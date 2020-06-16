@@ -148,7 +148,7 @@ public:
     return _pDistortion->getUndistortedRadius(max_radius);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt)
+  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) const
   {
     if (this->_pDistortion == nullptr)
     {
@@ -157,7 +157,7 @@ public:
     return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt)
+  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) const
   {
     if (this->_pDistortion == nullptr)
     {
@@ -167,7 +167,7 @@ public:
     return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
   }
 
-  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt)
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) const
   {
     if (this->_pDistortion == nullptr)
     {
@@ -177,7 +177,7 @@ public:
     return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
   }
 
-  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt)
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) const
   {
     if (this->_pDistortion == nullptr)
     {
@@ -187,7 +187,7 @@ public:
     return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
   }
 
-  std::shared_ptr<Distortion> getDistortion()
+  std::shared_ptr<Distortion> getDistortion() const
   {
       return _pDistortion;
   }

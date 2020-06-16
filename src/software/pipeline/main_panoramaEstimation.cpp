@@ -24,10 +24,6 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/BundleAdjustmentPanoramaCeres.hpp>
-//#include <aliceVision/sfm/BundleAdjustmentCeresAlt.hpp>
-
 #include <cstdlib>
 
 // These constants define the current software version.

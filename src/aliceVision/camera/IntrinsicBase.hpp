@@ -124,6 +124,33 @@ public:
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const = 0;
 
   /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pose The pose
+   * @param[in] pt3D The 3d ppont
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian  wrt pose
+   */
+  virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+
+  /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pose The pose
+   * @param[in] pt3D The 3d ppont
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian  wrt point
+   */
+  virtual Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+
+  /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pose The pose
+   * @param[in] pt3D The 3d ppont
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian wrt params
+   */
+  virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+
+  /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
    * @param[in] pose The pose
    * @param[in] X The 3D projected point

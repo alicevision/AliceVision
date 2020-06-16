@@ -88,7 +88,7 @@ public:
     _offset(1) = K(1, 2);
   }
 
-  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {
     const Vec3 X = pose(pt); // apply pose
     const Vec2 P = X.head<2>() / X(2);
@@ -101,7 +101,7 @@ public:
 
   Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec3 X = pose(pt); // apply pose
 
     const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
 
@@ -118,9 +118,32 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
   }
 
-  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3& pt) const override
   {
-    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec3 X = pose(pt); // apply pose
+
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = pose.rotation();
+    T.block<3, 1>(0, 3) = pose.translation();
+
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt.homogeneous());
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) const override
+  {
+    const Vec3 X = pose(pt); // apply pose
 
     const Eigen::Matrix<double, 3, 3>& d_X_d_P = pose.rotation();
 
@@ -137,28 +160,46 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
   }
 
-  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) const
   {
-    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec3 X = pose(pt); // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) const
   {
     return getDerivativeCam2ImaWrtPrincipalPoint();
   }
 
-  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) const
   {
 
-    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec3 X = pose(pt); // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     const Vec2 distorted = this->addDistortion(P);
 
     return getDerivativeCam2ImaWrtScale(distorted);
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const override {
+    
+    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
+
+    ret.block<2, 1>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
+    ret.block<2, 2>(0, 1) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+
+    if (hasDistortion()) {
+
+      size_t distortionSize = _pDistortion->getDistortionParametersCount();
+
+      ret.block(0, 3, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
+    }
+    
+
+    return ret;
   }
 
   Vec3 toUnitSphere(const Vec2 & pt) const override

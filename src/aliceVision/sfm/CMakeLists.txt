@@ -21,6 +21,8 @@ set(sfm_files_headers
   utils/syntheticScene.hpp
   BundleAdjustment.hpp
   BundleAdjustmentCeres.hpp
+  BundleAdjustmentPanoramaCeres.hpp
+  BundleAdjustmentSymbolicCeres.hpp
   LocalBundleAdjustmentGraph.hpp
   FrustumFilter.hpp
   ResidualErrorFunctor.hpp
@@ -51,6 +53,7 @@ set(sfm_files_sources
   utils/syntheticScene.cpp
   BundleAdjustmentCeres.cpp
   BundleAdjustmentPanoramaCeres.cpp
+  BundleAdjustmentSymbolicCeres.cpp
   LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
   generateReport.cpp

@@ -18,142 +18,9 @@
 
 #include <fstream>
 
-
-
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
-
-class SO3Parameterization : public ceres::LocalParameterization {
- public:
-  ~SO3Parameterization() override = default;
-
-  virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const {
- 
-    double* ptrBase = (double*)x;
-    double* ptrResult = (double*)x_plus_delta;
-    Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > rotation(ptrBase);
-    Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > rotationResult(ptrResult);
-
-    Eigen::Vector3d axis;
-    axis(0) = delta[0];
-    axis(1) = delta[1];
-    axis(2) = delta[2];
-    double angle = axis.norm();
-
-    axis.normalize();
-
-    Eigen::AngleAxisd aa(angle, axis);
-    Eigen::Matrix3d Rupdate;
-    Rupdate = aa.toRotationMatrix();
-
-    rotationResult = Rupdate * rotation;
-
-    return true;
-  }
-
-  bool ComputeJacobian(const double* /*x*/, double* jacobian) const override {
-    
-    Eigen::Map<Eigen::Matrix<double, 9, 3, Eigen::RowMajor>> J(jacobian);
-    //Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> R(x);
-
-    J.fill(0);
-
-    J(1, 2) = 1;
-    J(2, 1) = -1;
-    J(3, 2) = -1;
-    J(5, 0) = 1;
-    J(6, 1) = 1;
-    J(7, 0) = -1;
-
-    return true;
-  }
-
-  int GlobalSize() const override { return 9; }
-
-  int LocalSize() const override { return 3; }
-};
-
-Eigen::Vector3d logm(const Eigen::Matrix3d & R) {
-  Eigen::Vector3d ret;
-
-  double p1 = R(2, 1) - R(1, 2);
-  double p2 = R(0, 2) - R(2, 0);
-  double p3 = R(1, 0) - R(0, 1);
-
-  double costheta = (R.trace() - 1.0) / 2.0;
-  if (costheta < -1.0) {
-    costheta = -1.0;
-  }
-
-  if (costheta > 1.0) {
-    costheta = 1.0;
-  }
-
-  if (1.0 - costheta < 1e-24) {
-    ret.fill(0);
-    return ret;
-  }
-
-  double theta = acos(costheta);
-  double scale = theta / (2.0 * sin(theta));
-
-  ret(0) = scale * p1;
-  ret(1) = scale * p2;
-  ret(2) = scale * p3;
-
-  return ret;
-}
-
-Eigen::Matrix<double, 3, 9> dlogmdr(const Eigen::Matrix3d & R) {
-
-  double p1 = R(2, 1) - R(1, 2);
-  double p2 = R(0, 2) - R(2, 0);
-  double p3 = R(1, 0) - R(0, 1);
-	double costheta = (R.trace() - 1.0) / 2.0;
-	if (costheta > 1.0) costheta = 1.0;
-	else if (costheta < -1.0) costheta = -1.0;
-  double theta = acos(costheta);
-
-	if (fabs(theta) < std::numeric_limits<float>::epsilon()) {
-		Eigen::Matrix<double, 3, 9> J;
-		J.fill(0);
-		J(0, 5) = 1;
-		J(0, 7) = -1;
-		J(1, 2) = -1;
-		J(1, 6) = 1;
-		J(2, 1) = 1;
-		J(2, 3) = -1;
-		return J;
-	}
-
-  double scale = theta / (2.0 * sin(theta));
-
-  Eigen::Vector3d resnoscale;
-	resnoscale(0) = p1;
-	resnoscale(1) = p2;
-	resnoscale(2) = p3;
-
-  /*Eigen::Matrix<double, 3, 3> dresdp = Eigen::Matrix3d::Identity() * scale;*/
-	Eigen::Matrix<double, 3, 9> dpdmat;
-  dpdmat.fill(0);
-	dpdmat(0, 5) = 1;
-	dpdmat(0, 7) = -1;
-	dpdmat(1, 2) = -1;
-	dpdmat(1, 6) = 1;
-	dpdmat(2, 1) = 1;
-	dpdmat(2, 3) = -1;
-
-
-	double dscaledtheta = -0.5 * theta * cos(theta) / (sin(theta)*sin(theta)) + 0.5 / sin(theta);
-	double dthetadcostheta = -1.0 / sqrt(-costheta*costheta + 1.0);
-
-	Eigen::Matrix<double, 1, 9> dcosthetadmat;
-	dcosthetadmat << 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5;
-	Eigen::Matrix<double, 1, 9> dscaledmat = dscaledtheta * dthetadcostheta * dcosthetadmat;
-
-  return dpdmat * scale + resnoscale * dscaledmat;
-}
 
 class CostRotationPrior : public ceres::SizedCostFunction<3, 9, 9> {
 public:
@@ -171,7 +38,7 @@ public:
 
     Eigen::Matrix3d two_R_one_est = twoRo * oneRo.transpose();
     Eigen::Matrix3d error_R = two_R_one_est * _two_R_one.transpose();
-    Eigen::Vector3d error_r = logm(error_R);
+    Eigen::Vector3d error_r = SO3::logm(error_R);
 
     residuals[0] = error_r(0);
     residuals[1] = error_r(1);
@@ -184,13 +51,13 @@ public:
     if (jacobians[0]) {
       Eigen::Map<Eigen::Matrix<double, 3, 9, Eigen::RowMajor>> J(jacobians[0]);
 
-      J = dlogmdr(error_R) * getJacobian_AB_wrt_A<3, 3, 3>(two_R_one_est, _two_R_one.transpose()) * getJacobian_AB_wrt_B<3, 3, 3>(twoRo, oneRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), oneRo);
+      J = SO3::dlogmdr(error_R) * getJacobian_AB_wrt_A<3, 3, 3>(two_R_one_est, _two_R_one.transpose()) * getJacobian_AB_wrt_B<3, 3, 3>(twoRo, oneRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), oneRo);
     }
 
     if (jacobians[1]) {
       Eigen::Map<Eigen::Matrix<double, 3, 9, Eigen::RowMajor>> J(jacobians[1]);
 
-      J = dlogmdr(error_R) * getJacobian_AB_wrt_A<3, 3, 3>(two_R_one_est, _two_R_one.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(twoRo, oneRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), twoRo);
+      J = SO3::dlogmdr(error_R) * getJacobian_AB_wrt_A<3, 3, 3>(two_R_one_est, _two_R_one.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(twoRo, oneRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), twoRo);
     }
 
     return true;
@@ -366,7 +233,7 @@ void BundleAdjustmentPanoramaCeres::CeresOptions::setDenseBA()
   preconditionerType  = ceres::JACOBI;
   linearSolverType = ceres::DENSE_SCHUR;
   sparseLinearAlgebraLibraryType = ceres::SUITE_SPARSE; // not used but just to avoid a warning in ceres
-  ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: DENSE_SCHUR");
+  ALICEVISION_LOG_DEBUG("BundleAdjustmentParnorama[Ceres]: DENSE_SCHUR");
 }
 
 void BundleAdjustmentPanoramaCeres::CeresOptions::setSparseBA()
@@ -378,24 +245,24 @@ void BundleAdjustmentPanoramaCeres::CeresOptions::setSparseBA()
   {
     sparseLinearAlgebraLibraryType = ceres::SUITE_SPARSE;
     linearSolverType = ceres::SPARSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: SPARSE_SCHUR, SUITE_SPARSE");
+    ALICEVISION_LOG_DEBUG("BundleAdjustmentParnorama[Ceres]: SPARSE_SCHUR, SUITE_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE))
   {
     sparseLinearAlgebraLibraryType = ceres::CX_SPARSE;
     linearSolverType = ceres::SPARSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: SPARSE_SCHUR, CX_SPARSE");
+    ALICEVISION_LOG_DEBUG("BundleAdjustmentParnorama[Ceres]: SPARSE_SCHUR, CX_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     sparseLinearAlgebraLibraryType = ceres::EIGEN_SPARSE;
     linearSolverType = ceres::SPARSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: SPARSE_SCHUR, EIGEN_SPARSE");
+    ALICEVISION_LOG_DEBUG("BundleAdjustmentParnorama[Ceres]: SPARSE_SCHUR, EIGEN_SPARSE");
   }
   else
   {
     linearSolverType = ceres::DENSE_SCHUR;
-    ALICEVISION_LOG_WARNING("BundleAdjustment[Ceres]: no sparse BA available, fallback to dense BA.");
+    ALICEVISION_LOG_WARNING("BundleAdjustmentParnorama[Ceres]: no sparse BA available, fallback to dense BA.");
   }
 }
 
@@ -541,14 +408,14 @@ void BundleAdjustmentPanoramaCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 {
   const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
 
-  const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, SO3Matrix& poseBlock)
+  const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, SO3::Matrix& poseBlock)
   {
     const Mat3& R = cameraPose.getTransform().rotation();
     poseBlock = R;
     double* poseBlockPtr = poseBlock.data();
 
     /*Define rotation parameterization*/
-    problem.AddParameterBlock(poseBlockPtr, 9, new SO3Parameterization);
+    problem.AddParameterBlock(poseBlockPtr, 9, new SO3::LocalParameterization);
 
     // keep the camera extrinsics constants
     if(cameraPose.isLocked() || isConstant || !refineRotation)
@@ -812,7 +679,7 @@ void BundleAdjustmentPanoramaCeres::updateFromSolution(sfmData::SfMData& sfmData
         continue;
       }
 
-      const SO3Matrix & poseBlock = _posesBlocks.at(poseId);
+      const SO3::Matrix & poseBlock = _posesBlocks.at(poseId);
 
       // update the pose
       posePair.second.setTransform(poseFromRT(poseBlock, Vec3(0,0,0)));
@@ -876,6 +743,8 @@ bool BundleAdjustmentPanoramaCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
 
   return true;
 }
+
+
 
 } // namespace sfm
 } // namespace aliceVision

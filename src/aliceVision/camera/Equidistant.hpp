@@ -71,14 +71,14 @@ public:
     return EQUIDISTANT_CAMERA; 
   }
 
-  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {    
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
     const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
 
-    const Vec3 X = pose.rotation() * pt;
+    const Vec3 X = pose(pt);
 
     /* Compute angle with optical center */
     const double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
@@ -97,9 +97,11 @@ public:
     return pt_ima;
   }
 
-  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
+  
+
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt) 
   {
-    const Vec3 X = pose.rotation() * pt;
+    const Vec3 X = pose(pt);
 
     const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
 
@@ -145,9 +147,59 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
   }
 
-  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3 & pt) const override
   {
-    Vec3 X = pose.rotation() * pt;
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = pose.rotation();
+    T.block<3, 1>(0, 3) = pose.translation();
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt.homogeneous());
+
+    const Vec3 X = pose(pt);
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    const double angle_Z = std::atan2(len2d, X(2));
+    const double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double radius = angle_Z / (0.5 * fov);
+
+    const double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) const override
+  {
+    Vec3 X = pose(pt);
 
     const Eigen::Matrix3d& d_X_d_pt = pose.rotation();
 
@@ -194,7 +246,7 @@ public:
 
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    const Vec3 X = pose.rotation() * pt;
+    const Vec3 X = pose(pt);
 
     /* Compute angle with optical center */
     const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
@@ -217,7 +269,7 @@ public:
 
   Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    const Vec3 X = pose.rotation() * pt;
+    const Vec3 X = pose(pt);
 
     /* Compute angle with optical center */
     const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
@@ -251,6 +303,10 @@ public:
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt)
   {
     return getDerivativeCam2ImaWrtPrincipalPoint();
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const override {
+    return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 5);
   }
 
   Vec3 toUnitSphere(const Vec2 & pt) const override
