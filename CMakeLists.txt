@@ -173,7 +173,7 @@ ExternalProject_Add(${TBB_TARGET}
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
-       BUILD_COMMAND PREFIX=<INSTALL_DIR> make PREFIX=<INSTALL_DIR>
+       BUILD_COMMAND PREFIX=<INSTALL_DIR> make PREFIX=<INSTALL_DIR> -j$(nproc)
        INSTALL_COMMAND mkdir -p <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR} && echo "cp <BINARY_DIR>/build/linux_*_release/*.so* <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
        )
 set(TBB_CMAKE_FLAGS -DTBB_INCLUDE_DIRS:PATH=${CMAKE_INSTALL_PREFIX}/include -DTBB_LIBRARIES=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libtbb.so)
@@ -503,7 +503,7 @@ ExternalProject_Add(${OPENCV_TARGET}
     -DWITH_OPENCL=OFF
     -DBUILD_TESTS=OFF
     -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version
-    ../${OPENCV_SRC_PATH}
+    <SOURCE_DIR>
 )
 # set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install -DCMAKE_PREFIX_PATH=${BUILD_DIR}/opencv_install)
 set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4 -DOPENCV_DIR=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4)
@@ -592,12 +592,12 @@ else()
 # Add sources
 add_subdirectory(src)
 
-endif()
-
 install(
-    FILES LICENSE-MPL2.md LICENSE-MIT-libmv.md COPYING.md CONTRIBUTORS.md
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
-    )
+        FILES LICENSE-MPL2.md LICENSE-MIT-libmv.md COPYING.md CONTRIBUTORS.md
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
+)
+
+endif()
 
 # Bundle target (see src/cmake/MakeBundle.cmake)
 # Note: require that the install rule has been executed
