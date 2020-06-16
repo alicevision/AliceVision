@@ -191,6 +191,7 @@ Apple;iPhone X;4.89;phonearena
 Apple;iPhone XR;5.60;dpreview
 Apple;iPhone XS;5.60;dpreview
 Apple;iPhone XS Max;5.60;dpreview
+Arashi Vision;Insta360 ONE X;6.16;usercontribution
 Archos;Archos 101e Neon;1.6;devicespecifications
 Archos;Archos 50 Cobalt;2.9;devicespecifications
 Archos;Archos 50d Oxygen;4.69;devicespecifications
@@ -1783,6 +1784,7 @@ Fujifilm;Fujifilm FinePix S3500 Zoom;5.312;dpreview,digicamdb
 Fujifilm;Fujifilm FinePix S4000;6.16;digicamdb,imaging-resource
 Fujifilm;Fujifilm FinePix S4050;6.17;dpreview,digicamdb
 Fujifilm;Fujifilm FinePix S4200;6.17;dpreview,digicamdb,imaging-resource
+Fujifilm;Fujifilm FinePix S4250WM;6.16;usercontribution
 Fujifilm;Fujifilm FinePix S4300;6.16;digicamdb
 Fujifilm;Fujifilm FinePix S4400;6.16;digicamdb
 Fujifilm;Fujifilm FinePix S4500;6.17;dpreview,digicamdb,imaging-resource
@@ -2297,6 +2299,7 @@ Innjoo;Innjoo Fire4 Plus;4.71;devicespecifications
 Innjoo;Innjoo Maze;4.69;devicespecifications
 Innjoo;Innjoo Smartron;5.44;devicespecifications
 Innos;Innos Yi Luo D6000;6.24;devicespecifications
+Insta360;Insta360 Pro2;4.80;devicespecifications
 Intex;Intex Aqua 3G Pro Q;1.8;devicespecifications
 Intex;Intex Aqua 4.0 4G;2.8;devicespecifications
 Intex;Intex Aqua 4.5 3G;2.84;devicespecifications
