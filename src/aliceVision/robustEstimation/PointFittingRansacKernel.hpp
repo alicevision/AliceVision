@@ -35,10 +35,10 @@ class PointFittingRansacKernel
 {
 public:
 
-  using KernelBase = robustEstimation::PointFittingKernel<SolverT_, ErrorT_, ModelT_>;
+  using PFKernel = robustEstimation::PointFittingKernel<SolverT_, ErrorT_, ModelT_>;
 
   PointFittingRansacKernel(const Mat& x1, const Mat& x2)
-    : KernelBase(x1, x2)
+    : PFKernel(x1, x2)
   {}
 
   /**
@@ -47,7 +47,7 @@ public:
    */
   std::size_t getMinimumNbRequiredSamples() const override
   {
-    return KernelBase::getMinimumNbRequiredSamples();
+    return PFKernel::getMinimumNbRequiredSamples();
   }
 
   std::size_t getMinimumNbRequiredSamplesLS() const override
@@ -61,7 +61,7 @@ public:
    */
   std::size_t getMaximumNbModels() const override
   {
-    return KernelBase::getMaximumNbModels();
+    return PFKernel::getMaximumNbModels();
   }
 
   /**
@@ -73,14 +73,14 @@ public:
    */
   void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
   {
-    KernelBase::fit(samples, models);
+    PFKernel::fit(samples, models);
   }
 
 
   void fitLS(const std::vector<std::size_t>& inliers, std::vector<ModelT_>& models, const std::vector<double>* weights = nullptr) const override
   {
-    const Mat x1 = ExtractColumns(KernelBase::_x1, inliers);
-    const Mat x2 = ExtractColumns(KernelBase::_x2, inliers);
+    const Mat x1 = ExtractColumns(PFKernel::_x1, inliers);
+    const Mat x2 = ExtractColumns(PFKernel::_x2, inliers);
 
     if(weights == nullptr)
       _solverLs.solve(x1, x2, models);
@@ -95,7 +95,7 @@ public:
     for(std::size_t sample = 0; sample < numInliers; ++sample)
     {
       const auto idx = inliers[sample];
-      weights[sample] = KernelBase::_errorEstimator.error(model, KernelBase::_x1.col(idx), KernelBase::_x2.col(idx));
+      weights[sample] = PFKernel::_errorEstimator.error(model, PFKernel::_x1.col(idx), PFKernel::_x2.col(idx));
       // avoid division by zero
       weights[sample] = 1.0 / std::pow(std::max(eps, weights[sample]), 2);
     }
@@ -109,7 +109,7 @@ public:
    */
   double error(std::size_t sample, const ModelT_& model) const override
   {
-    return KernelBase::error(sample, model);
+    return PFKernel::error(sample, model);
   }
 
   /**
@@ -119,7 +119,7 @@ public:
    */
   void errors(const ModelT_& model, std::vector<double>& errors) const override
   {
-    KernelBase::errors(model, errors);
+    PFKernel::errors(model, errors);
   }
 
   /**
@@ -134,7 +134,7 @@ public:
    */
   std::size_t nbSamples() const override
   {
-    return KernelBase::nbSamples();
+    return PFKernel::nbSamples();
   }
 
   /**
