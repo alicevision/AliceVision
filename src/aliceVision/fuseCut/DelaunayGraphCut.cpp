@@ -494,15 +494,15 @@ void DelaunayGraphCut::displayStatistics()
     // Display some statistics
 
     StaticVector<int>* ptsCamsHist = getPtsCamsHist();
-    ALICEVISION_LOG_INFO("Histogram of number of cams per point:");
+    ALICEVISION_LOG_TRACE("Histogram of number of cams per point:");
     for(int i = 0; i < ptsCamsHist->size(); ++i)
-        ALICEVISION_LOG_INFO("    " << i << ": " << mvsUtils::num2str((*ptsCamsHist)[i]));
+        ALICEVISION_LOG_TRACE("    " << i << ": " << mvsUtils::num2str((*ptsCamsHist)[i]));
     delete ptsCamsHist;
 
     StaticVector<int>* ptsNrcsHist = getPtsNrcHist();
-    ALICEVISION_LOG_INFO("Histogram of Nrc per point:");
+    ALICEVISION_LOG_TRACE("Histogram of Nrc per point:");
     for(int i = 0; i < ptsNrcsHist->size(); ++i)
-        ALICEVISION_LOG_INFO("    " << i << ": " << mvsUtils::num2str((*ptsNrcsHist)[i]));
+        ALICEVISION_LOG_TRACE("    " << i << ": " << mvsUtils::num2str((*ptsNrcsHist)[i]));
     delete ptsNrcsHist;
 }
 
