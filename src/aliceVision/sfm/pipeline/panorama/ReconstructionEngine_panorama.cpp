@@ -168,7 +168,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
  * @param[out] vec_inliers The inliers satisfying the rotation as a list of indices.
  * @return the status of the estimation.
  */
-aliceVision::EstimationStatus robustRotationEstimationAC(const Mat3X &x1, const Mat3X &x2, const std::pair<std::size_t, std::size_t> &imgSize1, const std::pair<std::size_t, std::size_t> &imgSize2,  Mat3 &R, std::vector<std::size_t> &vec_inliers)
+aliceVision::EstimationStatus robustRotationEstimationAC(const Mat &x1, const Mat &x2, const std::pair<std::size_t, std::size_t> &imgSize1, const std::pair<std::size_t, std::size_t> &imgSize2,  Mat3 &R, std::vector<std::size_t> &vec_inliers)
 {
     // using KernelType = multiview::RelativePoseKernel<
     using KernelType = multiview::RelativePoseSphericalKernel<
@@ -206,7 +206,7 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2, const std::p
   return true;
 }
 
-bool robustRelativeRotation_fromR(const Mat3X &x1, const Mat3X &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
+bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
 {
   std::vector<std::size_t> vec_inliers{};
 

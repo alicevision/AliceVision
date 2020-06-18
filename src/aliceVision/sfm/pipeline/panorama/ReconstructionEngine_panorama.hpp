@@ -130,7 +130,7 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromR(const Mat3X &x1, const Mat3X &x2,
+bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2,
                                   const std::pair<size_t, size_t> &imgSize1,
                                   const std::pair<size_t, size_t> &imgSize2,
                                   RelativeRotationInfo &relativeRotationInfo,
