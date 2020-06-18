@@ -49,7 +49,9 @@ void Rotation3PSolver::solve(const Mat& p1, const Mat& p2, std::vector<robustEst
 
     Eigen::Matrix3d R = U * D * V.transpose();
 
-    Rs.emplace_back(R);
+    robustEstimation::Mat3Model ret(R);
+
+    Rs.emplace_back(ret);
 }
 
 }  // namespace kernel
