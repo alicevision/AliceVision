@@ -20,6 +20,35 @@ if(ALICEVISION_BUILD_SFM)
           Boost::filesystem
           Boost::system
     )
+
+  # Extraction 3D lines
+  alicevision_add_software(aliceVision_extraction_line3D
+    SOURCE main_extraction_line3D.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS Line3D::line3D
+          aliceVision_system
+          aliceVision_feature
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::system
+  )
+
+  # Reconstruction 3D Lines
+  alicevision_add_software(aliceVision_reconstruction_line3D
+    SOURCE main_reconstruction_line3D.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS Line3D::line3D
+          aliceVision_system
+          aliceVision_feature
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::system
+  )
+
   # Intrinsic image analysis and SfMData container initialization
   alicevision_add_software(aliceVision_cameraInit
     SOURCE main_cameraInit.cpp
