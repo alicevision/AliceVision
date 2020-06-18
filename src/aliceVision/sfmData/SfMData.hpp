@@ -495,6 +495,9 @@ public:
    */
   void combine(const SfMData& sfmData);
 
+  std::vector<IndexT> findNearestViewsByLandmarks(IndexT viewId, std::size_t nbNearestCams, double minViewAngle, double maxViewAngle) const;
+  BoxStats<double> getViewLandmarkDepthStat(IndexT viewId) const;
+
 private:
   /// Absolute path to the SfMData file (should not be saved)
   std::string _absolutePath;

@@ -614,6 +614,10 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
     const double x = landmark.X(0);
     const double y = landmark.X(1);
     const double z = landmark.X(2);
+    if(!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+    {
+        continue;
+    }
 
     accMinX(x);
     accMinY(y);
@@ -641,7 +645,9 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
 
   const double volume = mvsUtils::computeHexahedronVolume(hexah);
 
-  if(std::isnan(volume) || volume < std::numeric_limits<double>::epsilon())
+  if(!std::isfinite(volume))
+      throw std::runtime_error("Failed to estimate space from SfM: The space bounding box is invalid.");
+  if(volume < std::numeric_limits<double>::epsilon())
     throw std::runtime_error("Failed to estimate space from SfM: The space bounding box is too small.");
 
   ALICEVISION_LOG_INFO("Estimate space done.");

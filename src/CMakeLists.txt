@@ -654,6 +654,16 @@ if(ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
+# Line3D
+# ==============================================================================
+find_package(Line3D REQUIRED)
+if(Line3D_FOUND)
+  message(STATUS "Line3D found. (Version ${Line3D_VERSION})")
+else()
+  message(SEND_ERROR "Failed to find Line3D.")
+endif()
+
+# ==============================================================================
 # ZLIB
 # ==============================================================================
 if(ALICEVISION_BUILD_MVS)

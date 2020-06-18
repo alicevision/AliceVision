@@ -7,6 +7,19 @@ set(FOLDER_SOFTWARE_PIPELINE "Software/Pipeline")
 ### SfM software
 if(ALICEVISION_BUILD_SFM)
 
+  # Convert SfMData to 3D Lines
+  alicevision_add_software(aliceVision_line3D
+    SOURCE main_line3D.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS Line3D::line3D
+          aliceVision_system
+          aliceVision_feature
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::system
+    )
   # Intrinsic image analysis and SfMData container initialization
   alicevision_add_software(aliceVision_cameraInit
     SOURCE main_cameraInit.cpp

@@ -262,5 +262,96 @@ void SfMData::combine(const SfMData& sfmData)
   constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
 }
 
+BoxStats<double> SfMData::getViewLandmarkDepthStat(IndexT viewId) const
+{
+    std::vector<double> depths;
+
+    const sfmData::View& view = getView(viewId);
+
+    for(const auto& landmarkPair: getLandmarks())
+    {
+        const auto& observations = landmarkPair.second.observations;
+
+        auto viewObsIt = observations.find(viewId);
+        if(viewObsIt == observations.end())
+            continue;
+
+        const geometry::Pose3 pose = getPose(view).getTransform();
+        const double depth = pose.depth(landmarkPair.second.X);
+
+        depths.push_back(depth);
+    }
+
+    BoxStats<double> stats(depths.begin(), depths.end());
+    return stats;
+}
+
+std::vector<IndexT> SfMData::findNearestViewsByLandmarks(IndexT viewId, std::size_t nbNearestCams, double minViewAngle, double maxViewAngle) const
+{
+    std::map<IndexT, int> commonObsPerView;
+
+    const sfmData::View& view = getView(viewId);
+    const geometry::Pose3 pose = getPose(view).getTransform();
+    const camera::IntrinsicBase* intrinsicPtr = getIntrinsicPtr(view.getIntrinsicId());
+
+    for(const auto& landmarkPair: getLandmarks())
+    {
+        const auto& observations = landmarkPair.second.observations;
+
+        auto viewObsIt = observations.find(viewId);
+        if(viewObsIt == observations.end())
+            continue;
+
+        for(const auto& observationPair : observations)
+        {
+            const IndexT otherViewId = observationPair.first;
+
+            if(otherViewId == viewId)
+                continue;
+
+            const sfmData::View& otherView = getView(otherViewId);
+            const geometry::Pose3 otherPose = getPose(otherView).getTransform();
+            const camera::IntrinsicBase* otherIntrinsicPtr = getIntrinsicPtr(otherView.getIntrinsicId());
+
+            const double angle = camera::AngleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+
+            if(angle < minViewAngle || angle > maxViewAngle)
+                continue;
+
+            if(commonObsPerView.count(otherViewId))
+            {
+                ++commonObsPerView[otherViewId];
+            }
+            else
+            {
+                commonObsPerView[otherViewId] = 1;
+            }
+        }
+    }
+    std::vector<std::pair<IndexT, int>> data;
+    for(auto v: commonObsPerView)
+    {
+        data.push_back(std::make_pair(v.first, v.second));
+    }
+
+    const std::size_t maxNbNearestCams = std::min(nbNearestCams, data.size());
+
+    std::partial_sort(data.begin(), data.begin() + maxNbNearestCams, data.end(),
+                      [](const std::pair<IndexT,int> &left, const std::pair<IndexT,int> &right)
+    {
+        return left.second > right.second;
+    });
+
+    std::vector<IndexT> out;
+    for(std::size_t i = 0; i < maxNbNearestCams; ++i)
+    {
+        // a minimum of 10 common points is required (10*2 because points are stored in both rc/tc combinations)
+        if(data[i].second > (10 * 2))
+            out.push_back(data[i].first);
+    }
+
+    return out;
+}
+
 } // namespace sfmData
 } // namespace aliceVision
