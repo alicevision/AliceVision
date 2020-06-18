@@ -709,7 +709,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       connection_size[J] += relativePose_info.vec_inliers.size();
 
       // Sort all inliers by increasing ids
-      if (relativePose_info.vec_inliers.size() > 0)
+      if (!relativePose_info.vec_inliers.empty())
       {
         std::sort(relativePose_info.vec_inliers.begin(), relativePose_info.vec_inliers.end());
 
@@ -722,6 +722,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
           for (const auto & match : matches)
           {
+            if(index_inlier >= relativePose_info.vec_inliers.size())
+              break;
             size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
             if (index == next_inlier)
             {
