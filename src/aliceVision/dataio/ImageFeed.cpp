@@ -8,6 +8,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
@@ -224,13 +225,8 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       folder = bf::path(imagePath).parent_path().string();
       ALICEVISION_LOG_DEBUG("filePattern: " << filePattern);
       std::string regexStr = filePattern;
-      // escape "."
       boost::algorithm::replace_all(regexStr, ".", "\\.");
-      // recognize # as a digit
-      boost::algorithm::replace_all(regexStr, "#", "[0-9]");
-      // recognize @ as a sequence of digits
-      boost::algorithm::replace_all(regexStr, "@", "[0-9]+");
-      re = regexStr;
+      re = filterToRegex(regexStr);
     }
     else
     {
