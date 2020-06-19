@@ -53,15 +53,15 @@ struct ProcessingParams
 // Conversion functions used for bilateral filter
 cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img)
 {  
-    cv::Mat mat(img.Width(), img.Height(), CV_32FC3);
+    cv::Mat mat(img.Height(), img.Width(), CV_32FC3);
     for(int row = 0; row < img.Height(); row++)
     {
-        image::RGBfColor* rowPtr = mat.ptr<image::RGBfColor>(row);
+        cv::Vec3f* rowPtr = mat.ptr<cv::Vec3f>(row);
         for(int col = 0; col < img.Width(); col++)
         {
-            image::RGBfColor& matPixel = rowPtr[col];
+            cv::Vec3f& matPixel = rowPtr[col];
             const image::RGBAfColor& imgPixel = img(row, col);
-            matPixel = image::RGBfColor(imgPixel.b(), imgPixel.g(), imgPixel.r());
+            matPixel = cv::Vec3f(imgPixel.b(), imgPixel.g(), imgPixel.r());
         }
     }
     return mat;
@@ -71,11 +71,11 @@ void cvMatBGRToImageRGBA(const cv::Mat& matIn, image::Image<image::RGBAfColor>& 
 {
     for(int row = 0; row < imageOut.Height(); row++)
     {
-        const image::RGBfColor* rowPtr = matIn.ptr<image::RGBfColor>(row);
+        const cv::Vec3f* rowPtr = matIn.ptr<cv::Vec3f>(row);
         for(int col = 0; col < imageOut.Width(); col++)
         {
-            const image::RGBfColor& matPixel = rowPtr[col];
-            imageOut(row, col) = image::RGBAfColor(matPixel.b(), matPixel.g(), matPixel.r(), imageOut(row, col).a());
+            const cv::Vec3f& matPixel = rowPtr[col];
+            imageOut(row, col) = image::RGBAfColor(matPixel[2], matPixel[1], matPixel[0], imageOut(row, col).a());
         }
     }
 }
