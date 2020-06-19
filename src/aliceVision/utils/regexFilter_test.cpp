@@ -31,44 +31,44 @@ BOOST_AUTO_TEST_CASE(utils_regexMatching)
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
-        filterStringCollection(test, "C:/Users/*####.jpg");
+        filterStrings(test, "C:/Users/*####.jpg");
         BOOST_CHECK_EQUAL(test.size(), 12);
     }
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
-        filterStringCollection(test, "C:/Users/*000#.jpg");
+        filterStrings(test, "C:/Users/*000#.jpg");
         BOOST_CHECK_EQUAL(test.size(), 9);
     }
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
-        filterStringCollection(test, "C:/Users/*000#.jpg");
+        filterStrings(test, "C:/Users/*000#.jpg");
         BOOST_CHECK_EQUAL(test.size(), 9);
     }
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
         const std::vector<std::string> testDesired{"C:/Users/test00.exr", "C:/Users/test01.exr", "C:/Users/test02.exr", "C:/Users/test03.exr"};
-        filterStringCollection(test, "C:/Users/*#?.exr");
+        filterStrings(test, "C:/Users/*#?.exr");
         BOOST_CHECK_EQUAL(test, testDesired);
     }
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
-        filterStringCollection(test, "C:/Users/*_####.???");
+        filterStrings(test, "C:/Users/*_####.???");
         BOOST_CHECK_EQUAL(test.size(), 12);
     }
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
-        filterStringCollection(test, "C:/Users/#####.???");
+        filterStrings(test, "C:/Users/#####.???");
         BOOST_CHECK_EQUAL(test.size(), 0);
     }
     {
         std::vector<std::string> test;
         test.assign(exemplePaths.begin(), exemplePaths.end());
-        filterStringCollection(test, "C:/Users/@.???");
+        filterStrings(test, "C:/Users/@.???");
         BOOST_CHECK_EQUAL(test.size(), 4);
     }
 }

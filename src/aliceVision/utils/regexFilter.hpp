@@ -39,15 +39,14 @@ std::regex filterToRegex(std::string str)
 }
 
 /**
- * @brief Template function that allows you to filter any type of stl like string container by deleting in it the values that do not match the filter
- * @param[in] strContainer - Any container that contains strings
+ * @brief Function that allows you to filter vector of strings by deleting in it the values that do not match the filter
+ * @param[in] <td::vector<std::string> - Vector that contains strings
  * @param[in] filter - String represent the filter to be applied
  */
-template <typename C, typename T = std::decay_t<decltype(*std::declval<C>().begin())>, typename = std::enable_if_t<std::is_convertible_v<T, std::string>>>
-void filterStringCollection(C& strContainer, const std::string& filter)
+void filterStrings(std::vector<std::string>& strVec, const std::string& filter)
 {
     const std::regex regex = filterToRegex(filter);
-    const auto begin = strContainer.begin();
-    const auto end = strContainer.end();
-    strContainer.erase(std::remove_if(begin, end, [&regex](const std::string& str) { return !std::regex_match(str, regex); }), end);
+    const auto begin = strVec.begin();
+    const auto end = strVec.end();
+    strVec.erase(std::remove_if(begin, end, [&regex](const std::string& str) { return !std::regex_match(str, regex); }), end);
 }
