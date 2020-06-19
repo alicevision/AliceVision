@@ -7,6 +7,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/utils/regexFilter.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -182,7 +183,7 @@ int aliceVision_main(int argc, char * argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
-         "SfMData file input.")
+         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
          "SfMData file output.")
         ;
@@ -352,49 +353,50 @@ int aliceVision_main(int argc, char * argv[])
     else
     {
         const fs::path inputPath(sfmInputDataFilename);
-        std::string inputDirPath;
-        std::vector<std::string> filesNames;
+        std::vector<std::string> filesStrPaths;
 
         if (fs::is_regular_file(inputPath))
         {
-            inputDirPath = inputPath.parent_path().string();
-            filesNames.push_back( inputPath.filename().string() );
+            filesStrPaths.push_back(inputPath.string());
         }
         else
         {
-            if (extension == "")
-            {
-                ALICEVISION_LOG_ERROR("The extension files must be specified for the directory path '" << sfmInputDataFilename << "'");
-                return EXIT_FAILURE;
-            }
-
-            inputDirPath = inputPath.string();
+            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().string() + "'.");
             // Iterate over files in directory
-            for(fs::directory_entry& entry : fs::directory_iterator(inputPath))
+            for(fs::directory_entry& entry : fs::directory_iterator(inputPath.parent_path()))
             {
-                // Get lowerCase extension string
-                const std::string ext = boost::to_lower_copy(entry.path().extension().string());
-
-                // If files in input directory match selected extension
-                if (ext == (std::string(".") + extension))
+                const std::string entryPath = entry.path().generic_string();
+                const std::string ext = entry.path().extension().string();
+                if(image::isSupported(ext))
                 {
-                    const std::string entryFileName = entry.path().filename().string();
-                    filesNames.emplace_back(entryFileName);
+                    filesStrPaths.push_back(entryPath);
                 }
             }
 
-            if (!filesNames.size())
+            // regex filtering files paths 
+            filterStrings(filesStrPaths, sfmInputDataFilename);
+
+            if(!filesStrPaths.size())
             {
-                ALICEVISION_LOG_WARNING("Any images was found in this directory '" << inputPath << "' , the file extension ." << extension << " may be incorrect ?");
+                ALICEVISION_LOG_INFO("Any images was found in this directory");
+                ALICEVISION_LOG_INFO("Filter expression '" << sfmInputDataFilename << "' may be incorrect ?");
+                return EXIT_FAILURE;
+            }
+            else
+            {
+                ALICEVISION_LOG_INFO(filesStrPaths.size() << " images found.");
             }
         }
 
-        for(const std::string& fileName : filesNames)
+        for(const std::string& inputFilePath : filesStrPaths)
         {
-            const std::string inputFilePath = (fs::path(inputDirPath) / fileName).string();
-            const std::string outputFilePath = (fs::path(sfmOutputDataFilepath).parent_path() / fileName).string();
+            const fs::path path = fs::path(inputFilePath);
+            const std::string fileName = path.stem().string();
+            const std::string fileExt = path.extension().string();
+            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+            const std::string outputFilePath = (fs::path(sfmOutputDataFilepath).parent_path() / (fileName + outputExt)).string();
 
-            ALICEVISION_LOG_INFO("Process image '" << fileName << "'");
+            ALICEVISION_LOG_INFO("Process image '" << fileName << fileExt << "'.");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
