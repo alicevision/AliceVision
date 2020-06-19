@@ -281,7 +281,9 @@ int aliceVision_main(int argc, char * argv[])
     }
 
     // Check if is sfm data file
-    if (fs::path(sfmInputDataFilename).extension().string() == ".abc")
+    const std::string inputExt = boost::to_lower_copy(fs::path(sfmInputDataFilename).extension().string());
+    static const std::array<std::string, 2> SFMSupportedExtensions = {".sfm", ".abc"};
+    if(std::find(SFMSupportedExtensions.begin(), SFMSupportedExtensions.end(), inputExt) != SFMSupportedExtensions.end() )
     {
         sfmData::SfMData sfmData;
         if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
@@ -303,7 +305,7 @@ int aliceVision_main(int argc, char * argv[])
             image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
             oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
 
-            // If exposureCompensation is needed for sfmData fIles
+            // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
             {
                 const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
