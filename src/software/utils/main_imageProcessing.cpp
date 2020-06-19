@@ -139,7 +139,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     
     if (pParams.bilateralFilter)
     {
-        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
             // Create temporary OpenCV Mat (keep only 3 Channels) to handled Eigen data of our image
             cv::Mat openCVMatIn = imageRGBAToCvMatBGR(image);
             cv::Mat openCVMatOut(image.Width(), image.Height(), CV_32FC3);
@@ -148,10 +148,10 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
             // Copy filtered data from openCV Mat(3 channels) to our image(keep the alpha channel unfiltered)
             cvMatBGRToImageRGBA(openCVMatOut, image);
-        #else
-            ALICEVISION_LOG_ERROR("Unsupported mode! If you intended to use a bilateral filter, please add OpenCV support.");
-            return EXIT_FAILURE;
-        #endif
+            
+#else
+            throw std::invalid_argument("Unsupported mode! If you intended to use a bilateral filter, please add OpenCV support.");
+#endif
     }
 
     if(pParams.fillHoles)
@@ -212,16 +212,16 @@ int aliceVision_main(int argc, char * argv[])
         ("fillHoles", po::value<bool>(&pParams.fillHoles)->default_value(pParams.fillHoles),
          "Fill Holes.")
 
-        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-            ("bilateralFilter", po::value<bool>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
-             "use bilateral Filter")
-            ("BilateralFilterDistance", po::value<int>(&pParams.BilateralFilterDistance)->default_value(pParams.BilateralFilterDistance),
-             "Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).")
-            ("BilateralFilterSigmaSpace",po::value<float>(&pParams.BilateralFilterSigmaSpace)->default_value(pParams.BilateralFilterSigmaSpace),
-             "Filter sigma in the coordinate space.")
-            ("BilateralFilterSigmaColor",po::value<float>(&pParams.BilateralFilterSigmaColor)->default_value(pParams.BilateralFilterSigmaColor),
-             "Filter sigma in the color space.")
-        #endif
+        ("bilateralFilter", po::value<bool>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
+            "use bilateral Filter")
+        ("BilateralFilterDistance", po::value<int>(&pParams.BilateralFilterDistance)->default_value(pParams.BilateralFilterDistance),
+            "Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).")
+        ("BilateralFilterSigmaSpace",po::value<float>(&pParams.BilateralFilterSigmaSpace)->default_value(pParams.BilateralFilterSigmaSpace),
+            "Filter sigma in the coordinate space.")
+        ("BilateralFilterSigmaColor",po::value<float>(&pParams.BilateralFilterSigmaColor)->default_value(pParams.BilateralFilterSigmaColor),
+            "Filter sigma in the color space.")
+
+
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
         ;
@@ -263,6 +263,15 @@ int aliceVision_main(int argc, char * argv[])
 
       // Set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
+
+
+#if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+    if(pParams.bilateralFilter)
+    {
+        ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter can't be used without openCV !");
+        return EXIT_FAILURE;
+    }
+#endif
 
     if (pParams.downscale < 0.0001f || pParams.downscale > 1.0f)
     {
