@@ -271,23 +271,32 @@ public:
    * @param[in] isPositive true if the metadata must be positive
    * @return true if the corresponding metadata value exists
    */
-  bool hasDigitMetadata(const std::string& name, bool isPositive = true) const
+  bool hasDigitMetadata(const std::vector<std::string>& names, bool isPositive = true) const
   {
+    bool hasDigitMetadata = false;
     double value = -1.0;
-    const auto it = findMetadataIterator(name);
 
-    if(it == _metadata.end() || it->second.empty())
-      return false;
+    for(const std::string& name : names)
+    {
+        const auto it = findMetadataIterator(name);
 
-    try
-    {
-      value = std::stod(it->second);
+        if(it == _metadata.end() || it->second.empty())
+        {
+            continue;
+        }
+
+        try
+        {
+            value = std::stod(it->second);
+            hasDigitMetadata = true;
+            break;
+        }
+        catch(std::exception &)
+        {
+            value = -1.0;
+        }
     }
-    catch(std::exception &)
-    {
-      return false;
-    }
-    return (!isPositive || (value > 0));
+    return hasDigitMetadata && (!isPositive || (value > 0));
   }
 
   const std::string& getMetadata(const std::vector<std::string>& names) const
@@ -392,11 +401,11 @@ public:
    */
   double getMetadataFNumber() const
   {
-      if(hasDigitMetadata("FNumber"))
+      if(hasDigitMetadata({"FNumber"}))
       {
           return getDoubleMetadata({"FNumber"});
       }
-      if (hasDigitMetadata("ApertureValue"))
+      if (hasDigitMetadata({"ApertureValue"}))
       {
           const double aperture = getDoubleMetadata({"ApertureValue"});
           // fnumber = 2^(aperture/2)
