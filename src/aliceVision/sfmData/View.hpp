@@ -234,19 +234,10 @@ public:
       }
       if(key == nameLower)
       {
-        if(it == _metadata.end())
-        {
-          // we found one candidate match
-          it = mIt;
-        }
-        else
-        {
-          // multiple entries match the input
-          return _metadata.end();
-        }
+        return mIt;
       }
     }
-    return it;
+    return _metadata.end();
   }
 
   /**
