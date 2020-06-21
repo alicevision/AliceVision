@@ -9,8 +9,6 @@
 
 #include <aliceVision/types.hpp>
 
-#include <boost/algorithm/string.hpp>
-
 #include <string>
 #include <utility>
 
@@ -196,65 +194,18 @@ public:
   /**
    * 
   */
-  float getCameraExposureSetting() const
-  {
-    const float shutter = getMetadataShutter();
-    const float fnumber = getMetadataFNumber();
-    if (shutter < 0 || fnumber < 0)
-        return -1.f;
+  float getCameraExposureSetting() const;
 
-    const float iso = getMetadataISO();
-    const float isoRatio = (iso < 0.f) ? 1.0 : (iso / 100.f);
+  float getEv() const;
 
-    float cameraExposure = (shutter * isoRatio) / (fnumber * fnumber);
-    return cameraExposure;
-  }
-
-  float getEv() const
-  {
-    return std::log2(1.f/getCameraExposureSetting());
-  }
-
-  std::map<std::string, std::string>::const_iterator findMetadataIterator(const std::string& name) const
-  {
-    auto it = _metadata.find(name);
-    if(it != _metadata.end())
-      return it;
-    std::string nameLower = name;
-    boost::algorithm::to_lower(nameLower);
-    for(auto mIt = _metadata.begin(); mIt != _metadata.end(); ++mIt)
-    {
-      std::string key = mIt->first;
-      boost::algorithm::to_lower(key);
-      if(key.size() > name.size())
-      {
-        auto delimiterIt = key.find_last_of("/:");
-        if(delimiterIt != std::string::npos)
-          key = key.substr(delimiterIt + 1);
-      }
-      if(key == nameLower)
-      {
-        return mIt;
-      }
-    }
-    return _metadata.end();
-  }
+  std::map<std::string, std::string>::const_iterator findMetadataIterator(const std::string& name) const;
 
   /**
    * @brief Return true if the given metadata name exists
    * @param[in] name The metadata name
    * @return true if the corresponding metadata value exists
    */
-  bool hasMetadata(const std::vector<std::string>& names) const
-  {
-    for(const std::string& name: names)
-    {
-      const auto it = findMetadataIterator(name);
-      if(it != _metadata.end())
-        return true;
-    }
-    return false;
-  }
+  bool hasMetadata(const std::vector<std::string>& names) const;
 
   /**
    * @brief Return true if the given metadata name exists and is a digit
@@ -262,75 +213,15 @@ public:
    * @param[in] isPositive true if the metadata must be positive
    * @return true if the corresponding metadata value exists
    */
-  bool hasDigitMetadata(const std::vector<std::string>& names, bool isPositive = true) const
-  {
-    bool hasDigitMetadata = false;
-    double value = -1.0;
+  bool hasDigitMetadata(const std::vector<std::string>& names, bool isPositive = true) const;
 
-    for(const std::string& name : names)
-    {
-        const auto it = findMetadataIterator(name);
+  const std::string& getMetadata(const std::vector<std::string>& names) const;
 
-        if(it == _metadata.end() || it->second.empty())
-        {
-            continue;
-        }
+  double readRealNumber(const std::string& str) const;
 
-        try
-        {
-            value = std::stod(it->second);
-            hasDigitMetadata = true;
-            break;
-        }
-        catch(std::exception &)
-        {
-            value = -1.0;
-        }
-    }
-    return hasDigitMetadata && (!isPositive || (value > 0));
-  }
+  double getDoubleMetadata(const std::vector<std::string>& names) const;
 
-  const std::string& getMetadata(const std::vector<std::string>& names) const
-  {
-    static const std::string emptyString;
-    for(const std::string& name: names)
-    {
-      const auto it = findMetadataIterator(name);
-      if(it != _metadata.end())
-        return it->second;
-    }
-    return emptyString;
-  }
-
-  double getDoubleMetadata(const std::vector<std::string>& names) const
-  {
-    const std::string value = getMetadata(names);
-    if(value.empty())
-      return -1.0;
-    try
-    {
-      return std::stod(value);
-    }
-    catch(std::exception&)
-    {
-      return -1.0;
-    }
-  }
-
-  int getIntMetadata(const std::vector<std::string>& names) const
-  {
-    const std::string value = getMetadata(names);
-    if(value.empty())
-      return -1;
-    try
-    {
-      return std::stoi(value);
-    }
-    catch(std::exception&)
-    {
-      return -1;
-    }
-  }
+  int getIntMetadata(const std::vector<std::string>& names) const;
 
   /**
    * @brief Get the corresponding "Make" metadata value

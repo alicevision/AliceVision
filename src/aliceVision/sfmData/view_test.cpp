@@ -28,6 +28,7 @@ BOOST_AUTO_TEST_CASE(View_Metadata)
 
     BOOST_CHECK_EQUAL(view.getMetadataFocalLength(), 50.0);
   }
+
   {
     sfmData::View view;
 
@@ -37,6 +38,17 @@ BOOST_AUTO_TEST_CASE(View_Metadata)
     BOOST_CHECK_EQUAL(view.getMetadata({"focalLength"}), "50");
 
     BOOST_CHECK_EQUAL(view.getMetadataFocalLength(), 50.0);
+  }
+
+  {
+      sfmData::View view;
+
+      view.addMetadata("test:FOCALLENGTH", "50/10");
+
+      BOOST_CHECK(view.hasMetadata({"FocalLength"}));
+      BOOST_CHECK_EQUAL(view.getMetadata({"focalLength"}), "50/10");
+
+      BOOST_CHECK_EQUAL(view.getMetadataFocalLength(), 5.0);
   }
 }
 

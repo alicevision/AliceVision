@@ -13,6 +13,7 @@ set(sfmData_files_headers
 set(sfmData_files_sources
   SfMData.cpp
   uid.cpp
+  View.cpp
   colorize.cpp
 )
 
