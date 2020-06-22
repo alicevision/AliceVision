@@ -26,14 +26,10 @@ using namespace aliceVision;
 // - Create a rotation matrix between two views
 // - Create two matrices of calibration for two views
 
-
-BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
-{
-  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
-  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1000.0, 960, 540);
+void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::shared_ptr<camera::IntrinsicBase> & intrinsic_noisy, double ratio_inliers) {
 
   sfmData::SfMData sfmdata;
-  sfmdata.getIntrinsics()[0] = intrinsic_est;
+  sfmdata.getIntrinsics()[0] = intrinsic_noisy;
 
   /*Create cameras */
   std::vector<geometry::Pose3> poses_gt;
@@ -56,6 +52,10 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
 
   feature::FeaturesPerView fpv;
   matching::PairwiseMatches matches;
+
+  std::mt19937 mt;
+  std::uniform_real_distribution<double> dist(0.0, 1.0);
+  std::normal_distribution<double> noise(0.0, 100.0);
   
   for (double latitude = - M_PI_2; latitude <= M_PI_2; latitude += 0.02) {
     for (double longitude = - M_PI; longitude <= M_PI; longitude += 0.02) {
@@ -69,8 +69,6 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
       std::vector<std::pair<size_t, size_t>> observations;
 
       /*Project this point on all cameras*/
-      std::default_random_engine generator;
-      std::normal_distribution<double> distribution(0.0, 0.2);
       for (int idPose = 0; idPose < poses_gt.size(); idPose++) {
 
         geometry::Pose3 pose = poses_gt[idPose];
@@ -91,6 +89,13 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
         
         /*Also store the index of this feature for this view*/
         observations.push_back(std::make_pair(idPose, pfs.size()));
+
+        double dice = dist(mt);
+        if (dice < ratio_inliers) {
+          //Outlier: generate large error
+          im(0) += noise(mt);
+          im(1) += noise(mt);
+        }
 
         feature::PointFeature pf(im(0), im(1), 1.0, 0.0);
         pfs.push_back(pf);
@@ -146,4 +151,38 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
     aa.fromRotationMatrix(delta);
     BOOST_CHECK_LT(aa.angle(), 1e-2);
   }
+}
+
+
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_RADIAL3)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1200.0, 960, 540);
+
+  test_panorama(intrinsic_gt, intrinsic_est, 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_RADIAL3_OUTLIERS)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1000.0, 960, 540);
+
+  test_panorama(intrinsic_gt, intrinsic_est, 0.3);
+}
+
+
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_EQUIDISTANT)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1200.0, 960, 540);
+
+  test_panorama(intrinsic_gt, intrinsic_est, 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_EQUIDISTANT_OUTLIERS)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1000.0, 960, 540);
+
+  test_panorama(intrinsic_gt, intrinsic_est, 0.3);
 }
