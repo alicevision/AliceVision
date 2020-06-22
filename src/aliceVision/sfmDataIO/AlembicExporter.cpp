@@ -191,8 +191,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     // We chose a full frame 24x36 camera
     float sensorWidthMM = 36.0;
 
-    if(view.hasMetadata("AliceVision:SensorWidth"))
-      sensorWidthMM = std::stof(view.getMetadata("AliceVision:SensorWidth"));
+    if(view.hasMetadata({"AliceVision:SensorWidth"}))
+      sensorWidthMM = view.getDoubleMetadata({"AliceVision:SensorWidth"});
 
     // Take the max of the image size to handle the case where the image is in portrait mode
     const float imgWidth = pinhole->w();

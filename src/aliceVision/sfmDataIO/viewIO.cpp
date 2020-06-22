@@ -104,11 +104,11 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
 
   bool isResized = false;
 
-  if(view.hasMetadata("Exif:PixelXDimension") && view.hasMetadata("Exif:PixelYDimension")) // has dimension metadata
+  if(view.hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) && view.hasMetadata({"Exif:PixelYDimension", "PixelYDimension"})) // has dimension metadata
   {
     // check if the image is resized
-    int exifWidth = std::stoi(view.getMetadata("Exif:PixelXDimension"));
-    int exifHeight = std::stoi(view.getMetadata("Exif:PixelYDimension"));
+    int exifWidth = std::stoi(view.getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
+    int exifHeight = std::stoi(view.getMetadata({"Exif:PixelYDimension", "PixelXDimension"}));
 
     // if metadata is rotated
     if(exifWidth == view.getHeight() && exifHeight == view.getWidth())
