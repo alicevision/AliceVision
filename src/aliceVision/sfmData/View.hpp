@@ -183,8 +183,10 @@ public:
   }
 
   /**
-   * @brief xxx
-   * @return true if the view is xxx
+   * @brief If the view is part of a camera rig, the camera can be a sub-pose of the rig pose but can also be temporarily solved independently.
+   * @return true if the view is not part of a rig.
+   *         true if the view is part of a rig and the camera is solved separately.
+   *         false if the view is part of a rig and the camera is solved as a sub-pose of the rig pose.
    */
   bool isPoseIndependant() const
   {
@@ -192,35 +194,65 @@ public:
   }
 
   /**
-   * 
-  */
+   * @brief Get the Camera Exposure Setting value.
+   * For the same scene, this value is linearly proportional to the amount of light captured by the camera according to
+   * the shooting parameters (shutter speed, f-number, iso).
+   */
   float getCameraExposureSetting() const;
 
+  /**
+   * @brief Get the Exposure Value. EV is a number that represents a combination of a camera's shutter speed and
+   * f-number, such that all combinations that yield the same exposure have the same EV.
+   * It progresses in a linear sequence as camera exposure is changed in power-of-2 steps.
+   */
   float getEv() const;
 
+  /**
+   * @brief Get an iterator on the map of metadata from a given name.
+   */
   std::map<std::string, std::string>::const_iterator findMetadataIterator(const std::string& name) const;
 
   /**
    * @brief Return true if the given metadata name exists
-   * @param[in] name The metadata name
+   * @param[in] names List of possible names for the metadata
    * @return true if the corresponding metadata value exists
    */
   bool hasMetadata(const std::vector<std::string>& names) const;
 
   /**
    * @brief Return true if the given metadata name exists and is a digit
-   * @param[in] name The metadata name
+   * @param[in] names List of possible names for the metadata
    * @param[in] isPositive true if the metadata must be positive
    * @return true if the corresponding metadata value exists
    */
   bool hasDigitMetadata(const std::vector<std::string>& names, bool isPositive = true) const;
 
+  /**
+   * @brief Get the metadata value as a string
+   * @param[in] names List of possible names for the metadata
+   * @return the metadata value as a string or an empty string if it does not exist
+   */
   const std::string& getMetadata(const std::vector<std::string>& names) const;
 
+  /**
+   * @brief Read a floating point value from a string. It support an integer, a floating point value or a fraction.
+   * @param[in] str string with the number to evaluate
+   * @return the extracted floating point value or -1.0 if it fails to convert the string
+   */
   double readRealNumber(const std::string& str) const;
 
+  /**
+   * @brief Get the metadata value as a double
+   * @param[in] names List of possible names for the metadata
+   * @return the metadata value as a double or -1.0 if it does not exist
+   */
   double getDoubleMetadata(const std::vector<std::string>& names) const;
 
+  /**
+   * @brief Get the metadata value as an integer
+   * @param[in] names List of possible names for the metadata
+   * @return the metadata value as an integer or -1 if it does not exist
+   */
   int getIntMetadata(const std::vector<std::string>& names) const;
 
   /**
@@ -269,9 +301,9 @@ public:
   }
 
   /**
-     * @brief Get the corresponding "ExposureTime" (shutter) metadata value
-     * @return the metadata value float or -1 if no corresponding value
-     */
+   * @brief Get the corresponding "ExposureTime" (shutter) metadata value
+   * @return the metadata value float or -1 if no corresponding value
+   */
   double getMetadataShutter() const
   {
       return getDoubleMetadata({"ExposureTime"});
