@@ -292,13 +292,15 @@ int aliceVision_main(int argc, char * argv[])
             return EXIT_FAILURE;
         }
 
+        const int size = sfmData.getViews().size();
+        int i = 0;
         for (auto & viewIt : sfmData.getViews())
         {
             auto& view = *viewIt.second;
             if (pParams.reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
                 continue;
 
-            ALICEVISION_LOG_INFO("Process view '" << view.getViewId() << "', url: '" << view.getImagePath() << "'");
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << view.getViewId() << "'");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
@@ -328,7 +330,7 @@ int aliceVision_main(int argc, char * argv[])
             // Analyze output path
             const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(view.getViewId()) + ext)).string();
 
-            ALICEVISION_LOG_INFO("Export image: '" << outputImagePath << "'.");
+            ALICEVISION_LOG_TRACE("Export image: '" << outputImagePath << "'.");
             image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
 
             // Update view for this modification
@@ -389,7 +391,8 @@ int aliceVision_main(int argc, char * argv[])
                 ALICEVISION_LOG_INFO(filesStrPaths.size() << " images found.");
             }
         }
-
+        const int size = filesStrPaths.size();
+        int i = 0;
         for(const std::string& inputFilePath : filesStrPaths)
         {
             const fs::path path = fs::path(inputFilePath);
@@ -398,7 +401,7 @@ int aliceVision_main(int argc, char * argv[])
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
             const std::string outputFilePath = (fs::path(sfmOutputDataFilepath).parent_path() / (fileName + outputExt)).string();
 
-            ALICEVISION_LOG_INFO("Process image '" << fileName << fileExt << "'.");
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << fileName << fileExt << "'.");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
@@ -409,7 +412,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            ALICEVISION_LOG_INFO("Export image: '" << outputFilePath << "'.");
+            ALICEVISION_LOG_TRACE("Export image: '" << outputFilePath << "'.");
             image::writeImage(outputFilePath, image, image::EImageColorSpace::AUTO, metadata);
         }
     }
