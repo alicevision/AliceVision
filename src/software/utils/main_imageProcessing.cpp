@@ -51,6 +51,13 @@ struct ProcessingParams
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 // Conversion functions used for bilateral filter
+
+/**
+ * @brief allows to convert an aliceVision image to an openCv image (cv::Mat) in BGR
+ * Ignores the alpha channel of the source image
+ * @param[in] matIn - Input RGBA aliceVision image
+ * @return the resulting openCV image
+ */
 cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img)
 {  
     cv::Mat mat(img.Height(), img.Width(), CV_32FC3);
@@ -67,6 +74,13 @@ cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img)
     return mat;
 }
 
+/**
+ * @brief allows to convert an openCv image (cv::Mat) in BGR to an aliceVision image
+ * Keeps the alpha channel of the output image unchanged
+ * @param[in] matIn - Input openCV image (cv::Mat)
+ * @param[out] matIn - output RGBA aliceVision image
+ * @return the resulting regex
+ */
 void cvMatBGRToImageRGBA(const cv::Mat& matIn, image::Image<image::RGBAfColor>& imageOut)
 {
     for(int row = 0; row < imageOut.Height(); row++)
