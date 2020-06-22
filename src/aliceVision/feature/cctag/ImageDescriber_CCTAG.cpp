@@ -29,10 +29,6 @@ ImageDescriber_CCTAG::CCTagParameters::CCTagParameters(size_t nRings)
 #endif
 }
 
-ImageDescriber_CCTAG::CCTagParameters::~CCTagParameters()
-{
-}
-
 bool ImageDescriber_CCTAG::CCTagParameters::setPreset(EImageDescriberPreset preset)
 {
   switch(preset)
@@ -60,9 +56,6 @@ ImageDescriber_CCTAG::ImageDescriber_CCTAG(const std::size_t nRings)
   , _params(nRings)
   {}
 
-ImageDescriber_CCTAG::~ImageDescriber_CCTAG()
-{
-}
 
 bool ImageDescriber_CCTAG::useCuda() const
 {

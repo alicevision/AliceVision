@@ -401,8 +401,10 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
 
     const int width = mp->getWidth(rc) / scale;
     const int height = mp->getHeight(rc) / scale;
+    const int nbDepthValues = std::count_if(depthMap->begin(), depthMap->end(), [](float v) { return v > 0.0f; });
 
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
+    metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));

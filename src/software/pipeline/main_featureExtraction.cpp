@@ -61,6 +61,8 @@ class FeatureExtractor
       , outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
     {}
 
+    ~ViewJob() = default;
+
     bool useGPU() const
     {
       return !gpuImageDescriberIndexes.empty();
@@ -204,6 +206,8 @@ public:
     }
   }
 
+  ~FeatureExtractor() = default;
+
 private:
 
   void computeViewJob(const ViewJob& job, bool useGPU = false)
@@ -215,7 +219,7 @@ private:
 
     const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
 
-    for(auto& imageDescriberIndex : imageDescriberIndexes)
+    for(const auto & imageDescriberIndex : imageDescriberIndexes)
     {
       const auto& imageDescriber = _imageDescribers.at(imageDescriberIndex);
       const feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();

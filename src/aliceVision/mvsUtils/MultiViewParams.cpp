@@ -65,7 +65,10 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
           if(readFromDepthMaps)
           {
-            path = getFileNameFromViewId(this, view.getViewId(), mvsUtils::EFileType::depthMap, 1);
+              // use output of DepthMapFilter if scale==0
+              // use output of DepthMap if scale==1
+              const int scale = (depthMapsFolder.empty() ? 0 : 1);
+              path = getFileNameFromViewId(this, view.getViewId(), mvsUtils::EFileType::depthMap, scale);
           }
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
