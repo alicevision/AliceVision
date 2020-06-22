@@ -333,7 +333,7 @@ void writeImage(const std::string& path,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
   const fs::path bPath = fs::path(path);
-  const std::string extension = bPath.extension().string();
+  const std::string extension = boost::to_lower_copy(bPath.extension().string());
   const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
   const bool isEXR = (extension == ".exr");
   //const bool isTIF = (extension == ".tif");
