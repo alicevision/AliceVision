@@ -47,6 +47,10 @@ struct ProcessingParams
     int BilateralFilterDistance = 0;
     float BilateralFilterSigmaColor = 0;
     float BilateralFilterSigmaSpace = 0;
+
+    bool ClaheFilter = false;
+    float ClaheClipLimit = 4.0f;
+    int ClaheTileGridSize = 8;
 };
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
@@ -169,6 +173,52 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 #endif
     }
 
+    // Contrast Limited Adaptive Histogram Equalization
+    if(pParams.ClaheFilter)
+    {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+        // Convert alicevision::image to BGR openCV Mat
+        cv::Mat BGRMat = imageRGBAToCvMatBGR(image);
+
+        // Convert BGR format to Lab format
+        cv::Mat labImg;
+        cv::cvtColor(BGRMat, labImg, cv::COLOR_LBGR2Lab);
+
+        // Extract the L channel 
+        cv::Mat L;
+        cv::extractChannel(labImg, L, 0);
+
+        // normalise L channel from [0, 100] to [0, 1]
+        std::for_each(L.begin<float>(), L.end<float>(), [](float& pixel) { pixel /= 100.0; });
+
+        // Convert float image to 16bit 
+        L.convertTo(L, CV_16U, 65535.0);
+
+        // apply Clahe algorithm to the L channel
+        {
+            const cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(pParams.ClaheClipLimit, cv::Size(pParams.ClaheTileGridSize, pParams.ClaheTileGridSize));
+            clahe->apply(L, L);
+        }
+
+        // Convert 16bit image to float 
+        L.convertTo(L, CV_32F, 1.0 / 65535.0);
+
+        // normalise back L channel from [0, 1] to [0, 100]
+        std::for_each(L.begin<float>(), L.end<float>(), [](float& pixel) { pixel *= 100.0; });
+        
+        // Merge back Lab colors channels
+        cv::insertChannel(L, labImg, 0);
+
+        // Convert Lab format to BGR format
+        cv::cvtColor(labImg, BGRMat, cv::COLOR_Lab2LBGR);
+
+        // Copy filtered data from openCV Mat to our alicevision image(keep the alpha channel unfiltered) 
+        cvMatBGRToImageRGBA(BGRMat, image);
+#else
+        throw std::invalid_argument( "Unsupported mode! If you intended to use a Clahe filter, please add OpenCV support.");
+#endif
+    }
+
     if(pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
@@ -236,6 +286,12 @@ int aliceVision_main(int argc, char * argv[])
         ("BilateralFilterSigmaColor",po::value<float>(&pParams.BilateralFilterSigmaColor)->default_value(pParams.BilateralFilterSigmaColor),
             "Filter sigma in the color space.")
 
+        ("ClaheFilter", po::value<bool>(&pParams.ClaheFilter)->default_value(pParams.ClaheFilter),
+         "Use Contrast Limited Adaptive Histogram Equalization (CLAHE) Filter.")
+        ("ClaheClipLimit", po::value<float>(&pParams.ClaheClipLimit)->default_value(pParams.ClaheClipLimit),
+         "Sets Threshold For Contrast Limiting.")
+        ("ClaheTileGridSize", po::value<int>(&pParams.ClaheTileGridSize)->default_value(pParams.ClaheTileGridSize),
+         "Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -279,11 +335,10 @@ int aliceVision_main(int argc, char * argv[])
       // Set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-
 #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-    if(pParams.bilateralFilter)
+    if(pParams.bilateralFilter || pParams.ClaheFilter)
     {
-        ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter can't be used without openCV !");
+        ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter and ClaheFilter can't be used without openCV !");
         return EXIT_FAILURE;
     }
 #endif
