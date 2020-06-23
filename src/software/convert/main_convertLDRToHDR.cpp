@@ -294,9 +294,9 @@ int aliceVision_main(int argc, char* argv[])
     std::map<int, size_t> count_flips;
     for(const auto& v : views)
     {
-        if(v.second->hasMetadata("raw:flip"))
+        if(v.second->hasMetadata({"raw:flip"}))
         {
-            std::string str = v.second->getMetadata("raw:flip");
+            std::string str = v.second->getMetadata({"raw:flip"});
             int flip_code = std::stoi(str);
             count_flips[flip_code]++;
         }
@@ -342,7 +342,7 @@ int aliceVision_main(int argc, char* argv[])
     for(auto& v : views)
     {
         /* Now, all views have raw:flip */
-        std::string str = v.second->getMetadata("raw:flip");
+        std::string str = v.second->getMetadata({"raw:flip"});
         int flip_code = std::stoi(str);
 
         if(flip_code == max_flip)
@@ -369,7 +369,7 @@ int aliceVision_main(int argc, char* argv[])
     for(auto& v : views)
     {
         /* Now, all views have raw:flip */
-        std::string str = v.second->getMetadata("raw:flip");
+        std::string str = v.second->getMetadata({"raw:flip"});
         int flip_code = std::stoi(str);
 
         if(flip_code == max_flip)
