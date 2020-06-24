@@ -64,7 +64,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  virtual EImageDescriberType getDescriberType() const override
+  EImageDescriberType getDescriberType() const override
   {
     return EImageDescriberType::SIFT_FLOAT;
   }
