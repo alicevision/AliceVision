@@ -733,7 +733,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
               const PointFeature& pI = _featuresPerView->getFeatures(I, descType)[match._i];
               const PointFeature& pJ = _featuresPerView->getFeatures(J, descType)[match._j];
 
-              sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0, pI.scale()), J, sfm::Observation(pt2, 0, pJ.scale()));
+              const sfm::Constraint2D constraint(I, sfm::Observation(pt1, match._i, pI.scale()), J, sfm::Observation(pt2, match._j, pJ.scale()), descType);
               constraints2d.push_back(constraint);
 
                ++index_inlier;
@@ -810,6 +810,7 @@ bool ReconstructionEngine_panorama::buildLandmarks()
 
     // Store landmark
     Landmark l;
+    l.descType = c.descType;
     l.observations[c.ViewFirst] = c.ObservationFirst;
     l.observations[c.ViewSecond] = c.ObservationSecond;
     l.X = wpt;
