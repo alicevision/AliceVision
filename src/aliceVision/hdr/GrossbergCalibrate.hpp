@@ -44,8 +44,6 @@ public:
   void process(const std::vector<std::vector<std::string>>& imagePathsGroups,
                std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
-               int nbPoints,
-               bool fisheye,
                rgbCurve &response);
 
 private:

@@ -34,7 +34,6 @@ public:
    * @param[in] LDR images groups
    * @param[in] channel quantization
    * @param[in] exposure times
-   * @param[in] number of samples
    * @param[in] calibration weight function
    * @param[in] lambda (parameter of smoothness)
    * @param[out] camera response function
@@ -42,9 +41,6 @@ public:
   bool process(const std::vector<std::vector<std::string>> &ldrImageGroups,
                std::size_t channelQuantization,
                const std::vector<std::vector<float>> &times,
-               int nbPoints,
-               int calibrationDownscale,
-               bool fisheye,
                const rgbCurve &weight,
                float lambda,
                rgbCurve &response);

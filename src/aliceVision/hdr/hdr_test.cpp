@@ -14,32 +14,41 @@
 
 #include <random>
 #include <array>
+#include <boost/filesystem.hpp>
 
 using namespace aliceVision;
+namespace fs = boost::filesystem;
 
 bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, const hdr::rgbCurve& gt_response)
 {
-    times = {0.05f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f};
+    /* Exposure time for each bracket */
+    times = {0.05f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f};
 
     std::default_random_engine generator;
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
-    /* Generate a random image */
-    image::Image<image::RGBfColor> img(128, 128, true, image::RGBfColor(0.0f));
+    const size_t size_region = 11;
+    const size_t regions_count_per_row = 64;
+    const size_t regions_count_per_col = 64;
+
+    /* Generate a random image made of flat blocks (to pass variancetest )*/
+    image::Image<image::RGBfColor> img(512, 512, true, image::RGBfColor(0.0f));
     int val = 0;
     for(int i = 0; i < img.Height(); i++)
     {
+        int y = i / size_region;
+
         for(int j = 0; j < img.Width(); j++)
         {
-            float r = val / 1023.0;
-            float g = val / 1023.0;
-            float b = val / 1023.0;
+            int x = j / size_region;
+            int val = y * regions_count_per_col + x;
+            val = val % 4096;
+
+            float r = float(val) / 1023.0;
+            float g = float(val) / 1023.0;
+            float b = float(val) / 1023.0;
+
             img(i, j) = image::RGBfColor(r, g, b);
-            val++;
-            if(val > 1023)
-            {
-                val = 0;
-            }
         }
     }
 
@@ -57,6 +66,7 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, c
                     float radiance = color[k];
                     float radiance_dt = radiance * time;
                     float val = gt_response(radiance_dt, k);
+                    val = std::min(1.0f, val);
                     img_bracket(i, j)[k] = val;
                 }
             }
@@ -100,17 +110,10 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
     exposures.push_back(times);
     hdr::LaguerreBACalibration calib;
     hdr::rgbCurve response(quantization);
-    calib.process(all_paths, quantization, exposures, 500000, 1.0, false, false, response);
-
-    for(int i = 0; i < quantization; i++)
-    {
-        float x = float(i) / float(quantization - 1);
-        BOOST_CHECK_SMALL(std::abs(hdr::laguerreFunctionInv(laguerreParams[0], x) - response(x, 0)), 0.5f);
-    }
+    calib.process(all_paths, quantization, exposures, false, response);
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
-
         image::Image<image::RGBfColor> imgA, imgB;
         image::readImage(paths[imageId], imgA, image::EImageColorSpace::LINEAR);
         image::readImage(paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
@@ -127,16 +130,28 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
                 image::RGBfColor Bb = imgB(i, j);
                 for(int k = 0; k < 3; k++)
                 {
-                    double diff = std::abs(response(Ba(k), k) - ratioExposures * response(Bb(k), k));
+                    double responseA = response(Ba(k), k);
+                    double responseB = response(Bb(k), k);
+                    double hdrA = responseA / times[imageId];
+                    double hdrB = responseB / times[imageId + 1];
+                    double diff = std::abs(responseA - ratioExposures * responseB);
 
+                    if (Bb(k) > 0.99) diff = 0.0;
+                    if (hdrA > 1.0) diff = 0.0;
+                    if (hdrB > 1.0) diff = 0.0;
+                    
                     max_diff = std::max(diff, max_diff);
+                    
                 }
             }
         }
+
+        
         BOOST_CHECK(std::isfinite(max_diff));
-        BOOST_CHECK_SMALL(max_diff, 1e-1);
+        BOOST_CHECK_SMALL(max_diff, 1e-3);
     }
 }
+
 
 BOOST_AUTO_TEST_CASE(hdr_debevec)
 {
@@ -146,7 +161,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
     const size_t quantization = pow(2, 10);
     hdr::rgbCurve gt_curve(quantization);
 
-    std::array<float, 3> laguerreParams = {-0.2, 0.4, -0.3};
+    std::array<float, 3> laguerreParams = {-0.8, 0.8, -0.3};
     for(int i = 0; i < quantization; i++)
     {
         float x = float(i) / float(quantization - 1);
@@ -168,9 +183,8 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
     hdr::rgbCurve calibrationWeight(quantization);
 
     calibrationWeight.setTriangular();
-    calib.process(all_paths, quantization, exposures, 60000, 1.0, false, calibrationWeight, 0.01, response);
+    calib.process(all_paths, quantization, exposures, calibrationWeight, 0.001, response);
     response.exponential();
-    response.scaleChannelWise();
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
@@ -190,21 +204,29 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
                 image::RGBfColor Bb = imgB(i, j);
                 for(int k = 0; k < 3; k++)
                 {
-                    double diff = std::abs(response(Ba(k), k) - ratioExposures * response(Bb(k), k));
+                    double responseA = response(Ba(k), k);
+                    double responseB = response(Bb(k), k);
+                    double hdrA = responseA / times[imageId];
+                    double hdrB = responseB / times[imageId + 1];
+                    double diff = std::abs(responseA - ratioExposures * responseB);
 
-                    //BOOST_CHECK(std::isfinite(diff));
-                    // TODO: remove this test that ignore the problem
-                    if(std::isfinite(diff))
-                        max_diff = std::max(diff, max_diff);
+                    if (Ba(k) < 0.01) diff = 0.0;
+                    if (Bb(k) > 0.96) diff = 0.0;
+                    if (hdrA > 0.99) diff = 0.0;
+                    if (hdrB > 0.99) diff = 0.0;
+                    
+                    max_diff = std::max(diff, max_diff);
+                    
                 }
             }
         }
 
-        std::cout << max_diff << std::endl;
+        
         BOOST_CHECK(std::isfinite(max_diff));
-        BOOST_CHECK_SMALL(max_diff, 1e-3);
+        BOOST_CHECK_SMALL(max_diff, 0.002);
     }
 }
+
 
 BOOST_AUTO_TEST_CASE(hdr_grossberg)
 {
@@ -215,7 +237,11 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     hdr::rgbCurve gt_curve(quantization);
 
     gt_curve.setEmor(0);
-    std::array<double, 3> grossberg_params[3] = {{0.1, -0.3, 0.2}, {0.4, 0.1, 0.1}, {-0.8, -0.3, -0.4}};
+    std::array<double, 3> grossberg_params[3] = {
+                {0.8, 0.3, 0.2}, 
+                {-0.1, -0.3, 0.2}, 
+                {2.1, 0.05, 0.4}
+            };
 
     for(int dim = 0; dim < 3; dim++)
     {
@@ -240,10 +266,8 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
 
     hdr::GrossbergCalibrate calib(9);
     hdr::rgbCurve response(quantization);
-    // TODO: fix "Error in cholesky decomposition"
-    /*
-    const size_t nbPoints = 400000;
-    calib.process(all_paths, quantization, exposures, nbPoints, false, response);
+
+    calib.process(all_paths, quantization, exposures, response);
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
@@ -261,22 +285,27 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
             {
                 image::RGBfColor Ba = imgA(i, j);
                 image::RGBfColor Bb = imgB(i, j);
-
                 for(int k = 0; k < 3; k++)
                 {
-                    float valA = Ba(k);
-                    float valB = Bb(k);
+                    double responseA = response(Ba(k), k);
+                    double responseB = response(Bb(k), k);
+                    double hdrA = responseA / times[imageId];
+                    double hdrB = responseB / times[imageId + 1];
+                    double diff = std::abs(responseA - ratioExposures * responseB);
 
-                    double diff = std::abs(response(valA, k) - ratioExposures * response(valB, k));
-
+                    if (Bb(k) > 0.93) diff = 0.0;
+                    if (hdrA > 0.99) diff = 0.0;
+                    if (hdrB > 0.99) diff = 0.0;
+                    
                     max_diff = std::max(diff, max_diff);
+                    
                 }
             }
         }
 
-        std::cout << max_diff << std::endl;
+        
         BOOST_CHECK(std::isfinite(max_diff));
-        BOOST_CHECK_SMALL(max_diff, 1e-3);
+        BOOST_CHECK_SMALL(max_diff, 2.0 * 1e-3);
     }
-    */
 }
+

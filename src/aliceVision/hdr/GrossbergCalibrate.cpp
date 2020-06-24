@@ -21,9 +21,7 @@ GrossbergCalibrate::GrossbergCalibrate(unsigned int dimension)
     _dimension = dimension;
 }
 
-void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
-                                 std::size_t channelQuantization, const std::vector<std::vector<float>>& times,
-                                 int nbPoints, bool fisheye, rgbCurve& response)
+void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups, std::size_t channelQuantization, const std::vector<std::vector<float>>& times, rgbCurve& response)
 {
     const double step = 1.0 / double(channelQuantization - 1);
 

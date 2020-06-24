@@ -25,8 +25,7 @@ namespace hdr {
 
 bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
                                const std::size_t channelQuantization, const std::vector<std::vector<float>>& times,
-                               int nbPoints, int calibrationDownscale, bool fisheye, const rgbCurve& weight,
-                               float lambda, rgbCurve& response)
+                               const rgbCurve& weight, float lambda, rgbCurve& response)
 {
     // Always 3 channels for the input images
     static const std::size_t channelsCount = 3;
@@ -135,7 +134,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imag
         // Enforce f(0.5) = 0.0
         //
         const size_t pos_middle = std::floor(channelQuantization / 2);
-        A(pos_middle, pos_middle) += 1.0f;
+        A(channelQuantization - 1, channelQuantization - 1) += 1.0f;
 
         // M is
         //

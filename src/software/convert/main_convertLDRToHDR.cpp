@@ -692,8 +692,7 @@ int aliceVision_main(int argc, char* argv[])
                 if(calibrationNbPoints <= 0)
                     calibrationNbPoints = 1000000;
                 hdr::DebevecCalibrate calibration;
-                calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints,
-                                    calibrationDownscale, fisheye, calibrationWeight, lambda, response);
+                calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationWeight, lambda, response);
 
                 {
                     std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
@@ -747,8 +746,7 @@ int aliceVision_main(int argc, char* argv[])
                 if(calibrationNbPoints <= 0)
                     calibrationNbPoints = 1000000;
                 hdr::GrossbergCalibrate calibration(5);
-                calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints,
-                                    fisheye, response);
+                calibration.process(groupedFilenames, channelQuantization, groupedExposures, response);
             }
             break;
             case ECalibrationMethod::LAGUERRE:
@@ -760,8 +758,7 @@ int aliceVision_main(int argc, char* argv[])
                 }
 
                 hdr::LaguerreBACalibration calibration;
-                calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints,
-                                    calibrationDownscale, fisheye, refineExposures, response);
+                calibration.process(groupedFilenames, channelQuantization, groupedExposures, false, response);
             }
             break;
         }

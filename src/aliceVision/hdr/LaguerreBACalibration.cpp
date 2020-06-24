@@ -92,7 +92,7 @@ public:
 
         residuals[0] = errorCost_1;
         residuals[1] = errorCost_2;
-
+ 
         if(jacobians == nullptr)
         {
             return true;
@@ -160,8 +160,8 @@ private:
 
 void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
                                     const std::size_t channelQuantization,
-                                    std::vector<std::vector<float>>& cameraExposures, int nbPoints, int imageDownscale,
-                                    bool fisheye, bool refineExposures, rgbCurve& response)
+                                    std::vector<std::vector<float>>& cameraExposures,
+                                     bool refineExposures, rgbCurve& response)
 {
     /*Extract samples from images*/
     ALICEVISION_LOG_DEBUG("Extract color samples");
@@ -177,12 +177,11 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
             std::pair<float, float> exposurePair;
             exposurePair.first = group[index];
             exposurePair.second = group[index + 1];
-
             exposureParameters[exposurePair] = double(exposurePair.second) / double(exposurePair.first);
         } 
     }
 
-    std::array<double, 3> laguerreParam = {0, 0, 0};
+    std::array<double, 3> laguerreParam = {0.0, 0.0, 0.0};
 
     ceres::Problem problem;
     ceres::LossFunction* lossFunction = nullptr;

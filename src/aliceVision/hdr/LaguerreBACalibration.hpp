@@ -40,7 +40,6 @@ public:
    * @param[in] LDR images groups
    * @param[in] channel quantization
    * @param[in] exposure times
-   * @param[in] number of samples
    * @param[in] calibration weight function
    * @param[out] camera response function
    */
@@ -48,9 +47,6 @@ public:
       const std::vector<std::vector<std::string>>& imagePathsGroups,
       const std::size_t channelQuantization,
       std::vector<std::vector<float>>& cameraExposures,
-      int nbPoints,
-      int imageDownscale,
-      bool fisheye,
       bool refineExposures,
       rgbCurve &response);
 };

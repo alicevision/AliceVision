@@ -36,7 +36,7 @@ struct Descriptor
     }
 };
 
-void integral(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor> & source) {
+void integral(image::Image<image::Rgb<double>> & dest, image::Image<image::RGBfColor> & source) {
 
     /*
     A B C 
@@ -52,18 +52,28 @@ void integral(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfCol
 
     dest.resize(source.Width(), source.Height());
 
-    dest(0, 0) = source(0, 0);
+    dest(0, 0).r() = source(0, 0).r();
+    dest(0, 0).g() = source(0, 0).g();
+    dest(0, 0).b() = source(0, 0).b();
+
     for (int j = 1; j < source.Width(); j++) {
-        dest(0, j) = dest(0, j - 1) + source(0, j);
+        dest(0, j).r() = dest(0, j - 1).r() + double(source(0, j).r());
+        dest(0, j).g() = dest(0, j - 1).g() + double(source(0, j).g());
+        dest(0, j).b() = dest(0, j - 1).b() + double(source(0, j).b());
     }
 
     for (int i = 1; i < source.Height(); i++) {
 
-        dest(i, 0) = dest(i - 1, 0) + source(i, 0);
+        dest(i, 0).r() = dest(i - 1, 0).r() + double(source(i, 0).r());
+        dest(i, 0).g() = dest(i - 1, 0).g() + double(source(i, 0).g());
+        dest(i, 0).b() = dest(i - 1, 0).b() + double(source(i, 0).b());
+        
 
         for (int j = 1; j < source.Width(); j++) {
 
-            dest(i, j) = dest(i, j - 1) - dest(i - 1, j - 1) + dest(i - 1, j) + source(i, j);
+            dest(i, j).r() = dest(i, j - 1).r() - dest(i - 1, j - 1).r() + dest(i - 1, j).r() + double(source(i, j).r());
+            dest(i, j).g() = dest(i, j - 1).g() - dest(i - 1, j - 1).g() + dest(i - 1, j).g() + double(source(i, j).g());
+            dest(i, j).b() = dest(i, j - 1).b() - dest(i - 1, j - 1).b() + dest(i - 1, j).b() + double(source(i, j).b());
         }
     }
 }
@@ -78,7 +88,7 @@ void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor
 
             dest(i, j).r() = source(i, j).r() * source(i, j).r();
             dest(i, j).g() = source(i, j).g() * source(i, j).g();
-            dest(i, j).g() = source(i, j).b() * source(i, j).b();
+            dest(i, j).b() = source(i, j).b() * source(i, j).b();
         }
     }
 }
@@ -88,8 +98,10 @@ void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor
 bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization)
 {
     const int radius = 5;
+    const int radiusp1 = radius + 1;
     const int diameter = (radius * 2) + 1;
     const float area = float(diameter * diameter);
+    
 
     /* For all brackets, For each pixel, compute image sample */
     image::Image<ImageSample> samples;
@@ -101,7 +113,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
          * Load image
         */
         Image<RGBfColor> img, imgSquare;
-        Image<RGBfColor> imgIntegral, imgIntegralSquare;
+        Image<Rgb<double>> imgIntegral, imgIntegralSquare;
         readImage(imagePaths[idBracket], img, EImageColorSpace::LINEAR);
         
         if (idBracket == 0) {
@@ -115,11 +127,11 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         integral(imgIntegral, img);
         integral(imgIntegralSquare, imgSquare);
 
-        for (int i = radius; i < img.Height() - radius; i++)  {
-            for (int j = radius; j < img.Width() - radius; j++)  {
+        for (int i = radius + 1; i < img.Height() - radius; i++)  {
+            for (int j = radius + 1; j < img.Width() - radius; j++)  {
 
-                image::RGBfColor S1 = imgIntegral(i + radius, j + radius) + imgIntegral(i - radius, j - radius) - imgIntegral(i + radius, j - radius) - imgIntegral(i - radius, j + radius);
-                image::RGBfColor S2 = imgIntegralSquare(i + radius, j + radius) + imgIntegralSquare(i - radius, j - radius) - imgIntegralSquare(i + radius, j - radius) - imgIntegralSquare(i - radius, j + radius);
+                image::Rgb<double> S1 = imgIntegral(i + radius, j + radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + radius, j - radiusp1) - imgIntegral(i - radiusp1, j + radius);
+                image::Rgb<double> S2 = imgIntegralSquare(i + radius, j + radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + radius);
                 
                 PixelDescription pd;
                 
@@ -186,15 +198,15 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
             for (int k = 1; k < sample.descriptions.size(); k++) {
                 bool valid = false;
 
-                if (sample.descriptions[k].mean.r() > 1.0) {
+                if (sample.descriptions[k].mean.r() > 0.99) {
                     continue;
                 }
 
-                if (sample.descriptions[k].mean.g() > 1.0) {
+                if (sample.descriptions[k].mean.g() > 0.99) {
                     continue;
                 }
 
-                if (sample.descriptions[k].mean.b() > 1.0) {
+                if (sample.descriptions[k].mean.b() > 0.99) {
                     continue;
                 }
 
@@ -294,7 +306,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
 
             desc.channel = channel;
 
-            for (int k = 0; k < 1024; k++) {
+            for (int k = 0; k < channelQuantization; k++) {
 
                 desc.quantizedValue = k;
 
