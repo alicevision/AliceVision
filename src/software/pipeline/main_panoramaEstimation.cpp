@@ -45,11 +45,10 @@ int aliceVision_main(int argc, char **argv)
   std::string sfmDataFilename;
   std::vector<std::string> featuresFolders;
   std::vector<std::string> matchesFolders;
-  std::string outDirectory;
+  std::string outputSfMDataFilepath;
+  std::string outputViewsAndPosesFilepath;
 
   // user optional parameters
-
-  std::string outSfMDataFilename = "sfmData.json";
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
   sfm::ERelativeRotationMethod relativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_E;
@@ -66,8 +65,8 @@ int aliceVision_main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Path of the output folder.")
+    ("output,o", po::value<std::string>(&outputSfMDataFilepath)->required(),
+      "Path of the output SfMData file.")
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
       "Path to folder(s) containing the extracted features.")
     ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
@@ -75,8 +74,6 @@ int aliceVision_main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("outSfMDataFilename", po::value<std::string>(&outSfMDataFilename)->default_value(outSfMDataFilename),
-      "Filename of the output SfMData file.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
@@ -93,7 +90,9 @@ int aliceVision_main(int argc, char **argv)
     ("refine", po::value<bool>(&refine)->default_value(refine),
       "Refine cameras with a Bundle Adjustment")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
-      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.");
+      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+    ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+      "Path of the output SfMData file.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -194,14 +193,13 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(outDirectory.empty())
-  {
-    ALICEVISION_LOG_ERROR("It is an invalid output folder");
-    return EXIT_FAILURE;
-  }
+  const std::string outDirectory = fs::path(outputSfMDataFilepath).parent_path().string();
 
   if(!fs::exists(outDirectory))
-    fs::create_directory(outDirectory);
+  {
+    ALICEVISION_LOG_ERROR("Output folder does not exist: " << outDirectory);
+    return EXIT_FAILURE;
+  }
 
   // Panorama reconstruction process
   aliceVision::system::Timer timer;
@@ -232,7 +230,7 @@ int aliceVision_main(int argc, char **argv)
   {
     sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
     sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-    sfmEngine.getSfMData().setAbsolutePath(outSfMDataFilename);
+    sfmEngine.getSfMData().setAbsolutePath(outputSfMDataFilepath);
   }
 
   if(refine)
@@ -334,8 +332,11 @@ int aliceVision_main(int argc, char **argv)
    * export to disk computed scene (data & visualizable results)
   **/
   ALICEVISION_LOG_INFO("Export SfMData to disk");
-  sfmDataIO::Save(outSfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
   sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+
+  if(!outputViewsAndPosesFilepath.empty())
+    sfmDataIO::Save(outSfmData, outputViewsAndPosesFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
 
   return EXIT_SUCCESS;
 }
