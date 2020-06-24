@@ -117,7 +117,7 @@ public:
   /**
    * @brief Projection of a 3D point into the camera plane (Apply pose, disto (if any) and Intrinsics)
    * @param[in] pose The pose
-   * @param[in] pt3D The 3d ppont
+   * @param[in] pt3D The 3d point
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The 2d projection in the camera plane
    */
@@ -126,7 +126,7 @@ public:
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
    * @param[in] pose The pose
-   * @param[in] pt3D The 3d ppont
+   * @param[in] pt3D The 3d point
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian  wrt pose
    */
@@ -135,7 +135,7 @@ public:
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
    * @param[in] pose The pose
-   * @param[in] pt3D The 3d ppont
+   * @param[in] pt3D The 3d point
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian  wrt point
    */
@@ -144,7 +144,7 @@ public:
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
    * @param[in] pose The pose
-   * @param[in] pt3D The 3d ppont
+   * @param[in] pt3D The 3d point
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian wrt params
    */
