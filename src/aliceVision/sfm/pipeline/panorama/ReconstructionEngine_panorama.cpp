@@ -799,23 +799,23 @@ bool ReconstructionEngine_panorama::buildLandmarks()
   {
     // Retrieve camera parameters
     const sfmData::View & v1 = _sfmData.getView(c.ViewFirst);
-    std::shared_ptr<camera::IntrinsicBase> cam1 = _sfmData.getIntrinsicsharedPtr(v1.getIntrinsicId());
-    sfmData::CameraPose pose = _sfmData.getPose(v1);
+    const std::shared_ptr<camera::IntrinsicBase> cam1 = _sfmData.getIntrinsicsharedPtr(v1.getIntrinsicId());
+    const sfmData::CameraPose pose1 = _sfmData.getPose(v1);
+    const Vec3 wpt1 = cam1->backproject(pose1.getTransform(), c.ObservationFirst.x, 1.0, true);
 
-    // From 2D to sphere
-    Vec3 pt = cam1->toUnitSphere(cam1->removeDistortion(cam1->ima2cam(c.ObservationFirst.x)));
-
-    // To world coordinates
-    Vec3 wpt = pose.getTransform().rotation().transpose() * pt;
+    const sfmData::View & v2 = _sfmData.getView(c.ViewSecond);
+    const std::shared_ptr<camera::IntrinsicBase> cam2 = _sfmData.getIntrinsicsharedPtr(v2.getIntrinsicId());
+    const sfmData::CameraPose pose2 = _sfmData.getPose(v2);
+    const Vec3 wpt2 = cam2->backproject(pose2.getTransform(), c.ObservationSecond.x, 1.0, true);
 
     // Store landmark
     Landmark l;
     l.descType = c.descType;
     l.observations[c.ViewFirst] = c.ObservationFirst;
     l.observations[c.ViewSecond] = c.ObservationSecond;
-    l.X = wpt;
-    _sfmData.getLandmarks()[count] = l;
-    count++;
+    l.X = (wpt1 + wpt2) * 0.5;
+
+    _sfmData.getLandmarks()[count++] = l;
   }
 
   return true;
