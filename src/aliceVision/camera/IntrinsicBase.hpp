@@ -124,6 +124,16 @@ public:
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const = 0;
 
   /**
+   * @brief Back-projection of a 2D point at a specific depth into a 3D point
+   * @param[in] pose The camera pose
+   * @param[in] pt2D The 2d point
+   * @param[in] depth The depth
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The 3d point
+   */
+  virtual Vec3 backproject(const geometry::Pose3& pose, const Vec2& pt2D, double depth, bool applyUndistortion = true) const = 0;
+
+  /**
    * @brief get derivative of a projection of a 3D point into the camera plane
    * @param[in] pose The pose
    * @param[in] pt3D The 3d point

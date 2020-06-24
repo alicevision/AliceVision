@@ -88,7 +88,7 @@ public:
     _offset(1) = K(1, 2);
   }
 
-  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {
     const Vec3 X = pose(pt); // apply pose
     const Vec2 P = X.head<2>() / X(2);
@@ -97,6 +97,17 @@ public:
     const Vec2 impt = this->cam2ima(distorted);
 
     return impt;
+  }
+
+  Vec3 backproject(const geometry::Pose3& pose, const Vec2& pt2D, double depth, bool applyUndistortion = true) const override
+  {
+      const Vec2 pt2D_cam = ima2cam(pt2D);
+      const Vec2 pt2D_undist = applyUndistortion ? removeDistortion(pt2D_cam) : pt2D_cam;
+
+      const Vec3 pt2D_undistN = pt2D_undist.homogeneous().normalized();
+      const Vec3 pt3d = depth * pt2D_undistN;
+      const Vec3 output = pose.inverse()(pt3d);
+      return output;
   }
 
   Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
