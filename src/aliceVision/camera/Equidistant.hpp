@@ -71,8 +71,8 @@ public:
     return EQUIDISTANT_CAMERA; 
   }
 
-  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
-  {    
+  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
     const double fmm = _scale(0) * rscale;
@@ -80,18 +80,18 @@ public:
 
     const Vec3 X = pose(pt);
 
-    /* Compute angle with optical center */
+    // Compute angle with optical center
     const double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
     
-    /* Ignore depth component and compute radial angle */
+    // Ignore depth component and compute radial angle
     const double angle_radial = std::atan2(X(1), X(0));
 
     const double radius = angle_Z / (0.5 * fov);
 
-    /* radius = focal * angle_Z */
+    // radius = focal * angle_Z
     const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
-    const Vec2 pt_disto = this->addDistortion(P);
+    const Vec2 pt_disto = applyDistortion ? this->addDistortion(P) : P;
     const Vec2 pt_ima = this->cam2ima(pt_disto);
 
     return pt_ima;
