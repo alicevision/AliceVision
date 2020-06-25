@@ -225,7 +225,6 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       folder = bf::path(imagePath).parent_path().string();
       ALICEVISION_LOG_DEBUG("filePattern: " << filePattern);
       std::string regexStr = filePattern;
-      boost::algorithm::replace_all(regexStr, ".", "\\.");
       re = filterToRegex(regexStr);
     }
     else

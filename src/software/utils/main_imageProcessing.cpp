@@ -362,8 +362,8 @@ int aliceVision_main(int argc, char * argv[])
 
     // Check if sfmInputDataFilename exist and is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
-    static const std::array<std::string, 2> SFMSupportedExtensions = {".sfm", ".abc"};
-    if(!inputExpression.empty() && std::find(SFMSupportedExtensions.begin(), SFMSupportedExtensions.end(), inputExt) != SFMSupportedExtensions.end())
+    static const std::array<std::string, 2> sfmSupportedExtensions = {".sfm", ".abc"};
+    if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) != sfmSupportedExtensions.end())
     {
         sfmData::SfMData sfmData;
         if (!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ESfMData(sfmDataIO::ALL)))
@@ -483,7 +483,9 @@ int aliceVision_main(int argc, char * argv[])
         {
             // If you try to use both a regex-like filter expression and folders as input
             if(!inputFolders.empty())
+            {
                 ALICEVISION_LOG_WARNING("InputFolders and filter expression cannot be used at the same time, InputFolders are ignored here.");
+            }
 
             if(fs::is_regular_file(inputPath))
             {

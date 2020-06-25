@@ -95,7 +95,7 @@ std::vector<std::string> getSupportedExtensions()
 
 bool isSupported(const std::string& ext)
 {
-  const std::vector<std::string> supportedExtensions = getSupportedExtensions();
+  static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
   const auto start = supportedExtensions.begin();
   const auto end = supportedExtensions.end();
   return (std::find(start, end, boost::to_lower_copy(ext)) != end);

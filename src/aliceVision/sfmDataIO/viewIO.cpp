@@ -201,20 +201,22 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   return intrinsic;
 }
 
-const boost::filesystem::path viewPathFromFolders(const sfmData::View& view, const std::vector<std::string>& Folders)
+boost::filesystem::path viewPathFromFolders(const sfmData::View& view, const std::vector<std::string>& folders)
 {
     boost::filesystem::path path = "";
-    for(const std::string& folder : Folders)
+    for(const std::string& folder : folders)
     {
         path = viewPathFromFolder(view, folder);
-        if(path != "")
+        if(!path.empty())
+        {
             break;
+        }
     }
 
     return path;
 }
 
-const boost::filesystem::path viewPathFromFolder(const sfmData::View& view, const std::string& folder)
+boost::filesystem::path viewPathFromFolder(const sfmData::View& view, const std::string& folder)
 {
     const fs::recursive_directory_iterator end;
     const auto findIt = std::find_if(fs::recursive_directory_iterator(folder), end, 
