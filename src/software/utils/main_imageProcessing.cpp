@@ -8,6 +8,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -234,6 +235,7 @@ int aliceVision_main(int argc, char * argv[])
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename = "";
+    std::vector<std::string> inputFolders;
     std::string sfmOutputDataFilepath = "";
     std::string extension;
 
@@ -246,8 +248,10 @@ int aliceVision_main(int argc, char * argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
+        ("input,i", po::value<std::string>(&sfmInputDataFilename)->default_value(sfmInputDataFilename),
          "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+        ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
+        "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
          "SfMData file output.")
         ;
@@ -335,6 +339,13 @@ int aliceVision_main(int argc, char * argv[])
       // Set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    // check user choose at least one input option
+    if(sfmInputDataFilename.empty() && inputFolders.empty())
+    {
+        ALICEVISION_LOG_ERROR("Program need at least --input or --inputFolders option." << std::endl << "No input images here.");
+        return EXIT_FAILURE;
+    }
+
 #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     if(pParams.bilateralFilter || pParams.ClaheFilter)
     {
@@ -349,16 +360,35 @@ int aliceVision_main(int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    // Check if is sfm data file
+    // Check if sfmInputDataFilename exist and is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(sfmInputDataFilename).extension().string());
     static const std::array<std::string, 2> SFMSupportedExtensions = {".sfm", ".abc"};
-    if(std::find(SFMSupportedExtensions.begin(), SFMSupportedExtensions.end(), inputExt) != SFMSupportedExtensions.end() )
+    if(!sfmInputDataFilename.empty() && std::find(SFMSupportedExtensions.begin(), SFMSupportedExtensions.end(), inputExt) != SFMSupportedExtensions.end())
     {
         sfmData::SfMData sfmData;
         if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
             ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
             return EXIT_FAILURE;
+        }
+
+        // Check if all views in sfm file match files available in inputFolders
+        if(!inputFolders.empty())
+        {
+            bool viewsFound = true;
+            for(const auto& viewIt : sfmData.getViews())
+            {
+                viewsFound = !sfmDataIO::viewPathFromFolders(*(viewIt.second), inputFolders).empty();
+                if(!viewsFound)
+                    break;
+            }
+
+            if(!viewsFound)
+            {
+                ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.");
+                ALICEVISION_LOG_ERROR("Use only SfmData input or specify the correct folders.");
+                return EXIT_FAILURE;
+            }
         }
 
         const int size = sfmData.getViews().size();
@@ -428,39 +458,68 @@ int aliceVision_main(int argc, char * argv[])
         const fs::path inputPath(sfmInputDataFilename);
         std::vector<std::string> filesStrPaths;
 
-        if (fs::is_regular_file(inputPath))
+        // If sfmInputDataFilename is empty use imageFolders instead
+        if(sfmInputDataFilename.empty())
         {
-            filesStrPaths.push_back(inputPath.string());
+            for(const std::string& folder : inputFolders)
+            {
+                // If one of the paths isn't a folder path
+                if(!fs::is_directory(folder))
+                {
+                    ALICEVISION_LOG_ERROR("the path '" << folder << "' is not a valid folder path.");
+                    return EXIT_FAILURE;
+                }
+
+                for(fs::directory_entry& entry : fs::directory_iterator(folder))
+                {
+                    const std::string entryPath = entry.path().generic_string();
+                    const std::string ext = entry.path().extension().string();
+                    if(image::isSupported(ext))
+                        filesStrPaths.push_back(entryPath);
+                }
+            }
         }
         else
         {
-            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().string() + "'.");
-            // Iterate over files in directory
-            for(fs::directory_entry& entry : fs::directory_iterator(inputPath.parent_path()))
-            {
-                const std::string entryPath = entry.path().generic_string();
-                const std::string ext = entry.path().extension().string();
-                if(image::isSupported(ext))
-                {
-                    filesStrPaths.push_back(entryPath);
-                }
-            }
+            // If you try to use both a regex-like filter expression and folders as input
+            if(!inputFolders.empty())
+                ALICEVISION_LOG_WARNING("InputFolders and filter expression cannot be used at the same time, InputFolders are ignored here.");
 
-            // regex filtering files paths 
-            filterStrings(filesStrPaths, sfmInputDataFilename);
-
-            if(!filesStrPaths.size())
+            if(fs::is_regular_file(inputPath))
             {
-                ALICEVISION_LOG_INFO("Any images was found in this directory");
-                ALICEVISION_LOG_INFO("Filter expression '" << sfmInputDataFilename << "' may be incorrect ?");
-                return EXIT_FAILURE;
+                filesStrPaths.push_back(inputPath.string());
             }
             else
             {
-                ALICEVISION_LOG_INFO(filesStrPaths.size() << " images found.");
+                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().string() + "'.");
+                // Iterate over files in directory
+                for(fs::directory_entry& entry : fs::directory_iterator(inputPath.parent_path()))
+                {
+                    const std::string entryPath = entry.path().generic_string();
+                    const std::string ext = entry.path().extension().string();
+                    if(image::isSupported(ext))
+                        filesStrPaths.push_back(entryPath);
+                }
+
+                // Regex filtering files paths
+                filterStrings(filesStrPaths, sfmInputDataFilename);
             }
         }
+
         const int size = filesStrPaths.size();
+
+        if(!size)
+        {
+            ALICEVISION_LOG_ERROR("Any images was found.");
+            ALICEVISION_LOG_ERROR("Input folders or input expression '" << sfmInputDataFilename << "' may be incorrect ?");
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO(size << " images found.");
+        }
+
+        
         int i = 0;
         for(const std::string& inputFilePath : filesStrPaths)
         {
