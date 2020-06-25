@@ -22,8 +22,8 @@ class IntrinsicsScaleOffsetDisto : public IntrinsicsScaleOffset
 public:
   IntrinsicsScaleOffsetDisto() = default;
 
-  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scale_x, double scale_y, double offset_x, double offset_y, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffset(w, h, scale_x, scale_y, offset_x, offset_y)
+  IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY)
   , _pDistortion(distortion)
   {}
 

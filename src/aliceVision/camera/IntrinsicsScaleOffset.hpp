@@ -20,10 +20,10 @@ class IntrinsicsScaleOffset: public IntrinsicBase
 public:
   IntrinsicsScaleOffset() = default;
 
-  IntrinsicsScaleOffset(unsigned int w, unsigned int h, double scale_x, double scale_y, double offset_x, double offset_y)
+  IntrinsicsScaleOffset(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY)
     : IntrinsicBase(w, h)
-    , _scale(scale_x, scale_y)
-    , _offset(offset_x, offset_y)
+    , _scale(scaleX, scaleY)
+    , _offset(offsetX, offsetY)
   {}
 
   ~IntrinsicsScaleOffset() override = default;
