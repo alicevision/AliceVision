@@ -31,6 +31,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
+using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -372,7 +373,7 @@ int aliceVision_main(int argc, char **argv)
   if(imageFolder.empty())
   {
     // fill SfMData from the JSON file
-    sfmDataIO::loadJSON(sfmData, sfmFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS), true);
+    loadJSON(sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true);
   }
   else
   {
@@ -389,7 +390,7 @@ int aliceVision_main(int argc, char **argv)
       {
         sfmData::View& view = incompleteViews.at(i);
         view.setImagePath(imagePaths.at(i));
-        sfmDataIO::updateIncompleteView(view);
+        updateIncompleteView(view);
       }
 
       for(const auto& view : incompleteViews)
@@ -556,7 +557,7 @@ int aliceVision_main(int argc, char **argv)
     }
 
     // build intrinsic
-    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmDataIO::getViewIntrinsic(view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
+    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
     camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
 
     // set initialization mode
@@ -742,7 +743,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // store SfMData views & intrinsic data
-  if(!sfmDataIO::Save(sfmData, outputFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }
