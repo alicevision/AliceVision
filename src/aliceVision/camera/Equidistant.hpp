@@ -32,17 +32,17 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
 public:
   EquiDistant() = default;
 
-  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy,
+  EquiDistant(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy,
               std::shared_ptr<Distortion> distortion = nullptr)
-      : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion)
+      : IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
       , _circleRadius(std::min(w, h) * 0.5)
       , _circleCenter(w / 2.0, h / 2.0)
   {
   }
 
-  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy, double circleRadiusPix,
+  EquiDistant(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy, double circleRadiusPix,
               std::shared_ptr<Distortion> distortion = nullptr)
-      : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion)
+      : IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
       , _circleRadius(circleRadiusPix)
       , _circleCenter(w / 2.0, h / 2.0)
   {

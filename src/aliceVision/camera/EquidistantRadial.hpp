@@ -27,14 +27,9 @@ class EquiDistantRadialK3 : public EquiDistant
 public:
   EquiDistantRadialK3() = default;
 
-  explicit EquiDistantRadialK3(int w, int h, double focal, double ppx, double ppy,
-                               double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
-    : EquiDistant(w, h, focal, ppx, ppy, std::min(w, h) * 0.5, std::shared_ptr<Distortion>(new DistortionRadialK3PT(k1, k2, k3)))
-  {
-  }
-
-  explicit EquiDistantRadialK3(int w, int h, double focal, double ppx, double ppy, double radius, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
-  : EquiDistant(w, h, focal, ppx, ppy, radius, std::shared_ptr<Distortion>(new DistortionRadialK3PT(k1, k2, k3)))
+  explicit EquiDistantRadialK3(int w, int h, double focalLengthPix, double ppx, double ppy,
+                               double radius = 0.0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
+    : EquiDistant(w, h, focalLengthPix, ppx, ppy, (radius != 0.0 ? radius : std::min(w, h) * 0.5), std::shared_ptr<Distortion>(new DistortionRadialK3PT(k1, k2, k3)))
   {
   }
 
