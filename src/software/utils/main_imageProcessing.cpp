@@ -234,7 +234,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 int aliceVision_main(int argc, char * argv[])
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string sfmInputDataFilename = "";
+    std::string inputExpression = "";
     std::vector<std::string> inputFolders;
     std::string sfmOutputDataFilepath = "";
     std::string extension;
@@ -248,7 +248,7 @@ int aliceVision_main(int argc, char * argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmInputDataFilename)->default_value(sfmInputDataFilename),
+        ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
          "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
         "Use images from specific folder(s) instead of those specify in the SfMData file.")
@@ -340,7 +340,7 @@ int aliceVision_main(int argc, char * argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // check user choose at least one input option
-    if(sfmInputDataFilename.empty() && inputFolders.empty())
+    if(inputExpression.empty() && inputFolders.empty())
     {
         ALICEVISION_LOG_ERROR("Program need at least --input or --inputFolders option." << std::endl << "No input images here.");
         return EXIT_FAILURE;
@@ -361,14 +361,14 @@ int aliceVision_main(int argc, char * argv[])
     }
 
     // Check if sfmInputDataFilename exist and is recognized as sfm data file
-    const std::string inputExt = boost::to_lower_copy(fs::path(sfmInputDataFilename).extension().string());
+    const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
     static const std::array<std::string, 2> SFMSupportedExtensions = {".sfm", ".abc"};
-    if(!sfmInputDataFilename.empty() && std::find(SFMSupportedExtensions.begin(), SFMSupportedExtensions.end(), inputExt) != SFMSupportedExtensions.end())
+    if(!inputExpression.empty() && std::find(SFMSupportedExtensions.begin(), SFMSupportedExtensions.end(), inputExt) != SFMSupportedExtensions.end())
     {
         sfmData::SfMData sfmData;
-        if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if (!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
-            ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
+            ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
             return EXIT_FAILURE;
         }
 
@@ -455,11 +455,11 @@ int aliceVision_main(int argc, char * argv[])
     }
     else
     {
-        const fs::path inputPath(sfmInputDataFilename);
+        const fs::path inputPath(inputExpression);
         std::vector<std::string> filesStrPaths;
 
         // If sfmInputDataFilename is empty use imageFolders instead
-        if(sfmInputDataFilename.empty())
+        if(inputExpression.empty())
         {
             for(const std::string& folder : inputFolders)
             {
@@ -502,7 +502,7 @@ int aliceVision_main(int argc, char * argv[])
                 }
 
                 // Regex filtering files paths
-                filterStrings(filesStrPaths, sfmInputDataFilename);
+                filterStrings(filesStrPaths, inputExpression);
             }
         }
 
@@ -511,7 +511,7 @@ int aliceVision_main(int argc, char * argv[])
         if(!size)
         {
             ALICEVISION_LOG_ERROR("Any images was found.");
-            ALICEVISION_LOG_ERROR("Input folders or input expression '" << sfmInputDataFilename << "' may be incorrect ?");
+            ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression << "' may be incorrect ?");
             return EXIT_FAILURE;
         }
         else
