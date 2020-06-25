@@ -11,6 +11,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -34,6 +35,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
+using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -167,28 +169,14 @@ bool prepareDenseScene(const SfMData& sfmData,
     {      
       if(!imagesFolders.empty())
       {
-        bool found = false;
-        for(const std::string& folder : imagesFolders)
-        {
-          const fs::recursive_directory_iterator end;
-          const auto findIt = std::find_if(fs::recursive_directory_iterator(folder), end,
-                                   [&view](const fs::directory_entry& e) {
-                                      return (e.path().stem() == std::to_string(view->getViewId()) ||
-                                              e.path().stem() == fs::path(view->getImagePath()).stem());});
+          const fs::path path = viewPathFromFolders(*view, imagesFolders);
 
-          if(findIt != end)
-          {
-            srcImage = (fs::path(folder) / (findIt->path().stem().string() + findIt->path().extension().string())).string();
-            found = true;
-            break;
-          }
-        }
+          // if path was not found
+          if(path.empty())
+              throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in given folder(s)");
 
-        if(!found)
-          throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in given folder(s)");
+          srcImage = path.string();
       }
-
-
       const std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const IntrinsicBase* cam = iterIntrinsic->second.get();
       Image<RGBfColor> image, image_ud;
