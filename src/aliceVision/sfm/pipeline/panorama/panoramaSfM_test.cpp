@@ -117,9 +117,10 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::s
       }
     }
   } 
+  sfm::ReconstructionEngine_panorama::Params params;
+  params.eRelativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_R;
 
-  sfm::ReconstructionEngine_panorama pano(sfmdata, "");
-  pano.SetRelativeRotationMethod(sfm::RELATIVE_ROTATION_FROM_R);
+  sfm::ReconstructionEngine_panorama pano(sfmdata, params, "");
   pano.SetFeaturesProvider(&fpv);
   pano.SetMatchesProvider(&matches);
 

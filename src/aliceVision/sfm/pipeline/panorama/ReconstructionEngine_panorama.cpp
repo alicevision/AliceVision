@@ -220,9 +220,11 @@ bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2, const std::pair<
 
 
 ReconstructionEngine_panorama::ReconstructionEngine_panorama(const SfMData& sfmData,
-                                                               const std::string& outDirectory,
-                                                               const std::string& loggingFile)
+                                                             const ReconstructionEngine_panorama::Params& params,
+                                                             const std::string& outDirectory,
+                                                             const std::string& loggingFile)
   : ReconstructionEngine(sfmData, outDirectory)
+  , _params(params)
   , _loggingFile(loggingFile)
 {
   if(!_loggingFile.empty())
@@ -234,12 +236,6 @@ ReconstructionEngine_panorama::ReconstructionEngine_panorama(const SfMData& sfmD
     _htmlDocStream->pushInfo( "Dataset info:");
     _htmlDocStream->pushInfo( "Views count: " + htmlDocument::toString( sfmData.getViews().size()) + "<br>");
   }
-
-  // Set default motion Averaging methods
-  _eRotationAveragingMethod = ROTATION_AVERAGING_L2;
-
-  // Set default relative rotation methods
-  _eRelativeRotationMethod = RELATIVE_ROTATION_FROM_E;
 }
 
 ReconstructionEngine_panorama::~ReconstructionEngine_panorama()
@@ -260,16 +256,6 @@ void ReconstructionEngine_panorama::SetFeaturesProvider(feature::FeaturesPerView
 void ReconstructionEngine_panorama::SetMatchesProvider(matching::PairwiseMatches* provider)
 {
   _pairwiseMatches = provider;
-}
-
-void ReconstructionEngine_panorama::SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod)
-{
-  _eRotationAveragingMethod = eRotationAveragingMethod;
-}
-
-void ReconstructionEngine_panorama::SetRelativeRotationMethod(ERelativeRotationMethod eRelativeRotationMethod)
-{
-  _eRelativeRotationMethod = eRelativeRotationMethod;
 }
 
 bool ReconstructionEngine_panorama::process()
@@ -348,10 +334,8 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
                           "\t- relative rotations: " << relatives_R.size() << "\n" 
                           "\t- global rotations: " << set_pose_ids.size());
 
-  /*
-  If a view with a pose prior is not found in the relative rotation,
-  make sure we add a fake link to adjust globally everything.
-  */
+  // If a view with a pose prior is not found in the relative rotation,
+  // make sure we add a fake link to adjust globally everything.
   sfmData::Poses & poses = _sfmData.getPoses();
   if (poses.size() > 0) {
 
@@ -367,7 +351,7 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
         
         set_pose_ids.insert(poseId);
 
-        /*Add a fake relative pose between this pose and the first found pose*/
+        // Add a fake relative pose between this pose and the first found pose
         Eigen::Matrix3d iRo = currentPose.second.getTransform().rotation();
         Eigen::Matrix3d iR1 = iRo * i1Ro.transpose();
         local_relatives_R.emplace_back(firstPoseId, currentPose.first, iR1, 1.0);
@@ -380,7 +364,7 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
 
   GlobalSfMRotationAveragingSolver rotationAveraging_solver;
   //-- Rejection triplet that are 'not' identity rotation (error to identity > 50°)
-  const bool b_rotationAveraging = rotationAveraging_solver.Run(_eRotationAveragingMethod, eRelativeRotationInferenceMethod, local_relatives_R, 100.0, global_rotations);
+  const bool b_rotationAveraging = rotationAveraging_solver.Run(_params.eRotationAveragingMethod, eRelativeRotationInferenceMethod, local_relatives_R, _params.maxAngularError, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
 
@@ -428,19 +412,41 @@ bool ReconstructionEngine_panorama::Adjust()
     return false;
   }
 
-  /*
-  success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
-                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL);
-  if(success)
+  if(_params.lockAllIntrinsics)
   {
-    ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal");
+      // no not modify intrinsic camera parameters
+      return true;
   }
-  else
+
+  if(_params.intermediateRefineWithFocal)
   {
-    ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
-      return false;
+      success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                    BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL);
+      if(success)
+      {
+        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal");
+      }
+      else
+      {
+        ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
+          return false;
+      }
   }
-  */
+  if(_params.intermediateRefineWithFocalDist)
+  {
+      success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                    BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
+                                    BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION);
+      if(success)
+      {
+        ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Distortion");
+      }
+      else
+      {
+        ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion");
+          return false;
+      }
+  }
 
   // Minimize All
   success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
@@ -512,7 +518,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
   std::map<IndexT, size_t> connection_size;
 
   ALICEVISION_LOG_INFO("Relative pose computation:");
-  /*For each pair of views, compute the relative pose*/
+  // For each pair of views, compute the relative pose
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
     {
@@ -559,7 +565,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         useSpherical = true;
       }
 
-      if (_eRelativeRotationMethod == RELATIVE_ROTATION_FROM_R)
+      if (_params.eRelativeRotationMethod == RELATIVE_ROTATION_FROM_R)
       {
         useSpherical = true;
       }
@@ -621,7 +627,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       const std::pair<size_t, size_t> imageSize(1., 1.);
       const Mat3 K  = Mat3::Identity();
 
-      switch(_eRelativeRotationMethod)
+      switch(_params.eRelativeRotationMethod)
       {
         case RELATIVE_ROTATION_FROM_E:
         {
@@ -669,12 +675,10 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         }
         break;
       default:
-        ALICEVISION_LOG_DEBUG("Unknown relative rotation method: " << ERelativeRotationMethod_enumToString(_eRelativeRotationMethod));
+        ALICEVISION_LOG_DEBUG("Unknown relative rotation method: " << ERelativeRotationMethod_enumToString(_params.eRelativeRotationMethod));
       }
-      
-      /*
-      If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
-      */
+
+      // If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
       double weight = relativePose_info.vec_inliers.size();
       if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
       {
@@ -688,7 +692,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
         Eigen::AngleAxisd checker;
         checker.fromRotationMatrix(jRi_est * jRi.transpose());
-        if (std::abs(radianToDegree(checker.angle())) > 5)
+        if (std::abs(radianToDegree(checker.angle())) > _params.maxAngleToPrior)
         {
           relativePose_info.relativePose = geometry::Pose3(jRi, Vec3::Zero());
           relativePose_info.vec_inliers.clear();

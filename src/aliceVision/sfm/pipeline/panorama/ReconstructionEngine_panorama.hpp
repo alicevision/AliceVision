@@ -137,25 +137,32 @@ bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2,
                                   const size_t max_iteration_count = 4096);
 
 
-/// Panorama Pipeline Reconstruction Engine.
-/// - Method: Based on Global SfM but with no translations between cameras.
+/**
+ * Panorama Pipeline Reconstruction Engine.
+ * The method is based on the Global SfM but with no translations between cameras.
+ */
 class ReconstructionEngine_panorama : public ReconstructionEngine
 {
 public:
-
+  struct Params
+  {
+      ERotationAveragingMethod eRotationAveragingMethod = ROTATION_AVERAGING_L2;
+      ERelativeRotationMethod eRelativeRotationMethod = RELATIVE_ROTATION_FROM_E;
+      bool lockAllIntrinsics = false;
+      double maxAngleToPrior = 5.0;  //< max angle to input prior in degree
+      double maxAngularError = 100.0;  //< max angular error in degree (in global rotation averaging)
+      bool intermediateRefineWithFocal = false; //< intermediate refine with rotation+focal
+      bool intermediateRefineWithFocalDist = false; //< intermediate refine with rotation+focal+distortion
+  };
   ReconstructionEngine_panorama(const sfmData::SfMData& sfmData,
-                                 const std::string& outDirectory,
-                                 const std::string& loggingFile = "");
+                                const Params& params,
+                                const std::string& outDirectory,
+                                const std::string& loggingFile = "");
 
   ~ReconstructionEngine_panorama();
 
   void SetFeaturesProvider(feature::FeaturesPerView* featuresPerView);
   void SetMatchesProvider(matching::PairwiseMatches* provider);
-
-  void SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod);
-  void SetRelativeRotationMethod(ERelativeRotationMethod eRelativeRotationMethod);
-
-  void setLockAllIntrinsics(bool v) { _lockAllIntrinsics = v; }
 
   virtual bool process();
 
@@ -178,13 +185,12 @@ private:
   std::string _loggingFile;
 
   // Parameter
-  ERotationAveragingMethod _eRotationAveragingMethod;
-  ERelativeRotationMethod _eRelativeRotationMethod;
-  bool _lockAllIntrinsics = false;
+  Params _params;
 
   // Data provider
   feature::FeaturesPerView* _featuresPerView;
   matching::PairwiseMatches* _pairwiseMatches;
+
 };
 
 } // namespace sfm

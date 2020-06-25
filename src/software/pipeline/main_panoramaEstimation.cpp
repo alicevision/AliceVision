@@ -50,12 +50,11 @@ int aliceVision_main(int argc, char **argv)
 
   // user optional parameters
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
-  sfm::ERelativeRotationMethod relativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_E;
   bool refine = true;
-  bool lockAllIntrinsics = false;
   float offsetLongitude = 0.0f;
   float offsetLatitude = 0.0f;
+
+  sfm::ReconstructionEngine_panorama::Params params;
 
   po::options_description allParams(
     "Perform estimation of cameras orientation around a nodal point for 360° panorama.\n"
@@ -76,10 +75,10 @@ int aliceVision_main(int argc, char **argv)
   optionalParams.add_options()
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
+    ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&params.eRotationAveragingMethod)->default_value(params.eRotationAveragingMethod),
       "* 1: L1 minimization\n"
       "* 2: L2 minimization")
-    ("relativeRotation", po::value<sfm::ERelativeRotationMethod>(&relativeRotationMethod)->default_value(relativeRotationMethod),
+    ("relativeRotation", po::value<sfm::ERelativeRotationMethod>(&params.eRelativeRotationMethod)->default_value(params.eRelativeRotationMethod),
       "* from essential matrix"
       "* from rotation matrix"
       "* from homography matrix")
@@ -89,8 +88,16 @@ int aliceVision_main(int argc, char **argv)
       "offset to camera latitude")
     ("refine", po::value<bool>(&refine)->default_value(refine),
       "Refine cameras with a Bundle Adjustment")
-    ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
+    ("lockAllIntrinsics", po::value<bool>(&params.lockAllIntrinsics)->default_value(params.lockAllIntrinsics),
       "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+    ("maxAngleToPrior", po::value<double>(&params.maxAngleToPrior)->default_value(params.maxAngleToPrior),
+      "Maximal angle allowed regarding the input prior.")
+    ("maxAngularError", po::value<double>(&params.maxAngularError)->default_value(params.maxAngularError),
+      "Maximal angular error in global rotation averaging.")
+    ("intermediateRefineWithFocal", po::value<bool>(&params.intermediateRefineWithFocal)->default_value(params.intermediateRefineWithFocal),
+      "Add an intermediate refine with rotation+focal in the different BA steps.")
+    ("intermediateRefineWithFocalDist", po::value<bool>(&params.intermediateRefineWithFocalDist)->default_value(params.intermediateRefineWithFocalDist),
+      "Add an intermediate refine with rotation+focal+distortion in the different BA steps.")
     ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
       "Path of the output SfMData file.");
 
@@ -132,15 +139,15 @@ int aliceVision_main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (rotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 ||
-      rotationAveragingMethod > sfm::ROTATION_AVERAGING_L2 )
+  if (params.eRotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 ||
+      params.eRotationAveragingMethod > sfm::ROTATION_AVERAGING_L2 )
   {
     ALICEVISION_LOG_ERROR("Rotation averaging method is invalid");
     return EXIT_FAILURE;
   }
 
-  if (relativeRotationMethod < sfm::RELATIVE_ROTATION_FROM_E ||
-      relativeRotationMethod > sfm::RELATIVE_ROTATION_FROM_H )
+  if (params.eRelativeRotationMethod < sfm::RELATIVE_ROTATION_FROM_E ||
+      params.eRelativeRotationMethod > sfm::RELATIVE_ROTATION_FROM_H )
   {
     ALICEVISION_LOG_ERROR("Relative rotation method is invalid");
     return EXIT_FAILURE;
@@ -205,21 +212,13 @@ int aliceVision_main(int argc, char **argv)
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_panorama sfmEngine(
     inputSfmData,
+    params,
     outDirectory,
     (fs::path(outDirectory) / "sfm_log.html").string());
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
-
-  // configure reconstruction parameters
-  sfmEngine.setLockAllIntrinsics(lockAllIntrinsics);
-
-  // configure motion averaging method
-  sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
-
-  // configure relative rotation method (from essential or from homography matrix)
-  sfmEngine.SetRelativeRotationMethod(sfm::ERelativeRotationMethod(relativeRotationMethod));
 
   if(!sfmEngine.process())
   {
