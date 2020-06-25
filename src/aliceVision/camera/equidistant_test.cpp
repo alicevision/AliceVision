@@ -52,13 +52,13 @@ BOOST_AUTO_TEST_CASE(cameraEquidistant_disto_undisto_Radial)
     BOOST_CHECK(! (cam.addDistortion(ptCamera) == cam.removeDistortion(cam.addDistortion(ptCamera))) ) ;
 
     // Check projection / back-projection
-    const double depth_gt = Vec2::Random()(0) * 100.0;
+    const double depth_gt = 1.0; // Vec2::Random()(0) * 100.0;
     const geometry::Pose3 pose(geometry::randomPose());
 
     const Vec3 pt3d = cam.backproject(ptImage_gt, true, pose, depth_gt);
     const Vec2 pt2d_proj = cam.project(pose, pt3d, true);
 
-    // EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
+    EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
   }
 }
 

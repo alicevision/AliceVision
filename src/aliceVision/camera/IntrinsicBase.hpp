@@ -131,7 +131,15 @@ public:
    * @param[in] depth The depth
    * @return The 3d point
    */
-  virtual Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const = 0;
+  Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const
+  {
+      const Vec2 pt2D_cam = ima2cam(pt2D);
+      const Vec2 pt2D_undist = applyUndistortion ? removeDistortion(pt2D_cam) : pt2D_cam;
+
+      const Vec3 pt3d = depth * toUnitSphere(pt2D_undist);
+      const Vec3 output = pose.inverse()(pt3d);
+      return output;
+  }
 
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane

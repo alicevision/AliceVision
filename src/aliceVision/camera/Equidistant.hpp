@@ -96,20 +96,6 @@ public:
     return pt_ima;
   }
 
-  Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const override
-  {
-      const Vec2 pt2D_cam = ima2cam(pt2D);
-      const Vec2 pt2D_camUndisto = applyUndistortion ? removeDistortion(pt2D_cam) : pt2D_cam;
-
-      // From 2D to sphere
-      const Vec3 pt = toUnitSphere(pt2D_camUndisto) * depth;
-
-      // To world coordinates
-      const Vec3 wpt = pose.inverse()(pt);
-
-      return wpt;
-  }
-
   Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt) 
   {
     const Vec3 X = pose(pt);

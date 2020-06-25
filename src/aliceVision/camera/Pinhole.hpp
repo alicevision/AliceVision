@@ -99,17 +99,6 @@ public:
     return impt;
   }
 
-  Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const override
-  {
-      const Vec2 pt2D_cam = ima2cam(pt2D);
-      const Vec2 pt2D_undist = applyUndistortion ? removeDistortion(pt2D_cam) : pt2D_cam;
-
-      const Vec3 pt2D_undistN = pt2D_undist.homogeneous().normalized();
-      const Vec3 pt3d = depth * pt2D_undistN;
-      const Vec3 output = pose.inverse()(pt3d);
-      return output;
-  }
-
   Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
   {
     const Vec3 X = pose(pt); // apply pose
@@ -208,17 +197,13 @@ public:
 
       ret.block(0, 3, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
     }
-    
 
     return ret;
   }
 
   Vec3 toUnitSphere(const Vec2 & pt) const override
   {
-
-    const Vec3 ptcam = pt.homogeneous();
-
-    return ptcam / ptcam.norm();
+    return pt.homogeneous().normalized();
   }
 
   Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
