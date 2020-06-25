@@ -431,7 +431,7 @@ struct Sampler2d
     _sampler( dy , coefs_y ) ;
 
     // Default color constructor init all channels to zero
-    typename RealPixel<T>::real_type res;
+    typename RealPixel<T>::real_type res{0};
 
     // integer position of sample (x,y)
     const int grid_x = static_cast<int>( floor( x ) );
