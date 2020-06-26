@@ -7,16 +7,25 @@
 /*
  * This is a unit test for the hnswlib library (https://github.com/nmslib/hnswlib)
  *
- * It will test the different classe/functions that are needed for hnswlib
+ * It will test the different classes/functions that are needed for hnswlib
  */
 
-// *** hnswlib is located in src/hnswlib/hnswlib/<whatever .h file we need> ***
+// *** hnswlib is located in src/dependencies/hnswlib/hnswlib/<whatever .h file we need> ***
+
+// ----------------------- TESTING -----------------------
+
+// create an instance of an arrayMatcher
 
 
-// Test the the building of the matching structure
+// create a small array to test with, that contains float values
 
 
+// build the matching structure for the ArrayMatcher instance
 
-// test the nearest neighbour searches
+
+// test nearest neighbour search
+
+
+// test any other methods/functions we implemented
 
 

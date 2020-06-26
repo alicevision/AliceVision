@@ -17,165 +17,181 @@ namespace aliceVision {
 namespace matching {
 
 void DistanceRatioMatch(
-  float f_dist_ratio,
-  matching::EMatcherType eMatcherType,
-  const feature::Regions & regions_I, // database
-  const feature::Regions & regions_J, // query
-  matching::IndMatches & matches)
+	float f_dist_ratio,
+	matching::EMatcherType eMatcherType,
+	const feature::Regions & regions_I, // database
+	const feature::Regions & regions_J, // query
+	matching::IndMatches & matches)
 {
-  RegionsDatabaseMatcher matcher(eMatcherType, regions_I);
-  matcher.Match(f_dist_ratio, regions_J, matches);
+	// Create the database that will be used to comparing incoming regions)
+	RegionsDatabaseMatcher matcher(eMatcherType, regions_I);
+
+	// Call match with your given ditance ratio after making a matcher
+	matcher.Match(f_dist_ratio, regions_J, matches);
 }
 
+// Honson: This is where the matching takes place after everything is initialized
 bool RegionsDatabaseMatcher::Match(
-  float distRatio,
-  const feature::Regions & queryRegions,
-  matching::IndMatches & matches) const
-{
-  if (queryRegions.RegionCount() == 0)
-    return false;
+	float distRatio,
+	const feature::Regions & queryRegions,
+	matching::IndMatches & matches) const
+	{
+		if (queryRegions.RegionCount() == 0)
+		return false;
 
-  if (!_regionsMatcher)
-    return false;
+		if (!_regionsMatcher)
+		return false;
 
-  return _regionsMatcher->Match(distRatio, queryRegions, matches);
-}
+		return _regionsMatcher->Match(distRatio, queryRegions, matches);
+	}
 
 RegionsDatabaseMatcher::RegionsDatabaseMatcher():
-  _matcherType(BRUTE_FORCE_L2),
-  _regionsMatcher(nullptr)
-{}
+	_matcherType(BRUTE_FORCE_L2),
+	_regionsMatcher(nullptr){}
 
 
 RegionsDatabaseMatcher::RegionsDatabaseMatcher(
-  matching::EMatcherType matcherType,
-  const feature::Regions & databaseRegions)
-  : _matcherType(matcherType)
+	matching::EMatcherType matcherType,
+	const feature::Regions & databaseRegions)
+	: _matcherType(matcherType)
 {
-  _regionsMatcher = createRegionsMatcher(databaseRegions, matcherType);
+	_regionsMatcher = createRegionsMatcher(databaseRegions, matcherType);
 }
 
 
 std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType)
 {
-  std::unique_ptr<IRegionsMatcher> out;
+	std::unique_ptr<IRegionsMatcher> out;
 
-  // Handle invalid request
-  if (regions.IsScalar() && matcherType == BRUTE_FORCE_HAMMING)
-    return out;
-  if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
-    return out;
+	// Handle invalid request
+	if (regions.IsScalar() && matcherType == BRUTE_FORCE_HAMMING)
+		return out;
+	if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
+		return out;
 
   // Switch regions type ID, matcher & Metric: initialize the Matcher interface
-  if (regions.IsScalar())
-  {
-    if (regions.Type_id() == typeid(unsigned char).name())
+    if (regions.IsScalar())
     {
-      // Build on the fly unsigned char based Matcher
-      switch (matcherType)
-      {
-        case BRUTE_FORCE_L2:
+	    if (regions.Type_id() == typeid(unsigned char).name())
         {
-          typedef L2_Vectorized<unsigned char> MetricT;
-          typedef ArrayMatcher_bruteForce<unsigned char, MetricT> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        case ANN_L2:
-        {
-          typedef ArrayMatcher_kdtreeFlann<unsigned char> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        case CASCADE_HASHING_L2:
-        {
-          typedef L2_Vectorized<unsigned char> MetricT;
-          typedef ArrayMatcher_cascadeHashing<unsigned char, MetricT> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        default:
-          ALICEVISION_LOG_WARNING("Using unknown matcher type");
-      }
-    }
-    else if (regions.Type_id() == typeid(float).name())
-    {
-      // Build on the fly float based Matcher
-      switch (matcherType)
-      {
-        case BRUTE_FORCE_L2:
-        {
-          typedef L2_Vectorized<float> MetricT;
-          typedef ArrayMatcher_bruteForce<float, MetricT> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        case ANN_L2:
-        {
-          typedef ArrayMatcher_kdtreeFlann<float> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        case CASCADE_HASHING_L2:
-        {
-          typedef L2_Vectorized<float> MetricT;
-          typedef ArrayMatcher_cascadeHashing<float, MetricT> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        default:
-          ALICEVISION_LOG_WARNING("Using unknown matcher type");
-      }
-    }
-    else if (regions.Type_id() == typeid(double).name())
-    {
-      // Build on the fly double based Matcher
-      switch (matcherType)
-      {
-        case BRUTE_FORCE_L2:
-        {
-          typedef L2_Vectorized<double> MetricT;
-          typedef ArrayMatcher_bruteForce<double, MetricT> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        case ANN_L2:
-        {
-          typedef ArrayMatcher_kdtreeFlann<double> MatcherT;
-          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-        }
-        break;
-        case CASCADE_HASHING_L2:
-        {
-          ALICEVISION_LOG_WARNING("Not yet implemented");
-        }
-        break;
-        default:
-          ALICEVISION_LOG_WARNING("Using unknown matcher type");
-      }
-    }
-  }
-  else if (regions.IsBinary() && regions.Type_id() == typeid(unsigned char).name())
-  {
-    switch (matcherType)
-    {
-      case BRUTE_FORCE_HAMMING:
-      {
-        typedef Hamming<unsigned char> Metric;
-        typedef ArrayMatcher_bruteForce<unsigned char, Metric> MatcherT;
-        out.reset(new matching::RegionsMatcher<MatcherT>(regions, false));
-      }
-      break;
-      default:
-          ALICEVISION_LOG_WARNING("Using unknown matcher type");
-    }
-  }
-  else
-  {
-    ALICEVISION_LOG_WARNING("Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
-      << "typeid: " << regions.Type_id());
-  }
-  return out;
+			// Build on the fly unsigned char based Matcher
+			switch (matcherType)
+			{
+
+				case BRUTE_FORCE_L2:
+				{
+				  typedef L2_Vectorized<unsigned char> MetricT;
+				  typedef ArrayMatcher_bruteForce<unsigned char, MetricT> MatcherT;
+				  out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case ANN_L2:
+				{
+				  typedef ArrayMatcher_kdtreeFlann<unsigned char> MatcherT;
+				  out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case CASCADE_HASHING_L2:
+				{
+				  typedef L2_Vectorized<unsigned char> MetricT;
+				  typedef ArrayMatcher_cascadeHashing<unsigned char, MetricT> MatcherT;
+				  out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				default:
+					ALICEVISION_LOG_WARNING("Using unknown matcher type");
+			}
+		}
+
+		// Honson: Describe & Match's concat enters in here as type float, brute force
+		else if (regions.Type_id() == typeid(float).name())
+		{
+			// Build on the fly float based Matcher
+			switch (matcherType)
+			{
+				// Honson: this our return for our specific example
+				case BRUTE_FORCE_L2:
+				{
+					typedef L2_Vectorized<float> MetricT;
+					typedef ArrayMatcher_bruteForce<float, MetricT> MatcherT;
+					out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case ANN_L2:
+				{
+				  typedef ArrayMatcher_kdtreeFlann<float> MatcherT;
+				  out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case CASCADE_HASHING_L2:
+				{
+				  typedef L2_Vectorized<float> MetricT;
+				  typedef ArrayMatcher_cascadeHashing<float, MetricT> MatcherT;
+				  out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case HNSWLIB:
+                {
+                    typedef L2_Vectorized<float> MetricT;
+                    typedef ArrayMatcher_hnswlib<float, MetricT> MatcherT;
+                    out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+                } break;	
+			
+				default:
+					ALICEVISION_LOG_WARNING("Using unknown matcher type");
+			}
+		}
+
+		else if (regions.Type_id() == typeid(double).name())
+		{
+			// Build on the fly double based Matcher
+			switch (matcherType)
+			{
+				case BRUTE_FORCE_L2:
+				{
+					typedef L2_Vectorized<double> MetricT;
+					typedef ArrayMatcher_bruteForce<double, MetricT> MatcherT;
+					out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case ANN_L2:
+				{
+					typedef ArrayMatcher_kdtreeFlann<double> MatcherT;
+					out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+				} break;
+
+				case CASCADE_HASHING_L2:
+				{
+					ALICEVISION_LOG_WARNING("Not yet implemented");
+				} break;
+			
+				default:
+					ALICEVISION_LOG_WARNING("Using unknown matcher type");
+			}
+		}
+	} //end if regions.isScalar()
+	else if (regions.IsBinary() && regions.Type_id() == typeid(unsigned char).name())
+	{
+		switch (matcherType)
+		{
+			case BRUTE_FORCE_HAMMING:
+			{
+				typedef Hamming<unsigned char> Metric;
+				typedef ArrayMatcher_bruteForce<unsigned char, Metric> MatcherT;
+				out.reset(new matching::RegionsMatcher<MatcherT>(regions, false));
+			} break;
+			
+			default:
+				ALICEVISION_LOG_WARNING("Using unknown matcher type");
+		}
+	}
+	else
+	{
+		ALICEVISION_LOG_WARNING("Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
+			<< "typeid: " << regions.Type_id());
+	}
+
+	return out;
 }
 
 }  // namespace matching
