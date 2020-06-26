@@ -35,7 +35,7 @@ struct ProcessingParams
 {
     bool reconstructedViewsOnly = false;
     bool exposureCompensation = false;
-    float downscale = 1.0f;
+    float scaleFactor = 1.0f;
     float contrast = 1.0f;
     int medianFilter = 0;
     bool fillHoles = false;
@@ -104,12 +104,12 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 {
     const unsigned int nchannels = 4;
 
-    if (pParams.downscale != 1.0f)
+    if (pParams.scaleFactor != 1.0f)
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = (unsigned int)(floor(float(w) / pParams.downscale));
-        const unsigned int nh = (unsigned int)(floor(float(h) / pParams.downscale));
+        const unsigned int nw = (unsigned int)(floor(float(w) * pParams.scaleFactor));
+        const unsigned int nh = (unsigned int)(floor(float(h) * pParams.scaleFactor));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -260,8 +260,8 @@ int aliceVision_main(int argc, char * argv[])
     optionalParams.add_options()
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
-        ("downscale", po::value<float>(&pParams.downscale)->default_value(pParams.downscale),
-         "Downscale Factor (1.0: no change).")
+        ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
+         "Scale Factor (1.0: no change).")
 
         ("exposureCompensation", po::value<bool>(& pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
          "Exposure Compensation.")
@@ -354,9 +354,9 @@ int aliceVision_main(int argc, char * argv[])
     }
 #endif
 
-    if (pParams.downscale < 0.0001f || pParams.downscale > 1.0f)
+    if (pParams.scaleFactor < 0.0001f || pParams.scaleFactor > 1.0f)
     {
-        ALICEVISION_LOG_ERROR("Invalid scale factor, downscale should be in range [0.0001, 1].");
+        ALICEVISION_LOG_ERROR("Invalid scale factor, it should be in range [0.0001, 1].");
         return EXIT_FAILURE;
     }
 
@@ -454,11 +454,11 @@ int aliceVision_main(int argc, char * argv[])
             view.setHeight(image.Height());
         }
 
-        if (pParams.downscale != 1.0f)
+        if (pParams.scaleFactor != 1.0f)
         {
             for (auto & i : sfmData.getIntrinsics())
             {
-                i.second->rescale(pParams.downscale);
+                i.second->rescale(pParams.scaleFactor);
             }
         }
 
