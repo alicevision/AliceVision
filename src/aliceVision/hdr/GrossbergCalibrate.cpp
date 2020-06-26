@@ -21,13 +21,9 @@ GrossbergCalibrate::GrossbergCalibrate(unsigned int dimension)
     _dimension = dimension;
 }
 
-void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups, std::size_t channelQuantization, const std::vector<std::vector<float>>& times, rgbCurve& response)
+void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples, const std::vector<std::vector<float>>& times, std::size_t channelQuantization, rgbCurve& response)
 {
     const double step = 1.0 / double(channelQuantization - 1);
-
-    ALICEVISION_LOG_DEBUG("Extract color samples");
-    std::vector<std::vector<ImageSample>> samples;
-    extractSamplesGroups(samples, imagePathsGroups, times, channelQuantization);
 
     // set channels count always RGB
     static const std::size_t channels = 3;
@@ -49,9 +45,9 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
     // sum(c_i * f_i(Ba)) - k*sum(c_i * f_i(Bb)) = k*f0(Bb) - f0(Ba)
 
     size_t count_measures = 0;
-    for(size_t group = 0; group < samples.size(); group++)
+    for(size_t group = 0; group < ldrSamples.size(); group++)
     {
-        std::vector<ImageSample> & groupSamples = samples[group];
+        const std::vector<ImageSample> & groupSamples = ldrSamples[group];
 
         for (size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++) {
             count_measures += groupSamples[sampleId].descriptions.size() - 1;
@@ -72,9 +68,9 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
             fdim.setEmorInv(dim + 1);
 
             size_t rowId = 0;
-            for(size_t groupId = 0; groupId < samples.size(); groupId++)
+            for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
             {
-                const std::vector<ImageSample>& groupSamples = samples[groupId];
+                const std::vector<ImageSample>& groupSamples = ldrSamples[groupId];
 
                 for(size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++)
                 {

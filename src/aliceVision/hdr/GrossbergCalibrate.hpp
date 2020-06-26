@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "sampling.hpp"
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
 
@@ -35,15 +36,13 @@ public:
   /**
    * @brief
    * @param[in] LDR images groups
-   * @param[in] channel quantization
    * @param[in] exposure times
-   * @param[in] number of samples
-   * @param[in] calibration weight function
+   * @param[in] channel quantization
    * @param[out] camera response function
    */
-  void process(const std::vector<std::vector<std::string>>& imagePathsGroups,
-               std::size_t channelQuantization,
+  void process(const std::vector<std::vector<ImageSample>>& ldrSamples,
                const std::vector< std::vector<float> > &times,
+               std::size_t channelQuantization,
                rgbCurve &response);
 
 private:

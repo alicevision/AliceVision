@@ -158,17 +158,11 @@ private:
     double _ratio;
 };
 
-void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
-                                    const std::size_t channelQuantization,
+void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
                                     std::vector<std::vector<float>>& cameraExposures,
-                                     bool refineExposures, rgbCurve& response)
+                                    const std::size_t channelQuantization,
+                                    bool refineExposures, rgbCurve& response)
 {
-    /*Extract samples from images*/
-    ALICEVISION_LOG_DEBUG("Extract color samples");
-    std::vector<std::vector<ImageSample>> samples;
-    extractSamplesGroups(samples, imagePathsGroups, cameraExposures, channelQuantization);
-
-
     std::map<std::pair<float, float>, double> exposureParameters;
     for(std::vector<float>& group : cameraExposures)
     {
@@ -191,13 +185,13 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
     }
 
     // Convert selected samples into residual blocks
-    for(int groupId = 0; groupId < samples.size(); ++groupId)
+    for(int groupId = 0; groupId < ldrSamples.size(); ++groupId)
     {
-        std::vector<ImageSample> & group = samples[groupId];
+        const std::vector<ImageSample> & group = ldrSamples[groupId];
 
         for (int sampleId = 0; sampleId < group.size(); sampleId++) {
 
-            ImageSample & sample = group[sampleId];
+            const ImageSample & sample = group[sampleId];
 
             for (int bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++) {
                 

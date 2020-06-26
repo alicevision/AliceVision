@@ -17,24 +17,64 @@ namespace hdr {
 
 using namespace aliceVision::image;
 
-struct Descriptor
-{
-    float exposure;
-    int channel;
-    int quantizedValue;
+std::ostream & operator<<(std::ostream& os, const ImageSample & s) { 
 
-    bool operator<(const Descriptor &o )  const
-    {
-        if (exposure < o.exposure)
-            return true;
-        if (exposure == o.exposure && channel < o.channel)
-            return true;
-        if (exposure == o.exposure && channel == o.channel && quantizedValue < o.quantizedValue)
-            return true;
+    os.write((const char*)&s.x, sizeof(s.x));
+    os.write((const char*)&s.y, sizeof(s.y));
 
-        return false;
+    size_t size = s.descriptions.size();
+    os.write((const char*)&size, sizeof(size));
+
+    for (int i = 0; i  < s.descriptions.size(); i++) {
+        os << s.descriptions[i];
     }
-};
+
+    return os;
+}
+
+std::istream & operator>>(std::istream& is, ImageSample & s) { 
+
+    size_t size;
+
+    is.read((char *)&s.x, sizeof(s.x));
+    is.read((char *)&s.y, sizeof(s.y));
+    is.read((char *)&size, sizeof(size));
+    s.descriptions.resize(size);
+
+    for (int i = 0; i  < size; i++) {
+        is >> s.descriptions[i];
+    }
+
+    return is;
+}
+
+std::ostream & operator<<(std::ostream& os, const PixelDescription & p) { 
+
+    os.write((const char *)&p.exposure, sizeof(p.exposure));
+    os.write((const char *)&p.mean.r(), sizeof(p.mean.r()));
+    os.write((const char *)&p.mean.g(), sizeof(p.mean.g()));
+    os.write((const char *)&p.mean.b(), sizeof(p.mean.b()));
+    os.write((const char *)&p.variance.r(), sizeof(p.variance.r()));
+    os.write((const char *)&p.variance.g(), sizeof(p.variance.g()));
+    os.write((const char *)&p.variance.b(), sizeof(p.variance.b()));
+
+    return os;
+}
+
+std::istream & operator>>(std::istream& is, PixelDescription & p) { 
+
+    is.read((char *)&p.exposure, sizeof(p.exposure));
+    is.read((char *)&p.mean.r(), sizeof(p.mean.r()));
+    is.read((char *)&p.mean.g(), sizeof(p.mean.g()));
+    is.read((char *)&p.mean.b(), sizeof(p.mean.b()));
+    is.read((char *)&p.variance.r(), sizeof(p.variance.r()));
+    is.read((char *)&p.variance.g(), sizeof(p.variance.g()));
+    is.read((char *)&p.variance.b(), sizeof(p.variance.b()));
+
+    return is;
+}
+
+
 
 void integral(image::Image<image::Rgb<double>> & dest, image::Image<image::RGBfColor> & source) {
 
@@ -167,7 +207,8 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
             int last_ok = 0;
 
             /*
-            Make sure we don't have a patch with high variance on any bracket
+            Make sure we don't have a patch with high variance on any bracket.
+            If the variance is too high somewhere, ignore the whole coordinate samples
             */
             bool valid = true;
             for (int k = 0; k < sample.descriptions.size(); k++) {
@@ -194,8 +235,10 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
             }
 
             /* Makes sure the curve is monotonic */
+            int firstvalid = -1;
             int lastvalid = 0;
             for (int k = 1; k < sample.descriptions.size(); k++) {
+                
                 bool valid = false;
 
                 if (sample.descriptions[k].mean.r() > 0.99) {
@@ -247,33 +290,45 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
                 }
 
                 if (valid) {
+                    if (firstvalid < 0) {
+                        firstvalid = k - 1;
+                    }
                     lastvalid = k;
                 }
                 else {
-                    break;
+                    if (lastvalid != 0) {
+                        break;
+                    }
                 }
             }
 
-            if (lastvalid == 0) {
+            if (lastvalid == 0 || firstvalid < 0) {
                 sample.descriptions.clear();
+                continue;
             }
-            else if (lastvalid < (sample.descriptions.size() - 1)) {
-                sample.descriptions.resize(lastvalid + 1);
+
+            if (firstvalid > 0 || lastvalid < sample.descriptions.size() - 1) {
+                std::vector<PixelDescription> replace;
+                for (int pos = firstvalid; pos <= lastvalid; pos++) {
+                    replace.push_back(sample.descriptions[pos]);
+                }
+                sample.descriptions = replace;
             }
         }
     }
 
 
+    /*Get a counter for all unique descriptors*/
     using Coordinates = std::pair<int, int>;
     using CoordinatesList = std::vector<Coordinates>;
-    using Counters = std::map<Descriptor, CoordinatesList>;
+    using Counters = std::map<UniqueDescriptor, CoordinatesList>;
     Counters counters;
 
     for (int i = radius; i < samples.Height() - radius; i++)  {
         for (int j = radius; j < samples.Width() - radius; j++)  {
 
             ImageSample & sample = samples(i, j);
-            Descriptor desc;
+            UniqueDescriptor desc;
 
             for (int k = 0; k < sample.descriptions.size(); k++) { 
                 
@@ -296,8 +351,8 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         }
     }
 
-    const size_t maxCountSample = 100;
-    Descriptor desc;
+    const size_t maxCountSample = 200;
+    UniqueDescriptor desc;
     for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++) {
 
         desc.exposure = times[idBracket];
@@ -325,6 +380,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
                     Coordinates coords = counters[desc][l];
                     
                     if (samples(coords.second, coords.first).descriptions.size() > 0) {
+
                         out_samples.push_back(samples(coords.second, coords.first));
                         samples(coords.second, coords.first).descriptions.clear();
                     }
@@ -336,6 +392,8 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
     return true;
 }
 
+
+
 bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, const std::vector<std::vector<std::string>> & imagePaths, const std::vector<std::vector<float>>& times, const size_t channelQuantization) {
 
     std::vector<std::vector<ImageSample>> nonFilteredSamples;
@@ -343,7 +401,7 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, c
 
     using SampleRef = std::pair<int, int>;
     using SampleRefList = std::vector<SampleRef>;
-    using MapSampleRefList = std::map<Descriptor, SampleRefList>;
+    using MapSampleRefList = std::map<UniqueDescriptor, SampleRefList>;
 
     MapSampleRefList mapSampleRefList;
 
@@ -371,7 +429,7 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, c
 
             for (int idDesc = 0; idDesc < sample.descriptions.size(); idDesc++) {
                 
-                Descriptor desc;
+                UniqueDescriptor desc;
                 desc.exposure = sample.descriptions[idDesc].exposure;
 
                 for (int channel = 0; channel < 3; channel++) {

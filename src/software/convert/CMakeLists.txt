@@ -43,15 +43,16 @@ alicevision_add_software(aliceVision_convertRAW
 
 if(ALICEVISION_BUILD_HDR)
 # Convert LDR to HDR
-alicevision_add_software(aliceVision_convertLDRToHDR
-  SOURCE main_convertLDRToHDR.cpp
-  FOLDER ${FOLDER_SOFTWARE_CONVERT}
-  LINKS aliceVision_system
-        aliceVision_image
-        aliceVision_hdr
-        aliceVision_sfmData
-        aliceVision_sfmDataIO
-        Boost::program_options
-        Boost::filesystem
-)
+# alicevision_add_software(aliceVision_convertLDRToHDR
+#   SOURCE main_convertLDRToHDR.cpp
+#   FOLDER ${FOLDER_SOFTWARE_CONVERT}
+#   LINKS aliceVision_system
+#         aliceVision_image
+#         aliceVision_hdr
+#         aliceVision_sfmData
+#         aliceVision_sfmDataIO
+#         Boost::program_options
+#         Boost::filesystem
+# )
+
 endif()

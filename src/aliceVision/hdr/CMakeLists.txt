@@ -4,7 +4,6 @@ set(hdr_files_headers
  LaguerreBACalibration.hpp
  sampling.hpp
  rgbCurve.hpp
- RobertsonCalibrate.hpp
  hdrMerge.hpp
  DebevecCalibrate.hpp
  GrossbergCalibrate.hpp
@@ -17,7 +16,6 @@ set(hdr_files_sources
  LaguerreBACalibration.cpp
  sampling.cpp
  rgbCurve.cpp
- RobertsonCalibrate.cpp
  hdrMerge.cpp
  DebevecCalibrate.cpp
  GrossbergCalibrate.cpp
@@ -36,4 +34,4 @@ alicevision_add_library(aliceVision_hdr
 )
 
 # Unit tests
-alicevision_add_test(hdr_test.cpp      NAME "hdr"            LINKS aliceVision_image aliceVision_hdr)
+#alicevision_add_test(hdr_test.cpp      NAME "hdr"            LINKS aliceVision_image aliceVision_hdr)

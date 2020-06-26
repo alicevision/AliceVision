@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "sampling.hpp"
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
 
@@ -44,9 +45,9 @@ public:
    * @param[out] camera response function
    */
   void process(
-      const std::vector<std::vector<std::string>>& imagePathsGroups,
-      const std::size_t channelQuantization,
+      const std::vector<std::vector<ImageSample>>& ldrSamples,
       std::vector<std::vector<float>>& cameraExposures,
+      const std::size_t channelQuantization,
       bool refineExposures,
       rgbCurve &response);
 };

@@ -23,24 +23,20 @@ namespace aliceVision {
 namespace hdr {
 
 
-bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
-                               const std::size_t channelQuantization, const std::vector<std::vector<float>>& times,
+bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
+                               const std::vector<std::vector<float>>& times, const std::size_t channelQuantization,
                                const rgbCurve& weight, float lambda, rgbCurve& response)
 {
     // Always 3 channels for the input images
     static const std::size_t channelsCount = 3;
 
-    /*Extract samples*/
-    ALICEVISION_LOG_DEBUG("Extract color samples");
-    std::vector<std::vector<ImageSample>> samples;
-    extractSamplesGroups(samples, imagePathsGroups, times, channelQuantization);
 
     // Count really extracted amount of points (observed in multiple brackets)
     std::vector<size_t> countPointPerGroup;
     size_t totalPoints = 0;
-    for(size_t groupId = 0; groupId < samples.size(); groupId++)
+    for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
     {
-        std::vector<ImageSample> & group = samples[groupId];
+        const std::vector<ImageSample> & group = ldrSamples[groupId];
         totalPoints += group.size();
     }
 
@@ -68,10 +64,10 @@ bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imag
         Dinv.setZero();
 
         size_t countPoints = 0;
-        for(size_t groupId = 0; groupId < samples.size(); groupId++)
+        for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
         {
             /*Process a group of brackets*/
-            const std::vector<ImageSample>& group = samples[groupId];
+            const std::vector<ImageSample>& group = ldrSamples[groupId];
             const std::vector<float> & local_times = times[groupId];
 
             for (size_t sampleId = 0; sampleId < group.size(); sampleId++) {

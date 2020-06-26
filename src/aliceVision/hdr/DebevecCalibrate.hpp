@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "sampling.hpp"
 #include "rgbCurve.hpp"
 
 #include <vector>
@@ -32,15 +33,15 @@ public:
   /**
    * @brief
    * @param[in] LDR images groups
-   * @param[in] channel quantization
    * @param[in] exposure times
+   * @param[in] channel quantization
    * @param[in] calibration weight function
    * @param[in] lambda (parameter of smoothness)
    * @param[out] camera response function
    */
-  bool process(const std::vector<std::vector<std::string>> &ldrImageGroups,
-               std::size_t channelQuantization,
+  bool process(const std::vector<std::vector<ImageSample>> & ldrSamples,
                const std::vector<std::vector<float>> &times,
+               std::size_t channelQuantization,
                const rgbCurve &weight,
                float lambda,
                rgbCurve &response);
