@@ -102,7 +102,7 @@ void cvMatBGRToImageRGBA(const cv::Mat& matIn, image::Image<image::RGBAfColor>& 
 
 void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams)
 {
-    unsigned int nchannels = 3;
+    const unsigned int nchannels = 4;
 
     if (pParams.downscale != 1.0f)
     {
@@ -113,14 +113,14 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
-        const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
-        const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
+        const oiio::ImageSpec imageSpecResized(nw, nh, nchannels, oiio::TypeDesc::FLOAT);
+        const oiio::ImageSpec imageSpecOrigin(w, h, nchannels, oiio::TypeDesc::FLOAT);
         oiio::ImageBuf bufferOrigin(imageSpecOrigin, image.data());
         oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
         oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
 
-        const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, nchannels, oiio::TypeDesc::FLOAT), image.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, nchannels, oiio::TypeDesc::FLOAT), rescaled.data());
+        const oiio::ImageBuf inBuf(imageSpecOrigin, image.data());
+        oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());
 
         oiio::ImageBufAlgo::resize(outBuf, inBuf);
 
@@ -223,8 +223,8 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     if(pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
-        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels+1, oiio::TypeDesc::FLOAT), image.data());
-        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels+1, oiio::TypeDesc::FLOAT), filtered.data());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
 
         image.swap(filtered);
