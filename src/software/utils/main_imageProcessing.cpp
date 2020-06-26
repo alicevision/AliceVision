@@ -372,39 +372,55 @@ int aliceVision_main(int argc, char * argv[])
             return EXIT_FAILURE;
         }
 
-        // Check if all views in sfm file match files available in inputFolders
-        if(!inputFolders.empty())
-        {
-            bool viewsFound = true;
-            for(const auto& viewIt : sfmData.getViews())
-            {
-                viewsFound = !sfmDataIO::viewPathFromFolders(*(viewIt.second), inputFolders).empty();
-                if(!viewsFound)
-                    break;
-            }
+        // Map used to store paths of the views that need to be processed
+        std::unordered_map<IndexT, std::string> ViewPaths;
 
-            if(!viewsFound)
+        const bool checkInputFolders = !inputFolders.empty();
+        // Iterate over all views
+        for(const auto& viewIt : sfmData.getViews())
+        {
+            const sfmData::View& view = *(viewIt.second);
+            // Only valid views if needed
+            if(pParams.reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
             {
-                ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.");
-                ALICEVISION_LOG_ERROR("Use only SfmData input or specify the correct folders.");
-                return EXIT_FAILURE;
+                continue;
+            }
+            // if inputFolders are used
+            if(checkInputFolders)
+            {
+                const std::string foundViewPath = sfmDataIO::viewPathFromFolders(view, inputFolders).generic_string();
+                // Checks if a file associated with a given view is found in the inputfolders
+                if(foundViewPath.empty())
+                {
+                    ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.");
+                    ALICEVISION_LOG_ERROR("Use only SfmData input, use reconstructedViewsOnly or specify the correct inputFolders.");
+                    return EXIT_FAILURE;
+                }
+                // Add to ViewPaths the new associated path
+                ViewPaths.insert({view.getViewId(), foundViewPath});
+                ALICEVISION_LOG_TRACE("New path found for the view " << view.getViewId() << " '" << foundViewPath << "'");
+            }
+            else
+            {
+                // Otherwise use the existing path
+                ViewPaths.insert({view.getViewId(), view.getImagePath()});
             }
         }
 
-        const int size = sfmData.getViews().size();
+        const int size = ViewPaths.size();
         int i = 0;
-        for (auto & viewIt : sfmData.getViews())
-        {
-            auto& view = *viewIt.second;
-            if (pParams.reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
-                continue;
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << view.getViewId() << "'");
+        for(auto& viewIt : ViewPaths)
+        {
+            const IndexT viewId = viewIt.first;
+            const std::string viewPath = viewIt.second;
+            sfmData::View& view = sfmData.getView(viewId);
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
-            image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
-            oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
+            image::readImage(viewPath, image, image::EImageColorSpace::LINEAR);
+            const oiio::ParamValueList metadata = image::readImageMetadata(viewPath);
 
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
@@ -414,7 +430,7 @@ int aliceVision_main(int argc, char * argv[])
                 const float ev = std::log2(1.0 / cameraExposure);
                 const float exposureCompensation = medianCameraExposure / cameraExposure;
 
-                ALICEVISION_LOG_INFO("View: " << view.getViewId() << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
+                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
 
                 for (int i = 0; i < image.Width() * image.Height(); ++i)
                     image(i) = image(i) * exposureCompensation;
@@ -424,10 +440,10 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
+            const std::string ext = extension.empty() ? fs::path(viewPath).extension().string() : (std::string(".") + extension);
 
             // Analyze output path
-            const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(view.getViewId()) + ext)).string();
+            const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(viewId) + ext)).generic_string();
 
             ALICEVISION_LOG_TRACE("Export image: '" << outputImagePath << "'.");
             image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
