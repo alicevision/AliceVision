@@ -10,10 +10,6 @@
 #include <aliceVision/utils/regexFilter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
-#include <OpenImageIO/imageio.h>
-#include <OpenImageIO/imagebuf.h>
-#include <OpenImageIO/imagebufalgo.h>
-
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -21,6 +17,11 @@
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include <opencv2/imgproc.hpp>
 #endif
+
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/imagebuf.h>
+#include <OpenImageIO/imagebufalgo.h>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
