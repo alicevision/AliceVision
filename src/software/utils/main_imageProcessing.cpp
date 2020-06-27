@@ -46,13 +46,13 @@ struct ProcessingParams
     float sharpenThreshold = 0.f;
 
     bool bilateralFilter = false;
-    int BilateralFilterDistance = 0;
-    float BilateralFilterSigmaColor = 0;
-    float BilateralFilterSigmaSpace = 0;
+    int bilateralFilterDistance = 0;
+    float bilateralFilterSigmaColor = 0.0f;
+    float bilateralFilterSigmaSpace = 0.0f;
 
-    bool ClaheFilter = false;
-    float ClaheClipLimit = 4.0f;
-    int ClaheTileGridSize = 8;
+    bool claheFilter = false;
+    float claheClipLimit = 4.0f;
+    int claheTileGridSize = 8;
 };
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
@@ -165,7 +165,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
             cv::Mat openCVMatIn = imageRGBAToCvMatBGR(image);
             cv::Mat openCVMatOut(image.Width(), image.Height(), CV_32FC3);
 
-            cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.BilateralFilterDistance, pParams.BilateralFilterSigmaColor, pParams.BilateralFilterSigmaSpace);
+            cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.bilateralFilterDistance, pParams.bilateralFilterSigmaColor, pParams.bilateralFilterSigmaSpace);
 
             // Copy filtered data from openCV Mat(3 channels) to our image(keep the alpha channel unfiltered)
             cvMatBGRToImageRGBA(openCVMatOut, image);
@@ -176,7 +176,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 
     // Contrast Limited Adaptive Histogram Equalization
-    if(pParams.ClaheFilter)
+    if(pParams.claheFilter)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Convert alicevision::image to BGR openCV Mat
@@ -198,7 +198,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         // apply Clahe algorithm to the L channel
         {
-            const cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(pParams.ClaheClipLimit, cv::Size(pParams.ClaheTileGridSize, pParams.ClaheTileGridSize));
+            const cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(pParams.claheClipLimit, cv::Size(pParams.claheTileGridSize, pParams.claheTileGridSize));
             clahe->apply(L, L);
         }
 
@@ -284,18 +284,18 @@ int aliceVision_main(int argc, char * argv[])
 
         ("bilateralFilter", po::value<bool>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
             "use bilateral Filter")
-        ("BilateralFilterDistance", po::value<int>(&pParams.BilateralFilterDistance)->default_value(pParams.BilateralFilterDistance),
+        ("bilateralFilterDistance", po::value<int>(&pParams.bilateralFilterDistance)->default_value(pParams.bilateralFilterDistance),
             "Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).")
-        ("BilateralFilterSigmaSpace",po::value<float>(&pParams.BilateralFilterSigmaSpace)->default_value(pParams.BilateralFilterSigmaSpace),
+        ("bilateralFilterSigmaSpace",po::value<float>(&pParams.bilateralFilterSigmaSpace)->default_value(pParams.bilateralFilterSigmaSpace),
             "Filter sigma in the coordinate space.")
-        ("BilateralFilterSigmaColor",po::value<float>(&pParams.BilateralFilterSigmaColor)->default_value(pParams.BilateralFilterSigmaColor),
+        ("bilateralFilterSigmaColor",po::value<float>(&pParams.bilateralFilterSigmaColor)->default_value(pParams.bilateralFilterSigmaColor),
             "Filter sigma in the color space.")
 
-        ("ClaheFilter", po::value<bool>(&pParams.ClaheFilter)->default_value(pParams.ClaheFilter),
+        ("claheFilter", po::value<bool>(&pParams.claheFilter)->default_value(pParams.claheFilter),
          "Use Contrast Limited Adaptive Histogram Equalization (CLAHE) Filter.")
-        ("ClaheClipLimit", po::value<float>(&pParams.ClaheClipLimit)->default_value(pParams.ClaheClipLimit),
+        ("claheClipLimit", po::value<float>(&pParams.claheClipLimit)->default_value(pParams.claheClipLimit),
          "Sets Threshold For Contrast Limiting.")
-        ("ClaheTileGridSize", po::value<int>(&pParams.ClaheTileGridSize)->default_value(pParams.ClaheTileGridSize),
+        ("claheTileGridSize", po::value<int>(&pParams.claheTileGridSize)->default_value(pParams.claheTileGridSize),
          "Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
@@ -348,9 +348,9 @@ int aliceVision_main(int argc, char * argv[])
     }
 
 #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-    if(pParams.bilateralFilter || pParams.ClaheFilter)
+    if(pParams.bilateralFilter || pParams.claheFilter)
     {
-        ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter and ClaheFilter can't be used without openCV !");
+        ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter and claheFilter can't be used without openCV !");
         return EXIT_FAILURE;
     }
 #endif
