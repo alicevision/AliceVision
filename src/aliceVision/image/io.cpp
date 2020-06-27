@@ -75,7 +75,7 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   return in;
 }
 
-bool isSupported(const std::string &ext)
+std::vector<std::string> getSupportedExtensions()
 {
   static const std::string extensionList = oiio::get_string_attribute("extension_list");
   std::vector<std::string> supportedExtensions;
@@ -90,7 +90,12 @@ bool isSupported(const std::string &ext)
     for(std::string& extension: extensions)
       supportedExtensions.push_back(extension.insert(0, "."));
   }
+  return supportedExtensions;
+}
 
+bool isSupported(const std::string& ext)
+{
+  static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
   const auto start = supportedExtensions.begin();
   const auto end = supportedExtensions.end();
   return (std::find(start, end, boost::to_lower_copy(ext)) != end);
@@ -328,7 +333,7 @@ void writeImage(const std::string& path,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
   const fs::path bPath = fs::path(path);
-  const std::string extension = bPath.extension().string();
+  const std::string extension = boost::to_lower_copy(bPath.extension().string());
   const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
   const bool isEXR = (extension == ".exr");
   //const bool isTIF = (extension == ".tif");

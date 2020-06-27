@@ -11,6 +11,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
@@ -149,12 +150,7 @@ int aliceVision_main(int argc, char **argv)
     imageWhiteRegexList.reserve(imageWhiteList.size());
     for (const std::string& exp : imageWhiteList)
     {
-      std::string filterToRegex = exp;
-      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\*"), std::string("(.*)"));
-      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\?"), std::string("(.)"));
-      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\@"), std::string("[0-9]+")); // one @ correspond to one or more digits
-      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\#"), std::string("[0-9]"));  // each # in pattern correspond to a digit
-      imageWhiteRegexList.emplace_back(filterToRegex);
+      imageWhiteRegexList.emplace_back(filterToRegex(exp));
     }
     
     std::vector<IndexT> viewsToRemove;
