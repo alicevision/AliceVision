@@ -3,7 +3,8 @@
 add_subdirectory(image)
 add_subdirectory(numeric)
 add_subdirectory(system)
-
+add_subdirectory(stl)
+add_subdirectory(utils)
 
 # SfM modules
 
@@ -27,7 +28,6 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(sfm)
   add_subdirectory(sfmData)
   add_subdirectory(sfmDataIO)
-  add_subdirectory(stl)
   add_subdirectory(track)
   add_subdirectory(voctree)
 

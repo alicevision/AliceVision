@@ -11,6 +11,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -116,17 +117,6 @@ int aliceVision_main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   system::Timer timer;
-  std::regex regexFilter;
-
-  if(!viewFilter.empty())
-  {
-    std::string filterToRegex = viewFilter;
-    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\*"), std::string("(.*)"));
-    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\?"), std::string("(.)"));
-    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\@"), std::string("[0-9]+")); // one @ correspond to one or more digits
-    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\#"), std::string("[0-9]"));  // each # in pattern correspond to a digit
-    regexFilter = std::regex(filterToRegex);
-  }
 
   // set output file type
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
@@ -151,9 +141,12 @@ int aliceVision_main(int argc, char** argv)
     ++progressBar;
 
     // regex filter
-    if(!viewFilter.empty() &&
-       !std::regex_match(view.getImagePath(), regexFilter))
-      continue;
+    if(!viewFilter.empty())
+    {
+        const std::regex regexFilter = filterToRegex(viewFilter);
+        if(!std::regex_match(view.getImagePath(), regexFilter))
+            continue;
+    }
 
     const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
 
