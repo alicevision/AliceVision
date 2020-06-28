@@ -40,7 +40,6 @@ namespace fs = boost::filesystem;
 int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
-
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::vector<std::string> featuresFolders;
@@ -244,9 +243,7 @@ int aliceVision_main(int argc, char **argv)
 
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
 
-  /**
-   * If an initial set of poses was available, make sure at least one pose is aligned with it
-   */
+  // If an initial set of poses was available, make sure at least one pose is aligned with it
   sfmData::Poses & final_poses = outSfmData.getPoses();
   if (!final_poses.empty() && !initial_poses.empty())
   {
@@ -263,9 +260,7 @@ int aliceVision_main(int argc, char **argv)
     }
   }
 
-  /***
-   * Handle image orientation
-  */
+  // Handle image orientation
   Eigen::Matrix3d R_metadata = Eigen::Matrix3d::Identity();
   sfmData::EEXIFOrientation metadata_orientation = outSfmData.getViews().begin()->second->getMetadataOrientation();
   switch (metadata_orientation)
@@ -303,17 +298,12 @@ int aliceVision_main(int argc, char **argv)
     pose.second.setTransform(p);
   }
 
-  /******
-   * Final report
-   */
+  // Final report
   ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
   sfm::generateSfMReport(outSfmData, (fs::path(outDirectory) / "sfm_report.html").string());
-  ALICEVISION_LOG_INFO("Panorama results:" << std::endl
-    << "\t- # input images: " << outSfmData.getViews().size() << std::endl
-    << "\t- # cameras calibrated: " << outSfmData.getPoses().size());
 
-  /*Add offsets to rotations*/
+  // Add offsets to rotations
   for (auto& pose: outSfmData.getPoses())
   {
     geometry::Pose3 p = pose.second.getTransform();
@@ -327,9 +317,12 @@ int aliceVision_main(int argc, char **argv)
   sfmEngine.buildLandmarks();
   sfmEngine.colorize();
 
-  /**
-   * export to disk computed scene (data & visualizable results)
-  **/
+  ALICEVISION_LOG_INFO("Panorama results:" << std::endl
+                                           << "\t- # input images: " << outSfmData.getViews().size() << std::endl
+                                           << "\t- # cameras calibrated: " << outSfmData.getPoses().size() << std::endl
+                                           << "\t- # landmarks: " << outSfmData.getLandmarks().size());
+
+  // Export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
   sfmDataIO::Save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
   sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
