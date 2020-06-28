@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
 
         
         BOOST_CHECK(std::isfinite(max_diff));
-        BOOST_CHECK_SMALL(max_diff, 0.002);
+        BOOST_CHECK_SMALL(max_diff, 0.01);
     }
 }
 
