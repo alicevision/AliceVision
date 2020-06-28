@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1) {
 
     // Check projection / back-projection
     const double depth_gt = Vec2::Random()(0) * 100.0;
-    const geometry::Pose3 pose(Mat3::Random(), Vec3::Random());
+    const geometry::Pose3 pose(geometry::randomPose());
 
     const Vec3 pt3d = cam.backproject(ptImage_gt, true, pose, depth_gt);
     const Vec2 pt2d_proj = cam.project(pose, pt3d, true);
