@@ -212,15 +212,6 @@ int aliceVision_main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if(transform.empty() && (
-     alignmentMethod == EAlignmentMethod::TRANSFOMATION ||
-     alignmentMethod == EAlignmentMethod::FROM_SINGLE_CAMERA)
-    )
-  {
-    ALICEVISION_LOG_ERROR("Missing --transformation option");
-    return EXIT_FAILURE;
-  }
-
   if (alignmentMethod == EAlignmentMethod::FROM_MARKERS && markers.empty())
   {
       ALICEVISION_LOG_ERROR("Missing --markers option");
@@ -235,19 +226,26 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  double S;
-  Mat3 R;
-  Vec3 t;
+  double S = 1.0;
+  Mat3 R = Mat3::Identity();
+  Vec3 t = Vec3::Zero();
 
   switch(alignmentMethod)
   {
     case EAlignmentMethod::TRANSFOMATION:
-    {
-      if(!parseAlignScale(transform, S, R, t))
       {
-         ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
-         return EXIT_FAILURE;
-      }
+          if(transform.empty())
+          {
+              ALICEVISION_LOG_WARNING("No transformation option set, so the transform will be identity.");
+          }
+          else
+          {
+              if(!parseAlignScale(transform, S, R, t))
+              {
+                 ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
+                 return EXIT_FAILURE;
+              }
+          }
     }
     break;
 
@@ -260,7 +258,14 @@ int aliceVision_main(int argc, char **argv)
     break;
 
     case EAlignmentMethod::FROM_SINGLE_CAMERA:
-      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn, transform, S, R, t);
+        if(transform.empty())
+        {
+            ALICEVISION_LOG_WARNING("No transformation option set, so the transform will be identity.");
+        }
+        else
+        {
+            sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn, transform, S, R, t);
+        }
     break;
 
     case EAlignmentMethod::FROM_MARKERS:
