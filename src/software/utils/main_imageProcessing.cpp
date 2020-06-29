@@ -42,7 +42,8 @@ struct ProcessingParams
     int medianFilter = 0;
     bool fillHoles = false;
 
-    int sharpenWidth = 1;
+    bool sharpen = false;
+    int sharpenWidth = 3;
     float sharpenContrast = 1.f;
     float sharpenThreshold = 0.f;
 
@@ -149,7 +150,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
-    if (pParams.sharpenWidth >= 3.f && pParams.sharpenContrast > 0.f)
+    if(pParams.sharpen)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
@@ -275,10 +276,12 @@ int aliceVision_main(int argc, char * argv[])
         ("medianFilter", po::value<int>(&pParams.medianFilter)->default_value(pParams.medianFilter),
          "Median Filter (0: no filter).")
 
+        ("sharpen", po::value<bool>(&pParams.sharpen)->default_value(pParams.sharpen),
+         "Use sharpen.")
         ("sharpenWidth", po::value<int>(&pParams.sharpenWidth)->default_value(pParams.sharpenWidth),
-         "Sharpen kernel width (<3: no sharpening).")
+         "Sharpen kernel width.")
         ("sharpenContrast", po::value<float>(&pParams.sharpenContrast)->default_value(pParams.sharpenContrast),
-         "Sharpen contrast value (0.0: no sharpening).")
+         "Sharpen contrast value.")
         ("sharpenThreshold", po::value<float>(&pParams.sharpenThreshold)->default_value(pParams.sharpenThreshold),
          "Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
 
@@ -286,7 +289,7 @@ int aliceVision_main(int argc, char * argv[])
          "Fill Holes.")
 
         ("bilateralFilter", po::value<bool>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
-            "use bilateral Filter")
+            "Use bilateral Filter.")
         ("bilateralFilterDistance", po::value<int>(&pParams.bilateralFilterDistance)->default_value(pParams.bilateralFilterDistance),
             "Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).")
         ("bilateralFilterSigmaSpace",po::value<float>(&pParams.bilateralFilterSigmaSpace)->default_value(pParams.bilateralFilterSigmaSpace),
