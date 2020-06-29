@@ -117,7 +117,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         readImage(imagePaths[idBracket], img, EImageColorSpace::LINEAR);
         
         if (idBracket == 0) {
-            samples.resize(img.Width(), img.Height());
+            samples.resize(img.Width(), img.Height(), true);
         }
         
         /**
@@ -296,7 +296,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         }
     }
 
-    const size_t maxCountSample = 300;
+    const size_t maxCountSample = 100;
     Descriptor desc;
     for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++) {
 
@@ -390,7 +390,7 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, c
         }
     }
 
-    const size_t maxCountSample = 200;
+    const size_t maxCountSample = 100;
     for (auto & list : mapSampleRefList) {
 
         if (list.second.size() > maxCountSample) {
