@@ -340,6 +340,7 @@ int aliceVision_main(int argc, char * argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
     std::vector<std::string> inputFolders;
+    std::vector<std::string> metadataFolders;
     std::string outputPath;
     std::string extension;
 
@@ -362,6 +363,8 @@ int aliceVision_main(int argc, char * argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("metadataFolders", po::value<std::vector<std::string>>(&metadataFolders)->multitoken(),
+        "Use images metadata from specific folder(s) instead of those specified in the input images.")
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
         ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
@@ -521,7 +524,30 @@ int aliceVision_main(int argc, char * argv[])
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(viewPath, image, image::EImageColorSpace::LINEAR);
-            const oiio::ParamValueList metadata = image::readImageMetadata(viewPath);
+
+            // Read metadata
+            std::string metadataFilePath;
+            if(!metadataFolders.empty()) // If metadataFolders is specified
+            {
+                std::string foundViewPath = sfmDataIO::viewPathFromFolders(view, metadataFolders).generic_string();
+                // Check if a file associated with a given view is found in the metadataFolders
+                if(!foundViewPath.empty())
+                {
+                    ALICEVISION_LOG_TRACE("Metadata path found for the current view: " << viewId << ".");
+                    metadataFilePath = foundViewPath;
+                } 
+                else
+                {
+                    ALICEVISION_LOG_WARNING("Metadata folders was specified but there is no matching (name or id) for this view: "
+                        << viewId << ". The default metadata will be used instead for this image.");
+                    metadataFilePath = viewPath;
+                }
+            }
+            else // Metadata are extracted from the original images
+            {
+                metadataFilePath = viewPath;
+            }
+            const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
 
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
@@ -653,7 +679,51 @@ int aliceVision_main(int argc, char * argv[])
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
-            const oiio::ParamValueList metadata = image::readImageMetadata(inputFilePath);
+
+            // Read metadata
+            std::string metadataFilePath;
+            if(!metadataFolders.empty()) // If metadataFolders is specified
+            {
+                for(const std::string& folder : metadataFolders)
+                {
+                    // Break the loop if metadateFilePath has already been found
+                    if(!metadataFilePath.empty())
+                        break;
+
+                    // If one of the paths isn't a folder path
+                    if(!fs::is_directory(folder))
+                    {
+                        ALICEVISION_LOG_ERROR("The path '" << folder << "' is not a valid folder path.");
+                        return EXIT_FAILURE;
+                    }
+
+                    for(fs::directory_entry& entry : fs::directory_iterator(folder))
+                    {
+                        const fs::path metadataPath = entry.path();
+                        const std::string metadataFileName = metadataPath.stem().string();
+                        const std::string metadataFileExt = metadataPath.extension().string();
+                        if(fileName == metadataFileName && fileExt == metadataFileExt)
+                        {
+                            // Update metadataFilePath
+                            ALICEVISION_LOG_TRACE("Metadata path found for the current image: " << fileName << fileExt);
+                            metadataFilePath = metadataPath.generic_string();
+                            break;
+                        }
+                    }
+                }
+
+                if(metadataFilePath.empty())
+                {
+                    ALICEVISION_LOG_WARNING("Metadata folders was specified but there is no matching for this image: "
+                                            << fileName << fileExt << ". The default metadata will be used instead for this image.");
+                    metadataFilePath = inputFilePath;
+                }
+            }
+            else // Metadata are extracted from the original images
+            {
+                metadataFilePath = inputFilePath;
+            }
+            const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
 
             // Image processing
             processImage(image, pParams);
