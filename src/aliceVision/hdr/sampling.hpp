@@ -95,7 +95,7 @@ public:
 
         for (auto & item : _positions) {
 
-            if (item.second.size() > 500) {
+            if (item.second.size() > 200) {
 
                 /*Shuffle and ignore the exceeding samples*/
                 std::random_shuffle(item.second.begin(), item.second.end());

@@ -154,7 +154,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         */
         Image<RGBfColor> img, imgSquare;
         Image<Rgb<double>> imgIntegral, imgIntegralSquare;
-        readImage(imagePaths[idBracket], img, EImageColorSpace::LINEAR);
+        readImage(imagePaths[idBracket], img, EImageColorSpace::SRGB);
         
         if (idBracket == 0) {
             samples.resize(img.Width(), img.Height(), true);
@@ -167,6 +167,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         integral(imgIntegral, img);
         integral(imgIntegralSquare, imgSquare);
 
+
         for (int i = radius + 1; i < img.Height() - radius; i++)  {
             for (int j = radius + 1; j < img.Width() - radius; j++)  {
 
@@ -176,9 +177,9 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
                 PixelDescription pd;
                 
                 pd.exposure = exposure;
-                pd.mean.r() = S1.r() / area;
-                pd.mean.g() = S1.g() / area;
-                pd.mean.b() = S1.b() / area;
+                pd.mean.r() = img(i,j).r(); //S1.r() / area;
+                pd.mean.g() = img(i,j).g(); //S1.g() / area;
+                pd.mean.b() = img(i,j).b(); //S1.b() / area;
                 pd.variance.r() = (S2.r() - (S1.r()*S1.r()) / area) / area;
                 pd.variance.g() = (S2.g() - (S1.g()*S1.g()) / area) / area;
                 pd.variance.b() = (S2.b() - (S1.b()*S1.b()) / area) / area;
@@ -189,6 +190,8 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
             }
         }            
     }
+
+    
 
     if (samples.Width() == 0) {
         /*Why ? just to be sure*/
@@ -317,7 +320,6 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         }
     }
 
-
     /*Get a counter for all unique descriptors*/
     using Coordinates = std::pair<int, int>;
     using CoordinatesList = std::vector<Coordinates>;
@@ -350,41 +352,25 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
             }
         }
     }
+    
 
     const size_t maxCountSample = 200;
-    UniqueDescriptor desc;
-    for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++) {
+    for (auto & item : counters) {
 
-        desc.exposure = times[idBracket];
+        if (item.second.size() > maxCountSample) {
 
-        for (int channel = 0; channel < 3; channel++) {
+            /*Shuffle and ignore the exceeding samples*/
+            std::random_shuffle(item.second.begin(), item.second.end());
+            item.second.resize(maxCountSample);
+        }
 
-            desc.channel = channel;
+        for (int l = 0; l < item.second.size(); l++) {
+            Coordinates coords = item.second[l];
 
-            for (int k = 0; k < channelQuantization; k++) {
+            if (samples(coords.second, coords.first).descriptions.size() > 0) {
 
-                desc.quantizedValue = k;
-
-                if (counters.find(desc) == counters.end()) {
-                    continue;
-                }
-
-                if (counters[desc].size() > maxCountSample) {
-
-                    /*Shuffle and ignore the exceeding samples*/
-                    std::random_shuffle(counters[desc].begin(), counters[desc].end());
-                    counters[desc].resize(maxCountSample);
-                }
-
-                for (int l = 0; l < counters[desc].size(); l++) {
-                    Coordinates coords = counters[desc][l];
-                    
-                    if (samples(coords.second, coords.first).descriptions.size() > 0) {
-
-                        out_samples.push_back(samples(coords.second, coords.first));
-                        samples(coords.second, coords.first).descriptions.clear();
-                    }
-                }
+                out_samples.push_back(samples(coords.second, coords.first));
+                samples(coords.second, coords.first).descriptions.clear();
             }
         }
     }

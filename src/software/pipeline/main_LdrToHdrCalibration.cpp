@@ -23,6 +23,7 @@
 #include <aliceVision/hdr/emorCurve.hpp>
 #include <aliceVision/hdr/LaguerreBACalibration.hpp>
 #include <aliceVision/hdr/sampling.hpp>
+#include <aliceVision/hdr/brackets.hpp>
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
@@ -112,6 +113,9 @@ int aliceVision_main(int argc, char* argv[])
     std::string outputResponsePath = "";
     ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
     std::string calibrationWeightFunction = "default";
+    int nbBrackets = 0;
+    int channelQuantizationPower = 10;
+    bool byPass = false;
 
     // Command line parameters
     po::options_description allParams("Parse external information about cameras used in a panorama.\n"
@@ -132,7 +136,13 @@ int aliceVision_main(int argc, char* argv[])
          "Name of method used for camera calibration: linear, debevec, grossberg, laguerre.")
         ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
          "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, "
-        "triangle, plateau).");
+        "triangle, plateau).")
+        ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
+         "bracket count per HDR image (0 means automatic).")
+        ("byPass", po::value<bool>(&byPass)->default_value(byPass),
+         "bypass HDR creation and use medium bracket as input for next steps")
+        ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
+         "Quantization level like 8 bits or 10 bits.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -180,21 +190,7 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    /*Read config from file*/
-    std::stringstream ss;
-    ss << samplesFolder << "/config.dat";
-    std::ifstream file_config(ss.str(), std::ios::binary);
-    if (!file_config.is_open()) {
-        ALICEVISION_LOG_ERROR("Impossible to read config");
-        return EXIT_FAILURE;
-    }
-    bool byPass = false;
-    int nbBrackets = 0;
-    int channelQuantizationPower = 0;
-    file_config.read((char *)&nbBrackets, sizeof(nbBrackets));
-    file_config.read((char *)&byPass, sizeof(byPass));
-    file_config.read((char *)&channelQuantizationPower, sizeof(channelQuantizationPower));
-
+    
     if (channelQuantizationPower <= 0) {
         ALICEVISION_LOG_ERROR("Invalid channelQuantizationPower config");
         return EXIT_FAILURE;
@@ -207,98 +203,12 @@ int aliceVision_main(int argc, char* argv[])
 
     size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
-    ALICEVISION_LOG_INFO("Input brackets count " << nbBrackets);
-    ALICEVISION_LOG_INFO("Input channel Quantization " << channelQuantization);
-
-    sfmData::Views& views = sfmData.getViews();
-
-    // Order views by their image names (without path and extension to make sure we handle rotated images)
-    std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
-    {
-        viewsOrderedByName.push_back(viewIt.second);
-    }
-    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                  if(a == nullptr || b == nullptr)
-                      return true;
-
-                  boost::filesystem::path path_a(a->getImagePath());
-                  boost::filesystem::path path_b(b->getImagePath());
-
-                  return (path_a.stem().string() < path_b.stem().string());
-              });
-
-    {
-        // Print a warning if the aperture changes.
-        std::set<float> fnumbers;
-        for(auto& view : viewsOrderedByName)
-        {
-            fnumbers.insert(view->getMetadataFNumber());
-        }
-        if(fnumbers.size() != 1)
-        {
-            ALICEVISION_LOG_WARNING("Different apertures amongst the dataset. For correct HDR, you should only change "
-                                    "the shutter speed (and eventually the ISO).");
-            ALICEVISION_LOG_WARNING("Used f-numbers:");
-            for(auto f : fnumbers)
-            {
-                ALICEVISION_LOG_WARNING(" * " << f);
-            }
-        }
-    }
-
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
-    {
-        std::vector<std::shared_ptr<sfmData::View>> group;
-        std::vector<float> exposures;
-        for(auto& view : viewsOrderedByName)
-        {
-            if(nbBrackets > 0)
-            {
-                group.push_back(view);
-                if(group.size() == nbBrackets)
-                {
-                    groupedViews.push_back(group);
-                    group.clear();
-                }
-            }
-            else
-            {
-                // Automatically determines the number of brackets
-                float exp = view->getCameraExposureSetting();
-                if(!exposures.empty() && exp != exposures.back() && exp == exposures.front())
-                {
-                    groupedViews.push_back(group);
-                    group.clear();
-                    exposures.clear();
-                }
-                exposures.push_back(exp);
-                group.push_back(view);
-            }
-        }
-        if(!group.empty())
-            groupedViews.push_back(group);
-    }
-
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    for(auto& group : groupedViews)
-    {
-        // Sort all images by exposure time
-        std::sort(group.begin(), group.end(),
-                  [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                      if(a == nullptr || b == nullptr)
-                          return true;
-                      return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
-                  });
-
-        // Target views are the middle exposed views
-        // For add number, there is no ambiguity on the middle image.
-        // For even number, we arbitrarily choose the more exposed view.
-        const int middleIndex = group.size() / 2;
-
-        targetViews.push_back(group[middleIndex]);
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets)) {
+        ALICEVISION_LOG_ERROR("Error on brackets information");
+        return EXIT_FAILURE;
     }
 
     // Build camera exposure table
@@ -345,7 +255,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
 
-    sampling.filter(1500000);
+    sampling.filter(1000000);
     
     ALICEVISION_LOG_INFO("Extracting samples for each group");
     group_pos = 0;

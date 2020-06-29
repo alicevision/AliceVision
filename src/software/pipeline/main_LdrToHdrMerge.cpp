@@ -18,6 +18,7 @@
 /*HDR Related*/
 #include <aliceVision/hdr/rgbCurve.hpp>
 #include <aliceVision/hdr/hdrMerge.hpp>
+#include <aliceVision/hdr/brackets.hpp>
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
@@ -42,7 +43,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilename;
     int nbBrackets = 3;
     bool byPass = false;
-    size_t channelQuantization = 1024;
+    int channelQuantizationPower = 10;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 1.0f;
@@ -63,6 +64,12 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
+         "bracket count per HDR image (0 means automatic).")
+        ("byPass", po::value<bool>(&byPass)->default_value(byPass),
+         "bypass HDR creation and use medium bracket as input for next steps")
+        ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
+         "Quantization level like 8 bits or 10 bits.")
         ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
          "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
@@ -133,117 +140,13 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-
-    // Order views by their image names (without path and extension to make sure we handle rotated images)
-    std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
-    {
-        viewsOrderedByName.push_back(viewIt.second);
-    }
-    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                  if(a == nullptr || b == nullptr)
-                      return true;
-
-                  boost::filesystem::path path_a(a->getImagePath());
-                  boost::filesystem::path path_b(b->getImagePath());
-
-                  return (path_a.stem().string() < path_b.stem().string());
-              });
-
-    {
-        // Print a warning if the aperture changes.
-        std::set<float> fnumbers;
-        for(auto& view : viewsOrderedByName)
-        {
-            fnumbers.insert(view->getMetadataFNumber());
-        }
-        if(fnumbers.size() != 1)
-        {
-            ALICEVISION_LOG_WARNING("Different apertures amongst the dataset. For correct HDR, you should only change "
-                                    "the shutter speed (and eventually the ISO).");
-            ALICEVISION_LOG_WARNING("Used f-numbers:");
-            for(auto f : fnumbers)
-            {
-                ALICEVISION_LOG_WARNING(" * " << f);
-            }
-        }
-    }
+    size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
-    {
-        std::vector<std::shared_ptr<sfmData::View>> group;
-        std::vector<float> exposures;
-        for(auto& view : viewsOrderedByName)
-        {
-            if(nbBrackets > 0)
-            {
-                group.push_back(view);
-                if(group.size() == nbBrackets)
-                {
-                    groupedViews.push_back(group);
-                    group.clear();
-                }
-            }
-            else
-            {
-                // Automatically determines the number of brackets
-                float exp = view->getCameraExposureSetting();
-                if(!exposures.empty() && exp != exposures.back() && exp == exposures.front())
-                {
-                    groupedViews.push_back(group);
-                    group.clear();
-                    exposures.clear();
-                }
-                exposures.push_back(exp);
-                group.push_back(view);
-            }
-        }
-        if(!group.empty())
-            groupedViews.push_back(group);
-    }
-    if(nbBrackets <= 0)
-    {
-        std::set<std::size_t> sizeOfGroups;
-        for(auto& group : groupedViews)
-        {
-            sizeOfGroups.insert(group.size());
-        }
-        if(sizeOfGroups.size() == 1)
-        {
-            ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
-                                 << *sizeOfGroups.begin() << ". It will generate " << groupedViews.size()
-                                 << " hdr images.");
-        }
-        else
-        {
-            ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
-        }
-    }
-    else if(nbBrackets == 1)
-    {
-        byPass = true;
-    }
-
-    // Build target views
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    for(auto& group : groupedViews)
-    {
-        // Sort all images by exposure time
-        std::sort(group.begin(), group.end(),
-                  [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                      if(a == nullptr || b == nullptr)
-                          return true;
-                      return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
-                  });
-
-        // Target views are the middle exposed views
-        // For add number, there is no ambiguity on the middle image.
-        // For even number, we arbitrarily choose the more exposed view.
-        const int middleIndex = group.size() / 2;
-
-        targetViews.push_back(group[middleIndex]);
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets)) {
+        return EXIT_FAILURE;
     }
 
     // Build camera exposure table
@@ -275,29 +178,11 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         groupedFilenames.push_back(filenames);
-    }
+    }    
 
     sfmData::SfMData outputSfm;
     sfmData::Views& vs = outputSfm.getViews();
     outputSfm.getIntrinsics() = sfmData.getIntrinsics();
-
-    // If bypass, simply use central bracket
-    if(byPass)
-    {
-        for(int g = 0; g < groupedFilenames.size(); ++g)
-        {
-            vs[targetViews[g]->getViewId()] = targetViews[g];
-        }
-
-        // Export output sfmData
-        if(!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
-        {
-            ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
-            return EXIT_FAILURE;
-        }
-
-        return EXIT_SUCCESS;
-    }
 
     hdr::rgbCurve fusionWeight(channelQuantization);
     fusionWeight.setFunction(fusionWeightFunction);

@@ -17,6 +17,7 @@
 
 /*HDR Related*/
 #include <aliceVision/hdr/sampling.hpp>
+#include <aliceVision/hdr/brackets.hpp>
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
@@ -68,7 +69,7 @@ int aliceVision_main(int argc, char* argv[])
          "verbosity level (fatal, error, warning, info, debug, trace).");
 
     allParams.add(requiredParams).add(optionalParams).add(logParams);
-
+    
     po::variables_map vm;
     try
     {
@@ -99,24 +100,13 @@ int aliceVision_main(int argc, char* argv[])
 
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    
+
     // Read sfm data
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
-        return EXIT_FAILURE;
-    }
-
-    size_t countImages = sfmData.getViews().size();
-    if(countImages == 0)
-    {
-        ALICEVISION_LOG_ERROR("The input SfMData contains no input !");
-        return EXIT_FAILURE;
-    }
-
-    if(nbBrackets > 0 && countImages % nbBrackets != 0)
-    {
-        ALICEVISION_LOG_ERROR("The input SfMData file is not compatible with the number of brackets.");
         return EXIT_FAILURE;
     }
 
@@ -127,118 +117,12 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    sfmData::Views& views = sfmData.getViews();
-
-    // Order views by their image names (without path and extension to make sure we handle rotated images)
-    std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-    for(auto& viewIt : sfmData.getViews())
-    {
-        viewsOrderedByName.push_back(viewIt.second);
-    }
-    std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(),
-              [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                  if(a == nullptr || b == nullptr)
-                      return true;
-
-                  boost::filesystem::path path_a(a->getImagePath());
-                  boost::filesystem::path path_b(b->getImagePath());
-
-                  return (path_a.stem().string() < path_b.stem().string());
-              });
-
-    {
-        // Print a warning if the aperture changes.
-        std::set<float> fnumbers;
-        for(auto& view : viewsOrderedByName)
-        {
-            fnumbers.insert(view->getMetadataFNumber());
-        }
-        if(fnumbers.size() != 1)
-        {
-            ALICEVISION_LOG_WARNING("Different apertures amongst the dataset. For correct HDR, you should only change "
-                                    "the shutter speed (and eventually the ISO).");
-            ALICEVISION_LOG_WARNING("Used f-numbers:");
-            for(auto f : fnumbers)
-            {
-                ALICEVISION_LOG_WARNING(" * " << f);
-            }
-        }
-    }
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
-    {
-        std::vector<std::shared_ptr<sfmData::View>> group;
-        std::vector<float> exposures;
-        for(auto& view : viewsOrderedByName)
-        {
-            if(nbBrackets > 0)
-            {
-                group.push_back(view);
-                if(group.size() == nbBrackets)
-                {
-                    groupedViews.push_back(group);
-                    group.clear();
-                }
-            }
-            else
-            {
-                // Automatically determines the number of brackets
-                float exp = view->getCameraExposureSetting();
-                if(!exposures.empty() && exp != exposures.back() && exp == exposures.front())
-                {
-                    groupedViews.push_back(group);
-                    group.clear();
-                    exposures.clear();
-                }
-                exposures.push_back(exp);
-                group.push_back(view);
-            }
-        }
-        if(!group.empty())
-            groupedViews.push_back(group);
-    }
-
-    if(nbBrackets <= 0)
-    {
-        std::set<std::size_t> sizeOfGroups;
-        for(auto& group : groupedViews)
-        {
-            sizeOfGroups.insert(group.size());
-        }
-        if(sizeOfGroups.size() == 1)
-        {
-            ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
-                                 << *sizeOfGroups.begin() << ". It will generate " << groupedViews.size()
-                                 << " hdr images.");
-        }
-        else
-        {
-            ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
-        }
-    }
-    else if(nbBrackets == 1)
-    {
-        byPass = true;
-    }
-
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    for(auto& group : groupedViews)
-    {
-        // Sort all images by exposure time
-        std::sort(group.begin(), group.end(),
-                  [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
-                      if(a == nullptr || b == nullptr)
-                          return true;
-                      return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
-                  });
-
-        // Target views are the middle exposed views
-        // For add number, there is no ambiguity on the middle image.
-        // For even number, we arbitrarily choose the more exposed view.
-        const int middleIndex = group.size() / 2;
-
-        targetViews.push_back(group[middleIndex]);
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets)) {
+        return EXIT_FAILURE;
     }
 
     // Build camera exposure table
@@ -324,18 +208,6 @@ int aliceVision_main(int argc, char* argv[])
 
         group_pos++;
     }
-
-    /*Store to file*/
-    std::stringstream ss;
-    ss << outputFolder << "/config.dat";
-    std::ofstream file_config(ss.str(), std::ios::binary);
-    if (!file_config.is_open()) {
-        ALICEVISION_LOG_ERROR("Impossible to write config");
-        return EXIT_FAILURE;
-    }
-    file_config.write((const char *)&nbBrackets, sizeof(nbBrackets));
-    file_config.write((const char *)&byPass, sizeof(byPass));
-    file_config.write((const char *)&channelQuantizationPower, sizeof(channelQuantizationPower));
 
     return EXIT_SUCCESS;
 }
