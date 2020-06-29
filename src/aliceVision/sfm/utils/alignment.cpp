@@ -597,34 +597,30 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   {
     case sfmData::EEXIFOrientation::RIGHT:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: RIGHT");
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
-                  * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
+          out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
                   * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::LEFT:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: LEFT");
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
-                  * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
+          out_R = Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
                   * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::UPSIDEDOWN:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: UPSIDEDOWN");
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
-                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::NONE:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
+          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     default:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
-                  * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1))
-                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
   }
 
   out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
-  out_S = 1;
+  out_S = 1.0;
 }
 
 void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
