@@ -126,7 +126,6 @@ int aliceVision_main(int argc, char **argv)
 
 
   // user optional parameters
-
   std::string transform;
   std::string landmarksDescriberTypesName;
   double userScale = 1;
@@ -134,6 +133,7 @@ int aliceVision_main(int argc, char **argv)
   bool applyRotation = true;
   bool applyTranslation = true;
   std::vector<sfm::MarkerWithCoord> markers;
+  std::string outputViewsAndPosesFilepath;
 
   po::options_description allParams("AliceVision sfmTransform");
 
@@ -172,6 +172,8 @@ int aliceVision_main(int argc, char **argv)
         "Apply translation transformation.")
     ("markers", po::value<std::vector<sfm::MarkerWithCoord>>(&markers)->multitoken(),
         "Markers ID and target coordinates 'ID:x,y,z'.")
+    ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+      "Path of the output SfMData file.")
     ;
 
   po::options_description logParams("Log parameters");
@@ -219,8 +221,8 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // Load input scene
-  sfmData::SfMData sfmDataIn;
-  if(!sfmDataIO::Load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -250,11 +252,11 @@ int aliceVision_main(int argc, char **argv)
     break;
 
     case EAlignmentMethod::AUTO_FROM_CAMERAS:
-      sfm::computeNewCoordinateSystemFromCameras(sfmDataIn, S, R, t);
+      sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
     break;
 
     case EAlignmentMethod::AUTO_FROM_LANDMARKS:
-      sfm::computeNewCoordinateSystemFromLandmarks(sfmDataIn, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
+      sfm::computeNewCoordinateSystemFromLandmarks(sfmData, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
     break;
 
     case EAlignmentMethod::FROM_SINGLE_CAMERA:
@@ -264,7 +266,7 @@ int aliceVision_main(int argc, char **argv)
         }
         else
         {
-            sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn, transform, S, R, t);
+            sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, transform, S, R, t);
         }
     break;
 
@@ -275,7 +277,7 @@ int aliceVision_main(int argc, char **argv)
             feature::EImageDescriberType::CCTAG3, feature::EImageDescriberType::CCTAG4
 #endif
         };
-        std::set<feature::EImageDescriberType> usedDescTypes = sfmDataIn.getLandmarkDescTypes();
+        std::set<feature::EImageDescriberType> usedDescTypes = sfmData.getLandmarkDescTypes();
 
         std::vector<feature::EImageDescriberType> usedMarkersDescTypes;
         std::set_intersection(
@@ -300,7 +302,7 @@ int aliceVision_main(int argc, char **argv)
             }
             return EXIT_FAILURE;
         }
-        const bool success = sfm::computeNewCoordinateSystemFromSpecificMarkers(sfmDataIn, vDescTypes.front(), markers, applyScale, S, R, t);
+        const bool success = sfm::computeNewCoordinateSystemFromSpecificMarkers(sfmData, vDescTypes.front(), markers, applyScale, S, R, t);
         if (!success)
         {
             ALICEVISION_LOG_ERROR("Failed to find a valid transformation for these " << markers.size() << " markers.");
@@ -328,15 +330,21 @@ int aliceVision_main(int argc, char **argv)
           << "\t- Translate: " << t.transpose());
   }
 
-  sfm::applyTransform(sfmDataIn, S, R, t);
+  sfm::applyTransform(sfmData, S, R, t);
 
   ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
   
   // Export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmDataIn, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
     return EXIT_FAILURE;
+  }
+
+  if(!outputViewsAndPosesFilepath.empty())
+  {
+      sfmDataIO::Save(sfmData, outputViewsAndPosesFilepath,
+                      sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
   }
 
   return EXIT_SUCCESS;

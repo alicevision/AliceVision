@@ -97,6 +97,7 @@ int aliceVision_main(int argc, char **argv)
     EMatchingMethod matchingMethod = EMatchingMethod::FROM_VIEWID;
     std::string fileMatchingPattern;
     std::vector<std::string> metadataMatchingList = { "Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
+    std::string outputViewsAndPosesFilepath;
 
     po::options_description allParams("AliceVision sfmAlignment");
 
@@ -124,6 +125,8 @@ int aliceVision_main(int argc, char **argv)
             "Transfer poses.")
         ("transferIntrinsics", po::value<bool>(&transferIntrinsics)->default_value(transferIntrinsics),
             "Transfer intrinsics.")
+        ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+            "Path of the output SfMData file.")
         ;
 
     po::options_description logParams("Log parameters");
@@ -165,16 +168,16 @@ int aliceVision_main(int argc, char **argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // Load input scene
-    sfmData::SfMData sfmDataIn;
-    if (!sfmDataIO::Load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
         return EXIT_FAILURE;
     }
 
     // Load reference scene
-    sfmData::SfMData sfmDataInRef;
-    if (!sfmDataIO::Load(sfmDataInRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
+    sfmData::SfMData sfmDataRef;
+    if (!sfmDataIO::Load(sfmDataRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The reference SfMData file '" << sfmDataReferenceFilename << "' cannot be read");
         return EXIT_FAILURE;
@@ -188,7 +191,7 @@ int aliceVision_main(int argc, char **argv)
         case EMatchingMethod::FROM_VIEWID:
         {
             std::vector<IndexT> commonViewIdsTmp;
-            getCommonViews(sfmDataIn, sfmDataInRef, commonViewIdsTmp);
+            getCommonViews(sfmData, sfmDataRef, commonViewIdsTmp);
             for (IndexT id : commonViewIdsTmp)
             {
                 commonViewIds.push_back(std::make_pair(id, id));
@@ -197,12 +200,12 @@ int aliceVision_main(int argc, char **argv)
         }
         case EMatchingMethod::FROM_FILEPATH:
         {
-            sfm::matchViewsByFilePattern(sfmDataIn, sfmDataInRef, fileMatchingPattern, commonViewIds);
+            sfm::matchViewsByFilePattern(sfmData, sfmDataRef, fileMatchingPattern, commonViewIds);
             break;
         }
         case EMatchingMethod::FROM_METADATA:
         {
-            sfm::matchViewsByMetadataMatching(sfmDataIn, sfmDataInRef, metadataMatchingList, commonViewIds);
+            sfm::matchViewsByMetadataMatching(sfmData, sfmDataRef, metadataMatchingList, commonViewIds);
             break;
         }
     }
@@ -222,14 +225,14 @@ int aliceVision_main(int argc, char **argv)
     {
         for (const auto& matchingViews: commonViewIds)
         {
-            if(!sfmDataIn.isPoseAndIntrinsicDefined(matchingViews.first) &&
-                sfmDataInRef.isPoseAndIntrinsicDefined(matchingViews.second))
+            if(!sfmData.isPoseAndIntrinsicDefined(matchingViews.first) &&
+                sfmDataRef.isPoseAndIntrinsicDefined(matchingViews.second))
             {
-                // Missing pose in sfmDataIn and valid pose in sfmDataInRef,
+                // Missing pose in sfmData and valid pose in sfmDataRef,
                 // so we can transfer the pose.
 
-                auto& viewA = sfmDataIn.getView(matchingViews.first);
-                const auto& viewB = sfmDataInRef.getView(matchingViews.second);
+                auto& viewA = sfmData.getView(matchingViews.first);
+                const auto& viewB = sfmDataRef.getView(matchingViews.second);
                 if (viewA.isPartOfRig() || viewB.isPartOfRig())
                 {
                     ALICEVISION_LOG_DEBUG("Rig poses are not yet supported in SfMTransfer.");
@@ -238,11 +241,11 @@ int aliceVision_main(int argc, char **argv)
 
                 if (transferPoses)
                 {
-                    sfmDataIn.getPoses()[viewA.getPoseId()] = sfmDataInRef.getPoses().at(viewB.getPoseId());
+                    sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPoses().at(viewB.getPoseId());
                 }
                 if (transferIntrinsics)
                 {
-                    sfmDataIn.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataInRef.getIntrinsicPtr(viewB.getIntrinsicId()));
+                    sfmData.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataRef.getIntrinsicPtr(viewB.getIntrinsicId()));
                 }
             }
         }
@@ -250,10 +253,16 @@ int aliceVision_main(int argc, char **argv)
 
     ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
     // Export the SfMData scene in the expected format
-    if (!sfmDataIO::Save(sfmDataIn, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
         return EXIT_FAILURE;
+    }
+
+    if(!outputViewsAndPosesFilepath.empty())
+    {
+        sfmDataIO::Save(sfmData, outputViewsAndPosesFilepath,
+                        sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
     }
 
     return EXIT_SUCCESS;

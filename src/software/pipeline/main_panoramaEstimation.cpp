@@ -328,7 +328,10 @@ int aliceVision_main(int argc, char **argv)
   sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   if(!outputViewsAndPosesFilepath.empty())
-    sfmDataIO::Save(outSfmData, outputViewsAndPosesFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
+  {
+      sfmDataIO::Save(outSfmData, outputViewsAndPosesFilepath,
+                      sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
+  }
 
   return EXIT_SUCCESS;
 }
