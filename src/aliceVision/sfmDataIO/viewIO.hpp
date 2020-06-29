@@ -40,7 +40,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
                                                 double sensorWidth = -1,
                                                 double defaultFocalLengthPx = -1,
                                                 double defaultFieldOfView = -1,
-                                                camera::EINTRINSIC defaultIntrinsicType = camera::PINHOLE_CAMERA_START,
+                                                camera::EINTRINSIC defaultIntrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_START,
                                                 double defaultPPx = -1,
                                                 double defaultPPy = -1);
 

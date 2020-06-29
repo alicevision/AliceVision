@@ -63,7 +63,7 @@ class PinholeRadialK1 : public Pinhole
   PinholeRadialK1* clone() const override { return new PinholeRadialK1(*this); }
   void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK1&>(other); }
 
-  EINTRINSIC getType() const override { return PINHOLE_CAMERA_RADIAL1; }
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL1; }
 
   virtual bool have_disto() const override {  return true; }
 
@@ -146,7 +146,7 @@ class PinholeRadialK3 : public Pinhole
   PinholeRadialK3* clone() const override { return new PinholeRadialK3(*this); }
   void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK3&>(other); }
 
-  EINTRINSIC getType() const override { return PINHOLE_CAMERA_RADIAL3; }
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL3; }
 
   virtual bool have_disto() const override {  return true; }
 

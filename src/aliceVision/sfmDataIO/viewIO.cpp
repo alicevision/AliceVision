@@ -163,13 +163,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
   {
     // if the focal lens is short, the fisheye model should fit better.
-    intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;
+      intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
   }
-  else if(intrinsicType == camera::PINHOLE_CAMERA_START)
+  else if(intrinsicType == camera::EINTRINSIC::PINHOLE_CAMERA_START)
   {
     // choose a default camera model if no default type
     // use standard lens with radial distortion by default
-    intrinsicType = camera::PINHOLE_CAMERA_RADIAL3;
+      intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
   }
 
   // create the desired intrinsic
@@ -180,13 +180,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   // initialize distortion parameters
   switch(intrinsicType)
   {
-    case camera::PINHOLE_CAMERA_FISHEYE:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
     {
       if(cameraBrand == "GoPro")
         intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
       break;
     }
-    case camera::PINHOLE_CAMERA_FISHEYE1:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
     {
       if(cameraBrand == "GoPro")
         intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 1.04});

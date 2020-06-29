@@ -36,7 +36,7 @@ class PinholeFisheye : public Pinhole
   PinholeFisheye* clone() const override { return new PinholeFisheye(*this); }
   void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeFisheye&>(other); }
 
-  EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE; }
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE; }
 
   virtual bool have_disto() const override { return true;}
 

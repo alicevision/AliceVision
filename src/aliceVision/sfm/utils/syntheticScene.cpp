@@ -78,15 +78,15 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
     const unsigned int h = config._cy *2;
     switch (eintrinsic)
     {
-      case camera::PINHOLE_CAMERA:
+        case camera::EINTRINSIC::PINHOLE_CAMERA:
         sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>
           (w, h, config._fx, config._cx, config._cy);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL1:
+        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>
           (w, h, config._fx, config._cx, config._cy, 0.0);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL3:
+        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>
           (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
@@ -164,13 +164,13 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     const unsigned int h = config._cy * 2;
     switch (eintrinsic)
     {
-      case camera::PINHOLE_CAMERA:
+      case camera::EINTRINSIC::PINHOLE_CAMERA:
         sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>(w, h, config._fx, config._cx, config._cy);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL1:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>(w, h, config._fx, config._cx, config._cy, 0.0);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL3:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>(w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:

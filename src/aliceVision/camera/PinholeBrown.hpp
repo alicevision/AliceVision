@@ -34,7 +34,7 @@ class PinholeBrownT2 : public Pinhole
     PinholeBrownT2* clone() const override { return new PinholeBrownT2(*this); }
     void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeBrownT2&>(other); }
   
-    EINTRINSIC getType() const override { return PINHOLE_CAMERA_BROWN; }
+    EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_BROWN; }
 
     virtual bool have_disto() const override { return true;}
 
