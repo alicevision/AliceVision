@@ -61,14 +61,12 @@ void updateIncompleteView(sfmData::View& view)
   }
 }
 
-std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view,
-                                                        double mmFocalLength,
-                                                        double sensorWidth,
-                                                        double defaultFocalLengthPx,
-                                                        double defaultFieldOfView,
-                                                        camera::EINTRINSIC defaultIntrinsicType,
-                                                        double defaultPPx,
-                                                        double defaultPPy)
+std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
+                    const sfmData::View& view, double mmFocalLength, double sensorWidth,
+                    double defaultFocalLengthPx, double defaultFieldOfView,
+                    camera::EINTRINSIC defaultIntrinsicType,
+                    camera::EINTRINSIC allowedEintrinsics, 
+                    double defaultPPx, double defaultPPy)
 {
   // can't combine defaultFocalLengthPx and defaultFieldOfView
   assert(defaultFocalLengthPx < 0 || defaultFieldOfView < 0);
@@ -160,16 +158,35 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     intrinsicType = camera::PINHOLE_CAMERA;
   }
   */
-  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
+  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0) && allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE)
   {
-    // if the focal lens is short, the fisheye model should fit better.
+    // If the focal lens is short, the fisheye model should fit better.
       intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
   }
-  else if(intrinsicType == camera::EINTRINSIC::PINHOLE_CAMERA_START)
+  else if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
   {
-    // choose a default camera model if no default type
-    // use standard lens with radial distortion by default
-      intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
+    // Choose a default camera model if no default type
+    static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {
+        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
+        camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
+        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1
+    };
+
+    for(const auto& e : intrinsicsPriorities)
+    {
+        if(allowedEintrinsics & e)
+        {
+            intrinsicType = e;
+            break;
+        }
+    }
+    // If still unassigned
+    if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
+    {
+        throw std::invalid_argument("No intrinsic value can be attributed !");
+    }  
   }
 
   // create the desired intrinsic

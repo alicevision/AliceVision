@@ -8,24 +8,29 @@
 #pragma once
 
 #include <boost/detail/bitmask.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <string>
 #include <stdexcept>
 #include <algorithm>
+#include <vector>
+#include <string>
 
 namespace aliceVision {
 namespace camera {
 
 enum EINTRINSIC
 {
-  PINHOLE_CAMERA_START = (1u << 0),
-  PINHOLE_CAMERA = (1u << 1),  // no distortion
-  PINHOLE_CAMERA_RADIAL1 = (1u << 2), // radial distortion K1
-  PINHOLE_CAMERA_RADIAL3 = (1u << 3),  // radial distortion K1,K2,K3
-  PINHOLE_CAMERA_BROWN = (1u << 4),    // radial distortion K1,K2,K3, tangential distortion T1,T2
-  PINHOLE_CAMERA_FISHEYE = (1u << 5),  // a simple Fish-eye distortion model with 4 distortion coefficients
-  PINHOLE_CAMERA_FISHEYE1 = (1u << 6), // a simple Fish-eye distortion model with 1 distortion coefficient
-  PINHOLE_CAMERA_END = (1u << 7)
+    UNKNOWN = (1u << 0),
+    PINHOLE_CAMERA = (1u << 1),          // no distortion
+    PINHOLE_CAMERA_RADIAL1 = (1u << 2),  // radial distortion K1
+    PINHOLE_CAMERA_RADIAL3 = (1u << 3),  // radial distortion K1,K2,K3
+    PINHOLE_CAMERA_BROWN = (1u << 4),    // radial distortion K1,K2,K3, tangential distortion T1,T2
+    PINHOLE_CAMERA_FISHEYE = (1u << 5),  // a simple Fish-eye distortion model with 4 distortion coefficients
+    PINHOLE_CAMERA_FISHEYE1 = (1u << 6), // a simple Fish-eye distortion model with 1 distortion coefficient
+    VALID_PINHOLE = PINHOLE_CAMERA | PINHOLE_CAMERA_RADIAL1 | PINHOLE_CAMERA_RADIAL3 | PINHOLE_CAMERA_BROWN |
+                    PINHOLE_CAMERA_FISHEYE | PINHOLE_CAMERA_FISHEYE1,
+    VALID_CAMERA_MODEL = VALID_PINHOLE,
 };
 
 BOOST_BITMASK(EINTRINSIC)
@@ -40,9 +45,9 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
       case EINTRINSIC::PINHOLE_CAMERA_BROWN: return "brown";
       case EINTRINSIC::PINHOLE_CAMERA_FISHEYE: return "fisheye4";
       case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1: return "fisheye1";
-      case EINTRINSIC::PINHOLE_CAMERA_START:
-      case EINTRINSIC::PINHOLE_CAMERA_END:
-      break;
+      case EINTRINSIC::UNKNOWN:
+      case EINTRINSIC::VALID_PINHOLE:
+          break;
   }
   throw std::out_of_range("Invalid Intrinsic Enum");
 }
@@ -78,12 +83,28 @@ inline std::istream& operator>>(std::istream& in, EINTRINSIC& e)
 // Return if the camera type is a valid enum
 inline bool isValid(EINTRINSIC eintrinsic)
 {
-    return eintrinsic > EINTRINSIC::PINHOLE_CAMERA_START && eintrinsic < EINTRINSIC::PINHOLE_CAMERA_END;
+    return EINTRINSIC::VALID_CAMERA_MODEL & eintrinsic;
 }
 
 inline bool isPinhole(EINTRINSIC eintrinsic)
 {
-    return eintrinsic > EINTRINSIC::PINHOLE_CAMERA_START && eintrinsic < EINTRINSIC::PINHOLE_CAMERA_END;
+    return EINTRINSIC::VALID_PINHOLE & eintrinsic;
+}
+
+inline EINTRINSIC EINTRINSIC_parseStringToBitmask(const std::string& str, const std::string& joinChar = ",")
+{   
+    std::vector<std::string> intrinsicsVec;
+    boost::split(intrinsicsVec, str, boost::is_any_of(joinChar));
+    if(!intrinsicsVec.size())
+    {
+        throw std::invalid_argument("'" + str + "'can't be parsed to EINTRINSIC Bitmask."); 
+    }
+    EINTRINSIC mask = EINTRINSIC_stringToEnum(intrinsicsVec[0]);
+    for(const std::string& intrinsic : intrinsicsVec)
+    {
+        mask |= EINTRINSIC_stringToEnum(intrinsic);
+    }
+    return mask;
 }
 
 } // namespace camera

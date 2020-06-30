@@ -183,6 +183,8 @@ int aliceVision_main(int argc, char **argv)
 
   std::string defaultIntrinsicKMatrix;
   std::string defaultCameraModelName;
+  std::string allowedCameraModels = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
+
   double defaultFocalLengthPixel = -1.0;
   double defaultFieldOfView = -1.0;
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
@@ -211,7 +213,9 @@ int aliceVision_main(int argc, char **argv)
     ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+      "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+    ("allowedCameraModels", po::value<std::string>(&allowedCameraModels)->default_value(allowedCameraModels),
+      "Permitted model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
     ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
       std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
       "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
@@ -261,7 +265,7 @@ int aliceVision_main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // set user camera model
-  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_START;
+  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::UNKNOWN;
   if(!defaultCameraModelName.empty())
       defaultCameraModel = camera::EINTRINSIC_stringToEnum(defaultCameraModelName);
 
@@ -557,7 +561,9 @@ int aliceVision_main(int argc, char **argv)
     }
 
     // build intrinsic
-    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
+    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
+        view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel,
+        camera::EINTRINSIC_parseStringToBitmask(allowedCameraModels), defaultPPx, defaultPPy);
     camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
 
     // set initialization mode
