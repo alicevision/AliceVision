@@ -12,6 +12,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/image/io.cpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -385,7 +386,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData::Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
+    if(listFiles(imageFolder, image::getSupportedExtensions(), imagePaths))
     {
       std::vector<sfmData::View> incompleteViews(imagePaths.size());
 
