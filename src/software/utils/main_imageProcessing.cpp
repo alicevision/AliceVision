@@ -224,8 +224,10 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     if(pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
-        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        // Premult necessary to ensure that the fill holes works as expected
+        oiio::ImageBufAlgo::premult(inBuf, inBuf);
         oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
 
         image.swap(filtered);
