@@ -39,17 +39,17 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
 {
   switch(intrinsicPtr->getType())
   {
-    case PINHOLE_CAMERA:
+    case EINTRINSIC::PINHOLE_CAMERA:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
-    case PINHOLE_CAMERA_RADIAL1:
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
-    case PINHOLE_CAMERA_RADIAL3:
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
-    case PINHOLE_CAMERA_BROWN:
+    case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
-    case PINHOLE_CAMERA_FISHEYE:
+    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
-    case PINHOLE_CAMERA_FISHEYE1:
+    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
@@ -66,17 +66,17 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
 {
   switch(intrinsicPtr->getType())
   {
-    case PINHOLE_CAMERA:
+    case EINTRINSIC::PINHOLE_CAMERA:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
-    case PINHOLE_CAMERA_RADIAL1:
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
-    case PINHOLE_CAMERA_RADIAL3:
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
-    case PINHOLE_CAMERA_BROWN:
+    case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
-    case PINHOLE_CAMERA_FISHEYE:
+    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
-    case PINHOLE_CAMERA_FISHEYE1:
+    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
     default:
       throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
@@ -93,13 +93,13 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
 {
   switch(intrinsicPtr->getType())
   {
-    case PINHOLE_CAMERA:
+    case EINTRINSIC::PINHOLE_CAMERA:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Pinhole(observation_first.homogeneous(), observation_second.homogeneous()));
-    case PINHOLE_CAMERA_RADIAL1:
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK1(observation_first.homogeneous(), observation_second.homogeneous()));
-    case PINHOLE_CAMERA_RADIAL3:
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK3(observation_first.homogeneous(), observation_second.homogeneous()));
-    case PINHOLE_CAMERA_FISHEYE:
+    case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(new ResidualErrorConstraintFunctor_PinholeFisheye(observation_first.homogeneous(), observation_second.homogeneous()));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");

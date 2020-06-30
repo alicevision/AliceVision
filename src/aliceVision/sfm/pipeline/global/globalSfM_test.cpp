@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
