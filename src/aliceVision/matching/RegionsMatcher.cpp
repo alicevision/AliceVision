@@ -10,6 +10,7 @@
 #include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
 #include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
 #include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
+#include "aliceVision/matching/ArrayMatcher_hnswlib.hpp"
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -135,8 +136,8 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
                     typedef L2_Vectorized<float> MetricT;
                     typedef ArrayMatcher_hnswlib<float, MetricT> MatcherT;
                     out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
-                } break;	
-			
+                } break;
+
 				default:
 					ALICEVISION_LOG_WARNING("Using unknown matcher type");
 			}
@@ -164,7 +165,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 				{
 					ALICEVISION_LOG_WARNING("Not yet implemented");
 				} break;
-			
+
 				default:
 					ALICEVISION_LOG_WARNING("Using unknown matcher type");
 			}
@@ -180,7 +181,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 				typedef ArrayMatcher_bruteForce<unsigned char, Metric> MatcherT;
 				out.reset(new matching::RegionsMatcher<MatcherT>(regions, false));
 			} break;
-			
+
 			default:
 				ALICEVISION_LOG_WARNING("Using unknown matcher type");
 		}
