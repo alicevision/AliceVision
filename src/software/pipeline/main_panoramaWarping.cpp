@@ -600,15 +600,159 @@ public:
 private:
 
   bool computeCoarseBB(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
+    
+    bool ret = true;
 
-    if (!isPinhole(intrinsics.getType())) {
+    if (isPinhole(intrinsics.getType())) {
+      ret = computeCoarseBB_Pinhole(coarse_bbox, panoramaSize, pose, intrinsics);
+    }
+    else if (isEquidistant(intrinsics.getType())) {
+      ret = computeCoarseBB_Equidistant(coarse_bbox, panoramaSize, pose, intrinsics);
+    }
+    else {
       coarse_bbox.left = 0;
       coarse_bbox.top = 0;
       coarse_bbox.width = panoramaSize.first;
       coarse_bbox.height = panoramaSize.second;
+      ret = true;
+    }
 
+    return ret;
+  }
+
+  bool computeCoarseBB_Equidistant(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
+    
+    const aliceVision::camera::EquiDistant & cam = dynamic_cast<const camera::EquiDistant&>(intrinsics);
+    
+
+    bool loop = false;
+    std::vector<bool> vec_bool(panoramaSize.second, false);
+
+    for (int i = 0; i < panoramaSize.second; i++) {
+      
+      {
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(0, i), panoramaSize.first, panoramaSize.second);
+
+        /**
+        * Check that this ray should be visible.
+        * This test is camera type dependent
+        */
+        Vec3 transformedRay = pose(ray);
+        if (!intrinsics.isVisibleRay(transformedRay)) {
+          continue;
+        }
+
+        /**
+         * Project this ray to camera pixel coordinates
+         */
+        const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+        /**
+         * Ignore invalid coordinates
+         */
+        if (!intrinsics.isVisible(pix_disto)) {
+          continue;
+        }
+      }
+
+      {
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(panoramaSize.first - 1, i), panoramaSize.first, panoramaSize.second);
+
+        /**
+        * Check that this ray should be visible.
+        * This test is camera type dependent
+        */
+        Vec3 transformedRay = pose(ray);
+        if (!intrinsics.isVisibleRay(transformedRay)) {
+          continue;
+        }
+
+        /**
+         * Project this ray to camera pixel coordinates
+         */
+        const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+        /**
+         * Ignore invalid coordinates
+         */
+        if (!intrinsics.isVisible(pix_disto)) {
+          continue;
+        }
+
+        vec_bool[i] = true;
+        loop = true;
+      }
+    }
+
+    if (vec_bool[0] || vec_bool[panoramaSize.second - 1]) {
+      loop = false;
+    }
+
+    if (!loop) {
+      coarse_bbox.left = 0;
+      coarse_bbox.top = 0;
+      coarse_bbox.width = panoramaSize.first;
+      coarse_bbox.height = panoramaSize.second;
       return true;
     }
+
+    int last_x = 0;
+
+    for (int x = panoramaSize.first - 1; x >= 0; x--) {
+      
+      size_t count = 0;
+
+      for (int i = 0; i < panoramaSize.second; i++) {
+        
+        if (vec_bool[i] == false) {
+          continue;
+        }
+
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x, i), panoramaSize.first, panoramaSize.second);
+
+        /**
+        * Check that this ray should be visible.
+        * This test is camera type dependent
+        */
+        Vec3 transformedRay = pose(ray);
+        if (!intrinsics.isVisibleRay(transformedRay)) {
+          vec_bool[i] = false;
+          continue;
+        }
+
+        /**
+         * Project this ray to camera pixel coordinates
+         */
+        const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+        /**
+         * Ignore invalid coordinates
+         */
+        if (!intrinsics.isVisible(pix_disto)) {
+          vec_bool[i] = false;
+          continue;
+        }
+        
+        count++;
+      }
+
+      if (count == 0) {
+        break;
+      }
+
+      last_x = x;
+    }
+
+    
+    coarse_bbox.left = last_x;
+    coarse_bbox.top = 0;
+    coarse_bbox.width = panoramaSize.first;
+    coarse_bbox.height = panoramaSize.second;
+
+    return true;
+  }
+
+  bool computeCoarseBB_Pinhole(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
 
     int bbox_left, bbox_top;
     int bbox_right, bbox_bottom;
