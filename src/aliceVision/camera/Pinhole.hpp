@@ -60,7 +60,7 @@ public:
 
   EINTRINSIC getType() const override
   {
-    return PINHOLE_CAMERA; 
+    return EINTRINSIC::PINHOLE_CAMERA; 
   }
 
   Mat3 K() const

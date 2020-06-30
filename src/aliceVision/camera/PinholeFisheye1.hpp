@@ -42,7 +42,7 @@ public:
       *this = dynamic_cast<const PinholeFisheye1&>(other);
   }
 
-  EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE1; }
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1; }
 
   ~PinholeFisheye1() override = default;
 };

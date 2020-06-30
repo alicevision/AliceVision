@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   const double dResidual_before = RMSE(sfmData);
 
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA_RADIAL1);
+  SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_RADIAL1);
 
   const double dResidual_before = RMSE(sfmData);
 
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA_RADIAL3);
+  SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
 
   const double dResidual_before = RMSE(sfmData);
 
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA_BROWN);
+  SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_BROWN);
 
   const double dResidual_before = RMSE(sfmData);
 
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA_FISHEYE);
+  SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA_FISHEYE);
 
   const double dResidual_before = RMSE(sfmData);
 
@@ -145,8 +145,8 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
-  SfMData sfmData_notRefined = getInputScene(d, config, PINHOLE_CAMERA); // used to compate which parameters are refined.
+  SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+  SfMData sfmData_notRefined = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA); // used to compate which parameters are refined.
 
   // Transform the views scheme
   //          v0 - v3

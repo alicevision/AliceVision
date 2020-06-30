@@ -444,7 +444,8 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   return true;
 }
 
-bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag, bool incompleteViews)
+bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag, bool incompleteViews,
+              EViewIdMethod viewIdMethod, const std::string& viewIdRegex)
 {
   Vec3 version;
 
@@ -531,7 +532,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
           v.setWidth(intrinsics->w());
           v.setHeight(intrinsics->h());
         }
-        updateIncompleteView(incompleteViews.at(i));
+        updateIncompleteView(incompleteViews.at(i), viewIdMethod, viewIdRegex);
       }
 
       // copy complete views in the SfMData views map

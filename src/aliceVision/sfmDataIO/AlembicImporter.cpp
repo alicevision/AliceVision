@@ -319,7 +319,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   std::string imagePath;
   std::vector<unsigned int> sensorSize_pix = {0, 0};
   std::vector<double> sensorSize_mm = {0, 0};
-  std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
+  std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
   double initialFocalLengthPix = -1;

@@ -37,7 +37,7 @@ class PinholeFisheye : public Pinhole
       *this = dynamic_cast<const PinholeFisheye&>(other);
   }
 
-  EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE; }
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE; }
 
   bool isVisibleRay(const Vec3 & ray) const override
   {
