@@ -12,13 +12,14 @@
 #include <aliceVision/image/io.hpp>
 
 #include <stdexcept>
+#include <regex>
 
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
 
-void updateIncompleteView(sfmData::View& view)
+void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const std::string& viewIdRegex)
 {
   // check if the view is complete
   if(view.getViewId() != UndefinedIndexT &&
@@ -40,8 +41,52 @@ void updateIncompleteView(sfmData::View& view)
   if(view.getMetadata().empty())
     view.setMetadata(metadata);
 
-  // reset viewId
-  view.setViewId(sfmData::computeViewUID(view));
+  // Reset viewId
+  if(view.getViewId() == UndefinedIndexT)
+  {
+    if(viewIdMethod == EViewIdMethod::FILENAME)
+    {
+      std::regex re;
+      try
+      {
+        re = viewIdRegex;
+      }
+      catch(const std::regex_error& e)
+      {
+        throw std::invalid_argument("Invalid regex conversion, your regexfilename '" + viewIdRegex + "' may be invalid.");
+      }
+
+      // Get view image filename without extension
+      const std::string filename = boost::filesystem::path(view.getImagePath()).stem().string();
+
+      std::smatch match;
+      std::regex_search(filename, match, re);
+      if(match.size() == 2)
+      {
+          try
+          {
+            const IndexT id(std::stoul(match.str(1)));
+            view.setViewId(id);
+          }
+          catch(std::invalid_argument& e)
+          {
+            ALICEVISION_LOG_ERROR("ViewId captured in the filename '" << filename << "' can't be converted to a number. "
+                                  "The regex '" << viewIdRegex << "' is probably incorrect.");
+            throw;
+          }
+      }
+      else
+      {
+        ALICEVISION_LOG_ERROR("The Regex '" << viewIdRegex << "' must match a unique number in the filename " << filename << "' to be used as viewId.");
+        throw std::invalid_argument("The Regex '" + viewIdRegex + "' must match a unique number in the filename " + filename + "' to be used as viewId.");
+      }
+    }
+    else
+    {
+      // Use metadata
+      view.setViewId(sfmData::computeViewUID(view));
+    }
+  }
 
   if(view.getPoseId() == UndefinedIndexT)
   {

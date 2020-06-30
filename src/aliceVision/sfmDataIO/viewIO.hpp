@@ -17,11 +17,50 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
+enum class EViewIdMethod
+{
+    METADATA,
+    FILENAME
+};
+
+inline std::string EViewIdMethod_enumToString(EViewIdMethod viewIdMethod)
+{
+    switch(viewIdMethod)
+    {
+        case EViewIdMethod::METADATA: return "metadata";
+        case EViewIdMethod::FILENAME: return "filename";
+    }
+    throw std::out_of_range("Invalid ViewIdMethod type Enum: " + std::to_string(int(viewIdMethod)));
+}
+
+inline EViewIdMethod EViewIdMethod_stringToEnum(const std::string& viewIdMethod)
+{
+    if(viewIdMethod == "metadata") return EViewIdMethod::METADATA;
+    if(viewIdMethod == "filename") return EViewIdMethod::FILENAME;
+
+    throw std::out_of_range("Invalid ViewIdMethod type string " + viewIdMethod);
+}
+
+inline std::ostream& operator<<(std::ostream& os, EViewIdMethod s)
+{
+    return os << EViewIdMethod_enumToString(s);
+}
+
+inline std::istream& operator>>(std::istream& in, EViewIdMethod& s)
+{
+    std::string token;
+    in >> token;
+    s = EViewIdMethod_stringToEnum(token);
+    return in;
+}
+
 /**
  * @brief update an incomplete view (at least only the image path)
  * @param view The given incomplete view
+ * @param[in] viewIdMethod ViewId generation method to use
+ * @param[in] viewIdRegex Optional regex used when viewIdMethod is FILENAME
  */
-void updateIncompleteView(sfmData::View& view);
+void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EViewIdMethod::METADATA, const std::string& viewIdRegex = "");
 
 /**
  * @brief create an intrinsic for the given View

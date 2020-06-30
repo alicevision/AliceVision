@@ -189,6 +189,8 @@ int aliceVision_main(int argc, char **argv)
   double defaultFocalLengthPixel = -1.0;
   double defaultFieldOfView = -1.0;
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
+  EViewIdMethod viewIdMethod = EViewIdMethod::METADATA;
+  std::string viewIdRegex = ".*?(\d+)";
 
   bool allowSingleView = false;
 
@@ -223,6 +225,12 @@ int aliceVision_main(int argc, char **argv)
       " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::GLOBAL) + ": all images may come from a single device (make/model/focal will still be a differentiator).\n"
       " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::FOLDER) + ": different folders will be considered as different devices\n"
       " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::IMAGE) + ": consider that each image has different internal camera parameters").c_str())
+    ("viewIdMethod", po::value<EViewIdMethod>(&viewIdMethod)->default_value(viewIdMethod),
+      std::string("Allows to choose the way the viewID is generated:\n"
+      " * " + EViewIdMethod_enumToString(EViewIdMethod::METADATA) + ": Generate viewId from image metadata.\n"
+      " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
+    ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
+      "Regex used to catch number used as viewId in filename.")
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
@@ -378,7 +386,7 @@ int aliceVision_main(int argc, char **argv)
   if(imageFolder.empty())
   {
     // fill SfMData from the JSON file
-    loadJSON(sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true);
+    loadJSON(sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true, viewIdMethod, viewIdRegex);
   }
   else
   {
@@ -395,7 +403,7 @@ int aliceVision_main(int argc, char **argv)
       {
         sfmData::View& view = incompleteViews.at(i);
         view.setImagePath(imagePaths.at(i));
-        updateIncompleteView(view);
+        updateIncompleteView(view, viewIdMethod, viewIdRegex);
       }
 
       for(const auto& view : incompleteViews)
