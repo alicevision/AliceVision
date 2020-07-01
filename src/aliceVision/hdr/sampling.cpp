@@ -135,7 +135,7 @@ void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor
 
 
 
-bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization)
+bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization, const EImageColorSpace & colorspace)
 {
     const int radius = 5;
     const int radiusp1 = radius + 1;
@@ -154,7 +154,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         */
         Image<RGBfColor> img, imgSquare;
         Image<Rgb<double>> imgIntegral, imgIntegralSquare;
-        readImage(imagePaths[idBracket], img, EImageColorSpace::SRGB);
+        readImage(imagePaths[idBracket], img, colorspace);
         
         if (idBracket == 0) {
             samples.resize(img.Width(), img.Height(), true);
@@ -378,82 +378,6 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
     return true;
 }
 
-
-
-bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, const std::vector<std::vector<std::string>> & imagePaths, const std::vector<std::vector<float>>& times, const size_t channelQuantization) {
-
-    std::vector<std::vector<ImageSample>> nonFilteredSamples;
-    out_samples.resize(imagePaths.size());
-
-    using SampleRef = std::pair<int, int>;
-    using SampleRefList = std::vector<SampleRef>;
-    using MapSampleRefList = std::map<UniqueDescriptor, SampleRefList>;
-
-    MapSampleRefList mapSampleRefList;
-
-    for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++) {
-        
-        std::vector<ImageSample> groupSamples;
-        if (!extractSamples(groupSamples, imagePaths[idGroup], times[idGroup], channelQuantization)) {
-            return false;
-        }
-
-        nonFilteredSamples.push_back(groupSamples);
-    }
-
-    for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++) {
-        
-        std::vector<ImageSample> & groupSamples = nonFilteredSamples[idGroup];
-
-        for (int idSample = 0; idSample < groupSamples.size(); idSample++) {
-
-            SampleRef s;
-            s.first = idGroup;
-            s.second = idSample;
-            
-            const ImageSample & sample = groupSamples[idSample];
-
-            for (int idDesc = 0; idDesc < sample.descriptions.size(); idDesc++) {
-                
-                UniqueDescriptor desc;
-                desc.exposure = sample.descriptions[idDesc].exposure;
-
-                for (int channel = 0; channel < 3; channel++) {
-                    
-                    desc.channel = channel;
-                    
-                    /* Get quantized value */
-                    desc.quantizedValue = int(std::round(sample.descriptions[idDesc].mean(channel)  * (channelQuantization - 1)));
-                    if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization) {
-                        continue;
-                    }
-
-                    mapSampleRefList[desc].push_back(s);
-                }
-            }
-        }
-    }
-
-    const size_t maxCountSample = 100;
-    for (auto & list : mapSampleRefList) {
-
-        if (list.second.size() > maxCountSample) {
-             /*Shuffle and ignore the exceeding samples*/
-            std::random_shuffle(list.second.begin(), list.second.end());
-            list.second.resize(maxCountSample);
-        }
-
-        for (auto & item : list.second) {
-            
-            if (nonFilteredSamples[item.first][item.second].descriptions.size() > 0) {
-                out_samples[item.first].push_back(nonFilteredSamples[item.first][item.second]);
-                nonFilteredSamples[item.first][item.second].descriptions.clear();
-            }
-        }
-    }
-
-    return true;
-}
 
 
 } // namespace hdr

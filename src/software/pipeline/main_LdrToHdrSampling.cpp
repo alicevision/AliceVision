@@ -185,7 +185,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Extracting sample from group " << group_pos);
 
         std::vector<hdr::ImageSample> out_samples;
-        bool res = hdr::extractSamples(out_samples, paths, exposures, channelQuantization);
+        bool res = hdr::extractSamples(out_samples, paths, exposures, channelQuantization, image::EImageColorSpace::SRGB);
         if (!res) {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << group_pos);
         }

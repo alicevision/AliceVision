@@ -52,8 +52,7 @@ std::ostream & operator<<(std::ostream& os, const PixelDescription & p);
 std::istream & operator>>(std::istream& os, ImageSample & s);
 std::istream & operator>>(std::istream& os, PixelDescription & p);
 
-bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization);
-bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, const std::vector<std::vector<std::string>> & imagePaths, const std::vector<std::vector<float>>& times, const size_t channelQuantization);
+bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization, const image::EImageColorSpace & colorspace);
 
 class Sampling {
 public:
@@ -95,7 +94,7 @@ public:
 
         for (auto & item : _positions) {
 
-            if (item.second.size() > 200) {
+            if (item.second.size() > 500) {
 
                 /*Shuffle and ignore the exceeding samples*/
                 std::random_shuffle(item.second.begin(), item.second.end());
