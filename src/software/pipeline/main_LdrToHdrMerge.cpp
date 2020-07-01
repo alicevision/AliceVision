@@ -201,7 +201,7 @@ int aliceVision_main(int argc, char* argv[])
         for(int i = 0; i < images.size(); i++)
         {
             ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
-            image::readImage(groupedFilenames[g][i], images[i], image::EImageColorSpace::LINEAR);
+            image::readImage(groupedFilenames[g][i], images[i], image::EImageColorSpace::SRGB);
         }
 
         // Merge HDR images
