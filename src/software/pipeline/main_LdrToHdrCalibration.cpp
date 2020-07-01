@@ -254,7 +254,7 @@ int aliceVision_main(int argc, char* argv[])
         group_pos++;
     }
 
-
+    /* We need to trim samples list */
     sampling.filter(1000000);
     
     ALICEVISION_LOG_INFO("Extracting samples for each group");
@@ -282,7 +282,7 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         std::vector<hdr::ImageSample> out_samples;
-        sampling.extractSamples(out_samples, samples, group_pos); 
+        sampling.extractUsefulSamples(out_samples, samples, group_pos); 
 
         calibration_samples.push_back(out_samples);
 

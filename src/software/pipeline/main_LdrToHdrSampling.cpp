@@ -101,7 +101,8 @@ int aliceVision_main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     
-
+    size_t channelQuantization = std::pow(2, channelQuantizationPower);
+    
     // Read sfm data
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
@@ -117,6 +118,8 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    size_t width = sfmData.getIntrinsics().begin()->second->w();
+    size_t height = sfmData.getIntrinsics().begin()->second->h();
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
@@ -160,15 +163,9 @@ int aliceVision_main(int argc, char* argv[])
     sfmData::Views& vs = outputSfm.getViews();
     outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
-    // If bypass, simply use central bracket
-    if(byPass)
-    {
-        return EXIT_SUCCESS;
-    }
 
-    size_t channelQuantization = std::pow(2, channelQuantizationPower);
     
-
+    
     size_t group_pos = 0;
     for(auto & group : groupedViews) {
 
@@ -183,9 +180,8 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         ALICEVISION_LOG_INFO("Extracting sample from group " << group_pos);
-
         std::vector<hdr::ImageSample> out_samples;
-        bool res = hdr::extractSamples(out_samples, paths, exposures, channelQuantization, image::EImageColorSpace::SRGB);
+        bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB);
         if (!res) {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << group_pos);
         }

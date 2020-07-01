@@ -15,7 +15,20 @@
 namespace aliceVision {
 namespace hdr {
 
+
 using namespace aliceVision::image;
+
+bool UniqueDescriptor::operator<(const UniqueDescriptor &o ) const
+{
+    if (exposure < o.exposure)
+        return true;
+    if (exposure == o.exposure && channel < o.channel)
+        return true;
+    if (exposure == o.exposure && channel == o.channel && quantizedValue < o.quantizedValue)
+        return true;
+
+    return false;
+}
 
 std::ostream & operator<<(std::ostream& os, const ImageSample & s) { 
 
@@ -76,7 +89,7 @@ std::istream & operator>>(std::istream& is, PixelDescription & p) {
 
 
 
-void integral(image::Image<image::Rgb<double>> & dest, image::Image<image::RGBfColor> & source) {
+void integral(image::Image<image::Rgb<double>> & dest, const Eigen::Matrix<image::RGBfColor, Eigen::Dynamic, Eigen::Dynamic> & source) {
 
     /*
     A B C 
@@ -90,26 +103,26 @@ void integral(image::Image<image::Rgb<double>> & dest, image::Image<image::RGBfC
     A+D+G+J      A+B+D+E+G+H+J+K    A+B+C+D+E+F+G+H+I+J+K+L
     */
 
-    dest.resize(source.Width(), source.Height());
+    dest.resize(source.cols(), source.rows());
 
     dest(0, 0).r() = source(0, 0).r();
     dest(0, 0).g() = source(0, 0).g();
     dest(0, 0).b() = source(0, 0).b();
 
-    for (int j = 1; j < source.Width(); j++) {
+    for (int j = 1; j < source.cols(); j++) {
         dest(0, j).r() = dest(0, j - 1).r() + double(source(0, j).r());
         dest(0, j).g() = dest(0, j - 1).g() + double(source(0, j).g());
         dest(0, j).b() = dest(0, j - 1).b() + double(source(0, j).b());
     }
 
-    for (int i = 1; i < source.Height(); i++) {
+    for (int i = 1; i < source.rows(); i++) {
 
         dest(i, 0).r() = dest(i - 1, 0).r() + double(source(i, 0).r());
         dest(i, 0).g() = dest(i - 1, 0).g() + double(source(i, 0).g());
         dest(i, 0).b() = dest(i - 1, 0).b() + double(source(i, 0).b());
         
 
-        for (int j = 1; j < source.Width(); j++) {
+        for (int j = 1; j < source.cols(); j++) {
 
             dest(i, j).r() = dest(i, j - 1).r() - dest(i - 1, j - 1).r() + dest(i - 1, j).r() + double(source(i, j).r());
             dest(i, j).g() = dest(i, j - 1).g() - dest(i - 1, j - 1).g() + dest(i - 1, j).g() + double(source(i, j).g());
@@ -118,13 +131,13 @@ void integral(image::Image<image::Rgb<double>> & dest, image::Image<image::RGBfC
     }
 }
 
-void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor> & source)
+void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RGBfColor, Eigen::Dynamic, Eigen::Dynamic> & source)
 {
-    dest.resize(source.Width(), source.Height());
+    dest.resize(source.cols(), source.rows());
 
-    for (int i = 0; i < source.Height(); i++) {
+    for (int i = 0; i < source.rows(); i++) {
 
-        for (int j = 0; j < source.Width(); j++) {
+        for (int j = 0; j < source.cols(); j++) {
 
             dest(i, j).r() = source(i, j).r() * source(i, j).r();
             dest(i, j).g() = source(i, j).g() * source(i, j).g();
@@ -135,7 +148,7 @@ void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor
 
 
 
-bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization, const EImageColorSpace & colorspace)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace)
 {
     const int radius = 5;
     const int radiusp1 = radius + 1;
@@ -144,7 +157,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
     
 
     /* For all brackets, For each pixel, compute image sample */
-    image::Image<ImageSample> samples;
+    image::Image<ImageSample> samples(imageWidth, imageHeight, true);
     for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++)
     {   
         const float exposure = times[idBracket];
@@ -152,46 +165,67 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         /**
          * Load image
         */
-        Image<RGBfColor> img, imgSquare;
-        Image<Rgb<double>> imgIntegral, imgIntegralSquare;
+        Image<RGBfColor> img;
         readImage(imagePaths[idBracket], img, colorspace);
-        
-        if (idBracket == 0) {
-            samples.resize(img.Width(), img.Height(), true);
-        }
-        
-        /**
-        * Stats for deviation
-        */
-        square(imgSquare, img);
-        integral(imgIntegral, img);
-        integral(imgIntegralSquare, imgSquare);
 
+        const int blockSize = 256;
 
-        for (int i = radius + 1; i < img.Height() - radius; i++)  {
-            for (int j = radius + 1; j < img.Width() - radius; j++)  {
-
-                image::Rgb<double> S1 = imgIntegral(i + radius, j + radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + radius, j - radiusp1) - imgIntegral(i - radiusp1, j + radius);
-                image::Rgb<double> S2 = imgIntegralSquare(i + radius, j + radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + radius);
-                
-                PixelDescription pd;
-                
-                pd.exposure = exposure;
-                pd.mean.r() = img(i,j).r(); //S1.r() / area;
-                pd.mean.g() = img(i,j).g(); //S1.g() / area;
-                pd.mean.b() = img(i,j).b(); //S1.b() / area;
-                pd.variance.r() = (S2.r() - (S1.r()*S1.r()) / area) / area;
-                pd.variance.g() = (S2.g() - (S1.g()*S1.g()) / area) / area;
-                pd.variance.b() = (S2.b() - (S1.b()*S1.b()) / area) / area;
-
-                samples(i, j).x = j;
-                samples(i, j).y = i;
-                samples(i, j).descriptions.push_back(pd);
+        std::vector<std::pair<int, int>> vec_blocks;
+        for (int cy = 0; cy < img.Height(); cy += blockSize - radius) {
+            for (int cx = 0; cx < img.Width(); cx += blockSize - radius) {
+                vec_blocks.push_back(std::make_pair(cx, cy));
             }
-        }            
-    }
+        }
 
+        #pragma omp parallel for
+        for (int idx = 0; idx < vec_blocks.size(); idx++) {
+
+            int cx = vec_blocks[idx].first;
+            int cy = vec_blocks[idx].second;
+
+            int blockWidth = ((img.Width() - cx) > blockSize)?blockSize:img.Width() - cx;
+            int blockHeight = ((img.Height() - cy) > blockSize)?blockSize:img.Height() - cy;
+            
+            auto blockInput = img.block(cy, cx, blockHeight, blockWidth);
+            auto blockOutput = samples.block(cy, cx, blockHeight, blockWidth);
+
+            /**
+            * Stats for deviation
+            */
+            Image<Rgb<double>> imgIntegral, imgIntegralSquare; 
+            Image<RGBfColor> imgSquare;
+
+            square(imgSquare, blockInput);
+            integral(imgIntegral, blockInput);
+            integral(imgIntegralSquare, imgSquare);
+
+            
+
+            for (int i = radius + 1; i < imgIntegral.Height() - radius; i++)  {
+                for (int j = radius + 1; j < imgIntegral.Width() - radius; j++)  {
+
+                    image::Rgb<double> S1 = imgIntegral(i + radius, j + radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + radius, j - radiusp1) - imgIntegral(i - radiusp1, j + radius);
+                    image::Rgb<double> S2 = imgIntegralSquare(i + radius, j + radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + radius);
+                    
+                    PixelDescription pd;
+                    
+                    pd.exposure = exposure;
+                    pd.mean.r() = blockInput(i,j).r(); 
+                    pd.mean.g() = blockInput(i,j).g(); 
+                    pd.mean.b() = blockInput(i,j).b();
+                    pd.variance.r() = (S2.r() - (S1.r()*S1.r()) / area) / area;
+                    pd.variance.g() = (S2.g() - (S1.g()*S1.g()) / area) / area;
+                    pd.variance.b() = (S2.b() - (S1.b()*S1.b()) / area) / area;
+
+                    blockOutput(i, j).x = cx + j;
+                    blockOutput(i, j).y = cy + i;
+                    blockOutput(i, j).descriptions.push_back(pd);
+                }
+            }
+        }      
+    }
     
+
 
     if (samples.Width() == 0) {
         /*Why ? just to be sure*/
@@ -199,6 +233,7 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
     }
 
     /*Create samples image*/
+    #pragma omp parallel for
     for (int i = radius; i < samples.Height() - radius; i++)  {
         for (int j = radius; j < samples.Width() - radius; j++)  {
             
@@ -324,36 +359,59 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
     using Coordinates = std::pair<int, int>;
     using CoordinatesList = std::vector<Coordinates>;
     using Counters = std::map<UniqueDescriptor, CoordinatesList>;
-    Counters counters;
 
-    for (int i = radius; i < samples.Height() - radius; i++)  {
-        for (int j = radius; j < samples.Width() - radius; j++)  {
+    Counters counters; 
+    {
+        Counters counters_vec[omp_get_max_threads()];
 
-            ImageSample & sample = samples(i, j);
-            UniqueDescriptor desc;
+        #pragma omp parallel for
+        for (int i = radius; i < samples.Height() - radius; i++)  {
 
-            for (int k = 0; k < sample.descriptions.size(); k++) { 
-                
-                desc.exposure = sample.descriptions[k].exposure;
+            Counters & counters_thread = counters_vec[omp_get_thread_num()];
 
-                for (int channel = 0; channel < 3; channel++) {
+            for (int j = radius; j < samples.Width() - radius; j++)  {
 
-                    desc.channel = channel;
+                ImageSample & sample = samples(i, j);
+                UniqueDescriptor desc;
+
+                for (int k = 0; k < sample.descriptions.size(); k++) { 
                     
-                    /* Get quantized value */
-                    desc.quantizedValue = int(std::round(sample.descriptions[k].mean(channel)  * (channelQuantization - 1)));
-                    if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization) {
-                        continue;
+                    desc.exposure = sample.descriptions[k].exposure;
+
+                    for (int channel = 0; channel < 3; channel++) {
+
+                        desc.channel = channel;
+                        
+                        /* Get quantized value */
+                        desc.quantizedValue = int(std::round(sample.descriptions[k].mean(channel)  * (channelQuantization - 1)));
+                        if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization) {
+                            continue;
+                        }
+                        
+                        Coordinates coordinates = std::make_pair(sample.x, sample.y);
+                        counters_thread[desc].push_back(coordinates);
                     }
-                    
-                    Coordinates coordinates = std::make_pair(sample.x, sample.y);
-                    counters[desc].push_back(coordinates);
+                }
+            }
+        }
+
+
+        for (int i = 0; i < omp_get_max_threads(); i++) {
+            
+            for (auto & item : counters_vec[i]) {
+
+                auto found = counters.find(item.first);
+                if (found != counters.end()) {
+                    found->second.insert(found->second.end(), item.second.begin(), item.second.end());
+                }
+                else {
+                    counters[item.first] = item.second;
                 }
             }
         }
     }
-    
 
+    
     const size_t maxCountSample = 200;
     for (auto & item : counters) {
 
@@ -375,10 +433,95 @@ bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std
         }
     }
 
+
     return true;
 }
 
+void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int image_index) {
 
+    for (int sample_index = 0; sample_index < samples.size(); sample_index++) {
+
+        ImageSample & sample = samples[sample_index];
+
+        for (auto & desc : sample.descriptions) {
+            UniqueDescriptor udesc;
+            udesc.exposure = desc.exposure;
+            
+            for (int channel = 0; channel < 3; channel++) {
+
+                udesc.channel = channel;                    
+                udesc.quantizedValue = int(std::round(desc.mean(channel)  * (channelQuantization - 1)));
+                if (udesc.quantizedValue < 0 || udesc.quantizedValue >= channelQuantization) {
+                    continue;
+                }
+
+                Coordinates c;
+                c.image_index = image_index;
+                c.sample_index = sample_index;
+
+                _positions[udesc].push_back(c);
+            }
+        }
+    }
+
+    for (auto & item : _positions) {
+
+        if (item.second.size() > 500) {
+
+            /*Shuffle and ignore the exceeding samples*/
+            std::random_shuffle(item.second.begin(), item.second.end());
+            item.second.resize(500);
+        }
+    }
+}
+
+void Sampling::filter(size_t max_total_points) {
+
+    size_t limit_per_group = 510;
+    size_t total_points = max_total_points + 1;
+
+    while (total_points > max_total_points) {
+
+        limit_per_group = limit_per_group - 10;
+
+        total_points = 0;
+        for (auto & item : _positions) {
+
+            if (item.second.size() > limit_per_group) {
+                /*Shuffle and ignore the exceeding samples*/
+                std::random_shuffle(item.second.begin(), item.second.end());
+                item.second.resize(limit_per_group);
+            }
+
+            total_points += item.second.size();
+        }
+    }
+}
+
+void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int image_index) {
+
+    std::set<unsigned int> unique_indices;
+
+    for (auto & item : _positions) {
+
+        for (auto & pos : item.second) {
+            
+            if (pos.image_index == image_index) {
+
+                unique_indices.insert(pos.sample_index);
+            }
+        }
+    }
+
+    for (auto & index : unique_indices) {
+
+        if (samples[index].descriptions.size() > 0) {
+
+            out_samples.push_back(samples[index]);
+            samples[index].descriptions.clear();
+        }
+    }
+}
 
 } // namespace hdr
 } // namespace aliceVision
