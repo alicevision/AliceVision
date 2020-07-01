@@ -120,6 +120,60 @@ inline std::ostream& operator<<(std::ostream& os, const ClaheFilterParams& cfPar
     return os;
 }
 
+enum class ENoiseMethod { uniform, gaussian, salt };
+
+inline std::string ENoiseMethod_enumToString(ENoiseMethod noiseMethod)
+{
+    switch(noiseMethod)
+    {
+        case ENoiseMethod::uniform: return "uniform";
+        case ENoiseMethod::gaussian: return "gaussian";
+        case ENoiseMethod::salt: return "salt";
+    }
+    throw std::invalid_argument("Invalid ENoiseMethod Enum");
+}
+
+inline ENoiseMethod ENoiseMethod_stringToEnum(std::string noiseMethod)
+{
+    boost::to_lower(noiseMethod);
+    if(noiseMethod == "uniform") return ENoiseMethod::uniform;
+    if(noiseMethod == "gaussian") return ENoiseMethod::gaussian;
+    if(noiseMethod == "salt") return ENoiseMethod::salt;
+
+    throw std::invalid_argument("Unrecognized noise method '" + noiseMethod + "'");
+}
+
+struct NoiseFilterParams
+{
+    bool enabled;
+    ENoiseMethod method;
+    float A;
+    float B;
+    bool mono;
+};
+
+std::istream& operator>>(std::istream& in, NoiseFilterParams& nfParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if(splitParams.size() != 5)
+        throw std::invalid_argument("Failed to parse NoiseFilterParams from: " + token);
+    nfParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    nfParams.method = ENoiseMethod_stringToEnum(splitParams[1]);
+    nfParams.A = boost::lexical_cast<float>(splitParams[2]);
+    nfParams.B = boost::lexical_cast<float>(splitParams[3]);
+    nfParams.mono = boost::to_lower_copy(splitParams[4]) == "true";
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const NoiseFilterParams& nfParams)
+{
+    os << nfParams.enabled << ":" << ENoiseMethod_enumToString(nfParams.method) << ":" << nfParams.A << ":" << nfParams.B
+       << ":" << nfParams.mono;
+    return os;
+}
 
 struct ProcessingParams
 {
@@ -152,6 +206,14 @@ struct ProcessingParams
         false, // enable
         4.0f,  // clipLimit
         8      // tileGridSize
+    };
+
+    NoiseFilterParams noise = {
+        false, // enable
+        ENoiseMethod::uniform,  // method
+        0.0f, // A
+        1.0f, // B
+        true // mono
     };
 
 };
@@ -333,6 +395,12 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
+
+    if(pParams.noise.enabled)
+    {   
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBufAlgo::noise(inBuf, ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono);
+    }
 }
 
 int aliceVision_main(int argc, char * argv[])
@@ -400,6 +468,16 @@ int aliceVision_main(int argc, char * argv[])
             " * Enabled: Use Contrast Limited Adaptive Histogram Equalization (CLAHE).\n"
             " * ClipLimit: Sets Threshold For Contrast Limiting.\n"
             " * TileGridSize: Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
+
+        ("noiseFilter", po::value<NoiseFilterParams>(&pParams.noise)->default_value(pParams.noise),
+                                 "Noise Filter parameters:\n"
+                                 " * Enabled: Add Noise.\n"
+                                 " * method: There are several noise types to choose from:\n"
+                                 "    - uniform: adds noise values uninformly distributed on range [A,B).\n"
+                                 "    - gaussian: adds Gaussian (normal distribution) noise values with mean value A and standard deviation B.\n"
+                                 "    - salt: changes to value A a portion of pixels given by B.\n"
+                                 " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
+                                 " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
