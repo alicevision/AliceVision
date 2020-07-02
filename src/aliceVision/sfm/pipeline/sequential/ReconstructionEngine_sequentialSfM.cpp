@@ -737,7 +737,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   }
 
   // residual histogram
-  Histogram<double> residualHistogram;
+  utils::Histogram<double> residualHistogram;
   {
       BoxStats<double> residualStats;
       computeResidualsHistogram(_sfmData, residualStats, &residualHistogram);
@@ -753,7 +753,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   }
 
   // tracks lengths histogram
-  Histogram<double> observationsLengthHistogram;
+  utils::Histogram<double> observationsLengthHistogram;
   {
       BoxStats<double> observationsLengthStats;
       int overallNbObservations = 0;
@@ -765,7 +765,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   }
 
   // nb landmarks per view histogram
-  Histogram<double> landmarksPerViewHistogram;
+  utils::Histogram<double> landmarksPerViewHistogram;
   {
       BoxStats<double> landmarksPerViewStats;
       computeLandmarksPerViewHistogram(_sfmData, landmarksPerViewStats, &landmarksPerViewHistogram);
@@ -1150,7 +1150,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
     }
 
     // save outlier residual information
-    Histogram<double> residualHistogram;
+    utils::Histogram<double> residualHistogram;
     BoxStats<double> residualStats;
     computeResidualsHistogram(_sfmData, residualStats, &residualHistogram);
     ALICEVISION_LOG_DEBUG("MSE Residual initial pair inlier: " << residualStats.mean);

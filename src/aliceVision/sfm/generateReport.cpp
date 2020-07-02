@@ -152,7 +152,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
       htmlDocStream.pushInfo(os.str());
 
       const double maxRange = *max_element(residuals.begin(), residuals.end());
-      Histogram<double> histo(0.0, maxRange, 100);
+      utils::Histogram<double> histo(0.0, maxRange, 100);
       histo.Add(residuals.begin(), residuals.end());
 
       svg::svgHisto svg_Histo;

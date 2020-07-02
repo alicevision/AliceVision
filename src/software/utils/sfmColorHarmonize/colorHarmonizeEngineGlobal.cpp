@@ -290,8 +290,8 @@ bool ColorHarmonizationEngineGlobal::Process()
     readImage(p_imaNames.first, imageI, image::EImageColorSpace::LINEAR);
     readImage(p_imaNames.second, imageJ, image::EImageColorSpace::LINEAR);
 
-    Histogram< double > histoI( minvalue, maxvalue, bin);
-    Histogram< double > histoJ( minvalue, maxvalue, bin);
+    utils::Histogram< double > histoI( minvalue, maxvalue, bin);
+    utils::Histogram< double > histoJ( minvalue, maxvalue, bin);
 
     int channelIndex = 0; // RED channel
     colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
@@ -300,7 +300,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     edgeR = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
 
-    histoI = histoJ = Histogram< double >( minvalue, maxvalue, bin);
+    histoI = histoJ = utils::Histogram<double>(minvalue, maxvalue, bin);
     channelIndex = 1; // GREEN channel
     colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
@@ -308,7 +308,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     edgeG = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
 
-    histoI = histoJ = Histogram< double >( minvalue, maxvalue, bin);
+    histoI = histoJ = utils::Histogram<double>(minvalue, maxvalue, bin);
     channelIndex = 2; // BLUE channel
     colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );

@@ -150,7 +150,7 @@ int aliceVision_main(int argc, char **argv)
     imageWhiteRegexList.reserve(imageWhiteList.size());
     for (const std::string& exp : imageWhiteList)
     {
-      imageWhiteRegexList.emplace_back(filterToRegex(exp));
+      imageWhiteRegexList.emplace_back(utils::filterToRegex(exp));
     }
     
     std::vector<IndexT> viewsToRemove;

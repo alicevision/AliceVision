@@ -143,7 +143,7 @@ int aliceVision_main(int argc, char** argv)
     // regex filter
     if(!viewFilter.empty())
     {
-        const std::regex regexFilter = filterToRegex(viewFilter);
+        const std::regex regexFilter = utils::filterToRegex(viewFilter);
         if(!std::regex_match(view.getImagePath(), regexFilter))
             continue;
     }

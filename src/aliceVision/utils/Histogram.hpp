@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace aliceVision {
-
+namespace utils {
 // A histogram class.
 // The Histogram object can keep a tally of values
 // within a range, the range is arranged into some
@@ -139,4 +139,5 @@ private:
   size_t overflow, underflow; //count under/over flow
 };
 
-}
+} // namespace utils
+} // namespace aliceVision

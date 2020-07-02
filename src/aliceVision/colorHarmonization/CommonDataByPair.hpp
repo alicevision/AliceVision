@@ -47,7 +47,7 @@ public:
    */
   template< typename ImageType >
   static void computeHisto(
-    Histogram< double > & histo,
+    utils::Histogram< double > & histo,
     const image::Image< unsigned char >& mask,
     std::size_t channelIndex,
     const image::Image< ImageType >& image )

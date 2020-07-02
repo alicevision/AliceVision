@@ -13,12 +13,15 @@
 #include <regex>
 #include <string>
 
+namespace aliceVision {
+namespace utils
+{
  /**
  * @brief Create regex from a string filter (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more)
  * @param[in] str - Input string filter
  * @return the resulting regex
  */
-std::regex filterToRegex(std::string str)
+inline std::regex filterToRegex(std::string str)
 {
     boost::replace_all(str, ".", "\\."); // escape "."
     boost::replace_all(str, "@", "[0-9]+"); // one @ correspond to one or more digits
@@ -43,10 +46,13 @@ std::regex filterToRegex(std::string str)
  * @param[in] <td::vector<std::string> - Vector that contains strings
  * @param[in] filter - String represent the filter to be applied
  */
-void filterStrings(std::vector<std::string>& strVec, const std::string& filter)
+inline void filterStrings(std::vector<std::string>& strVec, const std::string& filter)
 {
     const std::regex regex = filterToRegex(filter);
     const auto begin = strVec.begin();
     const auto end = strVec.end();
     strVec.erase(std::remove_if(begin, end, [&regex](const std::string& str) { return !std::regex_match(str, regex); }), end);
 }
+
+} // namespace utils
+} // namespace aliceVision
