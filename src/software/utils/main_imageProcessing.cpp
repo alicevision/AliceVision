@@ -9,6 +9,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -403,6 +404,53 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 }
 
+
+void saveImage(image::Image<image::RGBAfColor>& image,
+               const std::string& inputPath, const std::string& outputPath, const std::vector<std::string>& metadataFolders)
+{
+    // Read metadata path
+    std::string metadataFilePath;
+    
+    const std::string filename = fs::path(inputPath).filename().string();
+    // If metadataFolders is specified
+    if(!metadataFolders.empty())
+    {
+        // The file must match the file name and extension to be used as a metadata replacement.
+        const std::vector<std::string> metadataFilePaths = utils::getFilesPathsFromFolders(
+            metadataFolders, [&filename](const boost::filesystem::path& path)
+            {
+                return path.filename().string() == filename;
+            }
+        );
+
+        if(metadataFilePaths.size() > 1)
+        {
+            ALICEVISION_LOG_ERROR("Ambiguous case: Multiple path corresponding to this file was found for metadata replacement.");
+            throw std::invalid_argument("Ambiguous case: Multiple path corresponding to this file was found for metadata replacement");
+        }
+
+        if(metadataFilePaths.empty())
+        {
+            ALICEVISION_LOG_WARNING("Metadata folders was specified but there is no matching for this image: "<< filename
+                                    << ". The default metadata will be used instead for this image.");
+            metadataFilePath = inputPath;
+        }
+        else
+        {
+            ALICEVISION_LOG_TRACE("Metadata path found for the current image: " << filename);
+            metadataFilePath = metadataFilePaths[0];
+        }
+    }
+    else
+    {
+        // Metadata are extracted from the original images
+        metadataFilePath = inputPath;
+    }
+
+    const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+    image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+}
+
 int aliceVision_main(int argc, char * argv[])
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -570,17 +618,25 @@ int aliceVision_main(int argc, char * argv[])
             // if inputFolders are used
             if(checkInputFolders)
             {
-                const std::string foundViewPath = sfmDataIO::viewPathFromFolders(view, inputFolders).generic_string();
+                const std::vector<std::string> foundViewPaths = sfmDataIO::viewPathsFromFolders(view, inputFolders);
+
                 // Checks if a file associated with a given view is found in the inputfolders
-                if(foundViewPath.empty())
+                if(foundViewPaths.empty())
                 {
-                    ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.");
-                    ALICEVISION_LOG_ERROR("Use only SfmData input, use reconstructedViewsOnly or specify the correct inputFolders.");
+                    ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.\n"
+                        << "Use only SfmData input, use reconstructedViewsOnly or specify the correct inputFolders.");
                     return EXIT_FAILURE;
                 }
+                else if(foundViewPaths.size() > 1)
+                {
+                    ALICEVISION_LOG_ERROR("Ambiguous case: Multiple paths found in input folders for the corresponding view '" << view.getViewId() << "'.\n"
+                        << "Make sure that only one match can be found in input folders.");
+                    return EXIT_FAILURE;
+                }
+
                 // Add to ViewPaths the new associated path
-                ViewPaths.insert({view.getViewId(), foundViewPath});
-                ALICEVISION_LOG_TRACE("New path found for the view " << view.getViewId() << " '" << foundViewPath << "'");
+                ALICEVISION_LOG_TRACE("New path found for the view " << view.getViewId() << " '" << foundViewPaths[0] << "'");
+                ViewPaths.insert({view.getViewId(), foundViewPaths[0]});
             }
             else
             {
@@ -597,35 +653,17 @@ int aliceVision_main(int argc, char * argv[])
             const IndexT viewId = viewIt.first;
             const std::string viewPath = viewIt.second;
             sfmData::View& view = sfmData.getView(viewId);
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'");
+
+            const fs::path fsPath = viewPath;
+            const std::string fileExt = fsPath.extension().string();
+            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+            const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(viewPath, image, image::EImageColorSpace::LINEAR);
-
-            // Read metadata
-            std::string metadataFilePath;
-            if(!metadataFolders.empty()) // If metadataFolders is specified
-            {
-                std::string foundViewPath = sfmDataIO::viewPathFromFolders(view, metadataFolders).generic_string();
-                // Check if a file associated with a given view is found in the metadataFolders
-                if(!foundViewPath.empty())
-                {
-                    ALICEVISION_LOG_TRACE("Metadata path found for the current view: " << viewId << ".");
-                    metadataFilePath = foundViewPath;
-                } 
-                else
-                {
-                    ALICEVISION_LOG_WARNING("Metadata folders was specified but there is no matching (name or id) for this view: "
-                        << viewId << ". The default metadata will be used instead for this image.");
-                    metadataFilePath = viewPath;
-                }
-            }
-            else // Metadata are extracted from the original images
-            {
-                metadataFilePath = viewPath;
-            }
-            const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
 
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
@@ -645,16 +683,10 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            const std::string ext = extension.empty() ? fs::path(viewPath).extension().string() : (std::string(".") + extension);
-
-            // Analyze output path
-            const std::string outputImagePath = (fs::path(outputPath) / (std::to_string(viewId) + ext)).generic_string();
-
-            ALICEVISION_LOG_TRACE("Export image: '" << outputImagePath << "'.");
-            image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
+            saveImage(image, viewPath, outputfilePath, metadataFolders);
 
             // Update view for this modification
-            view.setImagePath(outputImagePath);
+            view.setImagePath(outputfilePath);
             view.setWidth(image.Width());
             view.setHeight(image.Height());
         }
@@ -667,11 +699,11 @@ int aliceVision_main(int argc, char * argv[])
             }
         }
 
-        const std::string outputSfmData = (fs::path(outputPath) / fs::path(inputExpression).filename()).string();
         // Save sfmData with modified path to images
-        if(!sfmDataIO::Save(sfmData, outputSfmData, sfmDataIO::ALL))
+        const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+        if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
-            ALICEVISION_LOG_ERROR("The output SfMData file '" << outputPath << "' cannot be written.");
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
             return EXIT_FAILURE;
         }
     }
@@ -683,23 +715,10 @@ int aliceVision_main(int argc, char * argv[])
         // If sfmInputDataFilename is empty use imageFolders instead
         if(inputExpression.empty())
         {
-            for(const std::string& folder : inputFolders)
-            {
-                // If one of the paths isn't a folder path
-                if(!fs::is_directory(folder))
-                {
-                    ALICEVISION_LOG_ERROR("the path '" << folder << "' is not a valid folder path.");
-                    return EXIT_FAILURE;
-                }
-
-                for(fs::directory_entry& entry : fs::directory_iterator(folder))
-                {
-                    const std::string entryPath = entry.path().generic_string();
-                    const std::string ext = entry.path().extension().string();
-                    if(image::isSupported(ext))
-                        filesStrPaths.push_back(entryPath);
-                }
-            }
+            // Get supported files
+            filesStrPaths = utils::getFilesPathsFromFolders(inputFolders, [](const boost::filesystem::path& path) {
+                return image::isSupported(path.extension().string());
+            });
         }
         else
         {
@@ -715,18 +734,15 @@ int aliceVision_main(int argc, char * argv[])
             }
             else
             {
-                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().string() + "'.");
-                // Iterate over files in directory
-                for(fs::directory_entry& entry : fs::directory_iterator(inputPath.parent_path()))
-                {
-                    const std::string entryPath = entry.path().generic_string();
-                    const std::string ext = entry.path().extension().string();
-                    if(image::isSupported(ext))
-                        filesStrPaths.push_back(entryPath);
-                }
+                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
 
-                // Regex filtering files paths
-                filterStrings(filesStrPaths, inputExpression);
+                const std::regex regex = utils::filterToRegex(inputExpression);
+                // Get supported files in inputPath directory which matches our regex filter
+                filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), 
+                    [&regex](const boost::filesystem::path& path) {
+                        return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
+                    }
+                );
             }
         }
 
@@ -747,68 +763,22 @@ int aliceVision_main(int argc, char * argv[])
         for(const std::string& inputFilePath : filesStrPaths)
         {
             const fs::path path = fs::path(inputFilePath);
-            const std::string fileName = path.stem().string();
+            const std::string filename = path.stem().string();
             const std::string fileExt = path.extension().string();
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputFilePath = (fs::path(outputPath) / (fileName + outputExt)).string();
+            const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << fileName << fileExt << "'.");
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
 
-            // Read metadata
-            std::string metadataFilePath;
-            if(!metadataFolders.empty()) // If metadataFolders is specified
-            {
-                for(const std::string& folder : metadataFolders)
-                {
-                    // Break the loop if metadateFilePath has already been found
-                    if(!metadataFilePath.empty())
-                        break;
-
-                    // If one of the paths isn't a folder path
-                    if(!fs::is_directory(folder))
-                    {
-                        ALICEVISION_LOG_ERROR("The path '" << folder << "' is not a valid folder path.");
-                        return EXIT_FAILURE;
-                    }
-
-                    for(fs::directory_entry& entry : fs::directory_iterator(folder))
-                    {
-                        const fs::path metadataPath = entry.path();
-                        const std::string metadataFileName = metadataPath.stem().string();
-                        const std::string metadataFileExt = metadataPath.extension().string();
-                        if(fileName == metadataFileName && fileExt == metadataFileExt)
-                        {
-                            // Update metadataFilePath
-                            ALICEVISION_LOG_TRACE("Metadata path found for the current image: " << fileName << fileExt);
-                            metadataFilePath = metadataPath.generic_string();
-                            break;
-                        }
-                    }
-                }
-
-                if(metadataFilePath.empty())
-                {
-                    ALICEVISION_LOG_WARNING("Metadata folders was specified but there is no matching for this image: "
-                                            << fileName << fileExt << ". The default metadata will be used instead for this image.");
-                    metadataFilePath = inputFilePath;
-                }
-            }
-            else // Metadata are extracted from the original images
-            {
-                metadataFilePath = inputFilePath;
-            }
-            const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
-
             // Image processing
             processImage(image, pParams);
 
             // Save the image
-            ALICEVISION_LOG_TRACE("Export image: '" << outputFilePath << "'.");
-            image::writeImage(outputFilePath, image, image::EImageColorSpace::AUTO, metadata);
+            saveImage(image, inputFilePath, outputFilePath, metadataFolders);
         }
     }
 
