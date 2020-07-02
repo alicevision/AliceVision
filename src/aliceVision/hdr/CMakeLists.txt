@@ -31,6 +31,7 @@ alicevision_add_library(aliceVision_hdr
   PRIVATE_LINKS
     aliceVision_system
     aliceVision_image
+    aliceVision_sfmData
     Boost::filesystem
     ${CERES_LIBRARIES}
 )
