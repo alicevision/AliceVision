@@ -33,26 +33,12 @@ using namespace matching;
 
 // ----------------------- TESTING -----------------------
 
-// create an instance of an arrayMatcher
-
-
-// create a small array to test with, that contains float values
-
-
-// build the matching structure for the ArrayMatcher instance
-
-
-// test nearest neighbour search
-
-
-// test any other methods/functions we implemented
-
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN)
 {
     const float array[] = {0, 1, 2, 5, 6};
     // no 3, because it involve the same dist as 1,1
 
-    HNSWMatcher<float> matcher;
+    ArrayMatcher_hnswlib<float> matcher;
     BOOST_CHECK( matcher.Build(array, 5, 1) );
 
     const float query[] {2};
@@ -61,7 +47,7 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN)
     const int NN = 5;
     BOOST_CHECK( matcher.SearchNeighbours(query, 1, &vec_nIndice, &vec_fDistance, NN) );
 
-    BOOST_CHECK_EQUAL( 5, vec_nIndice,.size() );
+    BOOST_CHECK_EQUAL( 5, vec_nIndice.size());
     BOOST_CHECK_EQUAL( 5, vec_fDistance.size() );
 
     // Check distances:

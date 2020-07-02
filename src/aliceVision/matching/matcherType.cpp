@@ -21,6 +21,7 @@ std::string EMatcherType_enumToString(EMatcherType matcherType)
     case EMatcherType::CASCADE_HASHING_L2:      return "CASCADE_HASHING_L2";
     case EMatcherType::FAST_CASCADE_HASHING_L2: return "FAST_CASCADE_HASHING_L2";
     case EMatcherType::BRUTE_FORCE_HAMMING:     return "BRUTE_FORCE_HAMMING";
+    case EMatcherType::HNSWLIB:                 return "HNSWLIB";
   }
   throw std::out_of_range("Invalid matcherType enum");
 }
@@ -32,6 +33,7 @@ EMatcherType EMatcherType_stringToEnum(const std::string& matcherType)
   if(matcherType == "CASCADE_HASHING_L2")       return EMatcherType::CASCADE_HASHING_L2;
   if(matcherType == "FAST_CASCADE_HASHING_L2")  return EMatcherType::FAST_CASCADE_HASHING_L2;
   if(matcherType == "BRUTE_FORCE_HAMMING")      return EMatcherType::BRUTE_FORCE_HAMMING;
+  if(matcherType == "HNSWLIB")                  return EMatcherType::HNSWLIB;
   throw std::out_of_range("Invalid matcherType : " + matcherType);
 }
 

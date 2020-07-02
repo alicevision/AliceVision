@@ -13,11 +13,17 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include "src/dependencies/hnswlib/hnswlib/hnswlib.h"
+#include "dependencies/hnswlib/hnswlib.h"
 
 #include <memory>
 #include <random>
 #include <cmath>
+
+using hnswlib::HierarchicalNSW;
+using hnswlib::L2Space;
+using hnswlib::L2SpaceI;
+using hnswlib::SpaceInterface;
+using namespace std;
 
 namespace aliceVision
 {
@@ -42,9 +48,9 @@ class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 public:
     typedef typename Metric::ResultType DistanceType;
 
-	// Some initialization
+    // Some initialization
     ArrayMatcher_hnswlib() {}
-    virtual ~ArrayMatcher_hnswlib() { memMapping.reset(); }
+    virtual ~ArrayMatcher_hnswlib() {}
 
     /**
      * Build the matching structure
@@ -57,21 +63,40 @@ public:
      */
     bool Build(const Scalar* dataset, int nbRows, int dimension)
     {
+        HNSWmetric.reset(nullptr);
+        HNSWmatcher.reset(nullptr);
+        dimension_ = 0;
+
         if(nbRows < 1)
+            return false;
+
+        dimension_ = dimension;
+
+        // Here this is tricky since there is no specialization
+        if(typeid(DistanceType) == typeid(int))
         {
-            memMapping.reset(nullptr);
+            HNSWmetric.reset(dynamic_cast<SpaceInterface<DistanceType>*>(new L2SpaceI(dimension)));
+        }
+        else if(typeid(DistanceType) == typeid(float))
+        {
+            HNSWmetric.reset(dynamic_cast<SpaceInterface<DistanceType>*>(new L2Space(dimension)));
+        }
+        else
+        {
+            std::cerr << "HNSW matcher: this type of distance is not handled Yet" << std::endl;
             return false;
         }
-        memMapping.reset(new Eigen::Map<BaseMat>((Scalar*)dataset, nbRows, dimension));
 
-        // Init the cascade hasher (hashing projection matrices)
-        cascade_hasher_.Init(dimension);
-        // Index the input descriptors
-        zero_mean_descriptor_ = CascadeHasher::GetZeroMeanDescriptor(*memMapping);
-        hashed_base_ = cascade_hasher_.CreateHashedDescriptions(*memMapping, zero_mean_descriptor_);
+        HNSWmatcher.reset(new HierarchicalNSW<DistanceType>(HNSWmetric.get(), nbRows, 16, 100));
+        HNSWmatcher->setEf(16);
 
-        // Amir: necessary declaration for searchNeighbours() to work
-        dimension_ = dimension;
+        // add first point..
+        HNSWmatcher->addPoint((void*)(dataset), (size_t)0);
+        //...and the other in //
+        for(int i = 1; i < nbRows; i++)
+        {
+            HNSWmatcher->addPoint((void*)(dataset + dimension * i), (size_t)i);
+        }
 
         return true;
     };
@@ -106,62 +131,36 @@ public:
     bool SearchNeighbours(const Scalar* query, int nbQuery, IndMatches* pvec_indices,
                           std::vector<DistanceType>* pvec_distances, size_t NN)
     {
-        if(HNSWMatcher.get() == nullptr)
+        if(HNSWmatcher.get() == nullptr)
         {
             return false;
         }
 
-        // Amir: no .rows() or .columns() property of HierarchicalNSW
-        // if(NN > (*memMapping).rows() || nbQuery < 1)
-        // {
-        //     return false;
-        // }
-
-        // // Matrix representation of the input data;
-        // Eigen::Map<BaseMat> mat_query((Scalar*)query, nbQuery, (*memMapping).cols());
-
         pvec_distances->reserve(nbQuery * NN);
         pvec_indices->reserve(nbQuery * NN);
 
-
-        // Amir: custom hnsw algorithm:
-        for (int i = 0; i < nbQuery; i ++) {
-            auto result = HNSWMatcher->searchKnn(   (const void*)(query + dimension_ * i),   /* arg 1 */
-                                                    NN,  /* arg 2 */
-                                                    bool (const std::pair<DistanceType, size_t> &var1, const std::pair<DistanceType, size_t> &var2) {
-                                                        return var1.first < var2.first
-                                                    }   /* arg 3, a lambda that returns a boolean */   );
-        }
-
+		for(int i = 0; i < nbQuery; i++)
         {
-            for (const auto &res : result) {
-                pvec_indices->emplace_back(i ,res.second);
-                pvec_distances->emplace_back(res.first);
-            }
-        }
-
-        // // Index the query descriptors
-        // const HashedDescriptions hashed_query =
-        //     cascade_hasher_.CreateHashedDescriptions(mat_query, zero_mean_descriptor_);
-        // // Match the query descriptors to the database
-        // cascade_hasher_.Match_HashedDescriptions(hashed_query, mat_query, hashed_base_, *memMapping, pvec_indices,
-        //                                          pvec_distances, NN);
+            auto result = HNSWmatcher->searchKnn(
+                (const void*)(query + dimension_ * i), NN,
+                [](const std::pair<DistanceType, size_t>& var1, const std::pair<DistanceType, size_t>& var2) -> bool {
+                    return var1.first < var2.first;
+                });
+			
+			for(const auto& res : result)
+			{
+				pvec_indices->emplace_back(i, res.second);
+				pvec_distances->emplace_back(res.first);
+			}
+		}
 
         return true;
     };
 
 private:
-    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> BaseMat;
-    /// Use a memory mapping in order to avoid memory re-allocation
-    std::unique_ptr<Eigen::Map<BaseMat>> memMapping;
-    CascadeHasher cascade_hasher_;
-    HashedDescriptions hashed_base_;
-    Eigen::VectorXf zero_mean_descriptor_;
-
-
-    // Amir: declaration of hnswlib
     int dimension_;
-    std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWMatcher;
+    std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
+    std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
 };
 
 } // namespace matching

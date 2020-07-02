@@ -82,17 +82,28 @@ int main(int argc, char** argv)
     using namespace aliceVision::feature;
     std::shared_ptr<ImageDescriber> image_describer;
     if(describerTypesName == "SIFT")
-        image_describer = std::make_shared<ImageDescriber_SIFT>(SiftParams());
+    {
+        image_describer = std::make_shared<ImageDescriber_SIFT>(SiftParams());    
+	}
     else if(describerTypesName == "AKAZE")
+    {
         image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEOptions(), AKAZE_MSURF));
-    else if(describerTypesName == "AKAZE_MLDB")
+    }
+	else if (describerTypesName == "AKAZE_MLDB")
+	{
         image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEOptions(), AKAZE_MLDB));
+	}
+    else if(describerTypesName == "HNSWLIB")
+    {
+        image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEOptions(), AKAZE_MSURF));
+    }
 
     if(image_describer.use_count() == 0)
     {
         std::cerr << "Invalid ImageDescriber type" << std::endl;
         return EXIT_FAILURE;
     }
+
     if(!describerPreset.empty())
     {
         image_describer->setConfigurationPreset(describerPreset);
@@ -145,8 +156,16 @@ int main(int argc, char** argv)
     //--
     //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio
     matching::IndMatches vec_PutativeMatches;
-    matching::DistanceRatioMatch(0.8, matching::BRUTE_FORCE_L2, *regions_perImage[0].get(), *regions_perImage[1].get(),
-                                 vec_PutativeMatches);
+    if(describerTypesName == "HNSWLIB")
+    {
+        matching::DistanceRatioMatch(0.8, matching::HNSWLIB, *regions_perImage[0].get(), *regions_perImage[1].get(),
+                                     vec_PutativeMatches);
+    }
+    else
+    {
+        matching::DistanceRatioMatch(0.8, matching::BRUTE_FORCE_L2, *regions_perImage[0].get(),
+                                     *regions_perImage[1].get(), vec_PutativeMatches);
+    }
 
     // Draw correspondences after Nearest Neighbor ratio filter
     {
@@ -172,6 +191,5 @@ int main(int argc, char** argv)
     std::cout << regions_perImage.at(0)->RegionCount() << " #Features on image A" << std::endl
               << regions_perImage.at(1)->RegionCount() << " #Features on image B" << std::endl
               << vec_PutativeMatches.size() << " #matches with Distance Ratio filter" << std::endl;
-
     return EXIT_SUCCESS;
 }

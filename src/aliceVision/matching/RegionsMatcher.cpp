@@ -31,7 +31,7 @@ void DistanceRatioMatch(
 	matcher.Match(f_dist_ratio, regions_J, matches);
 }
 
-// Honson: This is where the matching takes place after everything is initialized
+
 bool RegionsDatabaseMatcher::Match(
 	float distRatio,
 	const feature::Regions & queryRegions,
@@ -45,6 +45,7 @@ bool RegionsDatabaseMatcher::Match(
 
 		return _regionsMatcher->Match(distRatio, queryRegions, matches);
 	}
+
 
 RegionsDatabaseMatcher::RegionsDatabaseMatcher():
 	_matcherType(BRUTE_FORCE_L2),
@@ -60,17 +61,19 @@ RegionsDatabaseMatcher::RegionsDatabaseMatcher(
 }
 
 
-std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType)
-{
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType){
+
 	std::unique_ptr<IRegionsMatcher> out;
 
 	// Handle invalid request
 	if (regions.IsScalar() && matcherType == BRUTE_FORCE_HAMMING)
 		return out;
-	if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
-		return out;
+	
+	// HNSWLIB returns true binary but our matcher type is HNSWLIB
+	//if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
+	//	return out;
 
-  // Switch regions type ID, matcher & Metric: initialize the Matcher interface
+    // Switch regions type ID, matcher & Metric: initialize the Matcher interface
     if (regions.IsScalar())
     {
 	    if (regions.Type_id() == typeid(unsigned char).name())
@@ -78,7 +81,6 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 			// Build on the fly unsigned char based Matcher
 			switch (matcherType)
 			{
-
 				case BRUTE_FORCE_L2:
 				{
 				  typedef L2_Vectorized<unsigned char> MetricT;
@@ -104,13 +106,11 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 			}
 		}
 
-		// Honson: Describe & Match's concat enters in here as type float, brute force
 		else if (regions.Type_id() == typeid(float).name())
 		{
 			// Build on the fly float based Matcher
 			switch (matcherType)
 			{
-				// Honson: this our return for our specific example
 				case BRUTE_FORCE_L2:
 				{
 					typedef L2_Vectorized<float> MetricT;
@@ -133,7 +133,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 
 				case HNSWLIB:
                 {
-                    typedef L2_Vectorized<float> MetricT;
+					typedef L2_Vectorized<float> MetricT;
                     typedef ArrayMatcher_hnswlib<float, MetricT> MatcherT;
                     out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
                 } break;
@@ -171,6 +171,8 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 			}
 		}
 	} //end if regions.isScalar()
+
+	//changed to else for the time being
 	else if (regions.IsBinary() && regions.Type_id() == typeid(unsigned char).name())
 	{
 		switch (matcherType)
