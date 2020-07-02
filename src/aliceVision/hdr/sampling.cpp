@@ -362,7 +362,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
     Counters counters; 
     {
-        Counters counters_vec[omp_get_max_threads()];
+        std::vector<Counters> counters_vec(omp_get_max_threads());
 
         #pragma omp parallel for
         for (int i = radius; i < samples.Height() - radius; i++)  {
