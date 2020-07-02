@@ -176,11 +176,48 @@ inline std::ostream& operator<<(std::ostream& os, const NoiseFilterParams& nfPar
     return os;
 }
 
+enum class EImageFormat { RGBA, RGB, Grayscale };
+
+inline std::string EImageFormat_enumToString(EImageFormat imageFormat)
+{
+    switch(imageFormat)
+    {
+        case EImageFormat::RGBA: return "rgba";
+        case EImageFormat::RGB: return "rgb";
+        case EImageFormat::Grayscale: return "grayscale";
+    }
+    throw std::invalid_argument("Invalid EImageFormat Enum");
+}
+
+inline EImageFormat EImageFormat_stringToEnum(std::string imageFormat)
+{
+    boost::to_lower(imageFormat);
+    if(imageFormat == "rgba") return EImageFormat::RGBA;
+    if(imageFormat == "rgb") return EImageFormat::RGB;
+    if(imageFormat == "grayscale") return EImageFormat::Grayscale;
+
+    throw std::invalid_argument("Unrecognized image format '" + imageFormat + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, EImageFormat e)
+{
+    return os << EImageFormat_enumToString(e);
+}
+
+inline std::istream& operator>>(std::istream& in, EImageFormat& e)
+{
+    std::string token;
+    in >> token;
+    e = EImageFormat_stringToEnum(token);
+    return in;
+}
+
 struct ProcessingParams
 {
     bool reconstructedViewsOnly = false;
     bool keepImageFilename = false;
     bool exposureCompensation = false;
+    EImageFormat outputFormat = EImageFormat::RGBA;
     float scaleFactor = 1.0f;
     float contrast = 1.0f;
     int medianFilter = 0;
@@ -404,9 +441,9 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 }
 
-
-void saveImage(image::Image<image::RGBAfColor>& image,
-               const std::string& inputPath, const std::string& outputPath, const std::vector<std::string>& metadataFolders)
+void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+               const std::vector<std::string>& metadataFolders,
+               const EImageFormat& outputFormat)
 {
     // Read metadata path
     std::string metadataFilePath;
@@ -448,7 +485,27 @@ void saveImage(image::Image<image::RGBAfColor>& image,
     }
 
     const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
-    image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+
+    // Save image
+    ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
+    
+    if(outputFormat == EImageFormat::Grayscale)
+    {
+        image::Image<float> outputImage;
+        image::ConvertPixelType(image, &outputImage);
+        image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+    }
+    else if(outputFormat == EImageFormat::RGB)
+    {
+        image::Image<image::RGBfColor> outputImage;
+        image::ConvertPixelType(image, &outputImage);
+        image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+    }
+    else 
+    {
+        // Already in RGBAf
+        image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+    }
 }
 
 int aliceVision_main(int argc, char * argv[])
@@ -458,6 +515,7 @@ int aliceVision_main(int argc, char * argv[])
     std::vector<std::string> inputFolders;
     std::vector<std::string> metadataFolders;
     std::string outputPath;
+    EImageFormat outputFormat = EImageFormat::RGBA;
     std::string extension;
 
     ProcessingParams pParams;
@@ -526,6 +584,9 @@ int aliceVision_main(int argc, char * argv[])
                                  "    - salt: changes to value A a portion of pixels given by B.\n"
                                  " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
                                  " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
+
+        ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
+         "Output image format (rgba, rgb, grayscale)");
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -683,7 +744,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, metadataFolders);
+            saveImage(image, viewPath, outputfilePath, metadataFolders, outputFormat);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -778,7 +839,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, metadataFolders);
+            saveImage(image, inputFilePath, outputFilePath, metadataFolders, outputFormat);
         }
     }
 
