@@ -11,16 +11,16 @@
 #include <aliceVision/system/main.hpp>
 #include <OpenImageIO/imagebufalgo.h>
 
-/*SFMData*/
+// SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-/*HDR Related*/
+// HDR Related
 #include <aliceVision/hdr/rgbCurve.hpp>
 #include <aliceVision/hdr/hdrMerge.hpp>
 #include <aliceVision/hdr/brackets.hpp>
 
-/*Command line parameters*/
+// Command line parameters
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <sstream>
@@ -35,11 +35,11 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int aliceVision_main(int argc, char* argv[])
+int aliceVision_main(int argc, char** argv)
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string sfmInputDataFilename = "";
-    std::string inputResponsePath = "";
+    std::string sfmInputDataFilename;
+    std::string inputResponsePath;
     std::string sfmOutputDataFilename;
     int nbBrackets = 3;
     bool byPass = false;
@@ -126,37 +126,37 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;
     }
-
-    /** Check input compatibility with brackets */
-    size_t countImages = sfmData.getViews().size();
+    // Check input compatibility with brackets
+    const int countImages = sfmData.getViews().size();
     if(countImages == 0)
     {
-        ALICEVISION_LOG_ERROR("The input SfMData contains no input !");
+        ALICEVISION_LOG_ERROR("The input SfMData contains no image.");
         return EXIT_FAILURE;
     }
-    if(nbBrackets > 0 && countImages % nbBrackets != 0)
+    if(nbBrackets > 0 && (countImages % nbBrackets) != 0)
     {
         ALICEVISION_LOG_ERROR("The input SfMData file is not compatible with the number of brackets.");
         return EXIT_FAILURE;
     }
 
-    size_t channelQuantization = std::pow(2, channelQuantizationPower);
+    const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets)) {
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets))
+    {
         return EXIT_FAILURE;
     }
 
     // Build camera exposure table
     std::vector<std::vector<float>> groupedExposures;
-    for(int i = 0; i < groupedViews.size(); i++)
+    for(int i = 0; i < groupedViews.size(); ++i)
     {
         const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
         std::vector<float> exposures;
 
-        for(int j = 0; j < group.size(); j++)
+        for(int j = 0; j < group.size(); ++j)
         {
             float etime = group[j]->getCameraExposureSetting();
             exposures.push_back(etime);
@@ -166,19 +166,16 @@ int aliceVision_main(int argc, char* argv[])
 
     // Build table of file names
     std::vector<std::vector<std::string>> groupedFilenames;
-    for(int i = 0; i < groupedViews.size(); i++)
+    for(int i = 0; i < groupedViews.size(); ++i)
     {
         const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-
         std::vector<std::string> filenames;
-
-        for(int j = 0; j < group.size(); j++)
+        for(int j = 0; j < group.size(); ++j)
         {
             filenames.push_back(group[j]->getImagePath());
         }
-
         groupedFilenames.push_back(filenames);
-    }    
+    }
 
     sfmData::SfMData outputSfm;
     sfmData::Views& vs = outputSfm.getViews();
@@ -191,14 +188,13 @@ int aliceVision_main(int argc, char* argv[])
     std::cout << inputResponsePath << std::endl;
     response.read(inputResponsePath);
 
-
     for(int g = 0; g < groupedFilenames.size(); ++g)
     {
         std::vector<image::Image<image::RGBfColor>> images(groupedViews[g].size());
         std::shared_ptr<sfmData::View> targetView = targetViews[g];
 
         // Load all images of the group
-        for(int i = 0; i < images.size(); i++)
+        for(int i = 0; i < images.size(); ++i)
         {
             ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
             image::readImage(groupedFilenames[g][i], images[i], image::EImageColorSpace::SRGB);

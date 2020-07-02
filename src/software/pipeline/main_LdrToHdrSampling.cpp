@@ -11,15 +11,15 @@
 #include <aliceVision/system/main.hpp>
 #include <OpenImageIO/imagebufalgo.h>
 
-/*SFMData*/
+// SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-/*HDR Related*/
+// HDR Related
 #include <aliceVision/hdr/sampling.hpp>
 #include <aliceVision/hdr/brackets.hpp>
 
-/*Command line parameters*/
+// Command line parameters
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <sstream>
@@ -34,18 +34,18 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int aliceVision_main(int argc, char* argv[])
+int aliceVision_main(int argc, char** argv)
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string sfmInputDataFilename = "";
-    std::string outputFolder = "";
+    std::string sfmInputDataFilename;
+    std::string outputFolder;
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
     bool byPass = false;
 
     // Command line parameters
-    po::options_description allParams("Parse external information about cameras used in a panorama.\n"
-                                      "AliceVision PanoramaExternalInfo");
+    po::options_description allParams("Extract stable samples from multiple LDR images with different bracketing.\n"
+                                      "AliceVision LdrToHdrSampling");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -62,14 +62,14 @@ int aliceVision_main(int argc, char* argv[])
          "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.");
-        
+
     po::options_description logParams("Log parameters");
     logParams.add_options()
         ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
          "verbosity level (fatal, error, warning, info, debug, trace).");
 
     allParams.add(requiredParams).add(optionalParams).add(logParams);
-    
+
     po::variables_map vm;
     try
     {
@@ -100,9 +100,8 @@ int aliceVision_main(int argc, char* argv[])
 
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    
-    size_t channelQuantization = std::pow(2, channelQuantizationPower);
-    
+    const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
+
     // Read sfm data
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
@@ -118,91 +117,60 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    size_t width = sfmData.getIntrinsics().begin()->second->w();
-    size_t height = sfmData.getIntrinsics().begin()->second->h();
+    const std::size_t width = sfmData.getIntrinsics().begin()->second->w();
+    const std::size_t height = sfmData.getIntrinsics().begin()->second->h();
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets)) {
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets))
+    {
         return EXIT_FAILURE;
-    }
-
-    // Build camera exposure table
-    std::vector<std::vector<float>> groupedExposures;
-    for(int i = 0; i < groupedViews.size(); i++)
-    {
-        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-        std::vector<float> exposures;
-
-        for(int j = 0; j < group.size(); j++)
-        {
-            float etime = group[j]->getCameraExposureSetting();
-            exposures.push_back(etime);
-        }
-        groupedExposures.push_back(exposures);
-    }
-
-    // Build table of file names
-    std::vector<std::vector<std::string>> groupedFilenames;
-    for(int i = 0; i < groupedViews.size(); i++)
-    {
-        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-
-        std::vector<std::string> filenames;
-
-        for(int j = 0; j < group.size(); j++)
-        {
-            filenames.push_back(group[j]->getImagePath());
-        }
-
-        groupedFilenames.push_back(filenames);
     }
 
     sfmData::SfMData outputSfm;
     sfmData::Views& vs = outputSfm.getViews();
     outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
-
-    
-    
-    size_t group_pos = 0;
-    for(auto & group : groupedViews) {
-
-        
+    std::size_t group_pos = 0;
+    for(auto & group : groupedViews)
+    {
         std::vector<std::string> paths;
         std::vector<float> exposures;
 
-        for (auto & v : group) {
-
+        for (auto & v : group)
+        {
             paths.push_back(v->getImagePath());
             exposures.push_back(v->getCameraExposureSetting());
         }
 
         ALICEVISION_LOG_INFO("Extracting sample from group " << group_pos);
         std::vector<hdr::ImageSample> out_samples;
-        bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB);
-        if (!res) {
+        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB);
+        if (!res)
+        {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << group_pos);
         }
 
-        /*Store to file*/
+        // Store to file
         std::stringstream ss;
         ss << outputFolder << "/samples_" << group_pos << ".dat";
         std::ofstream file_samples(ss.str(), std::ios::binary);
-        if (!file_samples.is_open()) {
+        if (!file_samples.is_open())
+        {
             ALICEVISION_LOG_ERROR("Impossible to write samples");
             return EXIT_FAILURE;
         }
-        
-        size_t size = out_samples.size();
+
+        const std::size_t size = out_samples.size();
         file_samples.write((const char *)&size, sizeof(size));
 
-        for (int i = 0; i < out_samples.size(); i++) {
+        for(std::size_t i = 0; i < out_samples.size(); ++i)
+        {
             file_samples << out_samples[i];
         }
 
-        group_pos++;
+        ++group_pos;
     }
 
     return EXIT_SUCCESS;
