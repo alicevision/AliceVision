@@ -43,6 +43,9 @@ int aliceVision_main(int argc, char** argv)
     int channelQuantizationPower = 10;
     bool byPass = false;
 
+    int rangeStart = -1;
+    int rangeSize = 1;
+
     // Command line parameters
     po::options_description allParams("Extract stable samples from multiple LDR images with different bracketing.\n"
                                       "AliceVision LdrToHdrSampling");
@@ -61,7 +64,11 @@ int aliceVision_main(int argc, char** argv)
         ("byPass", po::value<bool>(&byPass)->default_value(byPass),
          "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
-         "Quantization level like 8 bits or 10 bits.");
+         "Quantization level like 8 bits or 10 bits.")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+          "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+          "Range size.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -128,13 +135,32 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    sfmData::SfMData outputSfm;
-    sfmData::Views& vs = outputSfm.getViews();
-    outputSfm.getIntrinsics() = sfmData.getIntrinsics();
-
-    std::size_t group_pos = 0;
-    for(auto & group : groupedViews)
+    // Define range to compute
+    if(rangeStart != -1)
     {
+      if(rangeStart < 0 || rangeSize < 0 ||
+         rangeStart > groupedViews.size())
+      {
+        ALICEVISION_LOG_ERROR("Range is incorrect");
+        return EXIT_FAILURE;
+      }
+
+      if(rangeStart + rangeSize > groupedViews.size())
+      {
+        rangeSize = groupedViews.size() - rangeStart;
+      }
+    }
+    else
+    {
+        rangeStart = 0;
+        rangeSize = groupedViews.size();
+    }
+    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
+
+    for(std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
+    {
+        auto & group = groupedViews[groupIdx];
+
         std::vector<std::string> paths;
         std::vector<float> exposures;
 
@@ -144,33 +170,30 @@ int aliceVision_main(int argc, char** argv)
             exposures.push_back(v->getCameraExposureSetting());
         }
 
-        ALICEVISION_LOG_INFO("Extracting sample from group " << group_pos);
+        ALICEVISION_LOG_INFO("Extracting samples from group " << groupIdx);
         std::vector<hdr::ImageSample> out_samples;
         const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB);
         if (!res)
         {
-            ALICEVISION_LOG_ERROR("Error while extracting samples from group " << group_pos);
+            ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);
         }
 
         // Store to file
-        std::stringstream ss;
-        ss << outputFolder << "/samples_" << group_pos << ".dat";
-        std::ofstream file_samples(ss.str(), std::ios::binary);
-        if (!file_samples.is_open())
+        const std::string samplesFilepath = (fs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
+        std::ofstream fileSamples(samplesFilepath, std::ios::binary);
+        if (!fileSamples.is_open())
         {
             ALICEVISION_LOG_ERROR("Impossible to write samples");
             return EXIT_FAILURE;
         }
 
         const std::size_t size = out_samples.size();
-        file_samples.write((const char *)&size, sizeof(size));
+        fileSamples.write((const char *)&size, sizeof(size));
 
         for(std::size_t i = 0; i < out_samples.size(); ++i)
         {
-            file_samples << out_samples[i];
+            fileSamples << out_samples[i];
         }
-
-        ++group_pos;
     }
 
     return EXIT_SUCCESS;

@@ -35,6 +35,15 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+std::string getHdrImagePath(const std::string& outputPath, std::size_t g)
+{
+    // Output image file path
+    std::stringstream sstream;
+    sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
+    const std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
+    return hdrImagePath;
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -48,6 +57,9 @@ int aliceVision_main(int argc, char** argv)
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 1.0f;
     float highlightTargetLux = 120000.0f;
+
+    int rangeStart = -1;
+    int rangeSize = 1;
 
     // Command line parameters
     po::options_description allParams("Merge LDR images into HDR images.\n"
@@ -76,7 +88,11 @@ int aliceVision_main(int argc, char** argv)
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
          "float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for "
-         "full correction to maxLuminance.");
+         "full correction to maxLuminance.")
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+          "Range image index start.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+          "Range size.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -149,85 +165,93 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Build camera exposure table
-    std::vector<std::vector<float>> groupedExposures;
-    for(int i = 0; i < groupedViews.size(); ++i)
+    // Define range to compute
+    if(rangeStart != -1)
     {
-        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-        std::vector<float> exposures;
+      if(rangeStart < 0 || rangeSize < 0 ||
+         rangeStart > groupedViews.size())
+      {
+        ALICEVISION_LOG_ERROR("Range is incorrect");
+        return EXIT_FAILURE;
+      }
 
-        for(int j = 0; j < group.size(); ++j)
-        {
-            float etime = group[j]->getCameraExposureSetting();
-            exposures.push_back(etime);
-        }
-        groupedExposures.push_back(exposures);
+      if(rangeStart + rangeSize > groupedViews.size())
+      {
+        rangeSize = groupedViews.size() - rangeStart;
+      }
     }
-
-    // Build table of file names
-    std::vector<std::vector<std::string>> groupedFilenames;
-    for(int i = 0; i < groupedViews.size(); ++i)
+    else
     {
-        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-        std::vector<std::string> filenames;
-        for(int j = 0; j < group.size(); ++j)
-        {
-            filenames.push_back(group[j]->getImagePath());
-        }
-        groupedFilenames.push_back(filenames);
+        rangeStart = 0;
+        rangeSize = groupedViews.size();
     }
+    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
 
-    sfmData::SfMData outputSfm;
-    sfmData::Views& vs = outputSfm.getViews();
-    outputSfm.getIntrinsics() = sfmData.getIntrinsics();
+    if(rangeStart == 0)
+    {
+        sfmData::SfMData outputSfm;
+        outputSfm.getIntrinsics() = sfmData.getIntrinsics();
+
+        // If we are on the first chunk, or we are computing all the dataset
+        // Export a new sfmData with HDR images as new Views.
+        for(std::size_t g = 0; g < groupedViews.size(); ++g)
+        {
+            const std::string hdrImagePath = getHdrImagePath(outputPath, g);
+            std::shared_ptr<sfmData::View> hdrView = std::make_shared<sfmData::View>(*targetViews[g]);
+            hdrView->setImagePath(hdrImagePath);
+            outputSfm.getViews()[hdrView->getViewId()] = hdrView;
+        }
+
+        // Export output sfmData
+        if(!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
+        {
+            ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
+            return EXIT_FAILURE;
+        }
+    }
 
     hdr::rgbCurve fusionWeight(channelQuantization);
     fusionWeight.setFunction(fusionWeightFunction);
 
+    ALICEVISION_LOG_DEBUG("inputResponsePath: " << inputResponsePath);
+
     hdr::rgbCurve response(channelQuantization);
-    std::cout << inputResponsePath << std::endl;
     response.read(inputResponsePath);
 
-    for(int g = 0; g < groupedFilenames.size(); ++g)
+    for(std::size_t g = rangeStart; g < rangeStart + rangeSize; ++g)
     {
-        std::vector<image::Image<image::RGBfColor>> images(groupedViews[g].size());
+        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[g];
+
+        std::vector<image::Image<image::RGBfColor>> images(group.size());
         std::shared_ptr<sfmData::View> targetView = targetViews[g];
+        std::vector<float> exposures(group.size(), 0.0f);
 
         // Load all images of the group
-        for(int i = 0; i < images.size(); ++i)
+        for(std::size_t i = 0; i < group.size(); ++i)
         {
-            ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
-            image::readImage(groupedFilenames[g][i], images[i], image::EImageColorSpace::SRGB);
+            const std::string filepath = group[i]->getImagePath();
+            ALICEVISION_LOG_INFO("Load " << filepath);
+            image::readImage(filepath, images[i], image::EImageColorSpace::SRGB);
+
+            exposures[i] = group[i]->getCameraExposureSetting();
         }
 
         // Merge HDR images
         hdr::hdrMerge merge;
         float targetCameraExposure = targetView->getCameraExposureSetting();
         image::Image<image::RGBfColor> HDRimage;
-        merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure);
-        if(highlightCorrectionFactor > 0.0)
+        ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
+        merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure);
+        if(highlightCorrectionFactor > 0.0f)
         {
-            merge.postProcessHighlight(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
+            merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
         }
 
-        // Output image file path
-        std::stringstream sstream;
-        sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
-        std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
+        const std::string hdrImagePath = getHdrImagePath(outputPath, g);
 
         // Write an image with parameters from the target view
         oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
         image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
-
-        targetViews[g]->setImagePath(hdrImagePath);
-        vs[targetViews[g]->getViewId()] = targetViews[g];
-    }
-
-    // Export output sfmData
-    if(!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
-    {
-        ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
-        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
