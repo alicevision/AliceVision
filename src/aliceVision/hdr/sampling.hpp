@@ -19,10 +19,11 @@ struct UniqueDescriptor
     int channel;
     int quantizedValue;
 
-    bool operator<(const UniqueDescriptor &o ) const;
+    bool operator<(const UniqueDescriptor &o) const;
 };
 
-struct PixelDescription {
+struct PixelDescription
+{
     float exposure;
     image::Rgb<float> mean;
     image::Rgb<float> variance;
@@ -44,19 +45,21 @@ std::istream & operator>>(std::istream& os, PixelDescription & p);
 
 struct UniqueDescriptor;
 
-class Sampling {
+class Sampling
+{
 public:
-    struct Coordinates {
-        unsigned int image_index;
-        unsigned int sample_index;
+    struct Coordinates
+    {
+        unsigned int imageIndex;
+        unsigned int sampleIndex;
     };
 
     using MapSampleRefList = std::map<UniqueDescriptor, std::vector<Coordinates>>;
 
 public:
-    void analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int image_index);
-    void filter(size_t max_total_points);
-    void extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int image_index);
+    void analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int imageIndex);
+    void filter(size_t maxTotalPoints);
+    void extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int imageIndex);
     
     static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::EImageColorSpace & colorspace);
 
