@@ -26,9 +26,12 @@
 #include <aliceVision/hdr/brackets.hpp>
 
 // Command line parameters
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+
 #include <sstream>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -115,7 +118,7 @@ int aliceVision_main(int argc, char** argv)
     std::string calibrationWeightFunction = "default";
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
-    bool byPass = false;
+    size_t maxTotalPoints = 1000000;
 
     // Command line parameters
     po::options_description allParams("Recover the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracking.\n"
@@ -125,13 +128,13 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
-        ("samplesFolders,f", po::value<std::string>(&samplesFolder)->required(),
-        "Path to folder containing the extracted samples.")
         ("response,o", po::value<std::string>(&outputResponsePath)->required(),
         "Output path for the response file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("samplesFolders,f", po::value<std::string>(&samplesFolder)->default_value(samplesFolder),
+         "Path to folder containing the extracted samples (Required if the calibration is not linear).")
         ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
          "Name of method used for camera calibration: linear, debevec, grossberg, laguerre.")
         ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
@@ -139,10 +142,12 @@ int aliceVision_main(int argc, char** argv)
         "triangle, plateau).")
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
          "bracket count per HDR image (0 means automatic).")
-        ("byPass", po::value<bool>(&byPass)->default_value(byPass),
-         "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
-         "Quantization level like 8 bits or 10 bits.");
+         "Quantization level like 8 bits or 10 bits.")
+        ("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
+         "Max number of points selected by the sampling strategy. This ensures that this sampling step will extract a number of pixels values "
+         "that the calibration step can manage (in term of computation time and memory usage).")
+        ;
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -210,115 +215,125 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    std::vector<std::vector<hdr::ImageSample>> calibrationSamples;
+    hdr::rgbCurve calibrationWeight(channelQuantization);
+
+    if(calibrationMethod == ECalibrationMethod::LINEAR)
+    {
+        ALICEVISION_LOG_INFO("No calibration needed in Linear.");
+        if(!samplesFolder.empty())
+        {
+            ALICEVISION_LOG_WARNING("The provided input sampling folder will not be used.");
+        }
+    }
+    else
+    {
+        if(samplesFolder.empty())
+        {
+            ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response Function (CRF).");
+            return EXIT_FAILURE;
+        }
+        size_t group_pos = 0;
+        hdr::Sampling sampling;
+
+        ALICEVISION_LOG_INFO("Analyzing samples for each group");
+        for(auto & group : groupedViews)
+        {
+            // Read from file
+            const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
+            std::ifstream fileSamples(samplesFilepath, std::ios::binary);
+            if (!fileSamples.is_open())
+            {
+                ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
+                return EXIT_FAILURE;
+            }
+
+            std::size_t size;
+            fileSamples.read((char *)&size, sizeof(size));
+
+            std::vector<hdr::ImageSample> samples(size);
+            for (std::size_t i = 0; i < size; ++i)
+            {
+                fileSamples >> samples[i];
+            }
+
+            sampling.analyzeSource(samples, channelQuantization, group_pos);
+
+            ++group_pos;
+        }
+
+        // We need to trim samples list
+        sampling.filter(maxTotalPoints);
+
+        ALICEVISION_LOG_INFO("Extracting samples for each group");
+        group_pos = 0;
+
+        std::size_t total = 0;
+        for(auto & group : groupedViews)
+        {
+            // Read from file
+            const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
+            std::ifstream fileSamples(samplesFilepath, std::ios::binary);
+            if (!fileSamples.is_open())
+            {
+                ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
+                return EXIT_FAILURE;
+            }
+
+            std::size_t size = 0;
+            fileSamples.read((char *)&size, sizeof(size));
+
+            std::vector<hdr::ImageSample> samples(size);
+            for (int i = 0; i < size; ++i)
+            {
+                fileSamples >> samples[i];
+            }
+
+            std::vector<hdr::ImageSample> out_samples;
+            sampling.extractUsefulSamples(out_samples, samples, group_pos);
+
+            calibrationSamples.push_back(out_samples);
+
+            ++group_pos;
+        }
+
+        // Define calibration weighting curve from name
+        boost::algorithm::to_lower(calibrationWeightFunction);
+        if(calibrationWeightFunction == "default")
+        {
+            switch(calibrationMethod)
+            {
+                case ECalibrationMethod::DEBEVEC:
+                    calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::TRIANGLE);
+                    break;
+                case ECalibrationMethod::LINEAR:
+                case ECalibrationMethod::GROSSBERG:
+                case ECalibrationMethod::LAGUERRE:
+                default:
+                    calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
+                    break;
+            }
+        }
+        calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
+    }
+
+    ALICEVISION_LOG_INFO("Start calibration");
+    hdr::rgbCurve response(channelQuantization);
+
     // Build camera exposure table
     std::vector<std::vector<float>> groupedExposures;
-    for(int i = 0; i < groupedViews.size(); i++)
+    for(int i = 0; i < groupedViews.size(); ++i)
     {
         const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
         std::vector<float> exposures;
 
-        for(int j = 0; j < group.size(); j++)
+        for(int j = 0; j < group.size(); ++j)
         {
             float etime = group[j]->getCameraExposureSetting();
             exposures.push_back(etime);
         }
         groupedExposures.push_back(exposures);
     }
-
-    size_t group_pos = 0;
-    hdr::Sampling sampling;
-
-    ALICEVISION_LOG_INFO("Analyzing samples for each group");
-    for(auto & group : groupedViews)
-    {
-        // Read from file
-        std::stringstream ss;
-        ss << samplesFolder << "/samples_" << group_pos << ".dat";
-        std::ifstream file_samples(ss.str(), std::ios::binary);
-        if (!file_samples.is_open())
-        {
-            ALICEVISION_LOG_ERROR("Impossible to read samples from file " << ss.str());
-            return EXIT_FAILURE;
-        }
-
-        std::size_t size;
-        file_samples.read((char *)&size, sizeof(size));
-
-        std::vector<hdr::ImageSample> samples(size);
-        for (std::size_t i = 0; i < size; ++i)
-        {
-            file_samples >> samples[i];
-        }
-
-        sampling.analyzeSource(samples, channelQuantization, group_pos);
-
-        ++group_pos;
-    }
-
-    // We need to trim samples list
-    sampling.filter(1000000);
-    
-    ALICEVISION_LOG_INFO("Extracting samples for each group");
-    group_pos = 0;
-
-    size_t total = 0;
-    std::vector<std::vector<hdr::ImageSample>> calibration_samples;
-    for(auto & group : groupedViews)
-    {
-        // Read from file
-        std::stringstream ss;
-        ss << samplesFolder << "/samples_" << group_pos << ".dat";
-        std::ifstream file_samples(ss.str(), std::ios::binary);
-        if (!file_samples.is_open())
-        {
-            ALICEVISION_LOG_ERROR("Impossible to read samples from file " << ss.str());
-            return EXIT_FAILURE;
-        }
-
-        size_t size; 
-        file_samples.read((char *)&size, sizeof(size));
-
-        std::vector<hdr::ImageSample> samples(size);
-        for (int i = 0; i < size; i++)
-        {
-            file_samples >> samples[i];
-        }
-
-        std::vector<hdr::ImageSample> out_samples;
-        sampling.extractUsefulSamples(out_samples, samples, group_pos); 
-
-        calibration_samples.push_back(out_samples);
-
-        ++group_pos;
-    }
-
-    // Define calibration weighting curve from name
-    hdr::rgbCurve calibrationWeight(channelQuantization);
-    std::transform(calibrationWeightFunction.begin(), calibrationWeightFunction.end(), calibrationWeightFunction.begin(), ::tolower);
-    std::string calibrationWeightFunctionV = calibrationWeightFunction;
-    if(calibrationWeightFunction == "default")
-    {
-        switch(calibrationMethod)
-        {
-            case ECalibrationMethod::LINEAR:
-                break;
-            case ECalibrationMethod::DEBEVEC:
-                calibrationWeight.setTriangular();
-                calibrationWeightFunctionV = "triangular";
-                break;
-            case ECalibrationMethod::GROSSBERG:
-                break;
-            case ECalibrationMethod::LAGUERRE:
-                break;
-        }
-    }
-    else
-    {
-        calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
-    }
-
-    ALICEVISION_LOG_INFO("Start calibration");
-    hdr::rgbCurve response(channelQuantization);
 
     switch(calibrationMethod)
     {
@@ -332,7 +347,7 @@ int aliceVision_main(int argc, char** argv)
         {
             hdr::DebevecCalibrate debevec;
             const float lambda = channelQuantization;
-            bool res = debevec.process(calibration_samples, groupedExposures, channelQuantization, calibrationWeight, lambda, response);
+            bool res = debevec.process(calibrationSamples, groupedExposures, channelQuantization, calibrationWeight, lambda, response);
             if (!res) {
                 ALICEVISION_LOG_ERROR("Calibration failed");
                 return EXIT_FAILURE;
@@ -344,13 +359,13 @@ int aliceVision_main(int argc, char** argv)
         case ECalibrationMethod::GROSSBERG:
         {
             hdr::GrossbergCalibrate calibration(5);
-            calibration.process(calibration_samples, groupedExposures, channelQuantization, response);
+            calibration.process(calibrationSamples, groupedExposures, channelQuantization, response);
             break;
         }
         case ECalibrationMethod::LAGUERRE:
         {
             hdr::LaguerreBACalibration calibration;
-            calibration.process(calibration_samples, groupedExposures, channelQuantization, false, response);
+            calibration.process(calibrationSamples, groupedExposures, channelQuantization, false, response);
             break;
         }
     }
