@@ -67,9 +67,8 @@ Eigen::Matrix3d getRotationForCode(int code)
 int aliceVision_main(int argc, char* argv[])
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string sfmInputDataFilename = "";
-    std::string sfmOutputDataFilename = "";
-
+    std::string sfmInputDataFilename;
+    std::string sfmOutputDataFilename;
 
     // Command line parameters
     po::options_description allParams("Prepare images set for use in panorama.\n"
@@ -79,7 +78,7 @@ int aliceVision_main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
-        ("outSfMDataFilename,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
+        ("output,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
          "SfMData file output.");
 
     po::options_description optionalParams("Optional parameters");
@@ -149,7 +148,6 @@ int aliceVision_main(int argc, char* argv[])
 
     if(sfmData.getIntrinsics().size() > 1)
     {
-
         unsigned int refw = sfmData.getIntrinsics().begin()->second->w();
         unsigned int refh = sfmData.getIntrinsics().begin()->second->h();
 
@@ -184,9 +182,9 @@ int aliceVision_main(int argc, char* argv[])
         }
         else
         {
-            /* Add fake raw:flip if needed */
-            int width = v.second->getWidth();
-            int height = v.second->getHeight();
+            // Add fake raw:flip if needed
+            std::size_t width = v.second->getWidth();
+            std::size_t height = v.second->getHeight();
             if(width > height)
             {
                 v.second->addMetadata("raw:flip", "0");
@@ -207,7 +205,7 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    /*Decide which rotation is the most used*/
+    // Decide which rotation is the most used
     int max_flip = -1;
     size_t max_count = 0;
     for(auto item : count_flips)
@@ -219,11 +217,11 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
-    /*Get the intrinsic of the best flip*/
+    // Get the intrinsic of the best flip
     IndexT refIntrinsic = UndefinedIndexT;
     for(auto& v : views)
     {
-        /* Now, all views have raw:flip */
+        // Now, all views have "raw:flip"
         std::string str = v.second->getMetadata({"raw:flip"});
         int flip_code = std::stoi(str);
 
@@ -250,7 +248,7 @@ int aliceVision_main(int argc, char* argv[])
 
     for(auto& v : views)
     {
-        /* Now, all views have raw:flip */
+        // Now, all views have raw:flip
         std::string str = v.second->getMetadata({"raw:flip"});
         int flip_code = std::stoi(str);
 
@@ -275,21 +273,21 @@ int aliceVision_main(int argc, char* argv[])
             angle = -angle;
         }
 
-        /*Prepare output file*/
+        // Prepare output file
         image::Image<image::RGBfColor> output;
         boost::filesystem::path origImgPath(v.second->getImagePath());
         std::string origFilename = origImgPath.stem().string();
         std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
         oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
 
-        /*Read input file*/
+        // Read input file
         image::Image<image::RGBfColor> originalImage;
         image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::LINEAR);
         oiio::ImageBuf bufInput(
             oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT),
             originalImage.data());
 
-        /*Find the correct operation to perform*/
+        // Find the correct operation to perform
         bool validTransform = false;
         if(axis(2) > 0.99)
         {
