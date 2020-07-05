@@ -1,28 +1,31 @@
-/**
- * Input and geometry
-*/
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// Input and geometry
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-/**
- * Image stuff
- */
+// Image stuff
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
 
-/*Logging stuff*/
+// Logging stuff
 #include <aliceVision/system/Logger.hpp>
 
-/*Reading command line options*/
+// Reading command line options
 #include <boost/program_options.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
-/*IO*/
+// IO
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -33,6 +36,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
+namespace fs = boost::filesystem;
 
 
 Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
@@ -1246,49 +1250,47 @@ Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
   return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
 }
 
-int aliceVision_main(int argc, char **argv) {
+int aliceVision_main(int argc, char **argv)
+{
+  std::string sfmDataFilename;
+  std::string outputDirectory;
 
-  /**
-   * Program description
-  */
+  std::pair<int, int> panoramaSize = {1024, 0};
+  int rangeStart = -1;
+  int rangeSize = 1;
+
+  // Program description
   po::options_description allParams (
     "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
     "AliceVision PanoramaWarping"
   );
 
-  /**
-   * Description of mandatory parameters
-   */
-  std::string sfmDataFilename;
-  std::string outputDirectory;
+  // Description of mandatory parameters
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
     ("output,o", po::value<std::string>(&outputDirectory)->required(), "Path of the output folder.");
   allParams.add(requiredParams);
 
-  /**
-   * Description of optional parameters
-   */
-  std::pair<int, int> panoramaSize = {1024, 0};
+  // Description of optional parameters
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first), "Panorama Width in pixels.");
+    ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
+     "Panorama Width in pixels.")
+    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+     "Range image index start.")
+    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+     "Range size.");
   allParams.add(optionalParams);
 
-  /**
-   * Setup log level given command line
-   */
+  // Setup log level given command line
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
   allParams.add(logParams);
 
-
-  /**
-   * Effectively parse command line given parse options
-   */
+  // Effectively parse command line given parse options
   po::variables_map vm;
   try
   {
@@ -1317,18 +1319,13 @@ int aliceVision_main(int argc, char **argv) {
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-
-  /**
-   * Set verbose level given command line
-   */
+  // Set verbose level given command line
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  /**
-   * Load information about inputs
-   * Camera images
-   * Camera intrinsics
-   * Camera extrinsics
-   */
+  // Load information about inputs
+  // Camera images
+  // Camera intrinsics
+  // Camera extrinsics
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS| sfmDataIO::INTRINSICS| sfmDataIO::EXTRINSICS)))
   {
@@ -1336,8 +1333,7 @@ int aliceVision_main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-
-  /*Order views by their image names for easier debugging*/
+  // Order views by their image names for easier debugging
   std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
   for (auto & viewIt: sfmData.getViews()) {
     viewsOrderedByName.push_back(viewIt.second);
@@ -1348,140 +1344,117 @@ int aliceVision_main(int argc, char **argv) {
   });
 
 
-  /*If panorama width is undefined, estimate it*/
-  if (panoramaSize.first <= 0) {
+  // If panorama width is undefined, estimate it
+  if (panoramaSize.first <= 0)
+  {
     std::pair<int, int> optimalPanoramaSize;
-    if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
+    if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData))
+    {
       panoramaSize = optimalPanoramaSize;
     }
   }
-  else {
+  else
+  {
     double max_scale = 1.0 / pow(2.0, 10);
     panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);
     panoramaSize.second = panoramaSize.first / 2;
   }
 
-
-
   ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
 
-  bpt::ptree viewsTree;
+  // Define range to compute
+  if(rangeStart != -1)
+  {
+    if(rangeStart < 0 || rangeSize < 0 ||
+       std::size_t(rangeStart) > viewsOrderedByName.size())
+    {
+      ALICEVISION_LOG_ERROR("Range is incorrect");
+      return EXIT_FAILURE;
+    }
 
-  /**
-   * Preprocessing per view
-   */
-  size_t pos = 0;
-  for (const std::shared_ptr<sfmData::View> & viewIt: viewsOrderedByName) {
-    
-    /**
-     * Retrieve view
-     */
+    if(std::size_t(rangeStart + rangeSize) > viewsOrderedByName.size())
+    {
+      rangeSize = int(viewsOrderedByName.size()) - rangeStart;
+    }
+  }
+  else
+  {
+      rangeStart = 0;
+      rangeSize = int(viewsOrderedByName.size());
+  }
+  ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
+
+  // Preprocessing per view
+  for(std::size_t i = std::size_t(rangeStart); i < std::size_t(rangeStart + rangeSize); ++i)
+  {
+    const std::shared_ptr<sfmData::View> & viewIt = viewsOrderedByName[i];
+
+    // Retrieve view
     const sfmData::View& view = *viewIt;
-    if (!sfmData.isPoseAndIntrinsicDefined(&view)) {
+    if (!sfmData.isPoseAndIntrinsicDefined(&view))
+    {
       continue;
     }
 
-    ALICEVISION_LOG_INFO("Processing view " << view.getViewId());
+    ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
 
-    /**
-     * Get intrinsics and extrinsics
-     */
+    // Get intrinsics and extrinsics
     geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
     std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
 
-  
-    
-    /**
-     * Prepare coordinates map
-    */
+    // Prepare coordinates map
     CoordinatesMap map;
     map.build(panoramaSize, camPose, *(intrinsic.get()));
 
-    /**
-     * Load image and convert it to linear colorspace
-     */
+    // Load image and convert it to linear colorspace
     std::string imagePath = view.getImagePath();
     ALICEVISION_LOG_INFO("Load image with path " << imagePath);
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
 
-    /**
-     * Warp image
-     */
+    // Warp image
     GaussianWarper warper;
     warper.warp(map, source);
 
-    /**
-    * Alpha mask
-    */
+    // Alpha mask
     AlphaBuilder alphabuilder;
     alphabuilder.build(map, *(intrinsic.get()));
 
-
-    /**
-     * Combine mask and image
-     */
-    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
-    const aliceVision::image::Image<unsigned char> & mask = warper.getMask();
-    const aliceVision::image::Image<float> & weights = alphabuilder.getWeights();
-
-    /**
-     * Store result image
-     */
-    bpt::ptree viewTree;
-    std::string path;
-
+    // Export mask and image
     {
-    std::stringstream ss;
-    ss << outputDirectory << "/view_" << pos << ".exr";
-    path = ss.str();
-    viewTree.put("filename_view", path);
-    ALICEVISION_LOG_INFO("Store view " << pos << " with path " << path);
-    image::writeImage(path, cam, image::EImageColorSpace::AUTO);
-    }
+        const std::string viewIdStr = std::to_string(view.getViewId());
+        oiio::ParamValueList metadata;
+        const int offsetX = int(warper.getOffsetX());
+        const int offsetY = int(warper.getOffsetY());
+        metadata.push_back(oiio::ParamValue("AliceVision:offsetX", offsetX));
+        metadata.push_back(oiio::ParamValue("AliceVision:offsetY", offsetY));
+        metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
+        metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
 
-    {
-    std::stringstream ss;
-    ss << outputDirectory << "/mask_" << pos << ".png";
-    path = ss.str();
-    viewTree.put("filename_mask", path);
-    ALICEVISION_LOG_INFO("Store mask " << pos << " with path " << path);
-    image::writeImage(path, mask, image::EImageColorSpace::NO_CONVERSION);
-    }
+        {
+            const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
 
-    {
-    std::stringstream ss;
-    ss << outputDirectory << "/weightmap_" << pos << ".exr";
-    path = ss.str();
-    viewTree.put("filename_weights", path);
-    ALICEVISION_LOG_INFO("Store weightmap " << pos << " with path " << path);
-    image::writeImage(path, weights, image::EImageColorSpace::AUTO);
-    }
-  
-    /**
-    * Store view info
-    */
-    viewTree.put("offsetx", warper.getOffsetX());
-    viewTree.put("offsety", warper.getOffsetY());
-    viewsTree.push_back(std::make_pair("", viewTree));
+            const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + ".exr")).string();
+            ALICEVISION_LOG_INFO("Store view " << i << " with path " << viewFilepath);
+            image::writeImage(viewFilepath, cam, image::EImageColorSpace::AUTO, metadata);
+        }
+        {
+            const aliceVision::image::Image<unsigned char> & mask = warper.getMask();
 
-    pos++;
+            const std::string maskFilepath = (fs::path(outputDirectory) / (viewIdStr + "_mask.exr")).string();
+            ALICEVISION_LOG_INFO("Store mask " << i << " with path " << maskFilepath);
+            image::writeImage(maskFilepath, mask, image::EImageColorSpace::NO_CONVERSION, metadata);
+        }
+        {
+            const aliceVision::image::Image<float> & weights = alphabuilder.getWeights();
+
+            const std::string weightFilepath = (fs::path(outputDirectory) / (viewIdStr + "_weight.exr")).string();
+            ALICEVISION_LOG_INFO("Store weightmap " << i << " with path " << weightFilepath);
+            image::writeImage(weightFilepath, weights, image::EImageColorSpace::AUTO, metadata);
+        }
+    }
   }
-
-  
-  /**
-   * Config output
-   */
-  bpt::ptree configTree;
-  configTree.put("panoramaWidth", panoramaSize.first);
-  configTree.put("panoramaHeight", panoramaSize.second);
-  configTree.add_child("views", viewsTree);
-
-  std::stringstream ss;
-  ss << outputDirectory << "/config_views.json";
-  ALICEVISION_LOG_INFO("Save config with path " << ss.str());
-  bpt::write_json(ss.str(), configTree, std::locale(), true);
 
   return EXIT_SUCCESS;
 }
