@@ -25,8 +25,8 @@ using namespace aliceVision::camera;
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1) {
-
+BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1)
+{
   const PinholeRadialK1 cam(1000, 1000, 1000, 500, 500,
     // K1
     0.1);
@@ -65,8 +65,8 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1) {
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3) {
-
+BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3)
+{
   const PinholeRadialK3 cam(1000, 1000, 1000, 500, 500,
     // K1, K2, K3
     -0.245539, 0.255195, 0.163773);
