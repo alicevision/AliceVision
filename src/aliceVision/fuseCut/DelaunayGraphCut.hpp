@@ -267,16 +267,20 @@ public:
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
 
-    bool rayCellIntersection(const Point3d &camC, const Point3d &p, int c, Facet& out_facet, bool nearestFarest,
-                            Point3d& out_nlpi) const;
-    inline bool nearestNeighCellToTheCamOnTheRay(const Point3d &camC, Point3d& out_p, int tetrahedron, Facet &out_f1, Facet &f2,
-                                          Point3d& out_lpi) const;
-    inline bool farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet &f1, Facet &f2,
-                                         Point3d& lpi) const;
+    bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, GEO::index_t tetrahedronIndex, Facet& outFacet,
+                             bool nearestFarest, Point3d& outIntersectPt) const;
+
+    inline bool neighbourCellToTheCamOnTheRay(const Point3d& camC, Point3d& p, int tetrahedron, bool nearestFarest, 
+                                            Facet& f1, Facet& f2, Point3d& outIntersectPt) const;
+    inline bool nearestNeighbourCellToTheCamOnTheRay(const Point3d& camC, Point3d& p, int tetrahedron, Facet& f1, Facet& f2,
+                                                     Point3d& outIntersectPt) const;
+    inline bool farestNeighbourCellToTheCamOnTheRay(const Point3d& camC, Point3d& p, int tetrahedron, Facet& f1, Facet& f2,
+                                                    Point3d& outIntersectPt) const;
+
     inline Facet getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex, int cam) const;
     Facet getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi, Point3d& ptt) const;
     Facet getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi, int cam) const;
-    int getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
+    GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 

@@ -1308,28 +1308,28 @@ void DelaunayGraphCut::removeSmallSegs(int minSegSize)
     initVertices();
 }
 
-bool DelaunayGraphCut::rayCellIntersection(const Point3d& camC, const Point3d& p, int tetrahedron, Facet& out_facet,
-                                        bool nearestFarest, Point3d& out_nlpi) const
+bool DelaunayGraphCut::rayCellIntersection(const Point3d& camCenter, const Point3d& p, GEO::index_t tetrahedronIndex, Facet& outFacet,
+                                           bool nearestFarest, Point3d& outIntersectPt) const
 {
-    out_nlpi = p; // important
-    out_facet.cellIndex = -1;
-    out_facet.localVertexIndex = -1;
+    outIntersectPt = p; // important
+    outFacet.cellIndex = GEO::NO_CELL;
+    outFacet.localVertexIndex = GEO::NO_VERTEX;
 
-    if(isInfiniteCell(tetrahedron))
+    if(isInfiniteCell(tetrahedronIndex))
     {
         return false;
     }
 
     Point3d linePoint = p;
-    Point3d lineVect = (camC - p).normalize();
-    double mind = (camC - p).size();
+    Point3d lineVect = (camCenter - p).normalize();
+    double currentDist = (camCenter - p).size();
 
     // go thru all triangles
     bool existsTriOnRay = false;
-    const Point3d* A = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 0)]);
-    const Point3d* B = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 1)]);
-    const Point3d* C = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 2)]);
-    const Point3d* D = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 3)]);
+    const Point3d* A = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 0)]);
+    const Point3d* B = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 1)]);
+    const Point3d* C = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 2)]);
+    const Point3d* D = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 3)]);
 
     // All the facets of the tetrahedron
     std::array<std::array<const Point3d*, 3>, 4> facets {{
@@ -1339,34 +1339,34 @@ bool DelaunayGraphCut::rayCellIntersection(const Point3d& camC, const Point3d& p
         {A, B, C}  // opposite vertex D, index 3
     }};
     int oppositeVertexIndex = -1;
-    Point3d lpi;
-    double dist;
+    Point3d intersectPt;
+    double intersectDist;
     // Test all facets of the tetrahedron
     for(int i = 0; i < 4; ++i)
     {
         const auto& facet= facets[i];
-        if(isLineInTriangle(&lpi, facet[0], facet[1], facet[2], &linePoint, &lineVect))
+        if(isLineInTriangle(&intersectPt, facet[0], facet[1], facet[2], &linePoint, &lineVect))
         {
-            dist = (camC - lpi).size();
+            intersectDist = (camCenter - intersectPt).size();
             if(nearestFarest)
             {
-                if(dist < mind) // between the camera and the point
+                if(intersectDist < currentDist) // between the camera and the point
                 {
                     oppositeVertexIndex = i;
                     existsTriOnRay = true;
-                    mind = dist;
-                    out_nlpi = lpi;
+                    currentDist = intersectDist;
+                    outIntersectPt = intersectPt;
                     //break;
                 }
             }
             else
             {
-                if(dist > mind) // behind the point (from the camera)
+                if(intersectDist > currentDist) // behind the point (from the camera)
                 {
                     oppositeVertexIndex = i;
                     existsTriOnRay = true;
-                    mind = dist;
-                    out_nlpi = lpi;
+                    currentDist = intersectDist;
+                    outIntersectPt = intersectPt;
                     //break;
                 }
             }
@@ -1376,8 +1376,8 @@ bool DelaunayGraphCut::rayCellIntersection(const Point3d& camC, const Point3d& p
     if(!existsTriOnRay)
         return false;
 
-    out_facet.cellIndex = tetrahedron; // cell handle
-    out_facet.localVertexIndex = oppositeVertexIndex; // vertex index that is not in the intersected facet
+    outFacet.cellIndex = tetrahedronIndex;           // cell handle
+    outFacet.localVertexIndex = oppositeVertexIndex; // vertex index that is not in the intersected facet
     return true;
 }
 
@@ -1388,8 +1388,8 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToThePoin
 
     double minDist = (ptt - p).size(); // initialize minDist to the distance from 3d point p to camera center c
     Facet nearestFacet;
-    nearestFacet.cellIndex = -1;
-    nearestFacet.localVertexIndex = -1;
+    nearestFacet.cellIndex = GEO::NO_CELL;
+    nearestFacet.localVertexIndex = GEO::NO_VERTEX;
 
     for(int k = 0; true; ++k)
     {
@@ -1431,28 +1431,28 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetBehindVertexOnTheRayToTheCam(V
         if(isInfiniteCell(adjCellIndex))
             continue;
 
-        Facet f1;
-        Point3d lpi;
-        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, f1, false, lpi) == true)
+        Facet outFacet;
+        Point3d intersectionPoint;
+        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, outFacet, false, intersectionPoint))
         {
             // if it is after the point p (along the axis from the camera)
-            if((mp->CArr[cam] - lpi).size() > maxDist)
+            if((mp->CArr[cam] - intersectionPoint).size() > maxDist)
             {
-                farestFacet = f1;
-                maxDist = (mp->CArr[cam] - lpi).size();
+                farestFacet = outFacet;
+                maxDist = (mp->CArr[cam] - intersectionPoint).size();
             }
         }
     }
     return farestFacet;
 }
 
-int DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const
+GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& intersectPoint) const
 {
     int cam_vi = _camsVertexes[cam];
     Point3d camBehind = mp->CArr[cam] + (mp->CArr[cam] - p);
     Point3d dir = (p - mp->CArr[cam]).normalize();
     float maxdist = 0.0f;
-    int farestCell = -1;
+    GEO::index_t farestCell = GEO::NO_CELL;
 
     for(int k = 0; true; ++k)
     {
@@ -1462,10 +1462,10 @@ int DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p,
         if(isInfiniteCell(adjCellIndex))
             continue;
 
-        Facet f1;
-        if(rayCellIntersection(camBehind, mp->CArr[cam], adjCellIndex, f1, false, lpi) == true)
+        Facet outFacet;
+        if(rayCellIntersection(camBehind, mp->CArr[cam], adjCellIndex, outFacet, false, intersectPoint))
         {
-            float dist = orientedPointPlaneDistance(lpi, camBehind, dir);
+            float dist = orientedPointPlaneDistance(intersectPoint, camBehind, dir);
             if(dist > maxdist)
             {
                 maxdist = dist;
