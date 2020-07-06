@@ -1734,7 +1734,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             Facet f1, f2;
             Point3d lpi;
             // find cell which is nearest to the cam and which is intersected with cam-p ray
-            if(!nearestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi))
+            if(!nearestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi))
             {
                 ok = false;
             }
@@ -1797,7 +1797,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             Point3d pold = p;
             Point3d lpi;
             // find cell which is farest to the cam and which intersect cam-p ray
-            if((!farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)) ||
+            if((!farestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)) ||
                ((po - pold).size() >= maxDist) || (!allPoints))
             {
                 ok = false;
@@ -1897,7 +1897,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
                     // find cell which is farest to the cam and which is
                     // intersected with cam-p
                     // ray
-                    if((!farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, ff1, ff2, lpi)) ||
+                    if((!farestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, ff1, ff2, lpi)) ||
                        ((po - pold).size() >= maxDist))
                     {
                         ok = false;
@@ -2031,7 +2031,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     Point3d lpi;
                     // find cell which is nearest to the cam and which intersect cam-p ray
                     if(((p - po).size() > (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) || // (2 + 2) * sigma
-                       (!nearestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
+                       (!nearestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
                     {
                         ok = false;
                     }
@@ -2065,7 +2065,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     Point3d lpi;
                     // find cell which is farest to the cam and which intersect cam-p ray
                     if(((p - po).size() > nsigmaBackSilentPart * maxDist) || // (p-po).size() > 2 * sigma
-                       (!farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
+                       (!farestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
                     {
                         ok = false;
                     }
@@ -2209,7 +2209,7 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
                     Point3d lpi;
                     // find cell which is nearest to the pont and which is
                     // intersected with point-p ray
-                    if(!farestNeighCellToTheCamOnTheRay(camBehind, p, tmp_ci, f1, f2, lpi))
+                    if(!farestNeighbourCellToTheCamOnTheRay(camBehind, p, tmp_ci, f1, f2, lpi))
                     {
                         ok = false;
                     }

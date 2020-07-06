@@ -345,42 +345,33 @@ public:
     mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
 };
 
-
-inline bool DelaunayGraphCut::nearestNeighCellToTheCamOnTheRay(const Point3d& camC, Point3d& out_p, int tetrahedron, Facet& out_f1,
-                                                      Facet& out_f2, Point3d& out_lpi) const
-{
-    out_f1.cellIndex = GEO::NO_CELL;
-    out_f1.localVertexIndex = GEO::NO_VERTEX;
-    out_f2.cellIndex = GEO::NO_CELL;
-    out_f2.localVertexIndex = GEO::NO_VERTEX;
-    out_lpi = out_p;
-
-    if(rayCellIntersection(camC, out_p, tetrahedron, out_f1, true, out_lpi) == true)
-    {
-        out_f2 = mirrorFacet(out_f1);
-        out_p = out_lpi;
-        return true;
-    }
-    return false;
-}
-
-inline bool DelaunayGraphCut::farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet& f1,
-                                                     Facet& f2, Point3d& lpi) const
+inline bool DelaunayGraphCut::neighbourCellToTheCamOnTheRay(const Point3d& camC, Point3d& p, int tetrahedron, bool nearestFarest, 
+                                                    Facet& f1, Facet& f2, Point3d& outIntersectPt) const
 {
     f1.cellIndex = GEO::NO_CELL;
     f1.localVertexIndex = GEO::NO_VERTEX;
     f2.cellIndex = GEO::NO_CELL;
     f2.localVertexIndex = GEO::NO_VERTEX;
-    lpi = p;
+    outIntersectPt = p;
 
-    if(rayCellIntersection(camC, p, tetrahedron, f1, false, lpi) == true)
+    if(rayCellIntersection(camC, p, tetrahedron, f1, nearestFarest, outIntersectPt))
     {
         f2 = mirrorFacet(f1);
-        p = lpi;
+        p = outIntersectPt;
         return true;
     }
-
     return false;
+}
+
+inline bool DelaunayGraphCut::nearestNeighbourCellToTheCamOnTheRay(const Point3d& camC, Point3d& p, int tetrahedron, Facet& f1, Facet& f2, 
+                                                            Point3d& outIntersectPt) const
+{
+    return neighbourCellToTheCamOnTheRay(camC, p, tetrahedron, true, f1, f2, outIntersectPt);
+}
+inline bool DelaunayGraphCut::farestNeighbourCellToTheCamOnTheRay(const Point3d& camC, Point3d& p, int tetrahedron, Facet& f1,  Facet& f2, 
+                                                            Point3d& outIntersectPt) const
+{
+    return neighbourCellToTheCamOnTheRay(camC, p, tetrahedron, false, f1, f2, outIntersectPt);
 }
 
 inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex,
