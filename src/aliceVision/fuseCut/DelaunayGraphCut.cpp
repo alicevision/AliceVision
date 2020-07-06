@@ -1750,6 +1750,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
                 if(f2.cellIndex == GEO::NO_CELL)
                     ok = false;
                 ci = f2.cellIndex;
+                p = lpi;
                 lastFinite = f2.cellIndex;
             }
         }
@@ -1822,6 +1823,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
                     _cellsAttr[f2.cellIndex].gEdgeVisWeight[f2.localVertexIndex] += weight * dist;
                 }
                 ci = f2.cellIndex;
+                p = lpi;
             }
         }
 
@@ -1907,6 +1909,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
                         if(ff2.cellIndex == GEO::NO_CELL)
                             ok = false;
                         ci = ff2.cellIndex;
+                        p = lpi;
                         f1 = ff1;
                         f2 = ff2;
                     }
@@ -2040,6 +2043,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         if(f2.cellIndex == GEO::NO_CELL)
                             ok = false;
                         ci = f2.cellIndex;
+                        p = lpi;
                     }
                 }
             }
@@ -2074,6 +2078,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         if(f2.cellIndex == GEO::NO_CELL)
                             ok = false;
                         ci = f2.cellIndex;
+                        p = lpi;
                     }
                 }
 
@@ -2225,6 +2230,7 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
                             _cellsAttr[f2.cellIndex].gEdgeVisWeight[f2.localVertexIndex] += weight;
                         }
                         tmp_ci = f2.cellIndex;
+                        p = lpi;
                         ++nwup;
                     }
                 }
