@@ -295,9 +295,20 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             }
             int wTmp, hTmp;
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-            if(wTmp != width || hTmp != height)
-                throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
+            // If we have a simMap in input use it,
+            // else init with a constant value.
+            if(boost::filesystem::exists(simMapFilepath))
+            {
+                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                if(wTmp != width || hTmp != height)
+                    throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("simMap file can't be found.");
+                simMap.resize(width * height, -1);
+            }
+
             {
                 std::vector<float> simMapTmp(simMap.size());
                 imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
@@ -879,9 +890,20 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
                 int wTmp, hTmp;
                 const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                if(wTmp != width || hTmp != height)
-                    throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
+                // If we have a simMap in input use it,
+                // else init with a constant value.
+                if(boost::filesystem::exists(simMapFilepath))
+                {
+                    imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                    if(wTmp != width || hTmp != height)
+                        throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
+                }
+                else
+                {
+                    ALICEVISION_LOG_WARNING("simMap file can't be found.");
+                    simMap.resize(width * height, -1);
+                }
+                
                 {
                     std::vector<float> simMapTmp(simMap.size());
                     imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit, params.simGaussianSizeInit);
