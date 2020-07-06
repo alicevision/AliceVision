@@ -42,6 +42,7 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
     bool byPass = false;
+    hdr::Sampling::Params params;
 
     int rangeStart = -1;
     int rangeSize = 1;
@@ -65,6 +66,12 @@ int aliceVision_main(int argc, char** argv)
          "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("blockSize", po::value<int>(&params.blockSize)->default_value(params.blockSize),
+         "Size of the image tile to extract a sample.")
+        ("radius", po::value<int>(&params.radius)->default_value(params.radius),
+         "Radius of the patch used to analyze the sample statistics.")
+        ("maxCountSample", po::value<size_t>(&params.maxCountSample)->default_value(params.maxCountSample),
+         "Max number of samples per image group.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
           "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -172,7 +179,7 @@ int aliceVision_main(int argc, char** argv)
 
         ALICEVISION_LOG_INFO("Extracting samples from group " << groupIdx);
         std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB);
+        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB, params);
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);

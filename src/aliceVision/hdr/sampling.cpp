@@ -145,32 +145,41 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
     }
 }
 
-bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace, const Sampling::Params params)
 {
-    const int radius = 5;
-    const int radiusp1 = radius + 1;
-    const int diameter = (radius * 2) + 1;
+    const int radiusp1 = params.radius + 1;
+    const int diameter = (params.radius * 2) + 1;
     const float area = float(diameter * diameter);
+
+    std::vector<std::pair<int, int>> vec_blocks;
+    for (int cy = 0; cy < imageHeight; cy += params.blockSize - params.radius)
+    {
+        for (int cx = 0; cx < imageWidth; cx += params.blockSize - params.radius)
+        {
+            vec_blocks.push_back(std::make_pair(cx, cy));
+        }
+    }
+
+    Image<RGBfColor> img;
 
     // For all brackets, For each pixel, compute image sample
     image::Image<ImageSample> samples(imageWidth, imageHeight, true);
-    for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++)
-    {   
+    for (unsigned int idBracket = 0; idBracket < imagePaths.size(); ++idBracket)
+    {
         const float exposure = times[idBracket];
 
         // Load image
-        Image<RGBfColor> img;
         readImage(imagePaths[idBracket], img, colorspace);
 
-        const int blockSize = 256;
-
-        std::vector<std::pair<int, int>> vec_blocks;
-        for (int cy = 0; cy < img.Height(); cy += blockSize - radius)
+        if(img.Width() != imageWidth ||
+           img.Height() != imageHeight)
         {
-            for (int cx = 0; cx < img.Width(); cx += blockSize - radius)
-            {
-                vec_blocks.push_back(std::make_pair(cx, cy));
-            }
+            std::stringstream ss;
+            ss << "Failed to extract samples, the images with multi-bracketing do not have the same image resolution.\n"
+               << " Current image resolution is: " << img.Width() << "x" << img.Height()
+               << ", instead of: " << imageWidth<< "x" << imageHeight << ".\n"
+               << "Current image path is: " << imagePaths[idBracket];
+            throw std::runtime_error(ss.str());
         }
 
         #pragma omp parallel for
@@ -179,9 +188,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             int cx = vec_blocks[idx].first;
             int cy = vec_blocks[idx].second;
 
-            int blockWidth = ((img.Width() - cx) > blockSize)?blockSize:img.Width() - cx;
-            int blockHeight = ((img.Height() - cy) > blockSize)?blockSize:img.Height() - cy;
-            
+            int blockWidth = ((img.Width() - cx) > params.blockSize) ? params.blockSize : img.Width() - cx;
+            int blockHeight = ((img.Height() - cy) > params.blockSize) ? params.blockSize : img.Height() - cy;
+
             auto blockInput = img.block(cy, cx, blockHeight, blockWidth);
             auto blockOutput = samples.block(cy, cx, blockHeight, blockWidth);
 
@@ -193,14 +202,12 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             integral(imgIntegral, blockInput);
             integral(imgIntegralSquare, imgSquare);
 
-            
-
-            for (int i = radius + 1; i < imgIntegral.Height() - radius; ++i)
+            for (int i = params.radius + 1; i < imgIntegral.Height() - params.radius; ++i)
             {
-                for (int j = radius + 1; j < imgIntegral.Width() - radius; ++j)
+                for (int j = params.radius + 1; j < imgIntegral.Width() - params.radius; ++j)
                 {
-                    image::Rgb<double> S1 = imgIntegral(i + radius, j + radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + radius, j - radiusp1) - imgIntegral(i - radiusp1, j + radius);
-                    image::Rgb<double> S2 = imgIntegralSquare(i + radius, j + radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + radius);
+                    image::Rgb<double> S1 = imgIntegral(i + params.radius, j + params.radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + params.radius, j - radiusp1) - imgIntegral(i - radiusp1, j + params.radius);
+                    image::Rgb<double> S2 = imgIntegralSquare(i + params.radius, j + params.radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + params.radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + params.radius);
                     
                     PixelDescription pd;
                     
@@ -217,7 +224,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                     blockOutput(i, j).descriptions.push_back(pd);
                 }
             }
-        }      
+        }
     }
 
     if (samples.Width() == 0)
@@ -228,11 +235,10 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
     // Create samples image
     #pragma omp parallel for
-    for (int i = radius; i < samples.Height() - radius; i++)
+    for (int i = params.radius; i < samples.Height() - params.radius; ++i)
     {
-        for (int j = radius; j < samples.Width() - radius; j++)
+        for (int j = params.radius; j < samples.Width() - params.radius; ++j)
         {
-
             ImageSample & sample = samples(i, j);
             if (sample.descriptions.size() < 2)
             {
@@ -244,21 +250,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             // Make sure we don't have a patch with high variance on any bracket.
             // If the variance is too high somewhere, ignore the whole coordinate samples
             bool valid = true;
-            for (int k = 0; k < sample.descriptions.size(); k++)
+            for (int k = 0; k < sample.descriptions.size(); ++k)
             {
-                if (sample.descriptions[k].variance.r() > 0.05)
-                {
-                    valid = false;
-                    break;
-                }
-
-                if (sample.descriptions[k].variance.g() > 0.05)
-                {
-                    valid = false;
-                    break;
-                }
-
-                if (sample.descriptions[k].variance.b() > 0.05)
+                if (sample.descriptions[k].variance.r() > 0.05 ||
+                    sample.descriptions[k].variance.g() > 0.05 ||
+                    sample.descriptions[k].variance.b() > 0.05)
                 {
                     valid = false;
                     break;
@@ -301,12 +297,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
                 if (sample.descriptions[k - 1].mean.norm() > 0.1f)
                 {
-                    
-                    /*Check that both colors are similars*/
-                    float n1 = sample.descriptions[k - 1].mean.norm();
-                    float n2 = sample.descriptions[k].mean.norm();
-                    float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
-                    float cosa = dot / (n1*n2);
+                    // Check that both colors are similars
+                    const float n1 = sample.descriptions[k - 1].mean.norm();
+                    const float n2 = sample.descriptions[k].mean.norm();
+                    const float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
+                    const float cosa = dot / (n1*n2);
                     if (cosa < 0.95f)
                     {
                         valid = false;
@@ -353,16 +348,16 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     using CoordinatesList = std::vector<Coordinates>;
     using Counters = std::map<UniqueDescriptor, CoordinatesList>;
 
-    Counters counters; 
+    Counters counters;
     {
         std::vector<Counters> counters_vec(omp_get_max_threads());
 
         #pragma omp parallel for
-        for (int i = radius; i < samples.Height() - radius; ++i)
+        for (int i = params.radius; i < samples.Height() - params.radius; ++i)
         {
             Counters & counters_thread = counters_vec[omp_get_thread_num()];
 
-            for (int j = radius; j < samples.Width() - radius; ++j)
+            for (int j = params.radius; j < samples.Width() - params.radius; ++j)
             {
                 ImageSample & sample = samples(i, j);
                 UniqueDescriptor desc;
@@ -404,14 +399,13 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         }
     }
 
-    const size_t maxCountSample = 200;
     for (auto & item : counters)
     {
-        if (item.second.size() > maxCountSample)
+        if (item.second.size() > params.maxCountSample)
         {
             // Shuffle and ignore the exceeding samples
             std::random_shuffle(item.second.begin(), item.second.end());
-            item.second.resize(maxCountSample);
+            item.second.resize(params.maxCountSample);
         }
 
         for (std::size_t l = 0; l < item.second.size(); ++l)

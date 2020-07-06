@@ -53,6 +53,12 @@ public:
         unsigned int imageIndex;
         unsigned int sampleIndex;
     };
+    struct Params
+    {
+        int blockSize = 256;
+        int radius = 5;
+        size_t maxCountSample = 200;
+    };
 
     using MapSampleRefList = std::map<UniqueDescriptor, std::vector<Coordinates>>;
 
@@ -61,7 +67,7 @@ public:
     void filter(size_t maxTotalPoints);
     void extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int imageIndex);
     
-    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::EImageColorSpace & colorspace);
+    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::EImageColorSpace & colorspace, const Params params);
 
 private:
     MapSampleRefList _positions;
