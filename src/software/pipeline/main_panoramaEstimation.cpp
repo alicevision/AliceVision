@@ -317,10 +317,23 @@ int aliceVision_main(int argc, char **argv)
   sfmEngine.buildLandmarks();
   sfmEngine.colorize();
 
-  ALICEVISION_LOG_INFO("Panorama results:" << std::endl
-                                           << "\t- # input images: " << outSfmData.getViews().size() << std::endl
-                                           << "\t- # cameras calibrated: " << outSfmData.getPoses().size() << std::endl
-                                           << "\t- # landmarks: " << outSfmData.getLandmarks().size());
+  {
+    std::set<IndexT> viewsWithObservations;
+    for(const auto& landmarkIt: outSfmData.getLandmarks())
+    {
+        for(const auto& obsIt: landmarkIt.second.observations)
+        {
+            viewsWithObservations.insert(obsIt.first);
+        }
+    }
+
+    ALICEVISION_LOG_INFO(
+                "Panorama results:" << std::endl
+                << "\t- # input images: " << outSfmData.getViews().size() << std::endl
+                << "\t- # cameras calibrated: " << outSfmData.getValidViews().size() << std::endl
+                << "\t- # cameras with observations: " << viewsWithObservations.size() << std::endl
+                << "\t- # landmarks: " << outSfmData.getLandmarks().size());
+  }
 
   // Export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
