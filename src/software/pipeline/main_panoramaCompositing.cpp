@@ -1110,6 +1110,8 @@ int aliceVision_main(int argc, char **argv)
   distanceseams.reset();
   distanceseams = nullptr;
 
+  oiio::ParamValueList outputMetadata;
+
   // Do compositing
   int pos = 0;
   for (const auto& viewIt : sfmData.getViews())
@@ -1126,6 +1128,11 @@ int aliceVision_main(int argc, char **argv)
     image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
     oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
+    if(outputMetadata.empty())
+    {
+        // the first one will define the output metadata (random selection)
+        outputMetadata = metadata;
+    }
     const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
     const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
@@ -1182,10 +1189,16 @@ int aliceVision_main(int argc, char **argv)
     drawSeams(compositer->getPanorama(), labels);
   }
 
+  // Remove Warping-specific metadata
+  outputMetadata.remove("AliceVision:offsetX");
+  outputMetadata.remove("AliceVision:offsetY");
+  outputMetadata.remove("AliceVision:panoramaWidth");
+  outputMetadata.remove("AliceVision:panoramaHeight");
+
   // Store output
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
   const aliceVision::image::Image<image::RGBAfColor> & panorama = compositer->getPanorama();
-  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::AUTO);
+  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::AUTO, outputMetadata);
 
   return EXIT_SUCCESS;
 }

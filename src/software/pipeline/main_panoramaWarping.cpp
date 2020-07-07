@@ -1424,7 +1424,8 @@ int aliceVision_main(int argc, char **argv)
     // Export mask and image
     {
         const std::string viewIdStr = std::to_string(view.getViewId());
-        oiio::ParamValueList metadata;
+
+        oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
         const int offsetX = int(warper.getOffsetX());
         const int offsetY = int(warper.getOffsetY());
         metadata.emplace_back("AliceVision:offsetX", offsetX);
