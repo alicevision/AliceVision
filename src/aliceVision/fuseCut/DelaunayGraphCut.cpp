@@ -1718,10 +1718,14 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             ++nsteps;
 
             Point3d pold = p;
-            Facet f1, f2;
+            Facet outFacet;
             Point3d lpi;
-            // find cell which is nearest to the cam and which is intersected with cam-p ray
-            if(!nearestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi))
+
+            // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell nearest to the
+            // cam which is intersected with cam-p ray
+            // true here mean nearest
+            const bool nearestFarest = true;
+            if(!rayCellIntersection(mp->CArr[cam], p, ci, outFacet, nearestFarest, lpi))
             {
                 ok = false;
             }
@@ -1731,14 +1735,16 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
 
                 {
 #pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[f1.cellIndex].gEdgeVisWeight[f1.localVertexIndex] += weight * dist;
+                    _cellsAttr[outFacet.cellIndex].gEdgeVisWeight[outFacet.localVertexIndex] += weight * dist;
                 }
 
-                if(f2.cellIndex == GEO::NO_CELL)
+                // Take the mirror facet to iterate over the next cell
+                ci = mirrorFacet(outFacet).cellIndex;
+
+                if(ci == GEO::NO_CELL)
                     ok = false;
-                ci = f2.cellIndex;
                 p = lpi;
-                lastFinite = f2.cellIndex;
+                lastFinite = ci;
             }
         }
 
@@ -1754,7 +1760,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
         out_nstepsBehind = 0;
         // get the tetrahedron next to point p on the ray from c
         Facet f1 = getFacetBehindVertexOnTheRayToTheCam(vertexIndex, cam);
-        Facet f2;
+        Facet outFacet;
 
         CellIndex ci = f1.cellIndex;
         if(ci != GEO::NO_CELL)
@@ -1784,8 +1790,12 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
 
             Point3d pold = p;
             Point3d lpi;
-            // find cell which is farest to the cam and which intersect cam-p ray
-            if((!farestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)) ||
+
+            // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest to the
+            // cam which is intersected with cam-p ray
+            // False here mean farest
+            const bool nearestFarest = false;
+            if(!rayCellIntersection(mp->CArr[cam], p, ci, outFacet, nearestFarest, lpi) ||
                ((po - pold).size() >= maxDist) || (!allPoints))
             {
                 ok = false;
@@ -1800,16 +1810,18 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
 
                 float dist = distFcn(maxDist, (po - pold).size(), distFcnHeight);
 
-                if(f2.cellIndex == GEO::NO_CELL)
+                // Take the mirror facet to iterate over the next cell
+                const Facet mFacet = mirrorFacet(outFacet);
+                ci = mFacet.cellIndex;
+                if(ci == GEO::NO_CELL)
                 {
                     ok = false;
                 }
                 else
                 {
 #pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[f2.cellIndex].gEdgeVisWeight[f2.localVertexIndex] += weight * dist;
+                    _cellsAttr[ci].gEdgeVisWeight[mFacet.localVertexIndex] += weight * dist;
                 }
-                ci = f2.cellIndex;
                 p = lpi;
             }
         }
@@ -1861,14 +1873,12 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
             Facet fFirst = getFacetInFrontVertexOnTheRayToTheCam(vi, cam);
 
             // get the tetrahedron next to point p on the ray from c
-            Facet f2;
             Facet f1 = getFacetBehindVertexOnTheRayToTheCam(vi, cam);
 
             if((fFirst.cellIndex != GEO::NO_CELL) && (f1.cellIndex != GEO::NO_CELL) && (!isInfiniteCell(f1.cellIndex)))
             {
                 float eFirst = _cellsAttr[fFirst.cellIndex].out;
 
-                f2 = mirrorFacet(f1);
                 CellIndex ci = f1.cellIndex;
                 Point3d p = po; // HAS TO BE HERE !!!
                 float maxDist = nPixelSizeBehind * mp->getCamPixelSize(p, cam);
@@ -1882,29 +1892,30 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
                 {
                     Point3d pold = p;
                     Point3d lpi;
-                    Facet ff1, ff2;
-                    // find cell which is farest to the cam and which is
-                    // intersected with cam-p
-                    // ray
-                    if((!farestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, ff1, ff2, lpi)) ||
+                    Facet outFacet;
+
+                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest
+                    // to the cam which is intersected with cam-p ray
+                    // False here mean farest
+                    const bool nearestFarest = false;
+                    if(!rayCellIntersection(mp->CArr[cam], p, ci, outFacet, nearestFarest, lpi) ||
                        ((po - pold).size() >= maxDist))
                     {
                         ok = false;
                     }
                     else
                     {
-                        if(ff2.cellIndex == GEO::NO_CELL)
+                        // Take the mirror facet to iterate over the next cell
+                        ci = mirrorFacet(outFacet).cellIndex;
+                        if(ci == GEO::NO_CELL)
                             ok = false;
-                        ci = ff2.cellIndex;
                         p = lpi;
-                        f1 = ff1;
-                        f2 = ff2;
                     }
                 }
 
                 if(ci != GEO::NO_CELL)
                 {
-                    float eLast = _cellsAttr[f2.cellIndex].out;
+                    float eLast = _cellsAttr[ci].out;
                     if((eFirst > eLast) && (eFirst < beta) && (eLast / eFirst < delta))
                     {
 #pragma OMP_ATOMIC_UPDATE
@@ -2017,19 +2028,23 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         maxSilent = std::max(maxSilent, c.out);
                     }
 
-                    Facet f1, f2;
+                    Facet outFacet;
                     Point3d lpi;
-                    // find cell which is nearest to the cam and which intersect cam-p ray
+                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell nearest
+                    // to the cam which is intersected with cam-p ray
+                    // True here mean nearest
+                    const bool nearestFarest = true;
                     if(((p - po).size() > (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) || // (2 + 2) * sigma
-                       (!nearestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
+                       !rayCellIntersection(mp->CArr[cam], p, ci, outFacet, nearestFarest, lpi))
                     {
                         ok = false;
                     }
                     else
                     {
-                        if(f2.cellIndex == GEO::NO_CELL)
+                        // Take the mirror facet to iterate over the next cell
+                        ci = mirrorFacet(outFacet).cellIndex;
+                        if(ci == GEO::NO_CELL)
                             ok = false;
-                        ci = f2.cellIndex;
                         p = lpi;
                     }
                 }
@@ -2052,19 +2067,24 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     minSilent = std::min(minSilent, c.out);
                     maxSilent = std::max(maxSilent, c.out);
 
-                    Facet f1, f2;
+                    Facet outFacet;
                     Point3d lpi;
-                    // find cell which is farest to the cam and which intersect cam-p ray
+
+                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest
+                    // to the cam which is intersected with cam-p ray
+                    // False here mean farest
+                    const bool nearestFarest = false;
                     if(((p - po).size() > nsigmaBackSilentPart * maxDist) || // (p-po).size() > 2 * sigma
-                       (!farestNeighbourCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
+                       !rayCellIntersection(mp->CArr[cam], p, ci, outFacet, nearestFarest, lpi))
                     {
                         ok = false;
                     }
                     else
                     {
-                        if(f2.cellIndex == GEO::NO_CELL)
+                        // Take the mirror facet to iterate over the next cell
+                        ci = mirrorFacet(outFacet).cellIndex;
+                        if(ci == GEO::NO_CELL)
                             ok = false;
-                        ci = f2.cellIndex;
                         p = lpi;
                     }
                 }
@@ -2197,26 +2217,31 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
                         _cellsAttr[tmp_ci].out += weight;
                     }
 
-                    Facet f1, f2;
+                    Facet outFacet;
                     Point3d lpi;
-                    // find cell which is nearest to the pont and which is
-                    // intersected with point-p ray
-                    if(!farestNeighbourCellToTheCamOnTheRay(camBehind, p, tmp_ci, f1, f2, lpi))
+
+                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest
+                    // to the cam which is intersected with cam-p ray
+                    // False here mean farest
+                    const bool nearestFarest = false;
+                    if(!rayCellIntersection(camBehind, p, tmp_ci, outFacet, nearestFarest, lpi))
                     {
                         ok = false;
                     }
                     else
                     {
-                        if(f2.cellIndex == GEO::NO_CELL)
+                        // Take the mirror facet to iterate over the next cell
+                        const Facet mFacet = mirrorFacet(outFacet);
+                        tmp_ci = mFacet.cellIndex;
+                        if(tmp_ci == GEO::NO_CELL)
                         {
                             ok = false;
                         }
                         else
                         {
 #pragma OMP_ATOMIC_UPDATE
-                            _cellsAttr[f2.cellIndex].gEdgeVisWeight[f2.localVertexIndex] += weight;
+                            _cellsAttr[tmp_ci].gEdgeVisWeight[mFacet.localVertexIndex] += weight;
                         }
-                        tmp_ci = f2.cellIndex;
                         p = lpi;
                         ++nwup;
                     }
