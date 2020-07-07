@@ -1166,8 +1166,8 @@ int aliceVision_main(int argc, char **argv)
       image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
       oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
-      const std::size_t offsetX = metadata.find("AliceVision:panoramaWidth")->get_int();
-      const std::size_t offsetY = metadata.find("AliceVision:panoramaHeight")->get_int();
+      const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+      const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
       drawBorders(compositer->getPanorama(), mask, offsetX, offsetY);
     }
