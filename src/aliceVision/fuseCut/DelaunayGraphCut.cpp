@@ -1348,27 +1348,14 @@ bool DelaunayGraphCut::rayCellIntersection(const Point3d& camCenter, const Point
         if(isLineInTriangle(&intersectPt, facet[0], facet[1], facet[2], &linePoint, &lineVect))
         {
             intersectDist = (camCenter - intersectPt).size();
-            if(nearestFarest)
+            // between the camera and the point if nearestFarest == true
+            // behind the point (from the camera) if nearestFarest == false
+            if(nearestFarest ? (intersectDist < currentDist) : (intersectDist > currentDist))
             {
-                if(intersectDist < currentDist) // between the camera and the point
-                {
-                    oppositeVertexIndex = i;
-                    existsTriOnRay = true;
-                    currentDist = intersectDist;
-                    outIntersectPt = intersectPt;
-                    //break;
-                }
-            }
-            else
-            {
-                if(intersectDist > currentDist) // behind the point (from the camera)
-                {
-                    oppositeVertexIndex = i;
-                    existsTriOnRay = true;
-                    currentDist = intersectDist;
-                    outIntersectPt = intersectPt;
-                    //break;
-                }
+                oppositeVertexIndex = i;
+                existsTriOnRay = true;
+                currentDist = intersectDist;
+                outIntersectPt = intersectPt;
             }
         }
     }
