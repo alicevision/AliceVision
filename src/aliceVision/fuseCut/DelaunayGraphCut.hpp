@@ -270,8 +270,7 @@ public:
     bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, GEO::index_t tetrahedronIndex, Facet& outFacet,
                              bool nearestFarest, Point3d& outIntersectPt) const;
 
-    inline Facet getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex, int cam) const;
-    Facet getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi, Point3d& ptt) const;
+    Facet getFacetInFrontVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam) const;
     Facet getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi, int cam) const;
     GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
 
@@ -341,23 +340,6 @@ public:
 
     mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
 };
-
-inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex,
-                                                                               int cam) const
-{
-    // if (btest) {
-    //	printf("cam %i pt %f %f %f\n",cam,p.x,p.y,p.z);
-    //	printf("ptid %i\n",vp->info().id);
-    //	printf("campos %f %f
-    //%f\n",mp->CArr[cam].x,mp->CArr[cam].y,mp->CArr[cam].z);
-    //};
-    if((cam < 0) || (cam >= mp->ncams))
-    {
-        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << vertexIndex);
-    }
-
-    return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
-}
 
 } // namespace fuseCut
 } // namespace aliceVision

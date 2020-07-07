@@ -1368,33 +1368,37 @@ bool DelaunayGraphCut::rayCellIntersection(const Point3d& camCenter, const Point
     return true;
 }
 
-DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi,
-                                                                                   Point3d& ptt) const
+DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam) const
 {
-    const Point3d& p = _verticesCoords[vi];
+    if((cam < 0) || (cam >= mp->ncams))
+    {
+        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << vertexIndex);
+    }
+    const Point3d& p = _verticesCoords[vertexIndex];
 
-    double minDist = (ptt - p).size(); // initialize minDist to the distance from 3d point p to camera center c
+    double minDist = (mp->CArr[cam] - p).size(); // initialize minDist to the distance from 3d point p to camera center
     Facet nearestFacet;
     nearestFacet.cellIndex = GEO::NO_CELL;
     nearestFacet.localVertexIndex = GEO::NO_VERTEX;
 
     for(int k = 0; true; ++k)
     {
-        CellIndex adjCellIndex = vertexToCells(vi, k); // GEOGRAM: set_stores_cicl(true) required
+        CellIndex adjCellIndex = vertexToCells(vertexIndex, k); // GEOGRAM: set_stores_cicl(true) required
         if(adjCellIndex == GEO::NO_CELL) // last one
             break;
-
         if(isInfiniteCell(adjCellIndex))
             continue;
-        Facet f1;
+
+        Facet outFacet;
         Point3d intersectPt;
-        if(rayCellIntersection(ptt, p, adjCellIndex, f1, true, intersectPt) == true)
+        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, outFacet, true, intersectPt) == true)
         {
+            const double intersectDist = (mp->CArr[cam] - intersectPt).size();
             // if it is inbetween the camera and the point
-            if((ptt - intersectPt).size() < minDist)
+            if(intersectDist < minDist)
             {
-                nearestFacet = f1;
-                minDist = (ptt - intersectPt).size();
+                nearestFacet = outFacet;
+                minDist = intersectDist;
             }
             // TODO FACA: maybe we can break and remove minDist?
         }
