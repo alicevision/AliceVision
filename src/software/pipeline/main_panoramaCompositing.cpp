@@ -1114,6 +1114,11 @@ int aliceVision_main(int argc, char **argv)
   int pos = 0;
   for (const auto& viewIt : sfmData.getViews())
   {
+    if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+    {
+        // skip unreconstructed views
+        continue;
+    }
     // Load image and convert it to linear colorspace
     const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + ".exr")).string();
     ALICEVISION_LOG_INFO("Load image with path " << imagePath);
