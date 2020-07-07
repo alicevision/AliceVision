@@ -44,7 +44,7 @@ std::size_t computeViewUID(const View& view)
   {
     // no metadata to identify the device, fallback to the folder path of the file
     const fs::path imagePath = view.getImagePath();
-    stl::hash_combine(uid, imagePath.parent_path().string());
+    stl::hash_combine(uid, imagePath.parent_path().generic_string());
   }
 
   if(view.hasMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}))
