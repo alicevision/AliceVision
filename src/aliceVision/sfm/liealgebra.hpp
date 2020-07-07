@@ -1,12 +1,10 @@
-#ifndef _TOTO_
-#define _TOTO_
+#pragma once
 
 #include <Eigen/Dense>
 #include <unsupported/Eigen/KroneckerProduct>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
-
 namespace SO3 {
 
 using Matrix = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
@@ -16,7 +14,7 @@ Compute the skew symmetric matrix of the given vector 3d
 @param int the 3d vector
 @return a skew symmetric matrix
 */
-static Eigen::Matrix3d skew(const Eigen::Vector3d & in) {
+inline Eigen::Matrix3d skew(const Eigen::Vector3d & in) {
     Eigen::Matrix3d ret;
 
     ret.fill(0);
@@ -36,7 +34,7 @@ Compute the exponential map of the given algebra on the group
 @param algebra the 3d vector
 @return a 3*3 SO(3) matrix
 */
-static Eigen::Matrix3d expm(const Eigen::Vector3d & algebra) {
+inline Eigen::Matrix3d expm(const Eigen::Vector3d & algebra) {
     double angle = algebra.norm();
 
     if (angle < std::numeric_limits<double>::epsilon()) {
@@ -56,7 +54,7 @@ Compute the algebra related to a given rotation matrix
 @param R the input rotation matrix
 @return the algebra
 */
-static Eigen::Vector3d logm(const Eigen::Matrix3d & R) {
+inline Eigen::Vector3d logm(const Eigen::Matrix3d & R) {
 
     Eigen::Vector3d ret;
 
@@ -93,7 +91,7 @@ Compute the jacobian of the logarithm wrt changes in the rotation matrix values
 @param R the input rotation matrix
 @return the jacobian matrix (3*9 matrix)
 */
-static Eigen::Matrix<double, 3, 9, Eigen::RowMajor> dlogmdr(const Eigen::Matrix3d & R) {
+inline Eigen::Matrix<double, 3, 9, Eigen::RowMajor> dlogmdr(const Eigen::Matrix3d & R) {
     double p1 = R(2, 1) - R(1, 2);
     double p2 = R(0, 2) - R(2, 0);
     double p3 = R(1, 0) - R(0, 1);
@@ -148,7 +146,7 @@ class LocalParameterization : public ceres::LocalParameterization {
  public:
   ~LocalParameterization() override = default;
 
-  virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
+  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
  
     double* ptrBase = (double*)x;
     double* ptrResult = (double*)x_plus_delta;
@@ -205,7 +203,7 @@ Compute the exponential map of the given algebra on the group
 @param algebra the 6d vector
 @return a 4*4 SE(3) matrix
 */
-static Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1> & algebra){
+inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1> & algebra){
 
   Eigen::Matrix4d ret;
   ret.setIdentity();
@@ -233,7 +231,7 @@ static Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1> & algebra){
 
 class LocalParameterization : public ceres::LocalParameterization {
 public:
-  virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
+  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
 
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T(x);
     Eigen::Map<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T_result(x_plus_delta);
@@ -246,7 +244,7 @@ public:
     return true;
   }
 
-  virtual bool ComputeJacobian(const double * x, double* jacobian) const override {
+  bool ComputeJacobian(const double * x, double* jacobian) const override {
 
     Eigen::Map<Eigen::Matrix<double, 16, 6, Eigen::RowMajor>> J(jacobian);
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T(x);
@@ -269,17 +267,15 @@ public:
     return true;
   }
 
-  virtual int GlobalSize() const override {
+  int GlobalSize() const override {
     return 16;
   }
 
-  virtual int LocalSize() const override {
+  int LocalSize() const override {
     return 6;
   }
 };
 
 }
-
 }
 
-#endif
