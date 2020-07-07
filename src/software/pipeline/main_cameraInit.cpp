@@ -190,7 +190,7 @@ int aliceVision_main(int argc, char **argv)
   double defaultFieldOfView = -1.0;
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
   EViewIdMethod viewIdMethod = EViewIdMethod::METADATA;
-  std::string viewIdRegex = ".*?(\d+)";
+  std::string viewIdRegex = ".*?(\\d+)";
 
   bool allowSingleView = false;
 

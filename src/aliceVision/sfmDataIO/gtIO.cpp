@@ -131,7 +131,7 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
   const std::string sGTPath = (fs::path(rootPath) / "gt_dense_cameras").string();
   if (!fs::is_directory(sGTPath))
   {
-    ALICEVISION_LOG_DEBUG("There is not valid GT data to read from " << sGTPath);
+    ALICEVISION_LOG_WARNING("There is no valid GT data to read from " << sGTPath);
     return false;
   }
 
@@ -214,7 +214,7 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
 
     std::shared_ptr<sfmData::View> viewPtr = std::make_shared<sfmData::View>(imgFile, UndefinedIndexT, index);
 
-    updateIncompleteView(*viewPtr);
+    updateIncompleteView(*viewPtr, EViewIdMethod::FILENAME, ".*?(\\d+)");
 
     // Update intrinsics with width and height of image
     sfmData.views.emplace(viewPtr->getViewId(), viewPtr);
