@@ -270,8 +270,7 @@ public:
     bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, GEO::index_t tetrahedronIndex, Facet& outFacet,
                              bool nearestFarest, Point3d& outIntersectPt) const;
 
-    Facet getFacetInFrontVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam) const;
-    Facet getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi, int cam) const;
+    Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam, bool nearestFarest) const;
     GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;

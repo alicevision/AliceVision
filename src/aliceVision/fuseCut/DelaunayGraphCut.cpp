@@ -1368,7 +1368,7 @@ bool DelaunayGraphCut::rayCellIntersection(const Point3d& camCenter, const Point
     return true;
 }
 
-DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam) const
+DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam, bool nearestFarest) const
 {
     if((cam < 0) || (cam >= mp->ncams))
     {
@@ -1376,10 +1376,8 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(
     }
     const Point3d& p = _verticesCoords[vertexIndex];
 
-    double minDist = (mp->CArr[cam] - p).size(); // initialize minDist to the distance from 3d point p to camera center
-    Facet nearestFacet;
-    nearestFacet.cellIndex = GEO::NO_CELL;
-    nearestFacet.localVertexIndex = GEO::NO_VERTEX;
+    double currentDist = (mp->CArr[cam] - p).size(); // initialize currentDist to the distance from 3d point p to camera center
+    Facet facet;
 
     for(int k = 0; true; ++k)
     {
@@ -1390,51 +1388,22 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(
             continue;
 
         Facet outFacet;
+
         Point3d intersectPt;
-        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, outFacet, true, intersectPt) == true)
+        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, outFacet, nearestFarest, intersectPt) == true)
         {
             const double intersectDist = (mp->CArr[cam] - intersectPt).size();
-            // if it is inbetween the camera and the point
-            if(intersectDist < minDist)
+            // if it's between the camera and the point if nearestFarest == true
+            // if it's behind the point (from the camera) if nearestFarest == false
+            if(nearestFarest ? (intersectDist < currentDist) : (intersectDist > currentDist))
             {
-                nearestFacet = outFacet;
-                minDist = intersectDist;
+                facet = outFacet;
+                currentDist = intersectDist;
             }
             // TODO FACA: maybe we can break and remove minDist?
         }
     }
-    return nearestFacet;
-}
-
-DelaunayGraphCut::Facet DelaunayGraphCut::getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi,
-                                                                              int cam) const
-{
-    const Point3d& p = _verticesCoords[vi];
-
-    double maxDist = (mp->CArr[cam] - p).size();
-    Facet farestFacet;
-
-    for(int k = 0; true; ++k)
-    {
-        CellIndex adjCellIndex = vertexToCells(vi, k); // GEOGRAM: set_stores_cicl(true) required
-        if(adjCellIndex == GEO::NO_CELL) // last one
-            break;
-        if(isInfiniteCell(adjCellIndex))
-            continue;
-
-        Facet outFacet;
-        Point3d intersectionPoint;
-        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, outFacet, false, intersectionPoint))
-        {
-            // if it is after the point p (along the axis from the camera)
-            if((mp->CArr[cam] - intersectionPoint).size() > maxDist)
-            {
-                farestFacet = outFacet;
-                maxDist = (mp->CArr[cam] - intersectionPoint).size();
-            }
-        }
-    }
-    return farestFacet;
+    return facet;
 }
 
 GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& intersectPoint) const
@@ -1705,8 +1674,10 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
     if(fillOut)
     {
         out_nstepsFront = 0;
+        // true here mean nearest
+        const bool nearestFarest = true;
         // tetrahedron connected to the point p and which intersect the ray from camera c to point p
-        CellIndex ci = getFacetInFrontVertexOnTheRayToTheCam(vertexIndex, cam).cellIndex;
+        CellIndex ci = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest).cellIndex;
 
         Point3d p = originPt;
         CellIndex lastFinite = GEO::NO_CELL;
@@ -1762,7 +1733,9 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
     {
         out_nstepsBehind = 0;
         // get the tetrahedron next to point p on the ray from c
-        Facet f1 = getFacetBehindVertexOnTheRayToTheCam(vertexIndex, cam);
+        // False here mean farest
+        const bool nearestFarest = false;
+        Facet f1 = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
         Facet outFacet;
 
         CellIndex ci = f1.cellIndex;
@@ -1873,10 +1846,13 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
         {
             int cam = v.cams[c];
 
-            Facet fFirst = getFacetInFrontVertexOnTheRayToTheCam(vi, cam);
+            // False here mean nearest
+            const bool nearestFarest = true;
+            Facet fFirst = getFacetFromVertexOnTheRayToTheCam(vi, cam, nearestFarest);
 
             // get the tetrahedron next to point p on the ray from c
-            Facet f1 = getFacetBehindVertexOnTheRayToTheCam(vi, cam);
+            // False here mean farest
+            Facet f1 = getFacetFromVertexOnTheRayToTheCam(vi, cam, false);
 
             if((fFirst.cellIndex != GEO::NO_CELL) && (f1.cellIndex != GEO::NO_CELL) && (!isInfiniteCell(f1.cellIndex)))
             {
@@ -2012,7 +1988,9 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             float midSilent = 10000000.0f;
 
             {
-                CellIndex ci = getFacetInFrontVertexOnTheRayToTheCam(vi, cam).cellIndex;
+                // True here mean nearest
+                const bool nearestFarest = true;
+                CellIndex ci = getFacetFromVertexOnTheRayToTheCam(vi, cam, nearestFarest).cellIndex;
                 Point3d p = originPt; // HAS TO BE HERE !!!
                 bool ok = (ci != GEO::NO_CELL);
                 while(ok)
@@ -2054,7 +2032,9 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             }
 
             {
-                CellIndex ci = getFacetBehindVertexOnTheRayToTheCam(vi, cam).cellIndex; // T1
+                // False here mean farest
+                const bool nearestFarest = false;
+                CellIndex ci = getFacetFromVertexOnTheRayToTheCam(vi, cam, nearestFarest).cellIndex; // T1
                 Point3d p = originPt; // HAS TO BE HERE !!!
                 bool ok = (ci != GEO::NO_CELL);
                 if(ok)
