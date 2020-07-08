@@ -1368,39 +1368,43 @@ bool DelaunayGraphCut::rayCellIntersection(const Point3d& camCenter, const Point
     return true;
 }
 
-DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam, bool nearestFarest) const
+DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const
 {
     if((cam < 0) || (cam >= mp->ncams))
     {
-        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << vertexIndex);
+        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << globalVertexIndex);
     }
-    const Point3d& p = _verticesCoords[vertexIndex];
+    const Point3d& p = _verticesCoords[globalVertexIndex];
 
     double currentDist = (mp->CArr[cam] - p).size(); // initialize currentDist to the distance from 3d point p to camera center
-    Facet facet;
 
-    for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(vertexIndex)) // GEOGRAM: set_stores_cicl(true) required
+    for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(globalVertexIndex)) // GEOGRAM: set_stores_cicl(true) required
     {
         if(isInfiniteCell(adjCellIndex))
             continue;
 
-        Facet outFacet;
+        // Get local vertex index
+        const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, globalVertexIndex);
+
+        // Define facet
+        const Facet facet(adjCellIndex, localVertexIndex);
+
+        const std::array<const Point3d*, 3> facetPoints = getFacetsPoints(facet);
 
         Point3d intersectPt;
-        if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, outFacet, nearestFarest, intersectPt) == true)
+        const Point3d lineVect = (mp->CArr[cam] - p).normalize();
+        if(isLineInTriangle(&intersectPt, facetPoints[0], facetPoints[1], facetPoints[2], &p, &lineVect))
         {
             const double intersectDist = (mp->CArr[cam] - intersectPt).size();
             // if it's between the camera and the point if nearestFarest == true
             // if it's behind the point (from the camera) if nearestFarest == false
             if(nearestFarest ? (intersectDist < currentDist) : (intersectDist > currentDist))
             {
-                facet = outFacet;
-                currentDist = intersectDist;
+                return facet;
             }
-            // TODO FACA: maybe we can break and remove minDist?
         }
     }
-    return facet;
+    return Facet();
 }
 
 GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& intersectPoint) const

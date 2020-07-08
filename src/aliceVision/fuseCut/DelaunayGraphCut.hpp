@@ -121,6 +121,13 @@ public:
         return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
     }
 
+    inline const std::array<const Point3d*, 3> getFacetsPoints(const Facet& f) const
+    {
+        return {&(_verticesCoords[getVertexIndex(f, 0)]),
+                &(_verticesCoords[getVertexIndex(f, 1)]),
+                &(_verticesCoords[getVertexIndex(f, 2)])};
+    }
+
     inline std::size_t getNbVertices() const
     {
         return _verticesAttr.size();
@@ -291,7 +298,7 @@ public:
     bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, GEO::index_t tetrahedronIndex, Facet& outFacet,
                              bool nearestFarest, Point3d& outIntersectPt) const;
 
-    Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex vertexIndex, int cam, bool nearestFarest) const;
+    Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
     GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
