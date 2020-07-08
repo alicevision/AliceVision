@@ -2654,7 +2654,7 @@ void DelaunayGraphCut::maxflow()
 }
 
 void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
-                                            bool update, Point3d* hexahInflated, const std::string& tmpCamsPtsFolderName,
+                                            bool update, Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
                                             const Point3d& spaceSteps)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::reconstructExpetiments");
