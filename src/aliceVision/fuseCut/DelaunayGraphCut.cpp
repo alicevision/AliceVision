@@ -1379,11 +1379,8 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(Ver
     double currentDist = (mp->CArr[cam] - p).size(); // initialize currentDist to the distance from 3d point p to camera center
     Facet facet;
 
-    for(int k = 0; true; ++k)
+    for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(vertexIndex)) // GEOGRAM: set_stores_cicl(true) required
     {
-        CellIndex adjCellIndex = vertexToCells(vertexIndex, k); // GEOGRAM: set_stores_cicl(true) required
-        if(adjCellIndex == GEO::NO_CELL) // last one
-            break;
         if(isInfiniteCell(adjCellIndex))
             continue;
 
@@ -1414,11 +1411,8 @@ GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Po
     float maxdist = 0.0f;
     GEO::index_t farestCell = GEO::NO_CELL;
 
-    for(int k = 0; true; ++k)
+    for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(cam_vi)) // GEOGRAM: set_stores_cicl(true) required
     {
-        CellIndex adjCellIndex = vertexToCells(cam_vi, k); // GEOGRAM: set_stores_cicl(true) required
-        if(adjCellIndex == GEO::NO_CELL) // last one
-            break;
         if(isInfiniteCell(adjCellIndex))
             continue;
 
@@ -2335,11 +2329,8 @@ void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
         VertexIndex cam_vi = _camsVertexes[rc];
         if(cam_vi == GEO::NO_VERTEX)
             continue;
-        for(int k = 0; true; ++k)
+        for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(cam_vi)) // GEOGRAM: set_stores_cicl(true) required
         {
-            CellIndex adjCellIndex = vertexToCells(cam_vi, k); // GEOGRAM: set_stores_cicl(true) required
-            if(adjCellIndex == GEO::NO_CELL) // last one
-                break;
             if(isInfiniteCell(adjCellIndex))
                 continue;
 

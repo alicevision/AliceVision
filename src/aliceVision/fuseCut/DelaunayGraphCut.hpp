@@ -234,6 +234,17 @@ public:
         return localCells[lvi];
     }
 
+    /**
+     * @brief Retrieves the global indexes of neighboring cells using the global index of a vertex.
+     * 
+     * @param vi the global vertexIndex
+     * @return a vector of neighboring cell indexes
+     */
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const
+    {
+        return _neighboringCellsPerVertex.at(vi);
+    }
+
     void initVertices();
     void computeDelaunay();
     void initCells();
