@@ -97,12 +97,25 @@ public:
     DelaunayGraphCut(mvsUtils::MultiViewParams* _mp);
     virtual ~DelaunayGraphCut();
 
-    /// Get absolute opposite vertex index
+    /**
+     * @brief Retrieve the global vertex index of the localVertexIndex of the facet.
+     * 
+     * @param f the facet
+     * @return the global vertex index
+     */
     inline VertexIndex getOppositeVertexIndex(const Facet& f) const
     {
         return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex);
     }
-    /// Get absolute vertex index
+
+    /**
+     * @brief Retrieve the global vertex index of a vertex from a facet and an relative index 
+     * compared to the localVertexIndex of the facet.
+     * 
+     * @param f the facet
+     * @param i the relative index (relative to the localVertexIndex of the facet)
+     * @return the global vertex index
+     */
     inline VertexIndex getVertexIndex(const Facet& f, int i) const
     {
         return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
