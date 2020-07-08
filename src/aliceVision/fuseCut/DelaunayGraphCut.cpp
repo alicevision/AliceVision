@@ -1692,7 +1692,6 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             ++out_nstepsFront;
             ++nsteps;
 
-            Point3d pold = p;
             Facet outFacet;
             Point3d intersectPt;
 
@@ -1706,8 +1705,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             }
             else
             {
-                float dist = distFcn(maxDist, (originPt - pold).size(), distFcnHeight);
                 {
+                    const float dist = distFcn(maxDist, (originPt - p).size(), distFcnHeight);
 #pragma OMP_ATOMIC_UPDATE
                     _cellsAttr[outFacet.cellIndex].gEdgeVisWeight[outFacet.localVertexIndex] += weight * dist;
                 }
@@ -1764,7 +1763,6 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             ++out_nstepsBehind;
             ++nsteps;
 
-            Point3d pold = p;
             Point3d intersectPt;
 
             // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest to the
@@ -1772,7 +1770,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             // False here mean farest
             const bool nearestFarest = false;
             if(!rayCellIntersection(mp->CArr[cam], p, ci, outFacet, nearestFarest, intersectPt) ||
-               ((originPt - pold).size() >= maxDist) || (!allPoints))
+               ((originPt - p).size() >= maxDist) || (!allPoints))
             {
                 ok = false;
             }
@@ -1784,7 +1782,6 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
                 // because labatutCFG09 with 32 gives much better result than nrc
                 // but when using just nrc and not using distFcn then the result is the same as labatutCGF09
 
-                float dist = distFcn(maxDist, (originPt - pold).size(), distFcnHeight);
 
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(outFacet);
@@ -1795,6 +1792,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
                 }
                 else
                 {
+                    const float dist = distFcn(maxDist, (originPt - p).size(), distFcnHeight);
 #pragma OMP_ATOMIC_UPDATE
                     _cellsAttr[ci].gEdgeVisWeight[mFacet.localVertexIndex] += weight * dist;
                 }
