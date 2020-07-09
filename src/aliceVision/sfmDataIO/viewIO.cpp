@@ -204,7 +204,9 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     intrinsicType = camera::PINHOLE_CAMERA;
   }
   */
-  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0) && allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE)
+  else if((allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) &&
+          ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
+          )
   {
     // If the focal lens is short, the fisheye model should fit better.
       intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
