@@ -35,14 +35,15 @@ int aliceVision_main(int argc, char **argv)
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-  std::string sfmDataFilename;
+  std::string sfmDataFilepath;
   std::vector<std::string> featuresFolders;
   std::vector<std::string> matchesFolders;
-  std::string outDirectory;
+  std::string extraInfoFolder;
+  std::string outputSfMViewsAndPoses;
 
   // user optional parameters
 
-  std::string outSfMDataFilename = "SfmData.json";
+  std::string outSfMDataFilepath = "SfmData.json";
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
   sfm::ETranslationAveragingMethod translationAveragingMethod = sfm::TRANSLATION_AVERAGING_SOFTL1;
@@ -56,10 +57,10 @@ int aliceVision_main(int argc, char **argv)
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+    ("input,i", po::value<std::string>(&sfmDataFilepath)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Path of the output folder.")
+    ("output,o", po::value<std::string>(&outSfMDataFilepath)->required(),
+      "Path to the output SfMData file.")
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
       "Path to folder(s) containing the extracted features.")
     ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
@@ -67,8 +68,10 @@ int aliceVision_main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("outSfMDataFilename", po::value<std::string>(&outSfMDataFilename)->default_value(outSfMDataFilename),
-      "Filename of the output SfMData file.")
+    ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
+      "Path to the output SfMData file (with only views and poses).")
+    ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
+      "Folder for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
@@ -135,9 +138,9 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilepath << "' cannot be read.");
     return EXIT_FAILURE;
   }
 
@@ -173,21 +176,18 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(outDirectory.empty())
-  {
-    ALICEVISION_LOG_ERROR("It is an invalid output folder");
-    return EXIT_FAILURE;
-  }
+  if(extraInfoFolder.empty())
+    extraInfoFolder = fs::path(outSfMDataFilepath).parent_path().string();
 
-  if(!fs::exists(outDirectory))
-    fs::create_directory(outDirectory);
+  if (!fs::exists(extraInfoFolder))
+    fs::create_directory(extraInfoFolder);
 
   // global SfM reconstruction process
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
-    outDirectory,
-    (fs::path(outDirectory) / "sfm_log.html").string());
+    extraInfoFolder,
+    (fs::path(extraInfoFolder) / "sfm_log.html").string());
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -210,19 +210,22 @@ int aliceVision_main(int argc, char **argv)
   {
     sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
     sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-    sfmEngine.getSfMData().setAbsolutePath(outDirectory);
+    sfmEngine.getSfMData().setAbsolutePath(fs::path(outSfMDataFilepath).parent_path().string());
   }
 
   ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(outDirectory) / "sfm_report.html").string());
+  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
 
-  sfmDataIO::Save(sfmEngine.getSfMData(), outSfMDataFilename, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+
+  if(!outputSfMViewsAndPoses.empty())
+    sfmDataIO:: Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
