@@ -162,10 +162,6 @@ public:
       return false;
     }
 
-    /*char filename[512];
-    sprintf(filename, "/home/mmoc/grad%d.png", level);
-    image::writeImage(filename, gradientImage, image::EImageColorSpace::SRGB);*/
-
     if (_gradientImage.Width() != gradientImage.Width() || _gradientImage.Height() != gradientImage.Height()) {
       _gradientImage = gradientImage;
     }
@@ -540,9 +536,9 @@ int main(int argc, char * argv[])
 {
   using namespace aliceVision;
 
-  std::string externalInfoFilename;
-  std::string sfmInputDataFilename;
-  std::string sfmOutputDataFilename;
+  std::string externalInfoFilepath;
+  std::string sfmInputDataFilepath;
+  std::string sfmOutputDataFilepath;
 
   bool useFisheye = false;
   bool estimateFisheyeCircle = true;
@@ -558,13 +554,13 @@ int main(int argc, char * argv[])
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(), "SfMData file input.")
-    ("outSfMDataFilename,o", po::value<std::string>(&sfmOutputDataFilename)->required(), "SfMData file output.")
+    ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
+    ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
   po::options_description motorizedHeadParams("Motorized Head parameters");
   motorizedHeadParams.add_options()
-    ("config,c", po::value<std::string>(&externalInfoFilename), "External info xml file.")
+    ("config,c", po::value<std::string>(&externalInfoFilepath), "External info xml file.")
     ;
 
   po::options_description fisheyeParams("Fisheye parameters");
@@ -618,19 +614,19 @@ int main(int argc, char * argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+  if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
     return EXIT_FAILURE;
   }
 
-  if(!externalInfoFilename.empty())
+  if(!externalInfoFilepath.empty())
   {
     pt::ptree tree;
 
     try
     {
-      pt::read_xml(externalInfoFilename, tree);
+      pt::read_xml(externalInfoFilepath, tree);
     }
     catch (...)
     {
@@ -819,10 +815,10 @@ int main(int argc, char * argv[])
     ALICEVISION_LOG_INFO(equidistantCount << " equidistant camera intrinsics have been updated");
   }
 
-  ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilename);
-  if(!sfmDataIO::Save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+  ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
+  if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
   {
-    ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilename << "' cannot be write.");
+    ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be write.");
     return EXIT_FAILURE;
   }
 
