@@ -1,12 +1,14 @@
 #include "brackets.hpp"
 
+#include <aliceVision/numeric/numeric.hpp>
+
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
 namespace hdr {
 
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, std::vector<std::shared_ptr<sfmData::View>> & targetViews, const sfmData::SfMData & sfmData, size_t countBrackets) {
-
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, const sfmData::SfMData& sfmData, size_t countBrackets)
+{
     size_t countImages = sfmData.getViews().size();
     if(countImages == 0)
     {
@@ -54,18 +56,23 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     
     std::vector<std::shared_ptr<sfmData::View>> group;
     std::vector<float> exposures;
-    for(auto& view : viewsOrderedByName) {
-        if (countBrackets > 0) {
+    for(auto& view : viewsOrderedByName)
+    {
+        if (countBrackets > 0)
+        {
             group.push_back(view);
-            if(group.size() == countBrackets) {
+            if(group.size() == countBrackets)
+            {
                 groups.push_back(group);
                 group.clear();
             }
         }
-        else {
+        else
+        {
             // Automatically determines the number of brackets
             float exp = view->getCameraExposureSetting();
-            if(!exposures.empty() && exp != exposures.back() && exp == exposures.front()) {
+            if(!exposures.empty() && exp != exposures.back() && exp == exposures.front())
+            {
                 groups.push_back(group);
                 group.clear();
                 exposures.clear();
@@ -75,28 +82,9 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         }
     }
     
-    if (!group.empty()) {
-        groups.push_back(group);
-    }
-
-    if(countBrackets <= 0)
+    if (!group.empty())
     {
-        std::set<std::size_t> sizeOfGroups;
-        for(auto& group : groups)
-        {
-            sizeOfGroups.insert(group.size());
-        }
-        if(sizeOfGroups.size() == 1)
-        {
-            ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
-                                 << *sizeOfGroups.begin() << ". It will generate " << groups.size()
-                                 << " hdr images.");
-        }
-        else
-        {
-            ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
-            return false;
-        }
+        groups.push_back(group);
     }
 
     for(auto & group : groups)
@@ -108,19 +96,23 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
                           return true;
                       return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
                   });
-
-        // Target views are the middle exposed views
-        // For add number, there is no ambiguity on the middle image.
-        // For even number, we arbitrarily choose the more exposed view.
-        const int middleIndex = group.size() / 2;
-
-        targetViews.push_back(group[middleIndex]);
     }
-
-    
 
     return true;
 }
 
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex)
+{
+    for(auto & group : groups)
+    {
+        // Target views are the middle exposed views
+        // For add number, there is no ambiguity on the middle image.
+        // For even number, we arbitrarily choose the more exposed view (as we usually have more under-exposed images than over-exposed).
+        const int middleIndex = int(group.size()) / 2;
+        const int targetIndex = clamp(middleIndex + offsetRefBracketIndex, 0, int(group.size()) - 1);
+
+        out_targetViews.push_back(group[targetIndex]);
+    }
+}
 }
 }

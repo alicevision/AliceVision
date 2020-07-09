@@ -208,11 +208,36 @@ int aliceVision_main(int argc, char** argv)
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
-    std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets))
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
     {
         ALICEVISION_LOG_ERROR("Error on brackets information");
         return EXIT_FAILURE;
+    }
+
+    {
+        std::set<std::size_t> sizeOfGroups;
+        for(auto& group : groupedViews)
+        {
+            sizeOfGroups.insert(group.size());
+        }
+        if(sizeOfGroups.size() == 1)
+        {
+            std::size_t usedNbBrackets = *sizeOfGroups.begin();
+            if(usedNbBrackets == 1)
+            {
+                ALICEVISION_LOG_INFO("No multi-bracketing.");
+                // Nothing to calibrate, export a linear CRF.
+                calibrationMethod = ECalibrationMethod::LINEAR;
+            }
+            ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
+                                 << usedNbBrackets << ". It will generate " << groupedViews.size()
+                                 << " hdr images.");
+        }
+        else
+        {
+            ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
+            return EXIT_FAILURE;
+        }
     }
 
     std::vector<std::vector<hdr::ImageSample>> calibrationSamples;

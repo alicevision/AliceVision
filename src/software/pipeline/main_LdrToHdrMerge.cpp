@@ -49,10 +49,11 @@ int aliceVision_main(int argc, char** argv)
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename;
     std::string inputResponsePath;
-    std::string sfmOutputDataFilename;
+    std::string sfmOutputDataFilepath;
     int nbBrackets = 3;
     bool byPass = false;
     int channelQuantizationPower = 10;
+    int offsetRefBracketIndex = 0;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 1.0f;
@@ -71,7 +72,7 @@ int aliceVision_main(int argc, char** argv)
          "SfMData file input.")
         ("response,o", po::value<std::string>(&inputResponsePath)->required(),
         "Input path for the response file.")
-        ("outSfMDataFilename,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
+        ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
          "SfMData file output.");
 
     po::options_description optionalParams("Optional parameters");
@@ -84,6 +85,8 @@ int aliceVision_main(int argc, char** argv)
          "Quantization level like 8 bits or 10 bits.")
         ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
          "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
+        ("offsetRefBracketIndex", po::value<int>(&offsetRefBracketIndex)->default_value(offsetRefBracketIndex),
+         "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -132,7 +135,7 @@ int aliceVision_main(int argc, char** argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // Analyze path
-    boost::filesystem::path path(sfmOutputDataFilename);
+    boost::filesystem::path path(sfmOutputDataFilepath);
     std::string outputPath = path.parent_path().string();
 
     // Read sfm data
@@ -159,11 +162,36 @@ int aliceVision_main(int argc, char** argv)
 
     // Make groups
     std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
-    std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    if (!hdr::estimateBracketsFromSfmData(groupedViews, targetViews, sfmData, nbBrackets))
+    if (!hdr::estimateBracketsFromSfmData(groupedViews, sfmData, nbBrackets))
     {
         return EXIT_FAILURE;
     }
+
+    {
+        std::set<std::size_t> sizeOfGroups;
+        for(auto& group : groupedViews)
+        {
+            sizeOfGroups.insert(group.size());
+        }
+        if(sizeOfGroups.size() == 1)
+        {
+            std::size_t usedNbBrackets = *sizeOfGroups.begin();
+            if(usedNbBrackets == 1)
+            {
+                ALICEVISION_LOG_INFO("No multi-bracketing.");
+            }
+            ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
+                                 << usedNbBrackets << ". It will generate " << groupedViews.size()
+                                 << " hdr images.");
+        }
+        else
+        {
+            ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
+            return EXIT_FAILURE;
+        }
+    }
+    std::vector<std::shared_ptr<sfmData::View>> targetViews;
+    hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex);
 
     // Define range to compute
     if(rangeStart != -1)
@@ -203,9 +231,9 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Export output sfmData
-        if(!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
+        if(!sfmDataIO::Save(outputSfm, sfmOutputDataFilepath, sfmDataIO::ESfMData::ALL))
         {
-            ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
+            ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilepath);
             return EXIT_FAILURE;
         }
     }
@@ -237,14 +265,22 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Merge HDR images
-        hdr::hdrMerge merge;
-        float targetCameraExposure = targetView->getCameraExposureSetting();
         image::Image<image::RGBfColor> HDRimage;
-        ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
-        merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure);
-        if(highlightCorrectionFactor > 0.0f)
+        if(images.size() > 1)
         {
-            merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
+            hdr::hdrMerge merge;
+            float targetCameraExposure = targetView->getCameraExposureSetting();
+            ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
+            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure);
+            if(highlightCorrectionFactor > 0.0f)
+            {
+                merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
+            }
+        }
+        else if(images.size() == 1)
+        {
+            // Nothing to do
+            HDRimage = images[0];
         }
 
         const std::string hdrImagePath = getHdrImagePath(outputPath, g);

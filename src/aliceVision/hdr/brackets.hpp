@@ -12,10 +12,21 @@ namespace aliceVision {
 namespace hdr {
 
 /**
- * Estimate brackets information from sfm data
- * If an error occur, like an invalid sfm data, return false
+ * @brief Estimate brackets information from sfm data
+ * @param[out] groups: estimated groups
+ * @param[in] sfmData
+ * @param[in] countBrackets: number of brackets
+ * @return false if an error occur, like an invalid sfm data
  */
-bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, std::vector<std::shared_ptr<sfmData::View>> & targetViews, const sfmData::SfMData & sfmData, size_t countBrackets);
+bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, const sfmData::SfMData& sfmData, size_t countBrackets);
+
+/**
+ * @brief Select the target views (used for instance to define the expoure)
+ * @param[out] targetViews: estimated target views
+ * @param[in] groups: groups of Views corresponding to multi-bracketing. Warning: Needs be sorted by exposure time.
+ * @param[in] offsetRefBracketIndex: 0 mean center bracket and you can choose +N/-N to select the reference bracket
+ */
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex);
 
 }
 }
