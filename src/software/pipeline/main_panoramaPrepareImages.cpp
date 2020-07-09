@@ -163,7 +163,9 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
 
-            ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
+            ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset.\n"
+                                  << " - Current intrinsic: " << item.second->w() << "x" << item.second->w() << "\n"
+                                  << " - Reference intrinsic: " << refw << "x" << refh);
             return EXIT_FAILURE;
         }
     }
