@@ -295,11 +295,11 @@ public:
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
 
-    bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, GEO::index_t tetrahedronIndex, Facet& outFacet,
+    bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, const Facet& inFacet, Facet& outFacet,
                              bool nearestFarest, Point3d& outIntersectPt) const;
 
     Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
-    GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
+    Facet getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
