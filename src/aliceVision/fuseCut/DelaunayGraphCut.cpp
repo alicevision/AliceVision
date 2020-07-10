@@ -1407,7 +1407,7 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(Ver
     return Facet();
 }
 
-GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& intersectPoint) const
+GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const
 {
     int cam_vi = _camsVertexes[cam];
     Point3d camBehind = mp->CArr[cam] + (mp->CArr[cam] - p);
@@ -1420,14 +1420,22 @@ GEO::index_t DelaunayGraphCut::getFirstCellOnTheRayFromCamToThePoint(int cam, Po
         if(isInfiniteCell(adjCellIndex))
             continue;
 
-        Facet outFacet;
-        if(rayCellIntersection(camBehind, mp->CArr[cam], adjCellIndex, outFacet, false, intersectPoint))
+        // Get local vertex index
+        const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, cam_vi);
+
+        // Define facet
+        const Facet facet(adjCellIndex, localVertexIndex);
+
+        const std::array<const Point3d*, 3> facetPoints = getFacetsPoints(facet);
+
+        const Point3d lineVect = (camBehind - mp->CArr[cam]).normalize();
+        if(isLineInTriangle(&intersectPt, facetPoints[0], facetPoints[1], facetPoints[2], &mp->CArr[cam], &lineVect))
         {
-            float dist = orientedPointPlaneDistance(intersectPoint, camBehind, dir);
+            const float dist = orientedPointPlaneDistance(intersectPt, camBehind, dir);
             if(dist > maxdist)
             {
                 maxdist = dist;
-                farestCell = adjCellIndex;
+                farestCell = facet.cellIndex;
             }
         }
     }

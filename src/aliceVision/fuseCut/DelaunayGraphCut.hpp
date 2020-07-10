@@ -299,7 +299,7 @@ public:
                              bool nearestFarest, Point3d& outIntersectPt) const;
 
     Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
-    GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
+    GEO::index_t getFirstCellOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
