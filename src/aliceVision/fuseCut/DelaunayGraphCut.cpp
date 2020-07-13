@@ -1743,8 +1743,8 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
     ALICEVISION_LOG_INFO("Forcing t-edges.");
     long t2 = clock();
 
-    float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
-    ALICEVISION_LOG_INFO("delta: " << delta);
+    float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
+    ALICEVISION_LOG_INFO("forceTEdgeDelta: " << forceTEdgeDelta);
 
     float beta = (float)mp->userParams.get<double>("delaunaycut.beta", 1000.0f);
     ALICEVISION_LOG_INFO("beta: " << beta);
@@ -1818,7 +1818,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
                 if(facet.cellIndex != GEO::NO_CELL)
                 {
                     const float eLast = _cellsAttr[facet.cellIndex].emptinessScore;
-                    if((eFirst > eLast) && (eFirst < beta) && (eLast / eFirst < delta))
+                    if((eFirst > eLast) && (eFirst < beta) && (eLast / eFirst < forceTEdgeDelta))
                     {
 #pragma OMP_ATOMIC_UPDATE
                         _cellsAttr[facet.cellIndex].on += (eFirst - eLast);
@@ -1845,8 +1845,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     ALICEVISION_LOG_INFO("Forcing t-edges");
     long t2 = clock();
 
-    float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
-    ALICEVISION_LOG_DEBUG("delta: " << delta);
+    float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
+    ALICEVISION_LOG_DEBUG("forceTEdgeDelta: " << forceTEdgeDelta);
 
     float minJumpPartRange = (float)mp->userParams.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
     ALICEVISION_LOG_DEBUG("minJumpPartRange: " << minJumpPartRange);
@@ -2012,7 +2012,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     // maxSilent: max score of emptiness for the tetrahedron around the point p (+/- 2*sigma around p)
 
                     if(
-                       (midSilent / maxJump < delta) && // (g / B) < k_rel              //// k_rel=0.1
+                       (midSilent / maxJump < forceTEdgeDelta) && // (g / B) < k_rel              //// k_rel=0.1
                        (maxJump - midSilent > minJumpPartRange) && // (B - g) > k_abs   //// k_abs=10000 // 1000 in the paper
                        (maxSilent < maxSilentPartRange)) // g < k_outl                  //// k_outl=100  // 400 in the paper
                         //(maxSilent-minSilent<maxSilentPartRange))
@@ -2456,9 +2456,9 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
     if(jancosekCVPR11)
     {
-        float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
+        float delta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
 
-        ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( delta*100 = " << static_cast<int>(delta * 100.0f) << "):");
+        ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( forceTEdgeDelta*100 = " << static_cast<int>(delta * 100.0f) << "):");
 
         fillGraph(false, sigma, true, false, true, distFcnHeight);
 
@@ -2483,9 +2483,9 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
     if(jancosekIJCV) // true by default
     {
-        float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
+        float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
 
-        ALICEVISION_LOG_INFO("Jancosek IJCV method ( delta*100 = " << static_cast<int>(delta * 100.0f) << " ): ");
+        ALICEVISION_LOG_INFO("Jancosek IJCV method ( forceTEdgeDelta*100 = " << static_cast<int>(forceTEdgeDelta * 100.0f) << " ): ");
 
         // compute weights on edge between tetrahedra
         fillGraph(false, sigma, true, false, true, distFcnHeight);
@@ -2495,7 +2495,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
 
-        if((delta > 0.0f) && (delta < 1.0f))
+        if((forceTEdgeDelta > 0.0f) && (forceTEdgeDelta < 1.0f))
         {
             forceTedgesByGradientIJCV(false, sigma);
         }
