@@ -1510,7 +1510,7 @@ float DelaunayGraphCut::weightFcn(float nrc, bool labatutWeights, int  /*ncams*/
     return weight;
 }
 
-void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind,
+void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints,
                                bool labatutWeights, bool fillOut, float distFcnHeight) // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
 {
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
@@ -1561,7 +1561,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
                 int nstepsFront = 0;
                 int nstepsBehind = 0;
                 fillGraphPartPtRc(nstepsFront, nstepsBehind, iV, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
-                                  allPoints, behind, fillOut, distFcnHeight);
+                                  allPoints, fillOut, distFcnHeight);
 
                 avStepsFront += nstepsFront;
                 aAvStepsFront += 1;
@@ -1586,7 +1586,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
 
 void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam,
                                        float weight, bool fixesSigma, float nPixelSizeBehind, bool allPoints,
-                                       bool behind, bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
+                                       bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
     out_nstepsFront = 0;
     out_nstepsBehind = 0;
@@ -1685,11 +1685,6 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
         {
             GC_cellInfo& c = _cellsAttr[facet.cellIndex];
             {
-                if(behind)
-                {
-#pragma OMP_ATOMIC_UPDATE
-                    c.cellTWeight += weight;
-                }
 #pragma OMP_ATOMIC_UPDATE
                 c.fullnessScore += weight;
             }
@@ -1734,13 +1729,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
         }
 
         // cv: is the tetrahedron in distance 2*sigma behind the point p in the direction of the camera c (called Lcp in the paper)
-        if(!behind)
+
+        if(facet.cellIndex != GEO::NO_CELL)
         {
-            if(facet.cellIndex != GEO::NO_CELL)
-            {
 #pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[facet.cellIndex].cellTWeight += weight;
-            }
+            _cellsAttr[facet.cellIndex].cellTWeight += weight;
         }
     }
 }
@@ -2467,7 +2460,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
         ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( delta*100 = " << static_cast<int>(delta * 100.0f) << "):");
 
-        fillGraph(false, sigma, true, false, false, true, distFcnHeight);
+        fillGraph(false, sigma, true, false, true, distFcnHeight);
 
         addToInfiniteSw((float)maxint);
 
@@ -2495,7 +2488,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
         ALICEVISION_LOG_INFO("Jancosek IJCV method ( delta*100 = " << static_cast<int>(delta * 100.0f) << " ): ");
 
         // compute weights on edge between tetrahedra
-        fillGraph(false, sigma, true, false, false, true, distFcnHeight);
+        fillGraph(false, sigma, true, false, true, distFcnHeight);
 
         addToInfiniteSw((float)maxint);
 
@@ -2519,7 +2512,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     if(labatutCFG09)
     {
         ALICEVISION_LOG_INFO("Labatut CFG 2009 method:");
-        fillGraph(false, sigma, true, false, true, true, distFcnHeight);
+        fillGraph(false, sigma, true, true, true, distFcnHeight);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");

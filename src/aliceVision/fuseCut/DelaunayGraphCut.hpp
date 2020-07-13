@@ -310,10 +310,10 @@ public:
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind, bool labatutWeights,
+    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool labatutWeights,
                            bool fillOut, float distFcnHeight = 0.0f);
     void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam, float weight,
-                           bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind, bool fillOut,
+                           bool fixesSigma, float nPixelSizeBehind, bool allPoint, bool fillOut,
                            float distFcnHeight);
 
     void forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind);
