@@ -63,15 +63,12 @@ enum ERepartitionMode
 {
     eRepartitionUndefined = 0,
     eRepartitionMultiResolution = 1,
-    eRepartitionRegularGrid = 2,
 };
 
 ERepartitionMode ERepartitionMode_stringToEnum(const std::string& s)
 {
     if(s == "multiResolution")
         return eRepartitionMultiResolution;
-    if(s == "regularGrid")
-        return eRepartitionRegularGrid;
     return eRepartitionUndefined;
 }
 
@@ -307,103 +304,6 @@ int aliceVision_main(int argc, char* argv[])
 
     switch(repartitionMode)
     {
-        case eRepartitionRegularGrid:
-        {
-            switch(partitioningMode)
-            {
-                case ePartitioningAuto:
-                {
-                    ALICEVISION_LOG_INFO("Meshing mode: regular Grid, partitioning: auto.");
-                    fuseCut::LargeScale lsbase(&mp, tmpDirectory.string() + "/");
-                    lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim, true);
-                    std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
-                    StaticVector<Point3d>* voxelsArray = nullptr;
-                    if(fs::exists(voxelsArrayFileName))
-                    {
-                        // If already computed reload it.
-                        ALICEVISION_LOG_INFO("Voxels array already computed, reload from file: " << voxelsArrayFileName);
-                        voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
-                    }
-                    else
-                    {
-                        ALICEVISION_LOG_INFO("Compute voxels array.");
-                        fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.spaceVoxelsFolderName);
-                        voxelsArray = rp.computeReconstructionPlanBinSearch(fuseParams.maxPoints);
-                        saveArrayToFile<Point3d>(voxelsArrayFileName, voxelsArray);
-                    }
-                    fuseCut::reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase);
-                    // Join meshes and ptsCams
-                    mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
-                    fuseCut::loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray), ptsCams);
-                    break;
-                }
-                case ePartitioningSingleBlock:
-                {
-                    ALICEVISION_LOG_INFO("Meshing mode: regular Grid, partitioning: single block.");
-                    fuseCut::LargeScale ls0(&mp, tmpDirectory.string() + "/");
-                    ls0.generateSpace(maxPtsPerVoxel, ocTreeDim, true);
-                    unsigned long ntracks = std::numeric_limits<unsigned long>::max();
-                    while(ntracks > fuseParams.maxPoints)
-                    {
-                        fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
-                        fuseCut::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
-                        fuseCut::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
-                        ntracks = vg.getNTracks();
-                        delete ls;
-                        ALICEVISION_LOG_INFO("Number of track candidates: " << ntracks);
-                        if(ntracks > fuseParams.maxPoints)
-                        {
-                            ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
-                            double t = (double)ntracks / (double)fuseParams.maxPoints;
-                            ALICEVISION_LOG_INFO("downsample: " << ((t < 2.0) ? "slow" : "fast"));
-                            ocTreeDim = (t < 2.0) ? ocTreeDim-100 : ocTreeDim*0.5;
-                        }
-                    }
-                    ALICEVISION_LOG_INFO("Number of tracks: " << ntracks);
-                    ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
-                    fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
-                    fuseCut::LargeScale lsbase(&mp, dirName.string()+"/");
-                    lsbase.loadSpaceFromFile();
-                    fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.spaceVoxelsFolderName);
-
-                    StaticVector<int> voxelNeighs;
-                    voxelNeighs.resize(rp.voxels->size() / 8);
-                    ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
-                    for(int i = 0; i < voxelNeighs.size(); ++i)
-                        voxelNeighs[i] = i;
-
-                    Point3d* hexah = &lsbase.space[0];
-
-                    StaticVector<int> cams;
-                    if(hexah)
-                    {
-                      cams = mp.findCamsWhichIntersectsHexahedron(hexah);
-                    }
-                    else
-                    {
-                      cams.resize(mp.getNbCameras());
-                      for(int i = 0; i < cams.size(); ++i)
-                          cams[i] = i;
-                    }
-
-                    if(cams.size() < 1)
-                        throw std::logic_error("No camera to make the reconstruction");
-
-                    fuseCut::DelaunayGraphCut delaunayGC(&mp);
-                    delaunayGC.createDensePointCloudFromPrecomputedDensePoints(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp);
-                    delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
-                    delaunayGC.graphCutPostProcessing();
-                    mesh = delaunayGC.createMesh();
-                    delaunayGC.createPtsCams(ptsCams);
-                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, hexah);
-                    break;
-                }
-                case ePartitioningUndefined:
-                default:
-                    throw std::invalid_argument("Partitioning mode is not defined");
-            }
-            break;
-        }
         case eRepartitionMultiResolution:
         {
             switch(partitioningMode)
@@ -476,7 +376,7 @@ int aliceVision_main(int argc, char* argv[])
                       sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
-                    delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
+                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
                     mesh = delaunayGC.createMesh();
                     delaunayGC.createPtsCams(ptsCams);

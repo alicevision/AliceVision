@@ -290,7 +290,6 @@ public:
     void addHelperPoints(int nGridHelperVolumePointsDim, const Point3d Voxel[8], float minDist);
 
     void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params);
-    void loadPrecomputedDensePoints(const StaticVector<int>* voxelsIds, const Point3d voxel[8], VoxelsGrid* ls);
 
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
@@ -320,11 +319,6 @@ public:
     void forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind);
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
 
-    void updateGraphFromTmpPtsCamsHexah(const StaticVector<int>& incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
-                                        bool labatutWeights, float distFcnHeight = 0.0f);
-    void updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
-                                          bool labatutWeights, float distFcnHeight);
-
     int setIsOnSurface();
 
     void addToInfiniteSw(float sW);
@@ -336,14 +330,13 @@ public:
     void maxflow();
 
     void reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
-                                bool update, Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
+                                Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
                                 const Point3d& spaceSteps);
 
 
     void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
-    void createDensePointCloudFromPrecomputedDensePoints(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls);
 
-    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, VoxelsGrid* ls, const std::string& folderName, const std::string& tmpCamsPtsFolderName,
+    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName,
                         bool removeSmallSegments, const Point3d& spaceSteps);
 
     /**
