@@ -24,9 +24,9 @@ struct GC_cellInfo
     /// score for emptiness along each egde/facet
     std::array<float, 4> gEdgeVisWeight{{0.0f, 0.0f, 0.0f, 0.0f}};
     /// fullness score: sum of all weights for fullness (just after the point p)
-    float in = 0.0f;
+    float fullnessScore = 0.0f;
     /// emptiness score: sum of all weights for emptiness (before the point p)
-    float out = 0.0f;
+    float emptinessScore = 0.0f;
     /// first full tetrahedron score: sum of weights for T1 (tetrahedron just after the point p)
     float on = 0.0f;
 
@@ -34,8 +34,8 @@ struct GC_cellInfo
     {
         fwrite(&cellSWeight, sizeof(float), 1, f);
         fwrite(&cellTWeight, sizeof(float), 1, f);
-        fwrite(&in, sizeof(float), 1, f);
-        fwrite(&out, sizeof(float), 1, f);
+        fwrite(&fullnessScore, sizeof(float), 1, f);
+        fwrite(&emptinessScore, sizeof(float), 1, f);
         fwrite(&on, sizeof(float), 1, f);
 
         // fwrite(gEdgePhotoWeight,sizeof(float),4,f);
@@ -46,8 +46,8 @@ struct GC_cellInfo
     {
         fread(&cellSWeight, sizeof(float), 1, f);
         fread(&cellTWeight, sizeof(float), 1, f);
-        fread(&in, sizeof(float), 1, f);
-        fread(&out, sizeof(float), 1, f);
+        fread(&fullnessScore, sizeof(float), 1, f);
+        fread(&emptinessScore, sizeof(float), 1, f);
         fread(&on, sizeof(float), 1, f);
 
         // fread(gEdgePhotoWeight,sizeof(float),4,f);

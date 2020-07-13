@@ -489,8 +489,8 @@ void DelaunayGraphCut::initCells()
         c.cellSWeight = 0.0f;
         c.cellTWeight = 0.0f;
         c.on = 0.0f;
-        c.in = 0.0f;
-        c.out = 0.0f;
+        c.fullnessScore = 0.0f;
+        c.emptinessScore = 0.0f;
         for(int s = 0; s < 4; ++s)
         {
             c.gEdgeVisWeight[s] = 0.0f; // weights for the 4 faces of the tetrahedron
@@ -1523,8 +1523,8 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
     {
         c.cellSWeight = 0.0f;
         c.cellTWeight = 0.0f;
-        c.in = 0.0f;
-        c.out = 0.0f;
+        c.fullnessScore = 0.0f;
+        c.emptinessScore = 0.0f;
         c.on = 0.0f;
         for(int s = 0; s < 4; s++)
         {
@@ -1622,7 +1622,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
         {
             {
 #pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[facet.cellIndex].out += weight;
+                _cellsAttr[facet.cellIndex].emptinessScore += weight;
             }
 
             ++out_nstepsFront;
@@ -1691,7 +1691,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
                     c.cellTWeight += weight;
                 }
 #pragma OMP_ATOMIC_UPDATE
-                c.in += weight;
+                c.fullnessScore += weight;
             }
 
             ++out_nstepsBehind;
@@ -1787,7 +1787,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
 
             if((fFirst.cellIndex != GEO::NO_CELL) && (facet.cellIndex != GEO::NO_CELL) && (!isInfiniteCell(facet.cellIndex)))
             {
-                float eFirst = _cellsAttr[fFirst.cellIndex].out;
+                float eFirst = _cellsAttr[fFirst.cellIndex].emptinessScore;
 
                 Point3d p = originPt; // HAS TO BE HERE !!!
                 float maxDist = nPixelSizeBehind * mp->getCamPixelSize(p, cam);
@@ -1824,7 +1824,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
 
                 if(facet.cellIndex != GEO::NO_CELL)
                 {
-                    const float eLast = _cellsAttr[facet.cellIndex].out;
+                    const float eLast = _cellsAttr[facet.cellIndex].emptinessScore;
                     if((eFirst > eLast) && (eFirst < beta) && (eLast / eFirst < delta))
                     {
 #pragma OMP_ATOMIC_UPDATE
@@ -1930,13 +1930,13 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     const GC_cellInfo& c = _cellsAttr[facet.cellIndex];
                     if((p - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
                     {
-                        minJump = std::min(minJump, c.out);
-                        maxJump = std::max(maxJump, c.out);
+                        minJump = std::min(minJump, c.emptinessScore);
+                        maxJump = std::max(maxJump, c.emptinessScore);
                     }
                     else
                     {
-                        minSilent = std::min(minSilent, c.out);
-                        maxSilent = std::max(maxSilent, c.out);
+                        minSilent = std::min(minSilent, c.emptinessScore);
+                        maxSilent = std::max(maxSilent, c.emptinessScore);
                     }
 
                     Facet outFacet;
@@ -1969,7 +1969,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                 bool ok = (facet.cellIndex != GEO::NO_CELL);
                 if(ok)
                 {
-                    midSilent = _cellsAttr[facet.cellIndex].out;
+                    midSilent = _cellsAttr[facet.cellIndex].emptinessScore;
                 }
 
                 while(ok)
@@ -1977,8 +1977,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     nstepsBehind++;
                     const GC_cellInfo& c = _cellsAttr[facet.cellIndex];
 
-                    minSilent = std::min(minSilent, c.out);
-                    maxSilent = std::max(maxSilent, c.out);
+                    minSilent = std::min(minSilent, c.emptinessScore);
+                    maxSilent = std::max(maxSilent, c.emptinessScore);
 
                     Facet outFacet;
                     Point3d intersectPt;
