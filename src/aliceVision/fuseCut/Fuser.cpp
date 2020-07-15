@@ -766,7 +766,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                 }
 
                 int nnoisePts = ((percNoisePts / 100.0f) * (float)(idsAlive->size()));
-                StaticVector<int>* randIdsAlive = mvsUtils::createRandomArrayOfIntegers(idsAlive->size());
+                const std::vector<int> randIdsAlive = mvsUtils::createRandomArrayOfIntegers(idsAlive->size());
 
                 srand(time(nullptr));
 
@@ -775,7 +775,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                     for(int x = 0; x < w; ++x)
                     {
                         int id = y * w + x;
-                        int i = (*idsAlive)[(*randIdsAlive)[id]];
+                        int i = (*idsAlive)[randIdsAlive[id]];
                         double depth = depthMap[i];
 
                         double sim = simMap[i];
@@ -823,7 +823,6 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                     mvsUtils::printfElapsedTime(t1);
 
                 delete idsAlive;
-                delete randIdsAlive;
             }
             else
             {

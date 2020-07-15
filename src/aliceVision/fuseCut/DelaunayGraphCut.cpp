@@ -24,6 +24,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <random>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -794,6 +795,10 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, const Poi
 
     float maxSize = 2.0f * (O - voxel[0]).size();
     Point3d CG = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    
+    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
+    std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
+    auto rand = std::bind(std::uniform_real_distribution<float>{0.0, 1.0}, generator);
 
     for(int x = 0; x <= ns; x++)
     {
@@ -803,7 +808,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, const Poi
             {
                 Point3d pt = voxel[0] + vx * ((float)x / (float)ns) + vy * ((float)y / (float)ns) +
                              vz * ((float)z / (float)ns);
-                pt = pt + (CG - pt).normalize() * (maxSize * ((float)rand() / (float)RAND_MAX));
+                pt = pt + (CG - pt).normalize() * (maxSize * rand());
 
                 Point3d p(pt.x, pt.y, pt.z);
                 GEO::index_t vi = locateNearestVertex(p);
@@ -1533,7 +1538,8 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
     }
 
     // choose random order to prevent waiting
-    StaticVector<int>* vetexesToProcessIdsRand = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size());
+    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
+    const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1543,10 +1549,10 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
     int nAvCams = 0;
 
 #pragma omp parallel for reduction(+:avStepsFront,aAvStepsFront,avStepsBehind,nAvStepsBehind,avCams,nAvCams)
-    for(int i = 0; i < vetexesToProcessIdsRand->size(); i++)
+    for(int i = 0; i < verticesRandIds.size(); i++)
     {
-        int iV = (*vetexesToProcessIdsRand)[i];
-        const GC_vertexInfo& v = _verticesAttr[iV];
+        int vertexIndex = verticesRandIds[i];
+        const GC_vertexInfo& v = _verticesAttr[vertexIndex];
 
         if(v.isReal() && (allPoints || v.isOnSurface) && (v.nrc > 0))
         {
@@ -1560,7 +1566,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
 
                 int nstepsFront = 0;
                 int nstepsBehind = 0;
-                fillGraphPartPtRc(nstepsFront, nstepsBehind, iV, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
+                fillGraphPartPtRc(nstepsFront, nstepsBehind, vertexIndex, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
                                   allPoints, fillOut, distFcnHeight);
 
                 avStepsFront += nstepsFront;
@@ -1573,8 +1579,6 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
             nAvCams += 1;
         }
     }
-
-    delete vetexesToProcessIdsRand;
 
     ALICEVISION_LOG_DEBUG("avStepsFront " << avStepsFront);
     ALICEVISION_LOG_DEBUG("avStepsFront = " << mvsUtils::num2str(avStepsFront) << " // " << mvsUtils::num2str(aAvStepsFront));
@@ -1755,28 +1759,29 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
     }
 
     // choose random order to prevent waiting
-    StaticVector<int>* vetexesToProcessIdsRand = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size());
+    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
+    const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
 #pragma omp parallel for
-    for(int i = 0; i < vetexesToProcessIdsRand->size(); ++i)
+    for(int i = 0; i < verticesRandIds.size(); ++i)
     {
-        int vi = (*vetexesToProcessIdsRand)[i];
-        GC_vertexInfo& v = _verticesAttr[vi];
+        const int vertexIndex = verticesRandIds[i];
+        GC_vertexInfo& v = _verticesAttr[vertexIndex];
         if(v.isVirtual())
             continue;
 
-        const Point3d& originPt = _verticesCoords[vi];
+        const Point3d& originPt = _verticesCoords[vertexIndex];
         for(int c = 0; c < v.cams.size(); ++c)
         {
             int cam = v.cams[c];
 
             // False here mean nearest
             const bool nearestFarest = true;
-            Facet fFirst = getFacetFromVertexOnTheRayToTheCam(vi, cam, nearestFarest);
+            Facet fFirst = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
 
             // get the tetrahedron next to point p on the ray from c
             // False here mean farest
-            Facet facet = getFacetFromVertexOnTheRayToTheCam(vi, cam, false);
+            Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, false);
 
             if((fFirst.cellIndex != GEO::NO_CELL) && (facet.cellIndex != GEO::NO_CELL) && (!isInfiniteCell(facet.cellIndex)))
             {
@@ -1830,8 +1835,6 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
 
     } // for i
 
-    delete vetexesToProcessIdsRand;
-
     for(GC_cellInfo& c: _cellsAttr)
     {
         c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, std::max(1.0f, c.cellTWeight) * c.on));
@@ -1872,7 +1875,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     }
 
     // choose random order to prevent waiting
-    StaticVector<int>* vetexesToProcessIdsRand = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size());
+    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
+    const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1880,14 +1884,14 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     int64_t nAvStepsBehind = 0;
 
 #pragma omp parallel for reduction(+:avStepsFront,aAvStepsFront,avStepsBehind,nAvStepsBehind)
-    for(int i = 0; i < vetexesToProcessIdsRand->size(); ++i)
+    for(int i = 0; i < verticesRandIds.size(); ++i)
     {
-        int vi = (*vetexesToProcessIdsRand)[i];
-        GC_vertexInfo& v = _verticesAttr[vi];
+        const int vertexIndex = verticesRandIds[i];
+        GC_vertexInfo& v = _verticesAttr[vertexIndex];
         if(v.isVirtual())
             continue;
 
-        const Point3d& originPt = _verticesCoords[vi];
+        const Point3d& originPt = _verticesCoords[vertexIndex];
         for(int c = 0; c < v.cams.size(); ++c)
         {
             int nstepsFront = 0;
@@ -1913,7 +1917,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             {
                 // True here mean nearest
                 const bool nearestFarest = true;
-                Facet facet = getFacetFromVertexOnTheRayToTheCam(vi, cam, nearestFarest);
+                Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
                 Point3d p = originPt; // HAS TO BE HERE !!!
                 bool ok = (facet.cellIndex != GEO::NO_CELL);
                 while(ok)
@@ -1957,7 +1961,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             {
                 // False here mean farest
                 const bool nearestFarest = false;
-                Facet facet = getFacetFromVertexOnTheRayToTheCam(vi, cam, nearestFarest);
+                Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
                 Point3d p = originPt; // HAS TO BE HERE !!!
                 bool ok = (facet.cellIndex != GEO::NO_CELL);
                 if(ok)
@@ -2029,8 +2033,6 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             nAvStepsBehind += 1;
         }
     }
-
-    delete vetexesToProcessIdsRand;
 
     for(GC_cellInfo& c: _cellsAttr)
     {
@@ -2282,9 +2284,6 @@ void DelaunayGraphCut::createDensePointCloud(Point3d hexah[8], const StaticVecto
   // add points from sfm
   if(sfmData != nullptr)
     addPointsFromSfM(hexah, cams, *sfmData);
-
-  // initialize random seed
-  srand(time(nullptr));
 
   const int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
 

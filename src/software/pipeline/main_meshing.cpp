@@ -148,6 +148,7 @@ int aliceVision_main(int argc, char* argv[])
     bool saveRawDensePointCloud = false;
     bool colorizeOutput = false;
     float forceTEdgeDelta = 0.1f;
+    unsigned int seed = 0;
 
     fuseCut::FuseParams fuseParams;
 
@@ -217,7 +218,9 @@ int aliceVision_main(int argc, char* argv[])
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
             "Save dense point cloud before cut and filtering.")
         ("forceTEdgeDelta", po::value<float>(&forceTEdgeDelta)->default_value(forceTEdgeDelta),
-            "0 to disable force T edge in graphcut. Threshold for emptiness/fullness variation.");
+            "0 to disable force T edge in graphcut. Threshold for emptiness/fullness variation.")
+        ("seed", po::value<unsigned int>(&seed)->default_value(seed),
+         "Seed used in random processes. (0 to use a random seed)."); 
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -290,6 +293,7 @@ int aliceVision_main(int argc, char* argv[])
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
     mp.userParams.put("delaunaycut.forceTEdgeDelta", forceTEdgeDelta);
+    mp.userParams.put("delaunaycut.seed", seed);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
