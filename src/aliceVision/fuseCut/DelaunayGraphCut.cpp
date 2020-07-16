@@ -26,6 +26,9 @@
 #include <boost/filesystem/operations.hpp>
 #include <random>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
+
 namespace aliceVision {
 namespace fuseCut {
 
@@ -1556,11 +1559,11 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
 
         if(v.isReal() && (v.nrc > 0))
         {
+            // "weight" is called alpha(p) in the paper
+            const float weight = weightFcn((float)v.nrc, labatutWeights, v.getNbCameras()); // number of cameras
+
             for(int c = 0; c < v.cams.size(); c++)
             {
-                // "weight" is called alpha(p) in the paper
-                float weight = weightFcn((float)v.nrc, labatutWeights, v.getNbCameras()); // number of cameras
-
                 assert(v.cams[c] >= 0);
                 assert(v.cams[c] < mp->ncams);
 
@@ -2304,9 +2307,20 @@ void DelaunayGraphCut::createGraphCut(Point3d hexah[8], const StaticVector<int>&
   if(removeSmallSegments) // false
     removeSmallSegs(2500); // TODO FACA: to decide
 
-  reconstructExpetiments(cams, folderName,
-                         hexah, tmpCamsPtsFolderName,
-                         spaceSteps);
+  voteFullEmptyScore(cams, folderName, tmpCamsPtsFolderName, spaceSteps);
+
+  if(saveTemporaryBinFiles)
+  {
+      std::unique_ptr<mesh::Mesh> mesh(createTetrahedralMesh());
+      mesh->saveToObj(folderName + "tetrahedralMesh.obj");
+  }
+
+  reconstructGC(hexah);
+
+  if(saveTemporaryBinFiles)
+  {
+      saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
+  }
 
   if(mp->userParams.get<bool>("LargeScale.saveDelaunayTriangulation", false))
   {
@@ -2428,11 +2442,11 @@ void DelaunayGraphCut::maxflow()
     ALICEVISION_LOG_INFO("Maxflow: done.");
 }
 
-void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
-                                            Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
-                                            const Point3d& spaceSteps)
+void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName,
+                                          const std::string& tmpCamsPtsFolderName,
+                                          const Point3d& spaceSteps)
 {
-    ALICEVISION_LOG_INFO("DelaunayGraphCut::reconstructExpetiments");
+    ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
     int maxint = 1000000.0f;
 
     long t1;
@@ -2473,11 +2487,6 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
-
-        reconstructGC(hexahInflated);
-
-        if(saveTemporaryBinFiles)
-            saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
     }
 
     if(jancosekIJCV) // true by default
@@ -2501,11 +2510,6 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
-
-        reconstructGC(hexahInflated);
-
-        if(saveTemporaryBinFiles)
-            saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
     }
 
     if(labatutCFG09)
@@ -2515,11 +2519,6 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
-
-        reconstructGC(hexahInflated);
-
-        if(saveTemporaryBinFiles)
-            saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
     }
 }
 
@@ -2687,6 +2686,211 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
                 t.v[0] = vertices[0];
                 t.v[1] = vertices[2];
                 t.v[2] = vertices[1];
+                me->tris.push_back(t);
+            }
+        }
+    }
+
+    ALICEVISION_LOG_INFO("Extract mesh from Graph Cut done.");
+    return me;
+}
+
+mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
+{
+    ALICEVISION_LOG_INFO("Create mesh of the tetrahedralization.");
+
+    ALICEVISION_LOG_INFO("# vertixes: " << _verticesCoords.size());
+    if(_cellsAttr.empty())
+        return nullptr;
+
+    mesh::Mesh* me = new mesh::Mesh();
+
+    // TODO: copy only surface points and remap visibilities
+    me->pts = StaticVector<Point3d>();
+    me->pts.reserve(10 * _verticesCoords.size());
+
+    me->tris = StaticVector<mesh::Mesh::triangle>();
+    me->tris.reserve(_verticesCoords.size());
+
+    using namespace boost::accumulators;
+    using Accumulator = accumulator_set<float, stats<tag::min, tag::max, tag::median, tag::mean>>;
+    auto displayAcc = [](const std::string& name, const Accumulator& acc) {
+        ALICEVISION_LOG_INFO(" [" << name << "]"
+                                  << " min: " << extract::min(acc) << " max: " << extract::max(acc)
+                                  << " mean: " << extract::mean(acc) << " median: " << extract::median(acc));
+    };
+    {
+        Accumulator acc_nrc;
+        Accumulator acc_camSize;
+        for(VertexIndex vi = 0; vi < _verticesAttr.size(); ++vi)
+        {
+            const GC_vertexInfo& vertexAttr = _verticesAttr[vi];
+            acc_nrc(vertexAttr.nrc);
+            acc_camSize(vertexAttr.cams.size());
+        }
+        displayAcc("acc_nrc", acc_nrc);
+        displayAcc("acc_camSize", acc_camSize);
+    }
+
+    float max_score = 1.0;
+    {
+        Accumulator acc_cellScore;
+        Accumulator acc_cellSWeight;
+        Accumulator acc_cellTWeight;
+        Accumulator acc_gEdgeVisWeight;
+        Accumulator acc_fullnessScore;
+        Accumulator acc_emptinessScore;
+        Accumulator acc_on;
+
+        for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+        {
+            const GC_cellInfo& cellAttr = _cellsAttr[ci];
+            acc_cellScore(cellAttr.cellSWeight - cellAttr.cellTWeight);
+            acc_cellSWeight(cellAttr.cellSWeight);
+            acc_cellTWeight(cellAttr.cellTWeight);
+
+            acc_gEdgeVisWeight(cellAttr.gEdgeVisWeight[0]);
+            acc_gEdgeVisWeight(cellAttr.gEdgeVisWeight[1]);
+            acc_gEdgeVisWeight(cellAttr.gEdgeVisWeight[2]);
+            acc_gEdgeVisWeight(cellAttr.gEdgeVisWeight[3]);
+
+            acc_fullnessScore(cellAttr.fullnessScore);
+            acc_emptinessScore(cellAttr.emptinessScore);
+            acc_on(cellAttr.on);
+        }
+        
+        displayAcc("cellScore", acc_cellScore);
+        displayAcc("cellSWeight", acc_cellSWeight);
+        displayAcc("cellTWeight", acc_cellTWeight);
+        displayAcc("gEdgeVisWeight", acc_gEdgeVisWeight);
+        displayAcc("fullnessScore", acc_fullnessScore);
+        displayAcc("emptinessScore", acc_emptinessScore);
+        displayAcc("on", acc_on);
+        max_score = 4.0f * extract::mean(acc_emptinessScore);
+    }
+    ALICEVISION_LOG_DEBUG("createTetrahedralMesh: max_score: " << max_score);
+
+    // loop over all facets
+    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    {
+        Point3d pointscellCenter(0.0, 0.0, 0.0);
+        {
+            bool invalid = false;
+            int weakVertex = 0;
+            for(VertexIndex k = 0; k < 4; ++k)
+            {
+                const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
+                const GC_vertexInfo& vertexAttr = _verticesAttr[vi];
+                if(vertexAttr.cams.size() <= 3)
+                {
+                    ++weakVertex;
+                }
+                const Facet f1(ci, k);
+                const Facet f2 = mirrorFacet(f1);
+                if(isInvalidOrInfiniteCell(f2.cellIndex))
+                {
+                    invalid = true;
+                    continue;
+                }
+                pointscellCenter = pointscellCenter + _verticesCoords[vi];
+            }
+            pointscellCenter = pointscellCenter / 4.0;
+            if(invalid)
+            {
+                // If one of the facet is invalid, discard the tetrahedron.
+                continue;
+            }
+            if (weakVertex >= 3)
+            {
+                // If the tetrahedron mainly composed of weak vertices, skip it.
+                // So keep tetrahedra that are linked to at least 3 good vertices.
+                continue;
+            }
+        }
+
+        const GC_cellInfo& cellAttr = _cellsAttr[ci];
+        const float score = cellAttr.emptinessScore; // cellAttr.cellSWeight - cellAttr.cellTWeight;
+        if(score < (max_score / 1000.0f))
+        {
+            // Skip too low score cells
+            continue;
+        }
+
+        for(VertexIndex k = 0; k < 4; ++k)
+        {
+            const Facet f1(ci, k);
+
+            VertexIndex vertices[3];
+            vertices[0] = getVertexIndex(f1, 0);
+            vertices[1] = getVertexIndex(f1, 1);
+            vertices[2] = getVertexIndex(f1, 2);
+
+            Point3d points[3];
+            for(int k = 0; k < 3; ++k)
+            {
+                points[k] = _verticesCoords[vertices[k]];
+                // Downscale cell for visibility
+                points[k] = pointscellCenter + ((points[k] - pointscellCenter) * 0.95);
+            }
+
+            const Facet f2 = mirrorFacet(f1);
+            //// do not need to test again: already filtered before
+            // if(isInvalidOrInfiniteCell(f2.cellIndex))
+            //     continue;
+
+            const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
+            const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
+
+            const Point3d N =
+                cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
+
+            const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
+            const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
+
+            bool clockwise = false;
+            if(dd1 == 0.0)
+            {
+                if(dd2 == 0.0)
+                {
+                    ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
+                }
+                if(dd2 > 0.0)
+                {
+                    clockwise = true;
+                }
+            }
+            else
+            {
+                if(dd1 < 0.0)
+                {
+                    clockwise = true;
+                }
+            }
+
+            const rgb color = getRGBFromJetColorMap(score / max_score);
+            const std::size_t vertexBaseIndex = me->pts.size();
+            for(const Point3d& p: points)
+            {
+                me->pts.push_back(p);
+                me->colors().push_back(color);
+            }
+
+            if(clockwise)
+            {
+                mesh::Mesh::triangle t;
+                t.alive = true;
+                t.v[0] = vertexBaseIndex;
+                t.v[1] = vertexBaseIndex + 1;
+                t.v[2] = vertexBaseIndex + 2;
+                me->tris.push_back(t);
+            }
+            else
+            {
+                mesh::Mesh::triangle t;
+                t.alive = true;
+                t.v[0] = vertexBaseIndex;
+                t.v[1] = vertexBaseIndex + 2;
+                t.v[2] = vertexBaseIndex + 1;
                 me->tris.push_back(t);
             }
         }

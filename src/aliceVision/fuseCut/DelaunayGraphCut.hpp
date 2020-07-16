@@ -329,10 +329,9 @@ public:
 
     void maxflow();
 
-    void reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
-                                Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
-                                const Point3d& spaceSteps);
-
+    void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName,
+                            const std::string& tmpCamsPtsFolderName,
+                            const Point3d& spaceSteps);
 
     void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
 
@@ -352,6 +351,7 @@ public:
     void leaveLargestFullSegmentOnly();
 
     mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
+    mesh::Mesh* createTetrahedralMesh() const;
 };
 
 } // namespace fuseCut
