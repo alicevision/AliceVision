@@ -117,10 +117,16 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         const ImageParams& imgParams = _imagesParams.at(i);
 
         oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(imgParams.path, metadata);
-
-        const auto scaleIt = metadata.find("AliceVision:downscale");
-        const auto pIt = metadata.find("AliceVision:P");
+        oiio::ParamValueList::const_iterator scaleIt = metadata.end();
+        oiio::ParamValueList::const_iterator pIt = metadata.end();
+        
+        const bool fileExists = fs::exists(imgParams.path);
+        if(fileExists)
+        {
+            imageIO::readImageMetadata(imgParams.path, metadata);
+            scaleIt = metadata.find("AliceVision:downscale");
+            pIt = metadata.find("AliceVision:P");
+        }
 
         // find image scale information
         if(scaleIt != metadata.end() && scaleIt->type() == oiio::TypeDesc::INT)
@@ -128,7 +134,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             // use aliceVision image metadata
             _imagesScale.at(i) = scaleIt->get_int();
         }
-        else
+        else if(fileExists)
         {
             // use image dimension
             int w, h, channels;
@@ -172,16 +178,16 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const std::string fileNameP = getFileNameFromIndex(this, i, EFileType::P);
             const std::string fileNameD = getFileNameFromIndex(this, i, EFileType::D);
 
-            if(fs::exists(fileNameP), fs::exists(fileNameD))
+            if(fs::exists(fileNameP) && fs::exists(fileNameD))
             {
-              ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
+                ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
 
-              loadMatricesFromTxtFile(i, fileNameP, fileNameD);
+                loadMatricesFromTxtFile(i, fileNameP, fileNameD);
             }
             else
             {
-              ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from SfMData.");
-              loadMatricesFromSfM(i);
+                ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from SfMData.");
+                loadMatricesFromSfM(i);
             }
         }
 
