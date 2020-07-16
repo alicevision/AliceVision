@@ -1515,7 +1515,7 @@ float DelaunayGraphCut::weightFcn(float nrc, bool labatutWeights, int  /*ncams*/
     return weight;
 }
 
-void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints,
+void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
                                bool labatutWeights, bool fillOut, float distFcnHeight) // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
 {
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
@@ -1554,7 +1554,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
         int vertexIndex = verticesRandIds[i];
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
 
-        if(v.isReal() && (allPoints || v.isOnSurface) && (v.nrc > 0))
+        if(v.isReal() && (v.nrc > 0))
         {
             for(int c = 0; c < v.cams.size(); c++)
             {
@@ -1567,7 +1567,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
                 int nstepsFront = 0;
                 int nstepsBehind = 0;
                 fillGraphPartPtRc(nstepsFront, nstepsBehind, vertexIndex, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
-                                  allPoints, fillOut, distFcnHeight);
+                                  fillOut, distFcnHeight);
 
                 avStepsFront += nstepsFront;
                 aAvStepsFront += 1;
@@ -1589,7 +1589,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
 }
 
 void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam,
-                                       float weight, bool fixesSigma, float nPixelSizeBehind, bool allPoints,
+                                       float weight, bool fixesSigma, float nPixelSizeBehind,
                                        bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
     out_nstepsFront = 0;
@@ -1684,7 +1684,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
 
         Point3d p = originPt; // HAS TO BE HERE !!!
 
-        bool ok = (facet.cellIndex != GEO::NO_CELL) && allPoints;
+        bool ok = (facet.cellIndex != GEO::NO_CELL);
         while(ok)
         {
             GC_cellInfo& c = _cellsAttr[facet.cellIndex];
@@ -1703,7 +1703,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
             // False here mean farest
             const bool nearestFarest = false;
             if(!rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt) ||
-               ((originPt - p).size() >= maxDist) || (!allPoints))
+               ((originPt - p).size() >= maxDist))
             {
                 ok = false;
             }
@@ -2459,7 +2459,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
         ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( forceTEdgeDelta*100 = " << static_cast<int>(delta * 100.0f) << "):");
 
-        fillGraph(false, sigma, true, false, true, distFcnHeight);
+        fillGraph(false, sigma, false, true, distFcnHeight);
 
         addToInfiniteSw((float)maxint);
 
@@ -2487,7 +2487,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
         ALICEVISION_LOG_INFO("Jancosek IJCV method ( forceTEdgeDelta*100 = " << static_cast<int>(forceTEdgeDelta * 100.0f) << " ): ");
 
         // compute weights on edge between tetrahedra
-        fillGraph(false, sigma, true, false, true, distFcnHeight);
+        fillGraph(false, sigma, false, true, distFcnHeight);
 
         addToInfiniteSw((float)maxint);
 
@@ -2511,7 +2511,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     if(labatutCFG09)
     {
         ALICEVISION_LOG_INFO("Labatut CFG 2009 method:");
-        fillGraph(false, sigma, true, true, true, distFcnHeight);
+        fillGraph(false, sigma, true, true, distFcnHeight);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
