@@ -1138,7 +1138,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
 void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // allPoints=true, alpha=0
 {
-    ALICEVISION_LOG_DEBUG("creating universe");
+    ALICEVISION_LOG_DEBUG("DelaunayGraphCut::computeVerticesSegSize");
     int scalePS = mp->userParams.get<int>("global.scalePS", 1);
     int step = mp->userParams.get<int>("global.step", 1);
     float pointToJoinPixSizeDist = (float)mp->userParams.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
@@ -1188,17 +1188,17 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
     }
     // mvsUtils::finishEstimate();
 
-    Universe* u = new Universe(_verticesAttr.size());
+    Universe u(_verticesAttr.size());
 
     // t1 = mvsUtils::initEstimate();
     int s = (int)edges.size(); // Fuse all edges collected to be merged
     for(int i = 0; i < s; i++)
     {
-        int a = u->find(edges[i].x);
-        int b = u->find(edges[i].y);
+        int a = u.find(edges[i].x);
+        int b = u.find(edges[i].y);
         if(a != b) // TODO FACA: Are they not different in all cases?
         {
-            u->join(a, b);
+            u.join(a, b);
         }
         // mvsUtils::printfEstimate(i, s, t1);
     }
@@ -1211,13 +1211,12 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
         if(v.isVirtual())
             continue;
 
-        int a = u->find(vi);
-        v.segSize = u->elts[a].size;
+        int a = u.find(vi);
+        v.segSize = u.elts[a].size;
         v.segId = a;
     }
 
-    delete u;
-    ALICEVISION_LOG_DEBUG("creating universe done.");
+    ALICEVISION_LOG_DEBUG("DelaunayGraphCut::computeVerticesSegSize done.");
 }
 
 void DelaunayGraphCut::removeSmallSegs(int minSegSize)
@@ -2294,7 +2293,7 @@ void DelaunayGraphCut::createDensePointCloud(Point3d hexah[8], const StaticVecto
   addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
 }
 
-void DelaunayGraphCut::createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, const Point3d& spaceSteps)
+void DelaunayGraphCut::createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments)
 {
   initVertices();
 
@@ -2307,7 +2306,7 @@ void DelaunayGraphCut::createGraphCut(Point3d hexah[8], const StaticVector<int>&
   if(removeSmallSegments) // false
     removeSmallSegs(2500); // TODO FACA: to decide
 
-  voteFullEmptyScore(cams, folderName, tmpCamsPtsFolderName, spaceSteps);
+  voteFullEmptyScore(cams, folderName);
 
   if(saveTemporaryBinFiles)
   {
@@ -2442,9 +2441,7 @@ void DelaunayGraphCut::maxflow()
     ALICEVISION_LOG_INFO("Maxflow: done.");
 }
 
-void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName,
-                                          const std::string& tmpCamsPtsFolderName,
-                                          const Point3d& spaceSteps)
+void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
     int maxint = 1000000.0f;

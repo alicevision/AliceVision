@@ -329,14 +329,11 @@ public:
 
     void maxflow();
 
-    void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName,
-                            const std::string& tmpCamsPtsFolderName,
-                            const Point3d& spaceSteps);
+    void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
 
     void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
 
-    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName,
-                        bool removeSmallSegments, const Point3d& spaceSteps);
+    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.

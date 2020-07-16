@@ -333,27 +333,6 @@ int aliceVision_main(int argc, char* argv[])
                     else
                       fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
 
-                    Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim, (meshingFromDepthMaps && !estimateSpaceFromSfM) ? nullptr : &sfmData);
-                    StaticVector<Point3d>* voxels = mvsUtils::computeVoxels(&hexah[0], dimensions);
-
-                    StaticVector<int> voxelNeighs;
-                    voxelNeighs.resize(voxels->size() / 8);
-                    ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
-
-                    for(int i = 0; i < voxelNeighs.size(); ++i)
-                        voxelNeighs[i] = i;
-
-                    Point3d spaceSteps;
-                    {
-                        Point3d vx = hexah[1] - hexah[0];
-                        Point3d vy = hexah[3] - hexah[0];
-                        Point3d vz = hexah[4] - hexah[0];
-                        spaceSteps.x = (vx.size() / (double)dimensions.x) / (double)ocTreeDim;
-                        spaceSteps.y = (vy.size() / (double)dimensions.y) / (double)ocTreeDim;
-                        spaceSteps.z = (vz.size() / (double)dimensions.z) / (double)ocTreeDim;
-                    }
-                    delete voxels;
-
                     StaticVector<int> cams;
                     if(meshingFromDepthMaps)
                     {
@@ -384,7 +363,7 @@ int aliceVision_main(int argc, char* argv[])
                       sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
-                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
+                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false);
                     delaunayGC.graphCutPostProcessing();
                     mesh = delaunayGC.createMesh();
                     delaunayGC.createPtsCams(ptsCams);
