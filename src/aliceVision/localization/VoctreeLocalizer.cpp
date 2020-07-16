@@ -1435,7 +1435,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
     sfm::ImageLocalizerMatchData matchData;
     matchData.vec_inliers = vec_inliers[camID];
     matchData.error_max = param->_errorMax;
-    matchData.projection_matrix = intrinsics.get_projective_equivalent(pose);
+    matchData.projection_matrix = intrinsics.getProjectiveEquivalent(pose);
     matchData.pt2D = vec_pts2D[camID];
     matchData.pt3D = vec_pts3D[camID];
     

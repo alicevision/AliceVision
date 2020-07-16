@@ -1,28 +1,31 @@
-/**
- * Input and geometry
-*/
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// Input and geometry
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-/**
- * Image stuff
- */
+// Image stuff
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
 
-/*Logging stuff*/
+// Logging stuff
 #include <aliceVision/system/Logger.hpp>
 
-/*Reading command line options*/
+// Reading command line options
 #include <boost/program_options.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
-/*IO*/
+// IO
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -33,6 +36,8 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
+namespace fs = boost::filesystem;
+
 
 typedef struct {
   size_t offset_x;
@@ -42,6 +47,112 @@ typedef struct {
   std::string weights_path;
 } ConfigView;
 
+void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<unsigned char> & mask, size_t offset_x, size_t offset_y) {
+
+  
+  for (int i = 0; i < mask.Height(); i++) {
+    int j = 0;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  for (int i = 0; i < mask.Height(); i++) {
+    int j = mask.Width() - 1;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  for (int j = 0; j < mask.Width(); j++) {
+    int i = 0;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  for (int j = 0; j < mask.Width(); j++) {
+    int i = mask.Height() - 1;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+  
+  for (int i = 1; i < mask.Height() - 1; i++) {
+
+    int di = i + offset_y;
+
+    for (int j = 1; j < mask.Width() - 1; j++) {
+
+      int dj = j + offset_x;
+      if (dj >= inout.Width()) {
+        dj = dj - inout.Width();
+      }
+
+      if (!mask(i, j)) continue;
+
+      unsigned char others = true;
+      others &= mask(i - 1, j - 1);
+      others &= mask(i - 1, j + 1);
+      others &= mask(i, j - 1);
+      others &= mask(i, j + 1);
+      others &= mask(i + 1, j - 1);
+      others &= mask(i + 1, j + 1);
+      if (others) continue;
+
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+}
+
+void drawSeams(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<unsigned char> & labels) {
+
+  for (int i = 1; i < labels.Height() - 1; i++) {
+
+    for (int j = 1; j < labels.Width() - 1; j++) {
+
+      unsigned char label = labels(i, j);
+      unsigned char same = true;
+
+      same &= (labels(i - 1, j - 1) == label);
+      same &= (labels(i - 1, j + 1) == label);
+      same &= (labels(i, j - 1) == label);
+      same &= (labels(i, j + 1) == label);
+      same &= (labels(i + 1, j - 1) == label);
+      same &= (labels(i + 1, j + 1) == label);
+
+      if (same) {
+        continue;
+      }
+
+      inout(i, j) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+}
 
 void getMaskFromLabels(aliceVision::image::Image<float> & mask, aliceVision::image::Image<unsigned char> & labels, unsigned char index, size_t offset_x, size_t offset_y) {
 
@@ -163,7 +274,7 @@ public:
     return true;
   }
 
-  const aliceVision::image::Image<image::RGBAfColor> & getPanorama() const {
+  aliceVision::image::Image<image::RGBAfColor> & getPanorama() {
     return _panorama;
   }
 
@@ -505,8 +616,8 @@ public:
     image::Image<float> current_weights = weights;
     image::Image<float> next_weights;
 
-    for (int l = 0; l < _levels.size() - 1; l++) {
-
+    for (int l = 0; l < _levels.size() - 1; l++)
+    {
       aliceVision::image::Image<image::RGBfColor> buf(width, height);
       aliceVision::image::Image<image::RGBfColor> buf2(width, height);
       aliceVision::image::Image<float> bufw(width, height);
@@ -609,8 +720,8 @@ public:
       addition(_levels[l], _levels[l], buf2);
       removeNegativeValues(_levels[l]);
     }
-    
-    /*Write output to RGBA*/
+
+    // Write output to RGBA
     for (int i = 0; i < output.Height(); i++) {
       for (int j = 0; j < output.Width(); j++) {
         output(i, j).r() = _levels[0](i, j).r();
@@ -642,9 +753,10 @@ public:
   currentIndex(0)
   {
   }
+  virtual ~DistanceSeams() = default;
 
-  virtual bool append(const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
-
+  virtual bool append(const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y)
+  {
     if (inputMask.size() != inputWeights.size()) {
       return false;
     }
@@ -686,7 +798,8 @@ private:
   unsigned char currentIndex;
 };
 
-class LaplacianCompositer : public Compositer {
+class LaplacianCompositer : public Compositer
+{
 public:
 
   LaplacianCompositer(size_t outputWidth, size_t outputHeight, size_t bands) :
@@ -801,8 +914,8 @@ public:
     return true;
   }
 
-  virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
-
+  virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y)
+  {
     aliceVision::image::Image<image::RGBfColor> color_big_feathered;
 
     size_t new_offset_x, new_offset_y;
@@ -854,49 +967,46 @@ protected:
   size_t _bands;
 };
 
-int aliceVision_main(int argc, char **argv) {
+int aliceVision_main(int argc, char **argv)
+{
+  std::string sfmDataFilepath;
+  std::string warpingFolder;
+  std::string outputPanorama;
 
-  /**
-   * Program description
-  */
+  std::string compositerType = "multiband";
+  std::string overlayType = "none";
+
+  system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
+
+  // Program description
   po::options_description allParams (
     "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
     "AliceVision PanoramaCompositing"
   );
 
-  /**
-   * Description of mandatory parameters
-   */
-  std::string inputDirectory;
-  std::string outputPanorama;
+  // Description of mandatory parameters
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("input,i", po::value<std::string>(&inputDirectory)->required(), "Warping directory.")
+    ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
+    ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
     ("output,o", po::value<std::string>(&outputPanorama)->required(), "Path of the output panorama.");
   allParams.add(requiredParams);
 
-  /**
-   * Description of optional parameters
-   */
-  std::string compositerType = "multiband";
+  // Description of optional parameters
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].");
+    ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
+    ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams].");
   allParams.add(optionalParams);
 
-  /**
-   * Setup log level given command line
-   */
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  // Setup log level given command line
   po::options_description logParams("Log parameters");
   logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
+    ("verboseLevel,v", po::value<system::EVerboseLevel>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
   allParams.add(logParams);
 
 
-  /**
-   * Effectively parse command line given parse options
-   */
+  // Effectively parse command line given parse options
   po::variables_map vm;
   try
   {
@@ -925,143 +1035,170 @@ int aliceVision_main(int argc, char **argv) {
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-
-  /**
-   * Set verbose level given command line
-   */
+  // Set verbose level given command line
   system::Logger::get()->setLogLevel(verboseLevel);
 
-
-  /*Load output from previous warping step*/
-  std::stringstream ss;
-  ss << inputDirectory << "/config_views.json";
-  std::ifstream file_config(ss.str());
-  if (file_config.is_open() == false) {
-    ALICEVISION_LOG_INFO("Config file for warping can't be found at " << ss.str());
+  // load input scene
+  sfmData::SfMData sfmData;
+  std::cout << sfmData.getViews().size()  << std::endl;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS)))
+  {
+    ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
     return EXIT_FAILURE;
   }
 
-  bpt::ptree configTree;
-  bpt::read_json(ss.str(), configTree);
-
-
   std::pair<int, int> panoramaSize;
-  panoramaSize.first = configTree.get<size_t>("panoramaWidth");
-  panoramaSize.second = configTree.get<size_t>("panoramaHeight");
+  {
+      const IndexT viewId = *sfmData.getValidViews().begin();
+      const std::string viewFilepath = (fs::path(warpingFolder) / (std::to_string(viewId) + ".exr")).string();
+      ALICEVISION_LOG_TRACE("Read panorama size from file: " << viewFilepath);
 
-  ALICEVISION_LOG_INFO("Output panorama size set to " << panoramaSize.first << "x" << panoramaSize.second);
+      oiio::ParamValueList metadata = image::readImageMetadata(viewFilepath);
+      panoramaSize.first = metadata.find("AliceVision:panoramaWidth")->get_int();
+      panoramaSize.second = metadata.find("AliceVision:panoramaHeight")->get_int();
 
-  std::vector<ConfigView> configViews;
-  size_t pos = 0;
-  for (auto & item : configTree.get_child("views")) {
-    ConfigView cv;
-
-    /*if (pos == 32 || pos == 33 || pos == 34)*/
-    {
-    cv.img_path = item.second.get<std::string>("filename_view");
-    cv.mask_path = item.second.get<std::string>("filename_mask");
-    cv.weights_path = item.second.get<std::string>("filename_weights");
-    cv.offset_x = item.second.get<size_t>("offsetx");
-    cv.offset_y = item.second.get<size_t>("offsety");
-    configViews.push_back(cv);
-    }
-    pos++;
+      if(panoramaSize.first == 0 || panoramaSize.second == 0)
+      {
+          ALICEVISION_LOG_ERROR("The output panorama size is empty.");
+          return EXIT_FAILURE;
+      }
+      ALICEVISION_LOG_INFO("Output panorama size set to " << panoramaSize.first << "x" << panoramaSize.second);
   }
 
   std::unique_ptr<Compositer> compositer;
   bool isMultiBand = false;
-  if (compositerType == "multiband") {
+  if (compositerType == "multiband")
+  {
     compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second, 8));
     isMultiBand = true;
   }
-  else if (compositerType == "alpha") {
+  else if (compositerType == "alpha")
+  {
     compositer = std::unique_ptr<Compositer>(new AlphaCompositer(panoramaSize.first, panoramaSize.second));
   }
-  else {
+  else
+  {
     compositer = std::unique_ptr<Compositer>(new Compositer(panoramaSize.first, panoramaSize.second));
   }
 
-  /*Compute seams*/
+  // Compute seams
   std::unique_ptr<DistanceSeams> distanceseams(new DistanceSeams(panoramaSize.first, panoramaSize.second));
-  if (isMultiBand) {
-    for (const ConfigView & cv : configViews) {
-
-      /**
-       * Load mask
-       */
-      std::string maskPath = cv.mask_path;
+  if (isMultiBand)
+  {
+    for (const auto& viewIt : sfmData.getViews())
+    {
+      // Load mask
+      const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
       ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
       image::Image<unsigned char> mask;
       image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
-      /**
-       * Load Weights
-       */
-      std::string weightsPath = cv.weights_path;
+      oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+      const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+      const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+      // Load Weights
+      const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_weight.exr")).string();
       ALICEVISION_LOG_INFO("Load weights with path " << weightsPath);
       image::Image<float> weights;
       image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
-      
-      distanceseams->append(mask, weights, cv.offset_x, cv.offset_y);
+
+      distanceseams->append(mask, weights, offsetX, offsetY);
     }
   }
   image::Image<unsigned char> labels = distanceseams->getLabels();
   distanceseams.reset();
   distanceseams = nullptr;
-  
-  /*Do compositing*/
-  pos = 0;
-  for (const ConfigView & cv : configViews) {
 
-    /**
-     * Load image and convert it to linear colorspace
-     */
-    std::string imagePath = cv.img_path;
+  oiio::ParamValueList outputMetadata;
+
+  // Do compositing
+  int pos = 0;
+  for (const auto& viewIt : sfmData.getViews())
+  {
+    if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+    {
+        // skip unreconstructed views
+        continue;
+    }
+    // Load image and convert it to linear colorspace
+    const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + ".exr")).string();
     ALICEVISION_LOG_INFO("Load image with path " << imagePath);
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
-    /**
-     * Load mask
-     */
-    std::string maskPath = cv.mask_path;
+    oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
+    if(outputMetadata.empty())
+    {
+        // the first one will define the output metadata (random selection)
+        outputMetadata = metadata;
+    }
+    const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+    const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+    // Load mask
+    const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
     ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
     image::Image<unsigned char> mask;
     image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
-    /**
-     * Load Weights
-     */
-    std::string weightsPath = cv.weights_path;
+    // Load Weights
+    const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_weight.exr")).string();
     ALICEVISION_LOG_INFO("Load weights with path " << weightsPath);
     image::Image<float> weights;
     image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
-
-    /*Build weight map*/
-    if (isMultiBand) {
+    // Build weight map
+    if (isMultiBand)
+    {
       image::Image<float> seams(weights.Width(), weights.Height());
-      getMaskFromLabels(seams, labels, pos, cv.offset_x, cv.offset_y);
+      getMaskFromLabels(seams, labels, pos, offsetX, offsetY);
 
-      /* Composite image into panorama */
-      compositer->append(source, mask, seams, cv.offset_x, cv.offset_y);
+      // Composite image into panorama
+      compositer->append(source, mask, seams, offsetX, offsetY);
     }
-    else {
-      compositer->append(source, mask, weights, cv.offset_x, cv.offset_y);
+    else
+    {
+      compositer->append(source, mask, weights, offsetX, offsetY);
     }
-
-    pos++;
+    ++pos;
   }
 
-  /* Build image */
+  // Build image
   compositer->terminate();
 
+  if (overlayType == "borders")
+  {
+    for (const auto& viewIt : sfmData.getViews())
+    {
+      // Load mask
+      const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+      ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+      image::Image<unsigned char> mask;
+      image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
-  /* Store output */
+      oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+      const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+      const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+      drawBorders(compositer->getPanorama(), mask, offsetX, offsetY);
+    }
+  }
+  else if (overlayType == "seams")
+  {
+    drawSeams(compositer->getPanorama(), labels);
+  }
+
+  // Remove Warping-specific metadata
+  outputMetadata.remove("AliceVision:offsetX");
+  outputMetadata.remove("AliceVision:offsetY");
+  outputMetadata.remove("AliceVision:panoramaWidth");
+  outputMetadata.remove("AliceVision:panoramaHeight");
+
+  // Store output
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
   const aliceVision::image::Image<image::RGBAfColor> & panorama = compositer->getPanorama();
-  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::SRGB);
-
+  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::AUTO, outputMetadata);
 
   return EXIT_SUCCESS;
 }

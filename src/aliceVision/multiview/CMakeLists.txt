@@ -19,6 +19,7 @@ set(multiview_files_headers
   relativePose/Homography4PSolver.hpp
   relativePose/HomographyError.hpp
   relativePose/HomographyKernel.hpp
+  relativePose/Rotation3PSolver.hpp
   relativePose/ISolverErrorRelativePose.hpp
   resection/EPnPSolver.hpp
   resection/EPnPKernel.hpp
@@ -51,6 +52,7 @@ set(multiview_files_sources
   relativePose/Fundamental8PSolver.cpp
   relativePose/Fundamental10PSolver.cpp
   relativePose/Homography4PSolver.cpp
+  relativePose/Rotation3PSolver.cpp
   resection/EPnPSolver.cpp
   resection/P3PSolver.cpp
   resection/P4PfSolver.cpp

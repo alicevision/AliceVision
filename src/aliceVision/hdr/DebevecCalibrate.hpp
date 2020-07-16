@@ -5,13 +5,27 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
-#include <aliceVision/image/all.hpp>
+
+#include "sampling.hpp"
 #include "rgbCurve.hpp"
-#include <aliceVision/numeric/numeric.hpp>
+
+#include <vector>
+#include <string>
+
 
 namespace aliceVision {
 namespace hdr {
 
+/**
+ * @brief Calibration of the Camera Response Function (CRF) from multiple LDR images.
+ *
+ * The implementation is based on the following paper:
+ * P. Debevec and J. Malik. Recovering high dynamic range radiance maps from photographs.
+ * In Proceedings of the 24th Annual Conference on Computer Graphics and Interactive Techniques,
+ * SIGGRAPH 97, pages 369-378, 1997.
+ *
+ * https://dl.acm.org/doi/pdf/10.1145/1401132.1401174
+ */
 class DebevecCalibrate
 {
 public:  
@@ -19,21 +33,17 @@ public:
   /**
    * @brief
    * @param[in] LDR images groups
-   * @param[in] channel quantization
    * @param[in] exposure times
-   * @param[in] number of samples
+   * @param[in] channel quantization
    * @param[in] calibration weight function
    * @param[in] lambda (parameter of smoothness)
    * @param[out] camera response function
    */
-  bool process(const std::vector<std::vector<std::string>> &ldrImageGroups,
-               const std::size_t channelQuantization,
+  bool process(const std::vector<std::vector<ImageSample>> & ldrSamples,
                const std::vector<std::vector<float>> &times,
-               const int nbPoints,
-               const int calibrationDownscale,
-               const bool fisheye,
+               std::size_t channelQuantization,
                const rgbCurve &weight,
-               const float lambda,
+               float lambda,
                rgbCurve &response);
 
 };

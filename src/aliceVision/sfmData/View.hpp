@@ -261,7 +261,7 @@ public:
    */
   const std::string& getMetadataMake() const
   {
-    return getMetadata({"Make", "cameraMake"});
+    return getMetadata({"Make", "cameraMake", "camera make"});
   }
 
   /**
@@ -270,7 +270,7 @@ public:
    */
   const std::string& getMetadataModel() const
   {
-    return getMetadata({"Model", "cameraModel"});
+      return getMetadata({"Model", "cameraModel", "cameraModelName", "camera model", "camera model name"});
   }
 
   /**
@@ -279,7 +279,7 @@ public:
    */
   const std::string& getMetadataBodySerialNumber() const
   {
-    return getMetadata({"Exif:BodySerialNumber", "cameraSerialNumber"});
+    return getMetadata({"Exif:BodySerialNumber", "cameraSerialNumber", "SerialNumber", "Serial Number"});
   }
 
   /**
@@ -288,7 +288,7 @@ public:
    */
   const std::string& getMetadataLensSerialNumber() const
   {
-    return getMetadata({"Exif:LensSerialNumber", "lensSerialNumber"});
+    return getMetadata({"Exif:LensSerialNumber", "lensSerialNumber", "lens serial number"});
   }
 
   /**
@@ -297,7 +297,7 @@ public:
    */
   double getMetadataFocalLength() const
   {
-    return getDoubleMetadata({"Exif:FocalLength", "focalLength"});
+    return getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length"});
   }
 
   /**
@@ -321,7 +321,7 @@ public:
       }
       if (hasDigitMetadata({"ApertureValue"}))
       {
-          const double aperture = getDoubleMetadata({"ApertureValue"});
+          const double aperture = getDoubleMetadata({"ApertureValue", "Aperture Value"});
           // fnumber = 2^(aperture/2)
           return std::pow(2.0, aperture / 2.0);
       }
@@ -334,7 +334,7 @@ public:
      */
   double getMetadataISO() const
   {
-      return getDoubleMetadata({"Exif:PhotographicSensitivity", "PhotographicSensitivity"});
+    return getDoubleMetadata({"Exif:PhotographicSensitivity", "PhotographicSensitivity", "Photographic Sensitivity", "ISO"});
   }
 
   /**
@@ -351,7 +351,7 @@ public:
 
   const std::string& getMetadataDateTimeOriginal() const
   {
-    return getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal"});
+    return getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"});
   }
 
   /**

@@ -61,7 +61,7 @@ struct AlembicExporter::DataImpl
   void addCamera(const std::string& name,
                const sfmData::View& view,
                const sfmData::CameraPose* pose = nullptr,
-               const camera::IntrinsicBase* intrinsic = nullptr,
+               std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
                const Vec6* uncertainty = nullptr,
                Alembic::Abc::OObject* parent = nullptr);
   
@@ -86,7 +86,7 @@ struct AlembicExporter::DataImpl
 void AlembicExporter::DataImpl::addCamera(const std::string& name,
                const sfmData::View& view,
                const sfmData::CameraPose* pose,
-               const camera::IntrinsicBase* intrinsic,
+               std::shared_ptr<camera::IntrinsicBase> intrinsic,
                const Vec6* uncertainty,
                Alembic::Abc::OObject* parent)
 {
@@ -178,29 +178,20 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   }
 
   // set intrinsic properties
-  const bool isIntrinsicValid = (intrinsic != nullptr &&
-                                 intrinsic->isValid() &&
-                                 camera::isPinhole(intrinsic->getType()));
-
-  if(isIntrinsicValid)
+  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicCasted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  if(intrinsicCasted)
   {
-    const auto* pinhole = dynamic_cast<const camera::Pinhole*>(intrinsic);
     CameraSample camSample;
 
-    // Use a common sensor width if we don't have this information.
-    // We chose a full frame 24x36 camera
-    float sensorWidthMM = 36.0;
-
-    if(view.hasMetadata({"AliceVision:SensorWidth"}))
-      sensorWidthMM = view.getDoubleMetadata({"AliceVision:SensorWidth"});
-
     // Take the max of the image size to handle the case where the image is in portrait mode
-    const float imgWidth = pinhole->w();
-    const float imgHeight = pinhole->h();
+    const float imgWidth = intrinsicCasted->w();
+    const float imgHeight = intrinsicCasted->h();
+    const float sensorWidth = intrinsicCasted->sensorWidth();
+    const float sensorHeight = intrinsicCasted->sensorHeight();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLength_pix = static_cast<const float>(pinhole->focal());
-    const float focalLength_mm = sensorWidthMM * focalLength_pix / sensorWidth_pix;
-    const float pix2mm = sensorWidthMM / sensorWidth_pix;
+    const float focalLength_pix = static_cast<const float>(intrinsicCasted->getScale()(0));
+    const float focalLength_mm = sensorWidth * focalLength_pix / sensorWidth_pix;
+    const float pix2mm = sensorWidth / sensorWidth_pix;
 
     // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
     // ABC: origin is centered and orientation is (up,right)
@@ -213,16 +204,26 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     camSample.setVerticalAperture(vaperture_cm);
 
     // Add sensor width (largest image side) in pixels as custom property
-    std::vector<::uint32_t> sensorSize_pix = {pinhole->w(), pinhole->h()};
+    std::vector<::uint32_t> sensorSize_pix = {intrinsicCasted->w(), intrinsicCasted->h()};
+    std::vector<double> sensorSize_mm = {sensorWidth, sensorHeight};
 
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
-    OStringProperty(userProps, "mvg_intrinsicType").set(pinhole->getTypeStr());
-    OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EIntrinsicInitMode_enumToString(pinhole->getInitializationMode()));
-    ODoubleProperty(userProps, "mvg_initialFocalLengthPix").set(pinhole->initialFocalLengthPix());
-    ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(pinhole->getParams());
-    OBoolProperty(userProps, "mvg_intrinsicLocked").set(pinhole->isLocked());
+    ODoubleArrayProperty(userProps, "mvg_sensorSizeMm").set(sensorSize_mm);
+    OStringProperty(userProps, "mvg_intrinsicType").set(intrinsicCasted->getTypeStr());
+    OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EIntrinsicInitMode_enumToString(intrinsicCasted->getInitializationMode()));
+    ODoubleProperty(userProps, "mvg_initialFocalLengthPix").set(intrinsicCasted->initialScale());
+    ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(intrinsicCasted->getParams());
+    OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
 
     camObj.getSchema().set(camSample);
+  }
+
+  std::shared_ptr<camera::EquiDistant> intrinsicEquiCasted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+  if(intrinsicEquiCasted)
+  {
+    ODoubleProperty(userProps, "mvg_fisheyeCircleCenterX").set(intrinsicEquiCasted->getCircleCenterX());
+    ODoubleProperty(userProps, "mvg_fisheyeCircleCenterY").set(intrinsicEquiCasted->getCircleCenterY());
+    ODoubleProperty(userProps, "mvg_fisheyeCircleRadius").set(intrinsicEquiCasted->getCircleRadius());
   }
 
   if(uncertainty)
@@ -232,7 +233,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
      mvg_uncertaintyParams.set(uncertaintyParams);
   }
 
-  if(pose == nullptr || !isIntrinsicValid)
+  if(pose == nullptr || intrinsicCasted == nullptr)
   {
     // hide camera
     Alembic::AbcGeom::CreateVisibilityProperty(xform, 0).set(Alembic::AbcGeom::kVisibilityHidden);
@@ -298,7 +299,7 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
 {
   const std::string name = fs::path(view.getImagePath()).stem().string();
   const sfmData::CameraPose* pose = (sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) :  nullptr;
-  const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsicPtr(view.getIntrinsicId()); 
+  const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()); 
 
   if(sfmData.isPoseAndIntrinsicDefined(&view))
     _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
@@ -358,7 +359,7 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
     const sfmData::RigSubPose& rigSubPose = rig.getSubPose(view.getSubPoseId());
     const bool isReconstructed = (rigSubPose.status != sfmData::ERigSubPoseStatus::UNINITIALIZED);
     const std::string name = fs::path(view.getImagePath()).stem().string();
-    const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
     std::unique_ptr<sfmData::CameraPose> subPosePtr;
 
     if(isReconstructed)
@@ -509,7 +510,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
 void AlembicExporter::addCamera(const std::string& name,
                                 const sfmData::View& view,
                                 const sfmData::CameraPose* pose,
-                                const camera::IntrinsicBase* intrinsic,
+                                std::shared_ptr<camera::IntrinsicBase> intrinsic,
                                 const Vec6* uncertainty)
 {
   _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
@@ -601,7 +602,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
   const float imgWidth = cam->w();
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float focalLength_pix = static_cast<const float>(cam->focal());
+  const float focalLength_pix = static_cast<const float>(cam->getScale()(0));
   const float focalLength_mm = sensorWidthMM * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidthMM / sensorWidth_pix;
 

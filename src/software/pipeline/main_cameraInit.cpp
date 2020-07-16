@@ -184,13 +184,13 @@ int aliceVision_main(int argc, char **argv)
 
   std::string defaultIntrinsicKMatrix;
   std::string defaultCameraModelName;
-  std::string allowedCameraModels = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
+  std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
 
   double defaultFocalLengthPixel = -1.0;
   double defaultFieldOfView = -1.0;
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
   EViewIdMethod viewIdMethod = EViewIdMethod::METADATA;
-  std::string viewIdRegex = ".*?(\d+)";
+  std::string viewIdRegex = ".*?(\\d+)";
 
   bool allowSingleView = false;
 
@@ -217,7 +217,7 @@ int aliceVision_main(int argc, char **argv)
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
       "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
-    ("allowedCameraModels", po::value<std::string>(&allowedCameraModels)->default_value(allowedCameraModels),
+    ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
       "Permitted model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
     ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
       std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
@@ -367,6 +367,8 @@ int aliceVision_main(int argc, char **argv)
     }
   }
 
+  camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);
+
   // use current time as seed for random generator for intrinsic Id without metadata
   std::srand(std::time(0));
 
@@ -409,8 +411,9 @@ int aliceVision_main(int argc, char **argv)
       for(const auto& view : incompleteViews)
         views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
     }
-    else
+    else {
       return EXIT_FAILURE;
+    }
   }
 
   if(sfmData.getViews().empty())
@@ -497,25 +500,28 @@ int aliceVision_main(int argc, char **argv)
                               << "\t- model: " << model << std::endl
                               << "\t- sensor width: " << datasheet._sensorSize << " mm");
 
-        if(datasheet._model != model) // the camera model in database is slightly different
+        if(datasheet._model != model) {
+          // the camera model in database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
+        }
 
         sensorWidth = datasheet._sensorSize;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
-        if(focalLengthmm > 0.0)
+        if(focalLengthmm > 0.0) {
           intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        }
       }
     }
 
     // try to find / compute with 'FocalLengthIn35mmFilm' metadata
-    if(hasFocalIn35mmMetadata)
+    if (hasFocalIn35mmMetadata)
     {
-      if(sensorWidth == -1.0)
+      if (sensorWidth == -1.0)
       {
         const double invRatio = 1.0 / imageRatio;
 
-        if(focalLengthmm > 0.0)
+        if (focalLengthmm > 0.0)
         {
           // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce sensorWith approximation
           const double sensorDiag = (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
@@ -562,23 +568,34 @@ int aliceVision_main(int argc, char **argv)
     else
     {
       // we have a valid sensorWidth information, so se store it into the metadata (where it would have been nice to have it in the first place)
-      if(sensorWidthSource == ESensorWidthSource::FROM_DB)
+      if(sensorWidthSource == ESensorWidthSource::FROM_DB) {
         view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
-      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+      }
+      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION) {
         view.addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
-      // else it is just a guess, so there is no need to put it into the metadata.
+      }
     }
 
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
         view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel,
-        camera::EINTRINSIC_parseStringToBitmask(allowedCameraModels), defaultPPx, defaultPPy);
-    camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
+        allowedCameraModels, defaultPPx, defaultPPy);
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
 
     // set initialization mode
     intrinsic->setInitializationMode(intrinsicInitMode);
 
-    if(intrinsic && intrinsic->getFocalLengthPix() > 0)
+    // Set sensor size
+    if (imageRatio > 1.0) {
+      intrinsicBase->setSensorWidth(sensorWidth);
+      intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+    }
+    else {
+      intrinsicBase->setSensorWidth(sensorWidth);
+      intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+    }
+
+    if(intrinsic && intrinsic->isValid())
     {
       // the view intrinsic is initialized
       #pragma omp atomic
@@ -637,13 +654,13 @@ int aliceVision_main(int argc, char **argv)
         }
       }
 
-      // If we have not managed to initialize the focal length, we need to use the
-      if(intrinsic->getFocalLengthPix() <= 0 && focalLengthmm > 0)
+      // If we have not managed to initialize the focal length, we need to use the focalLength in mm
+      if(intrinsic->getScale()(0) <= 0 && focalLengthmm > 0)
       {
         intrinsic->setSerialNumber(intrinsic->serialNumber() + "_FocalLengthMM_" + std::to_string(focalLengthmm));
       }
     }
-
+    
     // create intrinsic id
     // group camera that share common properties (leads to more faster & stable BA).
     if(intrinsicId == UndefinedIndexT)
@@ -756,7 +773,7 @@ int aliceVision_main(int argc, char **argv)
                           << "Check your input images metadata (brand, model, focal length, ...), more should be set and correct." << std::endl);
     return EXIT_FAILURE;
   }
-
+  
   // store SfMData views & intrinsic data
   if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {

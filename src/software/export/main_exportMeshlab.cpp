@@ -128,8 +128,14 @@ int aliceVision_main(int argc, char **argv)
 
     // We have a valid view with a corresponding camera & pose
     const std::string srcImage = view->getImagePath();
-    const IntrinsicBase * cam = iterIntrinsic->second.get();
-    Mat34 P = cam->get_projective_equivalent(pose);
+    std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+    std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+    if (!camPinHole) {
+      ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+      continue;
+    }
+    
+    Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
     for ( int i = 1; i < 3 ; ++i)
       for ( int j = 0; j < 4; ++j)

@@ -28,9 +28,12 @@ enum EINTRINSIC
     PINHOLE_CAMERA_BROWN = (1u << 4),    // radial distortion K1,K2,K3, tangential distortion T1,T2
     PINHOLE_CAMERA_FISHEYE = (1u << 5),  // a simple Fish-eye distortion model with 4 distortion coefficients
     PINHOLE_CAMERA_FISHEYE1 = (1u << 6), // a simple Fish-eye distortion model with 1 distortion coefficient
+    EQUIDISTANT_CAMERA = (1u << 7),      // an equidistant model
+    EQUIDISTANT_CAMERA_RADIAL3 = (1u << 8),  // an equidistant model with radial distortion
     VALID_PINHOLE = PINHOLE_CAMERA | PINHOLE_CAMERA_RADIAL1 | PINHOLE_CAMERA_RADIAL3 | PINHOLE_CAMERA_BROWN |
                     PINHOLE_CAMERA_FISHEYE | PINHOLE_CAMERA_FISHEYE1,
-    VALID_CAMERA_MODEL = VALID_PINHOLE,
+    VALID_EQUIDISTANT = EQUIDISTANT_CAMERA | EQUIDISTANT_CAMERA_RADIAL3,
+    VALID_CAMERA_MODEL = VALID_PINHOLE | VALID_EQUIDISTANT,
 };
 
 BOOST_BITMASK(EINTRINSIC)
@@ -45,8 +48,12 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
       case EINTRINSIC::PINHOLE_CAMERA_BROWN: return "brown";
       case EINTRINSIC::PINHOLE_CAMERA_FISHEYE: return "fisheye4";
       case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1: return "fisheye1";
+      case EINTRINSIC::EQUIDISTANT_CAMERA: return "equidistant";
+      case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3: return "equidistant_r3";
       case EINTRINSIC::UNKNOWN:
       case EINTRINSIC::VALID_PINHOLE:
+      case EINTRINSIC::VALID_EQUIDISTANT:
+      case EINTRINSIC::VALID_CAMERA_MODEL:
           break;
   }
   throw std::out_of_range("Invalid Intrinsic Enum");
@@ -63,6 +70,8 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
   if(type == "brown") return EINTRINSIC::PINHOLE_CAMERA_BROWN;
   if(type == "fisheye4") return EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
   if(type == "fisheye1") return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1;
+  if(type == "equidistant") return EINTRINSIC::EQUIDISTANT_CAMERA;
+  if(type == "equidistant_r3") return EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
 
   throw std::out_of_range(intrinsic);
 }
@@ -89,6 +98,11 @@ inline bool isValid(EINTRINSIC eintrinsic)
 inline bool isPinhole(EINTRINSIC eintrinsic)
 {
     return EINTRINSIC::VALID_PINHOLE & eintrinsic;
+}
+
+inline bool isEquidistant(EINTRINSIC eintrinsic)
+{
+    return EINTRINSIC::VALID_EQUIDISTANT & eintrinsic;
 }
 
 inline EINTRINSIC EINTRINSIC_parseStringToBitmask(const std::string& str, const std::string& joinChar = ",")

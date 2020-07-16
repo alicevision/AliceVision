@@ -263,7 +263,7 @@ int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
   std::string sfmDataFilename;
   std::string outputFolder;
 
@@ -303,7 +303,7 @@ int aliceVision_main(int argc, char **argv)
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+    ("verboseLevel,v", po::value<system::EVerboseLevel>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
@@ -362,6 +362,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input scene
   sfmData::SfMData sfmData;
+  std::cout << sfmData.getViews().size()  << std::endl;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");

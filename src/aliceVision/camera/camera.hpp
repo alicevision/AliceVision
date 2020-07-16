@@ -14,12 +14,14 @@
 #include <aliceVision/camera/PinholeBrown.hpp>
 #include <aliceVision/camera/PinholeFisheye.hpp>
 #include <aliceVision/camera/PinholeFisheye1.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/camera/EquidistantRadial.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 namespace aliceVision {
 namespace camera {
 
-inline std::shared_ptr<Pinhole> createPinholeIntrinsic(EINTRINSIC intrinsicType,
+inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
     unsigned int w = 0, unsigned int h = 0,
     double focal_length_pix = 0.0,
     double ppx = 0.0, double ppy = 0.0)
@@ -38,8 +40,14 @@ inline std::shared_ptr<Pinhole> createPinholeIntrinsic(EINTRINSIC intrinsicType,
       return std::make_shared<PinholeFisheye>(w, h, focal_length_pix, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
       return std::make_shared<PinholeFisheye1>(w, h, focal_length_pix, ppx, ppy);
+    case EINTRINSIC::EQUIDISTANT_CAMERA:
+      return std::make_shared<EquiDistant>(w, h, focal_length_pix, ppx, ppy);
+    case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
+      return std::make_shared<EquiDistantRadialK3>(w, h, focal_length_pix, ppx, ppy);
     case EINTRINSIC::UNKNOWN:
     case EINTRINSIC::VALID_PINHOLE:
+    case EINTRINSIC::VALID_EQUIDISTANT:
+    case EINTRINSIC::VALID_CAMERA_MODEL:
       break;
   }
   throw std::out_of_range("Unrecognized Intrinsic Enum");

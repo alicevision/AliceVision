@@ -247,7 +247,7 @@ if(ALICEVISION_HAVE_OPENMP)
   if(NOT MSVC)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
       # for those using the clang with OpenMP support
-      list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES iomp)
+      list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES omp)
     else()
     list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
     endif()
@@ -344,7 +344,7 @@ endif()
 # ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND OR EIGEN3_FOUND)
-  message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
+  # message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
   set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
 else()
@@ -806,7 +806,7 @@ set(ALICEVISION_INCLUDE_DIRS
         ${generatedDir}
         ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
         ${LEMON_INCLUDE_DIRS}
-        ${EIGEN_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIRS}
         ${CERES_INCLUDE_DIRS}
         ${UNCERTAINTYTE_INCLUDE_DIRS}
         ${MAGMA_INCLUDE_DIRS}

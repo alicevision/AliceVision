@@ -64,7 +64,7 @@ public:
    * @param[in] height The image height
    * @return total amount of memory needed
    */
-  virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
     return 3 * width * height * sizeof(float); //  GPU only
   }

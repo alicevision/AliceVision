@@ -364,7 +364,7 @@ int aliceVision_main(int argc, char** argv)
     //pointsFile = inputFolder + "/points.txt";
 
     image::Image<float> imageGrey;
-    camera::PinholeRadialK3 queryIntrinsics;
+    std::shared_ptr<camera::PinholeRadialK3> queryIntrinsics = std::make_shared<camera::PinholeRadialK3>();
     bool hasIntrinsics = false;
 
     std::size_t iInputFrame = 0;
@@ -377,7 +377,7 @@ int aliceVision_main(int argc, char** argv)
     // used to collect the match data result
     std::vector<localization::LocalizationResult> vLocalizationResults;
     std::size_t currentFrame = 0;
-    while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
+    while(feed.readImage(imageGrey, *queryIntrinsics, currentImgName, hasIntrinsics))
     {
       ALICEVISION_COUT("******************************");
       ALICEVISION_COUT("Stream " << idCamera << " Frame " << myToString(currentFrame, 4) << "/" << nbFrames << " : (" << iInputFrame << "/" << nbFramesToProcess << ")");
@@ -388,7 +388,7 @@ int aliceVision_main(int argc, char** argv)
       const bool ok = localizer->localize(imageGrey,
                                           param.get(),
                                           hasIntrinsics/*useInputIntrinsics*/,
-                                          queryIntrinsics,
+                                          *queryIntrinsics,
                                           localizationResult);
       assert( ok == localizationResult.isValid() );
       vLocalizationResults.emplace_back(localizationResult);
@@ -404,7 +404,7 @@ int aliceVision_main(int argc, char** argv)
         exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
                            sfmData::View(subMediaFilepath, currentFrame, currentFrame),
                            &pose,
-                           &queryIntrinsics);
+                           queryIntrinsics);
       }
       else
       {
@@ -412,7 +412,7 @@ int aliceVision_main(int argc, char** argv)
         exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
                            sfmData::View(subMediaFilepath, currentFrame, currentFrame),
                            &pose,
-                           &queryIntrinsics);
+                           queryIntrinsics);
       }
 #endif
       ++iInputFrame;

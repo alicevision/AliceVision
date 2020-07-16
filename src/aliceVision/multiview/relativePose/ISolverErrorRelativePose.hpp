@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include <aliceVision/numeric/numeric.hpp>
+
+
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {

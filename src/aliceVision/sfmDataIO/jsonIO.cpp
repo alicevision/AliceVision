@@ -98,21 +98,26 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("intrinsicId", intrinsicId);
   intrinsicTree.put("width", intrinsic->w());
   intrinsicTree.put("height", intrinsic->h());
+  intrinsicTree.put("sensorWidth", intrinsic->sensorWidth());
+  intrinsicTree.put("sensorHeight", intrinsic->sensorHeight());
   intrinsicTree.put("serialNumber", intrinsic->serialNumber());
   intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
   intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
-  intrinsicTree.put("pxInitialFocalLength", intrinsic->initialFocalLengthPix());
 
-  if(camera::isPinhole(intrinsicType))
+  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  if (intrinsicScaleOffset)
   {
-    const camera::Pinhole& pinholeIntrinsic = dynamic_cast<camera::Pinhole&>(*intrinsic);
+    intrinsicTree.put("pxInitialFocalLength", intrinsicScaleOffset->initialScale());
+    intrinsicTree.put("pxFocalLength", intrinsicScaleOffset->getScale()(0));
+    saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
+  }
 
-    intrinsicTree.put("pxFocalLength", pinholeIntrinsic.getFocalLengthPix());
-    saveMatrix("principalPoint", pinholeIntrinsic.getPrincipalPoint(), intrinsicTree);
-
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  if (intrinsicScaleOffsetDisto)
+  {
     bpt::ptree distParamsTree;
 
-    for(double param : pinholeIntrinsic.getDistortionParams())
+    for(double param : intrinsicScaleOffsetDisto->getDistortionParams())
     {
       bpt::ptree paramTree;
       paramTree.put("", param);
@@ -120,6 +125,14 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     }
 
     intrinsicTree.add_child("distortionParams", distParamsTree);
+  }
+
+  std::shared_ptr<camera::EquiDistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+  if (intrinsicEquidistant)
+  {
+    intrinsicTree.put("fisheyeCircleCenterX", intrinsicEquidistant->getCircleCenterX());
+    intrinsicTree.put("fisheyeCircleCenterY", intrinsicEquidistant->getCircleCenterY());
+    intrinsicTree.put("fisheyeCircleRadius", intrinsicEquidistant->getCircleRadius());
   }
 
   intrinsicTree.put("locked", static_cast<int>(intrinsic->isLocked())); // convert bool to integer to avoid using "true/false" in exported file instead of "1/0".
@@ -132,6 +145,8 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   intrinsicId = intrinsicTree.get<IndexT>("intrinsicId");
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
   const unsigned int height = intrinsicTree.get<unsigned int>("height");
+  const double sensorWidth = intrinsicTree.get<double>("sensorWidth", 36.0);
+  const double sensorHeight = intrinsicTree.get<double>("sensorHeight", 24.0);
   const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
   const camera::EIntrinsicInitMode initializationMode = camera::EIntrinsicInitMode_stringToEnum(intrinsicTree.get<std::string>("initializationMode", camera::EIntrinsicInitMode_enumToString(camera::EIntrinsicInitMode::CALIBRATED)));
   const double pxFocalLength = intrinsicTree.get<double>("pxFocalLength");
@@ -140,31 +155,49 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   Vec2 principalPoint;
   loadMatrix("principalPoint", principalPoint, intrinsicTree);
 
-  // check if the camera is a Pinhole model
-  if(!camera::isPinhole(intrinsicType))
-    throw std::out_of_range("Only Pinhole camera model supported");
 
   // pinhole parameters
-  std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
-  pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
-  pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
-  pinholeIntrinsic->setInitializationMode(initializationMode);
-
-  std::vector<double> distortionParams;
-  for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
-    distortionParams.emplace_back(paramNode.second.get_value<double>());
-
-  // ensure that we have the right number of params
-  distortionParams.resize(pinholeIntrinsic->getDistortionParams().size(), 0.0);
-
-  pinholeIntrinsic->setDistortionParams(distortionParams);
-  intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
+  intrinsic = camera::createIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));  
+  
+  intrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
+  intrinsic->setInitializationMode(initializationMode);
+  intrinsic->setSensorWidth(sensorWidth);
+  intrinsic->setSensorHeight(sensorHeight);
 
   // intrinsic lock
-  if(intrinsicTree.get<bool>("locked", false))
+  if(intrinsicTree.get<bool>("locked", false)) {
     intrinsic->lock();
-  else
+  }
+  else {
     intrinsic->unlock();
+  }
+
+  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicWithScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  if (intrinsicWithScale != nullptr) {
+    intrinsicWithScale->setInitialScale(intrinsicTree.get<double>("pxInitialFocalLength"));
+  }
+
+  // Load distortion
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  if (intrinsicWithDistoEnabled != nullptr)
+  {
+    std::vector<double> distortionParams;
+    for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+      distortionParams.emplace_back(paramNode.second.get_value<double>());
+
+    //ensure that we have the right number of params
+    distortionParams.resize(intrinsicWithDistoEnabled->getDistortionParams().size(), 0.0);
+    intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
+  }
+
+  // Load EquiDistant params
+  std::shared_ptr<camera::EquiDistant> intrinsicEquiDistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+  if (intrinsicEquiDistant != nullptr)
+  {
+    intrinsicEquiDistant->setCircleCenterX(intrinsicTree.get<double>("fisheyeCircleCenterX", 0.0));
+    intrinsicEquiDistant->setCircleCenterY(intrinsicTree.get<double>("fisheyeCircleCenterY", 0.0));
+    intrinsicEquiDistant->setCircleRadius(intrinsicTree.get<double>("fisheyeCircleRadius", 1.0));
+  }
 }
 
 void saveRig(const std::string& name, IndexT rigId, const sfmData::Rig& rig, bpt::ptree& parentTree)
@@ -481,6 +514,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       for(int i = 0; i < incompleteViews.size(); ++i)
       {
         sfmData::View& v = incompleteViews.at(i);
+
         // if we have the intrinsics and the view has an valid associated intrinsics
         // update the width and height field of View (they are mirrored)
         if (loadIntrinsics && v.getIntrinsicId() != UndefinedIndexT)
@@ -498,7 +532,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
           v.setWidth(intrinsics->w());
           v.setHeight(intrinsics->h());
         }
-        updateIncompleteView(incompleteViews.at(i));
         updateIncompleteView(incompleteViews.at(i), viewIdMethod, viewIdRegex);
       }
 

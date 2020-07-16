@@ -49,7 +49,7 @@ namespace aliceVision
       * @param fInit Tell if the image should be initialized
       * @param val If fInit is true, set all pixel to the specified value
       */
-      inline Image( int width, int height, bool fInit = false, const T val = T() )
+      inline Image( int width, int height, bool fInit = false, const T val = T{} )
       {
         Base::resize( height, width );
         if ( fInit )
@@ -104,7 +104,7 @@ namespace aliceVision
       * @param fInit Indicate if new image should be initialized
       * @param val if fInit is true all pixel in the new image are set to this value
       */
-      inline void resize( int width, int height, bool fInit = true, const T val = T( 0 ) )
+      inline void resize( int width, int height, bool fInit = true, const T val = T{} )
       {
         Base::resize( height, width );
         if ( fInit )

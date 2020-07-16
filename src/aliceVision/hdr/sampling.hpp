@@ -8,27 +8,70 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <set>
 
 namespace aliceVision {
 namespace hdr {
 
-
-struct ImageSamples
+struct UniqueDescriptor
 {
-    std::vector<image::Rgb<double>> colors;
-    int camId = 0;
-    double exposure = 0.0;
+    float exposure;
+    int channel;
+    int quantizedValue;
+
+    bool operator<(const UniqueDescriptor &o) const;
 };
 
+struct PixelDescription
+{
+    float exposure;
+    image::Rgb<float> mean;
+    image::Rgb<float> variance;
+};
 
-void extractSamples(
-    std::vector<std::vector<ImageSamples>>& out_samples,
-    const std::vector<std::vector<std::string>>& imagePathsGroups,
-    const std::vector< std::vector<float> >& cameraExposures,
-    int nbPoints,
-    int calibrationDownscale,
-    bool fisheye);
+struct ImageSample
+{
+    size_t x = 0;
+    size_t y = 0;
+    std::vector<PixelDescription> descriptions;
 
+    ImageSample() = default;
+};
+
+std::ostream & operator<<(std::ostream& os, const ImageSample & s);
+std::ostream & operator<<(std::ostream& os, const PixelDescription & p);
+std::istream & operator>>(std::istream& os, ImageSample & s);
+std::istream & operator>>(std::istream& os, PixelDescription & p);
+
+struct UniqueDescriptor;
+
+class Sampling
+{
+public:
+    struct Coordinates
+    {
+        unsigned int imageIndex;
+        unsigned int sampleIndex;
+    };
+    struct Params
+    {
+        int blockSize = 256;
+        int radius = 5;
+        size_t maxCountSample = 200;
+    };
+
+    using MapSampleRefList = std::map<UniqueDescriptor, std::vector<Coordinates>>;
+
+public:
+    void analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int imageIndex);
+    void filter(size_t maxTotalPoints);
+    void extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int imageIndex);
+    
+    static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::EImageColorSpace & colorspace, const Params params);
+
+private:
+    MapSampleRefList _positions;
+};
 
 } // namespace hdr
 } // namespace aliceVision

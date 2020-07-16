@@ -33,25 +33,26 @@ class RelativePoseKernel
 {
 public:
 
-  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+  using PFRansacKernel = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
   RelativePoseKernel(const Mat& x1, int w1, int h1,
                      const Mat& x2, int w2, int h2,
                      bool pointToLine = true)
-    : _x1(x1.rows(), x1.cols())
-    , _x2(x2.rows(), x2.cols())
-    , KernelBase(_x1, _x2)
+    : _x1n(x1.rows(), x1.cols())
+    , _x2n(x2.rows(), x2.cols())
+    , PFRansacKernel(_x1n, _x2n)  // provide a reference to the internal var members
     , _logalpha0(0.0)
     , _N1(3, 3)
     , _N2(3, 3)
     , _pointToLine(pointToLine)
   {
+    ALICEVISION_LOG_INFO("RelativePoseKernel: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
     assert(2 == x1.rows());
     assert(x1.rows() == x2.rows());
     assert(x1.cols() == x2.cols());
 
-    robustEstimation::normalizePointsFromImageSize(x1, &_x1, &_N1, w1, h1);
-    robustEstimation::normalizePointsFromImageSize(x2, &_x2, &_N2, w2, h2);
+    robustEstimation::normalizePointsFromImageSize(x1, &_x1n, &_N1, w1, h1);
+    robustEstimation::normalizePointsFromImageSize(x2, &_x2n, &_N2, w2, h2);
 
     // logAlpha0 is used to make error data scale invariant
     if(pointToLine)
@@ -84,7 +85,7 @@ public:
 
 protected:
   /// Normalized input data
-  Mat _x1, _x2;
+  Mat _x1n, _x2n;
   /// Matrix used to normalize data
   Mat3 _N1, _N2;
   /// Alpha0 is used to make the error adaptive to the image size
@@ -111,18 +112,19 @@ class RelativePoseKernel_K
 {
 public:
 
-  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+  using PFRansacKernel = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
   RelativePoseKernel_K(const Mat& x1, int w1, int h1,
                        const Mat& x2, int w2, int h2,
                        const Mat3& K1, const Mat3& K2)
-    : KernelBase(x1, x2)
+    : PFRansacKernel(x1, x2)
     , _N1(Mat3::Identity())
     , _N2(Mat3::Identity())
     , _logalpha0(0.0)
     , _K1(K1)
     , _K2(K2)
   {
+    ALICEVISION_LOG_INFO("RelativePoseKernel_K: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
     assert(2 == x1.rows());
     assert(x1.rows() == x2.rows());
     assert(x1.cols() == x2.cols());
@@ -141,7 +143,7 @@ public:
     const Mat x1 = ExtractColumns(_x1k, samples);
     const Mat x2 = ExtractColumns(_x2k, samples);
 
-    KernelBase::KernelBase::_kernelSolver.solve(x1, x2, models);
+    PFRansacKernel::PFKernel::_kernelSolver.solve(x1, x2, models);
   }
 
   double error(std::size_t sample, const ModelT_& model) const override
@@ -149,7 +151,7 @@ public:
     Mat3 F;
     fundamentalFromEssential(model.getMatrix(), _K1, _K2, &F);
     const ModelT_ modelF(F);
-    return _errorEstimator.error(modelF, KernelBase::_x1.col(sample), KernelBase::_x2.col(sample));
+    return _errorEstimator.error(modelF, PFRansacKernel::PFKernel::_x1.col(sample), PFRansacKernel::PFKernel::_x2.col(sample));
   }
 
   void unnormalize(ModelT_& model) const override
@@ -175,6 +177,48 @@ private:
   /// solver error estimation
   const ErrorT_ _errorEstimator;
 };
+
+/**
+ * Two view Kernel adapter in case of spherical camera for the A contrario model estimator
+ * Handle data normalization and compute the corresponding logalpha 0
+ * that depends of the error model (point to line, or point to point)
+ * This kernel adapter is working for affine, homography, fundamental matrix estimation.
+ */
+template <typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::Mat3Model,
+          typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
+class RelativePoseSphericalKernel: public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
+{
+public:
+    using PFRansacKernel = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+
+    RelativePoseSphericalKernel(const Mat& x1, const Mat& x2)
+        : PFRansacKernel(x1, x2)  // provide a reference to the input matrices
+        , _logalpha0(M_PI)
+    {
+        ALICEVISION_LOG_INFO("RelativePoseSphericalKernel: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
+        assert(x1.rows() == 3);
+        assert(x1.cols() > 0);
+        assert(x1.rows() == x2.rows());
+        assert(x1.cols() == x2.cols());
+    }
+
+    void unnormalize(ModelT_& model) const override
+    {
+        // do nothing, no normalization in this case
+    }
+
+    double logalpha0() const override { return _logalpha0; }
+    double multError() const override { return 1.0; }
+
+    Mat3 normalizer1() const { return Mat3::Identity(); }
+    Mat3 normalizer2() const { return Mat3::Identity(); }
+    double unormalizeError(double val) const override { return sqrt(val); }
+
+protected:
+    /// Alpha0 is used to make the error adaptive to the image size
+    const double _logalpha0;
+};
+
 
 } // namespace multiview
 } // namespace aliceVision

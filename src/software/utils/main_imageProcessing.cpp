@@ -35,6 +35,7 @@ namespace fs = boost::filesystem;
 struct ProcessingParams
 {
     bool reconstructedViewsOnly = false;
+    bool keepImageFilename = false;
     bool exposureCompensation = false;
     float scaleFactor = 1.0f;
     float contrast = 1.0f;
@@ -237,9 +238,9 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 int aliceVision_main(int argc, char * argv[])
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string inputExpression = "";
+    std::string inputExpression;
     std::vector<std::string> inputFolders;
-    std::string sfmOutputDataFilepath = "";
+    std::string outputPath;
     std::string extension;
 
     ProcessingParams pParams;
@@ -255,8 +256,8 @@ int aliceVision_main(int argc, char * argv[])
          "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
         "Use images from specific folder(s) instead of those specify in the SfMData file.")
-        ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
-         "SfMData file output.")
+        ("output,o", po::value<std::string>(&outputPath)->required(),
+         "Output folder.")
         ;
 
     po::options_description optionalParams("Optional parameters");
@@ -369,7 +370,7 @@ int aliceVision_main(int argc, char * argv[])
     if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) != sfmSupportedExtensions.end())
     {
         sfmData::SfMData sfmData;
-        if (!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if (!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::ALL))
         {
             ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
             return EXIT_FAILURE;
@@ -446,7 +447,7 @@ int aliceVision_main(int argc, char * argv[])
             const std::string ext = extension.empty() ? fs::path(viewPath).extension().string() : (std::string(".") + extension);
 
             // Analyze output path
-            const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(viewId) + ext)).generic_string();
+            const std::string outputImagePath = (fs::path(outputPath) / (std::to_string(viewId) + ext)).generic_string();
 
             ALICEVISION_LOG_TRACE("Export image: '" << outputImagePath << "'.");
             image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
@@ -465,10 +466,11 @@ int aliceVision_main(int argc, char * argv[])
             }
         }
 
+        const std::string outputSfmData = (fs::path(outputPath) / fs::path(inputExpression).filename()).string();
         // Save sfmData with modified path to images
-        if (!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if(!sfmDataIO::Save(sfmData, outputSfmData, sfmDataIO::ALL))
         {
-            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be written.");
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << outputPath << "' cannot be written.");
             return EXIT_FAILURE;
         }
     }
@@ -540,7 +542,6 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO(size << " images found.");
         }
 
-        
         int i = 0;
         for(const std::string& inputFilePath : filesStrPaths)
         {
@@ -548,7 +549,7 @@ int aliceVision_main(int argc, char * argv[])
             const std::string fileName = path.stem().string();
             const std::string fileExt = path.extension().string();
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputFilePath = (fs::path(sfmOutputDataFilepath).parent_path() / (fileName + outputExt)).string();
+            const std::string outputFilePath = (fs::path(outputPath) / (fileName + outputExt)).string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << fileName << fileExt << "'.");
 

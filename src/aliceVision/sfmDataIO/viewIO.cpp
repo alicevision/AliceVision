@@ -171,6 +171,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     ppy = defaultPPy;
   }
 
+
   // handle case where focal length (mm) is unset or false
   if(mmFocalLength <= 0.0)
   {
@@ -203,7 +204,9 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     intrinsicType = camera::PINHOLE_CAMERA;
   }
   */
-  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0) && allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE)
+  else if((allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) &&
+          ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
+          )
   {
     // If the focal lens is short, the fisheye model should fit better.
       intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
@@ -230,14 +233,18 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     // If still unassigned
     if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
     {
-        throw std::invalid_argument("No intrinsic value can be attributed !");
-    }  
+        throw std::invalid_argument("No intrinsic type can be attributed.");
+    }
   }
 
   // create the desired intrinsic
-  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createPinholeIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
-  if(hasFocalLengthInput)
-    intrinsic->setInitialFocalLengthPix(pxFocalLength);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
+  if(hasFocalLengthInput) {
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    if (intrinsicScaleOffset) {
+      intrinsicScaleOffset->setInitialScale(pxFocalLength);
+    }
+  }
 
   // initialize distortion parameters
   switch(intrinsicType)

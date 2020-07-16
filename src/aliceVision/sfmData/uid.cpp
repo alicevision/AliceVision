@@ -23,24 +23,33 @@ std::size_t computeViewUID(const View& view)
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
-  if(view.hasMetadata({"Exif:ImageUniqueID", "ImageUniqueID"}) ||
-     !bodySerialNumber.empty() ||
-     !lensSerialNumber.empty())
+  const bool hasImageUniqueID = view.hasMetadata({"Exif:ImageUniqueID", "ImageUniqueID"});
+  if(hasImageUniqueID)
   {
     stl::hash_combine(uid, view.getMetadata({"Exif:ImageUniqueID", "ImageUniqueID"}));
-    stl::hash_combine(uid, bodySerialNumber);
-    stl::hash_combine(uid, lensSerialNumber);
   }
   else
   {
     // no metadata to identify the image, fallback to the filename
     const fs::path imagePath = view.getImagePath();
-    stl::hash_combine(uid, imagePath.stem().string() + imagePath.extension().string());
+    stl::hash_combine(uid, imagePath.filename().string());
   }
 
-  if(view.hasMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal"}))
+  if(!bodySerialNumber.empty() || !lensSerialNumber.empty())
   {
-    stl::hash_combine(uid, view.getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal"}));
+    stl::hash_combine(uid, bodySerialNumber);
+    stl::hash_combine(uid, lensSerialNumber);
+  }
+  else if(!hasImageUniqueID)
+  {
+    // no metadata to identify the device, fallback to the folder path of the file
+    const fs::path imagePath = view.getImagePath();
+    stl::hash_combine(uid, imagePath.parent_path().generic_string());
+  }
+
+  if(view.hasMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}))
+  {
+    stl::hash_combine(uid, view.getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}));
     stl::hash_combine(uid, view.getMetadata({"Exif:SubsecTimeOriginal", "SubsecTimeOriginal"}));
   }
   else if(view.hasMetadata({"imageCounter"}))

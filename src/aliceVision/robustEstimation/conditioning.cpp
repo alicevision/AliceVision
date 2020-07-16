@@ -60,7 +60,8 @@ void normalizePointsFromImageSize(const Mat &points,
                       Mat *normalized_points,
                       Mat3 *T,
                       int width,
-                      int height) {
+                      int height)
+{
   preconditionerFromImageSize(width, height, T);
   applyTransformationToPoints(points, *T, normalized_points);
 }
@@ -68,7 +69,8 @@ void normalizePointsFromImageSize(const Mat &points,
 
 void normalizePoints(const Mat &points,
                      Mat *normalized_points,
-                     Mat3 *T) {
+                     Mat3 *T)
+{
   preconditionerFromPoints(points, T);
   applyTransformationToPoints(points, *T, normalized_points);
 }

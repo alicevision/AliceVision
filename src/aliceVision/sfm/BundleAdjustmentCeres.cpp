@@ -12,6 +12,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -91,6 +92,12 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
  */
 ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
 {
+  double radius = 0.0;
+  const camera::EquiDistant * equi = dynamic_cast<const camera::EquiDistant *>(intrinsicPtr);
+  if (equi) {
+    radius = equi->getCircleRadius();
+  }
+
   switch(intrinsicPtr->getType())
   {
     case EINTRINSIC::PINHOLE_CAMERA:
@@ -101,6 +108,10 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK3(observation_first.homogeneous(), observation_second.homogeneous()));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(new ResidualErrorConstraintFunctor_PinholeFisheye(observation_first.homogeneous(), observation_second.homogeneous()));
+    case EQUIDISTANT_CAMERA:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Equidistant, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Equidistant(observation_first.homogeneous(), observation_second.homogeneous(), radius));
+    case EQUIDISTANT_CAMERA_RADIAL3:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK3(observation_first.homogeneous(), observation_second.homogeneous(), radius));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   } 
@@ -454,13 +465,14 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     // refine the focal length
     if(refineIntrinsicsFocalLength)
     {
-      if(intrinsicPtr->initialFocalLengthPix() > 0)
+      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      if(intrinsicScaleOffset->initialScale() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
         assert(intrinsicBlock.size() >= 1);
         const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h()); // TODO : check if rounding is needed
-        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() - maxFocalError));
-        problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() + maxFocalError));
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() - maxFocalError));
+        problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() + maxFocalError));
       }
       else // no initial guess
       {
@@ -629,6 +641,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
 
     //For the moment assume a unique camera
     assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
+
 
     ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view_1.getIntrinsicId()), constraint.ObservationFirst.x, constraint.ObservationSecond.x);
     problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
@@ -817,6 +830,7 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
 
   // update input sfmData with the solution
   updateFromSolution(sfmData, refineOptions);
+
 
   // store some statitics from the summary
   _statistics.time = summary.total_time_in_seconds;

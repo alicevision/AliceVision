@@ -159,17 +159,19 @@ public:
   /**
     * @brief Set curves to Grossberg mean function of emor model
     */
-  void setEmor();
+  void setEmorInv(size_t dim = 0);
+
+
+  /**
+    * @brief Set curves to Grossberg mean function of emor model
+    */
+  void setEmor(size_t dim = 0);
 
   /**
     *@brief Set curves to gaussian
     */
   void setGaussian(double mu = 0.5, double sigma = 1.0 / (5.0 * sqrt(2.0)));
 
-  /**
-   * @brief set curve to adaptative weight for Robertson
-   */
-  void setRobertsonWeight();
 
   /**
     *@brief Set curves to triangular
@@ -218,6 +220,11 @@ public:
     * @brief scale the curve between 0 and 1
     */
   void scale();
+
+  /**
+    * @brief scale the curve between 0 and 1
+    */
+  void scaleChannelWise();
 
   /**
     * @brief interpolates all values at zero with the previous an the next value
@@ -369,8 +376,12 @@ public:
   std::size_t getIndex(float sample, float& fractionalPart) const
   {
     assert(getSize() != 0);
+
     float infIndex;
-    fractionalPart = std::modf(std::max(0.f, std::min(1.f, sample)) * getSize() - 2, &infIndex);
+    float size = getSize() - 1.0f;
+    float valueScaled = std::max(0.f, std::min(1.f, sample)) * size;
+    fractionalPart = std::modf(valueScaled, &infIndex);
+
     return std::size_t(infIndex);
   }
 

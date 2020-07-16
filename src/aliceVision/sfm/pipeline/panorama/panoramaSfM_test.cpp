@@ -7,8 +7,8 @@
 
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
-#include <aliceVision/sfm/utils/syntheticScene.hpp>
 #include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/pipeline/panorama/ReconstructionEngine_panorama.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -21,102 +21,169 @@
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
-using namespace aliceVision::camera;
-using namespace aliceVision::geometry;
-using namespace aliceVision::sfm;
-using namespace aliceVision::sfmData;
 
 // Test summary:
 // - Create a rotation matrix between two views
 // - Create two matrices of calibration for two views
 
+void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::shared_ptr<camera::IntrinsicBase> & intrinsic_noisy, double ratio_inliers) {
 
-BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
+  sfmData::SfMData sfmdata;
+  sfmdata.getIntrinsics()[0] = intrinsic_noisy;
+
+  /*Create cameras */
+  std::vector<geometry::Pose3> poses_gt;
+  size_t count = 0;
+  for (double latitude = - M_PI_2; latitude <= M_PI_2; latitude += 0.8) {
+    for (double longitude = - M_PI; longitude <= M_PI; longitude += 0.5) {
+      
+      Eigen::Matrix3d matLongitude = Eigen::AngleAxisd(longitude, Vec3(0,1,0)).toRotationMatrix();
+      Eigen::Matrix3d matLatitude = Eigen::AngleAxisd(latitude, Vec3(1,0,0)).toRotationMatrix();
+      Eigen::Matrix3d R = matLongitude * matLatitude;
+      geometry::Pose3 pose(R, Vec3(0,0,0));
+      poses_gt.push_back(pose);
+      
+      std::shared_ptr<sfmData::View> v = std::make_shared<sfmData::View>("fakeimg.png", count, 0, count, 1920, 1080);
+      sfmdata.getViews()[count] = v;
+      count++;
+    }
+  }
+
+
+  feature::FeaturesPerView fpv;
+  matching::PairwiseMatches matches;
+
+  std::mt19937 mt;
+  std::uniform_real_distribution<double> dist(0.0, 1.0);
+  std::normal_distribution<double> noise(0.0, 100.0);
+  
+  for (double latitude = - M_PI_2; latitude <= M_PI_2; latitude += 0.02) {
+    for (double longitude = - M_PI; longitude <= M_PI; longitude += 0.02) {
+      
+      const double Px = cos(latitude) * sin(longitude);
+      const double Py = sin(latitude);
+      const double Pz = cos(latitude) * cos(longitude);
+
+      Vec3 pt(Px, Py, Pz);
+
+      std::vector<std::pair<size_t, size_t>> observations;
+
+      /*Project this point on all cameras*/
+      for (int idPose = 0; idPose < poses_gt.size(); idPose++) {
+
+        geometry::Pose3 pose = poses_gt[idPose];
+
+        Vec3 ray = pose(pt);
+        if (!intrinsic_gt->isVisibleRay(ray)) {
+          continue;
+        }
+
+        Vec2 im = intrinsic_gt->project(pose, pt, true);
+        if (!intrinsic_gt->isVisible(im)) {
+          continue;
+        }
+
+        /*If it is visible, store a fake feature */
+        feature::MapFeaturesPerView & map = fpv.getData();
+        feature::PointFeatures & pfs = map[idPose][feature::EImageDescriberType::UNKNOWN];
+        
+        /*Also store the index of this feature for this view*/
+        observations.push_back(std::make_pair(idPose, pfs.size()));
+
+        double dice = dist(mt);
+        if (dice < ratio_inliers) {
+          //Outlier: generate large error
+          im(0) += noise(mt);
+          im(1) += noise(mt);
+        }
+
+        feature::PointFeature pf(im(0), im(1), 1.0, 0.0);
+        pfs.push_back(pf);
+      }
+
+      for (size_t idObs1 = 0; idObs1 < observations.size(); idObs1++) {
+        for (size_t idObs2 = idObs1 + 1; idObs2 < observations.size(); idObs2++) {
+
+          size_t idPose1 = observations[idObs1].first;
+          size_t idPose2 = observations[idObs2].first;
+
+          Pair p = std::make_pair(idPose1, idPose2);
+          
+          matching::IndMatch match(observations[idObs1].second, observations[idObs2].second);
+
+          matching::IndMatches & vec_matches = matches[p][feature::EImageDescriberType::UNKNOWN];
+          vec_matches.push_back(match);
+        }
+      }
+    }
+  } 
+  sfm::ReconstructionEngine_panorama::Params params;
+  params.eRelativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_R;
+
+  sfm::ReconstructionEngine_panorama pano(sfmdata, params, "");
+  pano.SetFeaturesProvider(&fpv);
+  pano.SetMatchesProvider(&matches);
+
+  if (!pano.process()) {
+    BOOST_TEST_FAIL("Panorama processing failed");
+    return;
+  }
+
+  if (!pano.Adjust()) {
+    BOOST_TEST_FAIL("Panorama adjustment failed");
+    return;
+  }
+
+  sfmdata = pano.getSfMData();
+
+  geometry::Pose3 zRw_gt = poses_gt[0];
+  geometry::Pose3 zRw_est = sfmdata.getPoses()[0].getTransform();
+
+  for (int idPose = 0; idPose < poses_gt.size(); idPose++) {
+    geometry::Pose3 cRw_gt = poses_gt[idPose];
+    geometry::Pose3 cRw_est = sfmdata.getPoses()[idPose].getTransform();
+
+    Eigen::Matrix3d cRz_gt = cRw_gt.rotation() * zRw_gt.rotation().transpose();
+    Eigen::Matrix3d cRz_est = cRw_est.rotation() * zRw_est.rotation().transpose();
+
+    Eigen::Matrix3d delta = cRz_gt * cRz_est.transpose();
+
+    Eigen::AngleAxisd aa;
+    aa.fromRotationMatrix(delta);
+    BOOST_CHECK_LT(aa.angle(), 1e-2);
+  }
+}
+
+
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_RADIAL3)
 {
-    // rotation between the two views
-    const Mat3 rotation = aliceVision::rotationXYZ(0.01, -0.001, -0.2);
-    ALICEVISION_LOG_INFO("Ground truth rotation:\n" << rotation);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1200.0, 960, 540);
 
-    // some random 3D points on the unit sphere
-    const Mat3X pts3d = Mat3X::Random(3, 20).colwise().normalized();
-    ALICEVISION_LOG_INFO("points 3d:\n" << pts3d);
+  test_panorama(intrinsic_gt, intrinsic_est, 0.0);
+}
 
-    // calibration 1
-    Mat3 K1;
-    K1 << 1200, 0, 960,
-         0, 1200, 540,
-         0, 0, 1;
-    ALICEVISION_LOG_INFO("K1:\n" << K1);
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_RADIAL3_OUTLIERS)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3, 1920, 1080, 1000.0, 960, 540);
 
-    // calibration 2
-    Mat3 K2;
-    K2 << 1100, 0, 960,
-           0, 1100, 540,
-           0, 0, 1;
-    ALICEVISION_LOG_INFO("K2:\n" << K2);
-
-    // 2d points on each side as projection of the 3D points
-    const Mat2X pts1 = (K1 * pts3d).colwise().hnormalized();
-    //        ALICEVISION_LOG_INFO("pts1:\n" << pts1);
-    const Mat2X pts2 = (K2 * rotation *  pts3d).colwise().hnormalized();
-    //        ALICEVISION_LOG_INFO("pts2:\n" << pts2);
-
-    // test the uncalibrated version, just pass the 2d points and compute R
-
-    const double epsilon = 1e-4;
-
-    // Relative Rotation from H
-    {
-        RelativeRotationInfo rotationInfo{};
-    ALICEVISION_LOG_INFO("\n\n###########################################\nUncalibrated from H");
-        robustRelativeRotation_fromH(K1, K2, pts1, pts2,
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              rotationInfo);
-        ALICEVISION_LOG_INFO("rotation.inverse() * rotationInfo._relativeRotation:\n" << rotation.inverse() * rotationInfo._relativeRotation);
-
-        EXPECT_MATRIX_NEAR(rotation, rotationInfo._relativeRotation, epsilon);
+  test_panorama(intrinsic_gt, intrinsic_est, 0.3);
+}
 
 
-        // test the calibrated version, compute normalized points for each view (by multiplying by the inverse of K) and estimate H and R
-    ALICEVISION_LOG_INFO("\n\n###########################################\nCalibrated from H");
-        robustRelativeRotation_fromH(Mat3::Identity(), Mat3::Identity(),
-                              (K1.inverse()*pts1.colwise().homogeneous()).colwise().hnormalized(),
-                              (K2.inverse()*pts2.colwise().homogeneous()).colwise().hnormalized(),
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              rotationInfo);
-        ALICEVISION_LOG_INFO("rotation.inverse() * rotationInfo._relativeRotation:\n" << rotation.inverse() * rotationInfo._relativeRotation);
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_EQUIDISTANT)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1200.0, 960, 540);
 
-        EXPECT_MATRIX_NEAR(rotation, rotationInfo._relativeRotation, epsilon);
-    }
+  test_panorama(intrinsic_gt, intrinsic_est, 0.0);
+}
 
-  /*
-    // Relative Rotation from E
-    {
-    RelativePoseInfo rotationInfo{};
-    ALICEVISION_LOG_INFO("\n\n###########################################\nUncalibrated from E");
-        robustRelativeRotation_fromE(K1, K2, pts1, pts2,
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              rotationInfo);
-    ALICEVISION_LOG_INFO("rotation.inverse() * rotationInfo._relativeRotation:\n" << rotation.inverse() * rotationInfo.relativePose.rotation());
+BOOST_AUTO_TEST_CASE(PANORAMA_SFM_EQUIDISTANT_OUTLIERS)
+{
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1357.0, 920, 560);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic_est = camera::createIntrinsic(camera::EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3, 1920, 1080, 1000.0, 960, 540);
 
-    EXPECT_MATRIX_NEAR(rotation, rotationInfo.relativePose.rotation(), epsilon);
-
-
-
-        // test the calibrated version, compute normalized points for each view (by multiplying by the inverse of K) and estimate H and R
-    ALICEVISION_LOG_INFO("\n\n###########################################\nCalibrated from E");
-        robustRelativeRotation_fromE(Mat3::Identity(), Mat3::Identity(),
-                              (K1.inverse()*pts1.colwise().homogeneous()).colwise().hnormalized(),
-                              (K2.inverse()*pts2.colwise().homogeneous()).colwise().hnormalized(),
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              std::make_pair<std::size_t, std::size_t>(1920, 1080),
-                              rotationInfo);
-    ALICEVISION_LOG_INFO("rotation.inverse() * rotationInfo._relativeRotation:\n" << rotation.inverse() * rotationInfo.relativePose.rotation());
-
-    EXPECT_MATRIX_NEAR(rotation, rotationInfo.relativePose.rotation(), epsilon);
-    }
-  */
+  test_panorama(intrinsic_gt, intrinsic_est, 0.3);
 }

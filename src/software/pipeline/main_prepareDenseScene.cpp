@@ -107,7 +107,15 @@ bool prepareDenseScene(const SfMData& sfmData,
     {
       // get camera pose / projection
       const Pose3 pose = sfmData.getPose(*view).getTransform();
-      Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
+
+      std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+      std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+      if (!camPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+        continue;
+      }
+
+      Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
       // get camera intrinsics matrices
       const Mat3 K = dynamic_cast<const Pinhole*>(sfmData.getIntrinsicPtr(view->getIntrinsicId()))->K();
@@ -201,7 +209,7 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
       
       // undistort
-      if(cam->isValid() && cam->have_disto())
+      if(cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
         UndistortImage(image, cam, image_ud, FBLACK);
