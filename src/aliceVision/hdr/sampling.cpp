@@ -152,9 +152,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     const float area = float(diameter * diameter);
 
     std::vector<std::pair<int, int>> vec_blocks;
-    for (int cy = 0; cy < imageHeight; cy += params.blockSize - params.radius)
+    for(int cy = 0; cy < imageHeight; cy += params.blockSize - diameter)
     {
-        for (int cx = 0; cx < imageWidth; cx += params.blockSize - params.radius)
+        for(int cx = 0; cx < imageWidth; cx += params.blockSize - diameter)
         {
             vec_blocks.push_back(std::make_pair(cx, cy));
         }
@@ -202,9 +202,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             integral(imgIntegral, blockInput);
             integral(imgIntegralSquare, imgSquare);
 
-            for (int i = params.radius + 1; i < imgIntegral.Height() - params.radius; ++i)
+            for(int i = radiusp1; i < imgIntegral.Height() - params.radius; ++i)
             {
-                for (int j = params.radius + 1; j < imgIntegral.Width() - params.radius; ++j)
+                for(int j = radiusp1; j < imgIntegral.Width() - params.radius; ++j)
                 {
                     image::Rgb<double> S1 = imgIntegral(i + params.radius, j + params.radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + params.radius, j - radiusp1) - imgIntegral(i - radiusp1, j + params.radius);
                     image::Rgb<double> S2 = imgIntegralSquare(i + params.radius, j + params.radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + params.radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + params.radius);
