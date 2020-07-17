@@ -9,20 +9,32 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
-#include <OpenImageIO/imagebufalgo.h>
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
+#include <aliceVision/mvsData/jetColorMap.hpp>
+
+#include <aliceVision/utils/Histogram.hpp>
+
+
 // HDR Related
 #include <aliceVision/hdr/sampling.hpp>
 #include <aliceVision/hdr/brackets.hpp>
 
+// Image Processing
+#include <OpenImageIO/imagebufalgo.h>
+
 // Command line parameters
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
+
 #include <sstream>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -41,8 +53,8 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
-    bool byPass = false;
     hdr::Sampling::Params params;
+    bool debug = false;
 
     int rangeStart = -1;
     int rangeSize = 1;
@@ -62,8 +74,6 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
          "bracket count per HDR image (0 means automatic).")
-        ("byPass", po::value<bool>(&byPass)->default_value(byPass),
-         "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("blockSize", po::value<int>(&params.blockSize)->default_value(params.blockSize),
@@ -72,6 +82,8 @@ int aliceVision_main(int argc, char** argv)
          "Radius of the patch used to analyze the sample statistics.")
         ("maxCountSample", po::value<size_t>(&params.maxCountSample)->default_value(params.maxCountSample),
          "Max number of samples per image group.")
+        ("debug", po::value<bool>(&debug)->default_value(debug),
+         "Export debug files.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
           "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -141,6 +153,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    std::size_t usedNbBrackets = 0;
     {
         std::set<std::size_t> sizeOfGroups;
         for(auto& group : groupedViews)
@@ -149,15 +162,13 @@ int aliceVision_main(int argc, char** argv)
         }
         if(sizeOfGroups.size() == 1)
         {
-            std::size_t usedNbBrackets = *sizeOfGroups.begin();
+            usedNbBrackets = *sizeOfGroups.begin();
             if(usedNbBrackets == 1)
             {
                 ALICEVISION_LOG_INFO("No multi-bracketing.");
                 return EXIT_SUCCESS;
             }
-            ALICEVISION_LOG_INFO("Number of brackets automatically detected: "
-                                 << usedNbBrackets << ". It will generate " << groupedViews.size()
-                                 << " hdr images.");
+            ALICEVISION_LOG_INFO("Number of brackets: " << usedNbBrackets << ". It will generate " << groupedViews.size() << " hdr images.");
         }
         else
         {
@@ -207,6 +218,45 @@ int aliceVision_main(int argc, char** argv)
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);
+        }
+
+        using namespace boost::accumulators;
+        using Accumulator = accumulator_set<float, stats<tag::min, tag::max, tag::median, tag::mean>>;
+        Accumulator acc_nbUsedBrackets;
+        {
+            utils::Histogram<int> histogram(1, usedNbBrackets, usedNbBrackets-1);
+            for(const hdr::ImageSample& sample : out_samples)
+            {
+                acc_nbUsedBrackets(sample.descriptions.size());
+                histogram.Add(sample.descriptions.size());
+            }
+            ALICEVISION_LOG_INFO("Number of used brackets in selected samples: "
+                                 << " min: " << extract::min(acc_nbUsedBrackets) << " max: "
+                                 << extract::max(acc_nbUsedBrackets) << " mean: " << extract::mean(acc_nbUsedBrackets)
+                                 << " median: " << extract::median(acc_nbUsedBrackets));
+
+            ALICEVISION_LOG_INFO("Histogram of the number of brackets per sample: " << histogram.ToString("", 2));
+        }
+        if(debug)
+        {
+            image::Image<image::RGBfColor> selectedPixels(width, height, true);
+
+            for(const hdr::ImageSample& sample: out_samples)
+            {
+                const float score = float(sample.descriptions.size()) / float(usedNbBrackets);
+                const Color color = getColorFromJetColorMap(score);
+                selectedPixels(sample.y, sample.x) = image::RGBfColor(color.r, color.g, color.b);
+            }
+            oiio::ParamValueList metadata;
+            metadata.push_back(oiio::ParamValue("AliceVision:nbSelectedPixels", int(selectedPixels.size())));
+            metadata.push_back(oiio::ParamValue("AliceVision:minNbUsedBrackets", extract::min(acc_nbUsedBrackets)));
+            metadata.push_back(oiio::ParamValue("AliceVision:maxNbUsedBrackets", extract::max(acc_nbUsedBrackets)));
+            metadata.push_back(oiio::ParamValue("AliceVision:meanNbUsedBrackets", extract::mean(acc_nbUsedBrackets)));
+            metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
+
+            image::writeImage((fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
+                              selectedPixels, image::EImageColorSpace::AUTO, metadata);
+
         }
 
         // Store to file
