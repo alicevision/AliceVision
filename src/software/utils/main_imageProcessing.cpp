@@ -586,7 +586,7 @@ int aliceVision_main(int argc, char * argv[])
                                  " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
 
         ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
-         "Output image format (rgba, rgb, grayscale)");
+         "Output image format (rgba, rgb, grayscale)")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
