@@ -9,6 +9,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -32,28 +33,227 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+struct SharpenParams
+{
+    bool enabled;
+    int width;
+    float contrast;
+    float threshold;
+};
+
+std::istream& operator>>(std::istream& in, SharpenParams& sParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if(splitParams.size() != 4)
+        throw std::invalid_argument("Failed to parse SharpenParams from: " + token);
+    sParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    sParams.width = boost::lexical_cast<int>(splitParams[1]);
+    sParams.contrast = boost::lexical_cast<float>(splitParams[2]);
+    sParams.threshold = boost::lexical_cast<float>(splitParams[3]);
+
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const SharpenParams& sParams)
+{
+    os << sParams.enabled << ":" << sParams.width << ":" << sParams.contrast << ":"<< sParams.threshold;
+    return os;
+}
+
+struct BilateralFilterParams
+{
+    bool enabled;
+    int distance;
+    float sigmaColor;
+    float sigmaSpace;
+};
+
+std::istream& operator>>(std::istream& in, BilateralFilterParams& bfParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if(splitParams.size() != 4)
+        throw std::invalid_argument("Failed to parse BilateralFilterParams from: " + token);
+    bfParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    bfParams.distance = boost::lexical_cast<int>(splitParams[1]);
+    bfParams.sigmaColor = boost::lexical_cast<float>(splitParams[2]);
+    bfParams.sigmaSpace = boost::lexical_cast<float>(splitParams[3]);
+
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const BilateralFilterParams& bfParams)
+{
+    os << bfParams.enabled << ":" << bfParams.distance << ":" << bfParams.sigmaColor << ":" << bfParams.sigmaSpace;
+    return os;
+}
+
+struct ClaheFilterParams
+{
+    bool enabled;
+    float clipLimit;
+    int tileGridSize;
+};
+
+std::istream& operator>>(std::istream& in, ClaheFilterParams& cfParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if(splitParams.size() != 3)
+        throw std::invalid_argument("Failed to parse ClaheFilterParams from: " + token);
+    cfParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    cfParams.clipLimit = boost::lexical_cast<float>(splitParams[1]);
+    cfParams.tileGridSize = boost::lexical_cast<int>(splitParams[2]);
+
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const ClaheFilterParams& cfParams)
+{
+    os << cfParams.enabled << ":" << cfParams.clipLimit << ":" << cfParams.tileGridSize;
+    return os;
+}
+
+enum class ENoiseMethod { uniform, gaussian, salt };
+
+inline std::string ENoiseMethod_enumToString(ENoiseMethod noiseMethod)
+{
+    switch(noiseMethod)
+    {
+        case ENoiseMethod::uniform: return "uniform";
+        case ENoiseMethod::gaussian: return "gaussian";
+        case ENoiseMethod::salt: return "salt";
+    }
+    throw std::invalid_argument("Invalid ENoiseMethod Enum");
+}
+
+inline ENoiseMethod ENoiseMethod_stringToEnum(std::string noiseMethod)
+{
+    boost::to_lower(noiseMethod);
+    if(noiseMethod == "uniform") return ENoiseMethod::uniform;
+    if(noiseMethod == "gaussian") return ENoiseMethod::gaussian;
+    if(noiseMethod == "salt") return ENoiseMethod::salt;
+
+    throw std::invalid_argument("Unrecognized noise method '" + noiseMethod + "'");
+}
+
+struct NoiseFilterParams
+{
+    bool enabled;
+    ENoiseMethod method;
+    float A;
+    float B;
+    bool mono;
+};
+
+std::istream& operator>>(std::istream& in, NoiseFilterParams& nfParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if(splitParams.size() != 5)
+        throw std::invalid_argument("Failed to parse NoiseFilterParams from: " + token);
+    nfParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    nfParams.method = ENoiseMethod_stringToEnum(splitParams[1]);
+    nfParams.A = boost::lexical_cast<float>(splitParams[2]);
+    nfParams.B = boost::lexical_cast<float>(splitParams[3]);
+    nfParams.mono = boost::to_lower_copy(splitParams[4]) == "true";
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const NoiseFilterParams& nfParams)
+{
+    os << nfParams.enabled << ":" << ENoiseMethod_enumToString(nfParams.method) << ":" << nfParams.A << ":" << nfParams.B
+       << ":" << nfParams.mono;
+    return os;
+}
+
+enum class EImageFormat { RGBA, RGB, Grayscale };
+
+inline std::string EImageFormat_enumToString(EImageFormat imageFormat)
+{
+    switch(imageFormat)
+    {
+        case EImageFormat::RGBA: return "rgba";
+        case EImageFormat::RGB: return "rgb";
+        case EImageFormat::Grayscale: return "grayscale";
+    }
+    throw std::invalid_argument("Invalid EImageFormat Enum");
+}
+
+inline EImageFormat EImageFormat_stringToEnum(std::string imageFormat)
+{
+    boost::to_lower(imageFormat);
+    if(imageFormat == "rgba") return EImageFormat::RGBA;
+    if(imageFormat == "rgb") return EImageFormat::RGB;
+    if(imageFormat == "grayscale") return EImageFormat::Grayscale;
+
+    throw std::invalid_argument("Unrecognized image format '" + imageFormat + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, EImageFormat e)
+{
+    return os << EImageFormat_enumToString(e);
+}
+
+inline std::istream& operator>>(std::istream& in, EImageFormat& e)
+{
+    std::string token;
+    in >> token;
+    e = EImageFormat_stringToEnum(token);
+    return in;
+}
+
 struct ProcessingParams
 {
     bool reconstructedViewsOnly = false;
     bool keepImageFilename = false;
     bool exposureCompensation = false;
+    EImageFormat outputFormat = EImageFormat::RGBA;
     float scaleFactor = 1.0f;
     float contrast = 1.0f;
     int medianFilter = 0;
     bool fillHoles = false;
 
-    int sharpenWidth = 1;
-    float sharpenContrast = 1.f;
-    float sharpenThreshold = 0.f;
+    SharpenParams sharpen = 
+    {
+        false, // enable
+        3,     // width
+        1.0f,  // contrast
+        0.0f   // threshold
+    };
 
-    bool bilateralFilter = false;
-    int bilateralFilterDistance = 0;
-    float bilateralFilterSigmaColor = 0.0f;
-    float bilateralFilterSigmaSpace = 0.0f;
+    BilateralFilterParams bilateralFilter = 
+    {
+        false, // enable
+        0,     // distance
+        0.0f,  // sigmaColor
+        0.0f   // sigmaSpace
+    };
 
-    bool claheFilter = false;
-    float claheClipLimit = 4.0f;
-    int claheTileGridSize = 8;
+    ClaheFilterParams claheFilter = 
+    {
+        false, // enable
+        4.0f,  // clipLimit
+        8      // tileGridSize
+    };
+
+    NoiseFilterParams noise = {
+        false, // enable
+        ENoiseMethod::uniform,  // method
+        0.0f, // A
+        1.0f, // B
+        true // mono
+    };
+
 };
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
@@ -149,24 +349,24 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
-    if (pParams.sharpenWidth >= 3.f && pParams.sharpenContrast > 0.f)
+    if(pParams.sharpen.enabled)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-        oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", pParams.sharpenWidth, pParams.sharpenContrast, pParams.sharpenThreshold);
+        oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", pParams.sharpen.width, pParams.sharpen.contrast, pParams.sharpen.threshold);
 
         image.swap(filtered);
     }
     
-    if (pParams.bilateralFilter)
+    if (pParams.bilateralFilter.enabled)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
             // Create temporary OpenCV Mat (keep only 3 Channels) to handled Eigen data of our image
             cv::Mat openCVMatIn = imageRGBAToCvMatBGR(image);
             cv::Mat openCVMatOut(image.Width(), image.Height(), CV_32FC3);
 
-            cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.bilateralFilterDistance, pParams.bilateralFilterSigmaColor, pParams.bilateralFilterSigmaSpace);
+            cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.bilateralFilter.distance, pParams.bilateralFilter.sigmaColor, pParams.bilateralFilter.sigmaSpace);
 
             // Copy filtered data from openCV Mat(3 channels) to our image(keep the alpha channel unfiltered)
             cvMatBGRToImageRGBA(openCVMatOut, image);
@@ -177,7 +377,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 
     // Contrast Limited Adaptive Histogram Equalization
-    if(pParams.claheFilter)
+    if(pParams.claheFilter.enabled)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Convert alicevision::image to BGR openCV Mat
@@ -199,7 +399,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         // apply Clahe algorithm to the L channel
         {
-            const cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(pParams.claheClipLimit, cv::Size(pParams.claheTileGridSize, pParams.claheTileGridSize));
+            const cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(pParams.claheFilter.clipLimit, cv::Size(pParams.claheFilter.tileGridSize, pParams.claheFilter.tileGridSize));
             clahe->apply(L, L);
         }
 
@@ -233,6 +433,79 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
+
+    if(pParams.noise.enabled)
+    {   
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBufAlgo::noise(inBuf, ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono);
+    }
+}
+
+void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+               const std::vector<std::string>& metadataFolders,
+               const EImageFormat& outputFormat)
+{
+    // Read metadata path
+    std::string metadataFilePath;
+    
+    const std::string filename = fs::path(inputPath).filename().string();
+    // If metadataFolders is specified
+    if(!metadataFolders.empty())
+    {
+        // The file must match the file name and extension to be used as a metadata replacement.
+        const std::vector<std::string> metadataFilePaths = utils::getFilesPathsFromFolders(
+            metadataFolders, [&filename](const boost::filesystem::path& path)
+            {
+                return path.filename().string() == filename;
+            }
+        );
+
+        if(metadataFilePaths.size() > 1)
+        {
+            ALICEVISION_LOG_ERROR("Ambiguous case: Multiple path corresponding to this file was found for metadata replacement.");
+            throw std::invalid_argument("Ambiguous case: Multiple path corresponding to this file was found for metadata replacement");
+        }
+
+        if(metadataFilePaths.empty())
+        {
+            ALICEVISION_LOG_WARNING("Metadata folders was specified but there is no matching for this image: "<< filename
+                                    << ". The default metadata will be used instead for this image.");
+            metadataFilePath = inputPath;
+        }
+        else
+        {
+            ALICEVISION_LOG_TRACE("Metadata path found for the current image: " << filename);
+            metadataFilePath = metadataFilePaths[0];
+        }
+    }
+    else
+    {
+        // Metadata are extracted from the original images
+        metadataFilePath = inputPath;
+    }
+
+    const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+
+    // Save image
+    ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
+    
+    if(outputFormat == EImageFormat::Grayscale)
+    {
+        image::Image<float> outputImage;
+        image::ConvertPixelType(image, &outputImage);
+        image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+    }
+    else if(outputFormat == EImageFormat::RGB)
+    {
+        image::Image<image::RGBfColor> outputImage;
+        image::ConvertPixelType(image, &outputImage);
+        image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+    }
+    else 
+    {
+        // Already in RGBAf
+        image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+    }
 }
 
 int aliceVision_main(int argc, char * argv[])
@@ -240,7 +513,9 @@ int aliceVision_main(int argc, char * argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
     std::vector<std::string> inputFolders;
+    std::vector<std::string> metadataFolders;
     std::string outputPath;
+    EImageFormat outputFormat = EImageFormat::RGBA;
     std::string extension;
 
     ProcessingParams pParams;
@@ -262,6 +537,8 @@ int aliceVision_main(int argc, char * argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("metadataFolders", po::value<std::vector<std::string>>(&metadataFolders)->multitoken(),
+        "Use images metadata from specific folder(s) instead of those specified in the input images.")
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
         ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
@@ -275,31 +552,41 @@ int aliceVision_main(int argc, char * argv[])
         ("medianFilter", po::value<int>(&pParams.medianFilter)->default_value(pParams.medianFilter),
          "Median Filter (0: no filter).")
 
-        ("sharpenWidth", po::value<int>(&pParams.sharpenWidth)->default_value(pParams.sharpenWidth),
-         "Sharpen kernel width (<3: no sharpening).")
-        ("sharpenContrast", po::value<float>(&pParams.sharpenContrast)->default_value(pParams.sharpenContrast),
-         "Sharpen contrast value (0.0: no sharpening).")
-        ("sharpenThreshold", po::value<float>(&pParams.sharpenThreshold)->default_value(pParams.sharpenThreshold),
-         "Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
+        ("sharpenFilter", po::value<SharpenParams>(&pParams.sharpen)->default_value(pParams.sharpen),
+            "Sharpen Filter parameters:\n"
+            " * Enabled: Use Sharpen.\n"
+            " * Width: Sharpen kernel width.\n"
+            " * Contrast: Sharpen contrast value.\n "
+            " * Threshold: Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
 
         ("fillHoles", po::value<bool>(&pParams.fillHoles)->default_value(pParams.fillHoles),
          "Fill Holes.")
 
-        ("bilateralFilter", po::value<bool>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
-            "use bilateral Filter")
-        ("bilateralFilterDistance", po::value<int>(&pParams.bilateralFilterDistance)->default_value(pParams.bilateralFilterDistance),
-            "Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).")
-        ("bilateralFilterSigmaSpace",po::value<float>(&pParams.bilateralFilterSigmaSpace)->default_value(pParams.bilateralFilterSigmaSpace),
-            "Filter sigma in the coordinate space.")
-        ("bilateralFilterSigmaColor",po::value<float>(&pParams.bilateralFilterSigmaColor)->default_value(pParams.bilateralFilterSigmaColor),
-            "Filter sigma in the color space.")
+        ("bilateralFilter", po::value<BilateralFilterParams>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
+            "Bilateral Filter parameters:\n"
+            " * Enabled: Use bilateral Filter.\n"
+            " * Distance: Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).\n"
+            " * SigmaSpace: Filter sigma in the coordinate space.\n "
+            " * SigmaColor: Filter sigma in the color space.")
 
-        ("claheFilter", po::value<bool>(&pParams.claheFilter)->default_value(pParams.claheFilter),
-         "Use Contrast Limited Adaptive Histogram Equalization (CLAHE) Filter.")
-        ("claheClipLimit", po::value<float>(&pParams.claheClipLimit)->default_value(pParams.claheClipLimit),
-         "Sets Threshold For Contrast Limiting.")
-        ("claheTileGridSize", po::value<int>(&pParams.claheTileGridSize)->default_value(pParams.claheTileGridSize),
-         "Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
+        ("claheFilter", po::value<ClaheFilterParams>(&pParams.claheFilter)->default_value(pParams.claheFilter),
+            "Sharpen Filter parameters:\n"
+            " * Enabled: Use Contrast Limited Adaptive Histogram Equalization (CLAHE).\n"
+            " * ClipLimit: Sets Threshold For Contrast Limiting.\n"
+            " * TileGridSize: Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
+
+        ("noiseFilter", po::value<NoiseFilterParams>(&pParams.noise)->default_value(pParams.noise),
+                                 "Noise Filter parameters:\n"
+                                 " * Enabled: Add Noise.\n"
+                                 " * method: There are several noise types to choose from:\n"
+                                 "    - uniform: adds noise values uninformly distributed on range [A,B).\n"
+                                 "    - gaussian: adds Gaussian (normal distribution) noise values with mean value A and standard deviation B.\n"
+                                 "    - salt: changes to value A a portion of pixels given by B.\n"
+                                 " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
+                                 " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
+
+        ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
+         "Output image format (rgba, rgb, grayscale)")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -351,7 +638,7 @@ int aliceVision_main(int argc, char * argv[])
     }
 
 #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-    if(pParams.bilateralFilter || pParams.claheFilter)
+    if(pParams.bilateralFilter.enabled || pParams.claheFilter.enabled)
     {
         ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter and claheFilter can't be used without openCV !");
         return EXIT_FAILURE;
@@ -392,17 +679,25 @@ int aliceVision_main(int argc, char * argv[])
             // if inputFolders are used
             if(checkInputFolders)
             {
-                const std::string foundViewPath = sfmDataIO::viewPathFromFolders(view, inputFolders).generic_string();
+                const std::vector<std::string> foundViewPaths = sfmDataIO::viewPathsFromFolders(view, inputFolders);
+
                 // Checks if a file associated with a given view is found in the inputfolders
-                if(foundViewPath.empty())
+                if(foundViewPaths.empty())
                 {
-                    ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.");
-                    ALICEVISION_LOG_ERROR("Use only SfmData input, use reconstructedViewsOnly or specify the correct inputFolders.");
+                    ALICEVISION_LOG_ERROR("Some views from SfmData cannot be found in folders passed in the parameters.\n"
+                        << "Use only SfmData input, use reconstructedViewsOnly or specify the correct inputFolders.");
                     return EXIT_FAILURE;
                 }
+                else if(foundViewPaths.size() > 1)
+                {
+                    ALICEVISION_LOG_ERROR("Ambiguous case: Multiple paths found in input folders for the corresponding view '" << view.getViewId() << "'.\n"
+                        << "Make sure that only one match can be found in input folders.");
+                    return EXIT_FAILURE;
+                }
+
                 // Add to ViewPaths the new associated path
-                ViewPaths.insert({view.getViewId(), foundViewPath});
-                ALICEVISION_LOG_TRACE("New path found for the view " << view.getViewId() << " '" << foundViewPath << "'");
+                ALICEVISION_LOG_TRACE("New path found for the view " << view.getViewId() << " '" << foundViewPaths[0] << "'");
+                ViewPaths.insert({view.getViewId(), foundViewPaths[0]});
             }
             else
             {
@@ -419,12 +714,17 @@ int aliceVision_main(int argc, char * argv[])
             const IndexT viewId = viewIt.first;
             const std::string viewPath = viewIt.second;
             sfmData::View& view = sfmData.getView(viewId);
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'");
+
+            const fs::path fsPath = viewPath;
+            const std::string fileExt = fsPath.extension().string();
+            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+            const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(viewPath, image, image::EImageColorSpace::LINEAR);
-            const oiio::ParamValueList metadata = image::readImageMetadata(viewPath);
 
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
@@ -444,16 +744,10 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            const std::string ext = extension.empty() ? fs::path(viewPath).extension().string() : (std::string(".") + extension);
-
-            // Analyze output path
-            const std::string outputImagePath = (fs::path(outputPath) / (std::to_string(viewId) + ext)).generic_string();
-
-            ALICEVISION_LOG_TRACE("Export image: '" << outputImagePath << "'.");
-            image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
+            saveImage(image, viewPath, outputfilePath, metadataFolders, outputFormat);
 
             // Update view for this modification
-            view.setImagePath(outputImagePath);
+            view.setImagePath(outputfilePath);
             view.setWidth(image.Width());
             view.setHeight(image.Height());
         }
@@ -466,11 +760,11 @@ int aliceVision_main(int argc, char * argv[])
             }
         }
 
-        const std::string outputSfmData = (fs::path(outputPath) / fs::path(inputExpression).filename()).string();
         // Save sfmData with modified path to images
-        if(!sfmDataIO::Save(sfmData, outputSfmData, sfmDataIO::ALL))
+        const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+        if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
-            ALICEVISION_LOG_ERROR("The output SfMData file '" << outputPath << "' cannot be written.");
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
             return EXIT_FAILURE;
         }
     }
@@ -482,23 +776,10 @@ int aliceVision_main(int argc, char * argv[])
         // If sfmInputDataFilename is empty use imageFolders instead
         if(inputExpression.empty())
         {
-            for(const std::string& folder : inputFolders)
-            {
-                // If one of the paths isn't a folder path
-                if(!fs::is_directory(folder))
-                {
-                    ALICEVISION_LOG_ERROR("the path '" << folder << "' is not a valid folder path.");
-                    return EXIT_FAILURE;
-                }
-
-                for(fs::directory_entry& entry : fs::directory_iterator(folder))
-                {
-                    const std::string entryPath = entry.path().generic_string();
-                    const std::string ext = entry.path().extension().string();
-                    if(image::isSupported(ext))
-                        filesStrPaths.push_back(entryPath);
-                }
-            }
+            // Get supported files
+            filesStrPaths = utils::getFilesPathsFromFolders(inputFolders, [](const boost::filesystem::path& path) {
+                return image::isSupported(path.extension().string());
+            });
         }
         else
         {
@@ -514,18 +795,15 @@ int aliceVision_main(int argc, char * argv[])
             }
             else
             {
-                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().string() + "'.");
-                // Iterate over files in directory
-                for(fs::directory_entry& entry : fs::directory_iterator(inputPath.parent_path()))
-                {
-                    const std::string entryPath = entry.path().generic_string();
-                    const std::string ext = entry.path().extension().string();
-                    if(image::isSupported(ext))
-                        filesStrPaths.push_back(entryPath);
-                }
+                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
 
-                // Regex filtering files paths
-                filterStrings(filesStrPaths, inputExpression);
+                const std::regex regex = utils::filterToRegex(inputExpression);
+                // Get supported files in inputPath directory which matches our regex filter
+                filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), 
+                    [&regex](const boost::filesystem::path& path) {
+                        return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
+                    }
+                );
             }
         }
 
@@ -546,24 +824,22 @@ int aliceVision_main(int argc, char * argv[])
         for(const std::string& inputFilePath : filesStrPaths)
         {
             const fs::path path = fs::path(inputFilePath);
-            const std::string fileName = path.stem().string();
+            const std::string filename = path.stem().string();
             const std::string fileExt = path.extension().string();
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputFilePath = (fs::path(outputPath) / (fileName + outputExt)).string();
+            const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << fileName << fileExt << "'.");
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
 
             // Read original image
             image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
-            const oiio::ParamValueList metadata = image::readImageMetadata(inputFilePath);
 
             // Image processing
             processImage(image, pParams);
 
             // Save the image
-            ALICEVISION_LOG_TRACE("Export image: '" << outputFilePath << "'.");
-            image::writeImage(outputFilePath, image, image::EImageColorSpace::AUTO, metadata);
+            saveImage(image, inputFilePath, outputFilePath, metadataFolders, outputFormat);
         }
     }
 

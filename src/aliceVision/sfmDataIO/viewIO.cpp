@@ -10,6 +10,7 @@
 #include <aliceVision/sfmData/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/image/io.hpp>
+#include "aliceVision/utils/filesIO.hpp"
 
 #include <stdexcept>
 #include <regex>
@@ -270,33 +271,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   return intrinsic;
 }
 
-boost::filesystem::path viewPathFromFolders(const sfmData::View& view, const std::vector<std::string>& folders)
+std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders)
 {
-    boost::filesystem::path path = "";
-    for(const std::string& folder : folders)
-    {
-        path = viewPathFromFolder(view, folder);
-        if(!path.empty())
-        {
-            break;
-        }
-    }
-
-    return path;
-}
-
-boost::filesystem::path viewPathFromFolder(const sfmData::View& view, const std::string& folder)
-{
-    const fs::recursive_directory_iterator end;
-    const auto findIt = std::find_if(fs::recursive_directory_iterator(folder), end, 
-        [&view](const fs::directory_entry& e)
-        {
-            const fs::path stem = e.path().stem();
-            return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImagePath()).stem());
-        }
-    );
-
-    return (findIt != end) ? findIt->path() : "";
+    return utils::getFilesPathsFromFolders(folders, [&view](const boost::filesystem::path& path) {
+        const boost::filesystem::path stem = path.stem();
+        return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImagePath()).stem());
+    });
 }
 
 } // namespace sfmDataIO

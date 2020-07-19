@@ -83,22 +83,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 					double defaultPPx = -1, double defaultPPy = -1);
 
 /**
-    * @brief Allows you to retrieve the image file path corresponding to a view by searching through a list of folders.
-    *        Filename must be the same or equal to the image uid.
-    * @param[in] the view
-    * @param[in] the folder list
-    * @return the path to the corresponding view if found in the folders, otherwise returns an empty path ("").
-    */
-boost::filesystem::path viewPathFromFolders(const sfmData::View& view, const std::vector<std::string>& folders);
-
-/**
-    * @brief  Allows you to retrieve the image file path corresponding to a view by searching in a folder.
-             Filename must be the same or equal to the image uid.
-    * @param[in] the view
-    * @param[in] the folder path
-    * @return the path to the corresponding view if found in the folder, otherwise returns an empty path ("").
-    */
-boost::filesystem::path viewPathFromFolder(const sfmData::View& view, const std::string& folder);
+* @brief Allows you to retrieve the files paths corresponding to a view by searching through a list of folders.
+*        Filename must be the same or equal to the viewId.
+* @param[in] the view
+* @param[in] the folder list
+* @return the list of paths to the corresponding view if found in the folders, otherwise returns an empty list.
+*/
+std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders);
 
 } // namespace sfmDataIO
 } // namespace aliceVision

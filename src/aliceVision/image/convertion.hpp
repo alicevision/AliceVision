@@ -13,50 +13,98 @@
 namespace aliceVision{
 namespace image {
 
-template<typename T>
 // The factor comes from http://www.easyrgb.com/
 // RGB to XYZ : Y is the luminance channel
 // var_R * 0.2126 + var_G * 0.7152 + var_B * 0.0722
-inline T Rgb2Gray(const T r,const T g, const T b) {
-  return r * 0.2126 + g * 0.7152 + b * 0.0722;
+inline float Rgb2GrayLinear(const float r, const float g, const float b)
+{
+  return r * 0.2126f + g * 0.7152f + b * 0.0722f;
 }
 
-template<typename Tin, typename Tout>
-inline void Convert(const Tin& valin, Tout& out) {
+inline float Rgb2Gray(const float r, const float g, const float b)
+{
+  return r * 0.299f + g * 0.587f + b * 0.114f;
+}
+
+template <typename Tin, typename Tout>
+inline void Convert(const Tin& valin, Tout& out)
+{
   out = static_cast<Tout>(valin);
 }
 
 template<>
-inline void Convert<unsigned char, RGBColor>(
-  const unsigned char& valin, RGBColor& valOut)
+inline void Convert<unsigned char, RGBColor>(const unsigned char& valin, RGBColor& valOut)
 {
   valOut = RGBColor(valin);
 }
 
 template<>
-inline void Convert<RGBColor, unsigned char>(
-  const RGBColor& valin, unsigned char& valOut)
+inline void Convert<RGBColor, unsigned char>(const RGBColor& valin, unsigned char& valOut)
 {
-  valOut = static_cast<unsigned char>(0.3 * valin.r() + 0.59 * valin.g() + 0.11 * valin.b());
+  valOut = static_cast<unsigned char>(Rgb2GrayLinear(valin.r(), valin.g(), valin.b()));
 }
 
 template<>
-inline void Convert<RGBAColor, unsigned char>(
-  const RGBAColor& valin, unsigned char& valOut)
+inline void Convert<unsigned char, RGBAColor>(const unsigned char& valin, RGBAColor& valOut)
 {
-  valOut = static_cast<unsigned char>(
-    (valin.a()/255.f) *
-    (0.3 * valin.r() + 0.59 * valin.g() + 0.11 * valin.b()));
+  valOut = RGBAColor(valin, valin, valin, 255);
 }
 
 template<>
-inline void Convert<RGBAColor, RGBColor>(
-  const RGBAColor& valin, RGBColor& valOut)
+inline void Convert<RGBAColor, unsigned char>(const RGBAColor& valin, unsigned char& valOut)
 {
-  valOut = RGBColor(
-    static_cast<unsigned char> ((valin.a()/255.f) * valin.r()),
-    static_cast<unsigned char> ((valin.a()/255.f) * valin.g()),
-    static_cast<unsigned char> ((valin.a()/255.f) * valin.b()));
+  valOut = static_cast<unsigned char>((valin.a() / 255.f) * Rgb2GrayLinear(valin.r(), valin.g(), valin.b()));
+}
+
+template<>
+inline void Convert<RGBAColor, RGBColor>(const RGBAColor& valin, RGBColor& valOut)
+{
+  valOut = RGBColor(static_cast<unsigned char>((valin.a() / 255.f) * valin.r()),
+                    static_cast<unsigned char>((valin.a() / 255.f) * valin.g()),
+                    static_cast<unsigned char>((valin.a() / 255.f) * valin.b()));
+}
+
+template<>
+inline void Convert<RGBColor, RGBAColor>(const RGBColor& valin, RGBAColor& valOut)
+{
+  valOut = RGBAColor(valin.r(), valin.g(), valin.b(), static_cast<unsigned char>(255));
+}
+
+template<>
+inline void Convert<float, RGBfColor>(const float& valin, RGBfColor& valOut)
+{
+  valOut = RGBfColor(valin);
+}
+
+template<>
+inline void Convert<RGBfColor, float>(const RGBfColor& valin, float& valOut)
+{
+  valOut = Rgb2GrayLinear(valin.r(), valin.g(), valin.b());
+}
+
+template<>
+inline void Convert<float, RGBAfColor>(const float& valin, RGBAfColor& valOut)
+{
+  valOut = RGBAfColor(valin);
+}
+
+template<>
+inline void Convert<RGBAfColor, float>(const RGBAfColor& valin, float& valOut)
+{
+  valOut = Rgb2GrayLinear(valin.a() * valin.r(), valin.a() * valin.g(), valin.a() * valin.b());
+}
+
+template<>
+inline void Convert<RGBAfColor, RGBfColor>(const RGBAfColor& valin, RGBfColor& valOut)
+{
+  valOut = RGBfColor(valin.a() * valin.r(), valin.a() * valin.g(), valin.a() * valin.b());
+}
+
+template<>
+inline void Convert<RGBfColor, RGBAfColor>(const RGBfColor& valin, RGBAfColor& valOut)
+{
+  // alpha 1 by default
+  valOut = RGBAfColor(valin.r(), valin.g(), valin.b());
 }
 
 template<typename ImageIn, typename ImageOut>

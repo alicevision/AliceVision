@@ -177,13 +177,20 @@ bool prepareDenseScene(const SfMData& sfmData,
     {      
       if(!imagesFolders.empty())
       {
-          const fs::path path = viewPathFromFolders(*view, imagesFolders);
+          std::vector<std::string> paths = sfmDataIO::viewPathsFromFolders(*view, imagesFolders);
 
           // if path was not found
-          if(path.empty())
-              throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in given folder(s)");
+          if(paths.empty())
+          {
+              throw std::runtime_error("Cannot find view '" + std::to_string(view->getViewId()) + "' image file in given folder(s)");
+          }
+          else if(paths.size() > 1)
+          {
+              throw std::runtime_error( "Ambiguous case: Multiple source image files found in given folder(s) for the view '" + 
+                  std::to_string(view->getViewId()) + "'.");
+          }
 
-          srcImage = path.string();
+          srcImage = paths[0];
       }
       const std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const IntrinsicBase* cam = iterIntrinsic->second.get();

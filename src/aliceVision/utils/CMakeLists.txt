@@ -2,6 +2,7 @@
 set(utils_files_headers
   Histogram.hpp
   regexFilter.hpp
+  filesIO.hpp
 )
 
 alicevision_add_interface(aliceVision_utils

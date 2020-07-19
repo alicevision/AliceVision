@@ -48,7 +48,7 @@ private:
 
 BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset) {
 
-  Histogram< double > histo( 0, 256, 255);
+  utils::Histogram< double > histo( 0, 256, 255);
   for (std::size_t i=0; i < 6000; i++)
   {
     histo.Add(normal_distribution(127, 10)());
@@ -106,8 +106,8 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset) {
 
 BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain) {
 
-  Histogram< double > histo_ref( 0, 256, 255);
-  Histogram< double > histo_offset_gain( 0, 256, 255);
+  utils::Histogram< double > histo_ref( 0, 256, 255);
+  utils::Histogram< double > histo_offset_gain( 0, 256, 255);
   const double GAIN = 3.0;
   const double OFFSET = 160;
   //const double GAIN = 2.0;
