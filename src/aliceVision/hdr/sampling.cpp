@@ -152,9 +152,10 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     const float area = float(diameter * diameter);
 
     std::vector<std::pair<int, int>> vec_blocks;
-    for(int cy = 0; cy < imageHeight; cy += params.blockSize - diameter)
+    const auto step = params.blockSize - diameter;
+    for(int cy = 0; cy < imageHeight; cy += step)
     {
-        for(int cx = 0; cx < imageWidth; cx += params.blockSize - diameter)
+        for(int cx = 0; cx < imageWidth; cx += step)
         {
             vec_blocks.push_back(std::make_pair(cx, cy));
         }
@@ -171,8 +172,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         // Load image
         readImage(imagePaths[idBracket], img, colorspace);
 
-        if(img.Width() != imageWidth ||
-           img.Height() != imageHeight)
+        if(img.Width() != imageWidth || img.Height() != imageHeight)
         {
             std::stringstream ss;
             ss << "Failed to extract samples, the images with multi-bracketing do not have the same image resolution.\n"
@@ -202,26 +202,26 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             integral(imgIntegral, blockInput);
             integral(imgIntegralSquare, imgSquare);
 
-            for(int i = radiusp1; i < imgIntegral.Height() - params.radius; ++i)
+            for(int y = radiusp1; y < imgIntegral.Height() - params.radius; ++y)
             {
-                for(int j = radiusp1; j < imgIntegral.Width() - params.radius; ++j)
+                for(int x = radiusp1; x < imgIntegral.Width() - params.radius; ++x)
                 {
-                    image::Rgb<double> S1 = imgIntegral(i + params.radius, j + params.radius) + imgIntegral(i - radiusp1, j - radiusp1) - imgIntegral(i + params.radius, j - radiusp1) - imgIntegral(i - radiusp1, j + params.radius);
-                    image::Rgb<double> S2 = imgIntegralSquare(i + params.radius, j + params.radius) + imgIntegralSquare(i - radiusp1, j - radiusp1) - imgIntegralSquare(i + params.radius, j - radiusp1) - imgIntegralSquare(i - radiusp1, j + params.radius);
+                    image::Rgb<double> S1 = imgIntegral(y + params.radius, x + params.radius) + imgIntegral(y - radiusp1, x - radiusp1) - imgIntegral(y + params.radius, x - radiusp1) - imgIntegral(y - radiusp1, x + params.radius);
+                    image::Rgb<double> S2 = imgIntegralSquare(y + params.radius, x + params.radius) + imgIntegralSquare(y - radiusp1, x - radiusp1) - imgIntegralSquare(y + params.radius, x - radiusp1) - imgIntegralSquare(y - radiusp1, x + params.radius);
                     
                     PixelDescription pd;
                     
                     pd.exposure = exposure;
-                    pd.mean.r() = blockInput(i,j).r(); 
-                    pd.mean.g() = blockInput(i,j).g(); 
-                    pd.mean.b() = blockInput(i,j).b();
+                    pd.mean.r() = blockInput(y,x).r(); 
+                    pd.mean.g() = blockInput(y,x).g(); 
+                    pd.mean.b() = blockInput(y,x).b();
                     pd.variance.r() = (S2.r() - (S1.r()*S1.r()) / area) / area;
                     pd.variance.g() = (S2.g() - (S1.g()*S1.g()) / area) / area;
                     pd.variance.b() = (S2.b() - (S1.b()*S1.b()) / area) / area;
 
-                    blockOutput(i, j).x = cx + j;
-                    blockOutput(i, j).y = cy + i;
-                    blockOutput(i, j).descriptions.push_back(pd);
+                    blockOutput(y, x).x = cx + x;
+                    blockOutput(y, x).y = cy + y;
+                    blockOutput(y, x).descriptions.push_back(pd);
                 }
             }
         }
@@ -235,11 +235,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
     // Create samples image
     #pragma omp parallel for
-    for (int i = params.radius; i < samples.Height() - params.radius; ++i)
+    for (int y = params.radius; y < samples.Height() - params.radius; ++y)
     {
-        for (int j = params.radius; j < samples.Width() - params.radius; ++j)
+        for (int x = params.radius; x < samples.Width() - params.radius; ++x)
         {
-            ImageSample & sample = samples(i, j);
+            ImageSample & sample = samples(y, x);
             if (sample.descriptions.size() < 2)
             {
                 continue;
@@ -250,11 +250,12 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             // Make sure we don't have a patch with high variance on any bracket.
             // If the variance is too high somewhere, ignore the whole coordinate samples
             bool valid = true;
+            const float maxVariance = 0.05f;
             for (int k = 0; k < sample.descriptions.size(); ++k)
             {
-                if (sample.descriptions[k].variance.r() > 0.05 ||
-                    sample.descriptions[k].variance.g() > 0.05 ||
-                    sample.descriptions[k].variance.b() > 0.05)
+                if (sample.descriptions[k].variance.r() > maxVariance ||
+                    sample.descriptions[k].variance.g() > maxVariance ||
+                    sample.descriptions[k].variance.b() > maxVariance)
                 {
                     valid = false;
                     break;
@@ -274,20 +275,27 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             {
                 bool valid = false;
 
-                if (sample.descriptions[k].mean.r() > 0.99f ||
-                    sample.descriptions[k].mean.g() > 0.99f ||
-                    sample.descriptions[k].mean.b() > 0.99f)
+                // Threshold on the max values, to avoid using fully saturated pixels
+                // TODO: on RAW images, values can be higher. May need to be computed dynamically?
+                const float maxValue = 0.99f;
+                if(sample.descriptions[k].mean.r() > maxValue ||
+                   sample.descriptions[k].mean.g() > maxValue ||
+                   sample.descriptions[k].mean.b() > maxValue)
                 {
                     continue;
                 }
 
-                if (sample.descriptions[k].mean.r() > 1.004f * sample.descriptions[k - 1].mean.r() ||
-                    sample.descriptions[k].mean.g() > 1.004f * sample.descriptions[k - 1].mean.g() ||
-                    sample.descriptions[k].mean.b() > 1.004f * sample.descriptions[k - 1].mean.b())
+                // Ensures that at least one channel is strictly increasing with increasing exposure
+                // TODO: check "exposure" params, we may have the same exposure multiple times
+                const float minIncreaseRatio = 1.004f;
+                if(sample.descriptions[k].mean.r() > minIncreaseRatio * sample.descriptions[k - 1].mean.r() ||
+                   sample.descriptions[k].mean.g() > minIncreaseRatio * sample.descriptions[k - 1].mean.g() ||
+                   sample.descriptions[k].mean.b() > minIncreaseRatio * sample.descriptions[k - 1].mean.b())
                 {
                     valid = true;
                 }
 
+                // Ensures that the values of each channel are increasing with increasing exposure
                 if (sample.descriptions[k].mean.r() < sample.descriptions[k - 1].mean.r() ||
                     sample.descriptions[k].mean.g() < sample.descriptions[k - 1].mean.g() ||
                     sample.descriptions[k].mean.b() < sample.descriptions[k - 1].mean.b())
@@ -295,14 +303,18 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
                     valid = false;
                 }
 
-                if (sample.descriptions[k - 1].mean.norm() > 0.1f)
+                // If we have enough information to analyze the chrominance
+                const float minGlobalValue = 0.1f;
+                if(sample.descriptions[k - 1].mean.norm() > minGlobalValue)
                 {
                     // Check that both colors are similars
                     const float n1 = sample.descriptions[k - 1].mean.norm();
                     const float n2 = sample.descriptions[k].mean.norm();
                     const float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
                     const float cosa = dot / (n1*n2);
-                    if (cosa < 0.95f)
+                    
+                    const float maxCosa = 0.95f; // ~ 18deg
+                    if(cosa < maxCosa)
                     {
                         valid = false;
                     }
@@ -353,13 +365,13 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         std::vector<Counters> counters_vec(omp_get_max_threads());
 
         #pragma omp parallel for
-        for (int i = params.radius; i < samples.Height() - params.radius; ++i)
+        for (int y = params.radius; y < samples.Height() - params.radius; ++y)
         {
             Counters & counters_thread = counters_vec[omp_get_thread_num()];
 
-            for (int j = params.radius; j < samples.Width() - params.radius; ++j)
+            for (int x = params.radius; x < samples.Width() - params.radius; ++x)
             {
-                ImageSample & sample = samples(i, j);
+                ImageSample & sample = samples(y, x);
                 UniqueDescriptor desc;
 
                 for (int k = 0; k < sample.descriptions.size(); ++k)
@@ -408,9 +420,9 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
             item.second.resize(params.maxCountSample);
         }
 
-        for (std::size_t l = 0; l < item.second.size(); ++l)
+        for (std::size_t i = 0; i < item.second.size(); ++i)
         {
-            Coordinates coords = item.second[l];
+            Coordinates coords = item.second[i];
 
             if (!samples(coords.second, coords.first).descriptions.empty())
             {
@@ -454,7 +466,9 @@ void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuan
 
     for (auto & item : _positions)
     {
-        if (item.second.size() > 500)
+        // TODO: expose as parameters
+        const std::size_t maxSamples = 500;
+        if(item.second.size() > maxSamples)
         {
             // Shuffle and ignore the exceeding samples
             std::random_shuffle(item.second.begin(), item.second.end());
@@ -465,6 +479,7 @@ void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuan
 
 void Sampling::filter(size_t maxTotalPoints)
 {
+    // TODO: avoid hardcoded value
     size_t limitPerGroup = 510;
     size_t total_points = maxTotalPoints + 1;
 
@@ -487,9 +502,9 @@ void Sampling::filter(size_t maxTotalPoints)
     }
 }
 
-void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int imageIndex)
+void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, const std::vector<ImageSample> & samples, int imageIndex) const
 {
-    std::set<unsigned int> unique_indices;
+    std::set<unsigned int> uniqueIndices;
 
     for (auto & item : _positions)
     {
@@ -497,17 +512,17 @@ void Sampling::extractUsefulSamples(std::vector<ImageSample> & out_samples, std:
         {
             if (pos.imageIndex == imageIndex)
             {
-                unique_indices.insert(pos.sampleIndex);
+                uniqueIndices.insert(pos.sampleIndex);
             }
         }
     }
 
-    for (auto & index : unique_indices)
+    // Export non-empty samples
+    for (auto & index : uniqueIndices)
     {
-        if (samples[index].descriptions.size() > 0)
+        if (!samples[index].descriptions.empty())
         {
             out_samples.push_back(samples[index]);
-            samples[index].descriptions.clear();
         }
     }
 }

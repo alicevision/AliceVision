@@ -43,7 +43,6 @@ std::ostream & operator<<(std::ostream& os, const PixelDescription & p);
 std::istream & operator>>(std::istream& os, ImageSample & s);
 std::istream & operator>>(std::istream& os, PixelDescription & p);
 
-struct UniqueDescriptor;
 
 class Sampling
 {
@@ -65,7 +64,7 @@ public:
 public:
     void analyzeSource(std::vector<ImageSample> & samples, int channelQuantization, int imageIndex);
     void filter(size_t maxTotalPoints);
-    void extractUsefulSamples(std::vector<ImageSample> & out_samples, std::vector<ImageSample> & samples, int imageIndex);
+    void extractUsefulSamples(std::vector<ImageSample> & out_samples, const std::vector<ImageSample> & samples, int imageIndex) const;
     
     static bool extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const image::EImageColorSpace & colorspace, const Params params);
 
