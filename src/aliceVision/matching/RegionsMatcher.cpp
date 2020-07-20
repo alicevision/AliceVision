@@ -68,10 +68,9 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 	// Handle invalid request
 	if (regions.IsScalar() && matcherType == BRUTE_FORCE_HAMMING)
 		return out;
-	
-	// HNSWLIB returns true binary but our matcher type is HNSWLIB
-	//if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
-	//	return out;
+
+	if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
+		return out;
 
     // Switch regions type ID, matcher & Metric: initialize the Matcher interface
     if (regions.IsScalar())

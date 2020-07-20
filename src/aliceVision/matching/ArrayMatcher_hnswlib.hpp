@@ -13,7 +13,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include "dependencies/hnswlib/hnswlib.h"
+#include "dependencies/hnswlib/hnswlib/hnswlib.h"
 
 #include <memory>
 #include <random>
@@ -146,7 +146,7 @@ public:
                 [](const std::pair<DistanceType, size_t>& var1, const std::pair<DistanceType, size_t>& var2) -> bool {
                     return var1.first < var2.first;
                 });
-			
+
 			for(const auto& res : result)
 			{
 				pvec_indices->emplace_back(i, res.second);
