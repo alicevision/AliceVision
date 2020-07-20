@@ -1744,107 +1744,6 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
     }
 }
 
-void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind)
-{
-    ALICEVISION_LOG_INFO("Forcing t-edges.");
-    long t2 = clock();
-
-    float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
-    ALICEVISION_LOG_INFO("forceTEdgeDelta: " << forceTEdgeDelta);
-
-    float beta = (float)mp->userParams.get<double>("delaunaycut.beta", 1000.0f);
-    ALICEVISION_LOG_INFO("beta: " << beta);
-
-    for(GC_cellInfo& c: _cellsAttr)
-    {
-        c.on = 0.0f;
-    }
-
-    // choose random order to prevent waiting
-    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
-    const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
-
-#pragma omp parallel for
-    for(int i = 0; i < verticesRandIds.size(); ++i)
-    {
-        const int vertexIndex = verticesRandIds[i];
-        GC_vertexInfo& v = _verticesAttr[vertexIndex];
-        if(v.isVirtual())
-            continue;
-
-        const Point3d& originPt = _verticesCoords[vertexIndex];
-        for(int c = 0; c < v.cams.size(); ++c)
-        {
-            int cam = v.cams[c];
-
-            // False here mean nearest
-            const bool nearestFarest = true;
-            Facet fFirst = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-
-            // get the tetrahedron next to point p on the ray from c
-            // False here mean farest
-            Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, false);
-
-            if((fFirst.cellIndex != GEO::NO_CELL) && (facet.cellIndex != GEO::NO_CELL) && (!isInfiniteCell(facet.cellIndex)))
-            {
-                float eFirst = _cellsAttr[fFirst.cellIndex].emptinessScore;
-
-                Point3d p = originPt; // HAS TO BE HERE !!!
-                float maxDist = nPixelSizeBehind * mp->getCamPixelSize(p, cam);
-                if(fixesSigma)
-                {
-                    maxDist = nPixelSizeBehind;
-                }
-
-                bool ok = (facet.cellIndex != GEO::NO_CELL);
-                while(ok)
-                {
-                    Point3d pold = p;
-                    Point3d intersectPt;
-                    Facet outFacet;
-
-                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest
-                    // to the cam which is intersected with cam-p ray
-                    // False here mean farest
-                    const bool nearestFarest = false;
-                    if(!rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt) ||
-                       ((originPt - pold).size() >= maxDist))
-                    {
-                        ok = false;
-                    }
-                    else
-                    {
-                        // Take the mirror facet to iterate over the next cell
-                        facet = mirrorFacet(outFacet);
-                        if(facet.cellIndex == GEO::NO_CELL)
-                            ok = false;
-                        p = intersectPt;
-                    }
-                }
-
-                if(facet.cellIndex != GEO::NO_CELL)
-                {
-                    const float eLast = _cellsAttr[facet.cellIndex].emptinessScore;
-                    if((eFirst > eLast) && (eFirst < beta) && (eLast / eFirst < forceTEdgeDelta))
-                    {
-#pragma OMP_ATOMIC_UPDATE
-                        _cellsAttr[facet.cellIndex].on += (eFirst - eLast);
-                    }
-                }
-            }
-
-        } // for c
-
-    } // for i
-
-    for(GC_cellInfo& c: _cellsAttr)
-    {
-        c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, std::max(1.0f, c.cellTWeight) * c.on));
-    }
-
-    mvsUtils::printfElapsedTime(t2, "t-edges forced: ");
-}
-
 void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind)
 {
     ALICEVISION_LOG_INFO("Forcing t-edges");
@@ -2460,31 +2359,8 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     bool labatutCFG09 = mp->userParams.get<bool>("global.LabatutCFG09", false);
-    bool jancosekCVPR11 = mp->userParams.get<bool>("global.JancosekCVPR11", false);
     // jancosekIJCV: "Exploiting Visibility Information in Surface Reconstruction to Preserve Weakly Supported Surfaces", Michal Jancosek and Tomas Pajdla, 2014
     bool jancosekIJCV = mp->userParams.get<bool>("global.JancosekIJCV", true);
-
-    if(jancosekCVPR11)
-    {
-        float delta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
-
-        ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( forceTEdgeDelta*100 = " << static_cast<int>(delta * 100.0f) << "):");
-
-        fillGraph(false, sigma, false, true, distFcnHeight);
-
-        addToInfiniteSw((float)maxint);
-
-        if(saveTemporaryBinFiles)
-            saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
-
-        if((delta > 0.0f) && (delta < 1.0f))
-        {
-            forceTedgesByGradientCVPR11(false, sigma);
-        }
-
-        if(saveTemporaryBinFiles)
-            saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
-    }
 
     if(jancosekIJCV) // true by default
     {

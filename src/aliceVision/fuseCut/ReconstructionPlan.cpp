@@ -432,10 +432,6 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
         {
             subFolderName = "LabatutCFG09";
         }
-        if(ls->mp->userParams.get<bool>("global.JancosekCVPR11", true))
-        {
-            subFolderName = "JancosekCVPR11";
-        }
     }
     subFolderName = subFolderName + "/";
 
