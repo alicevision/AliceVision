@@ -295,9 +295,20 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             }
             int wTmp, hTmp;
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-            if(wTmp != width || hTmp != height)
-                throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
+            // If we have a simMap in input use it,
+            // else init with a constant value.
+            if(boost::filesystem::exists(simMapFilepath))
+            {
+                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                if(wTmp != width || hTmp != height)
+                    throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("simMap file can't be found.");
+                simMap.resize(width * height, -1);
+            }
+
             {
                 std::vector<float> simMapTmp(simMap.size());
                 imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
@@ -494,15 +505,15 @@ void DelaunayGraphCut::displayStatistics()
     // Display some statistics
 
     StaticVector<int>* ptsCamsHist = getPtsCamsHist();
-    ALICEVISION_LOG_INFO("Histogram of number of cams per point:");
+    ALICEVISION_LOG_TRACE("Histogram of number of cams per point:");
     for(int i = 0; i < ptsCamsHist->size(); ++i)
-        ALICEVISION_LOG_INFO("    " << i << ": " << mvsUtils::num2str((*ptsCamsHist)[i]));
+        ALICEVISION_LOG_TRACE("    " << i << ": " << mvsUtils::num2str((*ptsCamsHist)[i]));
     delete ptsCamsHist;
 
     StaticVector<int>* ptsNrcsHist = getPtsNrcHist();
-    ALICEVISION_LOG_INFO("Histogram of Nrc per point:");
+    ALICEVISION_LOG_TRACE("Histogram of Nrc per point:");
     for(int i = 0; i < ptsNrcsHist->size(); ++i)
-        ALICEVISION_LOG_INFO("    " << i << ": " << mvsUtils::num2str((*ptsNrcsHist)[i]));
+        ALICEVISION_LOG_TRACE("    " << i << ": " << mvsUtils::num2str((*ptsNrcsHist)[i]));
     delete ptsNrcsHist;
 }
 
@@ -879,9 +890,20 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
                 int wTmp, hTmp;
                 const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                if(wTmp != width || hTmp != height)
-                    throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
+                // If we have a simMap in input use it,
+                // else init with a constant value.
+                if(boost::filesystem::exists(simMapFilepath))
+                {
+                    imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                    if(wTmp != width || hTmp != height)
+                        throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
+                }
+                else
+                {
+                    ALICEVISION_LOG_WARNING("simMap file can't be found.");
+                    simMap.resize(width * height, -1);
+                }
+                
                 {
                     std::vector<float> simMapTmp(simMap.size());
                     imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit, params.simGaussianSizeInit);
@@ -889,9 +911,20 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
 
                 const std::string nmodMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::nmodMap, 0);
-                imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                if(wTmp != width || hTmp != height)
-                    throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
+                // If we have an nModMap in input (from depthmapfilter) use it,
+                // else init with a constant value.
+                if(boost::filesystem::exists(nmodMapFilepath))
+                {
+                    imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
+                                       imageIO::EImageColorSpace::NO_CONVERSION);
+                    if(wTmp != width || hTmp != height)
+                        throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
+                }
+                else
+                {
+                    ALICEVISION_LOG_WARNING("nModMap file can't be found.");
+                    numOfModalsMap.resize(width*height, 1);
+                }
             }
 
             int syMax = std::ceil(height/step);

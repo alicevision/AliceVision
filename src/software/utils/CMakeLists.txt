@@ -24,10 +24,10 @@ if(ALICEVISION_HAVE_UNCERTAINTYTE)
 # message(warning "CUDA_cusparse_LIBRARY: ${CUDA_cusparse_LIBRARY}")
 endif()
 
-alicevision_add_software(aliceVision_utils_imageProcessing
-SOURCE main_imageProcessing.cpp
-FOLDER ${FOLDER_SOFTWARE_UTILS}
-LINKS aliceVision_system
+alicevision_add_software(aliceVision_utils_imageProcessing 
+    SOURCE main_imageProcessing.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
         aliceVision_sfm
@@ -35,6 +35,10 @@ LINKS aliceVision_system
         aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
+
+if(ALICEVISION_HAVE_OPENCV)
+  target_link_libraries(aliceVision_utils_imageProcessing PRIVATE ${OpenCV_LIBS})
+endif()
 
 # Voctree creation
 alicevision_add_software(aliceVision_utils_voctreeCreation

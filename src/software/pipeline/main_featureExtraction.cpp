@@ -61,6 +61,8 @@ class FeatureExtractor
       , outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
     {}
 
+    ~ViewJob() = default;
+
     bool useGPU() const
     {
       return !gpuImageDescriberIndexes.empty();
@@ -204,6 +206,8 @@ public:
     }
   }
 
+  ~FeatureExtractor() = default;
+
 private:
 
   void computeViewJob(const ViewJob& job, bool useGPU = false)
@@ -215,7 +219,7 @@ private:
 
     const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
 
-    for(auto& imageDescriberIndex : imageDescriberIndexes)
+    for(const auto & imageDescriberIndex : imageDescriberIndexes)
     {
       const auto& imageDescriber = _imageDescribers.at(imageDescriberIndex);
       const feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
@@ -259,7 +263,7 @@ int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
   std::string sfmDataFilename;
   std::string outputFolder;
 
@@ -299,7 +303,7 @@ int aliceVision_main(int argc, char **argv)
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+    ("verboseLevel,v", po::value<system::EVerboseLevel>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
@@ -358,6 +362,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input scene
   sfmData::SfMData sfmData;
+  std::cout << sfmData.getViews().size()  << std::endl;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");

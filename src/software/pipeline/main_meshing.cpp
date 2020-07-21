@@ -27,7 +27,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -139,7 +139,6 @@ int aliceVision_main(int argc, char* argv[])
     std::string outputMesh;
     std::string outputDensePointCloud;
     std::string depthMapsFolder;
-    std::string depthMapsFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     std::size_t estimateSpaceMinObservations = 3;
@@ -168,8 +167,6 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
-            "Input depth maps folder.")
-        ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder),
             "Input filtered depth maps folder.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
@@ -262,10 +259,9 @@ int aliceVision_main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    if(depthMapsFolder.empty() || depthMapsFilterFolder.empty())
+    if(depthMapsFolder.empty())
     {
       if(depthMapsFolder.empty() &&
-         depthMapsFilterFolder.empty() &&
          repartitionMode == eRepartitionMultiResolution &&
          partitioningMode == ePartitioningSingleBlock)
       {
@@ -275,7 +271,7 @@ int aliceVision_main(int argc, char* argv[])
       else
       {
         ALICEVISION_LOG_ERROR("Invalid input options:\n"
-                              "- Meshing from depth maps require --depthMapsFolder and --depthMapsFilterFolder options.\n"
+                              "- Meshing from depth maps require --depthMapsFolder option.\n"
                               "- Meshing from SfM require option --partitioning set to 'singleBlock' and option --repartition set to 'multiResolution'.");
         return EXIT_FAILURE;
       }
@@ -290,7 +286,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, depthMapsFilterFolder, meshingFromDepthMaps);
+    mvsUtils::MultiViewParams mp(sfmData, "", "", depthMapsFolder, meshingFromDepthMaps);
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
 

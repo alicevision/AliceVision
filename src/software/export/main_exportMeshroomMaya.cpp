@@ -119,7 +119,7 @@ int aliceVision_main(int argc, char **argv)
     image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
 
     // compute undistorted image
-    if(intrinsicPtr->isValid() && intrinsicPtr->have_disto())
+    if(intrinsicPtr->isValid() && intrinsicPtr->hasDistortion())
       camera::UndistortImage(image, intrinsicPtr.get(), imageUd, image::BLACK, true);
     else
       imageUd = image;

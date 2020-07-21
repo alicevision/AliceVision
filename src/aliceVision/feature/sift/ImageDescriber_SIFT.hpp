@@ -27,7 +27,7 @@ namespace feature {
 class ImageDescriber_SIFT : public ImageDescriber
 {
 public:
-  ImageDescriber_SIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
+  explicit ImageDescriber_SIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
     : _params(params)
     , _isOriented(isOriented)
   {
@@ -165,6 +165,8 @@ public:
   {
     _imageDescriberImpl->allocate(regions);
   }
+
+  ~ImageDescriber_SIFT() override = default;
 
 private:
   SiftParams _params;

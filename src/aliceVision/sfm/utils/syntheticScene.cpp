@@ -78,15 +78,15 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
     const unsigned int h = config._cy *2;
     switch (eintrinsic)
     {
-      case camera::PINHOLE_CAMERA:
+        case camera::EINTRINSIC::PINHOLE_CAMERA:
         sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>
           (w, h, config._fx, config._cx, config._cy);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL1:
+        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>
           (w, h, config._fx, config._cx, config._cy, 0.0);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL3:
+        case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>
           (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
@@ -164,13 +164,13 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     const unsigned int h = config._cy * 2;
     switch (eintrinsic)
     {
-      case camera::PINHOLE_CAMERA:
+      case camera::EINTRINSIC::PINHOLE_CAMERA:
         sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>(w, h, config._fx, config._cx, config._cy);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL1:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>(w, h, config._fx, config._cx, config._cy, 0.0);
       break;
-      case camera::PINHOLE_CAMERA_RADIAL3:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>(w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
@@ -189,7 +189,15 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     {
       const sfmData::View& view = *sfmData.views.at(viewId);
       const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-      const Vec2 pt = project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
+
+      std::shared_ptr<camera::IntrinsicBase> cam = sfmData.intrinsics.at(0);
+      std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+      if (!camPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in getInputRigScene");
+        continue;
+      }
+
+      const Vec2 pt = project(camPinHole->getProjectiveEquivalent(camPose), landmark.X);
       landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
     }
     sfmData.structure[landmarkId] = landmark;

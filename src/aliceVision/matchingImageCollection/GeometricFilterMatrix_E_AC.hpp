@@ -62,15 +62,19 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     const sfmData::View& viewI = sfmData->getView(I);
     const sfmData::View& viewJ = sfmData->getView(J);
 
-    // check that valid cameras can be retrieved for the pair of views
-    const camera::IntrinsicBase* camI = sfmData->getIntrinsicPtr(viewI.getIntrinsicId());
-    const camera::IntrinsicBase* camJ = sfmData->getIntrinsicPtr(viewJ.getIntrinsicId());
+    // Check that valid cameras can be retrieved for the pair of views
+    std::shared_ptr<camera::IntrinsicBase> cam_I = sfmData->getIntrinsicsharedPtr(viewI.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> cam_J = sfmData->getIntrinsicsharedPtr(viewJ.getIntrinsicId());
 
-    if(!camI || !camJ)
+    if(!cam_I || !cam_J)
       return EstimationStatus(false, false);
 
-    if(!isPinhole(camI->getType()) || !isPinhole(camJ->getType()))
+    std::shared_ptr<camera::Pinhole> castedCam_I = std::dynamic_pointer_cast<camera::Pinhole>(cam_I);
+    std::shared_ptr<camera::Pinhole> castedCam_J = std::dynamic_pointer_cast<camera::Pinhole>(cam_J);
+    if (castedCam_I == nullptr || castedCam_J == nullptr)
+    {
       return EstimationStatus(false, false);
+    }
 
     // get corresponding point regions arrays
     Mat xI,xJ;
@@ -82,11 +86,10 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
                     multiview::relativePose::FundamentalEpipolarDistanceError,
                     robustEstimation::Mat3Model>;
 
-    const camera::Pinhole* ptrPinholeI = (const camera::Pinhole*)(camI);
-    const camera::Pinhole* ptrPinholeJ = (const camera::Pinhole*)(camJ);
-
-    const KernelT kernel(xI, viewI.getWidth(), viewI.getHeight(),
-                         xJ, viewJ.getWidth(), viewJ.getHeight(), ptrPinholeI->K(), ptrPinholeJ->K());
+    KernelT kernel(
+      xI, viewI.getWidth(), viewI.getHeight(),
+      xJ, viewJ.getWidth(), viewJ.getHeight(),
+      castedCam_I->K(), castedCam_J->K());
 
     // robustly estimate the Essential matrix with A Contrario ransac
     const double upperBoundPrecision = Square(m_dPrecision);

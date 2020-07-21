@@ -5,7 +5,7 @@ Build instructions
 ------------------
 
 Required tools:
-* CMake >= 3.4
+* CMake >= 3.11
 * Git
 * C/C++ compiler (gcc or visual studio or clang) with C++11 support.
 
@@ -18,7 +18,7 @@ git clone https://github.com/alicevision/AliceVision.git --recursive
 ```
 
 As AliceVision use some C++11 features you must have a c++11 ready compiler:
-- Visual studio >= 2015
+- Visual studio >= 2015 (English language pack required for vcpkg)
 - GCC >= 4.7
 - Clang >= 3.3
 

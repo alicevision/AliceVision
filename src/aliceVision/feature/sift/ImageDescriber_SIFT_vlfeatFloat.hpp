@@ -28,7 +28,7 @@ namespace feature {
 class ImageDescriber_SIFT_vlfeatFloat : public ImageDescriber
 {
 public:
-  ImageDescriber_SIFT_vlfeatFloat(const SiftParams& params = SiftParams(), bool isOriented = true)
+  explicit ImageDescriber_SIFT_vlfeatFloat(const SiftParams& params = SiftParams(), bool isOriented = true)
     : ImageDescriber()
     , _params(params)
     , _isOriented(isOriented)
@@ -37,7 +37,7 @@ public:
     VLFeatInstance::initialize();
   }
 
-  ~ImageDescriber_SIFT_vlfeatFloat()
+  ~ImageDescriber_SIFT_vlfeatFloat() override
   {
     VLFeatInstance::destroy();
   }
@@ -64,7 +64,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  virtual EImageDescriberType getDescriberType() const override
+  EImageDescriberType getDescriberType() const override
   {
     return EImageDescriberType::SIFT_FLOAT;
   }

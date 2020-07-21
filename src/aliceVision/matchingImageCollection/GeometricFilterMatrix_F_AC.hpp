@@ -106,24 +106,38 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                              descTypes, xI, xJ);
 
     std::vector<std::size_t> inliers;
+    const camera::EquiDistant * cam_I_equidistant = dynamic_cast<const camera::EquiDistant *>(camI);
+    const camera::EquiDistant * cam_J_equidistant = dynamic_cast<const camera::EquiDistant *>(camJ);
     std::pair<bool, std::size_t> estimationPair;
 
     switch(m_estimator)
     {
       case robustEstimation::ERobustEstimator::ACRANSAC:
       {
-        if(m_estimateDistortion)
+        if (cam_I_equidistant && cam_J_equidistant)
+        {
+          estimationPair = geometricEstimation_Spherical_Mat(xI, xJ, cam_I_equidistant, cam_J_equidistant, imageSizeI, imageSizeJ, inliers);
+        }
+        else if(m_estimateDistortion)
         {
           estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental10PSolver, multiview::relativePose::Fundamental10PModel>(xI, xJ, imageSizeI, imageSizeJ, inliers);
         }
         else
+        {
           estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental7PSolver, robustEstimation::Mat3Model>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+        }
       }
       break;
       case robustEstimation::ERobustEstimator::LORANSAC:
       {
         if(m_estimateDistortion)
+        {
           throw std::invalid_argument("["+std::string(__func__)+"] Using fundamental matrix and f10 solver with LO_RANSAC is not yet implemented");
+        }
+        if (cam_I_equidistant && cam_J_equidistant)
+        {
+          throw std::invalid_argument("["+std::string(__func__)+"] Using fundamental matrix and equidistant cameras solver with LO_RANSAC is not yet implemented");
+        }
 
         estimationPair = geometricEstimation_Mat_LORANSAC<multiview::relativePose::Fundamental7PSolver, multiview::relativePose::Fundamental8PSolver>(xI, xJ, imageSizeI, imageSizeJ, inliers);
       }
@@ -151,6 +165,85 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
   /**
    * @brief Given two sets of image points, it estimates the fundamental matrix
    *        For ACRANSAC estimator
+   * @param[in] xI The first set of points
+   * @param[in] xJ The second set of points
+   * @param[in] imageSizeI The size of the first image (used for normalizing the points)
+   * @param[in] imageSizeJ The size of the second image
+   * @param[out] geometric_inliers A vector containing the indices of the inliers
+   * @return true if geometric_inliers is not empty
+   */
+  std::pair<bool, std::size_t>
+  geometricEstimation_Spherical_Mat(const Mat& xI, // points of the first image
+                                    const Mat& xJ, // points of the second image
+                                    const camera::EquiDistant* cam_I, const camera::EquiDistant* cam_J,
+                                    const std::pair<size_t, size_t>& imageSizeI, // size of the first image
+                                    const std::pair<size_t, size_t>& imageSizeJ, // size of the first image
+                                    std::vector<size_t>& out_inliers)
+  {
+      using namespace aliceVision;
+      using namespace aliceVision::robustEstimation;
+      out_inliers.clear();
+
+      if(m_estimator != ERobustEstimator::ACRANSAC)
+      {
+          throw std::runtime_error("[GeometricFilterMatrix_F_AC_AC::geometricEstimation_Spherical_Mat] only ACRansac "
+                                   "and LORansac are supported!");
+      }
+
+      // define the AContrario adapted Fundamental matrix solver
+      using KernelT = multiview::RelativePoseSphericalKernel<
+                          multiview::relativePose::Fundamental7PSphericalSolver,
+                          multiview::relativePose::EpipolarSphericalDistanceError,
+                          robustEstimation::Mat3Model>;
+
+      // TODO FACA: move normalization into the kernel?
+
+      // Lift points
+      Mat xI_lifted(3, xI.cols());
+      for(int i = 0; i < xI.cols(); ++i)
+      {
+          Vec2 src;
+          src(0) = xI(0, i);
+          src(1) = xI(1, i);
+          Vec3 dst = cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(src)));
+          xI_lifted(0, i) = dst(0);
+          xI_lifted(1, i) = dst(1);
+          xI_lifted(2, i) = dst(2);
+      }
+      Mat xJ_lifted(3, xJ.cols());
+      for(int i = 0; i < xJ.cols(); ++i)
+      {
+          Vec2 src;
+          src(0) = xJ(0, i);
+          src(1) = xJ(1, i);
+          Vec3 dst = cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(src)));
+          xJ_lifted(0, i) = dst(0);
+          xJ_lifted(1, i) = dst(1);
+          xJ_lifted(2, i) = dst(2);
+      }
+
+      const KernelT kernel(xI_lifted, xJ_lifted);
+
+      // Robustly estimate the Fundamental matrix with A Contrario ransac
+      const double upper_bound_precision = Square(m_dPrecision);
+
+      robustEstimation::Mat3Model model;
+      const std::pair<double, double> ACRansacOut = ACRANSAC(kernel, out_inliers, m_stIteration, &model, upper_bound_precision);
+
+      m_F = model.getMatrix();
+
+      if(out_inliers.empty())
+          return std::make_pair(false, kernel.getMinimumNbRequiredSamples());
+
+      m_dPrecision_robust = ACRansacOut.first;
+
+      return std::make_pair(true, kernel.getMinimumNbRequiredSamples());
+  }
+
+  /**
+   * @brief Given two sets of image points, it estimates the fundamental matrix
+   * relating them using a robust method (like A Contrario Ransac).
+   * 
    * @param[in] xI The first set of points
    * @param[in] xJ The second set of points
    * @param[in] imageSizeI The size of the first image (used for normalizing the points)
@@ -286,9 +379,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     return matches.getNbAllMatches() != 0;
   }
   
-
   // Stored data
-
   Mat3 m_F;
   robustEstimation::ERobustEstimator m_estimator;
   bool m_estimateDistortion;

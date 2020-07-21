@@ -22,6 +22,21 @@ if(ALICEVISION_BUILD_SFM)
           Boost::boost
   )
 
+  # Make sure all images are defined the same way
+  alicevision_add_software(aliceVision_panoramaPrepareImages
+    SOURCE main_panoramaPrepareImages.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_sensorDB
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+  )
+
   # Feature extraction
   alicevision_add_software(aliceVision_featureExtraction
     SOURCE main_featureExtraction.cpp
@@ -132,8 +147,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
-  alicevision_add_software(aliceVision_panoramaExternalInfo
-    SOURCE main_panoramaExternalInfo.cpp
+  alicevision_add_software(aliceVision_panoramaInit
+    SOURCE main_panoramaInit.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
           aliceVision_image
@@ -355,3 +370,45 @@ if(ALICEVISION_BUILD_MVS)
           Boost::filesystem
   )
 endif() # if(ALICEVISION_BUILD_MVS)
+
+
+if(ALICEVISION_BUILD_HDR)
+
+alicevision_add_software(aliceVision_LdrToHdrSampling
+  SOURCE main_LdrToHdrSampling.cpp
+  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_hdr
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_mvsData
+        Boost::program_options
+        Boost::filesystem
+)
+
+alicevision_add_software(aliceVision_LdrToHdrCalibration
+  SOURCE main_LdrToHdrCalibration.cpp
+  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_hdr
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+)
+
+alicevision_add_software(aliceVision_LdrToHdrMerge
+  SOURCE main_LdrToHdrMerge.cpp
+  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_hdr
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+)
+
+endif() 

@@ -79,11 +79,17 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
 /**
+ * @brief Return a list of extensions supported by openImageIO ie exists in extension_list from imageio.h
+ * @return A vector containing all supported extensions
+ */
+std::vector<std::string> getSupportedExtensions();
+
+/**
  * @brief Check if input image extension is supported by openImageIO ie exists in extension_list from imageio.h
  * @param[in] ext - image extension
  * @return true if valid extension
  */
-bool isSupported(const std::string &ext);
+bool isSupported(const std::string& ext);
 
 /**
  * @brief convert a metadata string map into an oiio::ParamValueList

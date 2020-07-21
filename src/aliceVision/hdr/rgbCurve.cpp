@@ -65,11 +65,52 @@ void rgbCurve::setGamma()
     }
 }
 
-void rgbCurve::setEmor()
+void rgbCurve::setEmor(size_t dim )
 {
   const std::size_t emorSize = std::pow(2, 10);
   const std::size_t curveSize = getSize();
-  const double* ptrf0 = getEmorInvCurve(0);
+  const double* ptrf0 = getEmorCurve(dim);
+  
+  std::vector<double> f0;
+  if(curveSize == emorSize)
+  {
+    for(auto &curve : _data)
+      curve.assign(ptrf0, ptrf0 + emorSize);
+  }
+  else if(emorSize > curveSize)
+  {
+    f0.assign(ptrf0, ptrf0 + emorSize);
+    std::vector<float> emor = std::vector<float>(f0.begin(), f0.end());
+
+    std::size_t step = emorSize/curveSize;
+    for(auto &curve : _data)
+    {
+      for(std::size_t i = 0; i<curveSize; ++i)
+        curve.at(i) = emor.at(step*i);
+    }
+  }
+  else
+  {
+    f0.assign(ptrf0, ptrf0 + emorSize);
+    std::vector<float> emor = std::vector<float>(f0.begin(), f0.end());
+
+    std::size_t step = curveSize/emorSize;
+    for(auto &curve : _data)
+    {
+      for(std::size_t i = 0; i<emorSize-1; ++i)
+        curve.at(i*step) = emor.at(i);
+      curve.at(emorSize*step-1) = emor.at(emorSize-1);
+    }
+    interpolateMissingValues();
+  }
+}
+
+void rgbCurve::setEmorInv(size_t dim )
+{
+  const std::size_t emorSize = std::pow(2, 10);
+  const std::size_t curveSize = getSize();
+  const double* ptrf0 = getEmorInvCurve(dim);
+  
   std::vector<double> f0;
   if(curveSize == emorSize)
   {
@@ -112,15 +153,6 @@ void rgbCurve::setGaussian(double mu, double sigma)
         float factor = i / (static_cast<float>(getSize() - 1)) - mu;
         setAllChannels(i, std::exp( -factor * factor / (2.0 * sigma * sigma)));
     }
-}
-
-void rgbCurve::setRobertsonWeight()
-{
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    float factor = i / (static_cast<float>(getSize() - 1)) - 0.5f;
-    setAllChannels(i, (std::exp( -16.f * factor * factor) - std::exp(-4.f)) / (1.f - std::exp(-4.f)));
-  }
 }
 
 void rgbCurve::setTriangular()
@@ -329,6 +361,18 @@ void rgbCurve::scale()
             value = (value - minTot) / (maxTot - minTot);
 }
 
+void rgbCurve::scaleChannelWise()
+{
+    for(auto &curve : _data)
+    {
+        float minV = *std::min_element(curve.begin(), curve.end());
+        float maxV = *std::max_element(curve.begin(), curve.end());
+        for(auto &value : curve) {
+            value = (value - minV) / (maxV - minV);
+        }
+    }       
+}
+
 void rgbCurve::interpolateMissingValues()
 {
     for(auto &curve : _data)
@@ -364,9 +408,16 @@ void rgbCurve::exponential()
 float rgbCurve::operator() (float sample, std::size_t channel) const
 {
   assert(channel < _data.size());
+  
   float fractionalPart = 0.0;
   std::size_t infIndex = getIndex(sample, fractionalPart);
-  return fractionalPart * _data[channel][infIndex] + (1.0f - fractionalPart) * _data[channel][infIndex + 1];
+  
+  /* Do not interpolate 1.0 */
+  if (infIndex == getSize() - 1) {
+    return _data[channel][infIndex];
+  }
+
+  return (1.0f - fractionalPart) * _data[channel][infIndex] + fractionalPart * _data[channel][infIndex + 1];
 }
 
 const rgbCurve rgbCurve::operator+(const rgbCurve &other) const

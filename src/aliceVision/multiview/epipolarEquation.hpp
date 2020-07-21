@@ -63,5 +63,38 @@ inline void encodeEpipolarEquation(const TMatX& x1, const TMatX& x2, TMatA* A, c
   }
 }
 
+
+template <typename TMatX, typename TMatA>
+inline void encodeEpipolarSphericalEquation(const TMatX& x1, const TMatX& x2, TMatA* A,
+                                            const std::vector<double>* weights = nullptr)
+{
+    assert(x1.cols() == x2.cols());
+    if(weights)
+    {
+        assert(x1.cols() == weights->size());
+    }
+    for(typename TMatX::Index i = 0; i < x1.cols(); ++i)
+    {
+        const Vec3 xx1 = x1.col(i);
+        const Vec3 xx2 = x2.col(i);
+        A->row(i) <<
+            xx2(0) * xx1(0),  // 0 represents x coords,
+            xx2(0) * xx1(1),  // 1 represents y coords.
+            xx2(0) * xx1(2),
+            xx2(1) * xx1(0),
+            xx2(1) * xx1(1),
+            xx2(1) * xx1(2),
+            xx2(2) * xx1(0),
+            xx2(2) * xx1(1),
+            xx2(2) * xx1(2);
+
+        if(weights)
+        {
+            A->row(i) *= (*weights)[i];
+        }
+    }
+}
+
+
 } // namespace multiview
 } // namespace aliceVision

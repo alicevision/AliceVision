@@ -25,7 +25,7 @@ namespace sfm {
  * @param[out] out_histogram : histogram of the number of points for each residual value (0-4 px)
  * @param[in] specificViews: Limit stats to specific views. If empty, compute stats for all views.
  */
-void computeResidualsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, Histogram<double>* out_histogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
+void computeResidualsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, utils::Histogram<double>* out_histogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
  * @brief Compute histogram of observations lengths
@@ -34,7 +34,7 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>
  * @param[out] observationsLengthHistogram : histogram of the number of points for each observation length
  * @param[in] specificViews: Limit stats to specific views. If empty, compute stats for all views
  */
-void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, int& overallNbObservations, Histogram<double>* observationsLengthHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
+void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, int& overallNbObservations, utils::Histogram<double>* observationsLengthHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
  * @brief Compute histogram of the number of landmarks per view
@@ -42,7 +42,7 @@ void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, BoxSta
  * @param[out] out_stats: stats containing the landmarks
  * @param[out] landmarksPerViewHistogram: histogram of the number of landmarks for each view
  */
-void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, Histogram<double>* landmarksPerViewHistogram);
+void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, utils::Histogram<double>* landmarksPerViewHistogram);
 
 /**
  * @brief Compute landmarks per view
@@ -66,7 +66,7 @@ void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<size_t
  * @param[out] scaleHistogram: histogram of the number of points for each scale value
  * @param[in] specificViews: Limit stats to specific views. If empty, no stats computed
  */
-void computeScaleHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, Histogram<double>* scaleHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
+void computeScaleHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, utils::Histogram<double>* scaleHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
  * @brief Compute different stats of residuals per view

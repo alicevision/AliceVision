@@ -22,21 +22,17 @@ namespace camera {
  * @brief Basis class for all intrinsic parameters of a camera
  *  Store the image size & define all basis optical modelization of a camera
  */
-struct IntrinsicBase
+class IntrinsicBase
 {
-  unsigned int _w = 0;
-  unsigned int _h = 0;
-  double _initialFocalLengthPix = -1;
-  std::string _serialNumber;
+public:
 
-  IntrinsicBase(unsigned int width = 0, unsigned int height = 0, const std::string& serialNumber = "")
+  explicit IntrinsicBase(unsigned int width = 0, unsigned int height = 0, const std::string& serialNumber = "")
     : _w(width)
     , _h(height)
     , _serialNumber(serialNumber)
   {}
 
-  virtual ~IntrinsicBase()
-  {}
+  virtual ~IntrinsicBase() = default;
   
   /**
    * @brief Get the lock state of the intrinsic
@@ -66,21 +62,30 @@ struct IntrinsicBase
   }
 
   /**
+   * @brief Get the intrinsic sensor width
+   * @return The intrinsic sensor width
+   */
+  inline double sensorWidth() const
+  {
+    return _sensorWidth;
+  }
+
+  /**
+   * @brief Get the intrinsic sensor height
+   * @return The intrinsic sensor height
+   */
+  inline double sensorHeight() const
+  {
+    return _sensorHeight;
+  }
+
+  /**
    * @brief Get the intrinsic serial number
    * @return The intrinsic serial number
    */
   inline const std::string& serialNumber() const
   {
     return _serialNumber;
-  }
-
-  /**
-   * @brief Get the intrinsic initial focal length in px
-   * @return The intrinsic initial focal length in px
-   */
-  inline double initialFocalLengthPix() const
-  {
-    return _initialFocalLengthPix;
   }
 
   /**
@@ -101,8 +106,9 @@ struct IntrinsicBase
   {
     return _w == other._w &&
            _h == other._h &&
+           _sensorWidth == other._sensorWidth &&
+           _sensorHeight == other._sensorHeight &&
            _serialNumber == other._serialNumber &&
-           _initialFocalLengthPix == other._initialFocalLengthPix &&
            _initializationMode == other._initializationMode &&
            getType() == other.getType() &&
            getParams() == other.getParams();
@@ -111,32 +117,56 @@ struct IntrinsicBase
   /**
    * @brief Projection of a 3D point into the camera plane (Apply pose, disto (if any) and Intrinsics)
    * @param[in] pose The pose
-   * @param[in] pt3D The 3d ppont
+   * @param[in] pt3D The 3d point
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The 2d projection in the camera plane
    */
-  inline Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const = 0;
+
+  /**
+   * @brief Back-projection of a 2D point at a specific depth into a 3D point
+   * @param[in] pt2D The 2d point
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @param[in] pose The camera pose
+   * @param[in] depth The depth
+   * @return The 3d point
+   */
+  Vec3 backproject(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const
   {
-    const Vec3 X = pose(pt3D); // apply pose
-    if (applyDistortion && this->have_disto()) // apply disto & intrinsics
-      return this->cam2ima( this->add_disto(X.head<2>()/X(2)) );
-    else // apply intrinsics
-      return this->cam2ima( X.head<2>()/X(2) );
+      const Vec2 pt2D_cam = ima2cam(pt2D);
+      const Vec2 pt2D_undist = applyUndistortion ? removeDistortion(pt2D_cam) : pt2D_cam;
+
+      const Vec3 pt3d = depth * toUnitSphere(pt2D_undist);
+      const Vec3 output = pose.inverse()(pt3d);
+      return output;
   }
 
-  inline Vec3 backproject(const geometry::Pose3& pose, const Vec2& pt2D, double depth, bool applyUndistortion = true) const
-  {
-    Vec2 pt2DCam;
-    if (applyUndistortion && this->have_disto()) // apply disto & intrinsics
-      pt2DCam = this->ima2cam(this->remove_disto(pt2D));
-    else
-      pt2DCam = this->ima2cam(pt2D);
+  /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pose The pose
+   * @param[in] pt3D The 3d point
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian  wrt pose
+   */
+  virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
 
-    const Vec3 pt2DCamN = pt2DCam.homogeneous().normalized();
-    const Vec3 pt3d = depth * pt2DCamN;
-    const Vec3 output = pose.inverse()(pt3d);
-    return output;
-  }
+  /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pose The pose
+   * @param[in] pt3D The 3d point
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian  wrt point
+   */
+  virtual Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+
+  /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pose The pose
+   * @param[in] pt3D The 3d point
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian wrt params
+   */
+  virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
 
   /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
@@ -203,6 +233,24 @@ struct IntrinsicBase
   {
     _h = height;
   }
+
+  /**
+   * @brief Set intrinsic sensor width
+   * @param[in] width The sensor width
+   */
+  inline void setSensorWidth(double width)
+  {
+    _sensorWidth = width;
+  }
+
+  /**
+   * @brief Set intrinsic sensor height
+   * @param[in] height The sensor height
+   */
+  inline void setSensorHeight(double height)
+  {
+    _sensorHeight = height;
+  }
   
   /**
    * @brief Set the serial number
@@ -211,15 +259,6 @@ struct IntrinsicBase
   inline void setSerialNumber(const std::string& serialNumber)
   {
     _serialNumber = serialNumber;
-  }
-
-  /**
-   * @brief Set initial focal length in px
-   * @param[in] initialFocalLengthPix The nitial focal length in px
-   */
-  inline void setInitialFocalLengthPix(double initialFocalLengthPix)
-  {
-    _initialFocalLengthPix = initialFocalLengthPix;
   }
 
   /**
@@ -251,6 +290,14 @@ struct IntrinsicBase
   virtual EINTRINSIC getType() const = 0;
 
   /**
+   * get a string
+   * @return the string describing the intrinsic type
+   */
+  std::string getTypeStr() const { 
+    return EINTRINSIC_enumToString(getType()); 
+  }
+
+  /**
    * @brief Get intrinsic parameters
    * @return intrinsic parameters
    */
@@ -262,13 +309,6 @@ struct IntrinsicBase
    * @return true if done
    */
   virtual bool updateFromParams(const std::vector<double>& params) = 0;
-
-  /**
-   * @brief Get bearing vector of p point (image coordinate)
-   * @param[in] p Vec2
-   * @return Vec3 bearing vector
-   */
-  virtual Vec3 operator () (const Vec2& p) const = 0;
 
   /**
    * @brief Transform a point from the camera plane to the image plane
@@ -288,7 +328,7 @@ struct IntrinsicBase
    * @brief Camera model handle a distortion field
    * @return True if the camera model handle a distortion field
    */
-  virtual bool have_disto() const
+  virtual bool hasDistortion() const
   {
     return false;
   }
@@ -298,14 +338,14 @@ struct IntrinsicBase
    * @param[in] p The point
    * @return The point with added distortion field
    */
-  virtual Vec2 add_disto(const Vec2& p) const = 0;
+  virtual Vec2 addDistortion(const Vec2& p) const = 0;
 
   /**
    * @brief Remove the distortion to a camera point (that is in normalized camera frame)
    * @param[in] p The point
    * @return The point with removed distortion field
    */
-  virtual Vec2 remove_disto(const Vec2& p) const = 0;
+  virtual Vec2 removeDistortion(const Vec2& p) const = 0;
 
   /**
    * @brief Return the undistorted pixel (with removed distortion)
@@ -326,14 +366,8 @@ struct IntrinsicBase
    * @param[in] value Given unit pixel error
    * @return Normalized unit pixel error to the camera plane
    */
-  virtual double imagePlane_toCameraPlaneError(double value) const = 0;
+  virtual double imagePlaneToCameraPlaneError(double value) const = 0;
 
-  /**
-   * @brief Return the intrinsic (interior & exterior) as a simplified projective projection
-   * @param[in] pose The camera Pose
-   * @return Simplified projective projection
-   */
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3& pose) const = 0;
 
   /**
    * @brief Return true if the intrinsic is valid
@@ -342,11 +376,6 @@ struct IntrinsicBase
   virtual bool isValid() const
   {
     return _w != 0 && _h != 0;
-  }
-
-  virtual bool hasDistortion() const
-  {
-    return false;
   }
 
   /**
@@ -393,10 +422,14 @@ struct IntrinsicBase
     stl::hash_combine(seed, static_cast<int>(this->getType()));
     stl::hash_combine(seed, _w);
     stl::hash_combine(seed, _h);
+    stl::hash_combine(seed, _sensorWidth);
+    stl::hash_combine(seed, _sensorHeight);
     stl::hash_combine(seed, _serialNumber);
     const std::vector<double> params = this->getParams();
-    for (size_t i=0; i < params.size(); ++i)
-      stl::hash_combine(seed, params[i]);
+    for(double param : params)
+    {
+        stl::hash_combine(seed, param);
+    }
     return seed;
   }
 
@@ -410,12 +443,24 @@ struct IntrinsicBase
     _h = (unsigned int)(floor(float(_h) * factor));
   }
 
-private:
+  /**
+   * @brief transform a given point (in pixels) to unit sphere in meters
+   * @param pt the input point
+   * @return a point on the unit sphere
+   */
+  virtual Vec3 toUnitSphere(const Vec2 & pt) const = 0;
+
+protected:
 
   /// initialization mode
   EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::NONE;
   /// intrinsic lock
   bool _locked = false;
+  unsigned int _w = 0;
+  unsigned int _h = 0;
+  double _sensorWidth = 36.0;
+  double _sensorHeight = 24.0;
+  std::string _serialNumber;
 };
 
 /**
@@ -424,7 +469,7 @@ private:
  * @param[in] ray2 Second bearing vector ray
  * @return The angle (degree) between two bearing vector rays
  */
-inline double AngleBetweenRays(const Vec3& ray1, const Vec3& ray2)
+inline double angleBetweenRays(const Vec3& ray1, const Vec3& ray2)
 {
   const double mag = ray1.norm() * ray2.norm();
   const double dotAngle = ray1.dot(ray2);
@@ -441,7 +486,7 @@ inline double AngleBetweenRays(const Vec3& ray1, const Vec3& ray2)
  * @param[in] x2 Second image point
  * @return The angle (degree) between two bearing vector rays
  */
-inline double AngleBetweenRays(const geometry::Pose3& pose1,
+inline double angleBetweenRays(const geometry::Pose3& pose1,
                                const IntrinsicBase* intrinsic1,
                                const geometry::Pose3& pose2,
                                const IntrinsicBase* intrinsic2,
@@ -452,9 +497,9 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
   // X = R.t() * K.inv() * x + C // Camera world point
   // getting the ray:
   // ray = X - C = R.t() * K.inv() * x
-  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->operator()(x1)).normalized();
-  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->operator()(x2)).normalized();
-  return AngleBetweenRays(ray1, ray2);
+  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->toUnitSphere(intrinsic1->removeDistortion(intrinsic1->ima2cam(x1)))).normalized();
+  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->toUnitSphere(intrinsic2->removeDistortion(intrinsic2->ima2cam(x2)))).normalized();
+  return angleBetweenRays(ray1, ray2);
 }
 
 /**
@@ -464,15 +509,92 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
  * @param[in] pt3D The 3d point
  * @return The angle (degree) between two poses and a 3D point.
  */
-inline double AngleBetweenRays(const geometry::Pose3& pose1,
+inline double angleBetweenRays(const geometry::Pose3& pose1,
                                const geometry::Pose3& pose2,
                                const Vec3& pt3D)
 {
   const Vec3 ray1 = pt3D - pose1.center();
   const Vec3 ray2 = pt3D - pose2.center();
-  return AngleBetweenRays(ray1, ray2);
+  return angleBetweenRays(ray1, ray2);
 }
 
-
 } // namespace camera
+
+template <size_t M, size_t N>
+Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A()
+{
+	Eigen::Matrix<double, M*N, M*N> ret;
+
+	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
+	/** vec(IAtB) = kron(B.t, I) * vec(A) */
+	/** dvec(IAtB)/dA = kron(B.t, I) * dvec(At)/dA */
+
+	ret.fill(0);
+
+	size_t pos_at = 0;
+	for (size_t i = 0; i < M; i++)
+    {
+		for (size_t j = 0; j < N; j++)
+        {
+			size_t pos_a = N * j + i;
+			ret(pos_at, pos_a) = 1;
+
+			pos_at++;
+		}
+	}
+
+	return ret;
+}
+
+template <size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double, M , N> & A, const Eigen::Matrix<double, N, K> & B)
+{
+	Eigen::Matrix<double, M*K, M*N> ret;
+
+	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
+	/** vec(IAB) = kron(B.t, I) * vec(A) */
+	/** dvec(IAB)/dA = kron(B.t, I) * dvec(A)/dA */
+	/** dvec(IAB)/dA = kron(B.t, I) */
+
+	ret.fill(0);
+
+	Eigen::Matrix<double, K, N> Bt = B.transpose();
+
+	for (size_t row = 0; row < K; row++)
+    {
+		for (size_t col = 0; col < N; col++)
+        {
+			ret.template block<M, M>(row * M, col * M) = Bt(row, col) * Eigen::Matrix<double, M, M>::Identity();
+		}
+	}
+
+	return ret;
+}
+
+template <size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M*K, M*N> getJacobian_AtB_wrt_A(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, M, K> & B)
+{
+	return getJacobian_AB_wrt_A<M, N, K>(A.transpose(), B) * getJacobian_At_wrt_A<M, N>();
+}
+
+template <size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, N, K> & B)
+{
+	Eigen::Matrix<double, M*K, N*K> ret;
+
+	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
+	/** vec(ABI) = kron(I, A) * vec(B) */
+	/** dvec(ABI)/dB = kron(I, A) * dvec(B)/dB */
+	/** dvec(ABI)/dB = kron(I, A) */
+
+	ret.fill(0);
+
+	for (size_t index = 0; index < K; index++)
+    {
+		ret.template block<M, N>(M * index, N * index) = A;
+	}
+
+	return ret;
+}
+
 } // namespace aliceVision

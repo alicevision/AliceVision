@@ -243,8 +243,10 @@ int main() {
     tinyScene.setPose(*tinyScene.views.at(1), sfmData::CameraPose(pose1));
 
     // Init structure by inlier triangulation
-    const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]->get_projective_equivalent(pose0);
-    const Mat34 P2 = tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]->get_projective_equivalent(pose1);
+    std::shared_ptr<camera::Pinhole> pinhole1 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]);
+    std::shared_ptr<camera::Pinhole> pinhole2 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]);
+    const Mat34 P1 = pinhole1->getProjectiveEquivalent(pose0);
+    const Mat34 P2 = pinhole2->getProjectiveEquivalent(pose1);
     sfmData::Landmarks & landmarks = tinyScene.structure;
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
       const PointFeature & LL = regionsL->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i];

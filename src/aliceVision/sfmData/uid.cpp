@@ -23,46 +23,55 @@ std::size_t computeViewUID(const View& view)
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
-  if(view.hasMetadata("Exif:ImageUniqueID") ||
-     !bodySerialNumber.empty() ||
-     !lensSerialNumber.empty())
+  const bool hasImageUniqueID = view.hasMetadata({"Exif:ImageUniqueID", "ImageUniqueID"});
+  if(hasImageUniqueID)
   {
-    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:ImageUniqueID"));
-    stl::hash_combine(uid, bodySerialNumber);
-    stl::hash_combine(uid, lensSerialNumber);
+    stl::hash_combine(uid, view.getMetadata({"Exif:ImageUniqueID", "ImageUniqueID"}));
   }
   else
   {
     // no metadata to identify the image, fallback to the filename
     const fs::path imagePath = view.getImagePath();
-    stl::hash_combine(uid, imagePath.stem().string() + imagePath.extension().string());
+    stl::hash_combine(uid, imagePath.filename().string());
   }
 
-  if(view.hasMetadata("Exif:DateTimeOriginal"))
+  if(!bodySerialNumber.empty() || !lensSerialNumber.empty())
   {
-    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:DateTimeOriginal"));
-    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:SubsecTimeOriginal"));
+    stl::hash_combine(uid, bodySerialNumber);
+    stl::hash_combine(uid, lensSerialNumber);
   }
-  else if(view.hasMetadata("imageCounter"))
+  else if(!hasImageUniqueID)
+  {
+    // no metadata to identify the device, fallback to the folder path of the file
+    const fs::path imagePath = view.getImagePath();
+    stl::hash_combine(uid, imagePath.parent_path().generic_string());
+  }
+
+  if(view.hasMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}))
+  {
+    stl::hash_combine(uid, view.getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}));
+    stl::hash_combine(uid, view.getMetadata({"Exif:SubsecTimeOriginal", "SubsecTimeOriginal"}));
+  }
+  else if(view.hasMetadata({"imageCounter"}))
   {
     // if the view is from a video camera
-    stl::hash_combine(uid, view.getMetadataOrEmpty("imageCounter"));
+    stl::hash_combine(uid, view.getMetadata({"imageCounter"}));
   }
   else
   {
     // if no original date/time, fallback to the file date/time
-    stl::hash_combine(uid, view.getMetadataOrEmpty("DateTime"));
+    stl::hash_combine(uid, view.getMetadata({"DateTime"}));
   }
 
   // can't use view.getWidth() and view.getHeight() directly
   // because ground truth tests and previous version datasets
   // view UID use EXIF width and height (or 0)
 
-  if(view.hasMetadata("Exif:PixelXDimension"))
-    stl::hash_combine(uid, std::stoi(view.getMetadata("Exif:PixelXDimension")));
+  if(view.hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}))
+    stl::hash_combine(uid, std::stoi(view.getMetadata({"Exif:PixelXDimension", "PixelXDimension"})));
 
-  if(view.hasMetadata("Exif:PixelYDimension"))
-    stl::hash_combine(uid, std::stoi(view.getMetadata("Exif:PixelYDimension")));
+  if(view.hasMetadata({"Exif:PixelYDimension", "PixelYDimension"}))
+    stl::hash_combine(uid, std::stoi(view.getMetadata({"Exif:PixelYDimension", "PixelYDimension"})));
 
   // limit to integer to maximize compatibility (like Alembic in Maya)
   uid = std::abs((int) uid);

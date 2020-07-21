@@ -245,7 +245,7 @@ void GlobalSfMRotationAveragingSolver::TripletRotationRejection(
 
   if (!vec_errToIdentityPerTriplet.empty())
   {
-    Histogram<float> histo(0.0f, *max_element(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end()), 20);
+    utils::Histogram<float> histo(0.0f, *max_element(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end()), 20);
     histo.Add(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end());
     ALICEVISION_LOG_DEBUG(histo.ToString());
   }

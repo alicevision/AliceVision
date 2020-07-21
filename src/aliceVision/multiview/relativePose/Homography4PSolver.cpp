@@ -72,6 +72,67 @@ void Homography4PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustE
   models.emplace_back(H);
 }
 
+/// Setup the Direct Linear Transform.
+///  Use template in order to support fixed or dynamic sized matrix.
+/// Allow solve H as homogeneous(p2) = H homogeneous(p1)
+template <typename Matrix>
+void buildActionMatrixSpherical(Matrix& L, const Mat& p1, const Mat& p2)
+{
+    const Mat::Index n = p1.cols();
+
+    for(Mat::Index i = 0; i < n; ++i)
+    {
+        Mat::Index j = 2 * i;
+        L(j, 3) = -p2(2, i) * p1(0, i);
+        L(j, 4) = -p2(2, i) * p1(1, i);
+        L(j, 5) = -p2(2, i) * p1(2, i);
+        L(j, 6) = p2(1, i) * p1(0, i);
+        L(j, 7) = p2(1, i) * p1(1, i);
+        L(j, 8) = p2(1, i) * p1(2, i);
+
+        ++j;
+        L(j, 0) = p2(2, i) * p1(0, i);
+        L(j, 1) = p2(2, i) * p1(1, i);
+        L(j, 2) = p2(2, i) * p1(2, i);
+        L(j, 6) = -p2(0, i) * p1(0, i);
+        L(j, 7) = -p2(0, i) * p1(1, i);
+        L(j, 8) = -p2(0, i) * p1(2, i);
+    }
+}
+
+
+void Homography4PSphericalSolver::solve(const Mat& p1, const Mat& p2, std::vector<robustEstimation::Mat3Model>& models) const
+{
+    assert(4 <= p2.cols());
+    assert(p1.rows() == p2.rows());
+    assert(p1.cols() == p2.cols());
+
+    Mat::Index n = p1.cols();
+
+    // No input normalization when on sphere
+    Vec9 h;
+    if(n == 4)
+    {
+        // In the case of minimal configuration we use fixed sized matrix to let
+        //  Eigen and the compiler doing the maximum of optimization.
+        typedef Eigen::Matrix<double, 16, 9> Mat16_9;
+        Mat16_9 L = Mat::Zero(16, 9);
+        buildActionMatrixSpherical(L, p1, p2);
+        Nullspace(&L, &h);
+    }
+    else
+    {
+        MatX9 L = Mat::Zero(n * 2, 9);
+        buildActionMatrixSpherical(L, p1, p2);
+        Nullspace(&L, &h);
+    }
+
+    // Build G matrix from vector
+    Mat3 H = Map<RMat3>(h.data());
+
+    models.emplace_back(H);
+}
+
 }  // namespace relativePose
 }  // namespace multiview
 }  // namespace aliceVision

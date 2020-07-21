@@ -302,7 +302,13 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
-
+    {
+        float minDepth, maxDepth, midDepth;
+        size_t nbDepths;
+        mp->getMinMaxMidNbDepth(rc, minDepth, maxDepth, midDepth, nbDepths);
+        metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", maxDepth));
+        metadata.push_back(oiio::ParamValue("AliceVision:minDepth", minDepth));
+    }
     {
       std::vector<double> matrixP = mp->getOriginalP(rc);
       metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
@@ -568,7 +574,7 @@ bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfm
       const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
       const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
 
-      const double angle = camera::AngleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
+      const double angle = camera::angleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
 
       // check angle between two observation
       if(angle < minObservationAngle)

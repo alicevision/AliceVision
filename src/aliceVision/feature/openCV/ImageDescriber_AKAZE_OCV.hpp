@@ -32,6 +32,8 @@ class ImageDescriber_AKAZE_OCV : public ImageDescriber
 {
 public:
 
+    ImageDescriber_AKAZE_OCV() = default;
+
   /**
    * @brief Check if the image describer use CUDA
    * @return True if the image describer use CUDA
@@ -54,7 +56,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  virtual EImageDescriberType getDescriberType() const override
+  EImageDescriberType getDescriberType() const override
   {
     return EImageDescriberType::AKAZE_OCV;
   }
@@ -102,6 +104,8 @@ public:
   {
     regions.reset( new AKAZE_Float_Regions );
   }
+
+  ~ImageDescriber_AKAZE_OCV() override = default;
 
 };
 

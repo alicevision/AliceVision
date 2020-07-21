@@ -19,16 +19,18 @@ struct Constraint2D
 {
   Constraint2D() = default;
   
-  Constraint2D(IndexT view_first = UndefinedIndexT, const Observation & observation_first = Observation(),
-            IndexT view_second = UndefinedIndexT, const Observation & observation_second = Observation())
+  Constraint2D(IndexT view_first, const Observation & observation_first,
+            IndexT view_second, const Observation & observation_second, feature::EImageDescriberType descType_)
     : ViewFirst(view_first)
     , ObservationFirst(observation_first)
     , ViewSecond(view_second)
     , ObservationSecond(observation_second)
+    , descType(descType_)
   {}
 
-  IndexT ViewFirst;
-  IndexT ViewSecond;
+  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
+  IndexT ViewFirst = UndefinedIndexT;
+  IndexT ViewSecond = UndefinedIndexT;
   Observation ObservationFirst;
   Observation ObservationSecond;
   

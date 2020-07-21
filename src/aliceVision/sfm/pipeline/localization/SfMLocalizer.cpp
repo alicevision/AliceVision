@@ -8,6 +8,7 @@
 #include "SfMLocalizer.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
@@ -63,7 +64,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
   {
     // undistort the points if the camera has a distortion model
     Mat pt2Dundistorted;
-    const bool hasDistortion = pinholeCam->have_disto();
+    const bool hasDistortion = pinholeCam->hasDistortion();
     if(hasDistortion)
     {
       const std::size_t numPts = resectionData.pt2D.cols();

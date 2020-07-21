@@ -29,7 +29,7 @@ IF(OPENGV_INCLUDE_DIR)
     MESSAGE(STATUS "Looking for Eigen dependency...")
     FIND_PACKAGE(Eigen QUIET)
     IF(EIGEN_FOUND)
-        INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIRS})
+        INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
     ELSE()
       MESSAGE(WARNING "Couldn't find Eigen, this is needed for compiling with openGV")
       # this is to make the find_package_handle_standard_args  fail

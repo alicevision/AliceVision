@@ -88,7 +88,8 @@ void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerVie
           for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
             iterPt != iterFeatPerDesc.second.end(); ++iterPt)
           {
-            const Vec3 bearingVector = (*cam)(cam->get_ud_pixel(iterPt->coords().cast<double>()));
+            const Vec2 pt = iterPt->coords().cast<double>();
+            const Vec3 bearingVector = cam->toUnitSphere(cam->removeDistortion(cam->ima2cam(pt)));
             iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
           }
         }
@@ -508,19 +509,32 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       }
       assert(nbBearing == iBearing);
 
-      const IntrinsicBase* cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId()).get();
-      const IntrinsicBase* cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId()).get();
+
+      std::shared_ptr<camera::IntrinsicBase> cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam_I);
+      if (!camIPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in Compute_Relative_Rotations");
+        continue;
+      }
+
+      std::shared_ptr<camera::IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam_J);
+      if (!camJPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in Compute_Relative_Rotations");
+        continue;
+      }
 
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
       relativePose_info.initial_residual_tolerance = std::pow(
-        cam_I->imagePlane_toCameraPlaneError(2.5) *
-        cam_J->imagePlane_toCameraPlaneError(2.5),
+        cam_I->imagePlaneToCameraPlaneError(2.5) *
+        cam_J->imagePlaneToCameraPlaneError(2.5),
         1./2.);
 
       // Since we use normalized features, we will use unit image size and intrinsic matrix:
       const std::pair<size_t, size_t> imageSize(1., 1.);
       const Mat3 K  = Mat3::Identity();
+
 
       if(!robustRelativePose(K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
       {
@@ -545,8 +559,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
         tinyScene.setPose(*view_J, CameraPose(poseJ));
 
         // Init structure
-        const Mat34 P1 = cam_I->get_projective_equivalent(poseI);
-        const Mat34 P2 = cam_J->get_projective_equivalent(poseJ);
+        const Mat34 P1 = camIPinHole->getProjectiveEquivalent(poseI);
+        const Mat34 P2 = camJPinHole->getProjectiveEquivalent(poseJ);
         Landmarks & landmarks = tinyScene.structure;
 
         size_t landmarkId = 0;

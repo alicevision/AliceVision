@@ -623,7 +623,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPer
     sfm::ImageLocalizerMatchData matchData;
     matchData.vec_inliers = vec_inliers[cam];
     matchData.error_max = param->_errorMax;
-    matchData.projection_matrix = intrinsics.get_projective_equivalent(pose);
+    matchData.projection_matrix = intrinsics.getProjectiveEquivalent(pose);
     matchData.pt2D = vec_pts2D[cam];
     matchData.pt3D = vec_pts3D[cam];
     
