@@ -382,6 +382,7 @@ alicevision_add_software(aliceVision_LdrToHdrSampling
         aliceVision_hdr
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_mvsData
         Boost::program_options
         Boost::filesystem
 )
