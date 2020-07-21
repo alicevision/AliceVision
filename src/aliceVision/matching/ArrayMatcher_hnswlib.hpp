@@ -1,6 +1,7 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2016 AliceVision contributors.
-// Copyright (c) 2012 openMVG contributors.
+// Copyright (c) 2020 AliceVision contributors.
+// Copyright (c) 2019 openMVG contributors.
+// Copyright (c) 2019 Romain Janvier and Pierre Moulon
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -16,6 +17,13 @@
 #include "dependencies/hnswlib/hnswlib/hnswlib.h"
 
 #include <memory>
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
+#include <omp.h>
+#endif
+
+#include <vector>
+
 #include <random>
 #include <cmath>
 
@@ -93,6 +101,9 @@ public:
         // add first point..
         HNSWmatcher->addPoint((void*)(dataset), (size_t)0);
         //...and the other in //
+        #ifdef ALICEVISION_IS_DEFINED
+        #pragma omp parallel for
+        #endif
         for(int i = 1; i < nbRows; i++)
         {
             HNSWmatcher->addPoint((void*)(dataset + dimension * i), (size_t)i);
@@ -139,6 +150,9 @@ public:
         pvec_distances->reserve(nbQuery * NN);
         pvec_indices->reserve(nbQuery * NN);
 
+        #ifdef ALICEVISION_IS_DEFINED
+        #pragma omp parallel for
+        #endif
 		for(int i = 0; i < nbQuery; i++)
         {
             auto result = HNSWmatcher->searchKnn(

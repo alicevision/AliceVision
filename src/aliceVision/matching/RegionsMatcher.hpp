@@ -145,7 +145,7 @@ public:
     if (!matcher_.SearchNeighbours(queries, queryregions_.RegionCount(), &vec_nIndice, &vec_fDistance, NNN__))
       return false;
 
-    assert(vec_nIndice.size() == vec_fDistance.size());
+    //assert(vec_nIndice.size() == vec_fDistance.size());
 
     std::vector<int> vec_nn_ratio_idx;
     std::vector<float> vec_distanceRatio;
