@@ -171,6 +171,7 @@ public:
                     pvec_distances->emplace_back(res.first);
                 }
             }
+
 		}
 
         return true;

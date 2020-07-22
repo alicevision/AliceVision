@@ -32,12 +32,16 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(voctree)
 
   if(ALICEVISION_HAVE_OPENCV)
-    add_subdirectory(calibration)
+    add_subdirectory(hdr)
   endif()
 endif()
 
 if(ALICEVISION_BUILD_HDR)
-add_subdirectory(hdr)
+  add_subdirectory(hdr)
+endif()
+
+if(ALICEVISION_BUILD_HDR OR ALICEVISION_BUILD_MVS)
+  add_subdirectory(mvsData)
 endif()
 
 # MVS modules
