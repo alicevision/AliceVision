@@ -161,11 +161,16 @@ public:
                     return var1.first < var2.first;
                 });
 
-			for(const auto& res : result)
-			{
-				pvec_indices->emplace_back(i, res.second);
-				pvec_distances->emplace_back(res.first);
-			}
+            #ifdef ALICEVISION_IS_DEFINED
+            #pragma omp critical
+            #endif
+            {
+                for(const auto& res : result)
+                {
+                    pvec_indices->emplace_back(i, res.second);
+                    pvec_distances->emplace_back(res.first);
+                }
+            }
 		}
 
         return true;
