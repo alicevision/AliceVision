@@ -31,7 +31,6 @@ using hnswlib::HierarchicalNSW;
 using hnswlib::L2Space;
 using hnswlib::L2SpaceI;
 using hnswlib::SpaceInterface;
-using namespace std;
 
 namespace aliceVision
 {
@@ -52,7 +51,7 @@ template <typename Scalar = float, typename Metric = L2_Simple<Scalar>>
 class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 {
 public:
-    using  DistanceType = typename Metric::ResultType;
+    using DistanceType = typename Metric::ResultType;
 
     // Some initialization
     ArrayMatcher_hnswlib() = default;

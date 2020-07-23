@@ -32,7 +32,7 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(voctree)
 
   if(ALICEVISION_HAVE_OPENCV)
-    add_subdirectory(hdr)
+    add_subdirectory(calibration)
   endif()
 endif()
 
@@ -49,8 +49,7 @@ endif()
 if(ALICEVISION_BUILD_MVS)
   add_subdirectory(lightingEstimation)
   add_subdirectory(mesh)
-  add_subdirectory(mvsData)
-  add_subdirectory(mvsUtils)
+    add_subdirectory(mvsUtils)
   add_subdirectory(fuseCut)
 
   if(ALICEVISION_HAVE_CUDA)
