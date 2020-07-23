@@ -56,7 +56,7 @@ public:
 
     // Some initialization
     ArrayMatcher_hnswlib() = default;
-    virtual ~ArrayMatcher_hnswlib() {}
+    ~ArrayMatcher_hnswlib() override = default;
 
     /**
      * Build the matching structure
