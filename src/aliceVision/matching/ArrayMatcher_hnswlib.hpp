@@ -54,7 +54,7 @@ template <typename Scalar = float, typename Metric = L2_Simple<Scalar>>
 class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 {
 public:
-    typedef typename Metric::ResultType DistanceType;
+    using  DistanceType = typename Metric::ResultType;
 
     // Some initialization
     ArrayMatcher_hnswlib() {}
