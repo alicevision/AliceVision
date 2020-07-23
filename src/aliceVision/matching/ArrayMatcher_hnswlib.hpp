@@ -68,9 +68,7 @@ public:
      */
     bool Build(const Scalar* dataset, int nbRows, int dimension)
     {
-        HNSWmetric.reset(nullptr);
-        HNSWmatcher.reset(nullptr);
-        dimension_ = 0;
+        reset();
 
         if(nbRows < 1)
             return false;
@@ -112,12 +110,12 @@ public:
     /**
      * Search the nearest Neighbor of the scalar array query.
      *
-     * \param[in]   query     The query array
-     * \param[out]  indice    The indice of array in the dataset that
+     * @param[in]   query     The query array
+     * @param[out]  indice    The indice of array in the dataset that
      *  have been computed as the nearest array.
-     * \param[out]  distance  The distance between the two arrays.
+     * @param[out]  distance  The distance between the two arrays.
      *
-     * \return True if success.
+     * @return True if success.
      */
     bool SearchNeighbour(const Scalar* query, int* indice, DistanceType* distance)
     {
@@ -128,13 +126,13 @@ public:
     /**
      * Search the N nearest Neighbor of the scalar array query.
      *
-     * \param[in]   query     The query array
-     * \param[in]   nbQuery   The number of query rows
-     * \param[out]  indices   The corresponding (query, neighbor) indices
-     * \param[out]  distances  The distances between the matched arrays.
-     * \param[out]  NN        The number of maximal neighbor that will be searched.
+     * @param[in]   query     The query array
+     * @param[in]   nbQuery   The number of query rows
+     * @param[out]  indices   The corresponding (query, neighbor) indices
+     * @param[out]  distances  The distances between the matched arrays.
+     * @param[out]  NN        The number of maximal neighbor that will be searched.
      *
-     * \return True if success.
+     * @return True if success.
      */
     bool SearchNeighbours(const Scalar* query, int nbQuery, IndMatches* pvec_indices,
                           std::vector<DistanceType>* pvec_distances, size_t NN)
@@ -178,6 +176,12 @@ private:
     int dimension_{0};
     std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
     std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
+
+    void reset() {
+        HNSWmetric.reset(nullptr);
+        HNSWmatcher.reset(nullptr);
+        dimension_ = 0;
+    }
 };
 
 } // namespace matching
