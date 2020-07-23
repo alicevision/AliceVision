@@ -176,7 +176,7 @@ public:
     };
 
 private:
-    int dimension_;
+    int dimension_{0};
     std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
     std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
 };
