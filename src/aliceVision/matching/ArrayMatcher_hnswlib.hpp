@@ -38,14 +38,6 @@ namespace aliceVision
 namespace matching
 {
 
-//------------------
-//-- Bibliography --
-//------------------
-//- [1] "Fast and Accurate Image Matching with Cascade Hashing for 3D Reconstruction"
-//- Authors: Jian Cheng, Cong Leng, Jiaxiang Wu, Hainan Cui, Hanqing Lu.
-//- Date: 2014.
-//- Conference: CVPR.
-//
 
 // Implementation of descriptor matching using the cascade hashing method of [1].
 // If you use this matcher, please cite the paper.
