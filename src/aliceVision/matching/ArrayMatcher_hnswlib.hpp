@@ -50,6 +50,12 @@ namespace matching
 // Implementation of descriptor matching using the cascade hashing method of [1].
 // If you use this matcher, please cite the paper.
 // template Metric parameter is ignored (by default compute square(L2 distance)).
+/**
+ * @brief Implementation of descriptor matching using the cascade hashing method of @cite Cheng2014.
+ * @tparam Scalar the type of data
+ * @tparam Metric is ignored (by default compute square(L2 distance)).
+ * @detail Jian Cheng, Cong Leng, Jiaxiang Wu, Hainan Cui, and Hanqing Lu. 2014. Fast and Accurate Image Matching with Cascade Hashing for 3D Reconstruction. In Proceedings of the 2014 IEEE Conference on Computer Vision and Pattern Recognition (CVPR ’14). IEEE Computer Society, USA, 1–8. DOI:https://doi.org/10.1109/CVPR.2014.8
+ */
 template <typename Scalar = float, typename Metric = L2_Simple<Scalar>>
 class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 {
