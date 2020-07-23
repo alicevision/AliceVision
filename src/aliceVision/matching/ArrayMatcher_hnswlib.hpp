@@ -14,7 +14,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include "dependencies/hnswlib/hnswlib/hnswlib.h"
+#include <dependencies/hnswlib/hnswlib/hnswlib.h>
 
 #include <memory>
 
