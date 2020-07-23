@@ -55,7 +55,7 @@ public:
     using  DistanceType = typename Metric::ResultType;
 
     // Some initialization
-    ArrayMatcher_hnswlib() {}
+    ArrayMatcher_hnswlib() = default;
     virtual ~ArrayMatcher_hnswlib() {}
 
     /**
