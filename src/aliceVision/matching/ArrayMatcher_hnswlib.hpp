@@ -89,7 +89,7 @@ public:
         }
         else
         {
-            std::cerr << "HNSW matcher: this type of distance is not handled Yet" << std::endl;
+            ALICEVISION_LOG_WARNING("HNSW matcher: this type of distance is not handled Yet");
             return false;
         }
 
