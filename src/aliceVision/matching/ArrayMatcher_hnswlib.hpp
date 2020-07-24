@@ -173,15 +173,16 @@ public:
     };
 
 private:
-    int dimension_{0};
-    std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
-    std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
-
     void reset() {
         HNSWmetric.reset(nullptr);
         HNSWmatcher.reset(nullptr);
         dimension_ = 0;
     }
+
+private:
+    int dimension_{0};
+    std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
+    std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
 };
 
 } // namespace matching
