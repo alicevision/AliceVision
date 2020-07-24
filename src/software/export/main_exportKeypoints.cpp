@@ -9,7 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -154,7 +154,7 @@ int aliceVision_main(int argc, char ** argv)
     // output filename
     fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
 
-    feature::saveFeatures2SVG(viewImagePath,
+    matching::saveFeatures2SVG(viewImagePath,
                                dimImage,
                                featuresPerView.getData().at(view->getViewId()),
                                outputFilename.string());

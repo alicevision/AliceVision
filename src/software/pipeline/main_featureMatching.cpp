@@ -10,6 +10,7 @@
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
 #include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
+#include <aliceVision/matching/matchesFiltering.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
@@ -28,7 +29,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/feature/selection.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/stl/stl.hpp>
 
@@ -564,7 +564,9 @@ int aliceVision_main(int argc, char **argv)
           if(useGridSort)
           {
             // TODO: rename as matchesGridOrdering
-            matchesGridFiltering(*lRegions, *rRegions, indexImagePair, sfmData, outMatches);
+              matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImgSize(),
+                                   *rRegions, sfmData.getView(indexImagePair.second).getImgSize(),
+                                   indexImagePair, outMatches);
           }
           if(numMatchesToKeep > 0)
           {

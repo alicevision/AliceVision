@@ -12,7 +12,7 @@
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
@@ -237,7 +237,7 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
     }
 
     namespace bfs = boost::filesystem;
-    feature::saveFeatures2SVG(imagePath,
+    matching::saveFeatures2SVG(imagePath,
                      queryImageSize,
                      extractedFeatures,
                      param->_visualDebug + "/" + bfs::path(imagePath).stem().string() + ".svg");
@@ -487,7 +487,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();
       
-      feature::saveMatches2SVG(imagePath,
+      matching::saveMatches2SVG(imagePath,
                       queryImageSize,
                       queryRegions,
                       matchedPath,
@@ -665,7 +665,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      feature::saveFeatures2SVG(imagePath,
+        matching::saveFeatures2SVG(imagePath,
                                  queryImageSize,
                                  resectionData.pt2D,
                                  param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
@@ -708,7 +708,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
   if(!param._visualDebug.empty() && !imagePath.empty())
   {
     namespace bfs = boost::filesystem;
-    feature::saveFeatures2SVG(imagePath,
+    matching::saveFeatures2SVG(imagePath,
                      queryImageSize,
                      resectionData.pt2D,
                      param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg",
@@ -878,7 +878,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
       outputName += matchedImage;
       outputName += ".svg";
 
-      feature::saveMatches2SVG(imagePath,
+      matching::saveMatches2SVG(imagePath,
                                 imageSize,
                                 queryRegions,
                                 matchedPath,

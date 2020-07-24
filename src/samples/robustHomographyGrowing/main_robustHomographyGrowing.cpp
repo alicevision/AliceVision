@@ -4,19 +4,19 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
-#include <aliceVision/feature/selection.hpp>
-#include "aliceVision/matching/filters.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
+#include <aliceVision/matching/matchesFiltering.hpp>
+#include <aliceVision/matching/filters.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/matching/svgVisualization.hpp>
 
 #include <aliceVision/system/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -208,9 +208,8 @@ int main(int argc, char **argv)
   // Display images sides by side with extracted features
   //--
   {
-
     const string out_filename = "01.features."+describerTypesName+".svg";
-    drawKeypointsSideBySide(filenameLeft,
+    matching::drawKeypointsSideBySide(filenameLeft,
                             imageLeftSize,
                             regions_perImage.at(0).get()->Features(),
                             filenameRight,

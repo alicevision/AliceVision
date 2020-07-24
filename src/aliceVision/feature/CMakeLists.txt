@@ -21,8 +21,6 @@ set(features_files_headers
   Regions.hpp
   regionsFactory.hpp
   RegionsPerView.hpp
-  selection.hpp
-  svgVisualization.hpp
 )
 
 # Sources
@@ -34,8 +32,6 @@ set(features_files_sources
   FeaturesPerView.cpp
   ImageDescriber.cpp
   imageDescriberCommon.cpp
-  selection.cpp
-  svgVisualization.cpp
 )
 
 # CCTAG ImageDescriber
