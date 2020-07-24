@@ -150,6 +150,7 @@ int aliceVision_main(int argc, char **argv)
       "* CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
       "* FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
       "(faster than CASCADE_HASHING_L2 but use more memory)\n"
+      "* HNSWLIB: Fast approximate Nearest Neighbor matching\n"
       "For Binary based descriptor:\n"
       "* BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
     ("geometricEstimator", po::value<robustEstimation::ERobustEstimator>(&geometricEstimator)->default_value(geometricEstimator),
