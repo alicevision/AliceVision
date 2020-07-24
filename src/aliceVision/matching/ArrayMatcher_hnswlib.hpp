@@ -137,52 +137,52 @@ public:
     bool SearchNeighbours(const Scalar* query, int nbQuery, IndMatches* pvec_indices,
                           std::vector<DistanceType>* pvec_distances, size_t NN)
     {
-        if(HNSWmatcher.get() == nullptr)
+      if(HNSWmatcher.get() == nullptr)
+      {
+        return false;
+      }
+
+      pvec_distances->resize(nbQuery * NN);
+      pvec_indices->resize(nbQuery * NN);
+
+      #ifdef ALICEVISION_IS_DEFINED
+      #pragma omp parallel for
+      #endif
+      for(int i = 0; i < nbQuery; i++)
+      {
+        auto result = HNSWmatcher->searchKnn(
+          (const void*)(query + dimension_ * i), NN,
+          [](const std::pair<DistanceType, size_t>& var1, const std::pair<DistanceType, size_t>& var2) -> bool {
+              return var1.first < var2.first;
+          });
+
+        /* direct indexing approach chosen over omp critical (OpenMP) approach due
+         * to possible performance loss from waiting threads in OpenMP approach
+        */
         {
-            return false;
+          for (int j = 0; j < NN; j++) {
+            const auto &res = result[j];
+            (*pvec_indices)[i * NN + j] = IndMatch(i, res.second);
+            (*pvec_distances)[i * NN + j] = res.first;
+          }
         }
 
-        pvec_distances->reserve(nbQuery * NN);
-        pvec_indices->reserve(nbQuery * NN);
+      }
 
-        #ifdef ALICEVISION_IS_DEFINED
-        #pragma omp parallel for
-        #endif
-		for(int i = 0; i < nbQuery; i++)
-        {
-            auto result = HNSWmatcher->searchKnn(
-                (const void*)(query + dimension_ * i), NN,
-                [](const std::pair<DistanceType, size_t>& var1, const std::pair<DistanceType, size_t>& var2) -> bool {
-                    return var1.first < var2.first;
-                });
-
-            #ifdef ALICEVISION_IS_DEFINED
-            #pragma omp critical
-            #endif
-            {
-                for(const auto& res : result)
-                {
-                    pvec_indices->emplace_back(i, res.second);
-                    pvec_distances->emplace_back(res.first);
-                }
-            }
-
-		}
-
-        return true;
+      return true;
     };
 
 private:
     void reset() {
-        HNSWmetric.reset(nullptr);
-        HNSWmatcher.reset(nullptr);
-        dimension_ = 0;
+      HNSWmetric.reset(nullptr);
+      HNSWmatcher.reset(nullptr);
+      dimension_ = 0;
     }
 
 private:
-    int dimension_{0};
-    std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
-    std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
+  int dimension_{0};
+  std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
+  std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
 };
 
 } // namespace matching
