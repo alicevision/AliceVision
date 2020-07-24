@@ -73,6 +73,9 @@ public:
   /// Rotation priors
   RotationPriors rotationpriors;
 
+  SfMData();
+  ~SfMData();
+
   // Operators
 
   bool operator==(const SfMData& other) const;
@@ -506,7 +509,9 @@ public:
    */
   void combine(const SfMData& sfmData);
 
-private:
+  void clear();
+
+ private:
   /// Absolute path to the SfMData file (should not be saved)
   std::string _absolutePath;
   /// Features folders path
