@@ -8,6 +8,21 @@
 
 #pragma once
 
+// AliceVision does not support Eigen with alignment,
+// So ensure Eigen is used with the correct flags.
+#ifndef EIGEN_MAX_ALIGN_BYTES
+#error "EIGEN_MAX_ALIGN_BYTES is not defined"
+#elif EIGEN_MAX_ALIGN_BYTES != 0
+#error "EIGEN_MAX_ALIGN_BYTES is defined but not 0"
+#endif
+
+#ifndef EIGEN_MAX_STATIC_ALIGN_BYTES
+#error "EIGEN_MAX_STATIC_ALIGN_BYTES is not defined"
+#elif EIGEN_MAX_STATIC_ALIGN_BYTES != 0
+#error "EIGEN_MAX_STATIC_ALIGN_BYTES is defined but not 0"
+#endif
+
+
 //--
 // Eigen
 // http://eigen.tuxfamily.org/dox-devel/QuickRefPage.html
