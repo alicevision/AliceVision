@@ -14,9 +14,11 @@ set(features_files_headers
   Descriptor.hpp
   feature.hpp
   FeaturesPerView.hpp
+  Hamming.hpp
   ImageDescriber.hpp
   imageDescriberCommon.hpp
   KeypointSet.hpp
+  metric.hpp
   PointFeature.hpp
   Regions.hpp
   regionsFactory.hpp
@@ -88,3 +90,4 @@ endif()
 
 # Unit tests
 alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_feature)
+alicevision_add_test(metric_test.cpp   NAME "descriptor_metric"   LINKS aliceVision_feature)

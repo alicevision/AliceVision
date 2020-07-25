@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/matching/metric.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/stl/DynamicBitset.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/feature/metric.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/stl/DynamicBitset.hpp>
+
 #include <iostream>
 #include <random>
 #include <cmath>
@@ -229,7 +230,7 @@ public:
     const int NN = 2
   ) const
   {
-    typedef L2_Vectorized<typename MatrixT::Scalar> MetricT;
+    typedef feature::L2_Vectorized<typename MatrixT::Scalar> MetricT;
     MetricT metric;
 
     static const int kNumTopCandidates = 10;
@@ -254,7 +255,7 @@ public:
     // feature for matching (i.e., prevents duplicates).
     std::vector<bool> used_descriptor(hashed_descriptions2.hashed_desc.size());
 
-    typedef matching::Hamming<stl::dynamic_bitset::BlockType> HammingMetricType;
+    typedef feature::Hamming<stl::dynamic_bitset::BlockType> HammingMetricType;
     static const HammingMetricType metricH = {};
     for (int i = 0; i < hashed_descriptions1.hashed_desc.size(); ++i)
     {
