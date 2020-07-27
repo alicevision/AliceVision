@@ -160,7 +160,7 @@ public:
          * to possible performance loss from waiting threads in OpenMP approach
         */
         {
-          for (int j = 0; j < NN; j++) {
+          for (int j = 0; j < NN; ++j) {
             const auto &res = result[j];
             (*pvec_indices)[i * NN + j] = IndMatch(i, res.second);
             (*pvec_distances)[i * NN + j] = res.first;
