@@ -148,7 +148,7 @@ public:
       #ifdef ALICEVISION_IS_DEFINED
       #pragma omp parallel for
       #endif
-      for(int i = 0; i < nbQuery; i++)
+      for(int i = 0; i < nbQuery; ++i)
       {
         auto result = HNSWmatcher->searchKnn(
           (const void*)(query + dimension_ * i), NN,
