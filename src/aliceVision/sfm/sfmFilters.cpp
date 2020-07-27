@@ -63,41 +63,94 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
 
 IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcceptedAngle)
 {
+  // note that smallest accepted angle => largest accepted cos(angle)
+  const double dMaxAcceptedCosAngle = std::cos(degreeToRadian(dMinAcceptedAngle));
   IndexT removedTrack_count = 0;
   sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
 
-  while(iterTracks != sfmData.structure.end())
+  typedef std::vector<sfmData::Landmarks::key_type> LandmarksKeysVec;
+  LandmarksKeysVec v_keys; v_keys.reserve(sfmData.structure.size());
+  for (const sfmData::Landmarks::value_type &kv : sfmData.structure) v_keys.push_back(kv.first);
+
+  std::vector<sfmData::Landmarks::key_type> toErase;
+
+  #pragma omp parallel for
+  for (auto it = v_keys.begin(); it < v_keys.end(); it ++)
   {
-    sfmData::Observations & observations = iterTracks->second.observations;
-    double max_angle = 0.0;
-    for(sfmData::Observations::const_iterator itObs1 = observations.begin(); itObs1 != observations.end(); ++itObs1)
+    const sfmData::Observations &observations = sfmData.structure[*it].observations;
+
+    // create matrix for observation directions from camera to point
+    Eigen::Matrix<double, 3, Eigen::Dynamic> viewDirections(3, observations.size());
+    Eigen::Matrix<double, 3, Eigen::Dynamic>::Index i;
+    sfmData::Observations::const_iterator itObs;
+    
+    // Greedy algorithm almost always finds an acceptable angle in 1-5 iterations (if it exists).
+    // It works by greedily chasing the first larger view angle found from the current greedy index.
+    // View angles have a spartial distribution, so greedily jumping over larger and larger angles
+    // forces the greedy index towards the outside of the distribution.
+    double dGreedyCos = 1.1;
+    Eigen::Matrix<double, 3, Eigen::Dynamic>::Index greedyI = 0;
+
+
+    // fill matrix, optimistically checking each new entry against col(greedyI)
+    for(itObs = observations.begin(), i = 0; itObs != observations.end(); ++itObs, ++i)
     {
-      const sfmData::View * view1 = sfmData.views.at(itObs1->first).get();
-      const geometry::Pose3 pose1 = sfmData.getPose(*view1).getTransform();
-      const camera::IntrinsicBase * intrinsic1 = sfmData.intrinsics.at(view1->getIntrinsicId()).get();
+      const sfmData::View * view = sfmData.views.at(itObs->first).get();
+      const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
+      const camera::IntrinsicBase * intrinsic = sfmData.intrinsics.at(view->getIntrinsicId()).get();
 
-      sfmData::Observations::const_iterator itObs2 = itObs1;
-      ++itObs2;
+      viewDirections.col(i) = applyIntrinsicExtrinsic(pose, intrinsic, itObs->second.x);
 
-      for(; itObs2 != observations.end(); ++itObs2)
+      double dCosAngle = viewDirections.col(i).transpose() * viewDirections.col(greedyI);
+      if (dCosAngle < dMaxAcceptedCosAngle)
       {
-        const sfmData::View * view2 = sfmData.views.at(itObs2->first).get();
-        const geometry::Pose3 pose2 = sfmData.getPose(*view2).getTransform();
-        const camera::IntrinsicBase * intrinsic2 = sfmData.intrinsics.at(view2->getIntrinsicId()).get();
-
-        const double angle = angleBetweenRays(pose1, intrinsic1, pose2, intrinsic2, itObs1->second.x, itObs2->second.x);
-        max_angle = std::max(angle, max_angle);
+        break;
+      }
+      else if (dCosAngle < dGreedyCos)
+      {
+        dGreedyCos = dCosAngle;
+        greedyI = i;
       }
     }
-    if (max_angle < dMinAcceptedAngle)
+
+    // early exit, acceptable angle found
+    if (itObs != observations.end())
     {
-      iterTracks = sfmData.structure.erase(iterTracks);
-      ++removedTrack_count;
+      continue;
     }
-    else
-      ++iterTracks;
+
+    // Switch to O(n^2) exhaustive search.
+    // Although this is an O(n^2) loop, in practice it will almost always break very early.
+    //
+    // - Default value of dMinAcceptedAngle is 2 degrees. Any larger angle breaks.
+    // - For landmarks with small number of views, n^2 is negligible.
+    // - For landmarks with large number of views, backwards iteration means
+    //     all view directions as considered as early as possible,
+    //     making it difficult for a small angle to hide between views.
+    //
+    for(i = viewDirections.cols() - 1; i > 0; i -= 1)
+    {
+      // Compute and find minimum cosAngle between viewDirections[i] and all viewDirections[0:i].
+      // Single statement can allow Eigen optimizations
+      double dMinCosAngle = (viewDirections.col(i).transpose() * viewDirections.leftCols(i)).minCoeff();
+      if (dMinCosAngle < dMaxAcceptedCosAngle) {
+        break;
+      }
+    }
+
+    // acceptable angle not found
+    if (i == 0)
+    {
+      #pragma omp critical
+      toErase.push_back(*it);
+    }
   }
-  return removedTrack_count;
+
+  for (IndexT key : toErase) {
+    sfmData.structure.erase(key);
+  }
+
+  return toErase.size();
 }
 
 bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedViewsId)
