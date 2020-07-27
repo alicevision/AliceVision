@@ -1137,7 +1137,6 @@ int aliceVision_main(int argc, char **argv)
 
   // load input scene
   sfmData::SfMData sfmData;
-  std::cout << sfmData.getViews().size()  << std::endl;
   if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
@@ -1189,6 +1188,12 @@ int aliceVision_main(int argc, char **argv)
     std::map<size_t, std::vector<std::shared_ptr<sfmData::View>>> indexed_by_scale;
     for (const auto& viewIt : sfmData.getViews())
     {
+      if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+      {
+          // skip unreconstructed views
+          continue;
+      }
+      
       // Load mask
       const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
       ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
@@ -1228,6 +1233,12 @@ int aliceVision_main(int argc, char **argv)
   else {
     for (auto& viewIt : sfmData.getViews())
     {
+      if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+      {
+          // skip unreconstructed views
+          continue;
+      }
+      
       viewsToDraw.push_back(viewIt.second);
     }
   }
@@ -1298,6 +1309,12 @@ int aliceVision_main(int argc, char **argv)
   {
     for (const auto& viewIt : sfmData.getViews())
     {
+      if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+      {
+          // skip unreconstructed views
+          continue;
+      }
+
       // Load mask
       const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
       ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
