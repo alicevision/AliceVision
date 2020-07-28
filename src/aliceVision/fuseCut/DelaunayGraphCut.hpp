@@ -77,6 +77,56 @@ public:
         VertexIndex localVertexIndex = GEO::NO_VERTEX;
     };
 
+    struct Edge
+    {
+        Edge() = default;
+        Edge(VertexIndex v0_, VertexIndex v1_)
+            : v0{v0_}
+            , v1{v1_}
+        {}
+
+        VertexIndex v0 = GEO::NO_VERTEX;
+        VertexIndex v1 = GEO::NO_VERTEX;
+    };
+
+    enum class EGeometryType
+    {
+        Vertex,
+        Edge,
+        Facet,
+        None
+    };
+
+    struct GeometryIntersection
+    {
+        EGeometryType type = EGeometryType::None;
+        union
+        {
+            Facet facet;
+            VertexIndex vertexIndex;
+            Edge edge;
+        };
+        GeometryIntersection() {}
+        explicit GeometryIntersection(const Facet& f)
+            : facet{f}
+            , type{EGeometryType::Facet}
+        {}
+        explicit GeometryIntersection(const VertexIndex& v)
+            : vertexIndex{v}
+            , type{EGeometryType::Vertex}
+        {}
+        explicit GeometryIntersection(const Edge& e)
+            : edge{e}
+            , type{EGeometryType::Edge}
+        {}
+    };
+
+    enum class EDirection
+    {
+        toTheCam,
+        behindThePoint
+    };
+
     mvsUtils::MultiViewParams* mp;
 
     GEO::Delaunay_var _tetrahedralization;
