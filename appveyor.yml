@@ -14,9 +14,9 @@ install:
     - cmd: >-
          call cudaInstallAppveyor.cmd
     - cd c:\tools\vcpkg\
-    - git branch -D alicevision_master
     - git fetch https://github.com/aliceVision/vcpkg.git alicevision_master:alicevision_master
     - git checkout alicevision_master
+    - git log -n 3
     - .\bootstrap-vcpkg.bat
     - vcpkg update
     - vcpkg upgrade --no-dry-run
