@@ -22,16 +22,16 @@ install:
     - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
-          boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread
-          openexr 
-          openimageio[libraw] 
-          alembic 
-          geogram 
-          eigen3 
-          ceres[suitesparse]
-          cuda
           --triplet x64-windows
           --recurse
+          boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread
+          openexr
+#          openimageio[libraw]
+#          alembic
+#          geogram
+#          eigen3
+#          ceres[suitesparse]
+#          cuda
     - vcpkg list
 
 before_build:
@@ -46,9 +46,9 @@ before_build:
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
-build:
-  project: build\aliceVision.sln
-  verbosity: minimal
+build: off
+#  project: build\aliceVision.sln
+#  verbosity: minimal
 
 #comment the above and uncomment the following to just build the dependencies
 # build_script:
