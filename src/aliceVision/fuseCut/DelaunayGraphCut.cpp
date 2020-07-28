@@ -28,6 +28,7 @@
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -1573,10 +1574,19 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
     int avCams = 0;
     int nAvCams = 0;
 
+    boost::progress_display progressBar(std::min(size_t(100), verticesRandIds.size()), std::cout, "fillGraphPartPtRc\n");
+    size_t progressStep = verticesRandIds.size() / 100;
+    progressStep = std::max(size_t(1), progressStep);
 #pragma omp parallel for reduction(+:avStepsFront,aAvStepsFront,avStepsBehind,nAvStepsBehind,avCams,nAvCams)
     for(int i = 0; i < verticesRandIds.size(); i++)
     {
-        int vertexIndex = verticesRandIds[i];
+        if(i % progressStep == 0)
+        {
+#pragma omp critical
+            ++progressBar;
+        }
+
+        const int vertexIndex = verticesRandIds[i];
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
 
         if(v.isReal() && (v.nrc > 0))
