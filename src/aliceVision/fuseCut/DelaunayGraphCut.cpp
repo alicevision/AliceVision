@@ -445,6 +445,17 @@ void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& 
     mvsUtils::printfElapsedTime(t1);
 }
 
+std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByEdge(const Edge& e) const
+{
+    const std::vector<CellIndex>& v0ci = getNeighboringCellsByVertexIndex(e.v0);
+    const std::vector<CellIndex>& v1ci = getNeighboringCellsByVertexIndex(e.v1);
+
+    std::vector<CellIndex> neighboringCells;
+    std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
+    
+    return neighboringCells;
+}
+
 void DelaunayGraphCut::initVertices()
 {
     ALICEVISION_LOG_DEBUG("initVertices ...\n");

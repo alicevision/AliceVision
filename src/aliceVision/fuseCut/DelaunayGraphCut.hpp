@@ -310,12 +310,20 @@ public:
      * @brief Retrieves the global indexes of neighboring cells using the global index of a vertex.
      * 
      * @param vi the global vertexIndex
-     * @return a vector of neighboring cell indexes
+     * @return a vector of neighboring cell indices
      */
     inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const
     {
         return _neighboringCellsPerVertex.at(vi);
     }
+
+     /**
+     * @brief Retrieves the global indexes of neighboring cells around one edge.
+     *
+     * @param e the concerned edge
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const;
 
     void initVertices();
     void computeDelaunay();
