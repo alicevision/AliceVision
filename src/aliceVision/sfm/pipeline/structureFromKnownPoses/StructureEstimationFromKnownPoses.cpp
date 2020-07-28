@@ -6,8 +6,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "StructureEstimationFromKnownPoses.hpp"
+#include <aliceVision/feature/metric.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
-#include <aliceVision/matching/metric.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>

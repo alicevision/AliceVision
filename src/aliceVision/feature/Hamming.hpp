@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aliceVision/matching/metric.hpp>
+#include "metric.hpp"
 
 #include <bitset>
 
@@ -29,7 +29,7 @@ typedef unsigned __int64 uint64_t;
 // For maximal performance SSE4 must be enable for builtin popcount activation.
 
 namespace aliceVision {
-namespace matching {
+namespace feature {
 
 #undef PLATFORM_64_BIT
 #undef PLATFORM_32_BIT
@@ -180,5 +180,5 @@ struct SquaredHamming
   }
 };
 
-}  // namespace matching
+}  // namespace feature
 }  // namespace aliceVision

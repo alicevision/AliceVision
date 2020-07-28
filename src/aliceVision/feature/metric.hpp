@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "aliceVision/matching/Hamming.hpp"
-#include "aliceVision/numeric/Accumulator.hpp"
+#include "Hamming.hpp"
+
+#include <aliceVision/numeric/Accumulator.hpp>
 #include <aliceVision/config.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_SSE)
@@ -18,8 +19,9 @@
 
 #include <cstddef>
 
+
 namespace aliceVision {
-namespace matching {
+namespace feature {
 
 /// Squared Euclidean distance functor.
 template<class T>
@@ -136,5 +138,5 @@ struct L2_Vectorized<float>
 
 #endif // ALICEVISION_HAVE_SSE
 
-}  // namespace matching
+}  // namespace feature
 }  // namespace aliceVision

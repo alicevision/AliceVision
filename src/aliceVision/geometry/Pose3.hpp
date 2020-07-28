@@ -78,6 +78,9 @@ class Pose3
       pose._rotation = _rotation * R.transpose();
       return pose;
     }
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 /**

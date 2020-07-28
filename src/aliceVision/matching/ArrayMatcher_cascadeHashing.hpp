@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include "aliceVision/matching/ArrayMatcher.hpp"
-#include "aliceVision/matching/CascadeHasher.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/feature/metric.hpp>
+#include <aliceVision/matching/ArrayMatcher.hpp>
+#include <aliceVision/matching/CascadeHasher.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -32,7 +33,7 @@ namespace matching {
 // Implementation of descriptor matching using the cascade hashing method of [1].
 // If you use this matcher, please cite the paper.
 // template Metric parameter is ignored (by default compute square(L2 distance)).
-template < typename Scalar = float, typename Metric = L2_Simple<Scalar> >
+template < typename Scalar = float, typename Metric = feature::L2_Simple<Scalar> >
 class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
 {
   public:
