@@ -19,7 +19,8 @@ install:
     - git log -n 3
     - .\bootstrap-vcpkg.bat
     - vcpkg update
-    - vcpkg upgrade --no-dry-run
+    - vcpkg remove --outdated
+#    - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
           --triplet x64-windows
