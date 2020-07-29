@@ -47,9 +47,9 @@ before_build:
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
-build: off
-#  project: build\aliceVision.sln
-#  verbosity: minimal
+build:
+  project: build\aliceVision.sln
+  verbosity: minimal
 
 #comment the above and uncomment the following to just build the dependencies
 # build_script:
