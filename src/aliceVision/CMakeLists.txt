@@ -40,12 +40,15 @@ if(ALICEVISION_BUILD_HDR)
   add_subdirectory(hdr)
 endif()
 
+if(ALICEVISION_BUILD_HDR OR ALICEVISION_BUILD_MVS)
+  add_subdirectory(mvsData)
+endif()
+
 # MVS modules
 
 if(ALICEVISION_BUILD_MVS)
   add_subdirectory(lightingEstimation)
   add_subdirectory(mesh)
-  add_subdirectory(mvsData)
   add_subdirectory(mvsUtils)
   add_subdirectory(fuseCut)
 
