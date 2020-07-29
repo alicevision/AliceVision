@@ -259,6 +259,9 @@ endif()
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
 set(ALICEVISION_BOOST_COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread timer)
+# Disable the search for boost-cmake (keep using the FindBoost.cmake).
+# See https://cmake.org/cmake/help/latest/module/FindBoost.html
+set(Boost_NO_BOOST_CMAKE ON)
 if(ALICEVISION_BUILD_TESTS)
     set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
 endif()
