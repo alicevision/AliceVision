@@ -333,7 +333,7 @@ private:
         CArr.resize(ncams);
         iCamArr.resize(ncams);
         FocK1K2Arr.resize(ncams);
-        _imagesScale.resize(ncams);
+        _imagesScale.resize(ncams, 1);
     }
 };
 

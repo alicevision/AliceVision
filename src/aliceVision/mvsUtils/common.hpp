@@ -62,7 +62,7 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
 int computeStep(MultiViewParams* mp, int scale, int maxWidth, int maxHeight);
 
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
-StaticVector<int>* createRandomArrayOfIntegers(int n);
+std::vector<int> createRandomArrayOfIntegers(const int size, const unsigned int seed = 0);
 
 int findNSubstrsInString(const std::string& str, const std::string& val);
 std::string num2str(int num);
