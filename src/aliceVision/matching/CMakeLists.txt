@@ -47,7 +47,6 @@ alicevision_add_library(aliceVision_matching
 alicevision_add_test(matching_test.cpp NAME "matching"          LINKS aliceVision_matching)
 alicevision_add_test(filters_test.cpp  NAME "matching_filters"  LINKS aliceVision_matching)
 alicevision_add_test(indMatch_test.cpp NAME "matching_indMatch" LINKS aliceVision_matching)
-alicevision_add_test(metric_test.cpp   NAME "matching_metric"   LINKS aliceVision_matching)
 alicevision_add_test(hnsw_test.cpp     NAME "matching_hnsw"     LINKS aliceVision_matching)
 
 add_subdirectory(kvld)
