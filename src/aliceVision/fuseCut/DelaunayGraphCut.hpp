@@ -127,6 +127,24 @@ public:
         behindThePoint
     };
 
+    struct IntersectionHistory
+    {
+        size_t steps = 0;
+        Point3d cam;
+        Point3d originPt;
+        Point3d dirVect;
+
+        std::vector<GeometryIntersection> geometries;
+        std::vector<Point3d> intersectPts;
+        std::vector<Point3d> vecToCam;
+        std::vector<float> distToCam;
+        std::vector<float> angleToCam;
+        IntersectionHistory(const Point3d& c, const Point3d& oPt, const Point3d& diV) : cam{c}, originPt{oPt}, dirVect{diV} {}
+        
+        void append(const GeometryIntersection& geom, const Point3d& intersectPt);
+    };
+
+
     mvsUtils::MultiViewParams* mp;
 
     GEO::Delaunay_var _tetrahedralization;
