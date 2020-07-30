@@ -141,10 +141,9 @@ if(ALICEVISION_BUILD_SFM)
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
           aliceVision_image
-          aliceVision_feature
-          aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO
+          aliceVision_fuseCut
           ${Boost_LIBRARIES}
   )
   alicevision_add_software(aliceVision_panoramaInit

@@ -27,6 +27,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
+//Graphcut
+#include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -984,6 +987,503 @@ private:
   image::Image<IndexT> _labels;
 };
 
+class GraphcutSeams {
+public:
+  struct Rect {
+    int l;
+    int t;
+    int w;
+    int h;
+  };
+
+  using PixelInfo = std::pair<IndexT, image::RGBfColor>;
+  using ImageOwners = image::Image<std::vector<PixelInfo>>;
+
+public:
+  GraphcutSeams(size_t outputWidth, size_t outputHeight) :
+  _owners(outputWidth, outputHeight, true),
+  _labels(outputWidth, outputHeight, true, 0)
+  {
+  }
+
+  virtual ~GraphcutSeams() = default;
+
+  virtual bool append(const aliceVision::image::Image<image::RGBfColor> & input, const aliceVision::image::Image<unsigned char> & inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
+  {
+    if (inputMask.size() != input.size()) {
+      return false;
+    }
+
+    Rect rect;
+    
+    rect.l = offset_x;
+    rect.t = offset_y;
+    rect.w = input.Width() + 1;
+    rect.h = input.Height() + 1;
+
+    /*Extend rect for borders*/
+    if (rect.l > 0) {
+      rect.l = rect.l - 3;
+      rect.w = rect.w + 6;
+    }
+    if (rect.t > 0) {
+      rect.t = rect.t - 3;
+      rect.h = rect.h + 6;
+    }
+    if (rect.l + rect.w > _owners.Width()) {
+      rect.w = _owners.Width() - rect.l;
+    }
+    if (rect.t + rect.h > _owners.Height()) {
+      rect.h = _owners.Height() - rect.t;
+    }
+    _rects[currentIndex] = rect;
+
+    /* 
+    _owners will get for each pixel of the panorama a list of pixels 
+    in the sources which may have seen this point.
+    */
+    for (int i = 0; i  < input.Height(); i++) {
+
+      int di = i + offset_y;
+
+      for (int j = 0; j < input.Width(); j++) {
+
+        if (!inputMask(i, j)) continue;
+
+        int dj = j + offset_x;
+        if (dj >= _owners.Width()) {
+          dj = dj - _owners.Width();
+        }
+
+        PixelInfo info;
+        info.first = currentIndex;
+        info.second = input(i, j);
+
+        _owners(di, dj).push_back(info);
+      }
+    }
+
+    return true;
+  }
+
+  bool process(const image::Image<IndexT> & existing_labels) {    
+
+    if (_labels.size() == existing_labels.size()) {
+      _labels = existing_labels;
+    }
+    else {
+      srand(3);
+      /* 
+      Initialize labels with a valid (but random) label
+      */
+      for (int i = 0; i < _labels.Height(); i++) {
+        for (int j = 0; j < _labels.Width(); j++) {
+
+          int size = _owners(i, j).size();
+
+          if (size == 0) {
+            _labels(i, j) = UndefinedIndexT;
+            continue;
+          }
+
+          int label = 0;//random() % size;
+          _labels(i, j) = _owners(i, j)[label].first;
+        }
+      }
+    }
+
+
+    for (int i = 0; i < 10; i++) {
+
+      /*For each possible label, try to extends its domination on the label's world */
+      bool change = false;
+
+      for (auto & info : _rects) {
+
+        ALICEVISION_LOG_INFO("Graphcut expansion (iteration " << i << ") for label " << info.first);
+
+        image::Image<IndexT> backup = _labels;
+
+        double base_cost = cost(info.first);
+        alphaExpansion(info.first);
+        double new_cost = cost(info.first);
+
+        if (new_cost > base_cost) {
+          _labels = backup;
+        }
+        else if (new_cost < base_cost) {
+          change = true;
+        }
+      }
+
+      if (!change) {
+        break;
+      }
+    }
+
+    return true;
+  }
+
+  double cost(IndexT currentLabel) {
+
+    Rect rect = _rects[currentLabel];
+
+    double cost = 0.0;
+
+    for (int i = 0; i < rect.h - 1; i++) {
+
+      int y = rect.t + i;
+      int yp = y + 1;
+
+      for (int j = 0; j < rect.w; j++) {
+
+        int x = rect.l + j;
+        if (x >= _owners.Width()) {
+          x = x - _owners.Width();
+        }
+
+        int xp = x + 1;
+        if (xp >= _owners.Width()) {
+          xp = xp - _owners.Width();
+        } 
+
+        IndexT label = _labels(y, x);
+        IndexT labelx = _labels(y, xp);
+        IndexT labely = _labels(yp, x);
+
+        if (label == UndefinedIndexT) continue;
+        if (labelx == UndefinedIndexT) continue;
+        if (labely == UndefinedIndexT) continue;
+
+        if (label == labelx) {
+          continue;
+        }
+
+        image::RGBfColor CColorLC;
+        image::RGBfColor CColorLX;
+        image::RGBfColor CColorLY;
+        bool hasCLC = false;
+        bool hasCLX = false;
+        bool hasCLY = false;
+
+        for (int l = 0; l < _owners(y, x).size(); l++) {
+          if (_owners(y, x)[l].first == label) {
+            hasCLC = true;
+            CColorLC = _owners(y, x)[l].second;
+          }
+          
+          if (_owners(y, x)[l].first == labelx) {
+            hasCLX = true;
+            CColorLX = _owners(y, x)[l].second;
+          }
+
+          if (_owners(y, x)[l].first == labely) {
+            hasCLY = true;
+            CColorLY = _owners(y, x)[l].second;
+          }
+        }
+        
+        image::RGBfColor XColorLC;
+        image::RGBfColor XColorLX;
+        bool hasXLC = false;
+        bool hasXLX = false;
+        
+        for (int l = 0; l < _owners(y, xp).size(); l++) {
+          if (_owners(y, xp)[l].first == label) {
+            hasXLC = true;
+            XColorLC = _owners(y, xp)[l].second;
+          }
+          
+          if (_owners(y, xp)[l].first == labelx) {
+            hasXLX = true;
+            XColorLX = _owners(y, xp)[l].second;
+          }
+        }
+
+        image::RGBfColor YColorLC;
+        image::RGBfColor YColorLY;
+        bool hasYLC = false;
+        bool hasYLY = false;
+        
+        for (int l = 0; l < _owners(yp, x).size(); l++) {
+          if (_owners(yp, x)[l].first == label) {
+            hasYLC = true;
+            YColorLC = _owners(yp, x)[l].second;
+          }
+          
+          if (_owners(yp, x)[l].first == labely) {
+            hasYLY = true;
+            YColorLY = _owners(yp, x)[l].second;
+          }
+        }
+
+        if (!hasCLC || !hasXLX || !hasYLY) {
+          continue;
+        }
+
+       
+
+        if (!hasCLX) {
+          CColorLX = CColorLC;
+        }
+
+        if (!hasCLY) {
+          CColorLY = CColorLC;
+        }
+
+        if (!hasXLC) {
+          XColorLC = XColorLX;
+        }
+
+        if (!hasYLC) {
+          YColorLC = YColorLY;
+        }
+
+        cost += (CColorLC - CColorLX).norm();
+        cost += (CColorLC - CColorLY).norm();
+        cost += (XColorLC - XColorLX).norm();
+        cost += (YColorLC - YColorLY).norm();
+      }
+    }
+
+    return cost;
+  }
+  
+  bool alphaExpansion(IndexT currentLabel) {
+
+    Rect rect = _rects[currentLabel];
+
+    image::Image<unsigned char> mask(rect.w, rect.h, true, 0);
+    image::Image<int> ids(rect.w, rect.h, true, -1);
+    image::Image<image::RGBfColor> color_label(rect.w, rect.h, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+    image::Image<image::RGBfColor> color_other(rect.w, rect.h, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+  
+
+    /*
+    A warped input has valid pixels only in some parts of the final image.
+    Rect is the bounding box of these valid pixels.
+    Let's build a mask : 
+     - 0 if the pixel is not viewed by anyone
+     - 1 if the pixel is viewed by the current label alpha
+     - 2 if the pixel is viewed by *another* label and this label is marked as current valid label
+     - 3 if the pixel is 1 + 2 : the pixel is not selected as alpha territory, but alpha is looking at it
+    */
+    for (int i = 0; i < rect.h; i++) {
+
+      int y = rect.t + i;
+
+      for (int j = 0; j < rect.w; j++) {
+
+        int x = rect.l + j;
+        if (x >= _owners.Width()) {
+          x = x - _owners.Width();
+        }        
+
+        std::vector<PixelInfo> & infos = _owners(y, x);
+        IndexT label = _labels(y, x);
+
+        image::RGBfColor currentColor;
+        image::RGBfColor otherColor;
+
+        /* Loop over observations */
+        for (int l = 0; l < infos.size(); l++) {
+
+          if (infos[l].first == currentLabel) {
+            mask(i, j) |= 1;
+            currentColor = infos[l].second;
+          }
+          else if (infos[l].first == label) {
+            mask(i, j) |= 2;
+            otherColor = infos[l].second;
+          }
+        }
+
+        /*
+        If the pixel may be a new kingdom for alpha !
+        */
+        if (mask(i, j) == 1) {
+          color_label(i, j) = currentColor;
+          color_other(i, j) = currentColor;
+        }
+        else if (mask(i, j) == 2) {
+          color_label(i, j) = otherColor;
+          color_other(i, j) = otherColor;
+        }
+        else if (mask(i, j) == 3) {
+          color_label(i, j) = currentColor;
+          color_other(i, j) = otherColor;
+        }
+      }
+    }
+    
+    /* 
+    The rectangle is a grid.
+    However we want to ignore a lot of pixel.
+    Let's create an index per valid pixels for graph cut reference
+    */
+    int count = 0;
+    for (int i = 0; i < rect.h; i++) {
+      for (int j = 0; j < rect.w; j++) {
+        if (mask(i, j) == 0) {
+          continue;
+        }
+
+        ids(i, j) = count;
+        count++;
+      }
+    }
+    
+    /*Create graph*/
+    fuseCut::MaxFlow_AdjList gc(count);
+    size_t countValid = 0;
+
+    for (int i = 0; i < rect.h; i++) {
+      for (int j = 0; j < rect.w; j++) {
+        
+        /* If this pixel is not valid, ignore */
+        if (mask(i, j) == 0) {
+          continue;
+        }
+
+        /* Get this pixel ID */
+        int node_id = ids(i, j);
+
+        if (mask(i, j) == 1) { 
+          /*
+          This pixel is only seen by alpha. 
+          Enforce its domination by stating that removing this pixel 
+          from alpha territoy is infinitly costly (impossible).
+          */
+          gc.addNode(node_id, 100000, 0);
+        }
+        else if (mask(i, j) == 2) {
+          /*
+          This pixel is only seen by an ennemy. 
+          Enforce its domination by stating that removing this pixel 
+          from ennemy territory is infinitly costly (impossible).
+          */
+          gc.addNode(node_id, 0, 100000);
+        }
+        else if (mask(i, j) == 3) {
+
+          /* 
+          This pixel is seen by both alpha and enemies but is owned by ennemy.
+          Make sure that changing node owner will have no direct cost.
+          Connect it to both alpha and ennemy for the moment 
+          (Graph cut will not allow a pixel to have both owners at the end).
+          */
+          gc.addNode(node_id, 0.00000001, 0);
+          gc.addNode(node_id, 0, 0.00000001);
+          countValid++;
+        }
+      }
+    }
+
+    if (countValid == 0) {
+      /* We have no possibility for territory expansion */
+      /* let's exit */
+      return true;
+    }
+
+    /* 
+    Loop over alpha bounding box.
+    Let's define the transition cost.
+    When two neighboor pixels have different labels, there is a seam (border) cost.
+    Graph cut will try to make sure the territory will have a minimal border cost
+    */
+    for (int i = 0; i < rect.h; i++) {
+      for (int j = 0; j < rect.w; j++) {
+          
+        if (mask(i, j) == 0) {
+          continue;
+        }
+
+        int node_id = ids(i, j);
+
+        /* Make sure it is possible to estimate this horizontal border */
+        if (i < mask.Height() - 1) {
+          
+          /* Make sure the other pixel is owned by someone */
+          if (mask(i + 1, j)) {
+
+            int other_node_id = ids(i + 1, j);
+            float w = 1000;
+            
+            
+            if (((mask(i, j) & 1) && (mask(i + 1, j) & 2)) || ((mask(i, j) & 2) && (mask(i + 1, j) & 1))) {
+              float d1 = (color_label(i, j) - color_other(i, j)).norm();
+              float d2 = (color_label(i + 1, j) - color_other(i + 1, j)).norm();
+              w = (d1 + d2) * 100.0 + 1.0;
+            }
+                
+            gc.addEdge(node_id, other_node_id, w, w);
+          }
+        }
+
+        if (j < mask.Width() - 1) {
+          
+          if (mask(i, j + 1)) {
+
+            int other_node_id = ids(i, j + 1);
+            float w = 1000;
+            
+            if (((mask(i, j) & 1) && (mask(i, j + 1) & 2)) || ((mask(i, j) & 2) && (mask(i, j + 1) & 1))) {
+              float d1 = (color_label(i, j) - color_other(i, j)).norm();
+              float d2 = (color_label(i, j + 1) - color_other(i, j + 1)).norm();
+              w = (d1 + d2) * 100.0 + 1.0;
+            }
+                
+            gc.addEdge(node_id, other_node_id, w, w);
+          }
+        }
+      }
+    }
+
+
+    gc.compute();
+  
+    int changeCount = 0;
+    for (int i = 0; i < rect.h; i++) {
+
+      int y = rect.t + i;
+
+      for (int j = 0; j < rect.w; j++) {
+
+        int x = rect.l + j;
+        if (x >= _owners.Width()) {
+          x = x - _owners.Width();
+        }
+        
+        IndexT label = _labels(y, x);
+        int id = ids(i, j);
+
+        if (gc.isSource(id)) {
+
+          if (label != currentLabel) {
+            changeCount++;
+          }
+
+          _labels(y, x) = currentLabel;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  const image::Image<IndexT> & getLabels() {
+
+    return _labels;
+  }
+
+private:
+
+  std::map<IndexT, Rect> _rects;
+  ImageOwners _owners;
+  image::Image<IndexT> _labels;
+};
+
+
 class LaplacianCompositer : public Compositer
 {
 public:
@@ -1072,6 +1572,7 @@ int aliceVision_main(int argc, char **argv)
 
   std::string compositerType = "multiband";
   std::string overlayType = "none";
+  bool useGraphCut = true;
 
   system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
 
@@ -1093,7 +1594,8 @@ int aliceVision_main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
-    ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams].");
+    ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams].")
+    ("useGraphCut,c", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Do we use graphcut for ghost removal ?");
   allParams.add(optionalParams);
 
   // Setup log level given command line
@@ -1178,7 +1680,6 @@ int aliceVision_main(int argc, char **argv)
   }
 
 
-
   // Compute seams
   std::vector<std::shared_ptr<sfmData::View>> viewsToDraw;
 
@@ -1243,9 +1744,46 @@ int aliceVision_main(int argc, char **argv)
     }
   }
 
+  /* Retrieve seams from distance tool */
   image::Image<IndexT> labels = distanceseams->getLabels();
   distanceseams.reset();
   distanceseams = nullptr;
+
+  if (isMultiBand && useGraphCut) {
+
+    GraphcutSeams seams(panoramaSize.first, panoramaSize.second);
+    for (const auto& viewIt : sfmData.getViews())
+    {
+      if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+      {
+          // skip unreconstructed views
+          continue;
+      }
+      
+      // Load mask
+      const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+      ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+      image::Image<unsigned char> mask;
+      image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+      oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+      const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+      const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+      // Load Color
+      const std::string colorsPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + ".exr")).string();
+      ALICEVISION_LOG_INFO("Load colors with path " << colorsPath);
+      image::Image<image::RGBfColor> colors;
+      image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
+
+      seams.append(colors, mask, viewIt.first, offsetX, offsetY);
+    }
+
+    if (seams.process(labels)) {
+      ALICEVISION_LOG_INFO("Updating labels with graphcut");
+      labels = seams.getLabels();
+    }
+  }
 
   oiio::ParamValueList outputMetadata;
 
