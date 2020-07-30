@@ -1370,6 +1370,162 @@ DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(Ver
     return Facet();
 }
 
+
+DelaunayGraphCut::GeometryIntersection
+DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection& inGeometry,
+    const Point3d& originPt,
+    const Point3d& dirVect, Point3d& intersectPt,
+    const float epsilon, const Point3d& lastIntersectPt) const
+{
+
+    switch (inGeometry.type)
+    {
+    case EGeometryType::Facet:
+    {
+        const CellIndex tetrahedronIndex = inGeometry.facet.cellIndex;
+
+        // Test all facets of the tetrahedron using i as localVertexIndex to define next intersectionFacet
+        for (int i = 0; i < 4; ++i)
+        {
+            // Because we can't intersect with incoming facet (same localVertexIndex)
+            if (i == inGeometry.facet.localVertexIndex)
+                continue;
+
+            const Facet intersectionFacet(tetrahedronIndex, i);
+
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilon, &lastIntersectPt);
+            if (result.type != EGeometryType::None)
+                return result;
+        }
+    }
+    break;
+
+    case EGeometryType::Vertex:
+    {
+        for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(inGeometry.vertexIndex))
+        {
+            if (isInfiniteCell(adjCellIndex))
+                continue;
+
+            // Get local vertex index
+            const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, inGeometry.vertexIndex);
+
+            // Define the facet to intersect
+            const Facet facet(adjCellIndex, localVertexIndex);
+
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilon, &lastIntersectPt);
+            if (result.type != EGeometryType::None)
+                return result;
+        }
+    }
+    break;
+
+    case EGeometryType::Edge:
+    {
+        GeometryIntersection result;
+
+        for (CellIndex adjCellIndex : getNeighboringCellsByEdge(inGeometry.edge))
+        {
+            if (isInfiniteCell(adjCellIndex))
+                continue;
+            // Local vertices indices
+            const VertexIndex lvi0 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v0);
+            const VertexIndex lvi1 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v1);
+
+            // The two facets that do not touch this edge need to be tested
+            const std::array<Facet, 2> opositeFacets{ {{adjCellIndex, lvi0}, {adjCellIndex, lvi1}} };
+
+            for (const Facet& facet : opositeFacets)
+            {
+                const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilon, &lastIntersectPt);
+                if (result.type != EGeometryType::None)
+                    return result;
+            }
+        }
+    }
+    break;
+
+    case EGeometryType::None:
+        throw std::runtime_error("[intersectNextGeom] intersection with input none geometry should not happen.");
+        break;
+    }
+    return GeometryIntersection();
+}
+
+DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(const Point3d& originPt,
+    const Point3d& DirVec,
+    const DelaunayGraphCut::Facet& facet,
+    Point3d& intersectPt,
+    const float epsilon, const Point3d* lastIntersectPt) const
+{
+    const VertexIndex AvertexIndex = getVertexIndex(facet, 0);
+    const VertexIndex BvertexIndex = getVertexIndex(facet, 1);
+    const VertexIndex CvertexIndex = getVertexIndex(facet, 2);
+
+    const Point3d* A = &_verticesCoords[AvertexIndex];
+    const Point3d* B = &_verticesCoords[BvertexIndex];
+    const Point3d* C = &_verticesCoords[CvertexIndex];
+
+    Point3d tempIntersectPt;
+    const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
+
+    if (!isnormal(tempIntersectPt.x) || !isnormal(tempIntersectPt.y) || !isnormal(tempIntersectPt.z))
+    {
+        ALICEVISION_LOG_DEBUG("Invalid/notNormal intersection point found during rayIntersectTriangle.");
+    }
+
+    const float u = triangleUv.x; // A to C
+    const float v = triangleUv.y; // A to B
+
+    // If we find invalid uv coordinate
+    if (!std::isfinite(u) && !std::isfinite(v))
+        return GeometryIntersection();
+
+    // Ouside the triangle with epsilon margin
+    if (u < -epsilon || v < -epsilon || (u + v) >(1 + epsilon))
+        return GeometryIntersection();
+
+    // In case intersectPt is provided, check if intersectPt is in front of lastIntersectionPt 
+    // in the DirVec direction to ensure that we are moving forward in the right direction
+    if (lastIntersectPt != nullptr && dot(DirVec, (tempIntersectPt - *lastIntersectPt).normalize()) <= 0)
+        return GeometryIntersection();
+
+    // Change intersection point only if tempIntersectionPt is in the right direction (mean we intersect something)
+    intersectPt = tempIntersectPt;
+
+    if (v < epsilon) // along A C edge
+    {
+        if (u < epsilon)
+        {
+            intersectPt = *A;
+            return GeometryIntersection(AvertexIndex); // vertex A
+        }
+        if (u > 1.0f - epsilon)
+        {
+            intersectPt = *C;
+            return GeometryIntersection(CvertexIndex); // vertex C
+        }
+
+        return GeometryIntersection(Edge(AvertexIndex, CvertexIndex)); // edge AC
+    }
+
+    if (u < epsilon) // along A B edge
+    {
+        if (v > 1.0f - epsilon)
+        {
+            intersectPt = *B;
+            return GeometryIntersection(BvertexIndex); // vertex B
+        }
+
+        return GeometryIntersection(Edge(AvertexIndex, BvertexIndex)); // edge AB
+    }
+
+    if (u + v > 1.0f - epsilon)
+        return GeometryIntersection(Edge(BvertexIndex, CvertexIndex)); // edge BC
+
+    return GeometryIntersection(facet);
+}
+
 DelaunayGraphCut::Facet DelaunayGraphCut::getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const
 {
     int cam_vi = _camsVertexes[cam];

@@ -360,6 +360,36 @@ public:
     Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
     Facet getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
 
+    /**
+     * @brief Function that returns the next geometry intersected by the ray.
+     * The function handles different cases, whether we come from an edge, a facet or a vertex.
+     * 
+     * @param inGeometry the geometry we come from
+     * @param originPt ray origin point
+     * @param dirVect ray direction
+     * @param intersectPt a reference that will store the computed intersection point for the intersected geometry
+     * @param epsilon used to define the boundary when we have to consider either a collision with an edge/vertex or a facet
+     * @param lastIntersectPt constant reference to the last intersection point used to test the direction.
+     * @return 
+     */
+    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry, const Point3d& originPt,
+        const Point3d& dirVect, Point3d& intersectPt, const float epsilon, const Point3d& lastIntersectPt) const;
+
+    /**
+     * @brief Function that returns the next geometry intersected by the ray on a given facet or None if there are no intersected geometry.
+     * The function distinguishes the intersections cases using epsilon.
+     * 
+     * @param originPt ray origin point
+     * @param DirVec ray direction
+     * @param facet the given facet to intersect with
+     * @param intersectPt a reference that will store the computed intersection point for the next intersecting geometry
+     * @param epsilon used to define the boundary when we have to consider either a collision with an edge/vertex or a facet
+     * @param lastIntersectPt pointer to the last intersection point used to test the direction (if not nulllptr)
+     * @return 
+     */
+    GeometryIntersection rayIntersectTriangle(const Point3d& originPt, const Point3d& DirVec, const Facet& facet,
+        Point3d& intersectPt, const float epsilon, const Point3d* lastIntersectPt = nullptr) const;
+
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
     inline double conj(double val) const { return val; }
