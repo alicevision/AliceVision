@@ -1783,152 +1783,167 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
                                        float weight, bool fixesSigma, float nPixelSizeBehind,
                                        bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
-    out_nstepsFront = 0;
-    out_nstepsBehind = 0;
-
-    int maxint = 1000000; // std::numeric_limits<int>::std::max()
+    const int maxint = 1000000; // std::numeric_limits<int>::std::max()
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
     const float pixSize = mp->getCamPixelSize(originPt, cam);
     float maxDist = nPixelSizeBehind * pixSize;
     if(fixesSigma)
-    {
         maxDist = nPixelSizeBehind;
-    }
 
     assert(cam >= 0);
     assert(cam < mp->ncams);
-
-    // printf("%f %f %f\n",originPt.x,originPt.y,originPt.z);
 
     int nsteps = 0;
 
     if(fillOut)
     {
-        out_nstepsFront = 0;
-        // true here mean nearest
-        const bool nearestFarest = true;
-        // tetrahedron connected to the point define by the vertexIndex and which intersect the ray from camera
-        Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
+        // Initialisation
+        GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
+        Point3d intersectPt = originPt;
+        const EDirection dir = EDirection::toTheCam;
+        const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1.0 : -1.0);
 
-        Point3d p = originPt;
-        bool ok = facet.cellIndex != GEO::NO_CELL;
-        while(ok)
+        out_nstepsFront = 0;
+
+        Facet lastIntersectedFacet;
+        // As long as we find a next geometry
+        do
         {
-            {
-#pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[facet.cellIndex].emptinessScore += weight;
-            }
+            // Keep previous informations
+            const GeometryIntersection previousGeometry = geometry;
+            const Point3d lastIntersectPt = intersectPt;
 
             ++out_nstepsFront;
-            ++nsteps;
 
-            Facet outFacet;
-            Point3d intersectPt;
-
-            // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell nearest to the
-            // cam which is intersected with cam-p ray
-            // true here mean nearest
-            const bool nearestFarest = true;
-            if(!rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt))
+            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+            
+            if (geometry.type == EGeometryType::None)
             {
-                ok = false;
+                // throw std::runtime_error("[Error]: fillGraphPartPtRc toTheCam, cause: geometry cannot be found.");
+                ALICEVISION_LOG_TRACE("[Error]: fillGraphPartPtRc toTheCam, cause: geometry cannot be found.");
+                break;
             }
-            else
+
+            if(geometry.type == EGeometryType::Facet)
             {
+                lastIntersectedFacet = geometry.facet;
+                // Vote for the cell between the previous vertex/edge and the intersected facet
+                // Because if there is an edge or a vertex, no vote has been made, we have to vote here for the right facet once we find it
+                if(previousGeometry.type != EGeometryType::Facet)
                 {
-                    const float dist = distFcn(maxDist, (originPt - p).size(), distFcnHeight);
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[outFacet.cellIndex].gEdgeVisWeight[outFacet.localVertexIndex] += weight * dist;
+                    _cellsAttr[geometry.facet.cellIndex].emptinessScore += weight;
                 }
 
+                const float dist = distFcn(maxDist, (originPt - intersectPt).size(), distFcnHeight);
+#pragma OMP_ATOMIC_UPDATE
+                _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+
                 // Take the mirror facet to iterate over the next cell
-                facet = mirrorFacet(outFacet);
+                const Facet mFacet = mirrorFacet(geometry.facet);
+                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                {
+                    // throw std::runtime_error("[Error]: fillGraphPartPtRc toTheCam, cause: invalidOrInfinite miror facet.");
+                    ALICEVISION_LOG_TRACE("[Error]: fillGraphPartPtRc toTheCam, cause: invalidOrInfinite miror facet.");
+                    break;
+                }
+                geometry.facet = mFacet;
 
-                if(facet.cellIndex == GEO::NO_CELL)
-                    ok = false;
-                p = intersectPt;
+                // Vote for the new cell after taking the mirror facet
+#pragma OMP_ATOMIC_UPDATE
+                _cellsAttr[geometry.facet.cellIndex].emptinessScore += weight;
             }
-        }
 
-        // get the outer tetrahedron of camera c for the ray to p = the last tetrahedron
-        if(facet.cellIndex != GEO::NO_CELL)
+        // Break only when we reach our camera vertex
+        } while(!(geometry.type == EGeometryType::Vertex && (mp->CArr[cam] - intersectPt).size() < 1.0e-3));
+
+        // Vote for the last intersected facet (close to the cam)
+        if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
 #pragma OMP_ATOMIC_WRITE
-            _cellsAttr[facet.cellIndex].cellSWeight = (float)maxint;
+            _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
         }
     }
-
     {
+        // Initialisation
+        GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
+        Point3d intersectPt = originPt;
+        const EDirection dir = EDirection::behindThePoint;
+        const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1 : -1);
+
         out_nstepsBehind = 0;
-        // get the tetrahedron next to point p on the ray from c
-        // False here mean farest
-        const bool nearestFarest = false;
-        Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-        Facet outFacet;
 
-        if(facet.cellIndex != GEO::NO_CELL)
+        bool firstIteration = true;
+        Facet lastIntersectedFacet;
+        // As long as we find a next geometry
+        do
         {
-#pragma OMP_ATOMIC_UPDATE
-            _cellsAttr[facet.cellIndex].on += weight;
-        }
-
-        Point3d p = originPt; // HAS TO BE HERE !!!
-
-        bool ok = (facet.cellIndex != GEO::NO_CELL);
-        while(ok)
-        {
-            GC_cellInfo& c = _cellsAttr[facet.cellIndex];
-            {
-#pragma OMP_ATOMIC_UPDATE
-                c.fullnessScore += weight;
-            }
+            // Keep previous informations
+            const GeometryIntersection previousGeometry = geometry;
+            const Point3d lastIntersectPt = intersectPt;
 
             ++out_nstepsBehind;
-            ++nsteps;
 
-            Point3d intersectPt;
-
-            // Intersection with the next facet in the current tetrahedron (facet.cellIndex) in order to find the cell farest to the
-            // cam which is intersected with cam-p ray
-            // False here mean farest
-            const bool nearestFarest = false;
-            if(!rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt) ||
-               ((originPt - p).size() >= maxDist))
+            // Vote for the first facet found (only once)
+            if(firstIteration && geometry.type == EGeometryType::Facet)
             {
-                ok = false;
+#pragma OMP_ATOMIC_UPDATE
+                _cellsAttr[geometry.facet.cellIndex].on += weight;
+                firstIteration = false;
             }
-            else
+            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+
+            if(geometry.type == EGeometryType::None)
             {
-                // float dist = 1.0f;
-                // float dist = distFcn(maxDist,(originPt-pold).size()); // not sure if it is OK ... TODO
-                // check ... with, without, and so on ....
-                // because labatutCFG09 with 32 gives much better result than nrc
-                // but when using just nrc and not using distFcn then the result is the same as labatutCGF09
+                // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified after taking mirror facet)
+                if(previousGeometry.type == EGeometryType::Facet)
+                {
+                    // throw std::runtime_error("[DelaunayGraphCut::fillGraphPartPtRc] first loop: Geometry cannot be found.");
+                    ALICEVISION_LOG_TRACE("[Error]: fillGraphPartPtRc behindThePoint, cause: None geometry but previous is Facet.");
+                }
+                // Break if we reach the end of the tetrahedralization volume
+                break;
+            }
 
+            if(geometry.type == EGeometryType::Facet)
+            {
+                lastIntersectedFacet = geometry.facet;
 
+                // Vote for the cell between the previous vertex/edge and the intersected facet
+                // Because if there is an edge or a vertex, no vote has been made, we have to vote here for the right facet once we find it
+                if (previousGeometry.type != EGeometryType::Facet)
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[geometry.facet.cellIndex].fullnessScore += weight;
+                }
+
+                const float dist = distFcn(maxDist, (originPt - intersectPt).size(), distFcnHeight);
+#pragma OMP_ATOMIC_UPDATE
+                _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+                
                 // Take the mirror facet to iterate over the next cell
-                facet = mirrorFacet(outFacet);
-                if(facet.cellIndex == GEO::NO_CELL)
+                const Facet mFacet = mirrorFacet(geometry.facet);
+                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
-                    ok = false;
+                    // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
+                    break;
                 }
-                else
-                {
-                    const float dist = distFcn(maxDist, (originPt - p).size(), distFcnHeight);
+                geometry.facet = mFacet;
+
+                // Vote for the new cell after taking the mirror facet
 #pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[facet.cellIndex].gEdgeVisWeight[facet.localVertexIndex] += weight * dist;
-                }
-                p = intersectPt;
+                _cellsAttr[geometry.facet.cellIndex].fullnessScore += weight;
             }
-        }
 
-        // cv: is the tetrahedron in distance 2*sigma behind the point p in the direction of the camera c (called Lcp in the paper)
+        // While we are within the surface margin
+        } while((originPt - intersectPt).size() < maxDist);
 
-        if(facet.cellIndex != GEO::NO_CELL)
+        // cv: is the tetrahedron in distance 2*sigma behind the point p in the direction of the camera c (called Lcp in the paper) Vote for the last found facet
+        // Vote for the last intersected facet (farthest from the camera)
+        if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
-#pragma OMP_ATOMIC_UPDATE
-            _cellsAttr[facet.cellIndex].cellTWeight += weight;
+#pragma OMP_ATOMIC_WRITE
+            _cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight += weight;
         }
     }
 }
@@ -1977,26 +1992,15 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     for(int i = 0; i < verticesRandIds.size(); ++i)
     {
         const int vertexIndex = verticesRandIds[i];
-        GC_vertexInfo& v = _verticesAttr[vertexIndex];
+        const GC_vertexInfo& v = _verticesAttr[vertexIndex];
         if(v.isVirtual())
             continue;
 
         const Point3d& originPt = _verticesCoords[vertexIndex];
-        for(int c = 0; c < v.cams.size(); ++c)
+        // For each camera that has visibility over the vertex v (vertexIndex)
+        for(const int cam : v.cams)
         {
-            int nstepsFront = 0;
-            int nstepsBehind = 0;
-
-            int cam = v.cams[c];
-            float maxDist = 0.0f;
-            if(fixesSigma)
-            {
-                maxDist = nPixelSizeBehind;
-            }
-            else
-            {
-                maxDist = nPixelSizeBehind * mp->getCamPixelSize(originPt, cam);
-            }
+            const float maxDist = nPixelSizeBehind * (fixesSigma ? 1.0f : mp->getCamPixelSize(originPt, cam));
 
             float minJump = 10000000.0f;
             float minSilent = 10000000.0f;
@@ -2005,91 +2009,117 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             float midSilent = 10000000.0f;
 
             {
-                // True here mean nearest
-                const bool nearestFarest = true;
-                Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-                Point3d p = originPt; // HAS TO BE HERE !!!
-                bool ok = (facet.cellIndex != GEO::NO_CELL);
-                while(ok)
+                // Initialisation
+                GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
+                Point3d intersectPt = originPt;
+                const EDirection dir = EDirection::toTheCam;
+                const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1.0 : -1.0);
+
+                int nstepsFront = 0;
+
+                // As long as we find a next geometry
+                do
                 {
+                    // Keep previous informations
+                    const GeometryIntersection previousGeometry = geometry;
+                    const Point3d lastIntersectPt = intersectPt;
+
                     ++nstepsFront;
 
-                    const GC_cellInfo& c = _cellsAttr[facet.cellIndex];
-                    if((p - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
+                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+
+                    if (geometry.type == EGeometryType::None)
                     {
-                        minJump = std::min(minJump, c.emptinessScore);
-                        maxJump = std::max(maxJump, c.emptinessScore);
+                        // throw std::runtime_error("[DelaunayGraphCut::fillGraphPartPtRc] first loop: Geometry cannot be found.");
+                        ALICEVISION_LOG_TRACE("[Error]: forceTedgesByGradientIJCV toTheCam, cause: geometry cannot be found.");
+                        break;
                     }
-                    else
+
+                    if(geometry.type == EGeometryType::Facet)
                     {
+                        const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
+                        if((intersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
+                        {
+                            minJump = std::min(minJump, c.emptinessScore);
+                            maxJump = std::max(maxJump, c.emptinessScore);
+                        }
+                        else
+                        {
+                            minSilent = std::min(minSilent, c.emptinessScore);
+                            maxSilent = std::max(maxSilent, c.emptinessScore);
+                        }
+
+                        // Take the mirror facet to iterate over the next cell
+                        const Facet mFacet = mirrorFacet(geometry.facet);
+                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        {
+                            // throw std::runtime_error("[DelaunayGraphCut::fillGraphPartPtRc] first loop: Geometry cannot be found.");
+                            ALICEVISION_LOG_TRACE("[Error]: forceTedgesByGradientIJCV toTheCam, cause: invalidOrInfinite miror facet.");
+                            break;
+                        }
+                        geometry.facet = mFacet;
+                    }
+
+                    // Break only when we reach our camera vertex or our distance condition is unsatisfied
+                } while(!(geometry.type == EGeometryType::Vertex && (mp->CArr[cam] - intersectPt).size() < 1.0e-3) 
+                && (intersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist);
+                
+                avStepsFront += nstepsFront;
+                aAvStepsFront += 1;
+            }
+            {
+                // Initialisation
+                GeometryIntersection geometry(vertexIndex);
+                Point3d intersectPt = originPt;
+                const EDirection dir = EDirection::behindThePoint;
+                const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1 : -1);
+
+                int nstepsBehind = 0;
+
+                Facet lastIntersectedFacet;
+                // As long as we find a next geometry
+                do
+                {
+                    // Keep previous informations
+                    const GeometryIntersection previousGeometry = geometry;
+                    const Point3d lastIntersectPt = intersectPt;
+
+                    ++nstepsBehind;
+
+                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+
+                    if(geometry.type == EGeometryType::None)
+                    {
+                        lastIntersectedFacet = geometry.facet;
+                        // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified later) 
+                        if (previousGeometry.type == EGeometryType::Facet)
+                        {
+                            // throw std::runtime_error("[Error]: forceTedgesByGradientIJCV behindThePoint, cause: geometry cannot be found.");
+                            ALICEVISION_LOG_TRACE("[Error]: forceTedgesByGradientIJCV behindThePoint, cause: geometry cannot be found.");
+                        }
+                        // Break if we reach the end of the tetrahedralization volume
+                        break;
+                    }
+
+                    if(geometry.type == EGeometryType::Facet)
+                    {
+                        const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
                         minSilent = std::min(minSilent, c.emptinessScore);
                         maxSilent = std::max(maxSilent, c.emptinessScore);
-                    }
 
-                    Facet outFacet;
-                    Point3d intersectPt;
-                    // Intersection with the next facet in the current tetrahedron (facet.cellIndex) in order to find the cell nearest
-                    // to the cam which is intersected with cam-p ray
-                    // True here mean nearest
-                    const bool nearestFarest = true;
-                    if(((p - originPt).size() > (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) || // (2 + 2) * sigma
-                       !rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt))
-                    {
-                        ok = false;
-                    }
-                    else
-                    {
                         // Take the mirror facet to iterate over the next cell
-                        facet = mirrorFacet(outFacet);
-                        if(facet.cellIndex == GEO::NO_CELL)
-                            ok = false;
-                        p = intersectPt;
+                        const Facet mFacet = mirrorFacet(geometry.facet);
+                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        {
+                            // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
+                            break;
+                        }
+                        geometry.facet = mFacet;
                     }
-                }
-            }
 
-            {
-                // False here mean farest
-                const bool nearestFarest = false;
-                Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-                Point3d p = originPt; // HAS TO BE HERE !!!
-                bool ok = (facet.cellIndex != GEO::NO_CELL);
-                if(ok)
-                {
-                    midSilent = _cellsAttr[facet.cellIndex].emptinessScore;
-                }
+                } while((intersectPt - originPt).size() <= nsigmaBackSilentPart * maxDist);
 
-                while(ok)
-                {
-                    nstepsBehind++;
-                    const GC_cellInfo& c = _cellsAttr[facet.cellIndex];
-
-                    minSilent = std::min(minSilent, c.emptinessScore);
-                    maxSilent = std::max(maxSilent, c.emptinessScore);
-
-                    Facet outFacet;
-                    Point3d intersectPt;
-
-                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest
-                    // to the cam which is intersected with cam-p ray
-                    // False here mean farest
-                    const bool nearestFarest = false;
-                    if(((p - originPt).size() > nsigmaBackSilentPart * maxDist) || // (p-originPt).size() > 2 * sigma
-                       !rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt))
-                    {
-                        ok = false;
-                    }
-                    else
-                    {
-                        // Take the mirror facet to iterate over the next cell
-                        facet = mirrorFacet(outFacet);
-                        if(facet.cellIndex == GEO::NO_CELL)
-                            ok = false;
-                        p = intersectPt;
-                    }
-                }
-
-                if(facet.cellIndex != GEO::NO_CELL)
+                if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
                 {
                     // Equation 6 in paper
                     //   (g / B) < k_rel
@@ -2112,15 +2142,13 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         //(maxSilent-minSilent<maxSilentPartRange))
                     {
 #pragma OMP_ATOMIC_UPDATE
-                        _cellsAttr[facet.cellIndex].on += (maxJump - midSilent);
+                        _cellsAttr[lastIntersectedFacet.cellIndex].on += (maxJump - midSilent);
                     }
                 }
-            }
 
-            avStepsFront += nstepsFront;
-            aAvStepsFront += 1;
-            avStepsBehind += nstepsBehind;
-            nAvStepsBehind += 1;
+                avStepsBehind += nstepsBehind;
+                nAvStepsBehind += 1;
+            }
         }
     }
 
