@@ -288,6 +288,8 @@ int aliceVision_main(int argc, char* argv[])
     optionalParams.add_options()
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
             "Input filtered depth maps folder.")
+        ("boundingBox", po::value<BoundingBox>(&boundingBox),
+            "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
@@ -314,8 +316,6 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
-        ("boundingBox", po::value<BoundingBox>(&boundingBox),
-            "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
         ("universePercentile", po::value<double>(&universePercentile)->default_value(universePercentile),
             "universe percentile")
         ("estimateSpaceMinObservations", po::value<std::size_t>(&estimateSpaceMinObservations)->default_value(estimateSpaceMinObservations),
