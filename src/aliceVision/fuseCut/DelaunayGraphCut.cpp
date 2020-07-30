@@ -2705,11 +2705,11 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
     return me;
 }
 
-mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
+mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh(bool filter, const float& downscaleFactor, const std::function<float(const GC_cellInfo&)> getScore) const
 {
     ALICEVISION_LOG_INFO("Create mesh of the tetrahedralization.");
 
-    ALICEVISION_LOG_INFO("# vertixes: " << _verticesCoords.size());
+    ALICEVISION_LOG_INFO("# vertices: " << _verticesCoords.size());
     if(_cellsAttr.empty())
         return nullptr;
 
@@ -2742,7 +2742,7 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         displayAcc("acc_camSize", acc_camSize);
     }
 
-    float max_score = 1.0;
+    float maxScore = 1.0;
     {
         Accumulator acc_cellScore;
         Accumulator acc_cellSWeight;
@@ -2751,10 +2751,10 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         Accumulator acc_fullnessScore;
         Accumulator acc_emptinessScore;
         Accumulator acc_on;
+        Accumulator acc_selectedScore;
 
-        for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+        for(const GC_cellInfo& cellAttr : _cellsAttr)
         {
-            const GC_cellInfo& cellAttr = _cellsAttr[ci];
             acc_cellScore(cellAttr.cellSWeight - cellAttr.cellTWeight);
             acc_cellSWeight(cellAttr.cellSWeight);
             acc_cellTWeight(cellAttr.cellTWeight);
@@ -2767,6 +2767,8 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
             acc_fullnessScore(cellAttr.fullnessScore);
             acc_emptinessScore(cellAttr.emptinessScore);
             acc_on(cellAttr.on);
+
+            acc_selectedScore(getScore(cellAttr));
         }
         
         displayAcc("cellScore", acc_cellScore);
@@ -2776,9 +2778,17 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         displayAcc("fullnessScore", acc_fullnessScore);
         displayAcc("emptinessScore", acc_emptinessScore);
         displayAcc("on", acc_on);
-        max_score = 4.0f * extract::mean(acc_emptinessScore);
+
+        displayAcc("selected", acc_selectedScore);
+        maxScore = 4.0f * extract::mean(acc_selectedScore);
     }
-    ALICEVISION_LOG_DEBUG("createTetrahedralMesh: max_score: " << max_score);
+
+
+    ALICEVISION_LOG_DEBUG("createTetrahedralMesh: maxScore: " << maxScore);
+
+    // Prevent division by zero (getRGBFromJetColorMap)
+    if (maxScore == 0)
+        maxScore = 1;
 
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
@@ -2791,13 +2801,13 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
             {
                 const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
                 const GC_vertexInfo& vertexAttr = _verticesAttr[vi];
-                if(vertexAttr.cams.size() <= 3)
+                if(filter && vertexAttr.cams.size() <= 3)
                 {
                     ++weakVertex;
                 }
                 const Facet f1(ci, k);
                 const Facet f2 = mirrorFacet(f1);
-                if(isInvalidOrInfiniteCell(f2.cellIndex))
+                if(filter && isInvalidOrInfiniteCell(f2.cellIndex))
                 {
                     invalid = true;
                     continue;
@@ -2805,12 +2815,12 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
                 pointscellCenter = pointscellCenter + _verticesCoords[vi];
             }
             pointscellCenter = pointscellCenter / 4.0;
-            if(invalid)
+            if(filter && invalid)
             {
-                // If one of the facet is invalid, discard the tetrahedron.
+                // If one of the mirror facet is invalid, discard the tetrahedron.
                 continue;
             }
-            if (weakVertex >= 3)
+            if (filter && (weakVertex >= 3))
             {
                 // If the tetrahedron mainly composed of weak vertices, skip it.
                 // So keep tetrahedra that are linked to at least 3 good vertices.
@@ -2819,8 +2829,8 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         }
 
         const GC_cellInfo& cellAttr = _cellsAttr[ci];
-        const float score = cellAttr.emptinessScore; // cellAttr.cellSWeight - cellAttr.cellTWeight;
-        if(score < (max_score / 1000.0f))
+        const float score = getScore(cellAttr); // cellAttr.cellSWeight - cellAttr.cellTWeight;
+        if(filter && (score < (maxScore / 1000.0f)))
         {
             // Skip too low score cells
             continue;
@@ -2840,44 +2850,43 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
             {
                 points[k] = _verticesCoords[vertices[k]];
                 // Downscale cell for visibility
-                points[k] = pointscellCenter + ((points[k] - pointscellCenter) * 0.95);
+                points[k] = pointscellCenter + ((points[k] - pointscellCenter) * downscaleFactor);
             }
 
             const Facet f2 = mirrorFacet(f1);
-            //// do not need to test again: already filtered before
-            // if(isInvalidOrInfiniteCell(f2.cellIndex))
-            //     continue;
-
-            const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
-            const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
-
-            const Point3d N =
-                cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
-
-            const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
-            const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
-
             bool clockwise = false;
-            if(dd1 == 0.0)
+            
+            //// do not need to test again: already filtered before
+            if (!isInvalidOrInfiniteCell(f2.cellIndex))
             {
-                if(dd2 == 0.0)
+                const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
+                const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
+
+                const Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
+
+                const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
+                const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
+                if (dd1 == 0.0)
                 {
-                    ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
+                    if (dd2 == 0.0)
+                    {
+                        ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
+                    }
+                    if (dd2 > 0.0)
+                    {
+                        clockwise = true;
+                    }
                 }
-                if(dd2 > 0.0)
+                else
                 {
-                    clockwise = true;
-                }
-            }
-            else
-            {
-                if(dd1 < 0.0)
-                {
-                    clockwise = true;
+                    if (dd1 < 0.0)
+                    {
+                        clockwise = true;
+                    }
                 }
             }
 
-            const rgb color = getRGBFromJetColorMap(score / max_score);
+            const rgb color = getRGBFromJetColorMap(score / maxScore);
             const std::size_t vertexBaseIndex = me->pts.size();
             for(const Point3d& p: points)
             {
@@ -2908,6 +2917,87 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
 
     ALICEVISION_LOG_INFO("Extract mesh from Graph Cut done.");
     return me;
+}
+
+void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt)
+{
+    std::unique_ptr<mesh::Mesh> mesh(createTetrahedralMesh(false, 0.999f));
+    std::unique_ptr<mesh::Mesh> meshf(createTetrahedralMesh(true, 0.999f));
+
+    // hack add direction vector from fromPt to toPt
+    {
+        const Point3d dirVec = fromPt - toPt;
+        const Point3d deltaVec = (dirVec * 0.1f);
+
+        mesh->pts.push_back(toPt - deltaVec);
+        mesh->colors().push_back(rgb(255, 0, 0));
+        mesh->pts.push_back(fromPt + deltaVec);
+        mesh->colors().push_back(rgb(0, 0, 255));
+        mesh->pts.push_back(fromPt + deltaVec * 0.001f);
+        mesh->colors().push_back(rgb(0, 0, 255));
+
+        meshf->pts.push_back(toPt - deltaVec);
+        meshf->colors().push_back(rgb(255, 0, 0));
+        meshf->pts.push_back(fromPt + deltaVec);
+        meshf->colors().push_back(rgb(0, 0, 255));
+        meshf->pts.push_back(fromPt + deltaVec * 0.001f);
+        meshf->colors().push_back(rgb(0, 0, 255));
+    }
+    {
+        mesh::Mesh::triangle t;
+        t.alive = true;
+        t.v[0] = meshf->pts.size() - 3;
+        t.v[1] = meshf->pts.size() - 2;
+        t.v[2] = meshf->pts.size() - 1;
+        meshf->tris.push_back(t);
+    }
+    {
+        mesh::Mesh::triangle t;
+        t.alive = true;
+        t.v[0] = mesh->pts.size() - 3;
+        t.v[1] = mesh->pts.size() - 2;
+        t.v[2] = mesh->pts.size() - 1;
+        mesh->tris.push_back(t);
+    }
+
+    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    mesh->saveToObj(tempDirPath + "/" + filename + ".obj");
+    meshf->saveToObj(tempDirPath + "/" + filename + "Filtered.obj");
+}
+
+void DelaunayGraphCut::exportFullScoreMeshs()
+{
+    std::unique_ptr<mesh::Mesh> meshEmptiness(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.emptinessScore; }));
+    std::unique_ptr<mesh::Mesh> meshFullness(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.fullnessScore; }));
+    std::unique_ptr<mesh::Mesh> meshSWeight(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.cellSWeight; }));
+    std::unique_ptr<mesh::Mesh> meshTWeight(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.cellTWeight; }));
+    std::unique_ptr<mesh::Mesh> meshOn(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.on; }));
+
+    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+
+    meshEmptiness->saveToObj(tempDirPath + "/meshEmptiness.obj");
+    meshFullness->saveToObj(tempDirPath + "/meshFullness.obj");
+    meshSWeight->saveToObj(tempDirPath + "/meshSWeight.obj");
+    meshTWeight->saveToObj(tempDirPath + "/meshTWeight.obj");
+    meshOn->saveToObj(tempDirPath + "/meshOn.obj");
+}
+
+void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt)
+{
+    // Clean _cellsAttr emptinessScore
+    for (int i = 0; i < _cellsAttr.size(); ++i)
+        _cellsAttr[i].emptinessScore = 0.0f;
+
+    // Vote only for listed intersected geom facets
+    for (size_t i = 0; i < intersectedGeom.size(); i++)
+    {
+        const GeometryIntersection& geo = intersectedGeom[i];
+
+        if (geo.type == EGeometryType::Facet)
+            _cellsAttr[geo.facet.cellIndex].emptinessScore += i;
+    }
+
+    exportDebugMesh(filename + "_BackProp", fromPt, toPt);
 }
 
 void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>** out_fullSegsColor, int& out_nsegments)

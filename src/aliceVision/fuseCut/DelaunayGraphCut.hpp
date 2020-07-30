@@ -449,7 +449,10 @@ public:
     void leaveLargestFullSegmentOnly();
 
     mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
-    mesh::Mesh* createTetrahedralMesh() const;
+    mesh::Mesh* createTetrahedralMesh(bool filter = true, const float& downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
+    void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
+    void exportFullScoreMeshs();
+    void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
 };
 
 } // namespace fuseCut
