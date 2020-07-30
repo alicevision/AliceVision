@@ -10,12 +10,12 @@ set(matching_files_headers
   guidedMatching.hpp
   io.hpp
   matcherType.hpp
-  metric.hpp
-  Hamming.hpp
   CascadeHasher.hpp
   RegionsMatcher.hpp
   pairwiseAdjacencyDisplay.hpp
   supportEstimation.hpp
+  matchesFiltering.hpp
+  svgVisualization.hpp
 )
 
 # Sources
@@ -25,6 +25,8 @@ set(matching_files_sources
   matcherType.cpp
   RegionsMatcher.cpp
   supportEstimation.cpp
+  matchesFiltering.cpp
+  svgVisualization.cpp
 )
 
 alicevision_add_library(aliceVision_matching

@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace feature {
+namespace matching {
 
 /**
  * The Sixteen Named Colors

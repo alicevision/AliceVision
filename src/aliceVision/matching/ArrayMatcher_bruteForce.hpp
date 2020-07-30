@@ -7,19 +7,22 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/matching/ArrayMatcher.hpp"
-#include "aliceVision/matching/metric.hpp"
-#include "aliceVision/stl/indexedSort.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/matching/ArrayMatcher.hpp>
+#include <aliceVision/feature/metric.hpp>
+#include <aliceVision/stl/indexedSort.hpp>
+
 #include <aliceVision/config.hpp>
+
 #include <memory>
 #include <iostream>
+
 
 namespace aliceVision {
 namespace matching {
 
 // By default compute square(L2 distance).
-template < typename Scalar = float, typename Metric = L2_Simple<Scalar> >
+template < typename Scalar = float, typename Metric = feature::L2_Simple<Scalar> >
 class ArrayMatcher_bruteForce  : public ArrayMatcher<Scalar, Metric>
 {
   public:

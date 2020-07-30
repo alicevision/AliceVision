@@ -97,15 +97,35 @@ public:
     DelaunayGraphCut(mvsUtils::MultiViewParams* _mp);
     virtual ~DelaunayGraphCut();
 
-    /// Get absolute opposite vertex index
+    /**
+     * @brief Retrieve the global vertex index of the localVertexIndex of the facet.
+     * 
+     * @param f the facet
+     * @return the global vertex index
+     */
     inline VertexIndex getOppositeVertexIndex(const Facet& f) const
     {
         return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex);
     }
-    /// Get absolute vertex index
+
+    /**
+     * @brief Retrieve the global vertex index of a vertex from a facet and an relative index 
+     * compared to the localVertexIndex of the facet.
+     * 
+     * @param f the facet
+     * @param i the relative index (relative to the localVertexIndex of the facet)
+     * @return the global vertex index
+     */
     inline VertexIndex getVertexIndex(const Facet& f, int i) const
     {
         return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
+    }
+
+    inline const std::array<const Point3d*, 3> getFacetsPoints(const Facet& f) const
+    {
+        return {&(_verticesCoords[getVertexIndex(f, 0)]),
+                &(_verticesCoords[getVertexIndex(f, 1)]),
+                &(_verticesCoords[getVertexIndex(f, 2)])};
     }
 
     inline std::size_t getNbVertices() const
@@ -234,6 +254,17 @@ public:
         return localCells[lvi];
     }
 
+    /**
+     * @brief Retrieves the global indexes of neighboring cells using the global index of a vertex.
+     * 
+     * @param vi the global vertexIndex
+     * @return a vector of neighboring cell indexes
+     */
+    inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const
+    {
+        return _neighboringCellsPerVertex.at(vi);
+    }
+
     void initVertices();
     void computeDelaunay();
     void initCells();
@@ -251,32 +282,23 @@ public:
 
     void addPointsFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData);
     void addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist);
-    void addPointsToPreventSingularities(const Point3d Voxel[], float minDist);
+    void addPointsToPreventSingularities(const Point3d Voxel[8], float minDist);
 
     /**
      * @brief Add volume points to prevent singularities
      */
-    void addHelperPoints(int nGridHelperVolumePointsDim, const Point3d Voxel[], float minDist);
+    void addHelperPoints(int nGridHelperVolumePointsDim, const Point3d Voxel[8], float minDist);
 
     void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params);
-    void loadPrecomputedDensePoints(const StaticVector<int>* voxelsIds, const Point3d voxel[8], VoxelsGrid* ls);
-
-    void createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
-                                                   StaticVector<int>* voxelsIds, Point3d Voxel[8], VoxelsGrid* ls);
 
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
 
-    bool rayCellIntersection(const Point3d &camC, const Point3d &p, int c, Facet& out_facet, bool nearestFarest,
-                            Point3d& out_nlpi) const;
-    inline bool nearestNeighCellToTheCamOnTheRay(const Point3d &camC, Point3d& out_p, int tetrahedron, Facet &out_f1, Facet &f2,
-                                          Point3d& out_lpi) const;
-    inline bool farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet &f1, Facet &f2,
-                                         Point3d& lpi) const;
-    inline Facet getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex, int cam) const;
-    Facet getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi, Point3d& ptt) const;
-    Facet getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi, int cam) const;
-    int getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
+    bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, const Facet& inFacet, Facet& outFacet,
+                             bool nearestFarest, Point3d& outIntersectPt) const;
+
+    Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
+    Facet getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
@@ -285,23 +307,16 @@ public:
     double maxEdgeLength() const;
     Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
     double getFaceWeight(const Facet &f1) const;
-    float weightFromSim(float sim);
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind, bool labatutWeights,
+    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool labatutWeights,
                            bool fillOut, float distFcnHeight = 0.0f);
     void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam, float weight,
-                           bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind, bool fillOut,
+                           bool fixesSigma, float nPixelSizeBehind, bool fillOut,
                            float distFcnHeight);
 
-    void forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind);
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
-
-    void updateGraphFromTmpPtsCamsHexah(const StaticVector<int>& incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
-                                        bool labatutWeights, float distFcnHeight = 0.0f);
-    void updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
-                                          bool labatutWeights, float distFcnHeight);
 
     int setIsOnSurface();
 
@@ -313,16 +328,11 @@ public:
 
     void maxflow();
 
-    void reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
-                                bool update, Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
-                                const Point3d& spaceSteps);
-
+    void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
 
     void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
-    void createDensePointCloudFromPrecomputedDensePoints(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls);
 
-    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, VoxelsGrid* ls, const std::string& folderName, const std::string& tmpCamsPtsFolderName,
-                        bool removeSmallSegments, const Point3d& spaceSteps);
+    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -331,74 +341,14 @@ public:
 
     void graphCutPostProcessing();
 
-    void clearAllPointsInFreeSpace();
-    void clearAllPointsNotOnSurface();
-    void addNewPointsToOccupiedSpace();
-    void clearOutAddIn();
-    StaticVector<int>* getNearestTrisFromMeshTris(mesh::Mesh* otherMesh);
-
     void segmentFullOrFree(bool full, StaticVector<int>** inColors, int& nsegments);
     int removeBubbles();
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
 
     mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
+    mesh::Mesh* createTetrahedralMesh() const;
 };
-
-
-inline bool DelaunayGraphCut::nearestNeighCellToTheCamOnTheRay(const Point3d& camC, Point3d& out_p, int tetrahedron, Facet& out_f1,
-                                                      Facet& out_f2, Point3d& out_lpi) const
-{
-    out_f1.cellIndex = GEO::NO_CELL;
-    out_f1.localVertexIndex = GEO::NO_VERTEX;
-    out_f2.cellIndex = GEO::NO_CELL;
-    out_f2.localVertexIndex = GEO::NO_VERTEX;
-    out_lpi = out_p;
-
-    if(rayCellIntersection(camC, out_p, tetrahedron, out_f1, true, out_lpi) == true)
-    {
-        out_f2 = mirrorFacet(out_f1);
-        out_p = out_lpi;
-        return true;
-    }
-    return false;
-}
-
-inline bool DelaunayGraphCut::farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet& f1,
-                                                     Facet& f2, Point3d& lpi) const
-{
-    f1.cellIndex = GEO::NO_CELL;
-    f1.localVertexIndex = GEO::NO_VERTEX;
-    f2.cellIndex = GEO::NO_CELL;
-    f2.localVertexIndex = GEO::NO_VERTEX;
-    lpi = p;
-
-    if(rayCellIntersection(camC, p, tetrahedron, f1, false, lpi) == true)
-    {
-        f2 = mirrorFacet(f1);
-        p = lpi;
-        return true;
-    }
-
-    return false;
-}
-
-inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex,
-                                                                               int cam) const
-{
-    // if (btest) {
-    //	printf("cam %i pt %f %f %f\n",cam,p.x,p.y,p.z);
-    //	printf("ptid %i\n",vp->info().id);
-    //	printf("campos %f %f
-    //%f\n",mp->CArr[cam].x,mp->CArr[cam].y,mp->CArr[cam].z);
-    //};
-    if((cam < 0) || (cam >= mp->ncams))
-    {
-        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << vertexIndex);
-    }
-
-    return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
-}
 
 } // namespace fuseCut
 } // namespace aliceVision

@@ -82,7 +82,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
       {
         case BRUTE_FORCE_L2:
         {
-          typedef L2_Vectorized<unsigned char> MetricT;
+          typedef feature::L2_Vectorized<unsigned char> MetricT;
           typedef ArrayMatcher_bruteForce<unsigned char, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         } break;
@@ -95,7 +95,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 
         case CASCADE_HASHING_L2:
         {
-          typedef L2_Vectorized<unsigned char> MetricT;
+          typedef feature::L2_Vectorized<unsigned char> MetricT;
           typedef ArrayMatcher_cascadeHashing<unsigned char, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         } break;
@@ -112,7 +112,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
       {
         case BRUTE_FORCE_L2:
         {
-          typedef L2_Vectorized<float> MetricT;
+          typedef feature::L2_Vectorized<float> MetricT;
           typedef ArrayMatcher_bruteForce<float, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         } break;
@@ -125,7 +125,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
 
         case CASCADE_HASHING_L2:
         {
-          typedef L2_Vectorized<float> MetricT;
+          typedef feature::L2_Vectorized<float> MetricT;
           typedef ArrayMatcher_cascadeHashing<float, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         } break;
@@ -149,7 +149,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
       {
         case BRUTE_FORCE_L2:
         {
-          typedef L2_Vectorized<double> MetricT;
+          typedef feature::L2_Vectorized<double> MetricT;
           typedef ArrayMatcher_bruteForce<double, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         } break;
@@ -178,7 +178,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
     {
       case BRUTE_FORCE_HAMMING:
       {
-        typedef Hamming<unsigned char> Metric;
+        typedef feature::Hamming<unsigned char> Metric;
         typedef ArrayMatcher_bruteForce<unsigned char, Metric> MatcherT;
         out.reset(new matching::RegionsMatcher<MatcherT>(regions, false));
       } break;

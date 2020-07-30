@@ -629,12 +629,24 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
     accMaxZ(z);
   }
 
-  const double xMin = quantile(accMinX, quantile_probability = 1.0 - percentile);
-  const double yMin = quantile(accMinY, quantile_probability = 1.0 - percentile);
-  const double zMin = quantile(accMinZ, quantile_probability = 1.0 - percentile);
-  const double xMax = quantile(accMaxX, quantile_probability = percentile);
-  const double yMax = quantile(accMaxY, quantile_probability = percentile);
-  const double zMax = quantile(accMaxZ, quantile_probability = percentile);
+  // Remove a percentile of the observations (to remove unstable points)
+  double xMin = quantile(accMinX, quantile_probability = 1.0 - percentile);
+  double yMin = quantile(accMinY, quantile_probability = 1.0 - percentile);
+  double zMin = quantile(accMinZ, quantile_probability = 1.0 - percentile);
+  double xMax = quantile(accMaxX, quantile_probability = percentile);
+  double yMax = quantile(accMaxY, quantile_probability = percentile);
+  double zMax = quantile(accMaxZ, quantile_probability = percentile);
+
+  // Add a margin on the result
+  const double xMargin = (xMax - xMin) * 0.05;
+  const double yMargin = (yMax - yMin) * 0.05;
+  const double zMargin = (zMax - zMin) * 0.05;
+  xMin -= xMargin;
+  yMin -= yMargin;
+  zMin -= zMargin;
+  xMax += xMargin;
+  yMax += yMargin;
+  zMax += zMargin;
 
   hexah[0] = Point3d(xMax, yMax, zMax);
   hexah[1] = Point3d(xMin, yMax, zMax);
@@ -766,7 +778,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                 }
 
                 int nnoisePts = ((percNoisePts / 100.0f) * (float)(idsAlive->size()));
-                StaticVector<int>* randIdsAlive = mvsUtils::createRandomArrayOfIntegers(idsAlive->size());
+                const std::vector<int> randIdsAlive = mvsUtils::createRandomArrayOfIntegers(idsAlive->size());
 
                 srand(time(nullptr));
 
@@ -775,7 +787,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                     for(int x = 0; x < w; ++x)
                     {
                         int id = y * w + x;
-                        int i = (*idsAlive)[(*randIdsAlive)[id]];
+                        int i = (*idsAlive)[randIdsAlive[id]];
                         double depth = depthMap[i];
 
                         double sim = simMap[i];
@@ -823,7 +835,6 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                     mvsUtils::printfElapsedTime(t1);
 
                 delete idsAlive;
-                delete randIdsAlive;
             }
             else
             {
