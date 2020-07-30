@@ -408,13 +408,14 @@ struct ResidualErrorFunctor_PinholeRadialK3
     {
       const T * cam_R = subpose_Rt;
       const T * cam_t = &subpose_Rt[3];
-      // Rotate the point according to the camera rotation
-      ceres::AngleAxisRotatePoint(cam_R, pos_proj, pos_proj);
+      // Rotate the point according to the camera rotation. In-place rotation not supported by Ceres
+      T pos_proj_tmp[3];
+      ceres::AngleAxisRotatePoint(cam_R, pos_proj, pos_proj_tmp);
 
       // Apply the camera translation
-      pos_proj[0] += cam_t[0];
-      pos_proj[1] += cam_t[1];
-      pos_proj[2] += cam_t[2];
+      pos_proj[0] = pos_proj_tmp[0] + cam_t[0];
+      pos_proj[1] = pos_proj_tmp[1] + cam_t[1];
+      pos_proj[2] = pos_proj_tmp[2] + cam_t[2];
     }
 
     // Transform the point from homogeneous to euclidean (undistorted point)
