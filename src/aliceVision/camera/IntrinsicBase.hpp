@@ -464,7 +464,8 @@ protected:
 };
 
 /**
- * @brief Return the angle (degree) between two bearing vector rays
+ * @brief Apply intrinsic and extrinsic parameters to unit vector
+ * from the cameras focus to a point on the camera plane
  * @param[in] pose Extrinsic pose
  * @param[in] intrinsic Intrinsic camera paremeters
  * @param[in] x Point in image

@@ -86,7 +86,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     
     // Greedy algorithm almost always finds an acceptable angle in 1-5 iterations (if it exists).
     // It works by greedily chasing the first larger view angle found from the current greedy index.
-    // View angles have a spartial distribution, so greedily jumping over larger and larger angles
+    // View angles have a sparial distribution, so greedily jumping over larger and larger angles
     // forces the greedy index towards the outside of the distribution.
     double dGreedyCos = 1.1;
     Eigen::Matrix<double, 3, Eigen::Dynamic>::Index greedyI = 0;
