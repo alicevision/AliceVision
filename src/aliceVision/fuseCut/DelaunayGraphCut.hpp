@@ -354,12 +354,6 @@ public:
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
 
-    bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, const Facet& inFacet, Facet& outFacet,
-                             bool nearestFarest, Point3d& outIntersectPt) const;
-
-    Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
-    Facet getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
-
     /**
      * @brief Function that returns the next geometry intersected by the ray.
      * The function handles different cases, whether we come from an edge, a facet or a vertex.
