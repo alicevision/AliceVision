@@ -264,11 +264,11 @@ public:
 
         std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
         int coutInvalidVertices = 0;
-        for(CellIndex ci = 0, nbCells = _tetrahedralization->nb_cells(); ci < nbCells; ++ci)
+        for (CellIndex ci = 0; ci < _tetrahedralization->nb_cells(); ++ci)
         {
             for(VertexIndex k = 0; k < 4; ++k)
             {
-                CellIndex vi = _tetrahedralization->cell_vertex(ci, k);
+                const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
                 if(vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
                 {
                     ++coutInvalidVertices;
@@ -298,7 +298,7 @@ public:
      * @param lvi
      * @return global index of the lvi'th neighboring cell
      */
-    CellIndex vertexToCells(VertexIndex vi, int lvi) const
+    inline CellIndex vertexToCells(VertexIndex vi, int lvi) const
     {
         const std::vector<CellIndex>& localCells = _neighboringCellsPerVertex.at(vi);
         if(lvi >= localCells.size())

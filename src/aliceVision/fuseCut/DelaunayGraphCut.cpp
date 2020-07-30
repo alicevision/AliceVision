@@ -24,7 +24,9 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
+
 #include <random>
+#include <stdexcept>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -493,8 +495,6 @@ void DelaunayGraphCut::computeDelaunay()
 
 void DelaunayGraphCut::initCells()
 {
-    ALICEVISION_LOG_DEBUG("initCells ...\n");
-
     _cellsAttr.resize(_tetrahedralization->nb_cells()); // or nb_finite_cells() if keeps_infinite()
 
     ALICEVISION_LOG_INFO(_cellsAttr.size() << " cells created by tetrahedralization.");
@@ -513,7 +513,7 @@ void DelaunayGraphCut::initCells()
         }
     }
 
-    ALICEVISION_LOG_DEBUG("initCells done\n");
+    ALICEVISION_LOG_DEBUG("initCells [" << _tetrahedralization->nb_cells() << "] done");
 }
 
 void DelaunayGraphCut::displayStatistics()
@@ -1635,7 +1635,6 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
             nAvCams += 1;
         }
     }
-
     ALICEVISION_LOG_DEBUG("avStepsFront " << avStepsFront);
     ALICEVISION_LOG_DEBUG("avStepsFront = " << mvsUtils::num2str(avStepsFront) << " // " << mvsUtils::num2str(aAvStepsFront));
     ALICEVISION_LOG_DEBUG("avStepsBehind = " << mvsUtils::num2str(avStepsBehind) << " // " << mvsUtils::num2str(nAvStepsBehind));

@@ -455,7 +455,7 @@ int aliceVision_main(int argc, char* argv[])
 
                     if (boundingBox.isInitialized())
                         boundingBox.toHexahedron(&hexah[0]);
-                    else if(meshingFromDepthMaps && !estimateSpaceFromSfM)
+                    else if(meshingFromDepthMaps && (!estimateSpaceFromSfM || sfmData.getLandmarks().empty()))
                       fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
                     else
                       fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
