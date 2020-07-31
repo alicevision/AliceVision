@@ -49,6 +49,137 @@ typedef struct {
   std::string weights_path;
 } ConfigView;
 
+/**
+ * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
+ *
+ * @see MaxFlow_CSR which use less memory.
+ */
+class MaxFlow_AdjList
+{
+public:
+    using NodeType = int;
+    using ValueType = float;
+
+    using Traits = boost::adjacency_list_traits<
+                boost::vecS,  // OutEdgeListS
+                boost::vecS,  // VertexListS
+                boost::directedS,
+                boost::vecS   // EdgeListS
+                >;
+    using edge_descriptor = typename Traits::edge_descriptor;
+    using vertex_descriptor = typename Traits::vertex_descriptor;
+    using vertex_size_type = typename Traits::vertices_size_type;
+    struct Edge {
+        ValueType capacity{};
+        ValueType residual{};
+        edge_descriptor reverse;
+    };
+    using Graph = boost::adjacency_list<boost::vecS,        // OutEdgeListS
+                                        boost::vecS,        // VertexListS
+                                        boost::directedS,
+                                        boost::no_property, // VertexProperty
+                                        Edge,               // EdgeProperty
+                                        boost::no_property, // GraphProperty
+                                        boost::vecS         // EdgeListS
+                                        >;
+    using VertexIterator = typename boost::graph_traits<Graph>::vertex_iterator;
+
+public:
+    explicit MaxFlow_AdjList(size_t numNodes)
+        : _graph(numNodes+2)
+        , _S(NodeType(numNodes))
+        , _T(NodeType(numNodes+1))
+    {
+        VertexIterator vi, vi_end;
+        for(boost::tie(vi, vi_end) = vertices(_graph); vi != vi_end; ++vi)
+        {
+            _graph.m_vertices[*vi].m_out_edges.reserve(9);
+        }
+        _graph.m_vertices[numNodes].m_out_edges.reserve(numNodes);
+        _graph.m_vertices[numNodes+1].m_out_edges.reserve(numNodes);
+    }
+
+    inline void addNodeToSource(NodeType n, ValueType source)
+    {
+        assert(source >= 0);
+        
+        edge_descriptor edge(boost::add_edge(_S, n, _graph).first);
+        edge_descriptor reverseEdge(boost::add_edge(n, _S, _graph).first);
+
+        _graph[edge].capacity = source;
+        _graph[edge].reverse = reverseEdge;
+        _graph[reverseEdge].reverse = edge;
+        _graph[reverseEdge].capacity = source;
+    }
+
+    inline void addNodeToSink(NodeType n, ValueType sink)
+    {
+        assert(sink >= 0);
+        
+        edge_descriptor edge(boost::add_edge(_T, n, _graph).first);
+        edge_descriptor reverseEdge(boost::add_edge(n, _T, _graph).first);
+
+        _graph[edge].capacity = sink;
+        _graph[edge].reverse = reverseEdge;
+        _graph[reverseEdge].reverse = edge;
+        _graph[reverseEdge].capacity = sink;
+    }
+
+    inline void addEdge(NodeType n1, NodeType n2, ValueType capacity, ValueType reverseCapacity)
+    {
+        assert(capacity >= 0 && reverseCapacity >= 0);
+
+        edge_descriptor edge(boost::add_edge(n1, n2, _graph).first);
+        edge_descriptor reverseEdge(boost::add_edge(n2, n1, _graph).first);
+        _graph[edge].capacity = capacity;
+        _graph[edge].reverse = reverseEdge;
+
+        _graph[reverseEdge].capacity = reverseCapacity;
+        _graph[reverseEdge].reverse = edge;
+    }
+
+    void printStats() const;
+    void printColorStats() const;
+
+    inline ValueType compute()
+    {
+        vertex_size_type nbVertices(boost::num_vertices(_graph));
+        _color.resize(nbVertices, boost::white_color);
+        std::vector<edge_descriptor> pred(nbVertices);
+        std::vector<vertex_size_type> dist(nbVertices);
+
+        ValueType v = boost::boykov_kolmogorov_max_flow(_graph,
+            boost::get(&Edge::capacity, _graph),
+            boost::get(&Edge::residual, _graph),
+            boost::get(&Edge::reverse, _graph),
+            &pred[0],
+            &_color[0],
+            &dist[0],
+            boost::get(boost::vertex_index, _graph),
+            _S, _T
+            );
+
+        return v;
+    }
+
+    /// is empty
+    inline bool isSource(NodeType n) const
+    {
+        return (_color[n] == boost::black_color);
+    }
+    /// is full
+    inline bool isTarget(NodeType n) const
+    {
+        return (_color[n] == boost::white_color);
+    }
+
+protected:
+    Graph _graph;
+    std::vector<boost::default_color_type> _color;
+    const NodeType _S;  //< emptyness
+    const NodeType _T;  //< fullness
+};
+
 bool feathering(aliceVision::image::Image<image::RGBfColor> & output, const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask) {
 
   std::vector<image::Image<image::RGBfColor>> feathering;
@@ -1072,7 +1203,6 @@ public:
       _labels = existing_labels;
     }
     else {
-      srand(3);
       /* 
       Initialize labels with a valid (but random) label
       */
@@ -1102,14 +1232,14 @@ public:
 
         ALICEVISION_LOG_INFO("Graphcut expansion (iteration " << i << ") for label " << info.first);
 
-        image::Image<IndexT> backup = _labels;
+        auto backup = _labels.block(info.second.t, info.second.l, info.second.h, info.second.w);
 
         double base_cost = cost(info.first);
         alphaExpansion(info.first);
         double new_cost = cost(info.first);
 
         if (new_cost > base_cost) {
-          _labels = backup;
+          _labels.block(info.second.t, info.second.l, info.second.h, info.second.w) = backup;
         }
         else if (new_cost < base_cost) {
           change = true;
@@ -1334,7 +1464,7 @@ public:
     }
     
     /*Create graph*/
-    fuseCut::MaxFlow_AdjList gc(count);
+    MaxFlow_AdjList gc(count);
     size_t countValid = 0;
 
     for (int i = 0; i < rect.h; i++) {
@@ -1348,21 +1478,41 @@ public:
         /* Get this pixel ID */
         int node_id = ids(i, j);
 
+        int im1 = std::max(i - 1, 0);
+        int jm1 = std::max(j - 1, 0);
+        int ip1 = std::min(i + 1, rect.h - 1);
+        int jp1 = std::min(j + 1, rect.w - 1);
+
         if (mask(i, j) == 1) { 
+
+          /* Only add nodes close to borders */
+          if (mask(im1, jm1) == 1 && mask(im1, j) == 1 && mask(im1, jp1) == 1 &&
+              mask(i, jm1) == 1 && mask(i, jp1) == 1 &&
+              mask(ip1, jm1) == 1 && mask(ip1, j) == 1 && mask(ip1, jp1) == 1) {
+            continue;
+          }
+
           /*
           This pixel is only seen by alpha. 
           Enforce its domination by stating that removing this pixel 
           from alpha territoy is infinitly costly (impossible).
           */
-          gc.addNode(node_id, 100000, 0);
+          gc.addNodeToSource(node_id, 100000);
         }
         else if (mask(i, j) == 2) {
+          /* Only add nodes close to borders */
+          if (mask(im1, jm1) == 2 && mask(im1, j) == 2 && mask(im1, jp1) == 2 &&
+              mask(i, jm1) == 2 && mask(i, jp1) == 2 &&
+              mask(ip1, jm1) == 2 && mask(ip1, j) == 2 && mask(ip1, jp1) == 2) {
+            continue;
+          }
+          
           /*
           This pixel is only seen by an ennemy. 
           Enforce its domination by stating that removing this pixel 
           from ennemy territory is infinitly costly (impossible).
           */
-          gc.addNode(node_id, 0, 100000);
+          gc.addNodeToSink(node_id, 100000);
         }
         else if (mask(i, j) == 3) {
 
@@ -1372,8 +1522,8 @@ public:
           Connect it to both alpha and ennemy for the moment 
           (Graph cut will not allow a pixel to have both owners at the end).
           */
-          gc.addNode(node_id, 0.00000001, 0);
-          gc.addNode(node_id, 0, 0.00000001);
+          gc.addNodeToSource(node_id, 0);
+          gc.addNodeToSink(node_id, 0);
           countValid++;
         }
       }
