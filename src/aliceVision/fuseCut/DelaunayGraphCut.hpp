@@ -449,6 +449,7 @@ public:
     void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
     void exportFullScoreMeshs();
     void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
+    void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
 
 } // namespace fuseCut

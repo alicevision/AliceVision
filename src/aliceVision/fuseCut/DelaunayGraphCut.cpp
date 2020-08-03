@@ -3001,6 +3001,48 @@ void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename, st
     exportDebugMesh(filename + "_BackProp", fromPt, toPt);
 }
 
+void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit)
+{
+    assert(boost::filesystem::path(filePath).extension().string() == std::string(".csv"));
+
+    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
+    std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
+
+    std::vector<int> idx(_cellsAttr.size());
+    std::iota(idx.begin(), idx.end(), 0);
+    std::shuffle(idx.begin(), idx.end(), generator);
+
+    std::ofstream csv(filePath);
+    const char sep = ','; // separator
+    csv << "fullnessScore" << sep <<
+        "emptinessScore" << sep <<
+        "cellSWeight" << sep <<
+        "cellTWeight" << sep <<
+        "on" << sep <<
+        "gEdgeVisWeight0" << sep <<
+        "gEdgeVisWeight1" << sep <<
+        "gEdgeVisWeight2" << sep <<
+        "gEdgeVisWeight3" << '\n';
+    const size_t size = sizeLimit > 0 ? std::min(sizeLimit, _cellsAttr.size()) : _cellsAttr.size();
+    for (size_t i = 0; i < size; ++i)
+    {
+        const GC_cellInfo& cellAttr = _cellsAttr[idx.back()];
+        idx.pop_back();
+        csv << cellAttr.fullnessScore << sep <<
+            cellAttr.emptinessScore << sep <<
+            cellAttr.cellSWeight << sep <<
+            cellAttr.cellTWeight << sep <<
+            cellAttr.on << sep <<
+            cellAttr.gEdgeVisWeight[0] << sep <<
+            cellAttr.gEdgeVisWeight[1] << sep <<
+            cellAttr.gEdgeVisWeight[2] << sep <<
+            cellAttr.gEdgeVisWeight[3] << '\n';
+    }
+
+    csv.close();
+    ALICEVISION_LOG_INFO("Csv exported: " << filePath);
+}
+
 void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>** out_fullSegsColor, int& out_nsegments)
 {
     ALICEVISION_LOG_DEBUG("segmentFullOrFree: segmenting connected space.");
