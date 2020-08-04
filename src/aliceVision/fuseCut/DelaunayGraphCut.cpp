@@ -1289,7 +1289,7 @@ DelaunayGraphCut::GeometryIntersection
 DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection& inGeometry,
     const Point3d& originPt,
     const Point3d& dirVect, Point3d& intersectPt,
-    const float epsilon, const Point3d& lastIntersectPt) const
+    const double epsilonFactor, const Point3d& lastIntersectPt) const
 {
 
     switch (inGeometry.type)
@@ -1307,7 +1307,7 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
 
             const Facet intersectionFacet(tetrahedronIndex, i);
 
-            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilon, &lastIntersectPt);
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilonFactor, &lastIntersectPt);
             if (result.type != EGeometryType::None)
                 return result;
         }
@@ -1327,7 +1327,7 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
             // Define the facet to intersect
             const Facet facet(adjCellIndex, localVertexIndex);
 
-            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilon, &lastIntersectPt);
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, &lastIntersectPt);
             if (result.type != EGeometryType::None)
                 return result;
         }
@@ -1351,7 +1351,7 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
 
             for (const Facet& facet : opositeFacets)
             {
-                const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilon, &lastIntersectPt);
+                const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, &lastIntersectPt);
                 if (result.type != EGeometryType::None)
                     return result;
             }
@@ -1370,7 +1370,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     const Point3d& DirVec,
     const DelaunayGraphCut::Facet& facet,
     Point3d& intersectPt,
-    const float epsilon, const Point3d* lastIntersectPt) const
+    const double epsilonFactor, const Point3d* lastIntersectPt) const
 {
     const VertexIndex AvertexIndex = getVertexIndex(facet, 0);
     const VertexIndex BvertexIndex = getVertexIndex(facet, 1);
@@ -1380,6 +1380,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     const Point3d* B = &_verticesCoords[BvertexIndex];
     const Point3d* C = &_verticesCoords[CvertexIndex];
 
+    const double epsilon = std::min(std::min((*A - *B).size(), (*B - *C).size()), (*A - *C).size()) * epsilonFactor;
     Point3d tempIntersectPt;
     const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
 
