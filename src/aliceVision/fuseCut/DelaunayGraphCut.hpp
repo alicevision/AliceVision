@@ -138,6 +138,24 @@ public:
         void append(const GeometryIntersection& geom, const Point3d& intersectPt);
     };
 
+    /**
+     * @brief  Used for debug purposes to store count about geometries intersected during fillGraph and forceTedges.
+     */
+    struct GeometriesCount
+    {
+        size_t facets = 0;
+        size_t vertices = 0;
+        size_t edges = 0;
+
+        GeometriesCount& operator+=(const GeometriesCount& gc)
+        {
+            edges += gc.edges;
+            vertices += gc.vertices;
+            facets += gc.facets;
+
+            return *this;
+        }
+    };
 
     mvsUtils::MultiViewParams* mp;
 
@@ -410,7 +428,7 @@ public:
 
     virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool labatutWeights,
                            bool fillOut, float distFcnHeight = 0.0f);
-    void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam, float weight,
+    void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam, float weight,
                            bool fixesSigma, float nPixelSizeBehind, bool fillOut,
                            float distFcnHeight);
 
