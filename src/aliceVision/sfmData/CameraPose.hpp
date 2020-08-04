@@ -87,9 +87,6 @@ private:
   geometry::Pose3 _transform;
   /// camera lock
   bool _locked = false;
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 } // namespace sfmData
