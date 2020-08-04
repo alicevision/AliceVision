@@ -737,6 +737,27 @@ int aliceVision_main(int argc, char** argv)
   if(useMultiSfM)
     aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
 
+  if(method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
+  {
+      const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
+      if(reconstructedViews == 0)
+      {
+          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching (no known pose).");
+          method = EImageMatchingMethod::VOCABULARYTREE;
+      }
+      else if(reconstructedViews == sfmDataA.getViews().size())
+      {
+          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use FRUSTUM intersection from known poses.");
+          method = EImageMatchingMethod::FRUSTUM;
+      }
+      else
+      {
+          ALICEVISION_LOG_ERROR(reconstructedViews << " reconstructed views for " << sfmDataA.getViews().size()
+                                                   << " views.");
+          throw std::runtime_error("FRUSTUM_OR_VOCABULARYTREE: Mixing reconstructed and unreconstructed Views.");
+      }
+  }
+
   // if not enough images to use the VOCABULARYTREE use the EXHAUSTIVE method
   if(method == EImageMatchingMethod::VOCABULARYTREE || method == EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE)
   {
@@ -802,33 +823,7 @@ int aliceVision_main(int argc, char** argv)
     }
     case EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE:
     {
-        const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
-        if(reconstructedViews == 0)
-        {
-            ALICEVISION_LOG_INFO("Use VOCABULARYTREE matching (no known pose).");
-            conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode, featuresFolders, sfmDataA,
-                             nbMaxDescriptors, sfmDataFilenameA, sfmDataB, sfmDataFilenameB, useMultiSfM,
-                             descriptorsFilesA, numImageQuery, selectedPairs);
-        }
-        else if(reconstructedViews == sfmDataA.getViews().size())
-        {
-            ALICEVISION_LOG_INFO("Use FRUSTUM intersection from known poses.");
-
-            // For all cameras with valid extrinsic/intrinsic, we select the camera with common visibilities based on
-            // cameras' frustum. We use an epsilon near value for the frustum, to ensure that mulitple images with a pure
-            // rotation will not intersect at the nodal point.
-            PairSet pairs = sfm::FrustumFilter(sfmDataA, 0.01).getFrustumIntersectionPairs();
-            for(const auto& p : pairs)
-            {
-                selectedPairs[p.first].insert(p.second);
-            }
-        }
-        else
-        {
-            ALICEVISION_LOG_ERROR(reconstructedViews << " reconstructed views for " << sfmDataA.getViews().size() << " views.");
-            throw std::runtime_error("Mixing reconstructed and unreconstructed Views.");
-        }
-        break;
+        throw std::runtime_error("FRUSTUM_OR_VOCABULARYTREE should have been decided before.");
     }
   }
 
