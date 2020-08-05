@@ -1680,8 +1680,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
         // Initialisation
         GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
         Point3d intersectPt = originPt;
-        const EDirection dir = EDirection::toTheCam;
-        const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1.0 : -1.0);
+        // toTheCam
+        const Point3d dirVect = (mp->CArr[cam] - originPt).normalize();
 
 #ifdef ALICEVISION_DEBUG_VOTE
         IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
@@ -1759,8 +1759,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
         // Initialisation
         GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
         Point3d intersectPt = originPt;
-        const EDirection dir = EDirection::behindThePoint;
-        const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1 : -1);
+        // behindThePoint
+        const Point3d dirVect = (originPt - mp->CArr[cam]).normalize();
 
 #ifdef ALICEVISION_DEBUG_VOTE
         IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
@@ -1912,8 +1912,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                 // Initialisation
                 GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
                 Point3d intersectPt = originPt;
-                const EDirection dir = EDirection::toTheCam;
-                const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1.0 : -1.0);
+                // toTheCam
+                const Point3d dirVect = (mp->CArr[cam] - originPt).normalize();
 
 #ifdef ALICEVISION_DEBUG_VOTE
                 IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
@@ -1983,8 +1983,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                 // Initialisation
                 GeometryIntersection geometry(vertexIndex);
                 Point3d intersectPt = originPt;
-                const EDirection dir = EDirection::behindThePoint;
-                const Point3d dirVect = (mp->CArr[cam] - originPt).normalize() * (dir == EDirection::toTheCam ? 1 : -1);
+                // behindThePoint
+                const Point3d dirVect = (originPt - mp->CArr[cam]).normalize();
 
 #ifdef ALICEVISION_DEBUG_VOTE
                 IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
