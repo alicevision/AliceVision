@@ -66,27 +66,38 @@ public:
 
     struct Facet
     {
+        CellIndex cellIndex = GEO::NO_CELL;
+        /// local opposite vertex index
+        VertexIndex localVertexIndex = GEO::NO_VERTEX;
+
         Facet(){}
         Facet(CellIndex ci, VertexIndex lvi)
             : cellIndex(ci)
             , localVertexIndex(lvi)
         {}
 
-        CellIndex cellIndex = GEO::NO_CELL;
-        /// local opposite vertex index
-        VertexIndex localVertexIndex = GEO::NO_VERTEX;
+        bool operator==(const Facet& f) const
+        {
+            return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex;
+        }
     };
 
     struct Edge
     {
+        VertexIndex v0 = GEO::NO_VERTEX;
+        VertexIndex v1 = GEO::NO_VERTEX;
+
         Edge() = default;
         Edge(VertexIndex v0_, VertexIndex v1_)
             : v0{v0_}
             , v1{v1_}
         {}
 
-        VertexIndex v0 = GEO::NO_VERTEX;
-        VertexIndex v1 = GEO::NO_VERTEX;
+        bool operator==(const Edge& e) const
+        {
+            return v0 == e.v0 && v1 == e.v1;
+        }
+
     };
 
     enum class EGeometryType
@@ -119,6 +130,24 @@ public:
             : edge{e}
             , type{EGeometryType::Edge}
         {}
+
+        bool operator==(const GeometryIntersection& g) const
+        {
+            if (type != g.type)
+                return false;
+
+            switch (type)
+            {
+            case EGeometryType::Vertex:
+                return vertexIndex == g.vertexIndex;
+            case EGeometryType::Edge:
+                return edge == g.edge;
+            case EGeometryType::Facet:
+                return facet == g.facet;
+            case EGeometryType::None:
+                return true;
+            }
+        }
     };
 
     struct IntersectionHistory
