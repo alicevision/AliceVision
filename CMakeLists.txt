@@ -21,6 +21,12 @@ option(AV_USE_CUDA "Enable CUDA" ON)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
+SET(CMAKE_RANLIB "gcc-ranlib")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+SET(CMAKE_AR  "gcc-ar")
+SET(CMAKE_RANLIB "gcc-ranlib")
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
 endif()
@@ -253,6 +259,9 @@ ExternalProject_Add(${SUITESPARSE_TARGET}
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
+       # Patch for CUDA 11: SuiteSparse hardcodes compute_30, but this has been dropped in CUDA 11.
+       # Can be removed when https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/56 is resolved.
+       PATCH_COMMAND sh -c "test `nvcc --version | grep -o 'release [0-9]*' | grep -o '[0-9]*'` -gt 10" && sed -i /compute_30/d ${CMAKE_CURRENT_BINARY_DIR}/suitesparse/SuiteSparse_config/SuiteSparse_config.mk || true
        BUILD_COMMAND   cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} library CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
        INSTALL_COMMAND cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} install library INSTALL=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
        DEPENDS ${LAPACK_TARGET}
