@@ -462,6 +462,34 @@ void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& 
     mvsUtils::printfElapsedTime(t1);
 }
 
+
+std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByGeometry(const GeometryIntersection& g) const
+{
+    switch (g.type)
+    {
+    case EGeometryType::Edge:
+        return getNeighboringCellsByEdge(g.edge);
+    case EGeometryType::Vertex:
+        return getNeighboringCellsByVertexIndex(g.vertexIndex);
+    case EGeometryType::Facet:
+        return getNeighboringCellsByFacet(g.facet);
+    case EGeometryType::None:
+        throw std::runtime_error("[error] getNeighboringCellsByGeometry: an undefined/None geometry has no neighboring cells.");
+    }
+}
+
+std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByFacet(const Facet& f) const
+{
+    std::vector<CellIndex> neighboringCells;
+    neighboringCells.push_back(f.cellIndex);
+
+    const Facet mFacet = mirrorFacet(f);
+    if(!isInvalidOrInfiniteCell(mFacet.cellIndex))
+        neighboringCells.push_back(mFacet.cellIndex);
+
+    return neighboringCells;
+}
+
 std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByEdge(const Edge& e) const
 {
     const std::vector<CellIndex>& v0ci = getNeighboringCellsByVertexIndex(e.v0);

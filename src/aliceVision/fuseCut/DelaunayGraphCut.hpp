@@ -336,6 +336,23 @@ public:
         return localCells[lvi];
     }
 
+
+    /**
+     * @brief Retrieves the global indexes of neighboring cells around a geometry.
+     *
+     * @param g the concerned geometry
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByGeometry(const GeometryIntersection& g) const;
+
+    /**
+     * @brief Retrieves the two global indexes of neighboring cells using a facet.
+     *
+     * @param f the concerned facet
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByFacet(const Facet& f) const;
+
     /**
      * @brief Retrieves the global indexes of neighboring cells using the global index of a vertex.
      * 
