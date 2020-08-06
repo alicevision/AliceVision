@@ -1731,8 +1731,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #endif
         outTotalStepsFront = 0;
         Facet lastIntersectedFacet;
-        // As long as we find a next geometry
-        do
+        // Break only when we reach our camera vertex (as long as we find a next geometry)
+        while (geometry.type != EGeometryType::Vertex || (mp->CArr[cam] - intersectPt).size() >= 1.0e-3)
         {
             // Keep previous informations
             const GeometryIntersection previousGeometry = geometry;
@@ -1744,7 +1744,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
             ++outTotalStepsFront;
 
             geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
-            
+
             if (geometry.type == EGeometryType::None)
             {
 #ifdef ALICEVISION_DEBUG_VOTE
@@ -1755,22 +1755,23 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 break;
             }
 
-            if(geometry.type == EGeometryType::Facet)
+            if (geometry.type == EGeometryType::Facet)
             {
                 ++outFrontCount.facets;
-                // Vote for the cell between the previous vertex/edge and the intersected facet
-                // Because if there is an edge or a vertex, no vote has been made, we have to vote here for the right facet once we find it
-                if(previousGeometry.type != EGeometryType::Facet)
                 {
+#pragma OMP_ATOMIC_UPDATE
                     _cellsAttr[geometry.facet.cellIndex].emptinessScore += weight;
                 }
 
-                const float dist = distFcn(maxDist, (originPt - intersectPt).size(), distFcnHeight);
+                {
+                    const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
 #pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+                    _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+                }
 
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
+                geometry.facet = mFacet;
                 if (isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
 #ifdef ALICEVISION_DEBUG_VOTE
@@ -1780,23 +1781,28 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     ALICEVISION_LOG_TRACE("[Error]: fillGraphPartPtRc toTheCam, cause: invalidOrInfinite miror facet.");
                     break;
                 }
-                geometry.facet = mFacet;
-
-                // Vote for the new cell after taking the mirror facet
+                lastIntersectedFacet = mFacet;
+            }
+            else
+            {
+                // We have just intersected a vertex or edge.
+                // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the current one.
+                if (previousGeometry.type == EGeometryType::Facet)
+                {
 #pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[geometry.facet.cellIndex].emptinessScore += weight;
-            }
-            else if (geometry.type == EGeometryType::Vertex)
-            {
-                ++outFrontCount.vertices;
-            }
-            else if (geometry.type == EGeometryType::Edge)
-            {
-                ++outFrontCount.edges;
-            }
+                    _cellsAttr[previousGeometry.facet.cellIndex].emptinessScore += weight;
+                }
 
-        // Break only when we reach our camera vertex
-        } while(!(geometry.type == EGeometryType::Vertex && (mp->CArr[cam] - intersectPt).size() < 1.0e-3));
+                if (geometry.type == EGeometryType::Vertex)
+                {
+                    ++outFrontCount.vertices;
+                }
+                else if (geometry.type == EGeometryType::Edge)
+                {
+                    ++outFrontCount.edges;
+                }
+            }
+        }
 
         // Vote for the last intersected facet (close to the cam)
         if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
@@ -1819,8 +1825,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 
         bool firstIteration = true;
         Facet lastIntersectedFacet;
-        // As long as we find a next geometry
-        do
+        // While we are within the surface margin (as long as we find a next geometry)
+        while ((originPt - intersectPt).size() < maxDist)
         {
             // Keep previous informations
             const GeometryIntersection previousGeometry = geometry;
@@ -1831,19 +1837,12 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #endif
             ++outTotalStepsBehind;
 
-            // Vote for the first facet found (only once)
-            if (firstIteration && geometry.type == EGeometryType::Facet)
-            {
-#pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[geometry.facet.cellIndex].on += weight;
-                firstIteration = false;
-            }
             geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
 
-            if(geometry.type == EGeometryType::None)
+            if (geometry.type == EGeometryType::None)
             {
                 // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified after taking mirror facet)
-                if(previousGeometry.type == EGeometryType::Facet)
+                if (previousGeometry.type == EGeometryType::Facet)
                 {
 #ifdef ALICEVISION_DEBUG_VOTE
                     // exportBackPropagationMesh("fillGraph_behindThePoint_NoneButPreviousIsFacet", history.geometries, originPt, mp->CArr[cam]);
@@ -1855,53 +1854,86 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 break;
             }
 
-            if(geometry.type == EGeometryType::Facet)
+            if (geometry.type == EGeometryType::Facet)
             {
                 ++outBehindCount.facets;
-                lastIntersectedFacet = geometry.facet;
 
-                // Vote for the cell between the previous vertex/edge and the intersected facet
-                // Because if there is an edge or a vertex, no vote has been made, we have to vote here for the right facet once we find it
-                if (previousGeometry.type != EGeometryType::Facet)
+                // Vote for the first cell found (only once)
+                if (firstIteration)
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[geometry.facet.cellIndex].on += weight;
+                    firstIteration = false;
+                }
+
                 {
 #pragma OMP_ATOMIC_UPDATE
                     _cellsAttr[geometry.facet.cellIndex].fullnessScore += weight;
                 }
 
-                const float dist = distFcn(maxDist, (originPt - intersectPt).size(), distFcnHeight);
-#pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
-                
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
+                lastIntersectedFacet = mFacet;
+                geometry.facet = mFacet;
                 if (isInvalidOrInfiniteCell(mFacet.cellIndex))
                 {
                     // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
                     break;
                 }
-                geometry.facet = mFacet;
 
-                // Vote for the new cell after taking the mirror facet
+                {
+                    const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
 #pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[geometry.facet.cellIndex].fullnessScore += weight;
+                    _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+                }
             }
-            else if (geometry.type == EGeometryType::Vertex)
+            else
             {
-                ++outBehindCount.vertices;
-            }
-            else if (geometry.type == EGeometryType::Edge)
-            {
-                ++outBehindCount.edges;
-            }
+                // Vote for the first cell found (only once)
+                // if we come from an edge or vertex to an other we have to vote for the first intersected cell.
+                if (firstIteration)
+                {
+                    if (previousGeometry.type != EGeometryType::Vertex)
+                        throw std::runtime_error("[error] The firstIteration vote could only happen during for the first cell when we come from the first vertex.");
+                    // the information of first intersected cell can only be found by taking intersection of neighbouring cells for both geometries
+                    const std::vector<CellIndex> previousNeighbouring = getNeighboringCellsByVertexIndex(previousGeometry.vertexIndex);
+                    const std::vector<CellIndex> currentNeigbouring = getNeighboringCellsByGeometry(geometry);
 
-        // While we are within the surface margin
-        } while((originPt - intersectPt).size() < maxDist);
+                    std::vector<CellIndex> neighboringCells;
+                    std::set_intersection(previousNeighbouring.begin(), previousNeighbouring.end(), currentNeigbouring.begin(), currentNeigbouring.end(), std::back_inserter(neighboringCells));
+
+                    for (const CellIndex& ci : neighboringCells)
+                    {
+#pragma OMP_ATOMIC_UPDATE
+                        _cellsAttr[neighboringCells[0]].on += weight;
+                    }
+                    firstIteration = false;
+                }
+
+                // We have just intersected a vertex or edge.
+                // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the current one.
+                if (previousGeometry.type == EGeometryType::Facet)
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[previousGeometry.facet.cellIndex].fullnessScore += weight;
+                }
+
+                if (geometry.type == EGeometryType::Vertex)
+                {
+                    ++outBehindCount.vertices;
+                }
+                else if (geometry.type == EGeometryType::Edge)
+                {
+                    ++outBehindCount.edges;
+                }
+            }
+        }
 
         // cv: is the tetrahedron in distance 2*sigma behind the point p in the direction of the camera c (called Lcp in the paper) Vote for the last found facet
         // Vote for the last intersected facet (farthest from the camera)
         if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
-#pragma OMP_ATOMIC_WRITE
+#pragma OMP_ATOMIC_UPDATE
             _cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight += weight;
         }
     }
@@ -1927,6 +1959,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     float nsigmaFrontSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaFrontSilentPart: " << nsigmaFrontSilentPart);
 
+    // This parameter allows to enlage the surface margin behind the point
     float nsigmaBackSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaBackSilentPart: " << nsigmaBackSilentPart);
 
@@ -1986,11 +2019,14 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                 IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
 #endif
                 // As long as we find a next geometry
-                do
+                Point3d lastIntersectPt = originPt;
+                // Iterate on geometries in the direction of camera's vertex within margin defined by maxDist (as long as we find a next geometry)
+                while ((geometry.type != EGeometryType::Vertex || (mp->CArr[cam] - intersectPt).size() < 1.0e-3) // We reach our camera vertex
+                && (lastIntersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) // We to far from the originPt
                 {
                     // Keep previous informations
                     const GeometryIntersection previousGeometry = geometry;
-                    const Point3d lastIntersectPt = intersectPt;
+                    lastIntersectPt = intersectPt;
 
 #ifdef ALICEVISION_DEBUG_VOTE
                     history.append(geometry, intersectPt);
@@ -2009,11 +2045,11 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         break;
                     }
 
-                    if(geometry.type == EGeometryType::Facet)
+                    if (geometry.type == EGeometryType::Facet)
                     {
                         ++totalGeometriesIntersectedFrontCount.facets;
                         const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
-                        if((intersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
+                        if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
                         {
                             minJump = std::min(minJump, c.emptinessScore);
                             maxJump = std::max(maxJump, c.emptinessScore);
@@ -2045,11 +2081,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     {
                         ++totalGeometriesIntersectedFrontCount.edges;
                     }
-
-                    // Break only when we reach our camera vertex or our distance condition is unsatisfied
-                } while(!(geometry.type == EGeometryType::Vertex && (mp->CArr[cam] - intersectPt).size() < 1.0e-3) 
-                && (intersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist);
-                
+                }
                 ++totalRayFront;
             }
             {
@@ -2064,12 +2096,15 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 #endif
 
                 Facet lastIntersectedFacet;
-                // As long as we find a next geometry
-                do
+                bool firstIteration = true;
+		        Point3d lastIntersectPt = originPt;
+
+                // While we are within the surface margin defined by maxDist (as long as we find a next geometry)
+                while ((lastIntersectPt - originPt).size() <= nsigmaBackSilentPart * maxDist)
                 {
                     // Keep previous informations
                     const GeometryIntersection previousGeometry = geometry;
-                    const Point3d lastIntersectPt = intersectPt;
+                    lastIntersectPt = intersectPt;
 
 #ifdef ALICEVISION_DEBUG_VOTE
                     history.append(geometry, intersectPt);
@@ -2080,7 +2115,6 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
                     if(geometry.type == EGeometryType::None)
                     {
-                        lastIntersectedFacet = geometry.facet;
                         // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified later) 
                         if (previousGeometry.type == EGeometryType::Facet)
                         {
@@ -2098,29 +2132,59 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     {
                         ++totalGeometriesIntersectedFrontCount.facets;
 
+                        // Vote for the first cell found (only once)
+                        if (firstIteration)
+                        {
+                            midSilent = _cellsAttr[geometry.facet.cellIndex].emptinessScore;
+                            firstIteration = false;
+                        }
+
                         const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
                         minSilent = std::min(minSilent, c.emptinessScore);
                         maxSilent = std::max(maxSilent, c.emptinessScore);
 
                         // Take the mirror facet to iterate over the next cell
                         const Facet mFacet = mirrorFacet(geometry.facet);
+                        lastIntersectedFacet = mFacet;
+                        geometry.facet = mFacet;
                         if (isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
                             // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
                             break;
                         }
-                        geometry.facet = mFacet;
                     }
-                    else if (geometry.type == EGeometryType::Vertex)
-                    {
-                        ++totalGeometriesIntersectedFrontCount.vertices;
-                    }
-                    else if (geometry.type == EGeometryType::Edge)
-                    {
-                        ++totalGeometriesIntersectedFrontCount.edges;
-                    }
+                    else {
 
-                } while((intersectPt - originPt).size() <= nsigmaBackSilentPart * maxDist);
+                        // Vote for the first cell found (only once)
+                        // if we come from an edge or vertex to an other we have to vote for the first intersected cell.
+                        if (firstIteration)
+                        {
+                            if (previousGeometry.type != EGeometryType::Vertex)
+                                throw std::runtime_error("[error] The firstIteration vote could only happen during for the first cell when we come from the first vertex.");
+                            // the information of first intersected cell can only be found by taking intersection of neighbouring cells for both geometries
+                            const std::vector<CellIndex> previousNeighbouring = getNeighboringCellsByVertexIndex(previousGeometry.vertexIndex);
+                            const std::vector<CellIndex> currentNeigbouring = getNeighboringCellsByGeometry(geometry);
+
+                            std::vector<CellIndex> neighboringCells;
+                            std::set_intersection(previousNeighbouring.begin(), previousNeighbouring.end(), currentNeigbouring.begin(), currentNeigbouring.end(), std::back_inserter(neighboringCells));
+
+                            for (const CellIndex& ci : neighboringCells)
+                            {
+                                midSilent = _cellsAttr[geometry.facet.cellIndex].emptinessScore;
+                            }
+                            firstIteration = false;
+                        }
+
+                        if (geometry.type == EGeometryType::Vertex)
+                        {
+                            ++totalGeometriesIntersectedFrontCount.vertices;
+                        }
+                        else if (geometry.type == EGeometryType::Edge)
+                        {
+                            ++totalGeometriesIntersectedFrontCount.edges;
+                        }
+                    }
+                }
 
                 if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
                 {
