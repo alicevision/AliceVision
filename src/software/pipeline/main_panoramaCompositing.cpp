@@ -180,6 +180,167 @@ protected:
     const NodeType _T;  //< fullness
 };
 
+bool computeSeamsMap(image::Image<unsigned char> & seams, const image::Image<IndexT> & labels) {
+
+  if (seams.size() != labels.size()) {
+    return false;
+  }
+
+  seams.fill(0);
+
+  for (int j = 1; j < labels.Width() - 1; j++) {
+    IndexT label = labels(0, j);
+    IndexT same = true;
+
+    same &= (labels(0, j - 1) == label);
+    same &= (labels(0, j + 1) == label);
+    same &= (labels(1, j - 1) == label);
+    same &= (labels(1, j) == label);
+    same &= (labels(1, j + 1) == label);
+
+    if (same) {
+      continue;
+    }
+
+    seams(0, j) = 255;
+  }
+
+  int lastrow = labels.Height() - 1;
+  for (int j = 1; j < labels.Width() - 1; j++) {
+    IndexT label = labels(lastrow, j);
+    IndexT same = true;
+
+    same &= (labels(lastrow - 1, j - 1) == label);
+    same &= (labels(lastrow - 1, j + 1) == label);
+    same &= (labels(lastrow, j - 1) == label);
+    same &= (labels(lastrow, j ) == label);
+    same &= (labels(lastrow, j + 1) == label);
+
+    if (same) {
+      continue;
+    }
+
+    seams(lastrow, j) = 255;
+  }
+
+  for (int i = 1; i < labels.Height() - 1; i++) {
+
+    for (int j = 1; j < labels.Width() - 1; j++) {
+
+      IndexT label = labels(i, j);
+      IndexT same = true;
+
+      same &= (labels(i - 1, j - 1) == label);
+      same &= (labels(i - 1, j) == label);
+      same &= (labels(i - 1, j + 1) == label);
+      same &= (labels(i, j - 1) == label);
+      same &= (labels(i, j + 1) == label);
+      same &= (labels(i + 1, j - 1) == label);
+      same &= (labels(i + 1, j) == label);
+      same &= (labels(i + 1, j + 1) == label);
+
+      if (same) {
+        continue;
+      }
+
+      seams(i, j) = 255;
+    }
+  }
+
+  return true;
+}
+
+static inline int f (int x_i, int gi) noexcept {
+  return (x_i*x_i)+gi*gi;
+}
+
+static inline int sep (int i, int u, int gi, int gu, int) noexcept {
+  return (u*u - i*i + gu*gu - gi*gi) / (2*(u-i));
+}
+
+/*Adapté depuis un code externe : VFLib: https://github.com/vinniefalco/VFLib (Licence MIT) */
+bool computeDistanceMap(image::Image<int> & distance, const image::Image<unsigned char> & mask) {
+
+  int m = mask.Width();
+  int n = mask.Height();
+
+  int width = mask.Width();
+  int height = mask.Height();
+
+  int maxval = width + height;
+  image::Image<int> buf(width, height);
+  
+  /* Per column distance 1D calculation */
+  for (int j = 0; j < width; j++)
+  {
+    buf(0, j) = mask(0, j) ? 0 : maxval;
+
+    /*Top to bottom accumulation */
+    for (int i = 1; i < height; i++) {
+
+      buf(i, j) = mask(i, j) ? 0 : 1 + buf(i - 1, j);
+    }
+
+    /*Bottom to top correction */
+    for (int i = height - 2; i >=0; i--) {
+
+      if (buf(i + 1, j) < buf(i, j)) {
+        buf(i, j) = 1 + buf(i + 1, j);
+      }
+    }
+  }
+
+  
+  
+  std::vector <int> s (std::max(width, height));
+  std::vector <int> t (std::max(width, height));
+
+  /*Per row scan*/
+  for (int i = 0; i < height; i++)
+  {
+    int q = 0;
+    s[0] = 0;
+    t[0] = 0;
+
+    // scan 3
+    for (int j = 1; j < width; j++)
+    {
+      while (q >= 0 && f(t[q]-s[q], buf(i, s[q])) > f(t[q]-j, buf(i, j)))
+        q--;
+
+      if (q < 0)
+      {
+        q = 0;
+        s [0] = j;
+      }
+      else
+      {
+        int const w = 1 + sep (s[q], j, buf(i, s[q]), buf(i, j), maxval);
+
+        if (w < width)
+        {
+          ++q;
+          s[q] = j;
+          t[q] = w;
+        }
+      }
+    }
+
+    // scan 4
+    for (int j = width - 1; j >= 0; --j)
+    {
+      int const d = f (j-s[q], buf(i, s[q]));
+
+      distance(i, j) =  d;
+      if (j == t[q])
+        --q;
+    }
+  }
+  
+
+  return true;
+}
+
 bool feathering(aliceVision::image::Image<image::RGBfColor> & output, const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask) {
 
   std::vector<image::Image<image::RGBfColor>> feathering;
@@ -930,30 +1091,85 @@ public:
     return true;
   }
 
-  bool apply(const aliceVision::image::Image<image::RGBfColor> & source, const aliceVision::image::Image<float> & weights, size_t offset_x, size_t offset_y) {
+  bool apply(const aliceVision::image::Image<image::RGBfColor> & source, const aliceVision::image::Image<unsigned char> & mask, const aliceVision::image::Image<float> & weights, size_t offset_x, size_t offset_y) {
 
     int width = source.Width();
     int height = source.Height();
+
+    /* Convert mask to alpha layer */
+    image::Image<float> mask_float(width, height);
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        if (mask(i, j)) {
+          mask_float(i, j) = 1.0f;
+        }
+        else {
+          mask_float(i, j) = 0.0f;
+        }
+      }
+    }
 
     image::Image<image::RGBfColor> current_color = source;
     image::Image<image::RGBfColor> next_color;
     image::Image<float> current_weights = weights;
     image::Image<float> next_weights;
+    image::Image<float> current_mask = mask_float;
+    image::Image<float> next_mask;
 
     for (int l = 0; l < _levels.size() - 1; l++)
     {
+      aliceVision::image::Image<image::RGBfColor> buf_masked(width, height);
       aliceVision::image::Image<image::RGBfColor> buf(width, height);
       aliceVision::image::Image<image::RGBfColor> buf2(width, height);
-      aliceVision::image::Image<float> bufw(width, height);
+      aliceVision::image::Image<float> buf_float(width, height);
       
       next_color = aliceVision::image::Image<image::RGBfColor>(width / 2, height / 2);
       next_weights = aliceVision::image::Image<float>(width / 2, height / 2);
+      next_mask = aliceVision::image::Image<float>(width / 2, height / 2);
 
-      convolveGaussian5x5<image::RGBfColor>(buf, current_color);
+      /*Apply mask to content before convolution*/
+      for (int i = 0; i < current_color.Height(); i++) {
+        for (int j = 0; j < current_color.Width(); j++) {
+          if (std::abs(current_mask(i, j)) > 1e-6) {
+            buf_masked(i, j) = current_color(i, j);
+          }
+          else {
+            buf_masked(i, j).r() = 0.0f;
+            buf_masked(i, j).g() = 0.0f;
+            buf_masked(i, j).b() = 0.0f;
+            current_weights(i, j) = 0.0f;
+          }
+        }
+      }
+
+      convolveGaussian5x5<image::RGBfColor>(buf, buf_masked);
+      convolveGaussian5x5<float>(buf_float, current_mask);
+      
+      /*
+      Normalize given mask
+      */
+      for (int i = 0; i < current_color.Height(); i++) {
+        for (int j = 0; j < current_color.Width(); j++) {
+          
+          float m = buf_float(i, j);
+
+          if (std::abs(m) > 1e-6) {
+            buf(i, j).r() = buf(i, j).r() / m;
+            buf(i, j).g() = buf(i, j).g() / m;
+            buf(i, j).b() = buf(i, j).b() / m;
+            buf_float(i, j) = 1.0f;
+          }
+          else {
+            buf(i, j).r() = 0.0f;
+            buf(i, j).g() = 0.0f;
+            buf(i, j).b() = 0.0f;
+            buf_float(i, j) = 0.0f;
+          }
+        }
+      }
+
       downscale(next_color,  buf);
-
-      convolveGaussian5x5<float>(bufw, current_weights);
-      downscale(next_weights,  bufw);
+      downscale(next_mask,  buf_float);
 
       upscale(buf, next_color);
       convolveGaussian5x5<image::RGBfColor>(buf2, buf);
@@ -966,10 +1182,16 @@ public:
 
       substract(current_color, current_color, buf2);
 
+      convolveGaussian5x5<float>(buf_float, current_weights);
+      downscale(next_weights, buf_float);
+
       merge(current_color, current_weights, l, offset_x, offset_y);
+      
       
       current_color = next_color;
       current_weights = next_weights;
+      current_mask = next_mask;
+
       width /= 2;
       height /= 2;
       offset_x /= 2;
@@ -1133,14 +1355,28 @@ public:
 public:
   GraphcutSeams(size_t outputWidth, size_t outputHeight) :
   _owners(outputWidth, outputHeight, true),
-  _labels(outputWidth, outputHeight, true, 0)
+  _labels(outputWidth, outputHeight, true, 0),
+  _original_labels(outputWidth, outputHeight, true, 0),
+  _distancesSeams(outputWidth, outputHeight, true, 0),
+  _maximal_distance_change(outputWidth + outputHeight)
   {
   }
 
   virtual ~GraphcutSeams() = default;
 
+  void setOriginalLabels(const image::Image<IndexT> & existing_labels) {
+    
+    _labels = existing_labels;
+    _original_labels = existing_labels;
+
+    image::Image<unsigned char> seams(_labels.Width(), _labels.Height());
+    computeSeamsMap(seams, _labels);
+    computeDistanceMap(_distancesSeams, seams);
+  }
+
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & input, const aliceVision::image::Image<unsigned char> & inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
   {
+
     if (inputMask.size() != input.size()) {
       return false;
     }
@@ -1161,13 +1397,11 @@ public:
       rect.t = rect.t - 3;
       rect.h = rect.h + 6;
     }
-    if (rect.l + rect.w > _owners.Width()) {
-      rect.w = _owners.Width() - rect.l;
-    }
     if (rect.t + rect.h > _owners.Height()) {
       rect.h = _owners.Height() - rect.t;
     }
     _rects[currentIndex] = rect;
+
 
     /* 
     _owners will get for each pixel of the panorama a list of pixels 
@@ -1190,6 +1424,12 @@ public:
         info.first = currentIndex;
         info.second = input(i, j);
 
+        /* If too far away from seam, do not add a contender */
+        int dist = _distancesSeams(di, dj);
+        if (dist > _maximal_distance_change + 10) {
+          continue;
+        }
+
         _owners(di, dj).push_back(info);
       }
     }
@@ -1197,31 +1437,12 @@ public:
     return true;
   }
 
-  bool process(const image::Image<IndexT> & existing_labels) {    
+  void setMaximalDistance(int dist) {
+    _maximal_distance_change = dist;
+  }
 
-    if (_labels.size() == existing_labels.size()) {
-      _labels = existing_labels;
-    }
-    else {
-      /* 
-      Initialize labels with a valid (but random) label
-      */
-      for (int i = 0; i < _labels.Height(); i++) {
-        for (int j = 0; j < _labels.Width(); j++) {
-
-          int size = _owners(i, j).size();
-
-          if (size == 0) {
-            _labels(i, j) = UndefinedIndexT;
-            continue;
-          }
-
-          int label = 0;//random() % size;
-          _labels(i, j) = _owners(i, j)[label].first;
-        }
-      }
-    }
-
+  bool process() {    
+    
 
     for (int i = 0; i < 10; i++) {
 
@@ -1232,14 +1453,29 @@ public:
 
         ALICEVISION_LOG_INFO("Graphcut expansion (iteration " << i << ") for label " << info.first);
 
-        auto backup = _labels.block(info.second.t, info.second.l, info.second.h, info.second.w);
+
+        int p1 = info.second.l;
+        int w1 = info.second.w;
+        int p2 = 0;
+        int w2 = 0;
+
+        if (p1 + w1 >= _labels.Width()) {
+          w1 = _labels.Width() - p1;
+          p2 = 0;
+          w2 = info.second.w - w1;
+        }
+
+        auto backup_1 = _labels.block(info.second.t, p1, info.second.h, w1);
+        auto backup_2 = _labels.block(info.second.t, p2, info.second.h, w2);
+
 
         double base_cost = cost(info.first);
         alphaExpansion(info.first);
         double new_cost = cost(info.first);
 
         if (new_cost > base_cost) {
-          _labels.block(info.second.t, info.second.l, info.second.h, info.second.w) = backup;
+          _labels.block(info.second.t, p1, info.second.h, w1) = backup_1;
+          _labels.block(info.second.t, p2, info.second.h, w2) = backup_2;
         }
         else if (new_cost < base_cost) {
           change = true;
@@ -1387,6 +1623,41 @@ public:
     image::Image<int> ids(rect.w, rect.h, true, -1);
     image::Image<image::RGBfColor> color_label(rect.w, rect.h, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
     image::Image<image::RGBfColor> color_other(rect.w, rect.h, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+
+    /*Compute distance map to seams*/
+    image::Image<int> distanceMap(rect.w, rect.h);
+    { 
+      image::Image<IndexT> binarizedWorld(rect.w, rect.h);
+      
+      for (int i = 0; i < rect.h; i++) {
+        int y = rect.t + i;
+
+        for (int j = 0; j < rect.w; j++) {
+
+          int x = rect.l + j;
+          if (x >= _owners.Width()) {
+            x = x - _owners.Width();
+          }   
+
+          IndexT label = _original_labels(y, x);
+          if (label == currentLabel) {
+            binarizedWorld(i, j) = 1;
+          }
+          else {
+            binarizedWorld(i, j) = 0;
+          }
+        }
+      }
+
+      image::Image<unsigned char> seams(rect.w, rect.h);
+      if (!computeSeamsMap(seams, binarizedWorld)) {
+        return false;
+      }
+
+      if (!computeDistanceMap(distanceMap, seams)) {
+        return false;
+      }
+    }
   
 
     /*
@@ -1415,16 +1686,33 @@ public:
         image::RGBfColor currentColor;
         image::RGBfColor otherColor;
 
+        int dist = distanceMap(i, j);
+
         /* Loop over observations */
         for (int l = 0; l < infos.size(); l++) {
-
-          if (infos[l].first == currentLabel) {
-            mask(i, j) |= 1;
-            currentColor = infos[l].second;
+          
+          if (dist > _maximal_distance_change) {
+          
+            if (infos[l].first == label) {
+              if (label == currentLabel) {
+                mask(i, j) = 1;
+                currentColor = infos[l].second;
+              }
+              else {
+                mask(i, j) = 2;
+                otherColor = infos[l].second;
+              }
+            }
           }
-          else if (infos[l].first == label) {
-            mask(i, j) |= 2;
-            otherColor = infos[l].second;
+          else {
+            if (infos[l].first == currentLabel) {
+              mask(i, j) |= 1;
+              currentColor = infos[l].second;
+            }
+            else if (infos[l].first == label) {
+              mask(i, j) |= 2;
+              otherColor = infos[l].second;
+            }
           }
         }
 
@@ -1631,8 +1919,146 @@ private:
   std::map<IndexT, Rect> _rects;
   ImageOwners _owners;
   image::Image<IndexT> _labels;
+  image::Image<IndexT> _original_labels;
+  image::Image<int> _distancesSeams;
+  size_t _maximal_distance_change;
 };
 
+class HierarchicalGraphcutSeams {
+public:
+
+  HierarchicalGraphcutSeams(size_t outputWidth, size_t outputHeight, size_t levelOfInterest):
+  _outputWidth(outputWidth),
+  _outputHeight(outputHeight),
+  _levelOfInterest(levelOfInterest),
+  _labels(outputWidth, outputHeight, true, UndefinedIndexT) {
+    
+
+    double scale = 1.0 / pow(2.0, levelOfInterest);
+    size_t width = size_t(floor(double(outputWidth) * scale));
+    size_t height = size_t(floor(double(outputHeight) * scale));
+
+    _graphcut = std::unique_ptr<GraphcutSeams>(new GraphcutSeams(width, height));
+  }
+
+  virtual ~HierarchicalGraphcutSeams() = default;
+
+  void setOriginalLabels(const image::Image<IndexT> & labels) {
+    
+    /* 
+    First of all, Propagate label to all levels
+    */
+    image::Image<IndexT> current_label = labels;
+
+    for (int l = 1; l <= _levelOfInterest; l++) {
+
+      aliceVision::image::Image<IndexT> next_label(current_label.Width() / 2, current_label.Height() / 2);
+
+      for (int i = 0; i < next_label.Height(); i++) {
+        int di = i * 2;
+
+        for (int j = 0; j < next_label.Width(); j++) {
+          int dj = j * 2;
+
+          next_label(i, j) = current_label(di, dj);
+        }
+      }
+      
+      current_label = next_label;
+    }   
+
+    _graphcut->setOriginalLabels(current_label);
+  }
+
+  void setMaximalDistance(int distance) {
+    _graphcut->setMaximalDistance(distance);
+  }
+
+  virtual bool append(const aliceVision::image::Image<image::RGBfColor> & input, const aliceVision::image::Image<unsigned char> & inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
+  {
+    image::Image<image::RGBfColor> current_color = input;
+    image::Image<unsigned char> current_mask = inputMask;
+
+    for (int l = 1; l <= _levelOfInterest; l++) {
+      
+      aliceVision::image::Image<image::RGBfColor> buf(current_color.Width(), current_color.Height());
+      aliceVision::image::Image<image::RGBfColor> next_color(current_color.Width() / 2, current_color.Height() / 2);
+      aliceVision::image::Image<unsigned char> next_mask(current_color.Width() / 2, current_color.Height() / 2);
+      
+      convolveGaussian5x5<image::RGBfColor>(buf, current_color);
+      downscale(next_color, buf);
+
+      for (int i = 0; i < next_mask.Height(); i++) {
+        int di = i * 2;
+
+        for (int j = 0; j < next_mask.Width(); j++) {
+          int dj = j * 2;
+
+          if (current_mask(di, dj) && current_mask(di, dj + 1) && current_mask(di + 1, dj) && current_mask(di + 1, dj + 1)) {
+            next_mask(i, j) = 255;
+          }
+          else {
+            next_mask(i, j) = 0;
+          }
+        }
+      }
+
+      current_color = next_color;
+      current_mask = next_mask;
+      offset_x /= 2;
+      offset_y /= 2;
+    }
+
+    return _graphcut->append(current_color, current_mask, currentIndex, offset_x, offset_y);
+  }
+
+  bool process() { 
+
+    if (!_graphcut->process()) {
+      return false;
+    }
+
+    image::Image<IndexT> current_labels = _graphcut->getLabels();
+
+    for (int l = _levelOfInterest - 1; l >= 0; l--) {
+
+      int nw = current_labels.Width() * 2;
+      int nh = current_labels.Height() * 2;
+      if (l == 0) {
+        nw = _outputWidth;
+        nh = _outputHeight;
+      }
+
+      aliceVision::image::Image<IndexT> next_label(nw, nh);
+      for (int i = 0; i < nh; i++) {
+        int hi = i / 2;
+
+        for (int j = 0; j < nw; j++) {
+          int hj = j / 2;
+
+          next_label(i, j) = current_labels(hi, hj);
+        }
+      }
+
+      current_labels = next_label;
+    }
+
+    _labels = current_labels;
+
+    return true;
+  }
+
+  const image::Image<IndexT> & getLabels() {    
+    return _labels;
+  }
+
+private:
+  std::unique_ptr<GraphcutSeams> _graphcut;
+  image::Image<IndexT> _labels;
+  size_t _levelOfInterest;
+  size_t _outputWidth;
+  size_t _outputHeight;
+};
 
 class LaplacianCompositer : public Compositer
 {
@@ -1655,7 +2081,7 @@ public:
     minsize / 8 = 2^x
     x = log2(minsize/8)
     */
-    size_t optimal_scale = size_t(floor(std::log2(double(minsize) / 8.0)));
+    size_t optimal_scale = size_t(floor(std::log2(double(minsize) / 5.0)));
     if (optimal_scale < _bands) {
       ALICEVISION_LOG_ERROR("Decreasing scale !");
       return false;
@@ -1688,7 +2114,7 @@ public:
       }
     }
   
-    _pyramid_panorama.apply(feathered, weights_pot, new_offset_x, new_offset_y);
+    _pyramid_panorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y);
  
     return true;
   }
@@ -1871,7 +2297,7 @@ int aliceVision_main(int argc, char **argv)
       minsize / 8 = 2^x
       x = log2(minsize/8)
       */
-      size_t optimal_scale = size_t(floor(std::log2(double(minsize) / 8.0)));
+      size_t optimal_scale = size_t(floor(std::log2(double(minsize) / 5.0)));
       indexed_by_scale[optimal_scale].push_back(viewIt.second);
     }
 
@@ -1901,37 +2327,51 @@ int aliceVision_main(int argc, char **argv)
 
   if (isMultiBand && useGraphCut) {
 
-    GraphcutSeams seams(panoramaSize.first, panoramaSize.second);
-    for (const auto& viewIt : sfmData.getViews())
-    {
-      if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+    int initial_level = 0;
+    int max_width_for_graphcut = 5000;
+    double ratio = double(panoramaSize.first) / double(max_width_for_graphcut);
+    if (ratio > 1.0) {
+      initial_level = int(ceil(log2(ratio)));
+    }  
+
+    for (int l = initial_level; l>= 0; l--) {
+      HierarchicalGraphcutSeams seams(panoramaSize.first, panoramaSize.second, l);
+      seams.setOriginalLabels(labels);
+      if (l != initial_level) {
+        seams.setMaximalDistance(100);
+      }
+
+      for (const auto& viewIt : sfmData.getViews())
       {
-          // skip unreconstructed views
-          continue;
+        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+        {
+            // skip unreconstructed views
+            continue;
+        }
+        
+        // Load mask
+        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+        ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+        image::Image<unsigned char> mask;
+        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+        oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+        const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+        const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+        // Load Color
+        const std::string colorsPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + ".exr")).string();
+        ALICEVISION_LOG_INFO("Load colors with path " << colorsPath);
+        image::Image<image::RGBfColor> colors;
+        image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
+
+        seams.append(colors, mask, viewIt.first, offsetX, offsetY);
       }
       
-      // Load mask
-      const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + "_mask.exr")).string();
-      ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
-      image::Image<unsigned char> mask;
-      image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
-
-      oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
-      const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
-      const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
-
-      // Load Color
-      const std::string colorsPath = (fs::path(warpingFolder) / (std::to_string(viewIt.first) + ".exr")).string();
-      ALICEVISION_LOG_INFO("Load colors with path " << colorsPath);
-      image::Image<image::RGBfColor> colors;
-      image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
-
-      seams.append(colors, mask, viewIt.first, offsetX, offsetY);
-    }
-
-    if (seams.process(labels)) {
-      ALICEVISION_LOG_INFO("Updating labels with graphcut");
-      labels = seams.getLabels();
+      if (seams.process()) {
+        ALICEVISION_LOG_INFO("Updating labels with graphcut");
+        labels = seams.getLabels();
+      }
     }
   }
 
