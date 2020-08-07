@@ -3469,5 +3469,25 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
     ALICEVISION_LOG_DEBUG("Largest full segment only done.");
 }
 
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type)
+{
+    switch (type)
+    {
+    case DelaunayGraphCut::EGeometryType::Facet:
+        stream << "Facet";
+        break;
+    case DelaunayGraphCut::EGeometryType::Vertex:
+        stream << "Vertex";
+        break;
+    case DelaunayGraphCut::EGeometryType::Edge:
+        stream << "Edge";
+        break;
+    case DelaunayGraphCut::EGeometryType::None:
+        stream << "None";
+        break;
+    }
+    return stream;
+}
+
 } // namespace fuseCut
 } // namespace aliceVision

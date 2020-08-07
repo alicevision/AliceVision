@@ -148,6 +148,10 @@ public:
                 return true;
             }
         }
+        bool operator!=(const GeometryIntersection& g) const
+        {
+            return !(*this == g);
+        }
     };
 
     struct IntersectionHistory
@@ -516,6 +520,9 @@ public:
     void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
     void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
+
+
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type);
 
 } // namespace fuseCut
 } // namespace aliceVision
