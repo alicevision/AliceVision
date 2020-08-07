@@ -1769,6 +1769,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                                        bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
     const int maxint = 1000000; // std::numeric_limits<int>::std::max()
+    const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
     const float pixSize = mp->getCamPixelSize(originPt, cam);
@@ -1804,7 +1805,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #endif
             ++outTotalStepsFront;
 
-            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
             if (geometry.type == EGeometryType::None)
             {
@@ -1898,7 +1899,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #endif
             ++outTotalStepsBehind;
 
-            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
             if (geometry.type == EGeometryType::None)
             {
@@ -2031,6 +2032,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
         // c.out = c.gEdgeVisWeight[0] + c.gEdgeVisWeight[1] + c.gEdgeVisWeight[2] + c.gEdgeVisWeight[3];
     }
 
+    const double marginEpsilonFactor = 1.0e-4;
+
     // choose random order to prevent waiting
     const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
     const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
@@ -2094,7 +2097,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 #endif
                     ++totalStepsFront;
 
-                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
                     if (geometry.type == EGeometryType::None)
                     {
@@ -2172,7 +2175,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 #endif
                     ++totalStepsBehind;
 
-                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, 1.0e-3, lastIntersectPt);
+                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
                     if(geometry.type == EGeometryType::None)
                     {
