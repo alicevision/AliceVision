@@ -483,6 +483,12 @@ public:
                            bool fixesSigma, float nPixelSizeBehind, bool fillOut,
                            float distFcnHeight);
 
+    /**
+     * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
+     * 
+     * @param fixesSigma Use constant sigma for all points or take into account the pixelSize 
+     * @param nPixelSizeBehind Used to define the surface margin
+     */
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
 
     int setIsOnSurface();
