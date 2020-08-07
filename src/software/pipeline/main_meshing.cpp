@@ -460,6 +460,14 @@ int aliceVision_main(int argc, char* argv[])
                     else
                       fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
 
+                    {
+                        const double length = hexah[0].x - hexah[1].x;
+                        const double width = hexah[0].y - hexah[3].y;
+                        const double height = hexah[0].z - hexah[4].z;
+
+                        ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width << ", height: " << height);
+                    }
+
                     StaticVector<int> cams;
                     if(meshingFromDepthMaps)
                     {
