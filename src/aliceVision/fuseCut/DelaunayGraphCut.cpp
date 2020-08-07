@@ -1319,6 +1319,8 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
     const Point3d& dirVect, Point3d& intersectPt,
     const double epsilonFactor, const Point3d& lastIntersectPt) const
 {
+    GeometryIntersection bestMatch;
+    Point3d bestMatchIntersectPt;
 
     switch (inGeometry.type)
     {
@@ -1334,10 +1336,21 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
                 continue;
 
             const Facet intersectionFacet(tetrahedronIndex, i);
+            bool ambiguous = false;
 
-            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilonFactor, &lastIntersectPt);
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
             if (result.type != EGeometryType::None)
-                return result;
+            {
+                if (!ambiguous)
+                    return result;
+
+                // Retrieve the best intersected point (farthest from origin point)
+                if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
+                {
+                    bestMatchIntersectPt = intersectPt;
+                    bestMatch = result;
+                }
+            }
         }
     }
     break;
@@ -1354,10 +1367,21 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
 
             // Define the facet to intersect
             const Facet facet(adjCellIndex, localVertexIndex);
+            bool ambiguous = false;
 
-            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, &lastIntersectPt);
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
             if (result.type != EGeometryType::None)
-                return result;
+            {
+                if (!ambiguous)
+                    return result;
+
+                // Retrieve the best intersected point (farthest from origin point)
+                if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
+                {
+                    bestMatchIntersectPt = intersectPt;
+                    bestMatch = result;
+                }
+            }
         }
     }
     break;
@@ -1379,9 +1403,20 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
 
             for (const Facet& facet : opositeFacets)
             {
-                const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, &lastIntersectPt);
+                bool ambiguous = false;
+                const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
                 if (result.type != EGeometryType::None)
-                    return result;
+                {
+                    if (!ambiguous)
+                        return result;
+
+                    // Retrieve the best intersected point (farthest from origin point)
+                    if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
+                    {
+                        bestMatchIntersectPt = intersectPt;
+                        bestMatch = result;
+                    }
+                }
             }
         }
     }
@@ -1391,15 +1426,19 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
         throw std::runtime_error("[intersectNextGeom] intersection with input none geometry should not happen.");
         break;
     }
-    return GeometryIntersection();
+
+    intersectPt = bestMatchIntersectPt;
+    return bestMatch;
 }
 
 DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(const Point3d& originPt,
     const Point3d& DirVec,
     const DelaunayGraphCut::Facet& facet,
     Point3d& intersectPt,
-    const double epsilonFactor, const Point3d* lastIntersectPt) const
+    const double epsilonFactor, bool &ambiguous, const Point3d* lastIntersectPt) const
 {
+    ambiguous = false;
+
     const VertexIndex AvertexIndex = getVertexIndex(facet, 0);
     const VertexIndex BvertexIndex = getVertexIndex(facet, 1);
     const VertexIndex CvertexIndex = getVertexIndex(facet, 2);
@@ -1408,42 +1447,64 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     const Point3d* B = &_verticesCoords[BvertexIndex];
     const Point3d* C = &_verticesCoords[CvertexIndex];
 
-    const double epsilon = std::min(std::min((*A - *B).size(), (*B - *C).size()), (*A - *C).size()) * epsilonFactor;
+    const double ABSize = (*A - *B).size();
+    const double BCSize = (*B - *C).size();
+    const double ACSize = (*A - *C).size();
+
+    const double marginEpsilon = std::min(std::min(ABSize, BCSize), ACSize) * epsilonFactor;
+    const double ambiguityEpsilon = (ABSize + BCSize + ACSize) / 3.0 * 1.0e-5;
+
     Point3d tempIntersectPt;
     const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
 
     if (!isnormal(tempIntersectPt.x) || !isnormal(tempIntersectPt.y) || !isnormal(tempIntersectPt.z))
     {
-        ALICEVISION_LOG_DEBUG("Invalid/notNormal intersection point found during rayIntersectTriangle.");
+        // This is not suppose to happen in real life, we log a warning instead of raising an exeption if we face a border case
+        ALICEVISION_LOG_WARNING("Invalid/notNormal intersection point found during rayIntersectTriangle.");
+        return GeometryIntersection();
     }
 
-    const float u = triangleUv.x; // A to C
-    const float v = triangleUv.y; // A to B
+    const double u = triangleUv.x; // A to C
+    const double v = triangleUv.y; // A to B
 
     // If we find invalid uv coordinate
     if (!std::isfinite(u) && !std::isfinite(v))
         return GeometryIntersection();
 
-    // Ouside the triangle with epsilon margin
-    if (u < -epsilon || v < -epsilon || (u + v) >(1 + epsilon))
+    // Ouside the triangle with marginEpsilon margin
+    if (u < -marginEpsilon || v < -marginEpsilon || (u + v) >(1 + marginEpsilon))
         return GeometryIntersection();
 
     // In case intersectPt is provided, check if intersectPt is in front of lastIntersectionPt 
     // in the DirVec direction to ensure that we are moving forward in the right direction
-    if (lastIntersectPt != nullptr && dot(DirVec, (tempIntersectPt - *lastIntersectPt).normalize()) <= 0)
-        return GeometryIntersection();
+    if (lastIntersectPt != nullptr) {
+        const Point3d diff = tempIntersectPt - *lastIntersectPt;
+        const double dotValue = dot(DirVec, diff.normalize());
+
+        if (diff.size() < ambiguityEpsilon)
+        {
+            ambiguous = true;
+        }
+        else
+        {
+            if (dotValue <= 0)
+            {
+               return GeometryIntersection();
+            }
+        }
+    }
 
     // Change intersection point only if tempIntersectionPt is in the right direction (mean we intersect something)
     intersectPt = tempIntersectPt;
 
-    if (v < epsilon) // along A C edge
+    if (v < marginEpsilon) // along A C edge
     {
-        if (u < epsilon)
+        if (u < marginEpsilon)
         {
             intersectPt = *A;
             return GeometryIntersection(AvertexIndex); // vertex A
         }
-        if (u > 1.0f - epsilon)
+        if (u > 1.0 - marginEpsilon)
         {
             intersectPt = *C;
             return GeometryIntersection(CvertexIndex); // vertex C
@@ -1452,9 +1513,9 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
         return GeometryIntersection(Edge(AvertexIndex, CvertexIndex)); // edge AC
     }
 
-    if (u < epsilon) // along A B edge
+    if (u < marginEpsilon) // along A B edge
     {
-        if (v > 1.0f - epsilon)
+        if (v > 1.0 - marginEpsilon)
         {
             intersectPt = *B;
             return GeometryIntersection(BvertexIndex); // vertex B
@@ -1463,7 +1524,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
         return GeometryIntersection(Edge(AvertexIndex, BvertexIndex)); // edge AB
     }
 
-    if (u + v > 1.0f - epsilon)
+    if (u + v > 1.0 - marginEpsilon)
         return GeometryIntersection(Edge(BvertexIndex, CvertexIndex)); // edge BC
 
     return GeometryIntersection(facet);
