@@ -1175,10 +1175,10 @@ int aliceVision_main(int argc, char **argv)
         oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
         const int offsetX = int(warper.getOffsetX());
         const int offsetY = int(warper.getOffsetY());
-        metadata.push_back(oiio::ParamValue("AliceVision:offsetX", offsetX));
-        metadata.push_back(oiio::ParamValue("AliceVision:offsetY", offsetY));
-        metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
-        metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
+        metadata.emplace_back("AliceVision:offsetX", offsetX);
+        metadata.emplace_back("AliceVision:offsetY", offsetY);
+        metadata.emplace_back("AliceVision:panoramaWidth", panoramaSize.first);
+        metadata.emplace_back("AliceVision:panoramaHeight", panoramaSize.second);
 
         {
             const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();

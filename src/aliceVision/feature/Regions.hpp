@@ -11,7 +11,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/Descriptor.hpp>
-#include <aliceVision/feature/metric.hpp>
+#include <aliceVision/matching/metric.hpp>
 
 #include <string>
 #include <cstddef>
@@ -152,13 +152,13 @@ struct SquaredMetric;
 template<typename T>
 struct SquaredMetric<T, ERegionType::Scalar>
 {
-  using Metric = L2_Vectorized<T>;
+  using Metric = matching::L2_Vectorized<T>;
 };
 
 template<typename T>
 struct SquaredMetric<T, ERegionType::Binary>
 {
-  using Metric = SquaredHamming<T>;
+  using Metric = matching::SquaredHamming<T>;
 };
 
 

@@ -10,7 +10,6 @@
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
 #include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
-#include <aliceVision/matching/matchesFiltering.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
@@ -29,6 +28,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/feature/selection.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/stl/stl.hpp>
 
@@ -150,6 +150,7 @@ int aliceVision_main(int argc, char **argv)
       "* CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
       "* FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
       "(faster than CASCADE_HASHING_L2 but use more memory)\n"
+      "* HNSWLIB: Fast approximate Nearest Neighbor matching\n"
       "For Binary based descriptor:\n"
       "* BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
     ("geometricEstimator", po::value<robustEstimation::ERobustEstimator>(&geometricEstimator)->default_value(geometricEstimator),
@@ -564,9 +565,7 @@ int aliceVision_main(int argc, char **argv)
           if(useGridSort)
           {
             // TODO: rename as matchesGridOrdering
-              matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImgSize(),
-                                   *rRegions, sfmData.getView(indexImagePair.second).getImgSize(),
-                                   indexImagePair, outMatches);
+            matchesGridFiltering(*lRegions, *rRegions, indexImagePair, sfmData, outMatches);
           }
           if(numMatchesToKeep > 0)
           {

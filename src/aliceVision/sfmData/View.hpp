@@ -111,15 +111,6 @@ public:
   }
 
   /**
-   * @brief Get view image height
-   * @return image height
-   */
-  std::pair<std::size_t, std::size_t> getImgSize() const
-  {
-    return {_width, _height};
-  }
-
-  /**
    * @brief Get the view id
    * @return view id
    */

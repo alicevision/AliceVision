@@ -7,3 +7,6 @@
 [submodule "src/dependencies/nanoflann"]
 	path = src/dependencies/nanoflann
 	url = https://github.com/alicevision/nanoflann.git
+[submodule "src/dependencies/hnswlib"]
+	path = src/dependencies/hnswlib
+	url = https://github.com/nmslib/hnswlib.git

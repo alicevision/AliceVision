@@ -10,12 +10,12 @@
 #include <aliceVision/system/Logger.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-#include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
+#include "cctag/ImageDescriber_CCTAG.hpp"
 #endif
-#include <dependencies/vectorGraphics/svgDrawer.hpp>
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 namespace aliceVision {
-namespace matching {
+namespace feature {
 
 
 std::string describerTypeColor(feature::EImageDescriberType descType )
@@ -186,7 +186,7 @@ void drawHomographyMatches(const std::string& imagePathLeft,
                            const matching::IndMatches& putativeMatches,
                            const std::string& outFilename)
 {
-  const auto& colors = sixteenColors;
+  const auto& colors = feature::sixteenColors;
 
   svg::svgDrawer svgStream(imageSizeLeft.first + imageSizeRight.first,
                            std::max(imageSizeLeft.second, imageSizeRight.second));
