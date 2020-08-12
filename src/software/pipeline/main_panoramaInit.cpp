@@ -331,7 +331,11 @@ public:
         double cx = pt(0) - best_params(0);
         double cy = pt(1) - best_params(1);
         double r = best_params(2);
-        double dist = sqrt(cx * cx + cy * cy) - r;
+        double normsq = cx * cx + cy * cy;
+        double norm = sqrt(normsq);
+        double dist = norm - r;
+
+        
 
         double w = 0.0;
         if (dist < c) {
@@ -341,13 +345,13 @@ public:
         }
 
         Eigen::Vector3d J;
-        if (std::abs(dist) < 1e-12) {
+        if (std::abs(normsq) < 1e-12) {
           J.fill(0);
           J(2) = -w;
         }
         else {
-          J(0) = - w * cx / dist;
-          J(1) = - w * cy / dist;
+          J(0) = - w * cx / norm;
+          J(1) = - w * cy / norm;
           J(2) = - w;
         }
 
