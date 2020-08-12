@@ -188,7 +188,7 @@ void ImageSeparableConvolution( const ImageType & img ,
   ImageVerticalConvolution( tmp , vert_k_cast , out ) ;
 }
 
-typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrixXf;
+using RowMatrixXf = image::Image<float>::EigenMapType;
 
 /// Specialization for Float based image (for arbitrary sized kernel)
 void SeparableConvolution2d(const RowMatrixXf& image,
@@ -210,7 +210,7 @@ void ImageSeparableConvolution( const Image<float> & img ,
   const VecKernel vert_k_cast = vert_k.template cast< typename aliceVision::Accumulator<pix_t>::Type >();
 
   out.resize(img.Width(), img.Height());
-  SeparableConvolution2d(img.GetMat(), horiz_k_cast, vert_k_cast, &((Image<float>::Base&)out));
+  SeparableConvolution2d(img.GetMat(), horiz_k_cast, vert_k_cast, &out);
 }
 
 } // namespace image

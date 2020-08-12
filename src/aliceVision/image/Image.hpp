@@ -8,38 +8,94 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
+#include <memory>
 
-//---------------------------------
-//  Universal Image Processing Algorithm
-//-- Container for a 2D image
-//-- This class ensure that the image have a width and a height
-//-- and a 2D array of T data.
-//-
-//-- Data is saved in row major format
-//-- Pixel access is done with operator(y,x)
-//  [2/3/2011 pierre MOULON]
-//---------------------------
 namespace aliceVision
 {
   namespace image
   {
 
+    /* There is no use for extended stride for the moment */
+    using EigenStride = Eigen::Stride<0, 0>;
+
+    /* An image is always a dynamic array with row major pixel ordering */
     template <typename T>
-    class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-    {
+    using EigenRowMatrixT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+    /* Define a map to an image container */
+    template <typename T>
+    using EigenMapTypeT = Eigen::Map<EigenRowMatrixT<T>, Eigen::AlignmentType::Unaligned, EigenStride>;
+
+    /*A container defines the pixel storage in memory */
+    template <class T>
+    class BaseContainer {
     public:
-      typedef T Tpixel; //-- Pixel data type
-      typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Base;
+      virtual ~BaseContainer() = default;
+      virtual BaseContainer * clone() = 0; 
+      virtual T * getDataPtr() = 0;
+      virtual bool resize( int width, int height, bool fInit = true, const T val = T( 0 )) = 0;
+    };
 
+    /**
+     * Classic Dense in-core container
+     * Using Eigen for management
+     */
+    template <class T>
+    class EigenContainer : public BaseContainer<T> {
+    public:
+      EigenContainer(int height, int width) : _contained(height, width){ 
+      }
+
+      EigenContainer(const EigenContainer & other) : _contained(other._contained) {
+      }
+
+      virtual BaseContainer<T> * clone() {
+        
+        return new EigenContainer(*this);
+      }
+
+      EigenRowMatrixT<T> & getContained() {
+        return _contained;
+      }
+
+      virtual T * getDataPtr() {
+        return _contained.data();
+      }
+
+      virtual bool resize( int width, int height, bool fInit = true, const T val = T( 0 )) {
+
+        _contained.resize(height, width);
+        if (fInit) {
+          _contained.fill(val);
+        }
+
+        return true;
+      }
+
+      virtual ~EigenContainer() = default;
+
+    protected:
+      EigenRowMatrixT<T> _contained;
+    };
+
+    template <typename T>
+    class Image : public EigenMapTypeT<T>
+    {
+    public:
+      using Tpixel = T;
+      using EigenRowMatrix = EigenRowMatrixT<T>;
+      using EigenMapType = EigenMapTypeT<T>;
 
       /**
        * @brief Default constructor
        * @note This create an empty image
        */
-      inline Image()
+      inline Image() : EigenMapType(nullptr, 0, 0)
       {
-        Base::resize( 0, 0 );
+        
+        std::shared_ptr<EigenContainer<T>> container = std::make_shared<EigenContainer<T>>(1, 1);        
+        _container = container;        
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), 1, 1);
       }
 
       /**
@@ -49,33 +105,64 @@ namespace aliceVision
       * @param fInit Tell if the image should be initialized
       * @param val If fInit is true, set all pixel to the specified value
       */
-      inline Image( int width, int height, bool fInit = false, const T val = T{} )
+      inline Image(int width, int height, bool fInit = false, const T val = T()) 
+      :  EigenMapType(nullptr, 0, 0)
       {
-        Base::resize( height, width );
-        if ( fInit )
-        {
-          Base::fill( val );
+        
+        std::shared_ptr<EigenContainer<T>> container = std::make_shared<EigenContainer<T>>(height, width);
+        
+        if (fInit) {
+          container->getContained().fill(val);
         }
+        
+        _container = container;   
+
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), height, width);
       };
 
       /**
       * @brief Copy constructor
       * @param I Source image
       */
-      inline Image( const Base& I )
-        : Base( I )
+      inline Image( const Image & I )
+      : EigenMapType(nullptr, 0, 0)
       {
 
+        size_t width = I.cols();
+        size_t height = I.rows();
+
+        _container = std::shared_ptr<BaseContainer<T>>(I._container->clone());
+
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), height, width);
+      }
+
+      /**
+      * @brief Copy constructor
+      * @param I Source matrix
+      */
+      inline Image( const EigenRowMatrix & I )
+      : EigenMapType(nullptr, 0, 0)
+      {        
+        size_t width = I.cols();
+        size_t height = I.rows();
+
+        std::shared_ptr<EigenContainer<T>> container = std::make_shared<EigenContainer<T>>(height, width);
+        container->getContained() = I;
+
+        _container = container;   
+
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), height, width);
       }
 
       /**
       * @brief Move constructor
       * @param src Source image
       */
-      inline Image( Base && src )
-        : Base( std::move( src ) )
+      inline Image(Image && src)
+      : EigenMapType(nullptr, 0, 0)
       {
-
+         _container = std::move(src._container);
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), src.rows(), src.cols());
       }
 
       /**
@@ -83,9 +170,35 @@ namespace aliceVision
       * @param I Source image
       * @return Image after assignment
       */
-      inline Image& operator=( const Base& I )
+      inline Image& operator=(const Image & I)
       {
-        Base::operator=( I );
+        size_t width = I.cols();
+        size_t height = I.rows();
+
+        _container = std::shared_ptr<BaseContainer<T>>(I._container->clone());
+
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), height, width);
+
+        return *this;
+      }
+
+      /**
+      * @brief Assignment operator
+      * @param I Source image
+      * @return Image after assignment
+      */
+      inline Image& operator=(const EigenRowMatrix & M)
+      {
+        size_t width = M.cols();
+        size_t height = M.rows();
+
+        std::shared_ptr<EigenContainer<T>> container = std::make_shared<EigenContainer<T>>(height, width);
+        container->getContained() = M;
+
+        _container = container;   
+
+        new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), height, width);
+
         return *this;
       }
 
@@ -93,10 +206,7 @@ namespace aliceVision
       * @brief destructor
       */
       virtual ~Image() = default;
-      //-- Image construction method
-      //------------------------------
-
-
+  
       /**
       * @brief Change geometry of image
       * @param width New width of image
@@ -104,24 +214,22 @@ namespace aliceVision
       * @param fInit Indicate if new image should be initialized
       * @param val if fInit is true all pixel in the new image are set to this value
       */
-      inline void resize( int width, int height, bool fInit = true, const T val = T{} )
+      inline void resize( int width, int height, bool fInit = true, const T val = T( 0 ))
       {
-        Base::resize( height, width );
-        if ( fInit )
-        {
-          Base::fill( val );
+        if (_container) {
+          if (_container->resize(width, height, fInit, val)) {
+            new ((EigenMapType*)this) EigenMapType(_container->getDataPtr(), height, width);
+          }
         }
       }
 
-      //------------------------------
-      //-- accessors/getters methods
       /**
        * @brief Retrieve the width of the image
        * @return Width of image
        */
       inline int Width()  const
       {
-        return static_cast<int>( Base::cols() );
+        return static_cast<int>(this->cols());
       }
 
       /**
@@ -130,7 +238,8 @@ namespace aliceVision
        */
       inline int Height() const
       {
-        return static_cast<int>( Base::rows() );
+        
+        return static_cast<int>( this->rows() );
       }
 
       /**
@@ -140,7 +249,7 @@ namespace aliceVision
       */
       inline int Depth() const
       {
-        return sizeof( Tpixel );
+        return sizeof(Tpixel);
       }
 
       /**
@@ -149,9 +258,10 @@ namespace aliceVision
       * @param x Index of the column
       * @return Constant pixel reference at position (y,x)
       */
-      inline const T& operator()( int y, int x ) const
+      inline const T& operator()(int y, int x) const
       {
-        return Base::operator()( y, x );
+        
+        return EigenMapType::operator()(y, x);
       }
 
       /**
@@ -160,36 +270,52 @@ namespace aliceVision
        * @param x Index of the column
        * @return Pixel reference at position (y,x)
        */
-      inline T& operator()( int y, int x )
+      inline T& operator()(int y, int x)
       {
-        return Base::operator()( y, x );
+        return EigenMapType::operator()(y, x);
       }
 
-      inline const T& operator()( int i ) const
+      /**
+       * @brief random pixel access
+       * @param i position of the pixel in row order
+       * @return Pixel reference at position i
+       */
+      [[deprecated]] const inline T& operator()(int i) const
       {
-        return Base::operator()( i );
+        int y = i / this->cols();
+        int x = i % this->cols();
+        
+        return EigenMapType::operator()(y, x);
       }
-      inline T& operator()( int i )
+
+      /**
+       * @brief random pixel access
+       * @param i position of the pixel in row order
+       * @return Pixel reference at position i
+       */
+      [[deprecated]] inline T& operator()(int i)
       {
-        return Base::operator()( i );
+        int y = i / this->cols();
+        int x = i % this->cols();
+        
+        return EigenMapType::operator()(y, x);
       }
+
 
       /**
       * @brief Get low level access to the internal pixel data
       * @return const reference to internal matrix data
       */
-      inline const Base& GetMat() const
+      inline const EigenMapType & GetMat() const
       {
-        return ( *this );
-      }
-      inline Base& GetMat()
-      {
-          return (*this);
+        return *this;
       }
 
-      //-- accessors/getters methods
-      //------------------------------
-
+      inline EigenMapType & GetMat()
+      {
+        return *this;
+      }
+      
       /**
       * @brief Tell if a point is inside the image.
       * @param y Index of the row
@@ -199,60 +325,27 @@ namespace aliceVision
       */
       inline bool Contains( int y, int x ) const
       {
-        return 0 <= x && x < Base::cols()
-               && 0 <= y && y < Base::rows();
+        return 0 <= x && x < this->cols() && 0 <= y && y < this->rows();
       }
 
       /**
-      * @brief Pixelwise addition of two images
-      * @param imgA First image
-      * @param imgB Second image
-      * @return pixelwise imgA + imgB
-      * @note Images must have the same size
-      */
-      template< typename T1>
-      friend Image<T1> operator+( const Image<T1> & imgA , const Image<T1> & imgB ) ;
+       * Get data pointer
+       * @return data pointer
+       */
+      Tpixel * data() const {
+        if (!_container) {
+          return nullptr;
+        }
 
-      /**
-      * @brief Pixelwise subtraction of two images
-      * @param imgA First image
-      * @param imgB Second image
-      * @return pixelwise imgA - imgB
-      * @note Images must have the same size
-      */
-      template< typename T1>
-      friend Image<T1> operator-( const Image<T1> & imgA , const Image<T1> & imgB ) ;
+        return _container->getDataPtr();
+      }
 
+      void fill(const T & value) {
+        EigenMapType::fill(value);
+      }
 
     protected :
-      //-- Image data are stored by inheritance of a matrix
+      std::shared_ptr<BaseContainer<T>> _container = nullptr;
     };
-
-    /**
-    * @brief Pixelwise addition of two images
-    * @param imgA First image
-    * @param imgB Second image
-    * @return pixelwise imgA + imgB
-    * @note Images must have the same size
-    */
-    template< typename T1 >
-    Image<T1> operator+( const Image<T1> & imgA , const Image<T1> & imgB )
-    {
-      return Image<T1>( imgA.Image<T1>::operator+( imgB ) ) ;
-    }
-
-    /**
-    * @brief Pixelwise subtraction of two images
-    * @param imgA First image
-    * @param imgB Second image
-    * @return pixelwise imgA - imgB
-    * @note Images must have the same size
-    */
-    template< typename T1>
-    Image<T1> operator-( const Image<T1> & imgA , const Image<T1> & imgB )
-    {
-      return Image<T1>( imgA.Image<T1>::operator-( imgB ) ) ;
-    }
-
   } // namespace image
 } // namespace aliceVision
