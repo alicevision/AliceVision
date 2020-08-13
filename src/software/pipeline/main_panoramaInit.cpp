@@ -142,12 +142,17 @@ public:
 
     double max_rx = std::max(double(source.Width()) - level_centerx, level_centerx);
     double max_ry = std::max(double(source.Height()) - level_centery, level_centery);
+
     double max_radius = std::min(max_rx, max_ry);
+    //Just in case the smallest side is cropped inside the circle.
+    max_radius *= 1.5;
+
     size_t max_radius_i = size_t(std::ceil(max_radius));
     double angles_bins = size_t(std::ceil(max_radius * M_PI)); 
 
-    image::Image<float> polarImage(max_radius_i, angles_bins);
-    if (!buildPolarImage(polarImage, source, level_centerx, level_centery)) {
+    image::Image<float> polarImage(max_radius_i, angles_bins, true, 0.0f);
+    image::Image<unsigned char> polarImageMask(max_radius_i, angles_bins, true, 0);
+    if (!buildPolarImage(polarImage, polarImageMask, source, level_centerx, level_centery)) {
       return false;
     }
 
@@ -158,7 +163,7 @@ public:
     int min_radius = 8;
     int radius = min_radius;// * pow(2, diff);
     
-    if (!buildGradientImage(gradientImage, polarImage, radius)) {
+    if (!buildGradientImage(gradientImage, polarImage, polarImageMask, radius)) {
       return false;
     }
 
@@ -331,7 +336,11 @@ public:
         double cx = pt(0) - best_params(0);
         double cy = pt(1) - best_params(1);
         double r = best_params(2);
-        double dist = sqrt(cx * cx + cy * cy) - r;
+        double normsq = cx * cx + cy * cy;
+        double norm = sqrt(normsq);
+        double dist = norm - r;
+
+        
 
         double w = 0.0;
         if (dist < c) {
@@ -341,13 +350,13 @@ public:
         }
 
         Eigen::Vector3d J;
-        if (std::abs(dist) < 1e-12) {
+        if (std::abs(normsq) < 1e-12) {
           J.fill(0);
           J(2) = -w;
         }
         else {
-          J(0) = - w * cx / dist;
-          J(1) = - w * cy / dist;
+          J(0) = - w * cx / norm;
+          J(1) = - w * cy / norm;
           J(2) = - w;
         }
 
@@ -445,12 +454,11 @@ public:
     return true;
   }
 
-  bool buildPolarImage(image::Image<float> & dst, const image::Image<float> & src, float center_x, float center_y) {
+  bool buildPolarImage(image::Image<float> & dst, image::Image<unsigned char> & dstmask, const image::Image<float> & src, float center_x, float center_y) {
 
     image::Sampler2d<image::SamplerLinear> sampler;
     size_t count_angles = dst.Height();
 
-    
 
     for (int angle = 0; angle < count_angles; angle++) {
       double rangle = angle * (2.0 * M_PI / double(count_angles));
@@ -463,16 +471,19 @@ public:
         double y = center_y + sangle * double(amplitude);
 
         dst(angle, amplitude) = 0;
+        dstmask(angle, amplitude) = 0;
+
         if (x < 0 || y < 0) continue;
         if (x >= src.Width() || y >= src.Height()) continue;
         dst(angle, amplitude) = sampler(src, y, x);
+        dstmask(angle, amplitude) = 255;
       }
     }
     
     return true;
   }
 
-  bool buildGradientImage(image::Image<float> & dst, const image::Image<float> & src, size_t radius_size) {
+  bool buildGradientImage(image::Image<float> & dst, const image::Image<float> & src, const image::Image<unsigned char> & srcMask, size_t radius_size) {
 
     /*Build gradient for x coordinates image */
     dst.fill(0);
@@ -489,23 +500,28 @@ public:
         float sum_inside = 0.0;
         float sum_outside = 0.0;
 
+        unsigned char valid = 255;
+
         for (int dx = -kernel_radius; dx < 0; dx++) {
           sum_inside += src(angle, amplitude + dx);
+          valid &= srcMask(angle, amplitude + dx);
         }
         for (int dx = 1; dx <= kernel_radius * 2; dx++) {
           sum_outside += src(angle, amplitude + dx);
+          valid &= srcMask(angle, amplitude + dx);
         }
 
-        dst(angle, amplitude) = sum_inside - sum_outside;
+        if (valid) {
+          dst(angle, amplitude) = std::max(0.0f, (sum_inside - sum_outside));
+        }
+        else {
+          dst(angle, amplitude) = 0.0f;
+        }
       }
     }
     
     return true;
   }
-
-  /*void drawCircle(image::Image<image::RGBfColor> & dest) {
-    image::DrawCircle(_center_x, _center_y, _radius, image::RGBfColor(1.0f), &dest);
-  }*/
 
   double getCircleCenterX() const {
     return _center_x;
