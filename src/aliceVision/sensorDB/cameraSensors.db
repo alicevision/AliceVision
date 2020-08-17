@@ -3247,6 +3247,7 @@ Mobiistar;Mobiistar Prime X Max;5.99;devicespecifications
 Mobiwire;Mobiwire Tala;4.74;devicespecifications
 Motorola;Moto G (4);6.06;usercontribution
 motorola;moto x4;4.0;usercontribution
+Motorola;Moto Z (2);4.96;devicespecifications
 Motorola;Motorola 2nd Gen;4.69;devicespecifications
 Motorola;Motorola 3rd Gen;4.69;devicespecifications
 Motorola;Motorola 4;6.06;usercontribution
@@ -5015,6 +5016,7 @@ Ramos;Ramos M7;4.82;devicespecifications
 Ramos;Ramos MOS1 Max;4.69;devicespecifications
 Ramos;Ramos R9;4.69;devicespecifications
 RaspberryPi;RP_imx219;3.6736;devicespecifications
+RaspberryPi;RP_imx477;6.287;devicespecifications
 RaspberryPi;RP_OV5647;3.6288;devicespecifications
 Realme;Realme 2 Pro;5.22;devicespecifications
 Red;Epic Dragon;30.7;usercontribution
