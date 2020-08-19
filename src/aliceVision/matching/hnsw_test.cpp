@@ -33,7 +33,7 @@ using namespace matching;
 
 // ----------------------- TESTING -----------------------
 
-BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN)
+BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN_float)
 {
     const float array[] = {0, 1, 2, 5, 6};
     // no 3, because it involve the same dist as 1,1
@@ -63,4 +63,87 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN)
     BOOST_CHECK_EQUAL(IndMatch(0,0), vec_nIndice[2]);
     BOOST_CHECK_EQUAL(IndMatch(0,3), vec_nIndice[3]);
     BOOST_CHECK_EQUAL(IndMatch(0,4), vec_nIndice[4]);
+}
+
+BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN_uchar)
+{
+    const unsigned char array[] = {0, 1, 2, 5, 6};
+    // no 3, because it involve the same dist as 1,1
+
+    ArrayMatcher_hnswlib<unsigned char> matcher;
+    BOOST_CHECK(matcher.Build(array, 5, 1));
+
+    const unsigned char query[]{2};
+    IndMatches vec_nIndice;
+    vector<float> vec_fDistance;
+    const int NN = 5;
+    BOOST_CHECK(matcher.SearchNeighbours(query, 1, &vec_nIndice, &vec_fDistance, NN));
+
+    BOOST_CHECK_EQUAL(5, vec_nIndice.size());
+    BOOST_CHECK_EQUAL(5, vec_fDistance.size());
+
+    for(auto i = 0; i < vec_fDistance.size(); ++i)
+    {
+        ALICEVISION_LOG_INFO("vec_nIndice[" << i << "]: " << vec_nIndice[i]);
+        ALICEVISION_LOG_INFO("vec_fDistance[" << i << "]: " << vec_fDistance[i]);
+    }
+
+    // Check distances:
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[0] - Square(2.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[1] - Square(1.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[2] - Square(0.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[3] - Square(5.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[4] - Square(6.0f - 2.0f)), 1e-6);
+
+    // Check indexes:
+    BOOST_CHECK_EQUAL(IndMatch(0, 2), vec_nIndice[0]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 1), vec_nIndice[1]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 0), vec_nIndice[2]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 3), vec_nIndice[3]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 4), vec_nIndice[4]);
+}
+
+BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_Hnsw_NN_uchar_128)
+{
+    std::vector<unsigned char> array(128*5, 0);
+    // {0, 1, 2, 5, 6}
+    array[1 * 128] = 1;
+    array[2 * 128] = 2;
+    array[3 * 128] = 5;
+    array[4 * 128] = 6;
+
+    // no 3, because it involve the same dist as 1,1
+
+    ArrayMatcher_hnswlib<unsigned char> matcher;
+    BOOST_CHECK(matcher.Build(array.data(), 5, 128));
+
+    std::vector<unsigned char> query(1 * 128, 0);
+    query[0] = 2;
+    IndMatches vec_nIndice;
+    vector<float> vec_fDistance;
+    const int NN = 5;
+    BOOST_CHECK(matcher.SearchNeighbours(query.data(), 1, &vec_nIndice, &vec_fDistance, NN));
+
+    BOOST_CHECK_EQUAL(5, vec_nIndice.size());
+    BOOST_CHECK_EQUAL(5, vec_fDistance.size());
+
+    for(auto i = 0; i < vec_fDistance.size(); ++i)
+    {
+        ALICEVISION_LOG_INFO("vec_nIndice[" << i << "]: " << vec_nIndice[i]);
+        ALICEVISION_LOG_INFO("vec_fDistance[" << i << "]: " << vec_fDistance[i]);
+    }
+
+    // Check distances:
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[0] - Square(2.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[1] - Square(1.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[2] - Square(0.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[3] - Square(5.0f - 2.0f)), 1e-6);
+    BOOST_CHECK_SMALL(static_cast<double>(vec_fDistance[4] - Square(6.0f - 2.0f)), 1e-6);
+
+    // Check indexes:
+    BOOST_CHECK_EQUAL(IndMatch(0, 2), vec_nIndice[0]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 1), vec_nIndice[1]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 0), vec_nIndice[2]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 3), vec_nIndice[3]);
+    BOOST_CHECK_EQUAL(IndMatch(0, 4), vec_nIndice[4]);
 }
