@@ -292,10 +292,8 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
 
   if(_ceresOptions.useParametersOrdering)
   {
-    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
-
     // copy ParameterBlockOrdering
-    *(solverOptions.linear_solver_ordering) = _ceresOptions.linearSolverOrdering;
+    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering(_linearSolverOrdering));
   }
 }
 
@@ -577,20 +575,23 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
       // apply a specific parameter ordering:
       if(_ceresOptions.useParametersOrdering)
       {
-        _ceresOptions.linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
-        _ceresOptions.linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
-        _ceresOptions.linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
+        _linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
+        _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+        _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
       }
 
       if(view.isPartOfRig() && !view.isPoseIndependant())
       {
         ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation);
 
+        double* rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
+        _linearSolverOrdering.AddElementToGroup(rigBlockPtr, 1);
+
         problem.AddResidualBlock(costFunction,
             lossFunction,
             intrinsicBlockPtr,
             poseBlockPtr,
-            _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data(), // subpose of the cameras rig
+            rigBlockPtr, // subpose of the cameras rig
             landmarkBlockPtr); // do we need to copy 3D point to avoid false motion, if failure ?
       }
       else
@@ -695,6 +696,19 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData,
 
   // add rotation priors to the Ceres problem
   addRotationPriorsToProblem(sfmData, refineOptions, problem);
+}
+
+ void BundleAdjustmentCeres::resetProblem()
+{
+  _statistics = Statistics();
+
+  _allParametersBlocks.clear();
+  _posesBlocks.clear();
+  _intrinsicsBlocks.clear();
+  _landmarksBlocks.clear();
+  _rigBlocks.clear();
+
+  _linearSolverOrdering.Clear();
 }
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const

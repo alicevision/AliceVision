@@ -49,7 +49,6 @@ public:
     ceres::LinearSolverType linearSolverType;
     ceres::PreconditionerType preconditionerType;
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
-    ceres::ParameterBlockOrdering linearSolverOrdering;
     std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
     bool useParametersOrdering = true;
@@ -171,16 +170,7 @@ private:
   /**
    * @brief Clear structures for a new problem
    */
-  inline void resetProblem()
-  {
-    _statistics = Statistics();
-
-    _allParametersBlocks.clear();
-    _posesBlocks.clear();
-    _intrinsicsBlocks.clear();
-    _landmarksBlocks.clear();
-    _rigBlocks.clear();
-  }
+  void resetProblem();
 
   /**
    * @brief Set user Ceres options to the solver
@@ -305,6 +295,10 @@ private:
   /// rig sub-poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
   HashMap<IndexT, HashMap<IndexT, std::array<double,6>>> _rigBlocks;
+
+  /// hinted order for ceres to eliminate blocks when solving.
+  /// note: this ceres parameter is built internally and must be reset on each call to the solver.
+  ceres::ParameterBlockOrdering _linearSolverOrdering;
 
 };
 
