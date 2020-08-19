@@ -14,16 +14,12 @@
 
 #include <aliceVision/system/Logger.hpp>
 
+#include <aliceVision/aliceVision_omp.hpp>
+
 #include <dependencies/hnswlib/hnswlib/hnswlib.h>
 
 #include <memory>
-
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
-#include <omp.h>
-#endif
-
 #include <vector>
-
 #include <random>
 #include <cmath>
 
@@ -96,9 +92,7 @@ public:
         // add first point..
         HNSWmatcher->addPoint((void*)(dataset), (size_t)0);
         //...and the other in //
-        #ifdef ALICEVISION_IS_DEFINED
         #pragma omp parallel for
-        #endif
         for(int i = 1; i < nbRows; i++)
         {
             HNSWmatcher->addPoint((void*)(dataset + dimension * i), (size_t)i);
@@ -145,9 +139,7 @@ public:
       pvec_distances->resize(nbQuery * NN);
       pvec_indices->resize(nbQuery * NN);
 
-      #ifdef ALICEVISION_IS_DEFINED
       #pragma omp parallel for
-      #endif
       for(int i = 0; i < nbQuery; ++i)
       {
         auto result = HNSWmatcher->searchKnn(
