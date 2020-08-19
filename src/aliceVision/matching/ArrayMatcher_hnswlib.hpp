@@ -14,7 +14,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <aliceVision/aliceVision_omp.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <dependencies/hnswlib/hnswlib/hnswlib.h>
 
