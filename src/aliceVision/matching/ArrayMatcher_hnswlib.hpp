@@ -48,6 +48,7 @@ class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 {
 public:
     using BaseArrayMatcher = ArrayMatcher<Scalar, Metric>;
+    using BaseDistanceType = typename BaseArrayMatcher::DistanceType;
     using DistanceType = typename std::conditional<std::is_integral<Scalar>::value, int, float>::type;
 
     // Some initialization
@@ -101,7 +102,7 @@ public:
      *
      * @return True if success.
      */
-    bool SearchNeighbour(const Scalar* query, int* indice, typename BaseArrayMatcher::DistanceType* distance) override
+    bool SearchNeighbour(const Scalar* query, int* indice, BaseDistanceType* distance) override
     {
         ALICEVISION_LOG_WARNING("This matcher is not made to match a single query");
         return false;
@@ -119,7 +120,7 @@ public:
      * @return True if success.
      */
     bool SearchNeighbours(const Scalar* query, int nbQuery, IndMatches* pvec_indices,
-                          std::vector<typename BaseArrayMatcher::DistanceType>* pvec_distances, size_t NN) override
+                          std::vector<BaseDistanceType>* pvec_distances, size_t NN) override
     {
       if(HNSWmatcher.get() == nullptr)
       {
@@ -145,7 +146,7 @@ public:
           for (int j = 0; j < NN; ++j) {
             const auto &res = result[j];
             (*pvec_indices)[i * NN + j] = IndMatch(i, res.second);
-            (*pvec_distances)[i * NN + j] = BaseArrayMatcher::DistanceType(res.first);
+            (*pvec_distances)[i * NN + j] = BaseDistanceType(res.first);
           }
         }
 
