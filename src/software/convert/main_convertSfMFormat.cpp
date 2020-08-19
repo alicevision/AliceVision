@@ -178,7 +178,8 @@ int aliceVision_main(int argc, char **argv)
       if(toRemove)
       {
         viewsToRemove.push_back(view.getViewId());
-        if(view.isPoseIndependant())
+        // remove pose only if it exists and it is independent
+        if(view.isPoseIndependant() && sfmData.existsPose(view))
           posesToRemove.push_back(view.getPoseId());
       }
     }
