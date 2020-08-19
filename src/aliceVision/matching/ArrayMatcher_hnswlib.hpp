@@ -47,7 +47,8 @@ template <typename Scalar = float, typename Metric = L2_Simple<Scalar>>
 class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 {
 public:
-    using DistanceType = typename Metric::ResultType;
+    using BaseArrayMatcher = ArrayMatcher<Scalar, Metric>;
+    using DistanceType = typename std::conditional<std::is_integral<Scalar>::value, int, float>::type;
 
     // Some initialization
     ArrayMatcher_hnswlib() = default;
@@ -62,7 +63,7 @@ public:
      *
      * \return True if success.
      */
-    bool Build(const Scalar* dataset, int nbRows, int dimension)
+    bool Build(const Scalar* dataset, int nbRows, int dimension) override
     {
         reset();
 
@@ -72,19 +73,8 @@ public:
         dimension_ = dimension;
 
         // Here this is tricky since there is no specialization
-        if(typeid(DistanceType) == typeid(int))
-        {
-            HNSWmetric.reset(dynamic_cast<SpaceInterface<DistanceType>*>(new L2SpaceI(dimension)));
-        }
-        else if(typeid(DistanceType) == typeid(float))
-        {
-            HNSWmetric.reset(dynamic_cast<SpaceInterface<DistanceType>*>(new L2Space(dimension)));
-        }
-        else
-        {
-            ALICEVISION_LOG_WARNING("HNSW matcher: this type of distance is not handled Yet");
-            return false;
-        }
+        using L2SpaceType = typename std::conditional<std::is_integral<Scalar>::value, L2SpaceI, L2Space>::type;
+        HNSWmetric.reset(dynamic_cast<SpaceInterface<DistanceType>*>(new L2SpaceType(dimension)));
 
         HNSWmatcher.reset(new HierarchicalNSW<DistanceType>(HNSWmetric.get(), nbRows, 16, 100));
         HNSWmatcher->setEf(16);
@@ -111,7 +101,7 @@ public:
      *
      * @return True if success.
      */
-    bool SearchNeighbour(const Scalar* query, int* indice, DistanceType* distance)
+    bool SearchNeighbour(const Scalar* query, int* indice, typename BaseArrayMatcher::DistanceType* distance) override
     {
         ALICEVISION_LOG_WARNING("This matcher is not made to match a single query");
         return false;
@@ -129,7 +119,7 @@ public:
      * @return True if success.
      */
     bool SearchNeighbours(const Scalar* query, int nbQuery, IndMatches* pvec_indices,
-                          std::vector<DistanceType>* pvec_distances, size_t NN)
+                          std::vector<typename BaseArrayMatcher::DistanceType>* pvec_distances, size_t NN) override
     {
       if(HNSWmatcher.get() == nullptr)
       {
@@ -155,7 +145,7 @@ public:
           for (int j = 0; j < NN; ++j) {
             const auto &res = result[j];
             (*pvec_indices)[i * NN + j] = IndMatch(i, res.second);
-            (*pvec_distances)[i * NN + j] = res.first;
+            (*pvec_distances)[i * NN + j] = BaseArrayMatcher::DistanceType(res.first);
           }
         }
 
