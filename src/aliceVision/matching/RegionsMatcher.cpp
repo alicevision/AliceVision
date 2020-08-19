@@ -100,6 +100,13 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         } break;
 
+        case HNSWLIB:
+        {
+          typedef L2_Vectorized<unsigned char> MetricT;
+          typedef ArrayMatcher_hnswlib<unsigned char, MetricT> MatcherT;
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
+        } break;
+
         default:
           ALICEVISION_LOG_WARNING("Using unknown matcher type");
       }

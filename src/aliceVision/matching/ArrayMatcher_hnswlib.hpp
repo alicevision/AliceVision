@@ -49,7 +49,7 @@ class ArrayMatcher_hnswlib : public ArrayMatcher<Scalar, Metric>
 public:
     using BaseArrayMatcher = ArrayMatcher<Scalar, Metric>;
     using BaseDistanceType = typename BaseArrayMatcher::DistanceType;
-    using DistanceType = typename std::conditional<std::is_integral<Scalar>::value, int, float>::type;
+    using HDistanceType = typename std::conditional<std::is_integral<Scalar>::value, int, float>::type;
 
     // Some initialization
     ArrayMatcher_hnswlib() = default;
@@ -75,9 +75,9 @@ public:
 
         // Here this is tricky since there is no specialization
         using L2SpaceType = typename std::conditional<std::is_integral<Scalar>::value, L2SpaceI, L2Space>::type;
-        HNSWmetric.reset(dynamic_cast<SpaceInterface<DistanceType>*>(new L2SpaceType(dimension)));
+        HNSWmetric.reset(dynamic_cast<SpaceInterface<HDistanceType>*>(new L2SpaceType(dimension)));
 
-        HNSWmatcher.reset(new HierarchicalNSW<DistanceType>(HNSWmetric.get(), nbRows, 16, 100));
+        HNSWmatcher.reset(new HierarchicalNSW<HDistanceType>(HNSWmetric.get(), nbRows, 16, 100));
         HNSWmatcher->setEf(16);
 
         // add first point..
@@ -135,7 +135,7 @@ public:
       {
         auto result = HNSWmatcher->searchKnn(
           (const void*)(query + dimension_ * i), NN,
-          [](const std::pair<DistanceType, size_t>& var1, const std::pair<DistanceType, size_t>& var2) -> bool {
+          [](const std::pair<HDistanceType, size_t>& var1, const std::pair<HDistanceType, size_t>& var2) -> bool {
               return var1.first < var2.first;
           });
 
@@ -164,8 +164,8 @@ private:
 
 private:
   int dimension_{0};
-  std::unique_ptr<SpaceInterface<DistanceType>> HNSWmetric;
-  std::unique_ptr<HierarchicalNSW<DistanceType>> HNSWmatcher;
+  std::unique_ptr<SpaceInterface<HDistanceType>> HNSWmetric;
+  std::unique_ptr<HierarchicalNSW<HDistanceType>> HNSWmatcher;
 };
 
 } // namespace matching
