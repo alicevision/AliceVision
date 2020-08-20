@@ -110,6 +110,7 @@ void Database::find(const std::vector<Word>& document, std::size_t N, std::vecto
  */
 void Database::find( const SparseHistogram& query, std::size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
 {
+    matches.clear();
     matches.reserve(database_.size());
     for(const auto& document : database_)
     {
