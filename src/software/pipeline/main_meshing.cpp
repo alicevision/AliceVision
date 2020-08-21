@@ -22,8 +22,12 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
+#include <Eigen/Geometry>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+
+#include <cmath>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -126,6 +130,122 @@ void removeLandmarksWithoutObservations(sfmData::SfMData& sfmData)
   }
 }
 
+/// BoundingBox Structure stocking ordered values from the command line
+struct BoundingBox
+{
+    Eigen::Vector3d translation = Eigen::Vector3d::Zero();
+    Eigen::Vector3d rotation = Eigen::Vector3d::Zero();
+    Eigen::Vector3d scale = Eigen::Vector3d::Zero();
+
+    inline bool isInitialized() const 
+    { 
+        return scale(0) != 0.0;
+    }
+
+    Eigen::Matrix4d modelMatrix() const
+    {
+        // Compute the translation matrix
+        Eigen::Matrix4d translateMat = Eigen::Matrix4d::Identity();
+        translateMat.col(3).head<3>() << translation.x(), translation.y(), translation.z();
+
+        // Compute the rotation matrix from quaternion made with Euler angles in that order: ZXY (same as Qt algorithm)
+        Eigen::Matrix4d rotateMat = Eigen::Matrix4d::Identity();
+
+        {
+            double pitch = rotation.x() * M_PI / 180;
+            double yaw = rotation.y() * M_PI / 180;
+            double roll = rotation.z() * M_PI / 180;
+
+            pitch *= 0.5;
+            yaw *= 0.5;
+            roll *= 0.5;
+
+            const double cy = std::cos(yaw);
+            const double sy = std::sin(yaw);
+            const double cr = std::cos(roll);
+            const double sr = std::sin(roll);
+            const double cp = std::cos(pitch);
+            const double sp = std::sin(pitch);
+            const double cycr = cy * cr;
+            const double sysr = sy * sr;
+
+            const double w = cycr * cp + sysr * sp;
+            const double x = cycr * sp + sysr * cp;
+            const double y = sy * cr * cp - cy * sr * sp;
+            const double z = cy * sr * cp - sy * cr * sp;
+
+            Eigen::Quaterniond quaternion(w, x, y, z);
+            rotateMat.block<3, 3>(0, 0) = quaternion.matrix();
+        }
+
+        // Compute the scale matrix
+        Eigen::Matrix4d scaleMat = Eigen::Matrix4d::Identity();
+        scaleMat.diagonal().head<3>() << scale.x(), scale.y(), scale.z();
+
+        // Model matrix
+        Eigen::Matrix4d modelMat = translateMat * rotateMat * scaleMat;
+
+        return modelMat;
+    }
+
+    void toHexahedron(Point3d* hexah) const
+    {
+        Eigen::Matrix4d modelMat = modelMatrix();
+
+        // Retrieve the eight vertices of the bounding box
+        // Based on VoxelsGrid::getHexah implementation
+        Eigen::Vector4d origin = Eigen::Vector4d(-1, -1, -1, 1);
+        Eigen::Vector4d vvx = Eigen::Vector4d(2, 0, 0, 0);
+        Eigen::Vector4d vvy = Eigen::Vector4d(0, 2, 0, 0);
+        Eigen::Vector4d vvz = Eigen::Vector4d(0, 0, 2, 0);
+
+        Eigen::Vector4d vertex0 = modelMat * origin;
+        Eigen::Vector4d vertex1 = modelMat * (origin + vvx);
+        Eigen::Vector4d vertex2 = modelMat * (origin + vvx + vvy);
+        Eigen::Vector4d vertex3 = modelMat * (origin + vvy);
+        Eigen::Vector4d vertex4 = modelMat * (origin + vvz);
+        Eigen::Vector4d vertex5 = modelMat * (origin + vvz + vvx);
+        Eigen::Vector4d vertex6 = modelMat * (origin + vvz + vvx + vvy);
+        Eigen::Vector4d vertex7 = modelMat * (origin + vvz + vvy);
+
+        // Apply those eight vertices to the hexah
+        hexah[0] = Point3d(vertex0.x(), vertex0.y(), vertex0.z());
+        hexah[1] = Point3d(vertex1.x(), vertex1.y(), vertex1.z());
+        hexah[2] = Point3d(vertex2.x(), vertex2.y(), vertex2.z());
+        hexah[3] = Point3d(vertex3.x(), vertex3.y(), vertex3.z());
+        hexah[4] = Point3d(vertex4.x(), vertex4.y(), vertex4.z());
+        hexah[5] = Point3d(vertex5.x(), vertex5.y(), vertex5.z());
+        hexah[6] = Point3d(vertex6.x(), vertex6.y(), vertex6.z());
+        hexah[7] = Point3d(vertex7.x(), vertex7.y(), vertex7.z());
+    }
+};
+
+inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
+{
+    std::string s;
+    in >> s;
+
+    std::vector<std::string> dataStr;
+    boost::split(dataStr, s, boost::is_any_of(","));
+    if(dataStr.size() != 9)
+    {
+        throw std::runtime_error("Invalid number of values for bounding box.");
+    }
+
+    std::vector<double> data;
+    data.reserve(9);
+    for (const std::string& elt : dataStr) 
+    {
+        data.push_back(boost::lexical_cast<double>(elt));
+    }
+
+    out_bbox.translation << data[0], data[1], data[2];
+    out_bbox.rotation << data[3], data[4], data[5];
+    out_bbox.scale << data[6], data[7], data[8];
+
+    return in;
+}
+
 
 int aliceVision_main(int argc, char* argv[])
 {
@@ -149,6 +269,7 @@ int aliceVision_main(int argc, char* argv[])
     bool colorizeOutput = false;
     float forceTEdgeDelta = 0.1f;
     unsigned int seed = 0;
+    BoundingBox boundingBox;
 
     fuseCut::FuseParams fuseParams;
 
@@ -167,6 +288,8 @@ int aliceVision_main(int argc, char* argv[])
     optionalParams.add_options()
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
             "Input filtered depth maps folder.")
+        ("boundingBox", po::value<BoundingBox>(&boundingBox),
+            "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
@@ -328,7 +451,9 @@ int aliceVision_main(int argc, char* argv[])
                     float minPixSize;
                     fuseCut::Fuser fs(&mp);
 
-                    if(meshingFromDepthMaps && !estimateSpaceFromSfM)
+                    if (boundingBox.isInitialized())
+                        boundingBox.toHexahedron(&hexah[0]);
+                    else if(meshingFromDepthMaps && !estimateSpaceFromSfM)
                       fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
                     else
                       fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);

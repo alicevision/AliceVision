@@ -33,7 +33,8 @@ namespace po = boost::program_options;
  */
 enum class EAlignmentMethod: unsigned char
 {
-  TRANSFOMATION = 0
+  TRANSFORMATION = 0
+  , MANUAL
   , AUTO_FROM_CAMERAS
   , AUTO_FROM_LANDMARKS
   , FROM_SINGLE_CAMERA
@@ -49,7 +50,8 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
 {
   switch(alignmentMethod)
   {
-    case EAlignmentMethod::TRANSFOMATION:       return "transformation";
+    case EAlignmentMethod::TRANSFORMATION:      return "transformation";
+    case EAlignmentMethod::MANUAL:              return "manual";
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
     case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
@@ -68,7 +70,8 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   std::string method = alignmentMethod;
   std::transform(method.begin(), method.end(), method.begin(), ::tolower); //tolower
 
-  if(method == "transformation")      return EAlignmentMethod::TRANSFOMATION;
+  if(method == "transformation")      return EAlignmentMethod::TRANSFORMATION;
+  if(method == "manual")              return EAlignmentMethod::MANUAL;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
   if(method == "from_single_camera")  return EAlignmentMethod::FROM_SINGLE_CAMERA;
@@ -114,6 +117,60 @@ static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, V
   return true;
 }
 
+static void parseManualTransform(const std::string& manualTransform, double& S, Mat3& R, Vec3& t)
+{
+    // Parse the string
+    std::vector<std::string> dataStr;
+    boost::split(dataStr, manualTransform, boost::is_any_of(","));
+    if (dataStr.size() != 7)
+    {
+        throw std::runtime_error("Invalid number of values for manual transformation with ZXY Euler: tx,ty,tz,rx,ry,rz,s.");
+    }
+
+    std::vector<double> data;
+    data.reserve(7);
+    for (const std::string& elt : dataStr)
+    {
+        data.push_back(boost::lexical_cast<double>(elt));
+    }
+
+    // Assignments
+    t << data[0], data[1], data[2]; // Assign Translation
+    S = data[6]; // Assign Scale
+    
+    Vec3 eulerAngles(data[3], data[4], data[5]); // Temporary eulerAngles vector
+
+    // Compute the rotation matrix from quaternion made with Euler angles in that order: ZXY (same as Qt algorithm)
+    Mat3 rotateMat = Mat3::Identity();
+    {
+        double pitch = eulerAngles.x() * M_PI / 180;
+        double yaw = eulerAngles.y() * M_PI / 180;
+        double roll = eulerAngles.z() * M_PI / 180;
+
+        pitch *= 0.5;
+        yaw *= 0.5;
+        roll *= 0.5;
+
+        const double cy = std::cos(yaw);
+        const double sy = std::sin(yaw);
+        const double cr = std::cos(roll);
+        const double sr = std::sin(roll);
+        const double cp = std::cos(pitch);
+        const double sp = std::sin(pitch);
+        const double cycr = cy * cr;
+        const double sysr = sy * sr;
+
+        const double w = cycr * cp + sysr * sp;
+        const double x = cycr * sp + sysr * cp;
+        const double y = sy * cr * cp - cy * sr * sp;
+        const double z = cy * sr * cp - sy * cr * sp;
+
+        Eigen::Quaterniond quaternion(w, x, y, z);
+        rotateMat = quaternion.matrix();
+    }
+    R = rotateMat; // Assign Rotation
+}
+
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -135,6 +192,8 @@ int aliceVision_main(int argc, char **argv)
   std::vector<sfm::MarkerWithCoord> markers;
   std::string outputViewsAndPosesFilepath;
 
+  std::string manualTransform;
+
   po::options_description allParams("AliceVision sfmTransform");
 
   po::options_description requiredParams("Required parameters");
@@ -149,6 +208,7 @@ int aliceVision_main(int argc, char **argv)
     ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
         "Transform Method:\n"
         "\t- transformation: Apply a given transformation\n"
+        "\t- manual: Apply the gizmo transformation\n"
         "\t- auto_from_cameras: Use cameras\n"
         "\t- auto_from_landmarks: Use landmarks\n"
         "\t- from_single_camera: Use camera specified by --tranformation\n"
@@ -157,6 +217,8 @@ int aliceVision_main(int argc, char **argv)
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
       "Single camera: camera UID or image filename")
+    ("manualTransform", po::value<std::string>(&manualTransform),
+        "Translation, rotation and scale defined with the manual mode.")
     ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
       ("optional for 'landmarks' method:\n"
       "Image describer types used to compute the mean of the point cloud\n"
@@ -234,7 +296,7 @@ int aliceVision_main(int argc, char **argv)
 
   switch(alignmentMethod)
   {
-    case EAlignmentMethod::TRANSFOMATION:
+    case EAlignmentMethod::TRANSFORMATION:
       {
           if(transform.empty())
           {
@@ -248,6 +310,15 @@ int aliceVision_main(int argc, char **argv)
                  return EXIT_FAILURE;
               }
           }
+    }
+    break;
+
+    case EAlignmentMethod::MANUAL:
+    {
+        if (manualTransform.empty())
+            ALICEVISION_LOG_WARNING("No manualTransform option set, so the transform will be identity.");
+        else
+            parseManualTransform(manualTransform, S, R, t);
     }
     break;
 
