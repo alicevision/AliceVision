@@ -68,11 +68,11 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
   IndexT removedTrack_count = 0;
   sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
 
-  typedef std::vector<sfmData::Landmarks::key_type> LandmarksKeysVec;
+  using LandmarksKeysVec = std::vector<sfmData::Landmarks::key_type>;
   LandmarksKeysVec v_keys; v_keys.reserve(sfmData.structure.size());
-  for (const sfmData::Landmarks::value_type &kv : sfmData.structure) v_keys.push_back(kv.first);
+  std::transform(sfmData.structure.cbegin(), sfmData.structure.cend(), std::back_inserter(v_keys), stl::RetrieveKey());
 
-  std::vector<sfmData::Landmarks::key_type> toErase;
+  LandmarksKeysVec toErase;
 
   #pragma omp parallel for
   for (auto it = v_keys.begin(); it < v_keys.end(); it ++)
@@ -80,16 +80,16 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     const sfmData::Observations &observations = sfmData.structure[*it].observations;
 
     // create matrix for observation directions from camera to point
-    Eigen::Matrix<double, 3, Eigen::Dynamic> viewDirections(3, observations.size());
-    Eigen::Matrix<double, 3, Eigen::Dynamic>::Index i;
+    Mat3X viewDirections(3, observations.size());
+    Mat3X::Index i;
     sfmData::Observations::const_iterator itObs;
     
     // Greedy algorithm almost always finds an acceptable angle in 1-5 iterations (if it exists).
     // It works by greedily chasing the first larger view angle found from the current greedy index.
-    // View angles have a sparial distribution, so greedily jumping over larger and larger angles
+    // View angles have a spatial distribution, so greedily jumping over larger and larger angles
     // forces the greedy index towards the outside of the distribution.
     double dGreedyCos = 1.1;
-    Eigen::Matrix<double, 3, Eigen::Dynamic>::Index greedyI = 0;
+    Mat3X::Index greedyI = 0;
 
 
     // fill matrix, optimistically checking each new entry against col(greedyI)
@@ -132,7 +132,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     {
       // Compute and find minimum cosAngle between viewDirections[i] and all viewDirections[0:i].
       // Single statement can allow Eigen optimizations
-      double dMinCosAngle = (viewDirections.col(i).transpose() * viewDirections.leftCols(i)).minCoeff();
+      const double dMinCosAngle = (viewDirections.col(i).transpose() * viewDirections.leftCols(i)).minCoeff();
       if (dMinCosAngle < dMaxAcceptedCosAngle) {
         break;
       }
@@ -146,7 +146,8 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     }
   }
 
-  for (IndexT key : toErase) {
+  for (IndexT key : toErase)
+  {
     sfmData.structure.erase(key);
   }
 
