@@ -65,8 +65,6 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
 {
   // note that smallest accepted angle => largest accepted cos(angle)
   const double dMaxAcceptedCosAngle = std::cos(degreeToRadian(dMinAcceptedAngle));
-  IndexT removedTrack_count = 0;
-  sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
 
   using LandmarksKeysVec = std::vector<sfmData::Landmarks::key_type>;
   LandmarksKeysVec v_keys; v_keys.reserve(sfmData.structure.size());
@@ -75,9 +73,9 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
   LandmarksKeysVec toErase;
 
   #pragma omp parallel for
-  for (auto it = v_keys.begin(); it < v_keys.end(); it ++)
+  for (int landmarkIndex = 0; landmarkIndex < v_keys.size(); ++landmarkIndex)
   {
-    const sfmData::Observations &observations = sfmData.structure[*it].observations;
+    const sfmData::Observations &observations = sfmData.structure.at(v_keys[landmarkIndex]).observations;
 
     // create matrix for observation directions from camera to point
     Mat3X viewDirections(3, observations.size());
