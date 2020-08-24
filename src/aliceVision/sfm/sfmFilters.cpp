@@ -140,7 +140,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     if (i == 0)
     {
       #pragma omp critical
-      toErase.push_back(*it);
+      toErase.push_back(v_keys[landmarkIndex]);
     }
   }
 
