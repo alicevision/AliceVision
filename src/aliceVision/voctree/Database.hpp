@@ -23,8 +23,8 @@ namespace voctree{
  */
 struct DocMatch
 {
-  DocId id;
-  float score;
+  DocId id{UndefinedIndexT};
+  float score{0.0f};
 
   DocMatch() = default;
   DocMatch(DocId _id, float _score)

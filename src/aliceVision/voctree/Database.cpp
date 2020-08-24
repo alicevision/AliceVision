@@ -110,23 +110,18 @@ void Database::find(const std::vector<Word>& document, std::size_t N, std::vecto
  */
 void Database::find( const SparseHistogram& query, std::size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
 {
-  // Accumulate the best N matches
-  using bestN_tag = boost::accumulators::tag::tail<boost::accumulators::left>;
-  boost::accumulators::accumulator_set<DocMatch, boost::accumulators::features<bestN_tag> > acc(bestN_tag::cache_size = N);
-
-  /// @todo Try only computing distances against documents sharing at least one word
-  for(const auto& document: database_)
-  {
-    // for each document/image in the database compute the distance between the 
-    // histograms of the query image and the others
-    const float distance = sparseDistance(query, document.second, distanceMethod, word_weights_);
-    acc(DocMatch(document.first, distance));
-  }
-
-  // extract the best N
-  boost::accumulators::extractor<bestN_tag> bestN;
-  matches.resize(std::min(N, database_.size()));
-  std::copy(bestN(acc).begin(), bestN(acc).end(), matches.begin());
+    matches.clear();
+    matches.reserve(database_.size());
+    for(const auto& document : database_)
+    {
+        // for each document/image in the database compute the distance between the
+        // histograms of the query image and the others
+        const float distance = sparseDistance(query, document.second, distanceMethod, word_weights_);
+        matches.emplace_back(document.first, distance);
+    }
+    const std::size_t nMatches = std::min(N, matches.size());
+    std::partial_sort(matches.begin(), matches.begin() + nMatches, matches.end());
+    matches.resize(nMatches);
 }
 
 /**
