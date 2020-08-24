@@ -27,8 +27,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
-//Graphcut
-#include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/boykov_kolmogorov_max_flow.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
