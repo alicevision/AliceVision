@@ -17,18 +17,45 @@
 namespace aliceVision {
 namespace sfmData {
 
-float View::getCameraExposureSetting() const
+float View::getCameraExposureSetting(const float referenceISO, const float referenceFNumber) const
 {
     const float shutter = getMetadataShutter();
     const float fnumber = getMetadataFNumber();
+    const float iso = getMetadataISO();
+    
     if(shutter < 0 || fnumber < 0)
         return -1.f;
 
-    const float iso = getMetadataISO();
-    const float isoRatio = (iso < 0.f) ? 1.0 : (iso / 100.f);
+    float lReferenceIso = referenceISO;
+    if (lReferenceIso < 0.0f) {
+        lReferenceIso = iso;
+    }
 
-    float cameraExposure = (shutter * isoRatio) / (fnumber * fnumber);
-    return cameraExposure;
+    float lReferenceFNumber = referenceFNumber;
+    if (lReferenceFNumber < 0.0f) {
+        lReferenceFNumber = fnumber;
+    }
+    
+    /* 
+    iso = qLt / aperture^2
+    isoratio = iso2 / iso1 = qLt / aperture1² / (qLt / aperture2²) 
+    isoratio = aperture2² / aperture1²
+    aperture2² = iso2 / iso1 * 1
+    aperture2 = sqrt(iso2 / iso1)
+    */
+    float iso_2_aperture = sqrt(iso / lReferenceIso);
+  
+    /*
+    aperture = f / diameter
+    aperture2 / aperture1 = diameter2 / diameter1
+    (aperture2 / aperture1)² = (area2 / pi) / (area1 / pi)
+    */
+
+    float new_fnumber = fnumber * iso_2_aperture;
+    float exp_increase = (new_fnumber / lReferenceFNumber) * (new_fnumber / lReferenceFNumber);
+
+
+    return shutter * exp_increase;
 }
 
 float View::getEv() const
