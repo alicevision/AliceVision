@@ -104,6 +104,8 @@ if(AV_BUILD_ZLIB)
 set(ZLIB_TARGET zlib)
 ExternalProject_Add(${ZLIB_TARGET}
        URL http://www.zlib.net/zlib-1.2.11.tar.gz
+       URL_HASH MD5=1c9f62f0778697a09d36121ead88e08e
+       DOWNLOAD_DIR ${BUILD_DIR}/download/zlib
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -129,6 +131,8 @@ endif()
 set(GEOGRAM_TARGET geogram)
 ExternalProject_Add(${GEOGRAM_TARGET}
        URL https://github.com/alicevision/geogram/archive/v1.7.4.tar.gz
+       URL_HASH MD5=08b322ff129d3a67b182cc6362bab345
+       DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -173,6 +177,8 @@ endif()
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
        URL https://github.com/01org/tbb/archive/2019_U6.tar.gz
+       URL_HASH MD5=fbb2d9572fe39b997575055b9f9c820b
+       DOWNLOAD_DIR ${BUILD_DIR}/download/tbb
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -193,6 +199,8 @@ set(EIGEN_DISABLE_ALIGN_FLAGS
     "-DCMAKE_C_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0")
 ExternalProject_Add(${EIGEN_TARGET}
        URL https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz
+       URL_HASH MD5=77a2c934eaf35943c43ee600a83b72df
+       DOWNLOAD_DIR ${BUILD_DIR}/download/eigen
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -227,8 +235,10 @@ endif()
 if(AV_BUILD_LAPACK)
 set(LAPACK_TARGET lapack)
 ExternalProject_Add(${LAPACK_TARGET}
-       URL https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz
        #   http://www.netlib.org/lapack/lapack-3.9.0.tar.gz
+       URL https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz
+       URL_HASH MD5=0b251e2a8d5f949f99b50dd5e2200ee2
+       DOWNLOAD_DIR ${BUILD_DIR}/download/lapack
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -251,6 +261,8 @@ set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INS
 ExternalProject_Add(${SUITESPARSE_TARGET}
        # URL https://github.com/DrToimothyAldenDavis/SuiteSparse/archive/v4.5.6.tar.gz
        URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.8.1.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
+       URL_HASH MD5=c414679bbc9432a3def01b31ad921140
+       DOWNLOAD_DIR ${BUILD_DIR}/download/suitesparse
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -292,6 +304,8 @@ set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} -DCeres_DIR=${CMAKE_INSTALL_PRE
 set(OPENEXR_TARGET openexr)
 ExternalProject_Add(${OPENEXR_TARGET}
       URL https://github.com/openexr/openexr/archive/v2.4.0.tar.gz
+      URL_HASH MD5=9e4d69cf2a12c6fb19b98af7c5e0eaee
+      DOWNLOAD_DIR ${BUILD_DIR}/download/openexr
       # URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
       # The release 2.2.1 has troubles with C++17, which breaks compilation with recent compilers.
       # The problem has been fixed https://github.com/openexr/openexr/issues/235
@@ -323,6 +337,8 @@ if(AV_BUILD_TIFF)
 set(TIFF_TARGET tiff)
 ExternalProject_Add(${TIFF_TARGET}
        URL http://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz
+       URL_HASH MD5=2165e7aba557463acc0664e71a3ed424
+       DOWNLOAD_DIR ${BUILD_DIR}/download/tiff
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -342,6 +358,8 @@ if(AV_BUILD_PNG)
 set(PNG_TARGET png)
 ExternalProject_Add(${PNG_TARGET}
        URL http://github.com/glennrp/libpng-releases/raw/master/libpng-1.6.34.tar.gz
+       URL_HASH MD5=03fbc5134830240104e96d3cda648e71
+       DOWNLOAD_DIR ${BUILD_DIR}/download/libpng
        #    http://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
        #    https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
        PREFIX ${BUILD_DIR}
@@ -364,6 +382,8 @@ set(JPEG_TARGET turbojpeg)
 # Add turbojpeg
 ExternalProject_Add(${JPEG_TARGET}
        URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz
+       URL_HASH MD5=44c43e4a9fb352f47090804529317c88
+       DOWNLOAD_DIR ${BUILD_DIR}/download/libjpeg-turbo
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -423,6 +443,8 @@ endif()
 set(BOOST_TARGET boost)
 ExternalProject_Add(${BOOST_TARGET}
        URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src-1.70.0/boost_1_70_0.tar.bz2
+       URL_HASH MD5=242ecc63507711d6706b9b0c0d0c7d4f
+       DOWNLOAD_DIR ${BUILD_DIR}/download/boost
        #    http://sourceforge.net/projects/boost/files/boost/1.70.0/boost_1_70_0.tar.bz2
        #    https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz
        # GIT_REPOSITORY https://github.com/boostorg/boost.git
@@ -445,6 +467,8 @@ set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX})
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
       URL https://github.com/OpenImageIO/oiio/archive/Release-2.1.15.0.tar.gz
+      URL_HASH MD5=f03aa5e3ac4795af04771ee4146e9832
+      DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -464,6 +488,8 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
       URL https://github.com/alembic/alembic/archive/1.7.12.tar.gz
+      URL_HASH MD5=e2b3777f23c5c09481a008cc6f0f8a40
+      DOWNLOAD_DIR ${BUILD_DIR}/download/alembic
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -484,6 +510,7 @@ ExternalProject_Add(opencv_contrib
   # URL_MD5 4776354662667c85a91bcd19f6a13da7
   URL https://github.com/opencv/opencv_contrib/archive/4.1.0.zip
   URL_MD5 3cd00bbfdebb69ad24756ccfb801ebac
+  DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
   BUILD_ALWAYS 0
   UPDATE_COMMAND ""
@@ -497,6 +524,7 @@ ExternalProject_Add(${OPENCV_TARGET}
   # URL_MD5 b02b54115f1f99cb9e885d1e5988ff70
   URL https://github.com/opencv/opencv/archive/4.1.0.zip
   URL_MD5 5c5a9ce3519415b263d512e7f6a1e2af
+  DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
   UPDATE_COMMAND ""
   BUILD_IN_SOURCE 0
   BUILD_ALWAYS 0
