@@ -983,22 +983,15 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
     std::sort(scales.begin(), scales.end());
     int selected_index = int(floor(float(scales.size() - 1) * ratioUpscale));
     double selected_scale = scales[selected_index];
+
+    ALICEVISION_LOG_INFO("Computed panorama size: "  << optimalSize.first * selected_scale << "x" << optimalSize.second * selected_scale);
+
     double multiplier = pow(2.0, int(floor(log2(selected_scale))));
-    
     optimalSize.first = optimalSize.first * multiplier;
     optimalSize.second = optimalSize.second * multiplier;
   }
 
   return true;
-}
-
-Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
-    
-  Eigen::AngleAxis<double> Myaw(- yaw * M_PI / 180.0, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxis<double> Mpitch(- pitch * M_PI / 180.0, Eigen::Vector3d::UnitX());
-  Eigen::AngleAxis<double> Mroll(- roll * M_PI / 180.0, Eigen::Vector3d::UnitZ());
-    
-  return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
 }
 
 int aliceVision_main(int argc, char **argv)
@@ -1106,6 +1099,10 @@ int aliceVision_main(int argc, char **argv)
     if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
     {
       panoramaSize = optimalPanoramaSize;
+    }
+    else {
+      ALICEVISION_LOG_INFO("Impossible to compute an optimal panorama size");
+      return EXIT_FAILURE;
     }
   }
   else
