@@ -110,6 +110,11 @@ public:
     : _sfmData(sfmData)
   {}
 
+  void setNormalization(bool normalize, bool useLog) {
+    _useNormalization = normalize;
+    _useNormalizationLog = useLog;
+  }
+
   void setRange(int rangeStart, int rangeSize)
   {
     _rangeStart = rangeStart;
@@ -210,12 +215,46 @@ public:
 
 private:
 
+  void normalizeImage(image::Image<float> & imageInOut) {
+
+     /* Normalize image */
+    float min = imageInOut.minCoeff();
+    float max =  imageInOut.maxCoeff();
+    float sigma = (max - min);
+
+    if (sigma == 0.0f) {
+      return;
+    }
+
+    if (_useNormalizationLog) {
+      for (int i = 0; i < imageInOut.Height(); i++) {
+        for (int j = 0; j < imageInOut.Width(); j++) {
+          imageInOut(i, j) = std::log(imageInOut(i, j));
+        }
+      }
+
+      min = imageInOut.minCoeff();
+      max =  imageInOut.maxCoeff();
+      sigma = (max - min);
+    }
+
+    for (int i = 0; i < imageInOut.Height(); i++) {
+      for (int j = 0; j < imageInOut.Width(); j++) {
+        imageInOut(i, j) = (imageInOut(i, j) - min) / sigma;
+      }
+    }
+  }
+
   void computeViewJob(const ViewJob& job, bool useGPU = false)
   {
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
 
     image::readImage(job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
+
+    if (_useNormalization) {
+      normalizeImage(imageGrayFloat);
+    }
 
     const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
 
@@ -254,6 +293,9 @@ private:
   int _maxThreads = -1;
   std::vector<ViewJob> _cpuJobs;
   std::vector<ViewJob> _gpuJobs;
+
+  bool _useNormalization = false;
+  bool _useNormalizationLog = false;
 };
 
 
@@ -268,14 +310,14 @@ int aliceVision_main(int argc, char **argv)
   std::string outputFolder;
 
   // user optional parameters
-
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string describerPreset = feature::EImageDescriberPreset_enumToString(feature::EImageDescriberPreset::NORMAL);
+  std::string normalizationMode = "None";
   int rangeStart = -1;
   int rangeSize = 1;
   int maxThreads = 0;
   bool forceCpuExtraction = false;
-
+  
   po::options_description allParams("AliceVision featureExtraction");
 
   po::options_description requiredParams("Required parameters");
@@ -299,7 +341,9 @@ int aliceVision_main(int argc, char **argv)
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
       "Range size.")
     ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
-      "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).");
+      "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).")
+    ("normalizationMode", po::value<std::string>(&normalizationMode)->default_value(normalizationMode),
+      "Normalization method ('None', 'Normal', 'Logarithmic').");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -376,6 +420,18 @@ int aliceVision_main(int argc, char **argv)
   // set maxThreads
   extractor.setMaxThreads(maxThreads);
 
+  bool useNormalization = false;
+  bool useNormalizationLog = false;
+  if (normalizationMode == "Normal") {
+    useNormalization = true;
+    useNormalizationLog = false;
+  } else if (normalizationMode == "Log") {
+    useNormalization = true;
+    useNormalizationLog = true;
+  }
+
+  extractor.setNormalization(useNormalization, useNormalizationLog);
+ 
   // set extraction range
   if(rangeStart != -1)
   {
