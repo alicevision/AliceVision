@@ -555,11 +555,13 @@ int main(int argc, char * argv[])
   std::string externalInfoFilepath;
   std::string sfmInputDataFilepath;
   std::string sfmOutputDataFilepath;
+  std::string inputAngleString;
 
   bool useFisheye = false;
   bool estimateFisheyeCircle = true;
   Vec2 fisheyeCenterOffset(0, 0);
   double fisheyeRadius = 96.0;
+  float additionalAngle = 0.0f;
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
@@ -577,6 +579,7 @@ int main(int argc, char * argv[])
   po::options_description motorizedHeadParams("Motorized Head parameters");
   motorizedHeadParams.add_options()
     ("config,c", po::value<std::string>(&externalInfoFilepath), "External info xml file.")
+    ("inputAngle,a", po::value<std::string>(&inputAngleString), "External info xml additional angle.")
     ;
 
   po::options_description fisheyeParams("Fisheye parameters");
@@ -640,6 +643,16 @@ int main(int argc, char * argv[])
   {
     pt::ptree tree;
 
+    if (inputAngleString == "rotate90") {
+      additionalAngle = -M_PI_2;
+    }
+    else if (inputAngleString == "rotate180") {
+      additionalAngle = -M_PI;
+    }
+    else if (inputAngleString == "rotate270") {
+      additionalAngle = M_PI_2;
+    }
+
     try
     {
       pt::read_xml(externalInfoFilepath, tree);
@@ -647,6 +660,7 @@ int main(int argc, char * argv[])
     catch (...)
     {
       ALICEVISION_CERR("Error parsing input file");
+      return EXIT_FAILURE;
     }
 
     pt::ptree lens = tree.get_child("papywizard.header.lens");
@@ -686,7 +700,7 @@ int main(int argc, char * argv[])
       Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
       Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
       Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
-      Eigen::AngleAxis<double> Mimage(-M_PI_2, Eigen::Vector3d::UnitZ());
+      Eigen::AngleAxis<double> Mimage(additionalAngle-M_PI_2, Eigen::Vector3d::UnitZ());
 
       Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *  Mroll.toRotationMatrix() * Mimage.toRotationMatrix()  ;
 
