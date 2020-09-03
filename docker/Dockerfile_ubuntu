@@ -1,6 +1,7 @@
 ARG AV_VERSION
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
+ARG CMAKE_FLAGS_EXTRA=
 FROM alicevision/alicevision-deps:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
@@ -50,6 +51,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release \
         -DALICEVISION_USE_CUDA:BOOL=ON \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_EXAMPLES:BOOL=OFF \
+	${CMAKE_FLAGS_EXTRA} \
         "${AV_DEV}" && \
    make install -j"$(nproc)" && \
    rm -rf "${AV_BUILD}" "${AV_DEV}" && \
