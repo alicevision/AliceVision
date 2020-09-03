@@ -172,11 +172,13 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+
+  /* Store the pose c1_R_o of the prior */
   sfmData::Poses & initial_poses = inputSfmData.getPoses();
-  Eigen::Matrix3d ref_R_base = Eigen::Matrix3d::Identity();
+  Eigen::Matrix3d c1_R_oprior = Eigen::Matrix3d::Identity();
   if (!initial_poses.empty())
   {
-    ref_R_base = initial_poses.begin()->second.getTransform().rotation();
+    c1_R_oprior = initial_poses.begin()->second.getTransform().rotation();
   }
 
   // get describerTypes
@@ -243,19 +245,46 @@ int aliceVision_main(int argc, char **argv)
 
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
 
+  
+
   // If an initial set of poses was available, make sure at least one pose is aligned with it
+  // Otherwise take the middle view (sorted over time)
   sfmData::Poses & final_poses = outSfmData.getPoses();
-  if (!final_poses.empty() && !initial_poses.empty())
+
+  if (!final_poses.empty())
   {
-    Eigen::Matrix3d ref_R_current = final_poses.begin()->second.getTransform().rotation();
-    Eigen::Matrix3d R_restore = ref_R_current.transpose() * ref_R_base;
+    Eigen::Matrix3d ocur_R_oprior = Eigen::Matrix3d::Identity();
+
+    if (initial_poses.empty()) {
+
+      std::vector<std::pair<int64_t, IndexT>> sorted_views;
+
+      // Sort views per timestamps
+      for (auto v : outSfmData.getViews()) {
+        int64_t t = v.second->getMetadataDateTimestamp();
+        sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
+      }
+      std::sort(sorted_views.begin(), sorted_views.end());
+
+      // Get the view which was taken at the middle of the sequence 
+      int median = sorted_views.size() / 2;
+      IndexT poseId = sorted_views[median].second;
+      
+      // Set as reference
+      ocur_R_oprior = final_poses[poseId].getTransform().rotation().transpose();
+    }
+    else {
+      Eigen::Matrix3d c1_R_ocur = final_poses.begin()->second.getTransform().rotation();
+      ocur_R_oprior = c1_R_ocur.transpose() * c1_R_oprior;
+    }
     
-    for (auto & pose : outSfmData.getPoses())
+    for (auto & pose : final_poses)
     {
       geometry::Pose3 p = pose.second.getTransform();
 
-      Eigen::Matrix3d newR = p.rotation() * R_restore;
-      p.rotation() = newR;
+      Eigen::Matrix3d c_R_oprior = p.rotation() * ocur_R_oprior;
+
+      p.rotation() = c_R_oprior;
       pose.second.setTransform(p);
     }
   }
