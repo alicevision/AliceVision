@@ -261,7 +261,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Load " << filepath);
             image::readImage(filepath, images[i], image::EImageColorSpace::SRGB);
 
-            exposures[i] = group[i]->getCameraExposureSetting(targetView->getMetadataISO(), targetView->getMetadataFNumber());
+            exposures[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
         }
 
         // Merge HDR images
