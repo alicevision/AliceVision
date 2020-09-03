@@ -2072,11 +2072,14 @@ public:
     size_t minsize = std::min(color.Height(), color.Width());
       
     /*
-    minsize / 2^x = 8
-    minsize / 8 = 2^x
-    x = log2(minsize/8)
+    Look for the smallest scale such that the image is not smaller than the
+    convolution window size. 
+    minsize / 2^x = 5
+    minsize / 5 = 2^x
+    x = log2(minsize/5)
     */
-    size_t optimal_scale = size_t(floor(std::log2(double(minsize) / 5.0)));
+    const float gaussian_filter_size = 5.0f;
+    size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussian_filter_size)));
     if (optimal_scale < _bands) {
       ALICEVISION_LOG_ERROR("Decreasing scale !");
       return false;
