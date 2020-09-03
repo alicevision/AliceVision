@@ -978,17 +978,19 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   }
 
   
-  if (scales.size() > 1) {
+  if (scales.empty()) {
 
     std::sort(scales.begin(), scales.end());
     int selected_index = int(floor(float(scales.size() - 1) * ratioUpscale));
     double selected_scale = scales[selected_index];
 
-    ALICEVISION_LOG_INFO("Computed panorama size: "  << optimalSize.first * selected_scale << "x" << optimalSize.second * selected_scale);
+    ALICEVISION_LOG_INFO("Estimated panorama size: "  << int(optimalSize.first * selected_scale) << "x" << int(optimalSize.second * selected_scale));
 
     double multiplier = pow(2.0, int(floor(log2(selected_scale))));
     optimalSize.first = optimalSize.first * multiplier;
     optimalSize.second = optimalSize.second * multiplier;
+
+    ALICEVISION_LOG_INFO("Estimated panorama size (Rounded to lower power of two): "  << optimalSize.first << "x" << optimalSize.second);
   }
 
   return true;
@@ -1094,7 +1096,9 @@ int aliceVision_main(int argc, char **argv)
   // If panorama width is undefined, estimate it
   if (panoramaSize.first <= 0)
   {
-    float ratioUpscale = float(percentUpscale) / 100.0f;
+    float ratioUpscale = clamp(float(percentUpscale) / 100.0f, 0.0f, 1.0f);
+
+
     std::pair<int, int> optimalPanoramaSize;
     if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
     {
