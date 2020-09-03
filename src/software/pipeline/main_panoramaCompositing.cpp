@@ -1388,13 +1388,16 @@ public:
       rect.l = rect.l - 3;
       rect.w = rect.w + 6;
     }
+
     if (rect.t > 0) {
-      rect.t = rect.t - 3;
+      rect.t = std::max(0, rect.t - 3);
       rect.h = rect.h + 6;
     }
+
     if (rect.t + rect.h > _owners.Height()) {
       rect.h = _owners.Height() - rect.t;
     }
+
     _rects[currentIndex] = rect;
 
 
@@ -1459,7 +1462,6 @@ public:
           p2 = 0;
           w2 = info.second.w - w1;
         }
-
 
         Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_1 = _labels.block(info.second.t, p1, info.second.h, w1);
         Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_2 = _labels.block(info.second.t, p2, info.second.h, w2);
