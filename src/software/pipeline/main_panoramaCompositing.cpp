@@ -1454,15 +1454,15 @@ public:
         int p2 = 0;
         int w2 = 0;
 
-        if (p1 + w1 >= _labels.Width()) {
+        if (p1 + w1 > _labels.Width()) {
           w1 = _labels.Width() - p1;
           p2 = 0;
           w2 = info.second.w - w1;
         }
 
-        auto backup_1 = _labels.block(info.second.t, p1, info.second.h, w1);
-        auto backup_2 = _labels.block(info.second.t, p2, info.second.h, w2);
 
+        Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_1 = _labels.block(info.second.t, p1, info.second.h, w1);
+        Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_2 = _labels.block(info.second.t, p2, info.second.h, w2);
 
         double base_cost = cost(info.first);
         alphaExpansion(info.first);
