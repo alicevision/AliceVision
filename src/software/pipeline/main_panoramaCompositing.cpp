@@ -258,7 +258,7 @@ static inline int sep (int i, int u, int gi, int gu, int) noexcept {
   return (u*u - i*i + gu*gu - gi*gi) / (2*(u-i));
 }
 
-/*Adapté depuis un code externe : VFLib: https://github.com/vinniefalco/VFLib (Licence MIT) */
+/// Code adapted from VFLib: https://github.com/vinniefalco/VFLib (Licence MIT)
 bool computeDistanceMap(image::Image<int> & distance, const image::Image<unsigned char> & mask) {
 
   int m = mask.Width();
