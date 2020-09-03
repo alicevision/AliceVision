@@ -458,7 +458,7 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVisi
     }
 
     if (mask(i, j)) {
-      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+      inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
     }
   }
 
@@ -471,7 +471,7 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVisi
     }
 
     if (mask(i, j)) {
-      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+      inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
     }
   }
 
@@ -484,7 +484,7 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVisi
     }
 
     if (mask(i, j)) {
-      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+      inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
     }
   }
 
@@ -497,7 +497,7 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVisi
     }
 
     if (mask(i, j)) {
-      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+      inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
     }
   }
   
@@ -523,7 +523,7 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVisi
       others &= mask(i + 1, j + 1);
       if (others) continue;
 
-      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+      inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
     }
   }
 }
@@ -2149,6 +2149,8 @@ int aliceVision_main(int argc, char **argv)
   std::string compositerType = "multiband";
   std::string overlayType = "none";
   bool useGraphCut = true;
+  bool showBorders = false;
+  bool showSeams = false;
 
   system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
 
@@ -2170,7 +2172,7 @@ int aliceVision_main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
-    ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams].")
+    ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")
     ("useGraphCut,c", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Do we use graphcut for ghost removal ?");
   allParams.add(optionalParams);
 
@@ -2212,6 +2214,15 @@ int aliceVision_main(int argc, char **argv)
 
   // Set verbose level given command line
   system::Logger::get()->setLogLevel(verboseLevel);
+
+  if (overlayType == "borders" || overlayType == "all")
+  {
+    showBorders = true;
+  }
+
+  if (overlayType == "seams" || overlayType == "all") {
+    showSeams = true;
+  }
 
   // load input scene
   sfmData::SfMData sfmData;
@@ -2432,8 +2443,9 @@ int aliceVision_main(int argc, char **argv)
 
   // Build image
   compositer->terminate();
+  
 
-  if (overlayType == "borders")
+  if (showBorders)
   {
     for (const auto& viewIt : sfmData.getViews())
     {
@@ -2456,7 +2468,8 @@ int aliceVision_main(int argc, char **argv)
       drawBorders(compositer->getPanorama(), mask, offsetX, offsetY);
     }
   }
-  else if (overlayType == "seams")
+  
+  if (showSeams)
   {
     drawSeams(compositer->getPanorama(), labels);
   }
