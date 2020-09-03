@@ -1025,7 +1025,7 @@ int aliceVision_main(int argc, char **argv)
   optionalParams.add_options()
     ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
      "Panorama Width in pixels.")
-    ("percentUpscale,w", po::value<int>(&percentUpscale)->default_value(percentUpscale),
+    ("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale),
      "Percentage of upscaled pixels.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
      "Range image index start.")
