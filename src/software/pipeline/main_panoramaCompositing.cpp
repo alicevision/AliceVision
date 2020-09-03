@@ -261,9 +261,6 @@ static inline int sep (int i, int u, int gi, int gu, int) noexcept {
 /// Code adapted from VFLib: https://github.com/vinniefalco/VFLib (Licence MIT)
 bool computeDistanceMap(image::Image<int> & distance, const image::Image<unsigned char> & mask) {
 
-  int m = mask.Width();
-  int n = mask.Height();
-
   int width = mask.Width();
   int height = mask.Height();
 
