@@ -289,8 +289,6 @@ bool computeDistanceMap(image::Image<int> & distance, const image::Image<unsigne
       }
     }
   }
-
-  
   
   std::vector <int> s (std::max(width, height));
   std::vector <int> t (std::max(width, height));
