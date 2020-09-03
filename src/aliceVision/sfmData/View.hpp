@@ -370,7 +370,7 @@ public:
     std::string dtstring = getMetadataDateTimeOriginal();
     std::regex regex("([\\d]+):([\\d]+):([\\d]+) ([\\d]+):([\\d]+):([\\d]+)");
     
-    if (std::regex_match(dtstring, sm, regex)) {
+    if (!std::regex_match(dtstring, sm, regex)) {
       return -1;
     }
     
