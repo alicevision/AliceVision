@@ -396,7 +396,6 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
 bool ReconstructionEngine_panorama::Adjust()
 {
   BundleAdjustmentPanoramaCeres::CeresOptions options;
-  options.useParametersOrdering = false;
   options.summary = true;
   
   // Start bundle with rotation only

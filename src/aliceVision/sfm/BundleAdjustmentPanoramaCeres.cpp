@@ -394,14 +394,6 @@ void BundleAdjustmentPanoramaCeres::setSolverOptions(ceres::Solver::Options& sol
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
-
-  if(_ceresOptions.useParametersOrdering)
-  {
-    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
-
-    // copy ParameterBlockOrdering
-    *(solverOptions.linear_solver_ordering) = _ceresOptions.linearSolverOrdering;
-  }
 }
 
 void BundleAdjustmentPanoramaCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)
