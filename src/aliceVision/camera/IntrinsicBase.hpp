@@ -464,6 +464,25 @@ protected:
 };
 
 /**
+ * @brief Apply intrinsic and extrinsic parameters to unit vector
+ * from the cameras focus to a point on the camera plane
+ * @param[in] pose Extrinsic pose
+ * @param[in] intrinsic Intrinsic camera paremeters
+ * @param[in] x Point in image
+ * @return The unit vector in 3D space pointing out from the camera to the point
+ */
+inline Vec3 applyIntrinsicExtrinsic(const geometry::Pose3& pose,
+                                    const IntrinsicBase* intrinsic,
+                                    const Vec2& x) {
+
+  // x = (u, v, 1.0)  // image coordinates
+  // X = R.t() * K.inv() * x + C // Camera world point
+  // getting the ray:
+  // ray = X - C = R.t() * K.inv() * x
+  return (pose.rotation().transpose() * intrinsic->toUnitSphere(intrinsic->removeDistortion(intrinsic->ima2cam(x)))).normalized();
+}
+
+/**
  * @brief Return the angle (degree) between two bearing vector rays
  * @param[in] ray1 First bearing vector ray
  * @param[in] ray2 Second bearing vector ray
@@ -493,12 +512,8 @@ inline double angleBetweenRays(const geometry::Pose3& pose1,
                                const Vec2& x1,
                                const Vec2& x2)
 {
-  // x = (u, v, 1.0)  // image coordinates
-  // X = R.t() * K.inv() * x + C // Camera world point
-  // getting the ray:
-  // ray = X - C = R.t() * K.inv() * x
-  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->toUnitSphere(intrinsic1->removeDistortion(intrinsic1->ima2cam(x1)))).normalized();
-  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->toUnitSphere(intrinsic2->removeDistortion(intrinsic2->ima2cam(x2)))).normalized();
+  const Vec3 ray1 = applyIntrinsicExtrinsic(pose1, intrinsic1, x1);
+  const Vec3 ray2 = applyIntrinsicExtrinsic(pose2, intrinsic2, x2);
   return angleBetweenRays(ray1, ray2);
 }
 

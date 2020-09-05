@@ -47,9 +47,7 @@ public:
     ceres::LinearSolverType linearSolverType;
     ceres::PreconditionerType preconditionerType;
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
-    ceres::ParameterBlockOrdering linearSolverOrdering;
     unsigned int nbThreads;
-    bool useParametersOrdering = true;
     bool summary = false;
     bool verbose = true;
   };

@@ -316,7 +316,7 @@ public:
    */
   double getMetadataShutter() const
   {
-      return getDoubleMetadata({"ExposureTime"});
+      return getDoubleMetadata({"ExposureTime", "Shutter Speed Value"});
   }
 
   /**
@@ -329,7 +329,7 @@ public:
       {
           return getDoubleMetadata({"FNumber"});
       }
-      if (hasDigitMetadata({"ApertureValue"}))
+      if (hasDigitMetadata({"ApertureValue", "Aperture Value"}))
       {
           const double aperture = getDoubleMetadata({"ApertureValue", "Aperture Value"});
           // fnumber = 2^(aperture/2)
