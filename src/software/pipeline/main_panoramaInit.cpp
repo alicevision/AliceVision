@@ -216,6 +216,8 @@ public:
     double level_centerx = _center_x / pow(2.0, level);
     double level_centery = _center_y / pow(2.0, level);
     double level_radius = _radius / pow(2.0, level);
+    int min_radius = gradients.Width() / 2;
+    
 
     /* Extract maximas of response */
     std::vector<Eigen::Vector2d> selected_points;
@@ -229,7 +231,7 @@ public:
       int max_x = -1;
 
       /*Lookup possible radius*/
-      int start = std::max(0, int(level_radius) - uncertainty);
+      int start = std::max(min_radius, int(level_radius) - uncertainty);
       int end = std::min(gradients.Width() - 1, int(level_radius) + uncertainty);
 
       for (size_t x = start; x <= end; x++) {
