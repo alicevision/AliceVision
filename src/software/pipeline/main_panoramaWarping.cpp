@@ -325,7 +325,7 @@ public:
       }
     }
 
-    if (scales.size() <= 1) return false;
+    if (scales.empty()) return false;
 
     std::sort(scales.begin(), scales.end());
     int selected_index = int(floor(float(scales.size() - 1) * ratioUpscale));
