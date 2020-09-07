@@ -355,7 +355,7 @@ int aliceVision_main(int argc, char** argv)
         for(int j = 0; j < group.size(); ++j)
         {   
             
-            float etime = group[j]->getCameraExposureSetting(group[0]->getMetadataISO(), group[0]->getMetadataFNumber());
+            float etime = group[j]->getCameraExposureSetting(/*group[0]->getMetadataISO(), group[0]->getMetadataFNumber()*/);
             exposures.push_back(etime);
         }
         groupedExposures.push_back(exposures);
