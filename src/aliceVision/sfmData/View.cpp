@@ -21,39 +21,37 @@ float View::getCameraExposureSetting(const float referenceISO, const float refer
 {
     const float shutter = getMetadataShutter();
     const float fnumber = getMetadataFNumber();
-    const float iso = getMetadataISO();
-    
-    if(shutter < 0 || fnumber < 0)
+    if(shutter <= 0.0f || fnumber <= 0.0f)
         return -1.f;
 
-    float lReferenceIso = referenceISO;
-    if (lReferenceIso < 0.0f) {
-        lReferenceIso = iso;
-    }
-
     float lReferenceFNumber = referenceFNumber;
-    if (lReferenceFNumber < 0.0f) {
+    if (lReferenceFNumber <= 0.0f)
+    {
         lReferenceFNumber = fnumber;
     }
-    
-    /* 
+
+    const float iso = getMetadataISO();
+    /*
     iso = qLt / aperture^2
-    isoratio = iso2 / iso1 = qLt / aperture1² / (qLt / aperture2²) 
-    isoratio = aperture2² / aperture1²
-    aperture2² = iso2 / iso1 * 1
+    isoratio = iso2 / iso1 = (qLt / aperture1^2) / (qLt / aperture2^2)
+    isoratio = aperture2^2 / aperture1^2
+    aperture2^2 = iso2 / iso1 * 1
     aperture2 = sqrt(iso2 / iso1)
     */
-    float iso_2_aperture = (iso < 1e-6f)?1.0f:sqrt(iso / lReferenceIso);
-  
+    float iso_2_aperture = 1.0f;
+    if(iso > 1e-6f && referenceISO > 1e-6f)
+    {
+        // Need to have both iso and reference iso to use it
+        iso_2_aperture = std::sqrt(iso / referenceISO);
+    }
+
     /*
     aperture = f / diameter
     aperture2 / aperture1 = diameter2 / diameter1
-    (aperture2 / aperture1)² = (area2 / pi) / (area1 / pi)
+    (aperture2 / aperture1)^2 = (area2 / pi) / (area1 / pi)
     */
-
     float new_fnumber = fnumber * iso_2_aperture;
     float exp_increase = (new_fnumber / lReferenceFNumber) * (new_fnumber / lReferenceFNumber);
-
 
     return shutter * exp_increase;
 }
