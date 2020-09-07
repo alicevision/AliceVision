@@ -47,9 +47,9 @@ std::size_t computeViewUID(const View& view)
     stl::hash_combine(uid, imagePath.parent_path().generic_string());
   }
 
-  if(view.hasMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}))
+  if(view.hasMetadataDateTimeOriginal())
   {
-    stl::hash_combine(uid, view.getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"}));
+    stl::hash_combine(uid, view.getMetadataDateTimeOriginal());
     stl::hash_combine(uid, view.getMetadata({"Exif:SubsecTimeOriginal", "SubsecTimeOriginal"}));
   }
   else if(view.hasMetadata({"imageCounter"}))

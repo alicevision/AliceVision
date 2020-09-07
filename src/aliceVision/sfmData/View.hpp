@@ -359,6 +359,12 @@ public:
     return static_cast<EEXIFOrientation>(orientation);
   }
 
+  const bool hasMetadataDateTimeOriginal() const
+  {
+      return hasMetadata(
+          {"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date", "ctime"});
+  }
+
   const std::string& getMetadataDateTimeOriginal() const
   {
     return getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date", "ctime"});
