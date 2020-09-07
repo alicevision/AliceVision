@@ -43,7 +43,7 @@ float View::getCameraExposureSetting(const float referenceISO, const float refer
     aperture2² = iso2 / iso1 * 1
     aperture2 = sqrt(iso2 / iso1)
     */
-    float iso_2_aperture = sqrt(iso / lReferenceIso);
+    float iso_2_aperture = (iso < 1e-6f)?1.0f:sqrt(iso / lReferenceIso);
   
     /*
     aperture = f / diameter
