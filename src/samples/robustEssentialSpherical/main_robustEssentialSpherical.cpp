@@ -36,7 +36,7 @@ using namespace svg;
 using namespace std;
 
 int main() {
-
+  std::mt19937 randomNumberGenerator;
   std::cout << "Compute the relative pose between two spherical image."
    << "\nUse an Acontrario robust estimation based on angular errors." << std::endl;
 
@@ -101,6 +101,7 @@ int main() {
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::ANN_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -164,7 +165,7 @@ int main() {
       // Robust estimation of the Essential matrix and it's precision
       robustEstimation::Mat3Model E;
       const double precision = std::numeric_limits<double>::infinity();
-      const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &E, precision);
+      const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &E, precision);
       const double & threshold = ACRansacOut.first;
       const double & NFA = ACRansacOut.second;
 

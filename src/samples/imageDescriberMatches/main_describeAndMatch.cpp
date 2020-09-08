@@ -76,6 +76,7 @@ int main(int argc, char **argv)
   }
 
   Image<RGBColor> image;
+  std::mt19937 randomNumberGenerator;
 
   Image<unsigned char> imageL, imageR;
   readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
@@ -148,6 +149,7 @@ int main(int argc, char **argv)
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio
   matching::IndMatches vec_PutativeMatches;
   matching::DistanceRatioMatch(
+    randomNumberGenerator,
     0.8, matching::BRUTE_FORCE_L2,
     *regions_perImage[0].get(),
     *regions_perImage[1].get(),

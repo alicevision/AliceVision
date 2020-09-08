@@ -169,6 +169,7 @@ int main(int argc, char **argv)
   ALICEVISION_COUT(vm);
 
   Image<RGBColor> image;
+  std::mt19937 randomNumberGenerator;
 
   Image<float> imageLeft, imageRight;
   readImage(filenameLeft, imageLeft, image::EImageColorSpace::NO_CONVERSION);
@@ -225,7 +226,8 @@ int main(int argc, char **argv)
   matching::IndMatches vec_PutativeMatches;
 
 
-  matching::DistanceRatioMatch(ratioThreshold,
+  matching::DistanceRatioMatch(randomNumberGenerator,
+                               ratioThreshold,
                                matching::BRUTE_FORCE_L2,
                                *regions_perImage[0],
                                *regions_perImage[1],
