@@ -2473,6 +2473,9 @@ int aliceVision_main(int argc, char **argv)
   outputMetadata.remove("AliceVision:offsetY");
   outputMetadata.remove("AliceVision:panoramaWidth");
   outputMetadata.remove("AliceVision:panoramaHeight");
+  // no notion of extra orientation on the output panorama
+  outputMetadata.remove("Orientation");
+  outputMetadata.remove("orientation");
 
   // Store output
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
