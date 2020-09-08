@@ -294,8 +294,8 @@ endif()
 # OpenEXR
 # ==============================================================================
 find_package(OpenEXR REQUIRED)
-if(OPENEXR_FOUND)
-  message(STATUS "OpenEXR found. (Version ${OPENEXR_VERSION})")
+if(TARGET OpenEXR::IlmImf)
+  message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
 else()
   message(SEND_ERROR "Failed to find OpenEXR.")
 endif()
