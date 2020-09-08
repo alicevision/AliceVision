@@ -28,6 +28,7 @@ namespace aliceVision
 inline bool computeSimilarity(
   const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
+  std::mt19937 &randomNumberGenerator,
   std::vector<Vec3> & vec_camPosComputed_T,
   double *Sout, Mat3 * Rout, Vec3 * tout)
 {
@@ -49,7 +50,7 @@ inline bool computeSimilarity(
   Vec3 t;
   Mat3 R;
   std::vector<std::size_t> inliers;
-  if(!aliceVision::geometry::ACRansac_FindRTS(x1, x2, S, t, R, inliers, true))
+  if(!aliceVision::geometry::ACRansac_FindRTS(x1, x2, randomNumberGenerator, S, t, R, inliers, true))
     return false;
 
   vec_camPosComputed_T.resize(vec_camPosGT.size());
@@ -110,6 +111,7 @@ inline void EvaluteToGT(
   const std::vector<Mat3> & vec_camRotGT,
   const std::vector<Mat3> & vec_camRotComputed,
   const std::string & sOutPath,
+  std::mt19937 &randomNumberGenerator,
   htmlDocument::htmlDocumentStream * htmlDocStream
   )
 {
@@ -125,7 +127,7 @@ inline void EvaluteToGT(
   Vec3 t;
   double scale;
   
-  computeSimilarity(vec_camCenterGT, vec_camCenterComputed, vec_camPosComputed_T, &scale, &R, &t);
+  computeSimilarity(vec_camCenterGT, vec_camCenterComputed, randomNumberGenerator, vec_camPosComputed_T, &scale, &R, &t);
   
   std::cout << "\nEstimated similarity transformation between the sequences\n";
   std::cout << "R\n" << R << std::endl;

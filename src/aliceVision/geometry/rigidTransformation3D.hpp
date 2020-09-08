@@ -10,6 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/LMFunctor.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
+#include <random>
 
 namespace aliceVision {
 namespace geometry {
@@ -299,6 +300,7 @@ private:
  * 
  * @param[in] x1 The first 3xN matrix of euclidean points.
  * @param[in] x2 The second 3xN matrix of euclidean points.
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] S The scale factor.
  * @param[out] t The 3x1 translation.
  * @param[out] R The 3x3 rotation.
@@ -309,6 +311,7 @@ private:
  */
 bool ACRansac_FindRTS(const Mat &x1,
                       const Mat &x2,
+                      std::mt19937 &randomNumberGenerator,
                       double &S,
                       Vec3 &t,
                       Mat3 &R,
@@ -320,6 +323,7 @@ bool ACRansac_FindRTS(const Mat &x1,
  * points. Just a wrapper that output the similarity in matrix form
  * @param[in] x1 The first 3xN matrix of euclidean points.
  * @param[in] x2 The second 3xN matrix of euclidean points.
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] RTS The 4x4 similarity matrix. 
  * @param[out] vec_inliers The inliers used to estimate the similarity.
  * @param  refine Enable/Disable refining of the found transformation.
@@ -329,6 +333,7 @@ bool ACRansac_FindRTS(const Mat &x1,
  */
 inline bool ACRansac_FindRTS(const Mat &x1,
                              const Mat &x2, 
+                             std::mt19937 &randomNumberGenerator,
                              Mat4 &RTS, 
                              std::vector<std::size_t> &vec_inliers,
                              bool refine = false)
@@ -336,7 +341,7 @@ inline bool ACRansac_FindRTS(const Mat &x1,
   double S;
   Vec3 t; 
   Mat3 R; 
-  const bool good = ACRansac_FindRTS(x1, x2, S, t, R, vec_inliers, refine);
+  const bool good = ACRansac_FindRTS(x1, x2, randomNumberGenerator ,S, t, R, vec_inliers, refine);
   if(good)
     composeRTS(S, t, R, RTS);
   

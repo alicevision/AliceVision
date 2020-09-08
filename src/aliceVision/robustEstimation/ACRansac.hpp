@@ -143,6 +143,7 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
  */
 template<typename Kernel>
 std::pair<double, double> ACRANSAC(const Kernel& kernel,
+                                   std::mt19937 &randomNumberGenerator,
                                    std::vector<size_t>& vec_inliers,
                                    std::size_t nIter = 1024,
                                    typename Kernel::ModelT* model = nullptr,
@@ -186,9 +187,9 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
   {
     std::vector<std::size_t> vec_sample(sizeSample); // Sample indices
     if (bACRansacMode)
-      uniformSample(sizeSample, vec_index, vec_sample); // Get random sample
+      uniformSample(randomNumberGenerator, sizeSample, vec_index, vec_sample); // Get random sample
     else
-      uniformSample(sizeSample, nData, vec_sample); // Get random sample
+      uniformSample(randomNumberGenerator, sizeSample, nData, vec_sample); // Get random sample
 
     std::vector<typename Kernel::ModelT> vec_models; // Up to max_models solutions
     kernel.fit(vec_sample, vec_models);
