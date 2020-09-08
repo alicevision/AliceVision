@@ -240,7 +240,7 @@ private:
    * @param[in] filterViewId If defined, each output pairs must contain filterViewId
    * @return
    */
-  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT) const;
+  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT);
 
   /**
    * @brief Compute a score of the view for a subset of features. This is

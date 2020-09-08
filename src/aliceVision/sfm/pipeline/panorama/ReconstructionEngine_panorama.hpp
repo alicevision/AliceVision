@@ -93,6 +93,7 @@ struct RelativeRotationInfo
  * @param[in] x2 The corresponding points on the second image.
  * @param[in] imgSize1 The size of the first image.
  * @param[in] imgSize2 The size of the second image.
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] relativePoseInfo Contains the result of the estimation.
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
@@ -101,6 +102,7 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
                                   const Mat & x1, const Mat & x2,
                                   const std::pair<size_t, size_t> & size_ima1,
                                   const std::pair<size_t, size_t> & size_ima2,
+                                  std::mt19937 &randomNumberGenerator,
                                   RelativePoseInfo & relativePose_info,
                                   const size_t max_iteration_count = 4096);
 
@@ -110,6 +112,7 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
  * @param[in] x2 The corresponding points on the second image.
  * @param[in] imgSize1 The size of the first image.
  * @param[in] imgSize2 The size of the second image.
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] relativeRotationInfo Contains the result of the estimation.
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
@@ -117,6 +120,7 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
 bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
                                   const std::pair<size_t, size_t> &imgSize1,
                                   const std::pair<size_t, size_t> &imgSize2,
+                                  std::mt19937 &randomNumberGenerator,
                                   RelativeRotationInfo &relativeRotationInfo,
                                   const size_t max_iteration_count = 4096);
 
@@ -126,6 +130,7 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
  * @param[in] x2 The corresponding points on the second image.
  * @param[in] imgSize1 The size of the first image.
  * @param[in] imgSize2 The size of the second image.
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] relativeRotationInfo Contains the result of the estimation.
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
@@ -133,6 +138,7 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
 bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2,
                                   const std::pair<size_t, size_t> &imgSize1,
                                   const std::pair<size_t, size_t> &imgSize2,
+                                  std::mt19937 &randomNumberGenerator,
                                   RelativeRotationInfo &relativeRotationInfo,
                                   const size_t max_iteration_count = 4096);
 

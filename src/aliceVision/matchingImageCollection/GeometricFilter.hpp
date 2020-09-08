@@ -35,6 +35,7 @@ using namespace aliceVision::matching;
  * @param[in] putativeMatches
  * @param[in] guidedMatching
  * @param[in] distanceRatio
+ * @param[in] randomNumberGenerator
  */
 template<typename GeometryFunctor>
 void robustModelEstimation(
@@ -43,8 +44,10 @@ void robustModelEstimation(
   const feature::RegionsPerView& regionsPerView,
   const GeometryFunctor& functor,
   const PairwiseMatches& putativeMatches,
+  std::mt19937 & randomNumberGenerator,
   const bool guidedMatching = false,
-  const double distanceRatio = 0.6)
+  const double distanceRatio = 0.6
+  )
 {
   out_geometricMatches.clear();
 
@@ -64,7 +67,7 @@ void robustModelEstimation(
     {
       MatchesPerDescType inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, inliers);
+      const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, randomNumberGenerator, inliers);
       if(state.hasStrongSupport)
       {
         if(guidedMatching)

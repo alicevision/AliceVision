@@ -22,6 +22,7 @@ using namespace aliceVision::robustEstimation;
 // Test without outlier
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 5);
   // y = 2x + 1
   xy << 1, 2, 3, 4,  5,
@@ -33,7 +34,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
   // Check the best model that fit the most of the data
   //  in a robust framework (Ransac).
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_EQUAL(5, inliers.size());
@@ -42,6 +43,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
 // Test efficiency of MaxConsensus to find (inlier/outlier) in contamined data
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 6);
   // y = 2x + 1 with an outlier
   xy << 1, 2, 3, 4,  5, 100,  // outlier!
@@ -50,7 +52,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
   LineKernel kernel(xy);
 
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_EQUAL(5, inliers.size());
@@ -61,12 +63,14 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
 // was given for an estimation.
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
 {
+  std::mt19937 randomNumberGenerator;
+
   Mat2X xy(2, 1);
   xy << 1,
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  const LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  const LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_EQUAL(0, inliers.size());
 }
 
@@ -76,6 +80,8 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
 //  Check that the number of inliers and the model are correct.
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
 {
+  std::mt19937 randomNumberGenerator;
+
   const int NbPoints = 30;
   const double outlierRatio = .3; //works with 40
   Mat2X xy(2, NbPoints);
@@ -92,7 +98,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
 
   LineKernel kernel(xy);
   std::vector<size_t> inliers;
-  LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_EQUAL(NbPoints-nbPtToNoise, inliers.size());
   BOOST_CHECK_SMALL((-2.0) - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_SMALL( 6.3 - model.getMatrix()[1], 1e-9);

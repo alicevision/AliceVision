@@ -1106,7 +1106,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   const std::pair<std::size_t, std::size_t> imageSizeI(camI->w(), camI->h());
   const std::pair<std::size_t, std::size_t> imageSizeJ(camJ->w(), camJ->h());
 
-  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
+  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, _randomNumberGenerator, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
   {
     ALICEVISION_LOG_WARNING("Robust estimation failed to compute E for this pair");
     return false;
@@ -1201,8 +1201,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   return !_sfmData.structure.empty();
 }
 
-bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId) const
-{
+bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId) {
   // From the k view pairs with the highest number of verified matches
   // select a pair that have the largest baseline (mean angle between its bearing vectors).
   
@@ -1305,7 +1304,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     
     const bool relativePoseSuccess = robustRelativePose(
           camI->K(), camJ->K(),
-          xI, xJ, relativePose_info,
+          xI, xJ, _randomNumberGenerator, relativePose_info,
           std::make_pair(camI->w(), camI->h()), std::make_pair(camJ->w(), camJ->h()),
           1024);
     
@@ -1473,6 +1472,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
       resectionData.optionalIntrinsic.get(),
+      _randomNumberGenerator,
       resectionData,
       resectionData.pose, 
       _params.localizerEstimator
@@ -1778,7 +1778,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      multiview::TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
+      multiview::TriangulateNViewLORANSAC(features, Ps, _randomNumberGenerator, &X_homogeneous, &inliersIndex, 8.0);
       
       homogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       

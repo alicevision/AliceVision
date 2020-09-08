@@ -184,6 +184,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                                        const Regions_or_Features_ProviderT &regionsPerView,
                                        const Pair &pairIndex,
                                        const matching::MatchesPerDescType &putativeMatchesPerType,
+                                       std::mt19937 &randomNumberGenerator,
                                        matching::MatchesPerDescType &out_geometricInliersPerType,
                                        const std::string& outputSvgDir = "")
   {

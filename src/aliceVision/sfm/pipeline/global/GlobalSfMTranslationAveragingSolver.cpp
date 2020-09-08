@@ -45,6 +45,7 @@ bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTrans
                     const feature::FeaturesPerView& normalizedFeaturesPerView,
                     const matching::PairwiseMatches& pairwiseMatches,
                     const HashMap<IndexT, Mat3>& map_globalR,
+                    std::mt19937 & randomNumberGenerator,
                     matching::PairwiseMatches& tripletWise_matches)
 {
   // Compute the relative translations and save them to vec_initialRijTijEstimates:
@@ -52,6 +53,7 @@ bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTrans
         normalizedFeaturesPerView,
         pairwiseMatches,
         map_globalR,
+        randomNumberGenerator,
         tripletWise_matches);
 
   const bool translation = Translation_averaging(eTranslationAveragingMethod, sfmData, map_globalR);
@@ -279,6 +281,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sf
           const feature::FeaturesPerView & normalizedFeaturesPerView,
           const matching::PairwiseMatches & pairwiseMatches,
           const HashMap<IndexT, Mat3> & map_globalR,
+          std::mt19937 & randomNumberGenerator,
           matching::PairwiseMatches & tripletWise_matches)
 {
   ALICEVISION_LOG_DEBUG(
@@ -293,6 +296,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sf
     map_globalR,
     normalizedFeaturesPerView,
     pairwiseMatches,
+    randomNumberGenerator,
     m_vec_initialRijTijEstimates,
     tripletWise_matches);
 }
@@ -303,6 +307,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
   const HashMap<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
+  std::mt19937 & randomNumberGenerator,
   translationAveraging::RelativeInfoVec & vec_initialEstimates,
   matching::PairwiseMatches & newpairMatches)
 {
@@ -465,6 +470,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
               normalizedFeaturesPerView,
               pairwiseMatches,
               triplet,
+              randomNumberGenerator,
               vec_tis,
               dPrecision,
               vec_inliers,
@@ -586,6 +592,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   const feature::FeaturesPerView& normalizedFeaturesPerView,
   const matching::PairwiseMatches& pairwiseMatches,
   const graph::Triplet& poses_id,
+  std::mt19937 & randomNumberGenerator,
   std::vector<Vec3>& vec_tis,
   double& precision, // UpperBound of the precision found by the AContrario estimator
   std::vector<std::size_t>& vec_inliers,
@@ -674,7 +681,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   TrifocalTensorModel T;
   const std::pair<double,double> acStat =
-    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal);
+    robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, ORSA_ITER, &T, precision/min_focal);
   // If robust estimation fails => stop.
   if (precision == std::numeric_limits<double>::infinity())
     return false;

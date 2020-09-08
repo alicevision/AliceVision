@@ -125,6 +125,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleRotTranslation)
 
 BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
 {
+  std::mt19937 randomNumberGenerator;
   const std::size_t nbPoints = 100;
   Mat x1 = Mat::Random(3, nbPoints);
   Mat x2 = x1;
@@ -147,7 +148,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
   Vec3 tc;
 
   std::vector<std::size_t> inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, inliers, true);
+  const bool result = ACRansac_FindRTS(x1, x2, randomNumberGenerator, Sc, tc, Rc, inliers, true);
 
   BOOST_CHECK(result);
   BOOST_CHECK(inliers.size() == nbPoints);
@@ -179,6 +180,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
 
 BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
 {
+  std::mt19937 randomNumberGenerator;
   // it generates some points x1, it only generates the corresponding 
   // transformed points x2 for nbPoints-nbShuffles of them while the rest
   // are again taken randomly in order to generate outliers
@@ -206,7 +208,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
   Vec3 tc;
 
   std::vector<std::size_t> inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, inliers, true);
+  const bool result = ACRansac_FindRTS(x1, x2, randomNumberGenerator, Sc, tc, Rc, inliers, true);
 
   ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<

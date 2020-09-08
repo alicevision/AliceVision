@@ -250,6 +250,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<I
     *_normalizedFeaturesPerView.get(),
     *_pairwiseMatches,
     global_rotations,
+    _randomNumberGenerator,
     tripletWise_matches);
 
   if(!_loggingFile.empty())
@@ -344,7 +345,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
 
     const IndexT trackCountBefore = _sfmData.getLandmarks().size();
     StructureComputation_blind structure_estimator(true);
-    structure_estimator.triangulate(_sfmData);
+    structure_estimator.triangulate(_sfmData, _randomNumberGenerator);
 
     ALICEVISION_LOG_DEBUG("#removed tracks (invalid triangulation): " <<
       trackCountBefore - IndexT(_sfmData.getLandmarks().size()));
@@ -536,7 +537,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       const Mat3 K  = Mat3::Identity();
 
 
-      if(!robustRelativePose(K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
+      if(!robustRelativePose(K, K, x1, x2, _randomNumberGenerator, relativePose_info, imageSize, imageSize, 256))
       {
         continue;
       }

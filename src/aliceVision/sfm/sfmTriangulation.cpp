@@ -29,7 +29,7 @@ StructureComputation_blind::StructureComputation_blind(bool verbose)
   : StructureComputation_basis(verbose)
 {}
 
-void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
+void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
   std::unique_ptr<boost::progress_display> my_progress_bar;
@@ -107,15 +107,15 @@ StructureComputation_robust::StructureComputation_robust(bool verbose)
   : StructureComputation_basis(verbose)
 {}
 
-void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData) const
+void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
-  robust_triangulation(sfmData);
+  robust_triangulation(sfmData, randomNumberGenerator);
 }
 
 /// Robust triangulation of track data contained in the structure
 /// All observations must have View with valid Intrinsic and Pose data
 /// Invalid landmark are removed.
-void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData) const
+void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
   std::unique_ptr<boost::progress_display> my_progress_bar;
@@ -137,7 +137,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
         ++(*my_progress_bar);
       }
       Vec3 X;
-      if (robust_triangulation(sfmData, iterTracks->second.observations, X)) {
+      if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X)) {
         iterTracks->second.X = X;
       }
       else {
@@ -161,6 +161,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
 /// Return true for a successful triangulation
 bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& sfmData,
                                                        const sfmData::Observations& observations,
+                                                       std::mt19937 & randomNumberGenerator,
                                                        Vec3& X,
                                                        const IndexT min_required_inliers,
                                                        const IndexT min_sample_index) const
@@ -183,7 +184,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
   for(IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robustEstimation::uniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+    robustEstimation::uniformSample(randomNumberGenerator, std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfmData, observations, samples);

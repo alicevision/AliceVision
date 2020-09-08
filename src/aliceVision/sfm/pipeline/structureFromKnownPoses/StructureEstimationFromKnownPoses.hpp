@@ -22,6 +22,7 @@ public:
   void run(sfmData::SfMData& sfmData,
     const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView,
+    std::mt19937 &randomNumberGenerator, 
     double geometricErrorMax);
 
 public:
@@ -41,7 +42,8 @@ public:
   /// Init & triangulate landmark observations from validated 3-view correspondences
   void triangulate(
     sfmData::SfMData& sfmData,
-    const feature::RegionsPerView& regionsPerView);
+    const feature::RegionsPerView& regionsPerView,
+    std::mt19937 &randomNumberGenerator);
 
   const matching::PairwiseMatches& getPutativesMatches() const { return _putativeMatches; }
 
