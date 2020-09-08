@@ -83,6 +83,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 randomNumberGenerator;
+
   // -----------------------------
   // a. List images
   // b. Compute features and descriptor
@@ -149,6 +151,7 @@ int main(int argc, char **argv)
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),

@@ -82,6 +82,7 @@ int main(int argc, char **argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+  std::mt19937 randomNumberGenerator;
 
   Image<float> imageLeft;
   readImage(filenameLeft, imageLeft, EImageColorSpace::LINEAR);
@@ -127,6 +128,7 @@ int main(int argc, char **argv)
 
   // Find corresponding points
   matching::DistanceRatioMatch(
+    randomNumberGenerator,
     0.8, matching::BRUTE_FORCE_L2,
     *regions_perImage.at(0).get(),
     *regions_perImage.at(1).get(),
@@ -186,7 +188,8 @@ int main(int argc, char **argv)
       true); // configure as point to line error model.
 
     multiview::relativePose::Fundamental10PModel F;
-    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &F,
+    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, 
+      vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     
     const double & thresholdF = ACRansacOut.first;

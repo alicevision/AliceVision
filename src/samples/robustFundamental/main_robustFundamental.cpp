@@ -76,6 +76,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 randomNumberGenerator;
+
   Image<unsigned char> imageL, imageR;
   readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
   readImage(jpgFilenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
@@ -132,6 +134,7 @@ int main(int argc, char **argv)
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -185,7 +188,7 @@ int main(int argc, char **argv)
       true); // configure as point to line error model.
 
     robustEstimation::Mat3Model F;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     
     const double & thresholdF = ACRansacOut.first;

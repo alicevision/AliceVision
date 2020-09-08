@@ -281,6 +281,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 randomNumberGenerator;
+
   //--------------------------
   // Evaluation parameters
   //--------------------------
@@ -395,6 +397,7 @@ int main(int argc, char **argv)
 
           matching::IndMatches putativesMatches;
           matching::DistanceRatioMatch(
+            randomNumberGenerator,
             nndr, matching::BRUTE_FORCE_L2,
             *regions_0, *regions_I,
             putativesMatches);

@@ -33,7 +33,7 @@ using namespace svg;
 using namespace std;
 
 int main() {
-
+  std::mt19937 randomNumberGenerator;
   Image<RGBColor> image;
   const string jpg_filenameL = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
   const string jpg_filenameR = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
@@ -89,6 +89,7 @@ int main() {
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -140,7 +141,8 @@ int main() {
       false); // configure as point to point error model.
 
     robustEstimation::Mat3Model H;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &H,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, 
+    vec_inliers, 1024, &H,
       std::numeric_limits<double>::infinity());
     const double & thresholdH = ACRansacOut.first;
 

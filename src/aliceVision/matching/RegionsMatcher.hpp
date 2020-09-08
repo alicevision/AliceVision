@@ -26,7 +26,7 @@ namespace matching {
  * @brief Match two Regions according to a chosen MatcherType using the ratio test
  * to assure the robustness of the matches.
  * It returns the matching features.
- * 
+ * @param[in] randomNumberGenerator random Number generator
  * @param[in] dist_ratio The threshold for the ratio test.
  * @param[in] eMatcherType The type of matcher to use.
  * @param[in] regions_I The first Region to match
@@ -35,6 +35,7 @@ namespace matching {
  */
 void DistanceRatioMatch
 (
+  std::mt19937 & randomNumberGenerator, 
   float dist_ratio,   // Distance ratio
   matching::EMatcherType eMatcherType, // Matcher
   const feature::Regions & regions_I, // database
