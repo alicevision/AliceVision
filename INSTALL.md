@@ -93,14 +93,17 @@ vcpkg install ^
           boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
           lz4 ^
           openexr ^
-          openimageio[libraw] ^
           alembic ^
           geogram ^
           eigen3 ^
-          ceres[suitesparse] ^
+          opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
+          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp,tools] ^
+          ceres[suitesparse,cxsparse] ^
           cuda ^
+          tbb ^
           --triplet x64-windows
 ```
+
 3. Build AliceVision
 ```bash
 # With VCPKG_ROOT being the path to the root of vcpkg installation
