@@ -168,6 +168,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
 template<typename Kernel, typename Scorer>
 double localOptimization(const Kernel& kernel,
                          const Scorer& scorer,
+                         std::mt19937 &randomNumberGenerator,
                          typename Kernel::ModelT& bestModel,
                          std::vector<std::size_t>& bestInliers,
                          double mtheta = std::sqrt(2),
@@ -235,7 +236,7 @@ double localOptimization(const Kernel& kernel,
   for(std::size_t i = 0; i < numRep; ++i)
   {
     std::vector<std::size_t> sample;
-    uniformSample(sampleSize, inliersBase, sample);
+    uniformSample(randomNumberGenerator, sampleSize, inliersBase, sample);
     assert(sampleSize > kernel.getMinimumNbRequiredSamplesLS());
     assert(sample.size() > kernel.getMinimumNbRequiredSamplesLS());
   
@@ -292,6 +293,7 @@ double localOptimization(const Kernel& kernel,
 template<typename Kernel, typename Scorer>
 typename Kernel::ModelT LO_RANSAC(const Kernel& kernel,
                                   const Scorer& scorer,
+                                  std::mt19937 & randomNumberGenerator,
                                   std::vector<std::size_t>* best_inliers = NULL,
                                   double* best_score = NULL,
                                   bool bVerbose = false,
@@ -327,7 +329,7 @@ typename Kernel::ModelT LO_RANSAC(const Kernel& kernel,
   for(iteration = 0; iteration < max_iterations; ++iteration) 
   {
     std::vector<std::size_t> sample;
-    uniformSample(min_samples, total_samples, sample);
+    uniformSample(randomNumberGenerator, min_samples, total_samples, sample);
 
     std::vector<typename Kernel::ModelT> models;
     kernel.fit(sample, models);
@@ -359,7 +361,7 @@ typename Kernel::ModelT LO_RANSAC(const Kernel& kernel,
         
         if(inliers.size() > kernel.getMinimumNbRequiredSamplesLS())
         {
-          score = localOptimization(kernel, scorer, bestModel, inliers);
+          score = localOptimization(kernel, scorer, randomNumberGenerator, bestModel, inliers);
         }
         
         if(bVerbose)

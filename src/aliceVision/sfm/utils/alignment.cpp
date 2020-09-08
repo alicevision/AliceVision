@@ -183,7 +183,7 @@ bool computeSimilarityFromCommonCameras_poseId(
     Mat3 R;
     std::vector<std::size_t> inliers;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
         return false;
 
     ALICEVISION_LOG_DEBUG("There are " << commonPoseIds.size() << " common camera poses and " << inliers.size() << " were used to compute the similarity transform.");

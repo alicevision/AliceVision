@@ -22,6 +22,7 @@ using namespace aliceVision::robustEstimation;
 // Test without outlier
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 5);
   // y = 2x + 1
   xy << 1, 2, 3, 4,  5,
@@ -33,7 +34,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
   // Check the best model that fit the most of the data
   //  in a robust framework (Max-consensus).
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_EQUAL(5, inliers.size());
@@ -42,6 +43,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
 // Test without getting back the model
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree_DoNotGetBackModel)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 5);
   // y = 2x + 1
   xy << 1, 2, 3, 4,  5,
@@ -49,13 +51,14 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree_DoNotGetBackModel)
 
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_EQUAL(5, inliers.size());
 }
 
 // Test efficiency of MaxConsensus to find (inlier/outlier) in contamined data
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 6);
   // y = 2x + 1 with an outlier
   xy << 1, 2, 3, 4,  5, 100, // outlier!
@@ -64,7 +67,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
   LineKernel kernel(xy);
 
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_EQUAL(5, inliers.size());
@@ -75,12 +78,13 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
 // was given for an estimation.
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 1);
   xy << 1,
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  const LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  const LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_EQUAL(0, inliers.size());
 }
 
@@ -90,6 +94,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
 //  Check that the number of inliers and the model are correct.
 BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
 {
+  std::mt19937 randomNumberGenerator;
   const int numPoints = 30;
   const float outlierRatio = .3; //works with .4
   Mat2X xy(2, numPoints);
@@ -106,7 +111,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
   //-- Add some noise (for the asked percentage amount)
   int nbPtToNoise = (int) numPoints * outlierRatio;
   vector<std::size_t> vec_samples; // Fit with unique random index
-  uniformSample(nbPtToNoise, numPoints, vec_samples);
+  uniformSample(randomNumberGenerator, nbPtToNoise, numPoints, vec_samples);
   for(std::size_t i = 0; i <vec_samples.size(); ++i)
   {
     const std::size_t randomIndex = vec_samples[i];
@@ -117,7 +122,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
 
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), randomNumberGenerator, &inliers);
   BOOST_CHECK_EQUAL(numPoints-nbPtToNoise, inliers.size());
   BOOST_CHECK_SMALL((-2.0) - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_SMALL( 6.3 - model.getMatrix()[1], 1e-9);

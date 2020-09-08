@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <cassert>
+#include <random>
 
 namespace aliceVision {
 namespace sfmData {
@@ -522,6 +523,9 @@ public:
   Poses _poses;
   /// Considered rigs
   Rigs _rigs;
+  
+  /// Random number generator
+  std::mt19937 _randomNumberGenerator;
 
   /**
    * @brief Get Rig pose of a given camera view
@@ -565,6 +569,10 @@ public:
     assert(view.isPartOfRig());
     Rig& rig = _rigs.at(view.getRigId());
     return rig.getSubPose(view.getSubPoseId());
+  }
+
+  std::mt19937 & getRandomNumberGenerator() {
+    return _randomNumberGenerator;
   }
 };
 
