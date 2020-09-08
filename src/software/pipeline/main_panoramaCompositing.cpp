@@ -1384,16 +1384,10 @@ public:
     rect.h = input.Height() + 1;
 
     /*Extend rect for borders*/
-    if (rect.l > 0) {
-      rect.l = rect.l - 3;
-      rect.w = rect.w + 6;
-    }
-
-    if (rect.t > 0) {
-      rect.t = std::max(0, rect.t - 3);
-      rect.h = rect.h + 6;
-    }
-
+    rect.l = std::max(0, rect.l - 3);
+    rect.t = std::max(0, rect.t - 3);
+    rect.w = rect.w + 6;
+    rect.h = rect.h + 6;
     if (rect.t + rect.h > _owners.Height()) {
       rect.h = _owners.Height() - rect.t;
     }
