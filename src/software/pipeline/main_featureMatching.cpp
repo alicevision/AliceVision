@@ -228,12 +228,16 @@ int aliceVision_main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  std::random_device rd;
+  std::mt19937 generator(rd());
+
   // check and set input options
   if(matchesFolder.empty() || !fs::is_directory(matchesFolder))
   {
     ALICEVISION_LOG_ERROR("Invalid output matches folder: " + matchesFolder);
     return EXIT_FAILURE;
   }
+  
 
   const matchingImageCollection::EGeometricFilterType geometricFilterType = matchingImageCollection::EGeometricFilterType_stringToEnum(geometricFilterTypeName);
 
@@ -361,7 +365,7 @@ int aliceVision_main(int argc, char **argv)
         ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
 
         // photometric matching of putative pairs
-        imageCollectionMatcher->Match(regionPerView, pairsPoseUnknown, descType, mapPutativesMatches);
+        imageCollectionMatcher->Match(generator, regionPerView, pairsPoseUnknown, descType, mapPutativesMatches);
 
         // TODO: DELI
         // if(!guided_matching) regionPerView.clearDescriptors()

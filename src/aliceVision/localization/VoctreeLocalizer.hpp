@@ -111,7 +111,7 @@ public:
    * @brief Just a wrapper around the different localization algorithm, the algorithm
    * used to localized is chosen using \p param._algorithm. This version extract the
    * sift features from the query image.
-   * 
+   * @param[in] gen The random seed
    * @param[in] imageGrey The input greyscale image.
    * @param[in] param The parameters for the localization.
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration.
@@ -121,7 +121,8 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  bool localize(const image::Image<float> & imageGrey,
+  bool localize(std::mt19937 & gen,
+                const image::Image<float> & imageGrey,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
                 camera::PinholeRadialK3 &queryIntrinsics,
@@ -132,7 +133,7 @@ public:
    * @brief Just a wrapper around the different localization algorithm, the algorithm
    * used to localized is chosen using \p param._algorithm. This version takes as
    * input the sift feature already extracted.
-   * 
+   * @param[in] gen The random seed
    * @param[in] queryRegions The input features of the query image
    * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization.
@@ -143,7 +144,8 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  bool localize(const feature::MapRegionsPerDesc & queryRegions,
+  bool localize(std::mt19937 & gen, 
+                const feature::MapRegionsPerDesc & queryRegions,
                 const std::pair<std::size_t, std::size_t> &imageSize,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
@@ -152,14 +154,16 @@ public:
                 const std::string& imagePath = std::string()) override;
   
   
-  bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
+  bool localizeRig(std::mt19937 & gen,
+                   const std::vector<image::Image<float>> & vec_imageGrey,
                    const LocalizerParameters *param,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult> & vec_locResults) override;
   
-  bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig(std::mt19937 & gen,
+                   const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                    const LocalizerParameters *param,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -178,7 +182,8 @@ public:
                           std::vector<LocalizationResult>& vec_locResults);
 #endif
 
-  bool localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig_naive(std::mt19937 & gen,
+                        const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
                         std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -192,6 +197,7 @@ public:
    * retrieve \p numResults matching images and it tries to localize the query image
    * wrt the retrieve images in order of their score taking the first best result.
    *
+   * @param[in] gen The random seed
    * @param[in] queryRegions The input features of the query image
    * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization
@@ -203,7 +209,8 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
+  bool localizeFirstBestResult(std::mt19937 & gen, 
+                               const feature::MapRegionsPerDesc &queryRegions,
                                const std::pair<std::size_t, std::size_t> &imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
@@ -217,6 +224,7 @@ public:
    * wrt the retrieve images in order of their score, collecting all the 2d-3d correspondences
    * and performing the resection with all these correspondences
    *
+   * @param[in] gen The random seed
    * @param[in] queryRegions The input features of the query image
    * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization
@@ -228,7 +236,8 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeAllResults(const feature::MapRegionsPerDesc & queryRegions,
+  bool localizeAllResults(std::mt19937 & gen, 
+                          const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> & imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
@@ -240,6 +249,7 @@ public:
   /**
    * @brief Retrieve matches to all images of the database.
    *
+   * @param[in] gen
    * @param[in] queryRegions
    * @param[in] imageSize
    * @param[in] param
@@ -252,7 +262,8 @@ public:
    * @param[out] out_matchedImages image matches output
    * @param[in] imagePath
    */
-  void getAllAssociations(const feature::MapRegionsPerDesc & queryRegions,
+  void getAllAssociations(std::mt19937 & gen,
+                          const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> &imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,

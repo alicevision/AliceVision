@@ -13,6 +13,8 @@
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/localization/LocalizationResult.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace localization {
 
@@ -72,6 +74,7 @@ public:
     /**
    * @brief Localize one image
    * 
+   * @param[in] gen random seed.
    * @param[in] imageGrey The input greyscale image.
    * @param[in] param The parameters for the localization.
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration.
@@ -81,14 +84,16 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  virtual bool localize(const image::Image<float> & imageGrey,
+  virtual bool localize(std::mt19937 & gen,
+                        const image::Image<float> & imageGrey,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
                         camera::PinholeRadialK3 &queryIntrinsics,
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
 
-  virtual bool localize(const feature::MapRegionsPerDesc &queryRegions,
+  virtual bool localize(std::mt19937 & gen,
+                        const feature::MapRegionsPerDesc &queryRegions,
                         const std::pair<std::size_t, std::size_t> &imageSize,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
@@ -96,14 +101,16 @@ public:
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
     
-  virtual bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
+  virtual bool localizeRig(std::mt19937 & gen,
+                           const std::vector<image::Image<float>> & vec_imageGrey,
                            const LocalizerParameters *param,
                            std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose, 
                            std::vector<LocalizationResult>& vec_locResults)=0;
     
-  virtual bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+  virtual bool localizeRig(std::mt19937 & gen,
+                           const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                            const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                            const LocalizerParameters *param,
                            std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,

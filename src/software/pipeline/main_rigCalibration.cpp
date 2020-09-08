@@ -253,6 +253,9 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
+  std::random_device rd;
+  std::mt19937 generator(rd());
+
   std::unique_ptr<localization::LocalizerParameters> param;
   
   std::unique_ptr<localization::ILocalizer> localizer;
@@ -385,7 +388,8 @@ int aliceVision_main(int argc, char** argv)
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
       localizer->setCudaPipe( idCamera );
-      const bool ok = localizer->localize(imageGrey,
+      const bool ok = localizer->localize(generator,
+                                          imageGrey,
                                           param.get(),
                                           hasIntrinsics/*useInputIntrinsics*/,
                                           *queryIntrinsics,

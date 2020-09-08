@@ -265,6 +265,9 @@ int aliceVision_main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
+  std::random_device rd;
+  std::mt19937 generator(rd());
+
   const double defaultLoRansacMatchingError = 4.0;
   const double defaultLoRansacResectionError = 4.0;
   if(!robustEstimation::adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, defaultLoRansacMatchingError) ||
@@ -416,7 +419,8 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("******************************");
     localization::LocalizationResult localizationResult;
     auto detect_start = std::chrono::steady_clock::now();
-    localizer->localize(imageGrey, 
+    localizer->localize(generator,
+                       imageGrey, 
                        param.get(),
                        hasIntrinsics /*useInputIntrinsics*/,
                        queryIntrinsics,
