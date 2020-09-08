@@ -121,7 +121,7 @@ elseif(UNIX)
 endif()
 set(GEOGRAM_TARGET geogram)
 ExternalProject_Add(${GEOGRAM_TARGET}
-       URL https://github.com/alicevision/geogram/archive/v1.7.4.tar.gz
+       URL https://github.com/alicevision/geogram/archive/v1.7.5.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -200,7 +200,7 @@ if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
 ExternalProject_Add(${OPENGV_TARGET}
        GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-       GIT_TAG 306a54e6c6b94e2048f820cdf77ef5281d4b48ad
+       GIT_TAG 91f4b19c73450833a40e463ad3648aae80b3a7f3
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -239,7 +239,7 @@ set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
        # URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v4.5.6.tar.gz
-       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.7.2.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
+       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.8.1.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -276,7 +276,8 @@ set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} -DCeres_DIR=${CMAKE_INSTALL_PRE
 # Add OpenEXR
 set(OPENEXR_TARGET openexr)
 ExternalProject_Add(${OPENEXR_TARGET}
-      URL https://github.com/openexr/openexr/archive/v2.4.0.tar.gz
+      # vfxplatform CY2020: 2.4.x
+      URL https://github.com/openexr/openexr/archive/v2.4.1.tar.gz
       # URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
       # The release 2.2.1 has troubles with C++17, which breaks compilation with recent compilers.
       # The problem has been fixed https://github.com/openexr/openexr/issues/235
@@ -324,7 +325,8 @@ endif()
 if(AV_BUILD_PNG)
 set(PNG_TARGET png)
 ExternalProject_Add(${PNG_TARGET}
-       URL http://github.com/glennrp/libpng-releases/raw/master/libpng-1.6.34.tar.gz
+       URL https://github.com/glennrp/libpng/archive/v1.6.35.tar.gz
+       #    http://github.com/glennrp/libpng-releases/raw/master/libpng-1.6.34.tar.gz
        #    http://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
        #    https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
        PREFIX ${BUILD_DIR}
@@ -345,7 +347,7 @@ if(AV_BUILD_JPEG)
 set(JPEG_TARGET turbojpeg)
 # Add turbojpeg
 ExternalProject_Add(${JPEG_TARGET}
-       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz
+       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.5.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -381,7 +383,7 @@ ExternalProject_Add(libraw_cmake
 ExternalProject_Add(${LIBRAW_TARGET}
       # URL https://github.com/LibRaw/LibRaw/archive/0.19.5.tar.gz
       GIT_REPOSITORY https://github.com/LibRaw/LibRaw  # Need to use git to be able to apply the patch
-      GIT_TAG 0.19.5
+      GIT_TAG 0.20.0
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -402,29 +404,30 @@ endif()
 # Add Boost
 set(BOOST_TARGET boost)
 ExternalProject_Add(${BOOST_TARGET}
-       URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src-1.70.0/boost_1_70_0.tar.bz2
-       #    http://sourceforge.net/projects/boost/files/boost/1.70.0/boost_1_70_0.tar.bz2
-       #    https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz
-       # GIT_REPOSITORY https://github.com/boostorg/boost.git
-       # GIT_TAG boost-1.70.0
-       PREFIX ${BUILD_DIR}
-       BUILD_IN_SOURCE 0
-       BUILD_ALWAYS 0
-       UPDATE_COMMAND ""
-       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/boost
-       BINARY_DIR ${BUILD_DIR}/boost_build
-       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       CONFIGURE_COMMAND cd <SOURCE_DIR> && ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,filesystem,graph,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
-       BUILD_COMMAND cd <SOURCE_DIR> && ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi -j8
-       INSTALL_COMMAND cd <SOURCE_DIR> && ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi install
-       DEPENDS ${ZLIB_TARGET}
-       )
+      # vfxplatform CY2020: 1.70
+      URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src-1.70.0/boost_1_70_0.tar.bz2
+      #    http://sourceforge.net/projects/boost/files/boost/1.70.0/boost_1_70_0.tar.bz2
+      #    https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz
+      # GIT_REPOSITORY https://github.com/boostorg/boost.git
+      # GIT_TAG boost-1.70.0
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/boost
+      BINARY_DIR ${BUILD_DIR}/boost_build
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      CONFIGURE_COMMAND cd <SOURCE_DIR> && ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,filesystem,graph,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
+      BUILD_COMMAND cd <SOURCE_DIR> && ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi -j8
+      INSTALL_COMMAND cd <SOURCE_DIR> && ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi install
+      DEPENDS ${ZLIB_TARGET}
+      )
 set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX})
 
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/Release-2.1.15.0.tar.gz
+      URL https://github.com/OpenImageIO/oiio/archive/Release-2.2.6.1.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -442,7 +445,8 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
 # Add Alembic: I/O for Point Cloud and Cameras
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
-      URL https://github.com/alembic/alembic/archive/1.7.12.tar.gz
+      # vfxplatform CY2020 1.7.x
+      URL https://github.com/alembic/alembic/archive/1.7.14.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -514,7 +518,7 @@ if(AV_BUILD_CCTAG)
 set(CCTAG_TARGET cctag)
 ExternalProject_Add(${CCTAG_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/CCTag
-      GIT_TAG c8bebbbd15ba450bd7655f87aba34ab0c2d32f57
+      GIT_TAG 99dbd88d044e317796806805f8a0800775fcdc83
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -533,7 +537,7 @@ if(AV_BUILD_POPSIFT)
 set(POPSIFT_TARGET popsift)
 ExternalProject_Add(${POPSIFT_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/popsift
-      GIT_TAG 7fc809b73ff0313320013465e2f8b1af4f9d63a8
+      GIT_TAG 63f11cd949532197e985477c75ebdbe9a0f7649c
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
