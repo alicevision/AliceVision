@@ -353,8 +353,9 @@ int aliceVision_main(int argc, char** argv)
         std::vector<float> exposures;
 
         for(int j = 0; j < group.size(); ++j)
-        {
-            float etime = group[j]->getCameraExposureSetting();
+        {   
+            
+            float etime = group[j]->getCameraExposureSetting(/*group[0]->getMetadataISO(), group[0]->getMetadataFNumber()*/);
             exposures.push_back(etime);
         }
         groupedExposures.push_back(exposures);

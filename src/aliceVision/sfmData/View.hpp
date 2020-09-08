@@ -207,7 +207,7 @@ public:
    * For the same scene, this value is linearly proportional to the amount of light captured by the camera according to
    * the shooting parameters (shutter speed, f-number, iso).
    */
-  float getCameraExposureSetting() const;
+  float getCameraExposureSetting(const float referenceISO = 100.0f, const float referenceFNumber = 8.0f) const;
 
   /**
    * @brief Get the Exposure Value. EV is a number that represents a combination of a camera's shutter speed and
