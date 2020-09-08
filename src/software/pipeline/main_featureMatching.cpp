@@ -228,8 +228,7 @@ int aliceVision_main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  std::random_device rd;
-  std::mt19937 generator(rd());
+  std::mt19937 generator;
 
   // check and set input options
   if(matchesFolder.empty() || !fs::is_directory(matchesFolder))
@@ -466,6 +465,7 @@ int aliceVision_main(int argc, char **argv)
         regionPerView,
         GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
         mapPutativesMatches,
+        generator,
         guidedMatching);
     }
     break;
@@ -477,6 +477,7 @@ int aliceVision_main(int argc, char **argv)
       regionPerView,
       GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator, true),
       mapPutativesMatches,
+      generator,
       guidedMatching);
   }
   break;
@@ -488,6 +489,7 @@ int aliceVision_main(int argc, char **argv)
         regionPerView,
         GeometricFilterMatrix_E_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches,
+        generator,
         guidedMatching);
 
       // perform an additional check to remove pairs with poor overlap
@@ -516,7 +518,7 @@ int aliceVision_main(int argc, char **argv)
         &sfmData,
         regionPerView,
         GeometricFilterMatrix_H_AC(geometricErrorMax, maxIteration),
-        mapPutativesMatches, guidedMatching,
+        mapPutativesMatches, generator, guidedMatching,
         onlyGuidedMatching ? -1.0 : 0.6);
     }
     break;
@@ -528,6 +530,7 @@ int aliceVision_main(int argc, char **argv)
         regionPerView,
         GeometricFilterMatrix_HGrowing(geometricErrorMax, maxIteration),
         mapPutativesMatches,
+        generator,
         guidedMatching);
     }
     break;

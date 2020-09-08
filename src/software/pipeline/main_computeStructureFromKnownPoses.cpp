@@ -100,6 +100,8 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
+  std::mt19937 randomNumberGenerator;
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
   
@@ -165,7 +167,7 @@ int aliceVision_main(int argc, char **argv)
   structureEstimator.filter(sfmData, pairs, regionsPerView);
 
   // create 3D landmarks
-  structureEstimator.triangulate(sfmData, regionsPerView);
+  structureEstimator.triangulate(sfmData, regionsPerView, randomNumberGenerator);
 
   sfm::RemoveOutliers_AngleError(sfmData, 2.0);
 

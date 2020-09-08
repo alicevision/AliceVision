@@ -59,6 +59,7 @@ std::ostream& operator<<(std::ostream& os, const MarkerWithCoord& marker)
 bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::vector<std::pair<IndexT, IndexT>>& commonViewIds,
+    std::mt19937 &randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t)
@@ -106,7 +107,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     Mat3 R;
     std::vector<std::size_t> inliers;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
         return false;
 
     ALICEVISION_LOG_DEBUG("There are " << reconstructedCommonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
@@ -120,6 +121,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
 
 bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
                        const sfmData::SfMData& sfmDataB,
+                       std::mt19937 &randomNumberGenerator,
                        double* out_S,
                        Mat3* out_R,
                        Vec3* out_t)
@@ -137,12 +139,13 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
   {
       commonViewIds_pairs.push_back(std::make_pair(id, id));
   }
-  return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds_pairs, out_S, out_R, out_t);
+  return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds_pairs, randomNumberGenerator, out_S, out_R, out_t);
 }
 
 bool computeSimilarityFromCommonCameras_poseId(
         const sfmData::SfMData& sfmDataA,
         const sfmData::SfMData& sfmDataB,
+        std::mt19937 & randomNumberGenerator,
         double* out_S,
         Mat3* out_R,
         Vec3* out_t)
@@ -273,6 +276,7 @@ bool computeSimilarityFromCommonCameras_imageFileMatching(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::string& filePatternMatching,
+    std::mt19937 &randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t)
@@ -286,7 +290,7 @@ bool computeSimilarityFromCommonCameras_imageFileMatching(
 
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
+    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, randomNumberGenerator, out_S, out_R, out_t);
 }
 
 
@@ -355,6 +359,7 @@ bool computeSimilarityFromCommonCameras_metadataMatching(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::vector<std::string>& metadataList,
+    std::mt19937 &randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t)
@@ -368,7 +373,7 @@ bool computeSimilarityFromCommonCameras_metadataMatching(
 
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
+    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, randomNumberGenerator, out_S, out_R, out_t);
 }
 
 
@@ -406,6 +411,7 @@ std::map<std::pair<feature::EImageDescriberType, int>, IndexT> getUniqueMarkers(
 bool computeSimilarityFromCommonMarkers(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
+    std::mt19937 & randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t)
@@ -468,7 +474,7 @@ bool computeSimilarityFromCommonMarkers(
     Mat3 R;
     std::vector<std::size_t> inliers;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
         return false;
 
     ALICEVISION_LOG_DEBUG("There are " << commonLandmarks.size() << " common markers and " << inliers.size() << " were used to compute the similarity transform.");

@@ -92,6 +92,7 @@ public:
   */
   static bool Localize(const Pair& imageSize,
                        const camera::IntrinsicBase* optionalIntrinsics,
+                       std::mt19937 &randomNumberGenerator,
                        ImageLocalizerMatchData& resectionData,
                        geometry::Pose3& pose,
                        robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC);

@@ -212,7 +212,7 @@ public:
   bool localizeFirstBestResult(std::mt19937 & gen, 
                                const feature::MapRegionsPerDesc &queryRegions,
                                const std::pair<std::size_t, std::size_t> &imageSize,
-                               const Parameters &param,
+                               const Parameters &param, 
                                bool useInputIntrinsics,
                                camera::PinholeRadialK3 &queryIntrinsics,
                                LocalizationResult &localizationResult,
@@ -319,6 +319,7 @@ private:
                       bool useGuidedMatching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
+                      std::mt19937 & randomNumberGenerator,
                       matching::MatchesPerDescType & out_featureMatches,
                       robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC) const;
   
@@ -328,6 +329,7 @@ private:
                                  bool useInputIntrinsics,
                                  const camera::PinholeRadialK3 &queryIntrinsics,
                                  OccurenceMap &out_occurences,
+                                 std::mt19937 & randomNumberGenerator,
                                  const std::string& imagePath = std::string()) const;
   
   /**

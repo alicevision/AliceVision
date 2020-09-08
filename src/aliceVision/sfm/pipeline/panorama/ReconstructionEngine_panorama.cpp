@@ -632,7 +632,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       {
         case RELATIVE_ROTATION_FROM_E:
         {
-          if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, relativePose_info))
+          if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, _randomNumberGenerator, relativePose_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
@@ -644,7 +644,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
           
-          if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, relativeRotation_info))
+          if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
@@ -661,7 +661,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
           
-          if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, relativeRotation_info))
+          if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
             std::cout << view_I->getImagePath() << std::endl;
             std::cout << view_J->getImagePath() << std::endl;

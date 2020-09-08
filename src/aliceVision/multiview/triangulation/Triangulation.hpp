@@ -12,6 +12,7 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 
 #include <vector>
+#include <random>
 
 namespace aliceVision {
 namespace multiview {
@@ -64,6 +65,7 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
  */                               
 void TriangulateNViewLORANSAC(const Mat2X &x, 
                               const std::vector< Mat34 > &Ps,
+                              std::mt19937 & generator,
                               Vec4 *X,
                               std::vector<std::size_t> *inliersIndex = NULL,
                               const double & thresholdError = 4.0);                               

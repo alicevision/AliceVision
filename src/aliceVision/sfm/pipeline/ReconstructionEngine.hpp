@@ -11,6 +11,7 @@
 #include <aliceVision/sfmData/colorize.hpp>
 
 #include <string>
+#include <random>
 
 namespace aliceVision {
 namespace sfm {
@@ -81,6 +82,8 @@ protected:
   std::string _outputFolder;
   /// Internal SfMData
   sfmData::SfMData _sfmData;
+  //Random engine
+  std::mt19937 _randomNumberGenerator;
 };
 
 

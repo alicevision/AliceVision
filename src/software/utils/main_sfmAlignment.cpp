@@ -178,6 +178,8 @@ int aliceVision_main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  std::mt19937 randomNumberGenerator;
+
   // Load input scene
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -205,27 +207,27 @@ int aliceVision_main(int argc, char **argv)
   {
     case EAlignmentMethod::FROM_CAMERAS_VIEWID:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmData, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_POSEID:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmData, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmData, sfmDataInRef, fileMatchingPattern, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmData, sfmDataInRef, fileMatchingPattern, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_METADATA:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmData, sfmDataInRef, metadataMatchingList, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmData, sfmDataInRef, metadataMatchingList, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_MARKERS:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmData, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
       break;
     }
   }

@@ -42,6 +42,7 @@ public:
   * @param[in] imageSize the w,h image size
   * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
   * @param[in] queryRegions the image regions (type must be the same as the database)
+  * @param[in] randomNumberGenerator the random number generator
   * @param[out] pose found pose
   * @param[out] resectionData matching data (2D-3D and inliers; optional)
   * @return True if a putative pose has been estimated
@@ -49,6 +50,7 @@ public:
   bool Localize(const Pair& imageSize,
                 const camera::IntrinsicBase* optionalIntrinsics,
                 const feature::Regions& queryRegions,
+                std::mt19937 &randomNumberGenerator, 
                 geometry::Pose3& pose,
                 ImageLocalizerMatchData* resectionDataPtr = nullptr // optional
                 ) const;

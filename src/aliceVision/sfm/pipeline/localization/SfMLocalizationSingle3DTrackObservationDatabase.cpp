@@ -72,6 +72,7 @@ namespace sfm {
   bool SfMLocalizationSingle3DTrackObservationDatabase::Localize(const Pair& imageSize,
                                const camera::IntrinsicBase* optionalIntrinsics,
                                const feature::Regions& queryRegions,
+                               std::mt19937 &randomNumberGenerator, 
                                geometry::Pose3& pose,
                                ImageLocalizerMatchData* resectionDataPtr) const
   {
@@ -99,7 +100,7 @@ namespace sfm {
       resectionData.pt2D.col(i) = queryRegions.GetRegionPosition(putativeMatches[i]._j);
     }
 
-    const bool resection =  SfMLocalizer::Localize(imageSize, optionalIntrinsics, resectionData, pose);
+    const bool resection =  SfMLocalizer::Localize(imageSize, optionalIntrinsics, randomNumberGenerator, resectionData, pose);
 
     if(resectionDataPtr != nullptr)
       (*resectionDataPtr) = std::move(resectionData);

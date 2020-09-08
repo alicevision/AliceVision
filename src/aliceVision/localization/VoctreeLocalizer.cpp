@@ -473,6 +473,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(std::mt19937 & gen,
                                       param._useGuidedMatching,
                                       queryImageSize,
                                       std::make_pair(matchedView->getWidth(), matchedView->getHeight()),
+                                      gen,
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
@@ -545,6 +546,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(std::mt19937 & gen,
     bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
                                                    // pass the input intrinsic if they are valid, null otherwise
                                                    (useInputIntrinsics) ? &queryIntrinsics : nullptr,
+                                                   gen, 
                                                    resectionData,
                                                    pose,
                                                    param._resectionEstimator);
@@ -663,6 +665,7 @@ bool VoctreeLocalizer::localizeAllResults(std::mt19937 & gen,
   const bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
+                                                      gen, 
                                                       resectionData,
                                                       pose,
                                                       param._resectionEstimator);
@@ -844,6 +847,7 @@ void VoctreeLocalizer::getAllAssociations(std::mt19937 & gen,
                                       param._useGuidedMatching,
                                       imageSize,
                                       std::make_pair(matchedView->getWidth(), matchedView->getHeight()),
+                                      gen,
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
@@ -935,7 +939,7 @@ void VoctreeLocalizer::getAllAssociations(std::mt19937 & gen,
   {
     ALICEVISION_LOG_DEBUG("[matching]\tUsing frameBuffer matching: matching with the past " 
             << param._nbFrameBufferMatching << " frames" );
-    getAssociationsFromBuffer(matchers, imageSize, param, useInputIntrinsics, queryIntrinsics, out_occurences);
+    getAssociationsFromBuffer(matchers, imageSize, param, useInputIntrinsics, queryIntrinsics, out_occurences, gen);
   }
   
   const std::size_t numCollectedPts = out_occurences.size();
@@ -991,6 +995,7 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatche
                                                  bool useInputIntrinsics,
                                                  const camera::PinholeRadialK3 &queryIntrinsics,
                                                  OccurenceMap & out_occurences,
+                                                 std::mt19937 & randomNumberGenerator,
                                                  const std::string& imagePath) const
 {
   std::size_t frameCounter = 0;
@@ -1015,7 +1020,8 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatche
                                       param._useRobustMatching,
                                       param._useGuidedMatching,
                                       queryImageSize,
-                                      frameImageSize, 
+                                      frameImageSize,
+                                      randomNumberGenerator, 
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
@@ -1067,6 +1073,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
                                       bool useGuidedMatching,
                                       const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
                                       const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the second image
+                                      std::mt19937 & randomNumberGenerator,
                                       matching::MatchesPerDescType & out_featureMatches,
                                       robustEstimation::ERobustEstimator estimator) const
 {
@@ -1119,6 +1126,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
         imageSizeI,
         imageSizeJ,
         putativeFeatureMatches,
+        randomNumberGenerator,
         geometricInliersPerType);
 
   if(!estimationState.isValid)

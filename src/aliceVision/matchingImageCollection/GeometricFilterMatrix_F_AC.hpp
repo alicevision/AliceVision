@@ -53,6 +53,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                        const Regions_or_Features_ProviderT& regionsPerView,
                                        const Pair& pairIndex,
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
+                                       std::mt19937 & randomNumberGenerator,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
     out_geometricInliersPerType.clear();
@@ -75,6 +76,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                camI, camJ,
                                imageSizeI, imageSizeJ,
                                putativeMatchesPerType,
+                               randomNumberGenerator,
                                out_geometricInliersPerType);
   }
 
@@ -90,6 +92,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                        const std::pair<std::size_t, std::size_t>& imageSizeI, // size of the first image
                                        const std::pair<std::size_t, std::size_t>& imageSizeJ, // size of the second image
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
+                                       std::mt19937 & randomNumberGenerator,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
     out_geometricInliersPerType.clear();
@@ -116,15 +119,15 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       {
         if (cam_I_equidistant && cam_J_equidistant)
         {
-          estimationPair = geometricEstimation_Spherical_Mat(xI, xJ, cam_I_equidistant, cam_J_equidistant, imageSizeI, imageSizeJ, inliers);
+          estimationPair = geometricEstimation_Spherical_Mat(xI, xJ, cam_I_equidistant, cam_J_equidistant, imageSizeI, imageSizeJ, randomNumberGenerator, inliers);
         }
         else if(m_estimateDistortion)
         {
-          estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental10PSolver, multiview::relativePose::Fundamental10PModel>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+          estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental10PSolver, multiview::relativePose::Fundamental10PModel>(xI, xJ, imageSizeI, imageSizeJ, randomNumberGenerator, inliers);
         }
         else
         {
-          estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental7PSolver, robustEstimation::Mat3Model>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+          estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental7PSolver, robustEstimation::Mat3Model>(xI, xJ, imageSizeI, imageSizeJ, randomNumberGenerator, inliers);
         }
       }
       break;
@@ -139,7 +142,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
           throw std::invalid_argument("["+std::string(__func__)+"] Using fundamental matrix and equidistant cameras solver with LO_RANSAC is not yet implemented");
         }
 
-        estimationPair = geometricEstimation_Mat_LORANSAC<multiview::relativePose::Fundamental7PSolver, multiview::relativePose::Fundamental8PSolver>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+        estimationPair = geometricEstimation_Mat_LORANSAC<multiview::relativePose::Fundamental7PSolver, multiview::relativePose::Fundamental8PSolver>(xI, xJ, imageSizeI, imageSizeJ, randomNumberGenerator, inliers);
       }
       break;
 
@@ -178,6 +181,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                     const camera::EquiDistant* cam_I, const camera::EquiDistant* cam_J,
                                     const std::pair<size_t, size_t>& imageSizeI, // size of the first image
                                     const std::pair<size_t, size_t>& imageSizeJ, // size of the first image
+                                    std::mt19937 &randomNumberGenerator,
                                     std::vector<size_t>& out_inliers)
   {
       using namespace aliceVision;
@@ -228,7 +232,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       const double upper_bound_precision = Square(m_dPrecision);
 
       robustEstimation::Mat3Model model;
-      const std::pair<double, double> ACRansacOut = ACRANSAC(kernel, out_inliers, m_stIteration, &model, upper_bound_precision);
+      const std::pair<double, double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, out_inliers, m_stIteration, &model, upper_bound_precision);
 
       m_F = model.getMatrix();
 
@@ -256,6 +260,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                                                 const Mat& xJ, // points of the second image
                                                                 const std::pair<std::size_t, std::size_t>& imageSizeI, // size of the first image
                                                                 const std::pair<std::size_t, std::size_t>& imageSizeJ, // size of the first image
+                                                                std::mt19937 randomNumberGenerator,
                                                                 std::vector<std::size_t>& out_inliers)
   {
     out_inliers.clear();
@@ -275,7 +280,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     const double upperBoundPrecision = Square(m_dPrecision);
 
     ModelT_ model;
-    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, out_inliers, m_stIteration, &model, upperBoundPrecision);
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, out_inliers, m_stIteration, &model, upperBoundPrecision);
     m_F = model.getMatrix();
 
     if(out_inliers.empty())
@@ -301,6 +306,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                                                 const Mat& xJ, // points of the second image
                                                                 const std::pair<std::size_t, std::size_t>& imageSizeI, // size of the first image
                                                                 const std::pair<std::size_t, std::size_t>& imageSizeJ, // size of the first image
+                                                                std::mt19937 &randomNumberGenerator,
                                                                 std::vector<std::size_t>& out_inliers)
   {
     out_inliers.clear();
@@ -323,7 +329,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
     robustEstimation::ScoreEvaluator<KernelT> scorer(normalizedThreshold);
 
-    robustEstimation::Mat3Model model = robustEstimation::LO_RANSAC(kernel, scorer, &out_inliers);
+    robustEstimation::Mat3Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &out_inliers);
     m_F = model.getMatrix();
 
     if(out_inliers.empty())
