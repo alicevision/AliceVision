@@ -207,17 +207,9 @@ int aliceVision_main(int argc, char** argv)
        isSequence = true;
     }
 
-    std::string dateTimeMetadata = view.getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal"});
-
-    if(!dateTimeMetadata.empty()) // picture
+    if(view.hasMetadataDateTimeOriginal()) // picture
     {
-      dateTimeMetadata.erase(std::remove_if(dateTimeMetadata.begin(),dateTimeMetadata.end(), ::isspace), dateTimeMetadata.end());
-      dateTimeMetadata.erase(std::remove_if(dateTimeMetadata.begin(),dateTimeMetadata.end(), ::ispunct), dateTimeMetadata.end());
-
-      std::size_t key = std::numeric_limits<unsigned char>::max();
-
-      if(!dateTimeMetadata.empty())
-          key = std::stoul(dateTimeMetadata);
+        const std::size_t key = view.getMetadataDateTimestamp();
 
       dslrViewPerKey[cameraName].push_back({key, view.getViewId()});
     }

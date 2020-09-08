@@ -9,6 +9,7 @@
 
 #include <aliceVision/types.hpp>
 
+#include <regex>
 #include <string>
 #include <utility>
 
@@ -358,9 +359,36 @@ public:
     return static_cast<EEXIFOrientation>(orientation);
   }
 
+  const bool hasMetadataDateTimeOriginal() const
+  {
+      return hasMetadata(
+          {"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date", "ctime"});
+  }
+
   const std::string& getMetadataDateTimeOriginal() const
   {
-    return getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date"});
+    return getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal", "DateTime", "Date Time", "Create Date", "ctime"});
+  }
+
+  int64_t getMetadataDateTimestamp() const {
+
+    std::smatch sm;
+    std::string dtstring = getMetadataDateTimeOriginal();
+    std::regex regex("([\\d]+):([\\d]+):([\\d]+) ([\\d]+):([\\d]+):([\\d]+)");
+    
+    if (!std::regex_match(dtstring, sm, regex)) {
+      return -1;
+    }
+    
+    int64_t year = std::stoi(sm[1]);
+    int64_t month = std::stoi(sm[2]);
+    int64_t day = std::stoi(sm[3]);
+    int64_t hour = std::stoi(sm[4]);
+    int64_t minutes = std::stoi(sm[5]);
+    int64_t seconds = std::stoi(sm[6]);
+    int64_t timecode = ((((((((year * 12) + month) * 31) + day) * 24) + hour) * 60 + minutes) * 60) + seconds;
+
+    return timecode;
   }
 
   /**
