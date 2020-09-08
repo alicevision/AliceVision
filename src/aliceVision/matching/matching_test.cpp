@@ -22,9 +22,12 @@ using namespace matching;
 
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_Simple_Dim1)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   const float array[] = {0, 1, 2, 3, 4};
   ArrayMatcher_bruteForce<float> matcher;
-  BOOST_CHECK( matcher.Build(array, 5, 1) );
+  BOOST_CHECK( matcher.Build(gen, array, 5, 1) );
 
   const float query[] = {2};
   int nIndice = -1;
@@ -37,10 +40,13 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_Simple_Dim1)
 
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_NN)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   const float array[] = {0, 1, 2, 5, 6};
   // no 3, because it involve the same dist as 1,1
   ArrayMatcher_bruteForce<float> matcher;
-  BOOST_CHECK( matcher.Build(array, 5, 1) );
+  BOOST_CHECK( matcher.Build(gen, array, 5, 1) );
 
   const float query[] = {2};
   IndMatches vec_nIndice;
@@ -67,12 +73,15 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_NN)
 
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_Simple_Dim4)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   const float array[] = {
     0, 1, 2, 3,
     4, 5, 6, 7,
     8, 9, 10, 11};
   ArrayMatcher_bruteForce<float> matcher;
-  BOOST_CHECK( matcher.Build(array, 3, 4) );
+  BOOST_CHECK( matcher.Build(gen, array, 3, 4) );
 
   const float query[] = {4, 5, 6, 7};
   int nIndice = -1;
@@ -85,11 +94,14 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_Simple_Dim4)
 
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_kdtreeFlann_Simple__NN)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   const float array[] = {0, 1, 2, 5, 6};
   // no 3, because it involve the same dist as 1,1
 
   ArrayMatcher_kdtreeFlann<float> matcher;
-  BOOST_CHECK( matcher.Build(array, 5, 1) );
+  BOOST_CHECK( matcher.Build(gen, array, 5, 1) );
 
   const float query[] = {2};
   IndMatches vec_nIndice;
@@ -119,9 +131,12 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_kdtreeFlann_Simple__NN)
 
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_Simple_EmptyArrays)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   std::vector<float> array;
   ArrayMatcher_bruteForce<float> matcher;
-  BOOST_CHECK(! matcher.Build(&array[0], 0, 4) );
+  BOOST_CHECK(! matcher.Build(gen, &array[0], 0, 4) );
 
   int nIndice = -1;
   float fDistance = -1.0f;
@@ -130,9 +145,12 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_Simple_EmptyArrays)
 
 BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_kdtreeFlann_Simple_EmptyArrays)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   std::vector<float> array;
   ArrayMatcher_kdtreeFlann<float> matcher;
-  BOOST_CHECK(! matcher.Build(&array[0], 0, 4) );
+  BOOST_CHECK(! matcher.Build(gen, &array[0], 0, 4) );
 
   int nIndice = -1;
   float fDistance = -1.0f;
@@ -141,9 +159,12 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_kdtreeFlann_Simple_EmptyArrays)
 
 BOOST_AUTO_TEST_CASE(Matching_Cascade_Hashing_Simple_EmptyArrays)
 {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
   std::vector<float> array;
   ArrayMatcher_cascadeHashing<float> matcher;
-  BOOST_CHECK(! matcher.Build(&array[0], 0, 4) );
+  BOOST_CHECK(! matcher.Build(gen, &array[0], 0, 4) );
 
   int nIndice = -1;
   float fDistance = -1.0f;

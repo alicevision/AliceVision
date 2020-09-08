@@ -45,7 +45,7 @@ class ArrayMatcher_kdtreeFlann : public ArrayMatcher<Scalar, Metric>
    *
    * \return True if success.
    */
-  bool Build( const Scalar * dataset, int nbRows, int dimension)
+  bool Build(std::mt19937 & gen, const Scalar * dataset, int nbRows, int dimension)
   {
     if (nbRows <= 0)
       return false;

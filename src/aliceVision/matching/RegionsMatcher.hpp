@@ -17,6 +17,7 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 
 #include <vector>
+#include <random>
 
 namespace aliceVision {
 namespace matching {
@@ -110,14 +111,14 @@ public:
    * @param b_squared_metric Whether to use a squared metric for the ratio test 
    * when matching two Regions.
    */
-  RegionsMatcher(const feature::Regions& regions, bool b_squared_metric = false)
+  RegionsMatcher(std::mt19937 & gen, const feature::Regions& regions, bool b_squared_metric = false)
     : IRegionsMatcher(regions), b_squared_metric_(b_squared_metric)
   {
     if (regions_.RegionCount() == 0)
       return;
 
     const Scalar * tab = reinterpret_cast<const Scalar *>(regions_.DescriptorRawData());
-    matcher_.Build(tab, regions_.RegionCount(), regions_.DescriptorLength());
+    matcher_.Build(gen, tab, regions_.RegionCount(), regions_.DescriptorLength());
   }
 
   /**
@@ -208,6 +209,7 @@ class RegionsDatabaseMatcher
      * match other Regions (query).
      */
     RegionsDatabaseMatcher(
+      std::mt19937 & gen, 
       matching::EMatcherType matcherType,
       const feature::Regions & database_regions);
 
@@ -238,13 +240,14 @@ class RegionsDatabaseMatcherPerDesc
 {
 public:
   RegionsDatabaseMatcherPerDesc(
+      std::mt19937 & gen, 
       matching::EMatcherType matcherType,
       const feature::MapRegionsPerDesc & queryRegions)
     : _databaseRegions(queryRegions)
   {
     for(const auto& queryRegionsIt: queryRegions)
     {
-      _mapMatchers[queryRegionsIt.first] = RegionsDatabaseMatcher(matcherType, *queryRegionsIt.second);
+      _mapMatchers[queryRegionsIt.first] = RegionsDatabaseMatcher(gen, matcherType, *queryRegionsIt.second);
     }
   }
 
@@ -276,7 +279,7 @@ private:
   std::map<feature::EImageDescriberType, RegionsDatabaseMatcher> _mapMatchers;
 };
 
-std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType);
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(std::mt19937 & gen, const feature::Regions & regions, matching::EMatcherType matcherType);
 
 }  // namespace matching
 }  // namespace aliceVision

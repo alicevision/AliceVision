@@ -36,6 +36,7 @@
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <random>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
@@ -226,6 +227,9 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+
+  std::random_device rd;
+  std::mt19937 generator(rd());
 
   const double defaultLoRansacMatchingError = 4.0;
   const double defaultLoRansacResectionError = 4.0;
@@ -432,7 +436,8 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("******************************");
     auto detect_start = std::chrono::steady_clock::now();
     std::vector<localization::LocalizationResult> localizationResults;
-    const bool isLocalized = localizer->localizeRig(vec_imageGrey,
+    const bool isLocalized = localizer->localizeRig(generator, 
+                                                    vec_imageGrey,
                                                     param.get(),
                                                     vec_queryIntrinsics,
                                                     vec_subPoses,
