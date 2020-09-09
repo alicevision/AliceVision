@@ -145,10 +145,10 @@ VoctreeLocalizer::VoctreeLocalizer(const sfmData::SfMData &sfmData,
   _isInit = initDatabase(vocTreeFilepath, weightsFilepath, descriptorsFolder);
 }
 
-bool VoctreeLocalizer::localize(std::mt19937 & gen, 
-                                const feature::MapRegionsPerDesc & queryRegions,
+bool VoctreeLocalizer::localize(const feature::MapRegionsPerDesc & queryRegions,
                                 const std::pair<std::size_t, std::size_t> &imageSize,
                                 const LocalizerParameters *param,
+                                std::mt19937 & gen, 
                                 bool useInputIntrinsics,
                                 camera::PinholeRadialK3 &queryIntrinsics,
                                 LocalizationResult & localizationResult,
@@ -187,9 +187,9 @@ bool VoctreeLocalizer::localize(std::mt19937 & gen,
   }
 }
 
-bool VoctreeLocalizer::localize(std::mt19937 & gen, 
-                                const image::Image<float>& imageGrey,
+bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
                                 const LocalizerParameters *param,
+                                std::mt19937 & gen, 
                                 bool useInputIntrinsics,
                                 camera::PinholeRadialK3 &queryIntrinsics,
                                 LocalizationResult &localizationResult,
@@ -247,10 +247,10 @@ bool VoctreeLocalizer::localize(std::mt19937 & gen,
                      param->_visualDebug + "/" + bfs::path(imagePath).stem().string() + ".svg");
   }
 
-  return localize(gen, 
-                  queryRegionsPerDesc,
-                  queryImageSize,
+  return localize(queryRegionsPerDesc,
+                  queryImageSize, 
                   param,
+                  gen,
                   useInputIntrinsics,
                   queryIntrinsics,
                   localizationResult,
@@ -1167,9 +1167,9 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   return true;
 }
 
-bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
-                                   const std::vector<image::Image<float>> & vec_imageGrey,
+bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                                    const LocalizerParameters *parameters,
+                                   std::mt19937 & gen,
                                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                    const std::vector<geometry::Pose3 > &vec_subPoses,
                                    geometry::Pose3 &rigPose, 
@@ -1213,10 +1213,10 @@ bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
   }
   assert(vec_imageSize.size() == vec_queryRegions.size());
           
-  return localizeRig(gen,
-                     vec_queryRegions,
+  return localizeRig(vec_queryRegions,
                      vec_imageSize,
                      parameters,
+                     gen,
                      vec_queryIntrinsics,
                      vec_subPoses,
                      rigPose,
@@ -1224,10 +1224,10 @@ bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
 }
 
 
-bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
-                                    const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+bool VoctreeLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                    const LocalizerParameters *parameters,
+                                   std::mt19937 & gen,
                                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                    const std::vector<geometry::Pose3 > &vec_subPoses,
                                    geometry::Pose3 &rigPose,
@@ -1240,6 +1240,7 @@ bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
+                              gen,
                               vec_queryIntrinsics,
                               vec_subPoses,
                               rigPose,
@@ -1250,10 +1251,10 @@ bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
   {
     if(!parameters->_useLocalizeRigNaive)
       ALICEVISION_LOG_DEBUG("OpenGV is not available. Fallback to localizeRig_naive().");
-    return localizeRig_naive(gen,
-                           vec_queryRegions,
+    return localizeRig_naive(vec_queryRegions,
                            vec_imageSize,
                            parameters,
+                           gen,
                            vec_queryIntrinsics,
                            vec_subPoses,
                            rigPose,
@@ -1267,6 +1268,7 @@ bool VoctreeLocalizer::localizeRig(std::mt19937 & gen,
 bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                           const LocalizerParameters *parameters,
+                                          std::mt19937 &randomNumberGenerator,
                                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                           const std::vector<geometry::Pose3 > &vec_subPoses,
                                           geometry::Pose3 &rigPose,
@@ -1309,7 +1311,8 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
     Mat &pts2D = vec_pts2D[camID];
     camera::PinholeRadialK3 &queryIntrinsics = vec_queryIntrinsics[camID];
     const bool useInputIntrinsics = true;
-    getAllAssociations(vec_queryRegions[camID],
+    getAllAssociations(randomNumberGenerator,
+                       vec_queryRegions[camID],
                        imageSize,
                        *param,
                        useInputIntrinsics,
@@ -1524,10 +1527,10 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
-bool VoctreeLocalizer::localizeRig_naive(std::mt19937 & gen,
-                                          const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+bool VoctreeLocalizer::localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                           const LocalizerParameters *parameters,
+                                          std::mt19937 & gen,
                                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                           const std::vector<geometry::Pose3 > &vec_subPoses,
                                           geometry::Pose3 &rigPose,
@@ -1546,7 +1549,7 @@ bool VoctreeLocalizer::localizeRig_naive(std::mt19937 & gen,
   std::vector<bool> isLocalized(numCams, false);
   for(size_t i = 0; i < numCams; ++i)
   {
-    isLocalized[i] = localize(gen, vec_queryRegions[i], vec_imageSize[i], parameters, true /*useInputIntrinsics*/, vec_queryIntrinsics[i], vec_localizationResults[i]);
+    isLocalized[i] = localize(vec_queryRegions[i], vec_imageSize[i], parameters, gen, true /*useInputIntrinsics*/, vec_queryIntrinsics[i], vec_localizationResults[i]);
     assert(isLocalized[i] == vec_localizationResults[i].isValid());
     if(!isLocalized[i])
     {

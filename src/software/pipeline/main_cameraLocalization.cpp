@@ -419,9 +419,9 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("******************************");
     localization::LocalizationResult localizationResult;
     auto detect_start = std::chrono::steady_clock::now();
-    localizer->localize(generator,
-                       imageGrey, 
+    localizer->localize(imageGrey, 
                        param.get(),
+                       generator,
                        hasIntrinsics /*useInputIntrinsics*/,
                        queryIntrinsics,
                        localizationResult,

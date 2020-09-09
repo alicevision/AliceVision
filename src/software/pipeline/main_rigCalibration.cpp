@@ -388,9 +388,9 @@ int aliceVision_main(int argc, char** argv)
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
       localizer->setCudaPipe( idCamera );
-      const bool ok = localizer->localize(generator,
-                                          imageGrey,
+      const bool ok = localizer->localize(imageGrey,
                                           param.get(),
+                                          generator,
                                           hasIntrinsics/*useInputIntrinsics*/,
                                           *queryIntrinsics,
                                           localizationResult);
