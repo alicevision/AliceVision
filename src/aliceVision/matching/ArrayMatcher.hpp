@@ -37,7 +37,7 @@ class ArrayMatcher
    *
    * \return True if success.
    */
-  virtual bool Build(std::mt19937 & gen, const Scalar * dataset, int nbRows, int dimension)=0;
+  virtual bool Build(std::mt19937 & randomNumberGenerator,const Scalar * dataset, int nbRows, int dimension)=0;
 
   /**
    * Search the nearest Neighbor of the scalar array query.

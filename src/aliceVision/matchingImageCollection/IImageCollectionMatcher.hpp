@@ -34,7 +34,7 @@ class IImageCollectionMatcher
 
   /// Find corresponding points between some pair of view Ids
   virtual void Match(
-    std::mt19937 & gen, 
+    std::mt19937 & randomNumberGenerator,
     const feature::RegionsPerView& regionsPerView,
     const PairSet & pairs, // list of pair to consider for matching
     feature::EImageDescriberType descType,
