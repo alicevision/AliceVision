@@ -194,6 +194,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_
 
 bool CCTagLocalizer::localize(const image::Image<float> & imageGrey,
                               const LocalizerParameters *parameters,
+                              std::mt19937 & randomNumberGenerator,
                               bool useInputIntrinsics,
                               camera::PinholeRadialK3 &queryIntrinsics,
                               LocalizationResult & localizationResult, 
@@ -235,6 +236,7 @@ bool CCTagLocalizer::localize(const image::Image<float> & imageGrey,
   return localize(tmpQueryRegions,
                   imageSize,
                   parameters,
+                  randomNumberGenerator,
                   useInputIntrinsics,
                   queryIntrinsics,
                   localizationResult,
@@ -249,6 +251,7 @@ void CCTagLocalizer::setCudaPipe( int i )
 bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions,
                               const std::pair<std::size_t, std::size_t> &imageSize,
                               const LocalizerParameters *parameters,
+                              std::mt19937 & randomNumberGenerator,
                               bool useInputIntrinsics,
                               camera::PinholeRadialK3 &queryIntrinsics,
                               LocalizationResult & localizationResult,
@@ -273,7 +276,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
 
   std::vector<voctree::DocMatch> matchedImages;
   system::Timer timer;
-  getAllAssociations(queryRegions, imageSize, *param, occurences, resectionData.pt2D, resectionData.pt3D, matchedImages, imagePath);
+  getAllAssociations(queryRegions, imageSize, *param, randomNumberGenerator, occurences, resectionData.pt2D, resectionData.pt3D, matchedImages, imagePath);
   
   resectionData.vec_descType.resize(resectionData.pt2D.cols(), _cctagDescType);
   ALICEVISION_LOG_DEBUG("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
@@ -303,6 +306,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
   const bool bResection = sfm::SfMLocalizer::Localize(imageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
+                                                      randomNumberGenerator,
                                                       resectionData,
                                                       pose,
                                                       param->_resectionEstimator);
@@ -390,6 +394,7 @@ CCTagLocalizer::~CCTagLocalizer()
 // reference frame of the grid
 bool CCTagLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                                  const LocalizerParameters *parameters,
+                                 std::mt19937 & randomNumberGenerator,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
@@ -426,6 +431,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_im
   return localizeRig(vec_queryRegions,
                      vec_imageSize,
                      parameters,
+                     randomNumberGenerator,
                      vec_queryIntrinsics,
                      vec_subPoses,
                      rigPose,
@@ -435,6 +441,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_im
 bool CCTagLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                  const LocalizerParameters *parameters,
+                                 std::mt19937 & randomNumberGenerator,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
@@ -447,6 +454,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc> &
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
+                              randomNumberGenerator,
                               vec_queryIntrinsics,
                               vec_subPoses,
                               rigPose,
@@ -460,6 +468,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc> &
     return localizeRig_naive(vec_queryRegions,
                              vec_imageSize,
                              parameters,
+                             randomNumberGenerator,
                              vec_queryIntrinsics,
                              vec_subPoses,
                              rigPose,
@@ -471,6 +480,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc> &
 bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
+                                 std::mt19937 & randomNumberGenerator,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
@@ -510,7 +520,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPer
     Mat &pts3D = vec_pts3D[i];
     Mat &pts2D = vec_pts2D[i];
     const feature::CCTAG_Regions &queryRegions = vec_queryRegions[i].getRegions<feature::CCTAG_Regions>(_cctagDescType);
-    getAllAssociations(queryRegions, imageSize[i],*param, occurrences, pts2D, pts3D, matchedImages);
+    getAllAssociations(queryRegions, imageSize[i],*param, randomNumberGenerator, occurrences, pts2D, pts3D, matchedImages);
     numAssociations += occurrences.size();
   }
   
@@ -657,6 +667,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPer
 bool CCTagLocalizer::localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
+                                 std::mt19937 & randomNumberGenerator,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
@@ -681,7 +692,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<feature::MapRegionsPerD
   std::vector<bool> isLocalized(numCams, false);
   for(size_t i = 0; i < numCams; ++i)
   {
-    isLocalized[i] = localize(vec_queryRegions[i], imageSize[i], param, true /*useInputIntrinsics*/, vec_queryIntrinsics[i], vec_localizationResults[i]);
+    isLocalized[i] = localize(vec_queryRegions[i], imageSize[i], param, randomNumberGenerator, true /*useInputIntrinsics*/, vec_queryIntrinsics[i], vec_localizationResults[i]);
     if(!isLocalized[i])
     {
       ALICEVISION_CERR("Could not localize camera " << i);
@@ -760,6 +771,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<feature::MapRegionsPerD
 void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegions,
                                         const std::pair<std::size_t, std::size_t> &imageSize,
                                         const CCTagLocalizer::Parameters &param,
+                                        std::mt19937 & randomNumberGenerator,
                                         OccurenceMap & out_occurences,
                                         Mat &out_pt2D,
                                         Mat &out_pt3D,
