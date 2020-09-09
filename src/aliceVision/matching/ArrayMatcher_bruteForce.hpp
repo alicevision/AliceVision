@@ -42,7 +42,7 @@ class ArrayMatcher_bruteForce  : public ArrayMatcher<Scalar, Metric>
    *
    * \return True if success.
    */
-  bool Build(std::mt19937 & gen, const Scalar * dataset, int nbRows, int dimension) {
+  bool Build(std::mt19937 & randomNumberGenerator,const Scalar * dataset, int nbRows, int dimension) {
     if (nbRows < 1) {
       memMapping.reset(nullptr);
       return false;

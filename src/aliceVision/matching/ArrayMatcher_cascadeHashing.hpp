@@ -53,7 +53,7 @@ class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
    *
    * \return True if success.
    */
-  bool Build(std::mt19937 & gen, const Scalar * dataset, int nbRows, int dimension) {
+  bool Build(std::mt19937 & randomNumberGenerator,const Scalar * dataset, int nbRows, int dimension) {
     if (nbRows < 1) {
       memMapping.reset(nullptr);
       return false;
@@ -61,7 +61,7 @@ class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
     memMapping.reset(new Eigen::Map<BaseMat>( (Scalar*)dataset, nbRows, dimension) );
 
     // Init the cascade hasher (hashing projection matrices)
-    cascade_hasher_.Init(gen, dimension);
+    cascade_hasher_.Init(randomNumberGenerator, dimension);
     // Index the input descriptors
     zero_mean_descriptor_ = CascadeHasher::GetZeroMeanDescriptor(*memMapping);
     hashed_base_ = cascade_hasher_.CreateHashedDescriptions(

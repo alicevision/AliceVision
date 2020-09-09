@@ -30,7 +30,7 @@ ImageCollectionMatcher_generic::ImageCollectionMatcher_generic(
 }
 
 void ImageCollectionMatcher_generic::Match(
-  std::mt19937 & gen, 
+  std::mt19937 & randomNumberGenerator,
   const feature::RegionsPerView& regionsPerView,
   const PairSet & pairs,
   feature::EImageDescriberType descType,
@@ -67,7 +67,7 @@ void ImageCollectionMatcher_generic::Match(
     }
 
     // Initialize the matching interface
-    matching::RegionsDatabaseMatcher matcher(gen, _matcherType, regionsI);
+    matching::RegionsDatabaseMatcher matcher(randomNumberGenerator, _matcherType, regionsI);
 
     #pragma omp parallel for schedule(dynamic) if(b_multithreaded_pair_search)
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
