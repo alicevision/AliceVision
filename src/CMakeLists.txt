@@ -904,6 +904,7 @@ endif()
 # ==============================================================================
 message("\n")
 message("** AliceVision version: " ${ALICEVISION_VERSION})
+message("** Target architecture: " ${TARGET_ARCHITECTURE})
 message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
