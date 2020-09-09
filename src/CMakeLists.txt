@@ -50,6 +50,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
+option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
@@ -991,8 +992,9 @@ if(ALICEVISION_BUILD_EXAMPLES AND ALICEVISION_BUILD_SFM)
 endif()
 
 # Complete software(s) build on aliceVision libraries
-add_subdirectory(software)
-
+if(ALICEVISION_BUILD_SOFTWARE)
+  add_subdirectory(software)
+endif()
 
 # ==============================================================================
 # Install rules
