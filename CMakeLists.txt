@@ -253,7 +253,7 @@ if(AV_BUILD_SUITESPARSE)
 set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
-       # URL https://github.com/DrToimothyAldenDavis/SuiteSparse/archive/v4.5.6.tar.gz
+       # URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v4.5.6.tar.gz
        URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.8.1.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
        URL_HASH MD5=c414679bbc9432a3def01b31ad921140
        DOWNLOAD_DIR ${BUILD_DIR}/download/suitesparse
@@ -666,5 +666,4 @@ add_custom_target(bundle
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
                   )
 set_target_properties(bundle PROPERTIES FOLDER Packaging)
-
 
