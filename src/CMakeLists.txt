@@ -50,6 +50,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
+option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
@@ -294,8 +295,8 @@ endif()
 # OpenEXR
 # ==============================================================================
 find_package(OpenEXR REQUIRED)
-if(OPENEXR_FOUND)
-  message(STATUS "OpenEXR found. (Version ${OPENEXR_VERSION})")
+if(TARGET OpenEXR::IlmImf)
+  message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
 else()
   message(SEND_ERROR "Failed to find OpenEXR.")
 endif()
@@ -904,6 +905,7 @@ endif()
 # ==============================================================================
 message("\n")
 message("** AliceVision version: " ${ALICEVISION_VERSION})
+message("** Target architecture: " ${TARGET_ARCHITECTURE})
 message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
@@ -990,8 +992,9 @@ if(ALICEVISION_BUILD_EXAMPLES AND ALICEVISION_BUILD_SFM)
 endif()
 
 # Complete software(s) build on aliceVision libraries
-add_subdirectory(software)
-
+if(ALICEVISION_BUILD_SOFTWARE)
+  add_subdirectory(software)
+endif()
 
 # ==============================================================================
 # Install rules
