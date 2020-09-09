@@ -436,9 +436,9 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("******************************");
     auto detect_start = std::chrono::steady_clock::now();
     std::vector<localization::LocalizationResult> localizationResults;
-    const bool isLocalized = localizer->localizeRig(generator, 
-                                                    vec_imageGrey,
+    const bool isLocalized = localizer->localizeRig(vec_imageGrey,
                                                     param.get(),
+                                                    generator,
                                                     vec_queryIntrinsics,
                                                     vec_subPoses,
                                                     rigPose,

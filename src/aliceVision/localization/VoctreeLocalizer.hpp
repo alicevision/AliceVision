@@ -121,9 +121,9 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  bool localize(std::mt19937 & gen,
-                const image::Image<float> & imageGrey,
+  bool localize(const image::Image<float> & imageGrey,
                 const LocalizerParameters *param,
+                std::mt19937 & gen,
                 bool useInputIntrinsics,
                 camera::PinholeRadialK3 &queryIntrinsics,
                 LocalizationResult &localizationResult, 
@@ -144,28 +144,28 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  bool localize(std::mt19937 & gen, 
-                const feature::MapRegionsPerDesc & queryRegions,
+  bool localize(const feature::MapRegionsPerDesc & queryRegions,
                 const std::pair<std::size_t, std::size_t> &imageSize,
                 const LocalizerParameters *param,
+                std::mt19937 & gen, 
                 bool useInputIntrinsics,
                 camera::PinholeRadialK3 &queryIntrinsics,
                 LocalizationResult & localizationResult,
                 const std::string& imagePath = std::string()) override;
   
   
-  bool localizeRig(std::mt19937 & gen,
-                   const std::vector<image::Image<float>> & vec_imageGrey,
+  bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                    const LocalizerParameters *param,
+                   std::mt19937 & gen,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult> & vec_locResults) override;
   
-  bool localizeRig(std::mt19937 & gen,
-                   const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                    const LocalizerParameters *param,
+                   std::mt19937 & gen,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
@@ -176,16 +176,17 @@ public:
   bool localizeRig_opengv(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,
+                          std::mt19937 & randomNumberGenerator,
                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                           const std::vector<geometry::Pose3 > &vec_subPoses,
                           geometry::Pose3 &rigPose,
                           std::vector<LocalizationResult>& vec_locResults);
 #endif
 
-  bool localizeRig_naive(std::mt19937 & gen,
-                        const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
+                        std::mt19937 & gen,
                         std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                         const std::vector<geometry::Pose3 > &vec_subPoses,
                         geometry::Pose3 &rigPose,
