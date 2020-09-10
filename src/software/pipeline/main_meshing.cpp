@@ -303,6 +303,8 @@ int aliceVision_main(int argc, char* argv[])
             "simFactor")
         ("angleFactor", po::value<float>(&fuseParams.angleFactor)->default_value(fuseParams.angleFactor),
             "angleFactor")
+        ("minVis", po::value<int>(&fuseParams.minVis)->default_value(fuseParams.minVis),
+            "Filter points based on their number of observations")
         ("partitioning", po::value<EPartitioningMode>(&partitioningMode)->default_value(partitioningMode),
             "Partitioning: 'singleBlock' or 'auto'.")
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
