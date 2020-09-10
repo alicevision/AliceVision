@@ -199,6 +199,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
     image::Image<float> isPixelClamped_g(width, height);
     image::ImageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
 
+    const float maxHalfFloat = 65504.0f;
 #pragma omp parallel for
     for (int y = 0; y < height; ++y)
     {
@@ -214,7 +215,9 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
             {
                 if(highlightTarget > radianceColor(channel))
                 {
-                    radianceColor(channel) = clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel);
+                    radianceColor(channel) = float(clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel));
+                    // Ensure that values can be stored in half float for openexr export
+                    radianceColor(channel) = std::min(maxHalfFloat, radianceColor(channel));
                 }
             }
         }
