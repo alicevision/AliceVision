@@ -1190,6 +1190,10 @@ int aliceVision_main(int argc, char **argv)
         metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
         metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
 
+        // Images will be converted in Panorama coordinate system, so there will be no more extra orientation.
+        metadata.remove("Orientation");
+        metadata.remove("orientation");
+
         {
             const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
 
