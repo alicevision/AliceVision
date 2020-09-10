@@ -1078,6 +1078,13 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             pixSizePrepare[vIndex] = -1;
             continue;
         }
+        // Filter points based on their number of observations
+        if(visCams.size() < params.minVis)
+        {
+            ALICEVISION_LOG_DEBUG("minVis value:" << params.minVis);
+            pixSizePrepare[vIndex] = -1;
+            continue;
+        }
 
         const double angleScore = 1.0 + params.angleFactor / maxAngle;
         // Combine angleScore with simScore
