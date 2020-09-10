@@ -1002,7 +1002,7 @@ int aliceVision_main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outputDirectory;
 
-  std::pair<int, int> panoramaSize = {1024, 0};
+  std::pair<int, int> panoramaSize = {0, 0};
   int rangeStart = -1;
   int rangeSize = 1;
   int percentUpscale = 50;
