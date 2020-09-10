@@ -42,6 +42,8 @@ struct FuseParams
     /// The step used to load depth values from depth maps is computed from maxInputPts. Here we define the minimal value for this step,
     /// so on small datasets we will not spend too much time at the beginning loading all depth values.
     int minStep = 2;
+    /// After fusion, filter points based on their number of observations
+    int minVis = 2;
 
     float simFactor = 15.0f;
     float angleFactor = 15.0f;
