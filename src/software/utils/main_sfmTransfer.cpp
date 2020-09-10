@@ -36,6 +36,7 @@ enum class EMatchingMethod : unsigned char
     FROM_VIEWID = 0
     , FROM_FILEPATH
     , FROM_METADATA
+    , FROM_INTRINSICID
 };
 
 /**
@@ -50,6 +51,7 @@ std::string EMatchingMethod_enumToString(EMatchingMethod alignmentMethod)
     case EMatchingMethod::FROM_VIEWID:   return "from_viewid";
     case EMatchingMethod::FROM_FILEPATH: return "from_filepath";
     case EMatchingMethod::FROM_METADATA: return "from_metadata";
+    case EMatchingMethod::FROM_INTRINSICID: return "from_intrinsicid";
     }
     throw std::out_of_range("Invalid EMatchingMethod enum");
 }
@@ -67,6 +69,7 @@ EMatchingMethod EMatchingMethod_stringToEnum(const std::string& alignmentMethod)
     if (method == "from_viewid")   return EMatchingMethod::FROM_VIEWID;
     if (method == "from_filepath") return EMatchingMethod::FROM_FILEPATH;
     if (method == "from_metadata") return EMatchingMethod::FROM_METADATA;
+    if (method == "from_intrinsicid") return EMatchingMethod::FROM_INTRINSICID;
     throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -208,21 +211,37 @@ int aliceVision_main(int argc, char **argv)
             sfm::matchViewsByMetadataMatching(sfmData, sfmDataRef, metadataMatchingList, commonViewIds);
             break;
         }
+        case EMatchingMethod::FROM_INTRINSICID: 
+        {
+            break;
+        }
     }
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-    if (commonViewIds.empty())
-    {
-        ALICEVISION_LOG_ERROR("Failed to find matching Views between the 2 SfmData.");
-        return EXIT_FAILURE;
-    }
 
-    if (!transferPoses && !transferIntrinsics)
+    if (matchingMethod == EMatchingMethod::FROM_INTRINSICID) 
+    {
+        for (auto intrinsic : sfmData.getIntrinsics()) 
+        {
+            for (auto intrinsicRef : sfmDataRef.getIntrinsics())  {
+                if (intrinsic.first == intrinsicRef.first) {
+                    *intrinsic.second = *intrinsicRef.second;
+                    break;
+                }
+            }
+        }
+    }
+    else if (!transferPoses && !transferIntrinsics)
     {
         ALICEVISION_LOG_ERROR("Nothing to do.");
     }
     else
     {
+        if (commonViewIds.empty())
+        {
+            ALICEVISION_LOG_ERROR("Failed to find matching Views between the 2 SfmData.");
+            return EXIT_FAILURE;
+        }
         for (const auto& matchingViews: commonViewIds)
         {
             if(!sfmData.isPoseAndIntrinsicDefined(matchingViews.first) &&
