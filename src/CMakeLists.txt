@@ -294,11 +294,18 @@ endif()
 # ==============================================================================
 # OpenEXR
 # ==============================================================================
-find_package(OpenEXR REQUIRED)
+find_package(OpenEXR)
 if(TARGET OpenEXR::IlmImf)
   message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
 else()
-  message(SEND_ERROR "Failed to find OpenEXR.")
+  # fallback for old openexr versions (<2.5)
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/openexr)
+  find_package(OpenEXR REQUIRED)
+  if(OPENEXR_FOUND)
+    message(STATUS "OpenEXR found (without config). (Version ${OPENEXR_VERSION})")
+  else()
+    message(SEND_ERROR "Failed to find OpenEXR.")
+  endif()
 endif()
 
 # ==============================================================================
