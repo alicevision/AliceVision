@@ -44,10 +44,6 @@ std::string getHdrImagePath(const std::string& outputPath, std::size_t g)
     return hdrImagePath;
 }
 
-bool isOverflow(const image::Image<image::RGBfColor> & input) {
-    const float maxHalfFloat = 65504.0f;
-    return (input.maxCoeff() > maxHalfFloat);
-}
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -63,6 +59,8 @@ int aliceVision_main(int argc, char** argv)
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 1.0f;
     float highlightTargetLux = 120000.0f;
+
+    image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
     int rangeStart = -1;
     int rangeSize = 1;
@@ -97,6 +95,8 @@ int aliceVision_main(int argc, char** argv)
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
          "float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for "
          "full correction to maxLuminance.")
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
           "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -292,11 +292,7 @@ int aliceVision_main(int argc, char** argv)
 
         // Write an image with parameters from the target view
         oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
-
-        if (isOverflow(HDRimage)) 
-        {
-            targetMetadata.push_back(oiio::ParamValue("AliceVision:useFullFloat", int(1)));
-        }
+        targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
 
         image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
     }

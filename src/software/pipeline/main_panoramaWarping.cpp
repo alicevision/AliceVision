@@ -38,11 +38,6 @@ namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
 namespace fs = boost::filesystem;
 
-bool isOverflow(const image::Image<image::RGBfColor> & input) {
-    const float maxHalfFloat = 65504.0f;
-    return (input.maxCoeff() > maxHalfFloat);
-}
-
 namespace SphericalMapping
 {
   /**
@@ -1008,9 +1003,12 @@ int aliceVision_main(int argc, char **argv)
   std::string outputDirectory;
 
   std::pair<int, int> panoramaSize = {0, 0};
+  int percentUpscale = 50;
+
+  image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+
   int rangeStart = -1;
   int rangeSize = 1;
-  int percentUpscale = 50;
 
   // Program description
   po::options_description allParams (
@@ -1032,6 +1030,8 @@ int aliceVision_main(int argc, char **argv)
      "Panorama Width in pixels.")
     ("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale),
      "Percentage of upscaled pixels.")
+    ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+      ("Storage data type: " + image::EStorageDataType_informations()).c_str())
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
      "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -1202,15 +1202,12 @@ int aliceVision_main(int argc, char **argv)
         {
             const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
 
-            oiio::ParamValueList view_metadata = metadata;
-            if (isOverflow(cam)) 
-            {
-                view_metadata.push_back(oiio::ParamValue("AliceVision:useFullFloat", int(1)));
-            }
+            oiio::ParamValueList viewMetadata = metadata;
+            viewMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
 
             const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + ".exr")).string();
             ALICEVISION_LOG_INFO("Store view " << i << " with path " << viewFilepath);
-            image::writeImage(viewFilepath, cam, image::EImageColorSpace::AUTO, view_metadata);
+            image::writeImage(viewFilepath, cam, image::EImageColorSpace::AUTO, viewMetadata);
         }
         {
             const aliceVision::image::Image<unsigned char> & mask = warper.getMask();

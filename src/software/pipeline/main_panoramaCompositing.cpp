@@ -49,10 +49,6 @@ typedef struct {
   std::string weights_path;
 } ConfigView;
 
-bool isOverflow(const image::Image<image::RGBAfColor> & input) {
-    const float maxHalfFloat = 65504.0f;
-    return (input.maxCoeff() > maxHalfFloat);
-}
 
 /**
  * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
@@ -2155,6 +2151,8 @@ int aliceVision_main(int argc, char **argv)
   bool showBorders = false;
   bool showSeams = false;
 
+  image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+
   system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
 
   // Program description
@@ -2176,7 +2174,9 @@ int aliceVision_main(int argc, char **argv)
   optionalParams.add_options()
     ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
     ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")
-    ("useGraphCut,c", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Do we use graphcut for ghost removal ?");
+    ("useGraphCut,c", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Do we use graphcut for ghost removal ?")
+    ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+      ("Storage data type: " + image::EStorageDataType_informations()).c_str());
   allParams.add(optionalParams);
 
   // Setup log level given command line
@@ -2490,11 +2490,8 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
   const aliceVision::image::Image<image::RGBAfColor> & panorama = compositer->getPanorama();
 
-  oiio::ParamValueList view_metadata = outputMetadata;
-  if (isOverflow(panorama)) 
-  {
-    outputMetadata.push_back(oiio::ParamValue("AliceVision:useFullFloat", int(1)));
-  }
+  // Select storage data type
+  outputMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
 
   image::writeImage(outputPanorama, panorama, image::EImageColorSpace::AUTO, outputMetadata);
 
