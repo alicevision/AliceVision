@@ -38,6 +38,11 @@ namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
 namespace fs = boost::filesystem;
 
+bool isOverflow(const image::Image<image::RGBfColor> & input) {
+    const float maxHalfFloat = 65504.0f;
+    return (input.maxCoeff() > maxHalfFloat);
+}
+
 namespace SphericalMapping
 {
   /**
@@ -1197,9 +1202,15 @@ int aliceVision_main(int argc, char **argv)
         {
             const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
 
+            oiio::ParamValueList view_metadata = metadata;
+            if (isOverflow(cam)) 
+            {
+                view_metadata.push_back(oiio::ParamValue("AliceVision:useFullFloat", int(1)));
+            }
+
             const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + ".exr")).string();
             ALICEVISION_LOG_INFO("Store view " << i << " with path " << viewFilepath);
-            image::writeImage(viewFilepath, cam, image::EImageColorSpace::AUTO, metadata);
+            image::writeImage(viewFilepath, cam, image::EImageColorSpace::AUTO, view_metadata);
         }
         {
             const aliceVision::image::Image<unsigned char> & mask = warper.getMask();

@@ -49,6 +49,11 @@ typedef struct {
   std::string weights_path;
 } ConfigView;
 
+bool isOverflow(const image::Image<image::RGBAfColor> & input) {
+    const float maxHalfFloat = 65504.0f;
+    return (input.maxCoeff() > maxHalfFloat);
+}
+
 /**
  * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
  *
@@ -1842,6 +1847,10 @@ public:
             if (((mask(i, j) & 1) && (mask(i + 1, j) & 2)) || ((mask(i, j) & 2) && (mask(i + 1, j) & 1))) {
               float d1 = (color_label(i, j) - color_other(i, j)).norm();
               float d2 = (color_label(i + 1, j) - color_other(i + 1, j)).norm();
+
+              d1 = std::min(2.0f, d1);
+              d2 = std::min(2.0f, d2);
+
               w = (d1 + d2) * 100.0 + 1.0;
             }
                 
@@ -2480,6 +2489,13 @@ int aliceVision_main(int argc, char **argv)
   // Store output
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
   const aliceVision::image::Image<image::RGBAfColor> & panorama = compositer->getPanorama();
+
+  oiio::ParamValueList view_metadata = outputMetadata;
+  if (isOverflow(panorama)) 
+  {
+    outputMetadata.push_back(oiio::ParamValue("AliceVision:useFullFloat", int(1)));
+  }
+
   image::writeImage(outputPanorama, panorama, image::EImageColorSpace::AUTO, outputMetadata);
 
   return EXIT_SUCCESS;

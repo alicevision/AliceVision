@@ -368,8 +368,12 @@ void writeImage(const std::string& path,
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
   {
-    formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
-    outBuf = &formatBuf;
+    int useFullFloat = imageSpec.get_int_attribute("AliceVision:useFullFloat", 0);
+
+    if (!useFullFloat) {
+      formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
+      outBuf = &formatBuf;
+    }
   }
 
   // write image

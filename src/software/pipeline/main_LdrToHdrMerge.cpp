@@ -44,6 +44,11 @@ std::string getHdrImagePath(const std::string& outputPath, std::size_t g)
     return hdrImagePath;
 }
 
+bool isOverflow(const image::Image<image::RGBfColor> & input) {
+    const float maxHalfFloat = 65504.0f;
+    return (input.maxCoeff() > maxHalfFloat);
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -287,6 +292,12 @@ int aliceVision_main(int argc, char** argv)
 
         // Write an image with parameters from the target view
         oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
+
+        if (isOverflow(HDRimage)) 
+        {
+            targetMetadata.push_back(oiio::ParamValue("AliceVision:useFullFloat", int(1)));
+        }
+
         image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
     }
 
