@@ -222,6 +222,7 @@ struct ProcessingParams
     float contrast = 1.0f;
     int medianFilter = 0;
     bool fillHoles = false;
+    bool fixNonFinite = false;
 
     SharpenParams sharpen = 
     {
@@ -305,6 +306,17 @@ void cvMatBGRToImageRGBA(const cv::Mat& matIn, image::Image<image::RGBAfColor>& 
 void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams)
 {
     const unsigned int nchannels = 4;
+
+    // Fix non-finite pixels
+    // Note: fill holes needs to fix non-finite values first
+    if(pParams.fixNonFinite || pParams.fillHoles)
+    {
+        oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        int pixelsFixed = 0;
+        // Works inplace
+        oiio::ImageBufAlgo::fixNonFinite(inBuf, inBuf, oiio::ImageBufAlgo::NonFiniteFixMode::NONFINITE_BOX3, &pixelsFixed);
+        ALICEVISION_LOG_INFO("Fixed " << pixelsFixed << " non-finite pixels.");
+    }
 
     if (pParams.scaleFactor != 1.0f)
     {
@@ -421,12 +433,12 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         throw std::invalid_argument( "Unsupported mode! If you intended to use a Clahe filter, please add OpenCV support.");
 #endif
     }
-
     if(pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+
         // Premult necessary to ensure that the fill holes works as expected
         oiio::ImageBufAlgo::premult(inBuf, inBuf);
         oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
@@ -541,6 +553,10 @@ int aliceVision_main(int argc, char * argv[])
         "Use images metadata from specific folder(s) instead of those specified in the input images.")
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
+
+        ("fixNonFinite", po::value<bool>(&pParams.fixNonFinite)->default_value(pParams.fixNonFinite),
+         "Fill non-finite pixels.")
+
         ("scaleFactor", po::value<float>(&pParams.scaleFactor)->default_value(pParams.scaleFactor),
          "Scale Factor (1.0: no change).")
 
