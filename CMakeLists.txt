@@ -250,6 +250,33 @@ set(LAPACK_CMAKE_FLAGS -DBLAS_LIBRARIES=${BLAS_LIBRARIES} -DLAPACK_LIBRARIES=${L
 endif()
 
 if(AV_BUILD_SUITESPARSE)
+
+ExternalProject_add(gmp
+      URL https://gmplib.org/download/gmp/gmp-6.2.0.tar.xz
+      URL_HASH MD5=a325e3f09e6d91e62101e59f9bda3ec1
+      DOWNLOAD_DIR ${BUILD_DIR}/download/gmp
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --enable-cxx
+      BUILD_COMMAND $(MAKE)
+)
+ExternalProject_add(mpfr
+      URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.1.0.tar.gz
+      URL_HASH MD5=81a97a9ba03590f83a30d26d4400ce39
+      DOWNLOAD_DIR ${BUILD_DIR}/download/mpfr
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-gmp=<INSTALL_DIR>
+      BUILD_COMMAND $(MAKE)
+      DEPENDS gmp
+)
+
 set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
@@ -268,7 +295,7 @@ ExternalProject_Add(${SUITESPARSE_TARGET}
        PATCH_COMMAND sh -c "test `nvcc --version | grep -o 'release [0-9]*' | grep -o '[0-9]*'` -gt 10" && sed -i /compute_30/d ${CMAKE_CURRENT_BINARY_DIR}/suitesparse/SuiteSparse_config/SuiteSparse_config.mk || true
        BUILD_COMMAND   cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} library CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
        INSTALL_COMMAND cd <BINARY_DIR> && ${SUITESPARSE_INTERNAL_MAKE_CMD} install library INSTALL=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-       DEPENDS ${LAPACK_TARGET}
+       DEPENDS ${LAPACK_TARGET} mpfr
        )
 set(SUITESPARSE_CMAKE_FLAGS ${LAPACK_CMAKE_FLAGS} -DSUITESPARSE_INCLUDE_DIR_HINTS=${CMAKE_INSTALL_PREFIX}/include -DSUITESPARSE_LIBRARY_DIR_HINTS=${CMAKE_INSTALL_PREFIX}/lib)
 endif()

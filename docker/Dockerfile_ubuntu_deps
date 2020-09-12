@@ -35,8 +35,6 @@ RUN . ./etc/os-release && \
 		unzip \
 		yasm \
 		pkg-config \
-		libgmp-dev \
-		libmpfr-dev \
 		libtool \
 		libssl-dev \
 		nasm \
