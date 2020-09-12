@@ -110,6 +110,7 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 #RUN make -j"$(nproc)" openimageio
 #RUN make -j"$(nproc)" alembic
 #RUN make -j"$(nproc)" popsift
+#RUN make -j"$(nproc)" ffmpeg
 #RUN make -j"$(nproc)" opencv
 #RUN make -j"$(nproc)" cctag
 

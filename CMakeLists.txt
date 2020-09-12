@@ -15,6 +15,7 @@ option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
 option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
+option(AV_BUILD_FFMPEG "Enable building an embedded FFMpeg" ON)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
@@ -484,6 +485,80 @@ ExternalProject_Add(${BOOST_TARGET}
       )
 set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX})
 
+if(AV_BUILD_FFMPEG)
+
+# GPL
+# ExternalProject_add(x264
+#       GIT_REPOSITORY https://code.videolan.org/videolan/x264.git
+#       GIT_TAG 5493be84
+#       GIT_PROGRESS ON
+#       PREFIX ${BUILD_DIR}
+#       BUILD_IN_SOURCE 0
+#       BUILD_ALWAYS 0
+#       UPDATE_COMMAND ""
+#       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+#       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --disable-static --enable-shared
+#       BUILD_COMMAND $(MAKE)
+# )
+# GPL
+# ExternalProject_add(x265
+#       GIT_REPOSITORY https://code.videolan.org/videolan/x265.git
+#       GIT_TAG 3.1.1
+#       GIT_PROGRESS ON
+#       PREFIX ${BUILD_DIR}
+#       BUILD_IN_SOURCE 0
+#       BUILD_ALWAYS 0
+#       UPDATE_COMMAND ""
+#       UPDATE_COMMAND echo add_subdirectory(source) > CMakeLists.txt
+#       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+#       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+#                  -DCMAKE_PROJECT_NAME=x265 -DENABLE_SHARED:bool=ON -DENABLE_PIC:bool=ON
+#       BUILD_COMMAND $(MAKE)
+# )
+ExternalProject_add(libvpx
+      GIT_REPOSITORY https://chromium.googlesource.com/webm/libvpx.git
+      GIT_TAG v1.8.0
+      GIT_PROGRESS ON
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+            --enable-shared --disable-static --disable-examples
+      BUILD_COMMAND $(MAKE)
+)
+
+set(FFMPEG_TARGET ffmpeg)
+ExternalProject_add(${FFMPEG_TARGET}
+      URL http://ffmpeg.org/releases/ffmpeg-4.1.4.tar.bz2
+      URL_HASH MD5=611d171e4aee749b85e04d17e2aee71d
+      DOWNLOAD_DIR ${BUILD_DIR}/download/ffmpeg
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+            --extra-cflags="-I<INSTALL_DIR>/include"
+            --extra-ldflags="-L<INSTALL_DIR>/lib"
+            --enable-shared
+            --disable-static
+            --disable-gpl
+            --enable-nonfree
+            # --enable-libfreetype
+            # --enable-libfdk-aac # audio
+            # --enable-libmp3lame # audio
+            # --enable-libopus # audio
+            # --enable-libvorbis # audio
+            --enable-libvpx
+            # --enable-libx264 # gpl
+            # --enable-libx265 # gpl
+      BUILD_COMMAND $(MAKE)
+      DEPENDS libvpx
+)
+endif()
+
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
@@ -497,9 +572,22 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
       BINARY_DIR ${BUILD_DIR}/openimageio_build
       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX} -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX} -DOIIO_BUILD_TESTS:BOOL=OFF -DILMBASE_HOME=${CMAKE_INSTALL_PREFIX} -DOPENEXR_HOME=${CMAKE_INSTALL_PREFIX} ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR> -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
+            -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX}
+            -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX} -DOIIO_BUILD_TESTS:BOOL=OFF
+            -DILMBASE_HOME=${CMAKE_INSTALL_PREFIX}
+            -DOPENEXR_HOME=${CMAKE_INSTALL_PREFIX}
+            ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+            -DUSE_FFMPEG=${AV_BUILD_FFMPEG}
+            -DUSE_TURBOJPEG=${AV_BUILD_JPEG}
+            -DUSE_LIBRAW=${AV_BUILD_LIBRAW}
+            -DUSE_OPENEXR=${AV_BUILD_OPENEXR}
+            -DUSE_TIFF=${AV_BUILD_TIFF}
+            -DUSE_PNG=${AV_BUILD_PNG}
+            -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
       BUILD_COMMAND $(MAKE)
-      DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET}
+      DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET}
       )
 # TODO: openjpeg
 # -DOPENJPEG_INCLUDE_DIR=$OPENJPEG_INCLUDE_DIR/openjpeg-2.0 -DOPENJPEG_OPENJP2_LIBRARIES=$OPENJPEG_OPENJP2_LIBRARIES
@@ -541,7 +629,7 @@ ExternalProject_Add(opencv_contrib
   INSTALL_COMMAND ""
 )
 ExternalProject_Add(${OPENCV_TARGET}
-  DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET}
+  DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${FFMPEG_TARGET}
   # URL https://github.com/opencv/opencv/archive/4.2.0.zip
   # URL_MD5 b02b54115f1f99cb9e885d1e5988ff70
   URL https://github.com/opencv/opencv/archive/4.1.0.zip
@@ -558,6 +646,7 @@ ExternalProject_Add(${OPENCV_TARGET}
     ${ZLIB_CMAKE_FLAGS} ${TBB_CMAKE_FLAGS}
     ${TIFF_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS}
     -DWITH_TBB=ON
+    -DWITH_FFMPEG=${AV_BUILD_FFMPEG}
     -DBUILD_opencv_python2=OFF
     -DBUILD_opencv_python3=OFF
     -DWITH_GTK_2_X=OFF
