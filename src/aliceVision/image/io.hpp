@@ -42,6 +42,7 @@ enum class EImageFileType
   EXR
 };
 
+
 /**
  * @brief get informations about each image file type
  * @return String
@@ -90,6 +91,25 @@ std::vector<std::string> getSupportedExtensions();
  * @return true if valid extension
  */
 bool isSupported(const std::string& ext);
+
+
+/**
+* @brief Data type use to write the image
+*/
+enum class EStorageDataType
+{
+    Float, //< Use full floating point precision to store
+    Half, //< Use half (values our of range could become inf or nan)
+    HalfFinite, //< Use half, but ensures out-of-range pixels are clamps to keep finite pixel values
+    Auto //< Use half if all pixels can be stored in half without clamp, else use full float
+};
+
+std::string EStorageDataType_informations();
+EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType);
+std::string EStorageDataType_enumToString(const EStorageDataType dataType);
+std::ostream& operator<<(std::ostream& os, EStorageDataType dataType);
+std::istream& operator>>(std::istream& in, EStorageDataType& dataType);
+
 
 /**
  * @brief convert a metadata string map into an oiio::ParamValueList
