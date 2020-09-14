@@ -127,10 +127,10 @@ std::string EStorageDataType_enumToString(const EStorageDataType dataType)
 {
     switch (dataType)
     {
-    case EStorageDataType::Float:  return "Float";
-    case EStorageDataType::Half:   return "Half";
-    case EStorageDataType::HalfFinite:  return "HalfFinite";
-    case EStorageDataType::Auto:   return "Auto";
+    case EStorageDataType::Float:  return "float";
+    case EStorageDataType::Half:   return "half";
+    case EStorageDataType::HalfFinite:  return "halfFinite";
+    case EStorageDataType::Auto:   return "auto";
     }
     throw std::out_of_range("Invalid EStorageDataType enum");
 }
