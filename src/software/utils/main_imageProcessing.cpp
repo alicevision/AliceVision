@@ -455,12 +455,14 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
                const std::vector<std::string>& metadataFolders,
-               const EImageFormat& outputFormat)
+               const EImageFormat outputFormat, const image::EStorageDataType storageDataType)
 {
     // Read metadata path
     std::string metadataFilePath;
     
     const std::string filename = fs::path(inputPath).filename().string();
+    const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
+    const bool isEXR = (outExtension == ".exr");
     // If metadataFolders is specified
     if(!metadataFolders.empty())
     {
@@ -496,7 +498,13 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
         metadataFilePath = inputPath;
     }
 
-    const oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+    oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+
+    if(isEXR)
+    {
+        // Select storage data type
+        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
+    }
 
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
@@ -528,6 +536,7 @@ int aliceVision_main(int argc, char * argv[])
     std::vector<std::string> metadataFolders;
     std::string outputPath;
     EImageFormat outputFormat = EImageFormat::RGBA;
+    image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
 
     ProcessingParams pParams;
@@ -603,6 +612,9 @@ int aliceVision_main(int argc, char * argv[])
 
         ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
          "Output image format (rgba, rgb, grayscale)")
+    
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str())
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -760,7 +772,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, metadataFolders, outputFormat);
+            saveImage(image, viewPath, outputfilePath, metadataFolders, outputFormat, storageDataType);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -855,7 +867,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, metadataFolders, outputFormat);
+            saveImage(image, inputFilePath, outputFilePath, metadataFolders, outputFormat, storageDataType);
         }
     }
 
