@@ -43,13 +43,6 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
-template <class T>
-void debugImage(const image::Image<T> & toSave, const std::string & name, int pyramid_id, int level) {
-
-  char filename[FILENAME_MAX];
-  sprintf(filename, "%s_%d_%d.exr", name.c_str(), pyramid_id, level);
-  image::writeImage(filename, toSave, image::EImageColorSpace::AUTO);
-}
 
 /**
  * A simple class for gaussian pyramid
@@ -114,8 +107,8 @@ public:
 
   CircleDetector() = delete;
 
-  CircleDetector(size_t width, size_t height, size_t minimal_size) 
-  : _source_width(width), _source_height(height), _minimal_size(minimal_size), _radius(0) {
+  CircleDetector(const std::string & baseDirectory, size_t width, size_t height, size_t minimal_size) 
+  : _baseDirectory(baseDirectory), _source_width(width), _source_height(height), _minimal_size(minimal_size), _radius(0) {
   }
 
   bool appendImage(const image::Image<float> & grayscale_input) {
@@ -245,7 +238,7 @@ public:
 
   bool processLevel(size_t level, int uncertainty) {
 
-    const image::Image<float> gradients = _gradientImage;
+    image::Image<float> gradients = _gradientImage;
     
     image::Image<unsigned char> selection(gradients.Width(), gradients.Height(), true, 0);
 
@@ -271,19 +264,28 @@ public:
       int start = std::max(min_radius, int(level_radius) - uncertainty);
       int end = std::min(gradients.Width() - 1, int(level_radius) + uncertainty);
 
-      for (size_t x = start; x <= end; x++) {
-        if (max_val < gradients(y, x)) {
-          max_x = x;
-          max_val = gradients(y, x);
+      /*Remove non maximas*/
+      for (int x = start; x < end; x++) {
+        if (gradients(y, x) < gradients(y, x + 1)) {
+          gradients(y, x) = 0.0f;
         }
       }
 
-      if (max_x > 0) {
-        double nx = level_centerx + cangle * double(max_x);
-        double ny = level_centery + sangle * double(max_x);
-        selected_points.push_back({nx, ny});
+      /*Remove non maximas*/
+      for (int x = end; x > start; x--) {
+        if (gradients(y, x) < gradients(y, x - 1)) {
+          gradients(y, x) = 0.0f;
+        }
+      }
 
-        selection(y, max_x) = 255;
+      /* Store maximas */
+      for (int x = start; x <= end; x++) {
+        if (gradients(y, x) > 0.0f) {
+          double nx = level_centerx + cangle * double(x);
+          double ny = level_centery + sangle * double(x);
+          selected_points.push_back({nx, ny});
+          selection(y, x) = 255;
+        }
       }
     }
     
@@ -293,7 +295,6 @@ public:
 
     debugImage(selection, "selected", 0, level);
 
-    
     /***
     * RANSAC
     */
@@ -582,9 +583,19 @@ public:
     return _radius;
   }
 
+
+  template <class T>
+  void debugImage(const image::Image<T> & toSave, const std::string & name, int pyramid_id, int level) {
+
+    /*char filename[FILENAME_MAX];
+    sprintf(filename, "%s/%s_%d_%d.exr", _baseDirectory.c_str(), name.c_str(), pyramid_id, level);
+    image::writeImage(filename, toSave, image::EImageColorSpace::AUTO);*/
+  }
+
 private:
   std::vector<PyramidFloat> _pyramids;
   image::Image<float> _gradientImage;
+  std::string _baseDirectory;
   
   double _center_x;
   double _center_y;
@@ -837,7 +848,10 @@ int main(int argc, char * argv[])
 
       if(camera::isEquidistant(intrinsic->getType()))
       {
-        CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
+        boost::filesystem::path path(sfmOutputDataFilepath);
+        
+
+        CircleDetector detector(path.parent_path().string(), intrinsic->w(), intrinsic->h(), 256);
         for(auto & v : sfmData.getViews()) {
           /*Read original image*/
           image::Image<float> grayscale;
