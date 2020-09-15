@@ -43,6 +43,17 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
+template <class T>
+void debugImage(const image::Image<T> & toSave, const std::string & name, int pyramid_id, int level) {
+
+  char filename[FILENAME_MAX];
+  sprintf(filename, "%s_%d_%d.exr", name.c_str(), pyramid_id, level);
+  image::writeImage(filename, toSave, image::EImageColorSpace::AUTO);
+}
+
+/**
+ * A simple class for gaussian pyramid
+ */
 class PyramidFloat {
 public:
   PyramidFloat(size_t width, size_t height, size_t minimal_size) {
@@ -117,12 +128,14 @@ public:
       return false;
     }
 
-    /*Store pyramid for this image, will be processed later*/
+    /*
+    Store pyramid for this image, will be processed later
+    This way we ensure we do not loose intermediate information
+    */
     PyramidFloat pyramid(_source_width, _source_height, _minimal_size);
     if (!pyramid.apply(grayscale_input)) {
       return false;
     }
-
     _pyramids.push_back(pyramid);
 
     return true;
@@ -140,32 +153,37 @@ public:
     double level_centerx = _center_x / pow(2.0, level);
     double level_centery = _center_y / pow(2.0, level);
 
+    /* Compute the maximal distance between the borders and the circle center */
     double max_rx = std::max(double(source.Width()) - level_centerx, level_centerx);
     double max_ry = std::max(double(source.Height()) - level_centery, level_centery);
 
-    double max_radius = std::min(max_rx, max_ry);
     //Just in case the smallest side is cropped inside the circle.
+    double max_radius = std::min(max_rx, max_ry);
     max_radius *= 1.5;
 
     size_t max_radius_i = size_t(std::ceil(max_radius));
     double angles_bins = size_t(std::ceil(max_radius * M_PI)); 
 
+    /* Build a polar image using the estimated circle center */
     image::Image<float> polarImage(max_radius_i, angles_bins, true, 0.0f);
     image::Image<unsigned char> polarImageMask(max_radius_i, angles_bins, true, 0);
     if (!buildPolarImage(polarImage, polarImageMask, source, level_centerx, level_centery)) {
       return false;
     }
+    
+    debugImage(polarImage, "polarImage", _current_pyramid_id, level);
 
-    image::Image<float> gradientImage(max_radius_i, angles_bins);
-
+    /* Use a custom edge detector */
     /*int max = pyramid.countLevels() - 1;*/
     /*int diff = max - level;*/
     int min_radius = 8;
     int radius = min_radius;// * pow(2, diff);
-    
+    image::Image<float> gradientImage(max_radius_i, angles_bins);    
     if (!buildGradientImage(gradientImage, polarImage, polarImageMask, radius)) {
       return false;
     }
+
+    debugImage(gradientImage, "gradientImage", _current_pyramid_id, level);
 
     if (_gradientImage.Width() != gradientImage.Width() || _gradientImage.Height() != gradientImage.Height()) {
       _gradientImage = gradientImage;
@@ -183,26 +201,43 @@ public:
       return false;
     }
 
+    /* Initialize parameters with most common case */
     _center_x = _source_width / 2;
     _center_y = _source_height / 2;
     _radius = std::min(_source_width / 4, _source_height / 4);
+    _last_level_inliers = 0;
+    int last_valid_level = -1;
 
-    for (int current_level =  _pyramids[0].countLevels() - 1; current_level > 0; current_level--) {
+    for (int current_level =  _pyramids[0].countLevels() - 1; current_level > 1; current_level--) {
       
+      /* Compute gradients */
+      _current_pyramid_id = 0;
       for (PyramidFloat & pyr : _pyramids) {
         if (!preprocessLevel(pyr, current_level)) {
           return false;
         }
+        _current_pyramid_id++;
       }
       
+      /* Estimate the search area */
       int uncertainty = 50;
       if (current_level == _pyramids[0].countLevels() - 1) {
         uncertainty = std::max(_source_width, _source_height);
       }
 
+      debugImage(_gradientImage, "globalGradientImage", 0, current_level);
+
+      /* Perform estimation */
       if (!processLevel(current_level, uncertainty)) {
-        return false;
+        break;
       }
+
+      last_valid_level = current_level;
+    }
+
+    /*Check that the circle was detected at some level*/
+    if (last_valid_level < 0) {
+      return false;
     }
 
     return true;
@@ -211,6 +246,8 @@ public:
   bool processLevel(size_t level, int uncertainty) {
 
     const image::Image<float> gradients = _gradientImage;
+    
+    image::Image<unsigned char> selection(gradients.Width(), gradients.Height(), true, 0);
 
     /*Adapt current center to level*/
     double level_centerx = _center_x / pow(2.0, level);
@@ -245,12 +282,16 @@ public:
         double nx = level_centerx + cangle * double(max_x);
         double ny = level_centery + sangle * double(max_x);
         selected_points.push_back({nx, ny});
+
+        selection(y, max_x) = 255;
       }
     }
     
     if (selected_points.size() < 3) {
       return false;
     }
+
+    debugImage(selection, "selected", 0, level);
 
     
     /***
@@ -296,6 +337,11 @@ public:
         best_params = res;
       }
     } 
+
+    if (maxcount < _last_level_inliers) {
+      return false;
+    }
+    _last_level_inliers = maxcount;
 
     /***
     * Minimize
@@ -378,7 +424,6 @@ public:
     _center_x = best_params(0) * pow(2.0, level);
     _center_y = best_params(1) * pow(2.0, level);
     _radius = best_params(2) * pow(2.0, level);
-
 
     return true;
   }
@@ -548,6 +593,8 @@ private:
   size_t _source_width;
   size_t _source_height; 
   size_t _minimal_size;
+  size_t _current_pyramid_id;
+  size_t _last_level_inliers;
 };
 
 int main(int argc, char * argv[])
