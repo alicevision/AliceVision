@@ -130,7 +130,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
         // Enforce f(0.5) = 0.0
         //
         const size_t pos_middle = std::floor(channelQuantization / 2);
-        A(channelQuantization - 1, channelQuantization - 1) += 1.0f;
+        A(pos_middle, pos_middle) += 1.0f;
 
         // M is
         //
