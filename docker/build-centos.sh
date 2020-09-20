@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 test -e docker/fetch.sh || {
 	echo This script must be run from the top level of the AliceVision tree

@@ -49,8 +49,7 @@ RUN $YUM_INSTALL centos-release-scl-rh && \
 		nasm \
 		automake \
 		which \
-		openssl-devel \
-		gmp-devel
+		openssl-devel
 
 # Okay, change our shell to specifically use our software collections.
 # (default was SHELL [ "/bin/sh", "-c" ])
@@ -76,14 +75,6 @@ RUN tar zxf /tmp/cmake-3.16.3.tar.gz && \
     make -j"$(nproc)" && \
     make install
 
-# Manually install MPFR
-RUN wget https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.gz -O - | tar zxf - && \
-    cd mpfr-4.1.0 && \
-    ./configure --prefix=/usr/local && \
-    make -j"$(nproc)" && \
-    make install && \
-    cd .. && \
-    rm -rf mpfr-4.1.0
 
 COPY CMakeLists.txt ${AV_DEV}/
 
@@ -119,6 +110,7 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 #RUN make -j"$(nproc)" openimageio
 #RUN make -j"$(nproc)" alembic
 #RUN make -j"$(nproc)" popsift
+#RUN make -j"$(nproc)" ffmpeg
 #RUN make -j"$(nproc)" opencv
 #RUN make -j"$(nproc)" cctag
 
