@@ -43,6 +43,10 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
+
+/**
+ * A simple class for gaussian pyramid
+ */
 class PyramidFloat {
 public:
   PyramidFloat(size_t width, size_t height, size_t minimal_size) {
@@ -103,8 +107,12 @@ public:
 
   CircleDetector() = delete;
 
-  CircleDetector(size_t width, size_t height, size_t minimal_size) 
+  CircleDetector(size_t width, size_t height, size_t minimal_size)
   : _source_width(width), _source_height(height), _minimal_size(minimal_size), _radius(0) {
+  }
+
+  void setDebugDirectory(const std::string& dir) {
+    _debugDirectory = dir;
   }
 
   bool appendImage(const image::Image<float> & grayscale_input) {
@@ -117,19 +125,21 @@ public:
       return false;
     }
 
-    /*Store pyramid for this image, will be processed later*/
+    /*
+    Store pyramid for this image, will be processed later
+    This way we ensure we do not loose intermediate information
+    */
     PyramidFloat pyramid(_source_width, _source_height, _minimal_size);
     if (!pyramid.apply(grayscale_input)) {
       return false;
     }
-
     _pyramids.push_back(pyramid);
 
     return true;
   }
 
-  bool preprocessLevel(const PyramidFloat & pyramid, size_t level) {
-    
+  bool preprocessLevel(const PyramidFloat& pyramid, size_t pyramid_id, size_t level)
+  {    
     if (level >= pyramid.countLevels()) {
       return false;
     } 
@@ -140,32 +150,37 @@ public:
     double level_centerx = _center_x / pow(2.0, level);
     double level_centery = _center_y / pow(2.0, level);
 
+    /* Compute the maximal distance between the borders and the circle center */
     double max_rx = std::max(double(source.Width()) - level_centerx, level_centerx);
     double max_ry = std::max(double(source.Height()) - level_centery, level_centery);
 
-    double max_radius = std::min(max_rx, max_ry);
     //Just in case the smallest side is cropped inside the circle.
+    double max_radius = std::min(max_rx, max_ry);
     max_radius *= 1.5;
 
     size_t max_radius_i = size_t(std::ceil(max_radius));
     double angles_bins = size_t(std::ceil(max_radius * M_PI)); 
 
+    /* Build a polar image using the estimated circle center */
     image::Image<float> polarImage(max_radius_i, angles_bins, true, 0.0f);
     image::Image<unsigned char> polarImageMask(max_radius_i, angles_bins, true, 0);
     if (!buildPolarImage(polarImage, polarImageMask, source, level_centerx, level_centery)) {
       return false;
     }
+    
+    debugImage(polarImage, "polarImage", pyramid_id, level);
 
-    image::Image<float> gradientImage(max_radius_i, angles_bins);
-
+    /* Use a custom edge detector */
     /*int max = pyramid.countLevels() - 1;*/
     /*int diff = max - level;*/
     int min_radius = 8;
     int radius = min_radius;// * pow(2, diff);
-    
+    image::Image<float> gradientImage(max_radius_i, angles_bins);    
     if (!buildGradientImage(gradientImage, polarImage, polarImageMask, radius)) {
       return false;
     }
+
+    debugImage(gradientImage, "gradientImage", pyramid_id, level);
 
     if (_gradientImage.Width() != gradientImage.Width() || _gradientImage.Height() != gradientImage.Height()) {
       _gradientImage = gradientImage;
@@ -177,40 +192,65 @@ public:
     return true;
   }
 
-  bool process() {
-
-    if (_pyramids.size() == 0) { 
+  bool process()
+  {
+    if (_pyramids.size() == 0)
+    { 
       return false;
     }
 
+    /* Initialize parameters with most common case */
     _center_x = _source_width / 2;
     _center_y = _source_height / 2;
     _radius = std::min(_source_width / 4, _source_height / 4);
+    size_t last_level_inliers = 0;
+    int last_valid_level = -1;
 
-    for (int current_level =  _pyramids[0].countLevels() - 1; current_level > 0; current_level--) {
-      
-      for (PyramidFloat & pyr : _pyramids) {
-        if (!preprocessLevel(pyr, current_level)) {
+    for (int current_level =  _pyramids[0].countLevels() - 1; current_level > 1; current_level--)
+    {
+      /* Compute gradients */
+      size_t current_pyramid_id = 0;
+      for (PyramidFloat & pyr : _pyramids)
+      {
+        if(!preprocessLevel(pyr, current_pyramid_id, current_level))
+        {
           return false;
         }
+        current_pyramid_id++;
       }
       
+      /* Estimate the search area */
       int uncertainty = 50;
-      if (current_level == _pyramids[0].countLevels() - 1) {
+      if (current_level == _pyramids[0].countLevels() - 1)
+      {
         uncertainty = std::max(_source_width, _source_height);
       }
 
-      if (!processLevel(current_level, uncertainty)) {
-        return false;
+      debugImage(_gradientImage, "globalGradientImage", 0, current_level);
+
+      /* Perform estimation */
+      if(!processLevel(current_level, uncertainty, last_level_inliers))
+      {
+        break;
       }
+
+      last_valid_level = current_level;
+    }
+
+    /*Check that the circle was detected at some level*/
+    if (last_valid_level < 0)
+    {
+      return false;
     }
 
     return true;
   }
 
-  bool processLevel(size_t level, int uncertainty) {
-
-    const image::Image<float> gradients = _gradientImage;
+  bool processLevel(size_t level, int uncertainty, size_t& last_level_inliers)
+  {
+    image::Image<float> gradients = _gradientImage;
+    
+    image::Image<unsigned char> selection(gradients.Width(), gradients.Height(), true, 0);
 
     /*Adapt current center to level*/
     double level_centerx = _center_x / pow(2.0, level);
@@ -234,17 +274,28 @@ public:
       int start = std::max(min_radius, int(level_radius) - uncertainty);
       int end = std::min(gradients.Width() - 1, int(level_radius) + uncertainty);
 
-      for (size_t x = start; x <= end; x++) {
-        if (max_val < gradients(y, x)) {
-          max_x = x;
-          max_val = gradients(y, x);
+      /*Remove non maximas*/
+      for (int x = start; x < end; x++) {
+        if (gradients(y, x) < gradients(y, x + 1)) {
+          gradients(y, x) = 0.0f;
         }
       }
 
-      if (max_x > 0) {
-        double nx = level_centerx + cangle * double(max_x);
-        double ny = level_centery + sangle * double(max_x);
-        selected_points.push_back({nx, ny});
+      /*Remove non maximas*/
+      for (int x = end; x > start; x--) {
+        if (gradients(y, x) < gradients(y, x - 1)) {
+          gradients(y, x) = 0.0f;
+        }
+      }
+
+      /* Store maximas */
+      for (int x = start; x <= end; x++) {
+        if (gradients(y, x) > 0.0f) {
+          double nx = level_centerx + cangle * double(x);
+          double ny = level_centery + sangle * double(x);
+          selected_points.push_back({nx, ny});
+          selection(y, x) = 255;
+        }
       }
     }
     
@@ -252,7 +303,8 @@ public:
       return false;
     }
 
-    
+    debugImage(selection, "selected", 0, level);
+
     /***
     * RANSAC
     */
@@ -296,6 +348,11 @@ public:
         best_params = res;
       }
     } 
+
+    if (maxcount < last_level_inliers) {
+      return false;
+    }
+    last_level_inliers = maxcount;
 
     /***
     * Minimize
@@ -378,7 +435,6 @@ public:
     _center_x = best_params(0) * pow(2.0, level);
     _center_y = best_params(1) * pow(2.0, level);
     _radius = best_params(2) * pow(2.0, level);
-
 
     return true;
   }
@@ -537,9 +593,21 @@ public:
     return _radius;
   }
 
+  template <class T>
+  void debugImage(const image::Image<T> & toSave, const std::string & name, int pyramid_id, int level) {
+    // Only export debug image if there is an debug output folder defined.
+    if(_debugDirectory.empty())
+      return;
+
+    boost::filesystem::path filepath = boost::filesystem::path(_debugDirectory) /
+          (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
+    image::writeImage(filepath.string(), toSave, image::EImageColorSpace::AUTO);
+  }
+
 private:
   std::vector<PyramidFloat> _pyramids;
   image::Image<float> _gradientImage;
+  std::string _debugDirectory;
   
   double _center_x;
   double _center_y;
@@ -564,6 +632,7 @@ int main(int argc, char * argv[])
   Vec2 fisheyeCenterOffset(0, 0);
   double fisheyeRadius = 96.0;
   float additionalAngle = 0.0f;
+  bool debugFisheyeCircleEstimation = false;
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
@@ -592,6 +661,8 @@ int main(int argc, char * argv[])
     ("fisheyeCenterOffset_x", po::value<double>(&fisheyeCenterOffset(0)), "Fisheye circle's center offset X (pixels).")
     ("fisheyeCenterOffset_y", po::value<double>(&fisheyeCenterOffset(1)), "Fisheye circle's center offset Y (pixels).")
     ("fisheyeRadius,r", po::value<double>(&fisheyeRadius), "Fisheye circle's radius (% of image shortest side).")
+    ("debugFisheyeCircleEstimation", po::value<bool>(&debugFisheyeCircleEstimation),
+      "Debug fisheye circle detection.")
     ;
 
   po::options_description optionalParams("Optional parameters");
@@ -704,7 +775,7 @@ int main(int argc, char * argv[])
       Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
       Eigen::AngleAxis<double> Mimage(additionalAngle-M_PI_2, Eigen::Vector3d::UnitZ());
 
-      Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *  Mroll.toRotationMatrix() * Mimage.toRotationMatrix()  ;
+      Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *  Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
 
       rotations[id] = cRo.transpose();
     }
@@ -789,10 +860,16 @@ int main(int argc, char * argv[])
       }
 
       if(camera::isEquidistant(intrinsic->getType()))
-      {
+      { 
         CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
-        for(auto & v : sfmData.getViews()) {
-          /*Read original image*/
+        if(debugFisheyeCircleEstimation)
+        {
+            boost::filesystem::path path(sfmOutputDataFilepath);
+            detector.setDebugDirectory(path.parent_path().string());
+        }
+        for(auto & v : sfmData.getViews())
+        {
+          // Read original image
           image::Image<float> grayscale;
           image::readImage(v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
