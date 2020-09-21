@@ -739,10 +739,24 @@ int aliceVision_main(int argc, char** argv)
 
   if(method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
   {
+      // Frustum intersection is only implemented for pinhole cameras
+      bool onlyPinhole = true;
+      for (auto & cam : sfmDataA.getIntrinsics()) {
+        if (!camera::isPinhole(cam.second->getType())) {
+          onlyPinhole = false;
+          break;
+        }
+      }
+
       const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
       if(reconstructedViews == 0)
       {
-          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching (no known pose).");
+          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as there is no known pose.");
+          method = EImageMatchingMethod::VOCABULARYTREE;
+      }
+      else if(!onlyPinhole)
+      {
+          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as the scene contains non-pinhole cameras.");
           method = EImageMatchingMethod::VOCABULARYTREE;
       }
       else if(reconstructedViews == sfmDataA.getViews().size())
