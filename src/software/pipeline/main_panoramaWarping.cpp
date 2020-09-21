@@ -986,13 +986,10 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   int selected_index = int(floor(float(scales.size() - 1) * ratioUpscale));
   double selected_scale = scales[selected_index];
 
-  ALICEVISION_LOG_INFO("Estimated panorama size: "  << int(optimalSize.first * selected_scale) << "x" << int(optimalSize.second * selected_scale));
+  optimalSize.first = optimalSize.first * selected_scale;
+  optimalSize.second = optimalSize.second * selected_scale;
 
-  double multiplier = pow(2.0, int(floor(log2(selected_scale))));
-  optimalSize.first = optimalSize.first * multiplier;
-  optimalSize.second = optimalSize.second * multiplier;
-
-  ALICEVISION_LOG_INFO("Estimated panorama size (Rounded to lower power of two): "  << optimalSize.first << "x" << optimalSize.second);
+  ALICEVISION_LOG_INFO("Estimated panorama size: "  << optimalSize.first << "x" << optimalSize.second);
 
   return true;
 }
@@ -1115,12 +1112,10 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
     }
   }
-  else
-  {
-    double max_scale = 1.0 / pow(2.0, 10);
-    panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);
-    panoramaSize.second = panoramaSize.first / 2;
-  }
+  
+  double max_scale = 1.0 / pow(2.0, 10);
+  panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);
+  panoramaSize.second = panoramaSize.first / 2;
 
   ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
 
