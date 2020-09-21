@@ -871,12 +871,16 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     verticesCoordsPrepare.resize(realMaxVertices);
     std::vector<double> pixSizePrepare(realMaxVertices);
     std::vector<float> simScorePrepare(realMaxVertices);
+    
+    // counter for points filtered based on the number of observations (minVis)
+    int minVisCounter = 0;
 
     ALICEVISION_LOG_INFO("simFactor: " << params.simFactor);
     ALICEVISION_LOG_INFO("nbPixels: " << nbPixels);
     ALICEVISION_LOG_INFO("maxVertices: " << params.maxPoints);
     ALICEVISION_LOG_INFO("step: " << step);
     ALICEVISION_LOG_INFO("realMaxVertices: " << realMaxVertices);
+    ALICEVISION_LOG_INFO("minVis: " << params.minVis);
 
     ALICEVISION_LOG_INFO("Load depth maps and add points.");
     {
@@ -1081,8 +1085,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         // Filter points based on their number of observations
         if(visCams.size() < params.minVis)
         {
-            ALICEVISION_LOG_DEBUG("minVis value:" << params.minVis);
             pixSizePrepare[vIndex] = -1;
+            minVisCounter += 1;
             continue;
         }
 
@@ -1102,6 +1106,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     ALICEVISION_LOG_INFO("Angle min: " << stat_minAngle << ", max: " << stat_maxAngle << ".");
     ALICEVISION_LOG_INFO("Angle score min: " << stat_minAngleScore << ", max: " << stat_maxAngleScore << ".");
 #endif
+    ALICEVISION_LOG_INFO((minVisCounter) << " points filtered based on the number of observations (minVis). ");
     removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
 
     ALICEVISION_LOG_INFO("Filter by angle score and sim score");
