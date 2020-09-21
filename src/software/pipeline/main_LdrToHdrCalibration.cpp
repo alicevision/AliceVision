@@ -380,6 +380,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
             response.exponential();
+            response.scale();
             break;
         }
         case ECalibrationMethod::GROSSBERG:
