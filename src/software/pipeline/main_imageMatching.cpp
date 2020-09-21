@@ -739,8 +739,15 @@ int aliceVision_main(int argc, char** argv)
 
   if(method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
   {
+      bool onlyPinhole = true;
+      for (auto & cam : sfmDataA.getIntrinsics()) {
+        if (!camera::isPinhole(cam.second->getType())) {
+          onlyPinhole = false;
+        }
+      }
+
       const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
-      if(reconstructedViews == 0)
+      if(reconstructedViews == 0 || (onlyPinhole == false))
       {
           ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching (no known pose).");
           method = EImageMatchingMethod::VOCABULARYTREE;
