@@ -328,10 +328,13 @@ public:
     if (scales.empty()) return false;
 
     std::sort(scales.begin(), scales.end());
-    int selected_index = int(floor(float(scales.size() - 1) * ratioUpscale));
-    result = sqrt(scales[selected_index]);
-
-    
+    const float indexRatio = float(scales.size() - 1) * ratioUpscale;
+    float intPart = 0.0f;
+    const float fractPart = std::modf(indexRatio, &intPart);
+    const size_t indexL = int(intPart);
+    const size_t indexU = std::min(scales.size() - 1, size_t(std::ceil(indexRatio)));
+    const double scale = scales[indexL] * (1.0f - fractPart) + scales[indexU] * fractPart;
+    result = std::sqrt(scale);
 
     return true;
   }
@@ -983,11 +986,15 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   }
 
   std::sort(scales.begin(), scales.end());
-  int selected_index = int(floor(float(scales.size() - 1) * ratioUpscale));
-  double selected_scale = scales[selected_index];
+  const float indexRatio = float(scales.size() - 1) * ratioUpscale;
+  float intPart = 0.0f;
+  const float fractPart = std::modf(indexRatio, &intPart);
+  const size_t indexL = int(intPart);
+  const size_t indexU = std::min(scales.size() - 1, size_t(std::ceil(indexRatio)));
+  const double selectedScale = scales[indexL] * (1.0f - fractPart) + scales[indexU] * fractPart;
 
-  optimalSize.first = optimalSize.first * selected_scale;
-  optimalSize.second = optimalSize.second * selected_scale;
+  optimalSize.first = optimalSize.first * selectedScale;
+  optimalSize.second = optimalSize.second * selectedScale;
 
   ALICEVISION_LOG_INFO("Estimated panorama size: "  << optimalSize.first << "x" << optimalSize.second);
 
