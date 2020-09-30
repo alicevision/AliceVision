@@ -134,6 +134,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO
+          aliceVision_panorama
           ${Boost_LIBRARIES}
   )
   alicevision_add_software(aliceVision_panoramaCompositing
