@@ -13,12 +13,14 @@ bool CoordinatesMap::build(const std::pair<int, int> & panoramaSize, const geome
     _coordinates = aliceVision::image::Image<Eigen::Vector2d>(coarseBbox.width, coarseBbox.height, false);
     _mask = aliceVision::image::Image<unsigned char>(coarseBbox.width, coarseBbox.height, true, 0);
 
+    size_t max_x = 0;
+    size_t max_y = 0;
+    size_t min_x = panoramaSize.first;
+    size_t min_y = panoramaSize.second;
 
-    #pragma omp parallel for
     for (size_t y = 0; y < coarseBbox.height; y++) {
 
       size_t cy = y + coarseBbox.top;
-
 
       for (size_t x = 0; x < coarseBbox.width; x++) {
 
@@ -49,13 +51,65 @@ bool CoordinatesMap::build(const std::pair<int, int> & panoramaSize, const geome
 
         _coordinates(y, x) = pix_disto;
         _mask(y, x) = 1;
+
+        min_x = std::min(cx, min_x);
+        min_y = std::min(cy, min_y);
+        max_x = std::max(cx, max_x);
+        max_y = std::max(cy, max_y);
       }
     }
    
     _offset_x = coarseBbox.left;
     _offset_y = coarseBbox.top;
 
+    _boundingBox.left = min_x;
+    _boundingBox.top = min_y;
+    _boundingBox.width = max_x - min_x + 1; 
+    _boundingBox.height = max_y - min_y + 1;
+
     return true;
+}
+
+
+bool CoordinatesMap::containsPixels(const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics, const BoundingBox &coarseBbox) {
+    
+    for (size_t y = 0; y < coarseBbox.height; y++) {
+
+        size_t cy = y + coarseBbox.top;
+
+
+        for (size_t x = 0; x < coarseBbox.width; x++) {
+
+            size_t cx = x + coarseBbox.left;
+
+            Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(cx, cy), panoramaSize.first, panoramaSize.second);
+
+            /**
+            * Check that this ray should be visible.
+            * This test is camera type dependent
+            */
+            Vec3 transformedRay = pose(ray);
+            if (!intrinsics.isVisibleRay(transformedRay)) {
+                continue;
+            }
+
+            /**
+             * Project this ray to camera pixel coordinates
+             */
+            const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+            /**
+             * Ignore invalid coordinates
+             */
+            if (!intrinsics.isVisible(pix_disto)) {
+                continue;
+            }
+
+            return true;
+        }
+    }
+   
+    return false;
 }
 
 bool CoordinatesMap::computeScale(double & result, float ratioUpscale) {

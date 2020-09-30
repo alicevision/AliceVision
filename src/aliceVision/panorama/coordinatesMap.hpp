@@ -18,6 +18,14 @@ public:
    */
   bool build(const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics, const BoundingBox &coarseBbox);
 
+  /**
+   * Check if there is any valid pixel
+   * @param panoramaSize desired output panoramaSize 
+   * @param pose the camera pose wrt an arbitrary reference frame
+   * @param intrinsics the camera intrinsics
+   */
+  bool containsPixels(const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics, const BoundingBox &coarseBbox);
+
   bool computeScale(double & result, float ratioUpscale);
 
   size_t getOffsetX() const {
@@ -26,6 +34,10 @@ public:
 
   size_t getOffsetY() const {
     return _offset_y;
+  }
+
+  BoundingBox getBoundingBox() const {
+    return _boundingBox;
   }
 
   const aliceVision::image::Image<Eigen::Vector2d> & getCoordinates() const {
@@ -42,6 +54,7 @@ private:
 
   aliceVision::image::Image<Eigen::Vector2d> _coordinates;
   aliceVision::image::Image<unsigned char> _mask;
+  BoundingBox _boundingBox;
 };
 
 }

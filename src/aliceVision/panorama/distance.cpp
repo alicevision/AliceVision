@@ -4,16 +4,13 @@
 
 namespace aliceVision {
 
-bool distanceToCenter(aliceVision::image::Image<float> & _weights, const CoordinatesMap & map) {
+bool distanceToCenter(aliceVision::image::Image<float> & _weights, const CoordinatesMap & map, int width, int height) {
 
     const aliceVision::image::Image<Eigen::Vector2d> & coordinates = map.getCoordinates();
     const aliceVision::image::Image<unsigned char> & mask = map.getMask();
 
-    float w = static_cast<float>(coordinates.Width());
-    float h = static_cast<float>(coordinates.Height());
-
-    float cx = w / 2.0f;
-    float cy = h / 2.0f;
+    float cx = width / 2.0f;
+    float cy = height / 2.0f;
 
     _weights = aliceVision::image::Image<float>(coordinates.Width(), coordinates.Height());
 

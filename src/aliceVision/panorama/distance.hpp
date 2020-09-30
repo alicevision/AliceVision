@@ -6,6 +6,6 @@
 
 namespace aliceVision {
 
-bool distanceToCenter(aliceVision::image::Image<float> & _weights, const CoordinatesMap & map);
+bool distanceToCenter(aliceVision::image::Image<float> & _weights, const CoordinatesMap & map, int width, int height);
 
 }
