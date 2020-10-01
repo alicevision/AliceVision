@@ -1,35 +1,39 @@
 #pragma once
 
-
-struct BoundingBox {
+struct BoundingBox
+{
 
     int left;
     int top;
     int width;
     int height;
 
-    BoundingBox() {
+    BoundingBox()
+    {
         left = -1;
         top = -1;
         width = 0;
         height = 0;
     };
 
-    BoundingBox(int l, int t, int w, int h) : left(l), top(t), width(w), height(h) {}
-
-    int getRight() const {
-        return left + width - 1;
+    BoundingBox(int l, int t, int w, int h)
+        : left(l)
+        , top(t)
+        , width(w)
+        , height(h)
+    {
     }
 
-    int getBottom() const {
-        return top + height - 1;
-    }
+    int getRight() const { return left + width - 1; }
 
-    void snapToGrid(uint32_t gridSize) {
+    int getBottom() const { return top + height - 1; }
+
+    void snapToGrid(uint32_t gridSize)
+    {
 
         int right = getRight();
         int bottom = getBottom();
-        
+
         int leftBounded = int(floor(double(left) / double(gridSize))) * int(gridSize);
         int topBounded = int(floor(double(top) / double(gridSize))) * int(gridSize);
         int widthBounded = int(ceil(double(right - leftBounded + 1) / double(gridSize))) * int(gridSize);
@@ -41,9 +45,11 @@ struct BoundingBox {
         height = heightBounded;
     }
 
-    void unionWith(const BoundingBox & other) {
+    void unionWith(const BoundingBox& other)
+    {
 
-        if (left < 0 && top < 0) {
+        if(left < 0 && top < 0)
+        {
             left = other.left;
             top = other.top;
             width = other.width;

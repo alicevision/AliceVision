@@ -2,7 +2,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 
-namespace aliceVision 
+namespace aliceVision
 {
 
 namespace SphericalMapping
@@ -14,7 +14,7 @@ namespace SphericalMapping
  * @param height number of pixels used to represent latitude
  * @return spherical coordinates
  */
-Vec3 fromEquirectangular(const Vec2 & equirectangular, int width, int height);
+Vec3 fromEquirectangular(const Vec2& equirectangular, int width, int height);
 
 /**
  * Map from Spherical to equirectangular coordinates
@@ -23,7 +23,7 @@ Vec3 fromEquirectangular(const Vec2 & equirectangular, int width, int height);
  * @param height number of pixels used to represent latitude
  * @return equirectangular coordinates
  */
-Vec2 toEquirectangular(const Vec3 & spherical, int width, int height);
-  
-}
-}
+Vec2 toEquirectangular(const Vec3& spherical, int width, int height);
+
+} // namespace SphericalMapping
+} // namespace aliceVision

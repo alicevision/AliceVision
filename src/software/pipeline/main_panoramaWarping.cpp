@@ -274,20 +274,30 @@ int aliceVision_main(int argc, char** argv)
 				}    
 
 				// round to the closest tiles
-				coarseBbox.snapToGrid(tileSize);
+				BoundingBox snappedCoarseBbox;
+				snappedCoarseBbox = coarseBbox;
+				snappedCoarseBbox.snapToGrid(tileSize);
 
 				//Initialize bouding box for image
 				BoundingBox globalBbox;
 
 				#pragma omp parallel for
-				for (int y = 0; y < coarseBbox.height; y += tileSize) {
-						for (int x = 0; x < coarseBbox.width; x += tileSize) {
+				for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) {
+
+						for (int x = 0; x < snappedCoarseBbox.width; x += tileSize) {
 
 								BoundingBox localBbox;
-								localBbox.left = x + coarseBbox.left;
-								localBbox.top = y + coarseBbox.top;
+								localBbox.left = x + snappedCoarseBbox.left;
+								localBbox.top = y + snappedCoarseBbox.top;
 								localBbox.width = tileSize;
 								localBbox.height = tileSize;
+
+								
+
+								/*int stillToProcess = coarseBbox.width - localBbox.left;
+								if (stillToProcess < tileSize) {
+									localBbox.width = stillToProcess;
+								}*/
 
 								// Prepare coordinates map
 								CoordinatesMap map;
@@ -304,9 +314,12 @@ int aliceVision_main(int argc, char** argv)
 
 
 				// Update bounding box
-				coarseBbox = globalBbox;
-				coarseBbox.snapToGrid(tileSize);
-				if (coarseBbox.width <= 0 || coarseBbox.height <= 0)  continue;
+				BoundingBox snappedGlobalBbox;
+
+				// Once again, snap to grid
+				snappedGlobalBbox = globalBbox;
+				snappedGlobalBbox.snapToGrid(tileSize);
+				if (snappedGlobalBbox.width <= 0 || snappedGlobalBbox.height <= 0)  continue;
 
 
 				// Load image and convert it to linear colorspace
@@ -317,10 +330,10 @@ int aliceVision_main(int argc, char** argv)
 
 				// Load metadata and update for output
 				oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
-				metadata.push_back(oiio::ParamValue("AliceVision:offsetX", coarseBbox.left));
-				metadata.push_back(oiio::ParamValue("AliceVision:offsetY", coarseBbox.top));
-				metadata.push_back(oiio::ParamValue("AliceVision:contentX", globalBbox.left - coarseBbox.left));
-				metadata.push_back(oiio::ParamValue("AliceVision:contentY", globalBbox.top - coarseBbox.top));
+				metadata.push_back(oiio::ParamValue("AliceVision:offsetX", snappedGlobalBbox.left));
+				metadata.push_back(oiio::ParamValue("AliceVision:offsetY", snappedGlobalBbox.top));
+				metadata.push_back(oiio::ParamValue("AliceVision:contentX", globalBbox.left - snappedGlobalBbox.left));
+				metadata.push_back(oiio::ParamValue("AliceVision:contentY", globalBbox.top - snappedGlobalBbox.top));
 				metadata.push_back(oiio::ParamValue("AliceVision:contentW", globalBbox.width));
 				metadata.push_back(oiio::ParamValue("AliceVision:contentH", globalBbox.height));
 				metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
@@ -342,9 +355,9 @@ int aliceVision_main(int argc, char** argv)
 				std::unique_ptr<oiio::ImageOutput> out_weights = oiio::ImageOutput::create(weightFilepath);
 
 				// Define output properties
-				oiio::ImageSpec spec_view(coarseBbox.width, coarseBbox.height, 3, (storageDataType == image::EStorageDataType::Half)?oiio::TypeDesc::HALF:oiio::TypeDesc::FLOAT);
-				oiio::ImageSpec spec_mask(coarseBbox.width, coarseBbox.height, 1, oiio::TypeDesc::UCHAR);
-				oiio::ImageSpec spec_weights(coarseBbox.width, coarseBbox.height, 1, oiio::TypeDesc::HALF);
+				oiio::ImageSpec spec_view(snappedGlobalBbox.width, snappedGlobalBbox.height, 3, (storageDataType == image::EStorageDataType::Half)?oiio::TypeDesc::HALF:oiio::TypeDesc::FLOAT);
+				oiio::ImageSpec spec_mask(snappedGlobalBbox.width, snappedGlobalBbox.height, 1, oiio::TypeDesc::UCHAR);
+				oiio::ImageSpec spec_weights(snappedGlobalBbox.width, snappedGlobalBbox.height, 1, oiio::TypeDesc::HALF);
 
 				spec_view.tile_width = tileSize;
 				spec_view.tile_height = tileSize;
@@ -371,43 +384,60 @@ int aliceVision_main(int argc, char** argv)
 
 				#pragma omp parallel for 
 				{
-					for (int y = 0; y < coarseBbox.height; y += tileSize) 
+					for (int y = 0; y < snappedGlobalBbox.height; y += tileSize) 
 					{
-							for (int x = 0; x < coarseBbox.width; x += tileSize) 
+						for (int x = 0; x < snappedGlobalBbox.width; x += tileSize) 
+						{
+							BoundingBox localBbox;
+							localBbox.left = x + snappedGlobalBbox.left;
+							localBbox.top = y + snappedGlobalBbox.top;
+							localBbox.width = tileSize;
+							localBbox.height = tileSize;
+
+							/*bool fillup = false;
+							int stillToProcess = globalBbox.width - localBbox.left;
+							if (stillToProcess < tileSize) {
+								to continue
+								fillup = true;
+							}*/
+
+							// Prepare coordinates map
+							CoordinatesMap map;
+							if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
 							{
-									BoundingBox localBbox;
-									localBbox.left = x + coarseBbox.left;
-									localBbox.top = y + coarseBbox.top;
-									localBbox.width = tileSize;
-									localBbox.height = tileSize;
-
-									// Prepare coordinates map
-									CoordinatesMap map;
-									if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
-									{
-											continue;
-									}
-
-									// Warp image
-									GaussianWarper warper;
-									if (!warper.warp(map, pyramid)) {
-											continue;
-									}
-
-									// Alpha mask
-									aliceVision::image::Image<float> weights;
-									if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
-											continue;
-									}
-
-									// Store
-									#pragma omp critical 
-									{
-										out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
-										out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
-										out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
-									}
+								continue;
 							}
+
+							// Warp image
+							GaussianWarper warper;
+							if (!warper.warp(map, pyramid)) {
+								continue;
+							}
+
+							// Alpha mask
+							aliceVision::image::Image<float> weights;
+							if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
+								continue;
+							}
+
+							// Store
+							#pragma omp critical 
+							{
+								out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
+							}
+
+							// Store
+							#pragma omp critical 
+							{
+								out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
+							}
+
+							// Store
+							#pragma omp critical 
+							{
+								out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
+							}
+						}
 					}
 				}
 

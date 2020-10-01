@@ -12,6 +12,10 @@ set(panorama_files_sources
   distance.cpp
   remapBbox.cpp
   sphericalMapping.cpp
+  feathering.cpp
+  laplacianPyramid.cpp
+  seams.cpp
+  imageOps.cpp
 )
 
 alicevision_add_library(aliceVision_panorama
