@@ -2,6 +2,7 @@
 
 #include "gaussian.hpp"
 #include "imageOps.hpp"
+#include "compositer.hpp"
 
 namespace aliceVision
 {
@@ -135,40 +136,91 @@ void drawSeams(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVision:
     }
 }
 
-bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
-                      const aliceVision::image::Image<float>& inputWeights, IndexT currentIndex, size_t offset_x,
-                      size_t offset_y)
+bool WTASeams::initialize(image::TileCacheManager::shared_ptr & cacheManager) 
 {
-    if(inputMask.size() != inputWeights.size())
+    if(!_weights.createImage(cacheManager, _panoramaWidth, _panoramaHeight))
     {
         return false;
     }
 
-    for(int i = 0; i < inputMask.Height(); i++)
+    if(!_weights.perPixelOperation(
+        [](float ) -> float
+        { 
+            return 0.0f; 
+        }))
     {
+        return false;
+    }
 
-        int di = i + offset_y;
+    if(!_labels.createImage(cacheManager, _panoramaWidth, _panoramaHeight))
+    {
+        return false;
+    }
 
-        for(int j = 0; j < inputMask.Width(); j++)
+    if(!_labels.perPixelOperation(
+        [](IndexT ) -> IndexT
+        { 
+            return UndefinedIndexT; 
+        }))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
+                      const aliceVision::image::Image<float>& inputWeights, IndexT currentIndex, size_t offset_x,
+                      size_t offset_y)
+{
+    if( inputMask.size() != inputWeights.size())
+    {
+        return false;
+    }
+
+    aliceVision::image::Image<float> weights(inputMask.Width(), inputMask.Height());
+    aliceVision::image::Image<IndexT> labels(inputMask.Width(), inputMask.Height());
+
+    BoundingBox globalBb;
+    globalBb.left = offset_x;
+    globalBb.top = offset_y;
+    globalBb.width = inputMask.Width();
+    globalBb.height = inputMask.Height();
+
+    if (!loopyCachedImageExtract(weights, _weights, globalBb)) 
+    {
+        return false;
+    }
+
+    if (!loopyCachedImageExtract(labels, _labels, globalBb)) 
+    {
+        return false;
+    }
+    
+
+    for(size_t i = 0; i < weights.Height(); i++)
+    {
+        for(size_t j = 0; j < weights.Width(); j++)
         {
-
             if(!inputMask(i, j))
             {
                 continue;
             }
 
-            int dj = j + offset_x;
-            if(dj >= _weights.Width())
+            if (inputWeights(i, j) > weights(i, j))
             {
-                dj = dj - _weights.Width();
-            }
-
-            if(inputWeights(i, j) > _weights(di, dj))
-            {
-                _labels(di, dj) = currentIndex;
-                _weights(di, dj) = inputWeights(i, j);
+                labels(i, j) = currentIndex;
+                weights(i, j) = inputWeights(i, j);
             }
         }
+    }
+
+    if (!loopyCachedImageAssign(_weights, weights, globalBb)) {
+        return false;
+    }
+
+    if (!loopyCachedImageAssign(_labels, labels, globalBb)) {
+        return false;
     }
 
     return true;

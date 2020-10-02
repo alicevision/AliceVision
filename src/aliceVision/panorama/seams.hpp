@@ -3,6 +3,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/image/all.hpp>
 
+#include "cachedImage.hpp"
 #include "graphcut.hpp"
 
 namespace aliceVision
@@ -18,22 +19,30 @@ class WTASeams
 {
 public:
     WTASeams(size_t outputWidth, size_t outputHeight)
-        : _weights(outputWidth, outputHeight, true, 0.0f)
-        , _labels(outputWidth, outputHeight, true, 255)
+        : _panoramaWidth(outputWidth)
+        , _panoramaHeight(outputHeight)
     {
     }
 
     virtual ~WTASeams() = default;
 
-    virtual bool append(const aliceVision::image::Image<unsigned char>& inputMask,
+    bool initialize(image::TileCacheManager::shared_ptr & cacheManager);
+
+    bool append(const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, IndexT currentIndex, size_t offset_x,
                         size_t offset_y);
 
-    const image::Image<IndexT>& getLabels() { return _labels; }
+    CachedImage<IndexT> & getLabels() 
+    {
+        return _labels; 
+    }
 
 private:
-    image::Image<float> _weights;
-    image::Image<IndexT> _labels;
+    CachedImage<float> _weights;
+    CachedImage<IndexT> _labels;
+
+    int _panoramaWidth;
+    int _panoramaHeight;
 };
 
 class HierarchicalGraphcutSeams

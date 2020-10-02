@@ -338,6 +338,7 @@ int aliceVision_main(int argc, char** argv)
 				metadata.push_back(oiio::ParamValue("AliceVision:contentH", globalBbox.height));
 				metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
 				metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
+				metadata.push_back(oiio::ParamValue("AliceVision:tileSize", tileSize));
 
 				// Images will be converted in Panorama coordinate system, so there will be no more extra orientation.
 				metadata.remove("Orientation");

@@ -16,6 +16,7 @@ set(image_files_headers
   warping.hpp
   pixelTypes.hpp
   Sampler.hpp
+  cache.hpp
 )
 
 # Sources
@@ -23,6 +24,7 @@ set(image_files_sources
   convolution.cpp
   filtering.cpp
   io.cpp
+  cache.cpp
 )
 
 alicevision_add_library(aliceVision_image

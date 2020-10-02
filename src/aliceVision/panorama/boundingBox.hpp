@@ -71,4 +71,15 @@ struct BoundingBox
         width = maxr - left + 1;
         height = maxb - top + 1;
     }
+
+    bool isInside(const BoundingBox& other) const {
+
+        if (other.left > left) return false;
+        if (other.top > top) return false;
+
+        if (other.getRight() < getRight()) return false;
+        if (other.getBottom() < getBottom()) return false;
+
+        return true;
+    }
 };
