@@ -16,6 +16,7 @@ set(panorama_files_sources
   laplacianPyramid.cpp
   seams.cpp
   imageOps.cpp
+  cachedImage.cpp
 )
 
 alicevision_add_library(aliceVision_panorama

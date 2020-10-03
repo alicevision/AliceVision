@@ -1,13 +1,18 @@
 #pragma once
 
 #include "compositer.hpp"
+#include "feathering.hpp"
+#include "laplacianPyramid.hpp"
 
 namespace aliceVision
 {
 
 template <class T>
-bool makeImagePyramidCompatible(image::Image<T>& output, size_t& out_offset_x, size_t& out_offset_y,
-                                const image::Image<T>& input, size_t offset_x, size_t offset_y, size_t num_levels)
+bool makeImagePyramidCompatible(image::Image<T>& output, 
+                                size_t& out_offset_x, size_t& out_offset_y,
+                                const image::Image<T>& input,
+                                size_t offset_x, size_t offset_y, 
+                                size_t num_levels)
 {
 
     if(num_levels == 0)
@@ -72,11 +77,21 @@ public:
     {
     }
 
+    virtual bool initialize(image::TileCacheManager::shared_ptr & cacheManager) 
+    { 
+        if (!Compositer::initialize(cacheManager)) 
+        {
+            return false;
+        }
+
+        return _pyramid_panorama.initialize(cacheManager);
+    }
+
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, size_t offset_x, size_t offset_y)
     {
-        /*Get smalles size*/
+        /*Get smallest size*/
         size_t minsize = std::min(color.Height(), color.Width());
 
         /*
@@ -94,34 +109,40 @@ public:
             return false;
         }
 
+        //If the input scale is more important than previously processed, 
+        // The pyramid must be deepened accordingly
         if(optimal_scale > _bands)
         {
-            _bands = optimal_scale;
-            _pyramid_panorama.augment(_bands);
+            //_bands = optimal_scale;
+            //_pyramid_panorama.augment(_bands);
         }
 
+        // Make sure input is compatible with pyramid processing
         size_t new_offset_x, new_offset_y;
         aliceVision::image::Image<image::RGBfColor> color_pot;
         aliceVision::image::Image<unsigned char> mask_pot;
         aliceVision::image::Image<float> weights_pot;
+
         makeImagePyramidCompatible(color_pot, new_offset_x, new_offset_y, color, offset_x, offset_y, _bands);
         makeImagePyramidCompatible(mask_pot, new_offset_x, new_offset_y, inputMask, offset_x, offset_y, _bands);
         makeImagePyramidCompatible(weights_pot, new_offset_x, new_offset_y, inputWeights, offset_x, offset_y, _bands);
 
+        //std::cout << new_offset_x << " " << new_offset_y << std::endl;
+
+        // Fill Color images masked parts with fake but coherent info
         aliceVision::image::Image<image::RGBfColor> feathered;
         feathering(feathered, color_pot, mask_pot);
 
         /*To log space for hdr*/
-        for(int i = 0; i < feathered.Height(); i++)
+        /*for(int i = 0; i < feathered.Height(); i++)
         {
             for(int j = 0; j < feathered.Width(); j++)
             {
-
                 feathered(i, j).r() = std::log(std::max(1e-8f, feathered(i, j).r()));
                 feathered(i, j).g() = std::log(std::max(1e-8f, feathered(i, j).g()));
                 feathered(i, j).b() = std::log(std::max(1e-8f, feathered(i, j).b()));
             }
-        }
+        }*/
 
         _pyramid_panorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y);
 
@@ -133,16 +154,18 @@ public:
 
         _pyramid_panorama.rebuild(_panorama);
 
-        /*Go back to normal space from log space*/
-        for(int i = 0; i < _panorama.Height(); i++)
-        {
-            for(int j = 0; j < _panorama.Width(); j++)
-            {
-                _panorama(i, j).r() = std::exp(_panorama(i, j).r());
-                _panorama(i, j).g() = std::exp(_panorama(i, j).g());
-                _panorama(i, j).b() = std::exp(_panorama(i, j).b());
+        _panorama.perPixelOperation(
+            [](const image::RGBAfColor & a) -> image::RGBAfColor {
+
+                image::RGBAfColor out;
+
+                out.r() = std::exp(a.r());
+                out.g() = std::exp(a.g());
+                out.b() = std::exp(a.b());
+
+                return out;
             }
-        }
+        );
 
         return true;
     }

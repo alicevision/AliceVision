@@ -4,7 +4,7 @@
 #include <aliceVision/image/all.hpp>
 
 #include "cachedImage.hpp"
-#include "graphcut.hpp"
+//#include "graphcut.hpp"
 
 namespace aliceVision
 {
@@ -13,7 +13,7 @@ void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVisio
                  size_t offset_x, size_t offset_y);
 void drawSeams(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVision::image::Image<IndexT>& labels);
 
-void getMaskFromLabels(aliceVision::image::Image<float> & mask, aliceVision::image::Image<IndexT> & labels, IndexT index, size_t offset_x, size_t offset_y);
+bool getMaskFromLabels(aliceVision::image::Image<float> & mask, CachedImage<IndexT> & labels, IndexT index, size_t offset_x, size_t offset_y);
 
 class WTASeams
 {
@@ -52,21 +52,19 @@ public:
         : _outputWidth(outputWidth)
         , _outputHeight(outputHeight)
         , _levelOfInterest(levelOfInterest)
-        , _labels(outputWidth, outputHeight, true, UndefinedIndexT)
     {
-
-        double scale = 1.0 / pow(2.0, levelOfInterest);
-        size_t width = size_t(floor(double(outputWidth) * scale));
-        size_t height = size_t(floor(double(outputHeight) * scale));
-
-        _graphcut = std::unique_ptr<GraphcutSeams>(new GraphcutSeams(width, height));
     }
 
     virtual ~HierarchicalGraphcutSeams() = default;
 
-    void setOriginalLabels(const image::Image<IndexT>& labels);
+    bool initialize(image::TileCacheManager::shared_ptr & cacheManager);
 
-    void setMaximalDistance(int distance) { _graphcut->setMaximalDistance(distance); }
+    void setOriginalLabels(CachedImage<IndexT>& labels);
+
+    void setMaximalDistance(int distance) 
+    { 
+        //_graphcut->setMaximalDistance(distance); 
+    }
 
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& input,
                         const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x,
@@ -74,11 +72,14 @@ public:
 
     bool process();
 
-    const image::Image<IndexT>& getLabels() { return _labels; }
+    CachedImage<IndexT>& getLabels() 
+    { 
+        return _labels; 
+    }
 
 private:
-    std::unique_ptr<GraphcutSeams> _graphcut;
-    image::Image<IndexT> _labels;
+    //std::unique_ptr<GraphcutSeams> _graphcut;
+    CachedImage<IndexT> _labels;
     size_t _levelOfInterest;
     size_t _outputWidth;
     size_t _outputHeight;

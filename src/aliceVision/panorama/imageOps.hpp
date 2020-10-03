@@ -1,6 +1,7 @@
 #pragma once
 
 #include <aliceVision/image/all.hpp>
+#include "cachedImage.hpp"
 
 namespace aliceVision
 {
@@ -111,6 +112,6 @@ bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Im
     return true;
 }
 
-void removeNegativeValues(aliceVision::image::Image<image::RGBfColor>& img);
+void removeNegativeValues(CachedImage<image::RGBfColor>& img);
 
 } // namespace aliceVision

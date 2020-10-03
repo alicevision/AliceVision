@@ -1,5 +1,3 @@
-#pragma once
-
 #include "coordinatesMap.hpp"
 
 #include "sphericalMapping.hpp"

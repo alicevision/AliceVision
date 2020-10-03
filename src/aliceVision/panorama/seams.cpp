@@ -226,13 +226,13 @@ bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
     return true;
 }
 
-void HierarchicalGraphcutSeams::setOriginalLabels(const image::Image<IndexT>& labels)
+void HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
 {
 
     /*
     First of all, Propagate label to all levels
     */
-    image::Image<IndexT> current_label = labels;
+    /*image::Image<IndexT> current_label = labels;
 
     for(int l = 1; l <= _levelOfInterest; l++)
     {
@@ -254,14 +254,14 @@ void HierarchicalGraphcutSeams::setOriginalLabels(const image::Image<IndexT>& la
         current_label = next_label;
     }
 
-    _graphcut->setOriginalLabels(current_label);
+    _graphcut->setOriginalLabels(current_label);*/
 }
 
 bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RGBfColor>& input,
                                        const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex,
                                        size_t offset_x, size_t offset_y)
 {
-    image::Image<image::RGBfColor> current_color = input;
+    /*image::Image<image::RGBfColor> current_color = input;
     image::Image<unsigned char> current_mask = inputMask;
 
     for(int l = 1; l <= _levelOfInterest; l++)
@@ -300,13 +300,15 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
         offset_y /= 2;
     }
 
-    return _graphcut->append(current_color, current_mask, currentIndex, offset_x, offset_y);
+    return _graphcut->append(current_color, current_mask, currentIndex, offset_x, offset_y);*/
+
+    return true;
 }
 
 bool HierarchicalGraphcutSeams::process()
 {
 
-    if(!_graphcut->process())
+    /*if(!_graphcut->process())
     {
         return false;
     }
@@ -340,33 +342,47 @@ bool HierarchicalGraphcutSeams::process()
         current_labels = next_label;
     }
 
-    _labels = current_labels;
+    _labels = current_labels;*/
 
     return true;
 }
 
-void getMaskFromLabels(aliceVision::image::Image<float> & mask, aliceVision::image::Image<IndexT> & labels, IndexT index, size_t offset_x, size_t offset_y) {
+bool HierarchicalGraphcutSeams::initialize(image::TileCacheManager::shared_ptr & cacheManager) 
+{
+    return true;
+}
 
-  for (int i = 0; i < mask.Height(); i++) {
+bool getMaskFromLabels(aliceVision::image::Image<float> & mask, CachedImage<IndexT> & labels, IndexT index, size_t offset_x, size_t offset_y) {
 
-    int di = i + offset_y;
+    image::Image<IndexT> extractedLabels(mask.Width(), mask.Height());
 
-    for (int j = 0; j < mask.Width(); j++) {
+    BoundingBox bb;
+    bb.left = offset_x;
+    bb.top = offset_y;
+    bb.width = mask.Width();
+    bb.height = mask.Height();
 
-      int dj = j + offset_x;
-      if (dj >= labels.Width()) {
-        dj = dj - labels.Width();
-      }
-
-
-      if (labels(di, dj) == index) {
-        mask(i, j) = 1.0f;
-      }
-      else {
-        mask(i, j) = 0.0f;
-      }
+    if (!loopyCachedImageExtract(extractedLabels, labels, bb))
+    {
+        return false;
     }
-  }
+
+    for (int i = 0; i < extractedLabels.Height(); i++) 
+    {
+        for (int j = 0; j < extractedLabels.Width(); j++) 
+        {
+            if (extractedLabels(i, j) == index) 
+            {
+                mask(i, j) = 1.0f;
+            }
+            else 
+            {
+                mask(i, j) = 0.0f;
+            }
+        }
+    }
+
+    return true;
 }
 
 } // namespace aliceVision

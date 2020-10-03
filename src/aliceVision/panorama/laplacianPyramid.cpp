@@ -2,41 +2,81 @@
 
 #include "feathering.hpp"
 #include "gaussian.hpp"
+#include "compositer.hpp"
 
 namespace aliceVision
 {
 
-LaplacianPyramid::LaplacianPyramid(size_t base_width, size_t base_height, size_t max_levels)
+LaplacianPyramid::LaplacianPyramid(size_t base_width, size_t base_height, size_t max_levels) :
+_baseWidth(base_width),
+_baseHeight(base_height),
+_maxLevels(max_levels)
 {
+}
 
-    size_t width = base_width;
-    size_t height = base_height;
+bool LaplacianPyramid::initialize(image::TileCacheManager::shared_ptr & cacheManager) 
+{
+    size_t width = _baseWidth;
+    size_t height = _baseHeight;
 
     /*Make sure pyramid size can be divided by 2 on each levels*/
-    double max_scale = 1.0 / pow(2.0, max_levels - 1);
-    // width = size_t(ceil(double(width) * max_scale) / max_scale);
-    // height = size_t(ceil(double(height) * max_scale) / max_scale);
+    double max_scale = 1.0 / pow(2.0, _maxLevels - 1);
 
     /*Prepare pyramid*/
-    for(int lvl = 0; lvl < max_levels; lvl++)
+    for(int lvl = 0; lvl < _maxLevels; lvl++)
     {
+        CachedImage<image::RGBfColor> color;
+        CachedImage<float> weights;
 
-        _levels.push_back(
-            aliceVision::image::Image<image::RGBfColor>(width, height, true, image::RGBfColor(0.0f, 0.0f, 0.0f)));
-        _weights.push_back(aliceVision::image::Image<float>(width, height, true, 0.0f));
+        if(!color.createImage(cacheManager, width, height))
+        {
+            return false;
+        }
+
+        if(!weights.createImage(cacheManager, width, height))
+        {
+            return false;
+        }
+
+        if(!color.perPixelOperation(
+            [](image::RGBfColor ) -> image::RGBfColor 
+            { 
+                return image::RGBfColor(0.0f, 0.0f, 0.0f); 
+            })
+          )
+        {
+            return false;
+        }
+
+        if(!weights.perPixelOperation(
+            [](float) -> float
+            { 
+                return 0.0f; 
+            })
+          )
+        {
+            return false;
+        }
+
+        _levels.push_back(color);
+        _weights.push_back(weights);
 
         height /= 2;
         width /= 2;
     }
+
+    return true;
 }
 
 bool LaplacianPyramid::augment(size_t new_max_levels)
 {
 
-    if(new_max_levels <= _levels.size())
+    /*if(new_max_levels <= _levels.size())
     {
         return false;
     }
+
+    _maxLevels = new_max_levels;
 
     size_t old_max_level = _levels.size();
 
@@ -118,7 +158,7 @@ bool LaplacianPyramid::augment(size_t new_max_levels)
         height /= 2;
     }
 
-    merge(current_color, current_weights, _levels.size() - 1, 0, 0);
+    merge(current_color, current_weights, _levels.size() - 1, 0, 0);*/
 
     return true;
 }
@@ -127,6 +167,8 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
                              const aliceVision::image::Image<unsigned char>& mask,
                              const aliceVision::image::Image<float>& weights, size_t offset_x, size_t offset_y)
 {
+
+    
 
     int width = source.Width();
     int height = source.Height();
@@ -251,68 +293,88 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
     return true;
 }
 
+
 bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& oimg,
                              const aliceVision::image::Image<float>& oweight, size_t level, size_t offset_x,
                              size_t offset_y)
 {
+    CachedImage<image::RGBfColor> & img = _levels[level];
+    CachedImage<float> & weight = _weights[level];
 
-    image::Image<image::RGBfColor>& img = _levels[level];
-    image::Image<float>& weight = _weights[level];
+    aliceVision::image::Image<image::RGBfColor> extractedColor(oimg.Width(), oimg.Height());
+    aliceVision::image::Image<float> extractedWeight(oimg.Width(), oimg.Height());
 
+
+    BoundingBox extractBb;
+    extractBb.left = offset_x;
+    extractBb.top = offset_y;
+    extractBb.width = oimg.Width();
+    extractBb.height = oimg.Height();
+
+
+    if (!loopyCachedImageExtract(extractedColor, img, extractBb)) 
+    {
+        return false;
+    }
+
+    if (!loopyCachedImageExtract(extractedWeight, weight, extractBb)) 
+    {
+        return false;
+    }
+    
     for(int i = 0; i < oimg.Height(); i++)
     {
-
-        int di = i + offset_y;
-        if(di >= img.Height())
-            continue;
-
         for(int j = 0; j < oimg.Width(); j++)
         {
-
-            int dj = j + offset_x;
-            if(dj >= weight.Width())
-            {
-                dj = dj - weight.Width();
-            }
-
-            img(di, dj).r() += oimg(i, j).r() * oweight(i, j);
-            img(di, dj).g() += oimg(i, j).g() * oweight(i, j);
-            img(di, dj).b() += oimg(i, j).b() * oweight(i, j);
-            weight(di, dj) += oweight(i, j);
+            extractedColor(i, j).r() += oimg(i, j).r() * oweight(i, j);
+            extractedColor(i, j).g() += oimg(i, j).g() * oweight(i, j);
+            extractedColor(i, j).b() += oimg(i, j).b() * oweight(i, j);
+            extractedWeight(i, j) += oweight(i, j);
         }
+    }
+
+    if (!loopyCachedImageAssign(img, extractedColor, extractBb)) {
+        return false;
+    }
+
+    if (!loopyCachedImageAssign(weight, extractedWeight, extractBb)) {
+        return false;
     }
 
     return true;
 }
 
-bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output)
+bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
 {
 
     for(int l = 0; l < _levels.size(); l++)
     {
-        for(int i = 0; i < _levels[l].Height(); i++)
-        {
-            for(int j = 0; j < _levels[l].Width(); j++)
+        _levels[l].perPixelOperation(_weights[l], 
+            [](const image::RGBfColor & c, const float & w) -> image::RGBfColor 
             {
-                if(_weights[l](i, j) < 1e-6)
+                if (w < 1e-6) 
                 {
-                    _levels[l](i, j) = image::RGBfColor(0.0);
-                    continue;
+                    return image::RGBfColor(0.0f, 0.0f, 0.0f);
                 }
 
-                _levels[l](i, j).r() = _levels[l](i, j).r() / _weights[l](i, j);
-                _levels[l](i, j).g() = _levels[l](i, j).g() / _weights[l](i, j);
-                _levels[l](i, j).b() = _levels[l](i, j).b() / _weights[l](i, j);
+                image::RGBfColor r;
+
+                r.r() = c.r() / w;
+                r.g() = c.g() / w;
+                r.b() = c.b() / w;
+
+                return r;
             }
-        }
+        );
     }
 
+    
     removeNegativeValues(_levels[_levels.size() - 1]);
 
     for(int l = _levels.size() - 2; l >= 0; l--)
     {
 
-        aliceVision::image::Image<image::RGBfColor> buf(_levels[l].Width(), _levels[l].Height());
+        /*aliceVision::image::Image<image::RGBfColor> buf(_levels[l].Width(), _levels[l].Height());
         aliceVision::image::Image<image::RGBfColor> buf2(_levels[l].Width(), _levels[l].Height());
 
         upscale(buf, _levels[l + 1]);
@@ -326,12 +388,12 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output)
             }
         }
 
-        addition(_levels[l], _levels[l], buf2);
+        addition(_levels[l], _levels[l], buf2);*/
         removeNegativeValues(_levels[l]);
     }
 
     // Write output to RGBA
-    for(int i = 0; i < output.Height(); i++)
+    /*for(int i = 0; i < output.Height(); i++)
     {
         for(int j = 0; j < output.Width(); j++)
         {
@@ -348,7 +410,7 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output)
                 output(i, j).a() = 1.0f;
             }
         }
-    }
+    }*/
 
     return true;
 }

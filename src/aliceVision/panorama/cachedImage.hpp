@@ -4,6 +4,7 @@
 #include <aliceVision/image/cache.hpp>
 #include <aliceVision/panorama/boundingBox.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/types.hpp>
 
 namespace aliceVision
 {
@@ -101,6 +102,100 @@ public:
         return true;
     }
 
+    template <class T2, class BinaryFunction>
+    bool perPixelOperation(CachedImage<T2> & other,  BinaryFunction f)
+    {
+        if (other.getWidth() != _width || other.getHeight() != _height) 
+        {
+            return false;
+        }
+
+        for(int i = 0; i < _tilesArray.size(); i++)
+        {
+            std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
+            std::vector<image::CachedTile::smart_pointer>& rowOther = other.getTiles()[i];
+
+            for(int j = 0; j < _tilesArray[i].size(); j++)
+            {
+
+                image::CachedTile::smart_pointer ptr = row[j];
+                if(!ptr)
+                {
+                    continue;
+                }
+
+                image::CachedTile::smart_pointer ptrOther = rowOther[j];
+                if(!ptrOther)
+                {
+                    continue;
+                }
+
+                if(!ptr->acquire())
+                {
+                    continue;
+                }
+
+                if(!ptrOther->acquire())
+                {
+                    continue;
+                }
+
+                T* data = (T*)ptr->getDataPointer();
+                T2* dataOther = (T2*)ptrOther->getDataPointer();
+
+                std::transform(data, data + ptr->getTileWidth() * ptr->getTileHeight(), dataOther, data, f);
+            }
+        }
+
+        return true;
+    }
+
+    bool deepCopy(CachedImage<T> & source)
+    {
+        if (source._memoryWidth != _memoryWidth) return false;
+        if (source._memoryHeight != _memoryHeight) return false;
+        if (source._tileSize != _tileSize) return false;
+
+        for(int i = 0; i < _tilesArray.size(); i++)
+        {
+            std::vector<image::CachedTile::smart_pointer> & row = _tilesArray[i];
+            std::vector<image::CachedTile::smart_pointer> & rowSource = source._tilesArray[i];
+
+            for(int j = 0; j < _tilesArray[i].size(); j++)
+            {
+
+                image::CachedTile::smart_pointer ptr = row[j];
+                if(!ptr)
+                {
+                    continue;
+                }
+
+                image::CachedTile::smart_pointer ptrSource = rowSource[j];
+                if(!ptrSource)
+                {
+                    continue;
+                }
+
+                if (!ptr->acquire())
+                {
+                    continue;
+                }
+
+                if (!ptrSource->acquire())
+                {
+                    continue;
+                }
+
+                T * data = (T*)ptr->getDataPointer();
+                T * dataSource = (T*)ptrSource->getDataPointer();
+                
+                std::memcpy(data, dataSource, _tileSize * _tileSize * sizeof(T));
+            }   
+        }
+
+        return true;
+    }
+
     bool assign(const aliceVision::image::Image<T>& input, const BoundingBox & inputBb, const BoundingBox & outputBb)
     {
         BoundingBox outputMemoryBb;
@@ -125,34 +220,43 @@ public:
             return false;
         }
 
+        if (inputBb.width != outputBb.width) 
+        {
+            return false;
+        }
+
+        if (inputBb.height != outputBb.height) 
+        {
+            return false;
+        }
+
+
+        //Make sure we have our bounding box aligned with the tiles
         BoundingBox snapedBb = outputBb;
         snapedBb.snapToGrid(_tileSize);
 
+        //Compute grid parameters
         BoundingBox gridBb;
         gridBb.left = snapedBb.left / _tileSize;
         gridBb.top = snapedBb.top / _tileSize;
         gridBb.width = snapedBb.width / _tileSize;
         gridBb.height = snapedBb.height / _tileSize;
 
+        int delta_y = outputBb.top - snapedBb.top;
+        int delta_x = outputBb.left - snapedBb.left;
+
         for(int i = 0; i < gridBb.height; i++)
         {
+            //ibb.top + i * tileSize --> snapedBb.top + delta + i * tileSize
             int ti = gridBb.top + i;
-            int cy = ti * _tileSize;
-            int sy = inputBb.top + i * _tileSize;
-
-            int start_y = std::max(0, outputBb.top - cy);
-            int end_y = std::min(_tileSize - 1, outputBb.getBottom() - cy);
-
+            int sy = inputBb.top - delta_y + i * _tileSize;
+            
             std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[ti];
 
             for(int j = 0; j < gridBb.width; j++)
             {
                 int tj = gridBb.left + j;
-                int cx = tj * _tileSize;
-                int sx = inputBb.left + j * _tileSize;
-
-                int start_x = std::max(0, outputBb.left - cx);
-                int end_x = std::min(_tileSize - 1, outputBb.getRight() - cx);
+                int sx = inputBb.left - delta_x + j * _tileSize;
 
                 image::CachedTile::smart_pointer ptr = row[tj];
                 if(!ptr)
@@ -167,10 +271,12 @@ public:
 
                 T* data = (T*)ptr->getDataPointer();
 
-                for(int y = start_y; y <= end_y; y++)
+                for(int y = 0; y < _tileSize; y++)
                 {
-                    for(int x = start_x; x <= end_x; x++)
+                    for(int x = 0; x < _tileSize; x++)
                     {
+                        if (sy + y < 0 || sy + y >= input.Height()) continue;
+                        if (sx + x < 0 || sx + x >= input.Width()) continue;
                         data[y * _tileSize + x] = input(sy + y, sx + x);
                     }
                 }
@@ -204,6 +310,16 @@ public:
             return false;
         }
 
+        if (inputBb.width != outputBb.width) 
+        {
+            return false;
+        }
+
+        if (inputBb.height != outputBb.height) 
+        {
+            return false;
+        }
+
 
         BoundingBox snapedBb = inputBb;
         snapedBb.snapToGrid(_tileSize);
@@ -214,25 +330,21 @@ public:
         gridBb.width = snapedBb.width / _tileSize;
         gridBb.height = snapedBb.height / _tileSize;
 
+        int delta_y = inputBb.top - snapedBb.top;
+        int delta_x = inputBb.left - snapedBb.left;
+
         for(int i = 0; i < gridBb.height; i++)
         {
             int ti = gridBb.top + i;
-            int cy = ti * _tileSize;
-            int sy = outputBb.top + i * _tileSize;
+            int sy = outputBb.top - delta_y + i * _tileSize;
 
-            int start_y = std::max(0, inputBb.top - cy);
-            int end_y = std::min(_tileSize - 1, inputBb.getBottom() - cy);
 
             std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[ti];
 
             for(int j = 0; j < gridBb.width; j++)
             {
                 int tj = gridBb.left + j;
-                int cx = tj * _tileSize;
-                int sx = outputBb.left + j * _tileSize;
-
-                int start_x = std::max(0, inputBb.left - cx);
-                int end_x = std::min(_tileSize - 1, inputBb.getRight() - cx);
+                int sx = outputBb.left - delta_x + j * _tileSize;
 
                 image::CachedTile::smart_pointer ptr = row[tj];
                 if(!ptr)
@@ -247,10 +359,14 @@ public:
 
                 T* data = (T*)ptr->getDataPointer();
 
-                for(int y = start_y; y <= end_y; y++)
+                for(int y = 0; y < _tileSize; y++)
                 {
-                    for(int x = start_x; x <= end_x; x++)
+                    for(int x = 0; x < _tileSize; x++)
                     {
+                        if (sy + y < 0 || sy + y >= output.Height()) continue;
+                        if (sx + x < 0 || sx + x >= output.Width()) continue;
+                        if (y < 0 || x < 0) continue;
+
                         output(sy + y, sx + x) = data[y * _tileSize + x];
                     }
                 }
@@ -277,89 +393,12 @@ private:
 };
 
 template <>
-bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path)
-{
-
-    std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
-    {
-        return false;
-    }
-
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 4, oiio::TypeDesc::FLOAT);
-    spec.tile_width = _tileSize;
-    spec.tile_height = _tileSize;
-
-    if(!out->open(path, spec))
-    {
-        return false;
-    }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
-
-        std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
-
-        for(int j = 0; j < row.size(); j++)
-        {
-
-            if(!row[j]->acquire())
-            {
-                return false;
-            }
-
-            unsigned char* ptr = row[j]->getDataPointer();
-
-            out->write_tile(j * _tileSize, i * _tileSize, 0, oiio::TypeDesc::FLOAT, ptr);
-        }
-    }
-
-    out->close();
-
-    return true;
-}
+bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path);
 
 template <>
-bool CachedImage<IndexT>::writeImage(const std::string& path)
-{
+bool CachedImage<image::RGBfColor>::writeImage(const std::string& path);
 
-    std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
-    if(!out)
-    {
-        return false;
-    }
-
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 1, oiio::TypeDesc::UINT32);
-    spec.tile_width = _tileSize;
-    spec.tile_height = _tileSize;
-
-    if(!out->open(path, spec))
-    {
-        return false;
-    }
-    
-    for(int i = 0; i < _tilesArray.size(); i++)
-    {
-
-        std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
-
-        for(int j = 0; j < row.size(); j++)
-        {
-
-            if(!row[j]->acquire())
-            {
-                return false;
-            }
-
-            unsigned char* ptr = row[j]->getDataPointer();
-
-            out->write_tile(j * _tileSize, i * _tileSize, 0, oiio::TypeDesc::UINT32, ptr);
-        }
-    }
-
-    out->close();
-
-    return true;
-}
+template <>
+bool CachedImage<IndexT>::writeImage(const std::string& path);
 
 } // namespace aliceVision

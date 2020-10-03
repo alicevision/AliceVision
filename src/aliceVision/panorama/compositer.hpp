@@ -19,6 +19,12 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
     inputBb.height = input.Height();        
     outputBb = assignedOutputBb;
 
+    if (outputBb.getBottom() >= output.getHeight())
+    {
+        outputBb.height =  output.getHeight() - outputBb.top;
+        inputBb.height = outputBb.height;
+    }
+
     if (assignedOutputBb.getRight() < output.getWidth()) {
         
         if (!output.assign(input, inputBb, outputBb)) 
@@ -67,11 +73,18 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
     outputBb.top = 0;
     outputBb.width = output.Width();
     outputBb.height = output.Height();
+    
     inputBb = extractedInputBb;
+    if (inputBb.getBottom() >= input.getHeight())
+    {
+        inputBb.height =  input.getHeight() - inputBb.top;
+        outputBb.height = inputBb.height;
+    }
 
     if (extractedInputBb.getRight() < input.getWidth()) 
     {
-        if (!input.extract(output, outputBb, inputBb)) {
+        if (!input.extract(output, outputBb, inputBb)) 
+        {
             return false;
         }
     }

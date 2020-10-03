@@ -6,6 +6,7 @@
 #include <aliceVision/image/all.hpp>
 
 #include "distance.hpp"
+#include "boundingBox.hpp"
 
 namespace aliceVision
 {
@@ -211,43 +212,60 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
 class GraphcutSeams
 {
 public:
-    struct Rect
-    {
-        int l;
-        int t;
-        int w;
-        int h;
-    };
-
     using PixelInfo = std::pair<IndexT, image::RGBfColor>;
     using ImageOwners = image::Image<std::vector<PixelInfo>>;
 
 public:
     GraphcutSeams(size_t outputWidth, size_t outputHeight)
-        : _owners(outputWidth, outputHeight, true)
-        , _labels(outputWidth, outputHeight, true, 0)
-        , _original_labels(outputWidth, outputHeight, true, 0)
-        , _distancesSeams(outputWidth, outputHeight, true, 0)
+        : _outputWidth(outputWidth), _outputHeight(outputHeight)
         , _maximal_distance_change(outputWidth + outputHeight)
     {
     }
 
     virtual ~GraphcutSeams() = default;
 
-    void setOriginalLabels(const image::Image<IndexT>& existing_labels)
+    void setOriginalLabels(CachedImage<IndexT> & existing_labels)
     {
 
-        _labels = existing_labels;
-        _original_labels = existing_labels;
+        _labels.deepCopy(existing_labels);
+        _original_labels.deepCopy(existing_labels);
 
-        image::Image<unsigned char> seams(_labels.Width(), _labels.Height());
+        /*image::Image<unsigned char> seams(_labels.Width(), _labels.Height());
         computeSeamsMap(seams, _labels);
-        computeDistanceMap(_distancesSeams, seams);
+        computeDistanceMap(_distancesSeams, seams);*/
     }
 
-    virtual bool append(const aliceVision::image::Image<image::RGBfColor>& input,
-                        const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x,
-                        size_t offset_y)
+    bool initialize(image::TileCacheManager::shared_ptr & cacheManager) 
+    {
+        if(!_labels.createImage(cacheManager, _outputWidth, _outputHeight))
+        {
+            return false;
+        }
+
+        if(!_original_labels.createImage(cacheManager, _outputWidth, _outputHeight))
+        {
+            return false;
+        }
+
+        if(!_distancesSeams.createImage(cacheManager, _outputWidth, _outputHeight))
+        {
+            return false;
+        }
+
+        if(!_distancesSeams.perPixelOperation(
+            [](int) -> int
+            { 
+                return 0; 
+            })
+          )
+        {
+            return false;
+        }       
+
+        return true;
+    }
+
+    bool append(const aliceVision::image::Image<image::RGBfColor>& input, const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
     {
 
         if(inputMask.size() != input.size())
@@ -255,21 +273,21 @@ public:
             return false;
         }
 
-        Rect rect;
+        BoundingBox rect;
 
-        rect.l = offset_x;
-        rect.t = offset_y;
-        rect.w = input.Width() + 1;
-        rect.h = input.Height() + 1;
+        rect.left = offset_x;
+        rect.top = offset_y;
+        rect.width = input.Width() + 1;
+        rect.height = input.Height() + 1;
 
         /*Extend rect for borders*/
-        rect.l = std::max(0, rect.l - 3);
-        rect.t = std::max(0, rect.t - 3);
-        rect.w = rect.w + 6;
-        rect.h = rect.h + 6;
-        if(rect.t + rect.h > _owners.Height())
+        rect.left = std::max(0, rect.left - 3);
+        rect.top = std::max(0, rect.top - 3);
+        rect.width = rect.width + 6;
+        rect.height = rect.height + 6;
+        if(rect.top + rect.height > _owners.Height())
         {
-            rect.h = _owners.Height() - rect.t;
+            rect.height = _owners.Height() - rect.top;
         }
 
         _rects[currentIndex] = rect;
@@ -324,13 +342,13 @@ public:
             /*For each possible label, try to extends its domination on the label's world */
             bool change = false;
 
-            for(auto& info : _rects)
+            for(auto & info : _rects)
             {
 
                 ALICEVISION_LOG_INFO("Graphcut expansion (iteration " << i << ") for label " << info.first);
 
-                int p1 = info.second.l;
-                int w1 = info.second.w;
+                int p1 = info.second.left;
+                int w1 = info.second.width;
                 int p2 = 0;
                 int w2 = 0;
 
@@ -338,13 +356,11 @@ public:
                 {
                     w1 = _labels.Width() - p1;
                     p2 = 0;
-                    w2 = info.second.w - w1;
+                    w2 = info.second.width - w1;
                 }
 
-                Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_1 =
-                    _labels.block(info.second.t, p1, info.second.h, w1);
-                Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_2 =
-                    _labels.block(info.second.t, p2, info.second.h, w2);
+                Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_1 = _labels.block(info.second.top, p1, info.second.height, w1);
+                Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_2 = _labels.block(info.second.top, p2, info.second.height, w2);
 
                 double base_cost = cost(info.first);
                 alphaExpansion(info.first);
@@ -352,8 +368,8 @@ public:
 
                 if(new_cost > base_cost)
                 {
-                    _labels.block(info.second.t, p1, info.second.h, w1) = backup_1;
-                    _labels.block(info.second.t, p2, info.second.h, w2) = backup_2;
+                    _labels.block(info.second.top, p1, info.second.height, w1) = backup_1;
+                    _labels.block(info.second.top, p2, info.second.height, w2) = backup_2;
                 }
                 else if(new_cost < base_cost)
                 {
@@ -373,20 +389,20 @@ public:
     double cost(IndexT currentLabel)
     {
 
-        Rect rect = _rects[currentLabel];
+        BoundingBox rect = _rects[currentLabel];
 
         double cost = 0.0;
 
-        for(int i = 0; i < rect.h - 1; i++)
+        for(int i = 0; i < rect.height - 1; i++)
         {
 
-            int y = rect.t + i;
+            int y = rect.top + i;
             int yp = y + 1;
 
-            for(int j = 0; j < rect.w; j++)
+            for(int j = 0; j < rect.width; j++)
             {
 
-                int x = rect.l + j;
+                int x = rect.left + j;
                 if(x >= _owners.Width())
                 {
                     x = x - _owners.Width();
@@ -520,26 +536,26 @@ public:
     bool alphaExpansion(IndexT currentLabel)
     {
 
-        Rect rect = _rects[currentLabel];
+        BoundingBox rect = _rects[currentLabel];
 
-        image::Image<unsigned char> mask(rect.w, rect.h, true, 0);
-        image::Image<int> ids(rect.w, rect.h, true, -1);
-        image::Image<image::RGBfColor> color_label(rect.w, rect.h, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
-        image::Image<image::RGBfColor> color_other(rect.w, rect.h, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+        image::Image<unsigned char> mask(rect.width, rect.height, true, 0);
+        image::Image<int> ids(rect.width, rect.height, true, -1);
+        image::Image<image::RGBfColor> color_label(rect.width, rect.height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+        image::Image<image::RGBfColor> color_other(rect.width, rect.height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
 
         /*Compute distance map to seams*/
-        image::Image<int> distanceMap(rect.w, rect.h);
+        image::Image<int> distanceMap(rect.width, rect.height);
         {
-            image::Image<IndexT> binarizedWorld(rect.w, rect.h);
+            image::Image<IndexT> binarizedWorld(rect.width, rect.height);
 
-            for(int i = 0; i < rect.h; i++)
+            for(int i = 0; i < rect.height; i++)
             {
-                int y = rect.t + i;
+                int y = rect.top + i;
 
-                for(int j = 0; j < rect.w; j++)
+                for(int j = 0; j < rect.width; j++)
                 {
 
-                    int x = rect.l + j;
+                    int x = rect.left + j;
                     if(x >= _owners.Width())
                     {
                         x = x - _owners.Width();
@@ -557,7 +573,7 @@ public:
                 }
             }
 
-            image::Image<unsigned char> seams(rect.w, rect.h);
+            image::Image<unsigned char> seams(rect.width, rect.height);
             if(!computeSeamsMap(seams, binarizedWorld))
             {
                 return false;
@@ -578,15 +594,15 @@ public:
          - 2 if the pixel is viewed by *another* label and this label is marked as current valid label
          - 3 if the pixel is 1 + 2 : the pixel is not selected as alpha territory, but alpha is looking at it
         */
-        for(int i = 0; i < rect.h; i++)
+        for(int i = 0; i < rect.height; i++)
         {
 
-            int y = rect.t + i;
+            int y = rect.top + i;
 
-            for(int j = 0; j < rect.w; j++)
+            for(int j = 0; j < rect.width; j++)
             {
 
-                int x = rect.l + j;
+                int x = rect.left + j;
                 if(x >= _owners.Width())
                 {
                     x = x - _owners.Width();
@@ -663,9 +679,9 @@ public:
         Let's create an index per valid pixels for graph cut reference
         */
         int count = 0;
-        for(int i = 0; i < rect.h; i++)
+        for(int i = 0; i < rect.height; i++)
         {
-            for(int j = 0; j < rect.w; j++)
+            for(int j = 0; j < rect.width; j++)
             {
                 if(mask(i, j) == 0)
                 {
@@ -681,9 +697,9 @@ public:
         MaxFlow_AdjList gc(count);
         size_t countValid = 0;
 
-        for(int i = 0; i < rect.h; i++)
+        for(int i = 0; i < rect.height; i++)
         {
-            for(int j = 0; j < rect.w; j++)
+            for(int j = 0; j < rect.width; j++)
             {
 
                 /* If this pixel is not valid, ignore */
@@ -697,8 +713,8 @@ public:
 
                 int im1 = std::max(i - 1, 0);
                 int jm1 = std::max(j - 1, 0);
-                int ip1 = std::min(i + 1, rect.h - 1);
-                int jp1 = std::min(j + 1, rect.w - 1);
+                int ip1 = std::min(i + 1, rect.height - 1);
+                int jp1 = std::min(j + 1, rect.width - 1);
 
                 if(mask(i, j) == 1)
                 {
@@ -762,9 +778,9 @@ public:
         When two neighboor pixels have different labels, there is a seam (border) cost.
         Graph cut will try to make sure the territory will have a minimal border cost
         */
-        for(int i = 0; i < rect.h; i++)
+        for(int i = 0; i < rect.height; i++)
         {
-            for(int j = 0; j < rect.w; j++)
+            for(int j = 0; j < rect.width; j++)
             {
 
                 if(mask(i, j) == 0)
@@ -825,15 +841,15 @@ public:
         gc.compute();
 
         int changeCount = 0;
-        for(int i = 0; i < rect.h; i++)
+        for(int i = 0; i < rect.height; i++)
         {
 
-            int y = rect.t + i;
+            int y = rect.top + i;
 
-            for(int j = 0; j < rect.w; j++)
+            for(int j = 0; j < rect.width; j++)
             {
 
-                int x = rect.l + j;
+                int x = rect.left + j;
                 if(x >= _owners.Width())
                 {
                     x = x - _owners.Width();
@@ -853,20 +869,27 @@ public:
                     _labels(y, x) = currentLabel;
                 }
             }
-        }
+        }*/
 
         return true;
     }
 
-    const image::Image<IndexT>& getLabels() { return _labels; }
+    CachedImage<IndexT> & getLabels() 
+    { 
+        return _labels; 
+    }
 
 private:
-    std::map<IndexT, Rect> _rects;
-    ImageOwners _owners;
-    image::Image<IndexT> _labels;
-    image::Image<IndexT> _original_labels;
-    image::Image<int> _distancesSeams;
+
+    std::map<IndexT, BoundingBox> _rects;
+    int _outputWidth;
+    int _outputHeight;
     size_t _maximal_distance_change;
+
+    CachedImage<IndexT> _labels;
+    CachedImage<IndexT> _original_labels;
+    CachedImage<int> _distancesSeams;
+    ImageOwners _owners;
 };
 
 } // namespace aliceVision
