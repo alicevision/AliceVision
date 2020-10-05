@@ -178,7 +178,7 @@ Eigen::Affine3d point_to_plane(Eigen::MatrixBase<Derived1>& X,
                 shrink<3>(Z, mu, par.p);
                 /// Rotation and translation update
                 Eigen::VectorXd U = Z-C/mu;
-                Eigen::Affine3d transform = RigidMotionEstimator::point_to_plane(X, Qp, Qn, Eigen::VectorXd::Ones(X.cols()), U);
+                Eigen::Affine3d transform = rigidMotionEstimator::point_to_plane(X, Qp, Qn, Eigen::VectorXd::Ones(X.cols()), U);
                 finalTransform = transform * finalTransform;
                 /// Stopping criteria
                 dual = (X-Xo1).colwise().norm().maxCoeff();

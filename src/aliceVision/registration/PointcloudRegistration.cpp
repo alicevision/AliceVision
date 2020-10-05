@@ -209,23 +209,27 @@ Eigen::Matrix4d PointcloudRegistration::align(EAlignmentMethod mode)
         {
             ICP::Parameters par;
             transform = alignICP(mutableSourceCloud, mutableTargetCloud, par);
+            break;
         }
         case EAlignmentMethod::ICP_sim:
         {
             ICP::Parameters par;
             par.useDirectSimilarity = true;
             transform = alignICP(mutableSourceCloud, mutableTargetCloud, par);
+            break;
         }
         case EAlignmentMethod::SICP:
         {
             SICP::Parameters par;
             transform = alignSICP(mutableSourceCloud, mutableTargetCloud, par);
+            break;
         }
         case EAlignmentMethod::SICP_sim:
         {
             SICP::Parameters par;
             par.useDirectSimilarity = true;
             transform = alignSICP(mutableSourceCloud, mutableTargetCloud, par);
+            break;
         }
         case EAlignmentMethod::Undefined:
             throw std::runtime_error("Undefined alignment method");
