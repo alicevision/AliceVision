@@ -459,8 +459,8 @@ Eigen::Matrix4d PointcloudRegistration::applyGeneralizedICP(
     pcl::PointCloud <pcl::PointXYZ> & registered_source_cloud)
 {
 
-  boost::shared_ptr< std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > > source_covs(new std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >);
-  boost::shared_ptr< std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > > target_covs(new std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >);
+  std::shared_ptr< std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > > source_covs(new std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >);
+  std::shared_ptr< std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > > target_covs(new std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >);
   pcl::features::computeApproximateCovariances(source_cloud, source_normals, *source_covs);
   pcl::features::computeApproximateCovariances(target_cloud, target_normals, *target_covs);
 
