@@ -280,36 +280,41 @@ int aliceVision_main(int argc, char** argv)
 
 				//Initialize bouding box for image
 				BoundingBox globalBbox;
+				
+				std::vector<BoundingBox> boxes;
+				for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) 
+				{
+					for (int x = 0; x < snappedCoarseBbox.width; x += tileSize) 
+					{
+						BoundingBox localBbox;
+						localBbox.left = x + snappedCoarseBbox.left;
+						localBbox.top = y + snappedCoarseBbox.top;
+						localBbox.width = tileSize;
+						localBbox.height = tileSize;
+						boxes.push_back(localBbox);
+					}
+				}
 
 				#pragma omp parallel for
-				for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) {
+				for (int i = 0; i < boxes.size(); i++) {
 
-						for (int x = 0; x < snappedCoarseBbox.width; x += tileSize) {
+					BoundingBox localBbox = boxes[i];
 
-								BoundingBox localBbox;
-								localBbox.left = x + snappedCoarseBbox.left;
-								localBbox.top = y + snappedCoarseBbox.top;
-								localBbox.width = tileSize;
-								localBbox.height = tileSize;
+					/*int stillToProcess = coarseBbox.width - localBbox.left;
+					if (stillToProcess < tileSize) {
+						localBbox.width = stillToProcess;
+					}*/
 
-								
+					// Prepare coordinates map
+					CoordinatesMap map;
+					if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
+						continue;
+					}
 
-								/*int stillToProcess = coarseBbox.width - localBbox.left;
-								if (stillToProcess < tileSize) {
-									localBbox.width = stillToProcess;
-								}*/
-
-								// Prepare coordinates map
-								CoordinatesMap map;
-								if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
-									continue;
-								}
-
-								#pragma omp critical 
-								{
-									globalBbox.unionWith(map.getBoundingBox());
-								}
-						}
+					#pragma omp critical 
+					{
+						globalBbox.unionWith(map.getBoundingBox());
+					}
 				}
 
 
@@ -383,61 +388,65 @@ int aliceVision_main(int argc, char** argv)
 					continue;
 				}
 
+				boxes.clear();
+				for (int y = 0; y < snappedGlobalBbox.height; y += tileSize) 
+				{
+					for (int x = 0; x < snappedGlobalBbox.width; x += tileSize) 
+					{
+						BoundingBox localBbox;
+						localBbox.left = x + snappedGlobalBbox.left;
+						localBbox.top = y + snappedGlobalBbox.top;
+						localBbox.width = tileSize;
+						localBbox.height = tileSize;
+						boxes.push_back(localBbox);
+					}
+				}
+
+
 				#pragma omp parallel for 
 				{
-					for (int y = 0; y < snappedGlobalBbox.height; y += tileSize) 
+					for (int i = 0; i < boxes.size(); i++) 
 					{
-						for (int x = 0; x < snappedGlobalBbox.width; x += tileSize) 
+						BoundingBox localBbox = boxes[i];
+
+						int x = localBbox.left - snappedGlobalBbox.left;
+						int y = localBbox.top - snappedGlobalBbox.top;
+
+						// Prepare coordinates map
+						CoordinatesMap map;
+						if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
 						{
-							BoundingBox localBbox;
-							localBbox.left = x + snappedGlobalBbox.left;
-							localBbox.top = y + snappedGlobalBbox.top;
-							localBbox.width = tileSize;
-							localBbox.height = tileSize;
+							continue;
+						}
 
-							/*bool fillup = false;
-							int stillToProcess = globalBbox.width - localBbox.left;
-							if (stillToProcess < tileSize) {
-								to continue
-								fillup = true;
-							}*/
+						// Warp image
+						GaussianWarper warper;
+						if (!warper.warp(map, pyramid)) {
+							continue;
+						}
 
-							// Prepare coordinates map
-							CoordinatesMap map;
-							if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
-							{
-								continue;
-							}
+						// Alpha mask
+						aliceVision::image::Image<float> weights;
+						if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
+							continue;
+						}
 
-							// Warp image
-							GaussianWarper warper;
-							if (!warper.warp(map, pyramid)) {
-								continue;
-							}
+						// Store
+						#pragma omp critical 
+						{
+							out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
+						}
 
-							// Alpha mask
-							aliceVision::image::Image<float> weights;
-							if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
-								continue;
-							}
+						// Store
+						#pragma omp critical 
+						{
+							out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
+						}
 
-							// Store
-							#pragma omp critical 
-							{
-								out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
-							}
-
-							// Store
-							#pragma omp critical 
-							{
-								out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
-							}
-
-							// Store
-							#pragma omp critical 
-							{
-								out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
-							}
+						// Store
+						#pragma omp critical 
+						{
+							out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
 						}
 					}
 				}
