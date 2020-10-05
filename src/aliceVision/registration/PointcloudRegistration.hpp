@@ -47,6 +47,7 @@ inline std::string EAlignmentMethod_enumToString(EAlignmentMethod mode)
     case EAlignmentMethod::Undefined:
         return "Undefined";
     }
+    throw std::runtime_error("Unknown EAlignmentMethod: " + std::to_string(int(mode)));
 }
 
 inline EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& mode)

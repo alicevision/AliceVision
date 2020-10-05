@@ -96,11 +96,11 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-	// ===========================================================
-	// -- Run alignement
-	// ===========================================================
-  ALICEVISION_COUT("Convert method");
+    // ===========================================================
+    // -- Run alignement
+    // ===========================================================
   EAlignmentMethod method = EAlignmentMethod_stringToEnum(alignmentMethodName);
+  ALICEVISION_COUT("Alignment Method: " << EAlignmentMethod_enumToString(method));
 
     ALICEVISION_COUT("Create PointcloudRegistration");
 	PointcloudRegistration reg;
