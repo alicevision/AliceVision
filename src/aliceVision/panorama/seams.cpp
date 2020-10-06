@@ -215,11 +215,17 @@ bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
         }
     }
 
-    if (!loopyCachedImageAssign(_weights, weights, globalBb)) {
+    BoundingBox inputBb;
+    inputBb.left = 0;
+    inputBb.top = 0;
+    inputBb.width = labels.Width();
+    inputBb.height = labels.Height();
+
+    if (!loopyCachedImageAssign(_weights, weights, globalBb, inputBb)) {
         return false;
     }
 
-    if (!loopyCachedImageAssign(_labels, labels, globalBb)) {
+    if (!loopyCachedImageAssign(_labels, labels, globalBb, inputBb)) {
         return false;
     }
 

@@ -278,8 +278,13 @@ int aliceVision_main(int argc, char** argv)
     // Configure the cache manager memory
     cacheManager->setInCoreMaxObjectCount(1000);
 
-    LaplacianCompositer compositer(panoramaSize.first, panoramaSize.second, 3);
-    compositer.initialize(cacheManager);
+    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 1);
+    
+    if (!compositer.initialize()) 
+    {
+        ALICEVISION_LOG_ERROR("Failed to initialize compositer");
+        return EXIT_FAILURE;
+    }
 
     CachedImage<IndexT> labels;
     if (!computeWTALabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
@@ -295,11 +300,34 @@ int aliceVision_main(int argc, char** argv)
     }*/
 
 
-    for(const auto& it : sfmData.getViews())
+    //Get a list of views ordered by their image scale
+    std::vector<std::shared_ptr<sfmData::View>> viewOrderedByScale;
     {
-        IndexT viewId = it.first;
-        auto view = it.second;
+        std::map<size_t, std::vector<std::shared_ptr<sfmData::View>>> mapViewsScale;
+        for(const auto& it : sfmData.getViews()) 
+        {
+            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(it.first) + "_mask.exr")).string();
+            oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
 
+            const std::size_t contentW = metadata.find("AliceVision:contentW")->get_int();
+            const std::size_t contentH = metadata.find("AliceVision:contentH")->get_int();
+
+            size_t scale = compositer.getOptimalScale(contentW, contentH);
+            mapViewsScale[scale].push_back(it.second);
+        }
+        for (auto scaledList : mapViewsScale)
+        {
+            for (auto item : scaledList.second) 
+            {   
+                viewOrderedByScale.push_back(item);
+            }
+        }
+    }
+
+
+    for(const auto & view : viewOrderedByScale)
+    {
+        IndexT viewId = view->getViewId();
         if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
         {
             // skip unreconstructed views
@@ -315,6 +343,10 @@ int aliceVision_main(int argc, char** argv)
         oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
         const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+        const std::size_t contentX = metadata.find("AliceVision:contentX")->get_int();
+        const std::size_t contentY = metadata.find("AliceVision:contentY")->get_int();
+        const std::size_t contentW = metadata.find("AliceVision:contentW")->get_int();
+        const std::size_t contentH = metadata.find("AliceVision:contentH")->get_int();
 
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
@@ -328,7 +360,12 @@ int aliceVision_main(int argc, char** argv)
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
 
-
+        BoundingBox imageContent;
+        imageContent.left = contentX;
+        imageContent.top = contentY;
+        imageContent.width = contentW;
+        imageContent.height = contentH;
+        
         image::Image<float> seams(mask.Width(), mask.Height());
         if (!getMaskFromLabels(seams, labels, viewId, offsetX, offsetY)) 
         {
@@ -336,7 +373,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        compositer.append(source, mask, seams, offsetX, offsetY);
+        compositer.append(source, mask, seams, offsetX, offsetY, imageContent);
     }
 
     compositer.terminate();

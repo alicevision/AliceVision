@@ -14,7 +14,7 @@ public:
 
     bool initialize(image::TileCacheManager::shared_ptr & cacheManager);
 
-    bool augment(size_t new_max_levels);
+    bool augment(image::TileCacheManager::shared_ptr & cacheManager, size_t new_max_levels);
     
     bool apply(const aliceVision::image::Image<image::RGBfColor>& source,
                const aliceVision::image::Image<unsigned char>& mask, const aliceVision::image::Image<float>& weights,

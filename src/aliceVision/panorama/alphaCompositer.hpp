@@ -8,14 +8,15 @@ namespace aliceVision
 class AlphaCompositer : public Compositer
 {
 public:
-    AlphaCompositer(size_t outputWidth, size_t outputHeight) 
-    : Compositer(outputWidth, outputHeight)
+    AlphaCompositer(image::TileCacheManager::shared_ptr & cacheManager, size_t outputWidth, size_t outputHeight) 
+    : Compositer(cacheManager, outputWidth, outputHeight)
     {
     }
 
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
-                        const aliceVision::image::Image<float>& inputWeights, int offset_x, int offset_y)
+                        const aliceVision::image::Image<float>& inputWeights, 
+                        int offset_x, int offset_y, const BoundingBox & contentBox)
     {
 
         aliceVision::image::Image<image::RGBAfColor> masked(color.Width(), color.Height());
@@ -50,7 +51,13 @@ public:
             }
         }
 
-        if (!loopyCachedImageAssign(_panorama, masked, panoramaBb)) {
+        BoundingBox inputBb;
+        inputBb.left = 0;
+        inputBb.top = 0;
+        inputBb.width = masked.Width();
+        inputBb.height = masked.Height();
+
+        if (!loopyCachedImageAssign(_panorama, masked, panoramaBb, inputBb)) {
             return false;
         }
 

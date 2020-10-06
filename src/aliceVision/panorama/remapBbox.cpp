@@ -324,7 +324,6 @@ bool computeCoarseBB_Pinhole(BoundingBox& coarse_bbox, const std::pair<int, int>
     }
     else if(crossH)
     {
-
         int first_cross = 0;
         for(int i = 0; i < 8; i++)
         {
@@ -380,7 +379,7 @@ bool computeCoarseBB_Pinhole(BoundingBox& coarse_bbox, const std::pair<int, int>
                 }
             }
         }
-
+        
         bbox_width = bbox_right + (panoramaSize.first - bbox_left);
     }
     else

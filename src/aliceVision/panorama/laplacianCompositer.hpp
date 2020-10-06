@@ -70,30 +70,25 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
 class LaplacianCompositer : public Compositer
 {
 public:
-    LaplacianCompositer(size_t outputWidth, size_t outputHeight, size_t bands)
-        : Compositer(outputWidth, outputHeight)
-        , _pyramid_panorama(outputWidth, outputHeight, bands)
+    LaplacianCompositer(image::TileCacheManager::shared_ptr & cacheManager, size_t outputWidth, size_t outputHeight, size_t bands)
+        : Compositer(cacheManager, outputWidth, outputHeight)
+        , _pyramidPanorama(outputWidth, outputHeight, bands)
         , _bands(bands)
     {
     }
 
-    virtual bool initialize(image::TileCacheManager::shared_ptr & cacheManager) 
+    virtual bool initialize() 
     { 
-        if (!Compositer::initialize(cacheManager)) 
+        if (!Compositer::initialize()) 
         {
             return false;
         }
 
-        return _pyramid_panorama.initialize(cacheManager);
+        return _pyramidPanorama.initialize(_cacheManager);
     }
 
-    virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
-                        const aliceVision::image::Image<unsigned char>& inputMask,
-                        const aliceVision::image::Image<float>& inputWeights, size_t offset_x, size_t offset_y)
+    size_t getOptimalScale(int width, int height) 
     {
-        /*Get smallest size*/
-        size_t minsize = std::min(color.Height(), color.Width());
-
         /*
         Look for the smallest scale such that the image is not smaller than the
         convolution window size.
@@ -101,9 +96,22 @@ public:
         minsize / 5 = 2^x
         x = log2(minsize/5)
         */
+
+        size_t minsize = std::min(width, height);
         const float gaussian_filter_size = 5.0f;
         size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussian_filter_size)));
-        if(optimal_scale < _bands)
+
+        return optimal_scale;
+    }
+
+
+    virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
+                        const aliceVision::image::Image<unsigned char>& inputMask,
+                        const aliceVision::image::Image<float>& inputWeights, 
+                        size_t offset_x, size_t offset_y, const BoundingBox & contentBox)
+    {
+        size_t optimalScale = getOptimalScale(contentBox.width, contentBox.height);
+        if(optimalScale < _bands)
         {
             ALICEVISION_LOG_ERROR("Decreasing scale !");
             return false;
@@ -111,10 +119,10 @@ public:
 
         //If the input scale is more important than previously processed, 
         // The pyramid must be deepened accordingly
-        if(optimal_scale > _bands)
+        if(optimalScale > _bands)
         {
-            //_bands = optimal_scale;
-            //_pyramid_panorama.augment(_bands);
+            _bands = optimalScale;
+            _pyramidPanorama.augment(_cacheManager, _bands);
         }
 
         // Make sure input is compatible with pyramid processing
@@ -144,7 +152,7 @@ public:
             }
         }*/
 
-        _pyramid_panorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y);
+        _pyramidPanorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y);
 
         return true;
     }
@@ -152,9 +160,9 @@ public:
     virtual bool terminate()
     {
 
-        _pyramid_panorama.rebuild(_panorama);
+        _pyramidPanorama.rebuild(_panorama);
 
-        _panorama.perPixelOperation(
+        /*_panorama.perPixelOperation(
             [](const image::RGBAfColor & a) -> image::RGBAfColor {
 
                 image::RGBAfColor out;
@@ -165,13 +173,13 @@ public:
 
                 return out;
             }
-        );
+        );*/
 
         return true;
     }
 
 protected:
-    LaplacianPyramid _pyramid_panorama;
+    LaplacianPyramid _pyramidPanorama;
     size_t _bands;
 };
 

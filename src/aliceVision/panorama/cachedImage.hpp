@@ -376,11 +376,28 @@ public:
         return true;
     }
 
+    bool fill(const T & val) 
+    {
+        if (!perPixelOperation(
+            [val](T) -> T
+            { 
+                return val; 
+            })
+        )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     std::vector<std::vector<image::CachedTile::smart_pointer>>& getTiles() { return _tilesArray; }
 
     int getWidth() const { return _width; }
 
     int getHeight() const { return _height; }
+
+    int getTileSize() const { return _tileSize; }
 
 private:
     int _width;
@@ -400,5 +417,9 @@ bool CachedImage<image::RGBfColor>::writeImage(const std::string& path);
 
 template <>
 bool CachedImage<IndexT>::writeImage(const std::string& path);
+
+
+template <>
+bool CachedImage<unsigned char>::writeImage(const std::string& path);
 
 } // namespace aliceVision

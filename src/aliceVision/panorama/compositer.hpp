@@ -8,16 +8,20 @@ namespace aliceVision
 {
 
 template <class T>
-bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb) 
+bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb, const BoundingBox & assignedInputBb) 
 {
-    BoundingBox inputBb;
-    BoundingBox outputBb;
+    BoundingBox inputBb = assignedInputBb;
+    BoundingBox outputBb = assignedOutputBb;
 
-    inputBb.left = 0;
-    inputBb.top = 0;
-    inputBb.width = input.Width();
-    inputBb.height = input.Height();        
-    outputBb = assignedOutputBb;
+    if (inputBb.width != outputBb.width) 
+    {
+        return false;
+    }
+
+    if (inputBb.height != outputBb.height) 
+    {
+        return false;
+    }
 
     if (outputBb.getBottom() >= output.getHeight())
     {
@@ -51,8 +55,13 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
 
         inputBb.left = width1;
         outputBb.left = 0;
-        inputBb.width = width2;
-        outputBb.width = width2;
+
+        //no overlap
+        int width2_clamped = std::min(width2, left_1);
+        inputBb.width = width2_clamped;
+        outputBb.width = width2_clamped;
+        if (width2_clamped == 0) return true;
+
 
         if (!output.assign(input, inputBb, outputBb))
         {
@@ -122,7 +131,8 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
 class Compositer
 {
 public:
-    Compositer(int width, int height) :
+    Compositer(image::TileCacheManager::shared_ptr & cacheManager, int width, int height) :
+    _cacheManager(cacheManager),
     _panoramaWidth(width),
     _panoramaHeight(height)
     {
@@ -131,7 +141,8 @@ public:
 
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
-                        const aliceVision::image::Image<float>& inputWeights, int offset_x, int offset_y)
+                        const aliceVision::image::Image<float>& inputWeights, 
+                        int offset_x, int offset_y, const BoundingBox & contentBox)
     {
         aliceVision::image::Image<image::RGBAfColor> masked(color.Width(), color.Height());
 
@@ -163,16 +174,22 @@ public:
             }
         }
 
-        if (!loopyCachedImageAssign(_panorama, masked, panoramaBb)) {
+        BoundingBox inputBb;
+        inputBb.left = 0;
+        inputBb.top = 0;
+        inputBb.width = color.Width();
+        inputBb.height = color.Height();
+
+        if (!loopyCachedImageAssign(_panorama, masked, panoramaBb, inputBb)) {
             return false;
         }
 
         return true;
     }
 
-    virtual bool initialize(image::TileCacheManager::shared_ptr & cacheManager) { 
+    virtual bool initialize() { 
 
-        if(!_panorama.createImage(cacheManager, _panoramaWidth, _panoramaHeight))
+        if(!_panorama.createImage(_cacheManager, _panoramaWidth, _panoramaHeight))
         {
             return false;
         }
@@ -203,7 +220,7 @@ public:
     }
 
 protected:
-
+    image::TileCacheManager::shared_ptr _cacheManager;
     CachedImage<image::RGBAfColor> _panorama;
     int _panoramaWidth;
     int _panoramaHeight;

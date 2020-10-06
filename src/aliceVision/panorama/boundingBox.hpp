@@ -72,7 +72,8 @@ struct BoundingBox
         height = maxb - top + 1;
     }
 
-    bool isInside(const BoundingBox& other) const {
+    bool isInside(const BoundingBox& other) const 
+    {
 
         if (other.left > left) return false;
         if (other.top > top) return false;
@@ -81,5 +82,65 @@ struct BoundingBox
         if (other.getBottom() < getBottom()) return false;
 
         return true;
+    }
+
+    BoundingBox dilate(int units) 
+    {
+        BoundingBox b;
+        
+        b.left = left - units;
+        b.top = top - units;
+        b.width = width + units * 2;
+        b.height = height + units * 2;
+
+        return b;
+    }
+
+    void clampLeft() 
+    {
+        if (left < 0) 
+        {
+            width += left;
+            left = 0;
+        }
+    }
+
+    void clampRight(int maxRight)
+    {
+        if (getRight() > maxRight)
+        {
+            int removal = getRight() - maxRight;
+            width -= removal;
+        }
+    }
+
+    void clampTop() 
+    {
+        if (top < 0) 
+        {
+            height += top;
+            top = 0;
+        }
+    }
+
+    void clampBottom(int maxBottom)
+    {
+        if (getBottom() > maxBottom)
+        {
+            int removal = getBottom() - maxBottom;
+            height -= removal;
+        }
+    }
+
+    BoundingBox doubleSize()
+    {
+        BoundingBox b;
+
+        b.left = left * 2;
+        b.top = top * 2;
+        b.width = width * 2;
+        b.height = height * 2;
+
+        return b;
     }
 };
