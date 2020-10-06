@@ -85,17 +85,31 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
                 continue;
             }
 
-            if(i == _color.Height() - 1 || j == _color.Width() - 1 || !_mask(i + 1, j) || !_mask(i, j + 1))
+            int next_j = j + 1;
+            int next_i = i + 1;
+
+            if (j == _color.Width() - 1)
+            {
+                next_j = j - 1;
+            }
+
+            if (i == _color.Height() - 1)
+            {
+                next_i = i - 1;
+            }
+
+            if (!_mask(next_i, j) || !_mask(i, next_j))
             {
                 const Eigen::Vector2d& coord = coordinates(i, j);
                 const image::RGBfColor pixel = sampler(mlsource[0], coord(1), coord(0));
                 _color(i, j) = pixel;
+
                 continue;
             }
 
             const Eigen::Vector2d& coord_mm = coordinates(i, j);
-            const Eigen::Vector2d& coord_mp = coordinates(i, j + 1);
-            const Eigen::Vector2d& coord_pm = coordinates(i + 1, j);
+            const Eigen::Vector2d& coord_mp = coordinates(i, next_j);
+            const Eigen::Vector2d& coord_pm = coordinates(next_i, j);
 
             double dxx = coord_pm(0) - coord_mm(0);
             double dxy = coord_mp(0) - coord_mm(0);

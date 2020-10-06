@@ -278,7 +278,7 @@ int aliceVision_main(int argc, char** argv)
     // Configure the cache manager memory
     cacheManager->setInCoreMaxObjectCount(1000);
 
-    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 1);
+    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 5);
     
     if (!compositer.initialize()) 
     {

@@ -376,6 +376,67 @@ public:
         return true;
     }
 
+    static bool getTileAsImage(image::Image<T> & ret, image::CachedTile::smart_pointer tile) 
+    {
+        if(!tile)
+        {
+            return false;
+        }
+
+        if(!tile->acquire())
+        {
+            return false;
+        }
+
+        ret.resize(tile->getTileWidth(), tile->getTileHeight());
+        T * data = (T*)tile->getDataPointer();
+        for (int i = 0; i < tile->getTileHeight(); i++)
+        {
+            for (int j = 0; j < tile->getTileWidth(); j++)
+            {
+                ret(i, j) = *data;
+                data++;
+            }
+        }
+
+        return true;
+    }
+
+    static bool setTileWithImage(image::CachedTile::smart_pointer tile, const image::Image<T> & ret) 
+    {
+        if (ret.Width() != tile->getTileWidth())
+        {
+            return false;
+        }
+
+        if (ret.Height() != tile->getTileHeight())
+        {
+            return false;
+        }
+
+        if(!tile)
+        {
+            return false;
+        }
+
+        if(!tile->acquire())
+        {
+            return false;
+        }
+
+        T * data = (T*)tile->getDataPointer();
+        for (int i = 0; i < tile->getTileHeight(); i++)
+        {
+            for (int j = 0; j < tile->getTileWidth(); j++)
+            {
+                *data = ret(i, j);
+                data++;
+            }
+        }
+
+        return true;
+    }
+
     bool fill(const T & val) 
     {
         if (!perPixelOperation(
@@ -418,6 +479,8 @@ bool CachedImage<image::RGBfColor>::writeImage(const std::string& path);
 template <>
 bool CachedImage<IndexT>::writeImage(const std::string& path);
 
+template <>
+bool CachedImage<float>::writeImage(const std::string& path);
 
 template <>
 bool CachedImage<unsigned char>::writeImage(const std::string& path);

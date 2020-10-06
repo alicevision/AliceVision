@@ -101,10 +101,12 @@ public:
         const float gaussian_filter_size = 5.0f;
         size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussian_filter_size)));
 
+        optimal_scale = 5;
+
         return optimal_scale;
     }
 
-
+    
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
@@ -135,11 +137,13 @@ public:
         makeImagePyramidCompatible(mask_pot, new_offset_x, new_offset_y, inputMask, offset_x, offset_y, _bands);
         makeImagePyramidCompatible(weights_pot, new_offset_x, new_offset_y, inputWeights, offset_x, offset_y, _bands);
 
-        //std::cout << new_offset_x << " " << new_offset_y << std::endl;
-
+        
         // Fill Color images masked parts with fake but coherent info
         aliceVision::image::Image<image::RGBfColor> feathered;
-        feathering(feathered, color_pot, mask_pot);
+        if (!feathering(feathered, color_pot, mask_pot)) 
+        {
+            return false;
+        }
 
         /*To log space for hdr*/
         /*for(int i = 0; i < feathered.Height(); i++)
@@ -152,7 +156,10 @@ public:
             }
         }*/
 
-        _pyramidPanorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y);
+        if (!_pyramidPanorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y)) 
+        {
+            return false;
+        }
 
         return true;
     }
@@ -160,7 +167,10 @@ public:
     virtual bool terminate()
     {
 
-        _pyramidPanorama.rebuild(_panorama);
+        if (!_pyramidPanorama.rebuild(_panorama)) 
+        {
+            return false;
+        }
 
         /*_panorama.perPixelOperation(
             [](const image::RGBAfColor & a) -> image::RGBAfColor {

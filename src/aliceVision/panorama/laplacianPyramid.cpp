@@ -62,23 +62,43 @@ bool LaplacianPyramid::initialize(image::TileCacheManager::shared_ptr & cacheMan
 
 bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManager, size_t newMaxLevels)
 {
+    return true;
+    
     if(newMaxLevels <= _levels.size())
     {
         return false;
     }
+
+    int oldMaxLevels = _levels.size();
     _maxLevels = newMaxLevels;
 
-    //Get content of last level of pyramid
-    CachedImage<image::RGBfColor> lastColor = _levels[_levels.size() - 1];
-    CachedImage<float> largerWeight = _weights[_weights.size() - 1];
 
-    //Remove last level
-    /*_levels.pop_back();
-    _weights.pop_back();*/
+    //Get content of last level of pyramid
+    CachedImage<image::RGBfColor> largerColor;
+    if(!largerColor.createImage(cacheManager, _levels[oldMaxLevels - 1].getWidth(), _levels[oldMaxLevels - 1].getHeight()))
+    {
+        return false;
+    }
+
+    if (!largerColor.deepCopy(_levels[oldMaxLevels - 1])) 
+    {
+        return false;
+    }
+
+    CachedImage<float> largerWeight;
+    if(!largerWeight.createImage(cacheManager, _weights[oldMaxLevels - 1].getWidth(), _weights[oldMaxLevels - 1].getHeight()))
+    {
+        return false;
+    }
+
+    if (!largerWeight.deepCopy(_weights[oldMaxLevels - 1])) 
+    {
+        return false;
+    }
 
     //Last level was multiplied by the weight. 
     //Remove this factor
-    lastColor.perPixelOperation(largerWeight, 
+    largerColor.perPixelOperation(largerWeight, 
         [](const image::RGBfColor & c, const float & w) -> image::RGBfColor 
         {
             if (w < 1e-6) 
@@ -116,55 +136,185 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
         }
     );
 
-    largerMask.writeImage("/home/mmoc/mask.exr");
-
-
-    /*int largerLevel = _levels.size() - 1;
-    int currentLevel = _levels.size();
-
-    CachedImage<image::RGBfColor> largerColor = _levels[largerLevel];
-    CachedImage<float> largerWeight = _weights[largerLevel];
-
-    int width = largerColor.getWidth();
-    int height = largerColor.getHeight();
-
-    CachedImage<image::RGBfColor> color;
-    if(!color.createImage(cacheManager, width, height))
+    if (!feathering(largerColor, largerMask))
     {
         return false;
     }
 
-    CachedImage<float> weights;
-    if(!weights.createImage(cacheManager, width, height))
+
+    //Augment the number of levels
+    for (int level = oldMaxLevels; level < newMaxLevels; level++)
     {
-        return false;
+        CachedImage<image::RGBfColor> pyramidImage;
+        CachedImage<float> pyramidWeights;
+
+        if(!pyramidImage.createImage(cacheManager, _levels[_levels.size() - 1].getWidth() / 2, _levels[_levels.size() - 1].getHeight() / 2))
+        {
+            return false;
+        }
+
+        if(!pyramidWeights.createImage(cacheManager, _weights[_weights.size() - 1].getWidth() / 2, _weights[_weights.size() - 1].getHeight() / 2))
+        {
+            return false;
+        }
+        
+        pyramidImage.fill(image::RGBfColor(0.0f));
+        pyramidWeights.fill(0.0f);
+
+        _levels.push_back(pyramidImage);
+        _weights.push_back(pyramidWeights);
     }
 
-    aliceVision::image::Image<image::RGBfColor> extractedColor(width, height);
-    aliceVision::image::Image<float> extractedWeight(width, height);
 
-    BoundingBox extractBb;
-    extractBb.left = 0;
-    extractBb.top = 0;
-    extractBb.width = width;
-    extractBb.height = height;
+    const int processingSize = 512;
+    const size_t borderSize = 5;
 
+    CachedImage<image::RGBfColor> currentImage = largerColor;
+    CachedImage<float> currentWeights = largerWeight;
 
-    if (!loopyCachedImageExtract(extractedColor, largerColor, extractBb)) 
+    for (int level = oldMaxLevels - 1; level < _maxLevels - 1; level++) 
     {
-        return false;
+        CachedImage<image::RGBfColor> nextImage;
+        CachedImage<float> nextWeights;
+
+        if(!nextImage.createImage(cacheManager, currentImage.getWidth() / 2, currentImage.getHeight() / 2))
+        {
+            return false;
+        }
+
+        if(!nextWeights.createImage(cacheManager, currentImage.getWidth() / 2, currentImage.getHeight() / 2))
+        {
+            return false;
+        }
+
+        nextImage.fill(image::RGBfColor(0.0f));
+        nextWeights.fill(0.0f);
+
+        for (int y = 0; y < nextImage.getHeight(); y += processingSize)
+        {
+            for (int x = 0; x < nextImage.getWidth(); x += processingSize)
+            {
+                BoundingBox nextBbox;
+                nextBbox.left = x;
+                nextBbox.top = y;
+                nextBbox.width = processingSize;
+                nextBbox.height = processingSize;
+                nextBbox.clampRight(nextImage.getWidth() - 1);
+                nextBbox.clampBottom(nextImage.getHeight() - 1);
+
+                BoundingBox dilatedNextBbox = nextBbox.dilate(borderSize);
+                dilatedNextBbox.clampLeft();
+                dilatedNextBbox.clampTop();
+                dilatedNextBbox.clampBottom(nextImage.getHeight() - 1);
+
+                BoundingBox currentBbox = nextBbox.doubleSize();
+                BoundingBox dilatedCurrentBbox = dilatedNextBbox.doubleSize();
+                
+                aliceVision::image::Image<image::RGBfColor> extractedColor(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
+                if (!loopyCachedImageExtract(extractedColor, currentImage, dilatedCurrentBbox)) 
+                {
+                    return false;
+                }
+
+                aliceVision::image::Image<float> extractedWeight(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
+                if (!loopyCachedImageExtract(extractedWeight, currentWeights, dilatedCurrentBbox)) 
+                {
+                    return false;
+                }
+
+                
+                /*Compute raw next scale from current scale */
+                aliceVision::image::Image<image::RGBfColor> buf(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
+                aliceVision::image::Image<float> bufw(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
+                aliceVision::image::Image<image::RGBfColor> colorDownscaled(dilatedNextBbox.width, dilatedNextBbox.height);
+                aliceVision::image::Image<float> weightDownscaled(dilatedNextBbox.width, dilatedNextBbox.height);
+
+                convolveGaussian5x5<image::RGBfColor>(buf, extractedColor);
+                convolveGaussian5x5<float>(bufw, extractedWeight);
+                
+                downscale(colorDownscaled, buf);
+                downscale(weightDownscaled, bufw);
+
+                BoundingBox saveBoundingBox;
+                saveBoundingBox.left = nextBbox.left - dilatedNextBbox.left;
+                saveBoundingBox.top = nextBbox.top - dilatedNextBbox.top;
+                saveBoundingBox.width = nextBbox.width;
+                saveBoundingBox.height = nextBbox.height;
+
+                
+
+                if (!loopyCachedImageAssign(nextImage, colorDownscaled, nextBbox, saveBoundingBox)) {
+                    return false;
+                }
+
+                if (!loopyCachedImageAssign(nextWeights, weightDownscaled, nextBbox, saveBoundingBox)) {
+                    return false;
+                }
+
+
+
+                /* Compute difference */
+                aliceVision::image::Image<image::RGBfColor> buf2(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
+                upscale(buf, colorDownscaled);
+                convolveGaussian5x5<image::RGBfColor>(buf2, buf);
+
+                for (int i = 0; i  < buf2.Height(); i++) {
+                    for (int j = 0; j < buf2.Width(); j++) {
+                        buf2(i,j) *= 4.0f;
+                    }
+                }
+
+                substract(extractedColor, extractedColor, buf2);
+
+                for (int i = 0; i < extractedColor.Height(); i++) 
+                {
+                    for (int j = 0; j < extractedColor.Width(); j++)
+                    {
+                        extractedColor(i, j).r() = extractedColor(i, j).r() * extractedWeight(i, j);
+                        extractedColor(i, j).g() = extractedColor(i, j).r() * extractedWeight(i, j);
+                        extractedColor(i, j).b() = extractedColor(i, j).b() * extractedWeight(i, j);
+                    }
+                }
+
+                
+                saveBoundingBox.left = currentBbox.left - dilatedCurrentBbox.left;
+                saveBoundingBox.top = currentBbox.top - dilatedCurrentBbox.top;
+                saveBoundingBox.width = currentBbox.width;
+                saveBoundingBox.height = currentBbox.height;
+
+                if (!loopyCachedImageAssign(_levels[level], extractedColor, currentBbox, saveBoundingBox)) {
+                    return false;
+                }
+
+                if (!loopyCachedImageAssign(_weights[level], extractedWeight, currentBbox, saveBoundingBox)) {
+                    return false;
+                } 
+            }
+        }
+
+        currentImage = nextImage;
+        currentWeights = nextWeights;
     }
 
-    if (!loopyCachedImageExtract(extractedWeight, largerWeight, extractBb)) 
-    {
-        return false;
-    }
 
-    //image was multiplied with a weight, we need to get back the original weight
+    currentImage.perPixelOperation(currentWeights, 
+        [](const image::RGBfColor & c, const float & w) -> image::RGBfColor 
+        {
+            image::RGBfColor r;
 
-    _levels.push_back(color);
-    _weights.push_back(weights);*/
-    
+            r.r() = c.r() * w;
+            r.g() = c.g() * w;
+            r.b() = c.b() * w;
+
+            return r;
+        }
+    );
+
+
+    _levels[_levels.size() - 1].deepCopy(currentImage);
+    _weights[_weights.size() - 1].deepCopy(currentWeights);
+
+
     return true;
 }
 
@@ -175,6 +325,7 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
     int width = source.Width();
     int height = source.Height();
 
+    
     /* Convert mask to alpha layer */
     image::Image<float> mask_float(width, height);
     for(int i = 0; i < height; i++)
@@ -296,7 +447,6 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
     return true;
 }
 
-
 bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& oimg,
                              const aliceVision::image::Image<float>& oweight, size_t level, size_t offset_x,
                              size_t offset_y)
@@ -351,11 +501,14 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
         return false;
     }
 
+ 
+
     return true;
 }
 
 bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
 {
+    
 
     // We first want to compute the final pixels mean
     for(int l = 0; l < _levels.size(); l++)

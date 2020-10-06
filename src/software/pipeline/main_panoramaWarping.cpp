@@ -403,7 +403,7 @@ int aliceVision_main(int argc, char** argv)
 				}
 
 
-				#pragma omp parallel for 
+				//#pragma omp parallel for 
 				{
 					for (int i = 0; i < boxes.size(); i++) 
 					{
@@ -411,6 +411,8 @@ int aliceVision_main(int argc, char** argv)
 
 						int x = localBbox.left - snappedGlobalBbox.left;
 						int y = localBbox.top - snappedGlobalBbox.top;
+
+						
 
 						// Prepare coordinates map
 						CoordinatesMap map;
