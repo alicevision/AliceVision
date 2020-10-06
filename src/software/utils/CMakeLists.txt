@@ -226,3 +226,20 @@ alicevision_add_software(aliceVision_utils_fisheyeProjection
 )
 
 endif() # ALICEVISION_BUILD_SFM
+
+
+if(ALICEVISION_BUILD_MVS)
+
+# Mesh transform
+alicevision_add_software(aliceVision_utils_meshTransform
+  SOURCE main_meshTransform.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_mvsUtils
+        aliceVision_mesh
+        Boost::program_options
+        Boost::filesystem
+)
+
+endif() # ALICEVISION_BUILD_MVS
+

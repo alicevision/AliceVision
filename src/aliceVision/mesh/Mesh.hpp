@@ -136,6 +136,8 @@ public:
 
     void addMesh(const Mesh& mesh);
 
+    void applyTransform(const Matrix3x3& matrix);
+
     void getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
     void getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc, int scale,
                     int w, int h);

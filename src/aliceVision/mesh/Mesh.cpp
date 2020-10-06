@@ -157,6 +157,18 @@ void Mesh::addMesh(const Mesh& mesh)
     }
 }
 
+void Mesh::applyTransform(const Matrix3x3& matrix)
+{
+    for(Point3d& point: pts.getDataWritable())
+    {
+        point = matrix * point;
+    }
+    for(Point3d& normal: normals.getDataWritable())
+    {
+        normal = matrix * normal;
+    }
+}
+
 Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::MultiViewParams& mp, int rc, int w, int h) const
 {
     int ow = mp.getWidth(rc);
