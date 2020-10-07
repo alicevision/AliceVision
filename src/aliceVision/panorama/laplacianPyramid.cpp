@@ -492,16 +492,15 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
     inputBb.width = extractedColor.Width();
     inputBb.height = extractedColor.Height();
 
+   
+
     if (!loopyCachedImageAssign(img, extractedColor, extractBb, inputBb)) {
         return false;
     }
-
     
     if (!loopyCachedImageAssign(weight, extractedWeight, extractBb, inputBb)) {
         return false;
     }
-
- 
 
     return true;
 }
@@ -532,6 +531,9 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
         );
     }
 
+    char filename[FILENAME_MAX];
+    sprintf(filename, "/home/mmoc/file%d.exr", _levels.size() - 1);
+    _levels[_levels.size() - 1].writeImage(filename);
     
     removeNegativeValues(_levels[_levels.size() - 1]);
 
@@ -611,6 +613,9 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
         }
 
         removeNegativeValues(_levels[currentLevel]);
+        char filename[FILENAME_MAX];
+    sprintf(filename, "/home/mmoc/file%d.exr", currentLevel);
+    _levels[currentLevel].writeImage(filename);
     }
 
     for(int i = 0; i < output.getTiles().size(); i++)

@@ -249,6 +249,7 @@ public:
         {
             //ibb.top + i * tileSize --> snapedBb.top + delta + i * tileSize
             int ti = gridBb.top + i;
+            int oy = ti * _tileSize;
             int sy = inputBb.top - delta_y + i * _tileSize;
             
             std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[ti];
@@ -256,6 +257,7 @@ public:
             for(int j = 0; j < gridBb.width; j++)
             {
                 int tj = gridBb.left + j;
+                int ox = tj * _tileSize;
                 int sx = inputBb.left - delta_x + j * _tileSize;
 
                 image::CachedTile::smart_pointer ptr = row[tj];
@@ -275,8 +277,11 @@ public:
                 {
                     for(int x = 0; x < _tileSize; x++)
                     {
-                        if (sy + y < 0 || sy + y >= input.Height()) continue;
-                        if (sx + x < 0 || sx + x >= input.Width()) continue;
+                        if (sy + y < inputBb.top || sy + y > inputBb.getBottom()) continue;
+                        if (sx + x < inputBb.left || sx + x > inputBb.getRight()) continue;
+                        if (oy + y < outputBb.top || oy + y > outputBb.getBottom()) continue;
+                        if (ox + x < outputBb.left || ox + x > outputBb.getRight()) continue;
+
                         data[y * _tileSize + x] = input(sy + y, sx + x);
                     }
                 }
@@ -336,6 +341,7 @@ public:
         for(int i = 0; i < gridBb.height; i++)
         {
             int ti = gridBb.top + i;
+            int oy = ti * _tileSize;
             int sy = outputBb.top - delta_y + i * _tileSize;
 
 
@@ -344,6 +350,7 @@ public:
             for(int j = 0; j < gridBb.width; j++)
             {
                 int tj = gridBb.left + j;
+                int ox = tj * _tileSize;
                 int sx = outputBb.left - delta_x + j * _tileSize;
 
                 image::CachedTile::smart_pointer ptr = row[tj];
@@ -363,9 +370,10 @@ public:
                 {
                     for(int x = 0; x < _tileSize; x++)
                     {
-                        if (sy + y < 0 || sy + y >= output.Height()) continue;
-                        if (sx + x < 0 || sx + x >= output.Width()) continue;
-                        if (y < 0 || x < 0) continue;
+                        if (sy + y < outputBb.top || sy + y > outputBb.getBottom()) continue;
+                        if (sx + x < outputBb.left || sx + x > outputBb.getRight()) continue;
+                        if (oy + y < inputBb.top || oy + y > inputBb.getBottom()) continue;
+                        if (ox + x < inputBb.left || ox + x > inputBb.getRight()) continue;
 
                         output(sy + y, sx + x) = data[y * _tileSize + x];
                     }

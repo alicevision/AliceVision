@@ -47,7 +47,8 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
         outputBb.left = left_1;
         inputBb.width = width1;
         outputBb.width = width1;
-
+    
+        
         if (!output.assign(input, inputBb, outputBb))
         {
             return false;
