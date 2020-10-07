@@ -278,7 +278,7 @@ int aliceVision_main(int argc, char** argv)
     // Configure the cache manager memory
     cacheManager->setInCoreMaxObjectCount(1000);
 
-    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 5);
+    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 1);
     
     if (!compositer.initialize()) 
     {
@@ -293,9 +293,6 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    char filename[FILENAME_MAX];
-        
-    labels.writeImage("/home/mmoc/labels.exr");
 
     /*if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
     {
@@ -354,12 +351,6 @@ int aliceVision_main(int argc, char** argv)
         const std::size_t contentW = metadata.find("AliceVision:contentW")->get_int();
         const std::size_t contentH = metadata.find("AliceVision:contentH")->get_int();
 
-        if (offsetY < 927) 
-        {
-            continue;
-        }
-
-        std::cout << imagePath << std::endl;
 
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
@@ -386,9 +377,6 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("Error estimating seams image");
             return EXIT_FAILURE;
         }
-
-        sprintf(filename, "/home/mmoc/label%d.exr", pos);
-        image::writeImage(filename, seams, image::EImageColorSpace::NO_CONVERSION);
 
         compositer.append(source, mask, seams, offsetX, offsetY, imageContent);
     }

@@ -11,9 +11,9 @@ void removeNegativeValues(CachedImage<image::RGBfColor> & img)
             image::RGBfColor rpix;
             image::RGBfColor ret = c;
 
-            rpix.r() = /*std::exp*/(c.r());
-            rpix.g() = /*std::exp*/(c.g());
-            rpix.b() = /*std::exp*/(c.b());
+            rpix.r() = std::exp(c.r());
+            rpix.g() = std::exp(c.g());
+            rpix.b() = std::exp(c.b());
 
             if (rpix.r() < 0.0)
             {

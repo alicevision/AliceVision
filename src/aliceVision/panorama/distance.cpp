@@ -1,4 +1,4 @@
-#pragma once
+#include "distance.hpp"
 
 namespace aliceVision
 {

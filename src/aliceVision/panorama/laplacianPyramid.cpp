@@ -62,7 +62,7 @@ bool LaplacianPyramid::initialize(image::TileCacheManager::shared_ptr & cacheMan
 
 bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManager, size_t newMaxLevels)
 {
-    return true;
+    //return true;
     
     if(newMaxLevels <= _levels.size())
     {
@@ -318,6 +318,8 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
     return true;
 }
 
+
+static int pos = 0;
 bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& source,
                              const aliceVision::image::Image<unsigned char>& mask,
                              const aliceVision::image::Image<float>& weights, size_t offset_x, size_t offset_y)
@@ -426,6 +428,7 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         }
 
         substract(current_color, current_color, buf2);
+        
 
         convolveGaussian5x5<float>(buf_float, current_weights);
         downscale(next_weights, buf_float);
@@ -443,7 +446,7 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
     }
 
     merge(current_color, current_weights, _levels.size() - 1, offset_x, offset_y);
-
+    pos++;
     return true;
 }
 
@@ -531,9 +534,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
         );
     }
 
-    char filename[FILENAME_MAX];
-    sprintf(filename, "/home/mmoc/file%d.exr", _levels.size() - 1);
-    _levels[_levels.size() - 1].writeImage(filename);
+    
     
     removeNegativeValues(_levels[_levels.size() - 1]);
 
@@ -613,9 +614,6 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
         }
 
         removeNegativeValues(_levels[currentLevel]);
-        char filename[FILENAME_MAX];
-    sprintf(filename, "/home/mmoc/file%d.exr", currentLevel);
-    _levels[currentLevel].writeImage(filename);
     }
 
     for(int i = 0; i < output.getTiles().size(); i++)
@@ -655,7 +653,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
 
                 if(ptrWeight[k] < 1e-6)
                 {
-                    ptrOutput[k].a() = 1.0f;
+                    ptrOutput[k].a() = 0.0f;
                 }
                 else
                 {
