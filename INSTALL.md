@@ -27,7 +27,7 @@ Dependencies
 
 AliceVision depends on:
 
-* Boost >= 1.60.0
+* Boost >= 1.70.0
 * Eigen >= 3.3.4
 * Ceres >= 1.10.0
 * Flann >= 1.8.4 (internal)
@@ -35,10 +35,9 @@ AliceVision depends on:
 * Coin-or linear programming (Clp) (internal)
 * Open Solver Interface (Osi) >= 0.106.10 (internal)
 * Lemon >= 1.3 (internal)
-* OpenEXR >= 2.2.0
-* OpenImageIO >= 1.8.7
+* OpenEXR >= 2.4.0
+* OpenImageIO >= 2.1.0
 * Geogram >= 1.5.4 (https://gforge.inria.fr/frs/?group_id=5833)
-* OpenEXR >= 2.2
 * MeshSDFilter (internal)
 * OpenMesh (internal)
 * zlib
