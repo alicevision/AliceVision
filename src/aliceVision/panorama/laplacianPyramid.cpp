@@ -63,6 +63,8 @@ bool LaplacianPyramid::initialize(image::TileCacheManager::shared_ptr & cacheMan
 bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManager, size_t newMaxLevels)
 {
     //return true;
+
+    ALICEVISION_LOG_INFO("augment number of levels to " << newMaxLevels);
     
     if(newMaxLevels <= _levels.size())
     {

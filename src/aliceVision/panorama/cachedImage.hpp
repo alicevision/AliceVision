@@ -5,6 +5,7 @@
 #include <aliceVision/panorama/boundingBox.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/types.hpp>
+#include <iterator>
 
 namespace aliceVision
 {
@@ -13,6 +14,10 @@ template <class T>
 class CachedImage
 {
 public:
+    using RowType = std::vector<image::CachedTile::smart_pointer>;
+
+public:
+
     bool createImage(std::shared_ptr<image::TileCacheManager> manager, size_t width, size_t height)
     {
 
@@ -77,7 +82,7 @@ public:
         for(int i = 0; i < _tilesArray.size(); i++)
         {
 
-            std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
+            RowType & row = _tilesArray[i];
 
             for(int j = 0; j < _tilesArray[i].size(); j++)
             {
@@ -112,8 +117,8 @@ public:
 
         for(int i = 0; i < _tilesArray.size(); i++)
         {
-            std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[i];
-            std::vector<image::CachedTile::smart_pointer>& rowOther = other.getTiles()[i];
+            RowType& row = _tilesArray[i];
+            RowType& rowOther = other.getTiles()[i];
 
             for(int j = 0; j < _tilesArray[i].size(); j++)
             {
@@ -158,8 +163,8 @@ public:
 
         for(int i = 0; i < _tilesArray.size(); i++)
         {
-            std::vector<image::CachedTile::smart_pointer> & row = _tilesArray[i];
-            std::vector<image::CachedTile::smart_pointer> & rowSource = source._tilesArray[i];
+            RowType & row = _tilesArray[i];
+            RowType & rowSource = source._tilesArray[i];
 
             for(int j = 0; j < _tilesArray[i].size(); j++)
             {
@@ -252,7 +257,7 @@ public:
             int oy = ti * _tileSize;
             int sy = inputBb.top - delta_y + i * _tileSize;
             
-            std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[ti];
+            RowType & row = _tilesArray[ti];
 
             for(int j = 0; j < gridBb.width; j++)
             {
@@ -345,7 +350,7 @@ public:
             int sy = outputBb.top - delta_y + i * _tileSize;
 
 
-            std::vector<image::CachedTile::smart_pointer>& row = _tilesArray[ti];
+            RowType & row = _tilesArray[ti];
 
             for(int j = 0; j < gridBb.width; j++)
             {
@@ -460,7 +465,7 @@ public:
         return true;
     }
 
-    std::vector<std::vector<image::CachedTile::smart_pointer>>& getTiles() { return _tilesArray; }
+    std::vector<RowType>& getTiles() { return _tilesArray; }
 
     int getWidth() const { return _width; }
 
@@ -475,7 +480,7 @@ private:
     int _memoryHeight;
     int _tileSize;
 
-    std::vector<std::vector<image::CachedTile::smart_pointer>> _tilesArray;
+    std::vector<RowType> _tilesArray;
 };
 
 template <>

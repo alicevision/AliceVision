@@ -224,15 +224,23 @@ public:
 
     virtual ~GraphcutSeams() = default;
 
-    void setOriginalLabels(CachedImage<IndexT> & existing_labels)
-    {
-
-        _labels.deepCopy(existing_labels);
-        _original_labels.deepCopy(existing_labels);
+    bool setOriginalLabels(CachedImage<IndexT> & existing_labels)
+    {   
+        if (!_labels.deepCopy(existing_labels)) 
+        {
+            return false;
+        }
+        
+        if (!_original_labels.deepCopy(existing_labels)) 
+        {
+            return false;
+        }
 
         /*image::Image<unsigned char> seams(_labels.Width(), _labels.Height());
         computeSeamsMap(seams, _labels);
         computeDistanceMap(_distancesSeams, seams);*/
+
+        return true;
     }
 
     bool initialize(image::TileCacheManager::shared_ptr & cacheManager) 
@@ -247,20 +255,16 @@ public:
             return false;
         }
 
-        if(!_distancesSeams.createImage(cacheManager, _outputWidth, _outputHeight))
+        /*if(!_distancesSeams.createImage(cacheManager, _outputWidth, _outputHeight))
         {
             return false;
         }
 
-        if(!_distancesSeams.perPixelOperation(
-            [](int) -> int
-            { 
-                return 0; 
-            })
-          )
+        if(!_distancesSeams.fill(0.0f)) 
         {
             return false;
-        }       
+        }    */
+
 
         return true;
     }
@@ -268,7 +272,7 @@ public:
     bool append(const aliceVision::image::Image<image::RGBfColor>& input, const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
     {
 
-        if(inputMask.size() != input.size())
+       /* if(inputMask.size() != input.size())
         {
             return false;
         }
@@ -280,22 +284,18 @@ public:
         rect.width = input.Width() + 1;
         rect.height = input.Height() + 1;
 
-        /*Extend rect for borders*/
-        rect.left = std::max(0, rect.left - 3);
-        rect.top = std::max(0, rect.top - 3);
-        rect.width = rect.width + 6;
-        rect.height = rect.height + 6;
-        if(rect.top + rect.height > _owners.Height())
-        {
-            rect.height = _owners.Height() - rect.top;
-        }
+        //Extend rect for borders
+        rect.dilate(3);
+        rect.clampLeft();
+        rect.clampTop();
+        rect.clampBottom(_owners.Height() - 1)
 
         _rects[currentIndex] = rect;
 
-        /*
-        _owners will get for each pixel of the panorama a list of pixels
-        in the sources which may have seen this point.
-        */
+        
+        //_owners will get for each pixel of the panorama a list of pixels
+        //in the sources which may have seen this point.
+        
         for(int i = 0; i < input.Height(); i++)
         {
 
@@ -317,7 +317,7 @@ public:
                 info.first = currentIndex;
                 info.second = input(i, j);
 
-                /* If too far away from seam, do not add a contender */
+                // If too far away from seam, do not add a contender
                 int dist = _distancesSeams(di, dj);
                 if(dist > _maximal_distance_change + 10)
                 {
@@ -326,20 +326,23 @@ public:
 
                 _owners(di, dj).push_back(info);
             }
-        }
+        }*/
 
         return true;
     }
 
-    void setMaximalDistance(int dist) { _maximal_distance_change = dist; }
+    void setMaximalDistance(int dist) 
+    { 
+        _maximal_distance_change = dist; 
+    }
 
     bool process()
     {
 
-        for(int i = 0; i < 10; i++)
+        /*for(int i = 0; i < 10; i++)
         {
 
-            /*For each possible label, try to extends its domination on the label's world */
+            // For each possible label, try to extends its domination on the label's world
             bool change = false;
 
             for(auto & info : _rects)
@@ -381,7 +384,7 @@ public:
             {
                 break;
             }
-        }
+        }*/
 
         return true;
     }
@@ -393,7 +396,7 @@ public:
 
         double cost = 0.0;
 
-        for(int i = 0; i < rect.height - 1; i++)
+        /*for(int i = 0; i < rect.height - 1; i++)
         {
 
             int y = rect.top + i;
@@ -528,14 +531,14 @@ public:
                 cost += (XColorLC - XColorLX).norm();
                 cost += (YColorLC - YColorLY).norm();
             }
-        }
+        }*/
 
         return cost;
     }
 
     bool alphaExpansion(IndexT currentLabel)
     {
-
+        /*
         BoundingBox rect = _rects[currentLabel];
 
         image::Image<unsigned char> mask(rect.width, rect.height, true, 0);
@@ -543,7 +546,7 @@ public:
         image::Image<image::RGBfColor> color_label(rect.width, rect.height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
         image::Image<image::RGBfColor> color_other(rect.width, rect.height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
 
-        /*Compute distance map to seams*/
+        // Compute distance map to seams
         image::Image<int> distanceMap(rect.width, rect.height);
         {
             image::Image<IndexT> binarizedWorld(rect.width, rect.height);
@@ -585,15 +588,15 @@ public:
             }
         }
 
-        /*
-        A warped input has valid pixels only in some parts of the final image.
-        Rect is the bounding box of these valid pixels.
-        Let's build a mask :
-         - 0 if the pixel is not viewed by anyone
-         - 1 if the pixel is viewed by the current label alpha
-         - 2 if the pixel is viewed by *another* label and this label is marked as current valid label
-         - 3 if the pixel is 1 + 2 : the pixel is not selected as alpha territory, but alpha is looking at it
-        */
+        
+        //A warped input has valid pixels only in some parts of the final image.
+        //Rect is the bounding box of these valid pixels.
+        //Let's build a mask :
+        // - 0 if the pixel is not viewed by anyone
+        // - 1 if the pixel is viewed by the current label alpha
+        // - 2 if the pixel is viewed by *another* label and this label is marked as current valid label
+        // - 3 if the pixel is 1 + 2 : the pixel is not selected as alpha territory, but alpha is looking at it
+        
         for(int i = 0; i < rect.height; i++)
         {
 
@@ -616,7 +619,7 @@ public:
 
                 int dist = distanceMap(i, j);
 
-                /* Loop over observations */
+                // Loop over observations
                 for(int l = 0; l < infos.size(); l++)
                 {
 
@@ -652,9 +655,7 @@ public:
                     }
                 }
 
-                /*
-                If the pixel may be a new kingdom for alpha !
-                */
+                // If the pixel may be a new kingdom for alpha 
                 if(mask(i, j) == 1)
                 {
                     color_label(i, j) = currentColor;
@@ -673,11 +674,9 @@ public:
             }
         }
 
-        /*
-        The rectangle is a grid.
-        However we want to ignore a lot of pixel.
-        Let's create an index per valid pixels for graph cut reference
-        */
+        // The rectangle is a grid.
+        // However we want to ignore a lot of pixel.
+        // Let's create an index per valid pixels for graph cut reference
         int count = 0;
         for(int i = 0; i < rect.height; i++)
         {
@@ -693,7 +692,7 @@ public:
             }
         }
 
-        /*Create graph*/
+        //Create graph
         MaxFlow_AdjList gc(count);
         size_t countValid = 0;
 
@@ -702,13 +701,13 @@ public:
             for(int j = 0; j < rect.width; j++)
             {
 
-                /* If this pixel is not valid, ignore */
+                // If this pixel is not valid, ignore 
                 if(mask(i, j) == 0)
                 {
                     continue;
                 }
 
-                /* Get this pixel ID */
+                // Get this pixel ID 
                 int node_id = ids(i, j);
 
                 int im1 = std::max(i - 1, 0);
@@ -719,45 +718,40 @@ public:
                 if(mask(i, j) == 1)
                 {
 
-                    /* Only add nodes close to borders */
+                    // Only add nodes close to borders 
                     if(mask(im1, jm1) == 1 && mask(im1, j) == 1 && mask(im1, jp1) == 1 && mask(i, jm1) == 1 &&
                        mask(i, jp1) == 1 && mask(ip1, jm1) == 1 && mask(ip1, j) == 1 && mask(ip1, jp1) == 1)
                     {
                         continue;
                     }
 
-                    /*
-                    This pixel is only seen by alpha.
-                    Enforce its domination by stating that removing this pixel
-                    from alpha territoy is infinitly costly (impossible).
-                    */
+                    
+                    //This pixel is only seen by alpha.
+                    //Enforce its domination by stating that removing this pixel
+                    //from alpha territoy is infinitly costly (impossible).
                     gc.addNodeToSource(node_id, 100000);
                 }
                 else if(mask(i, j) == 2)
                 {
-                    /* Only add nodes close to borders */
+                    // Only add nodes close to borders
                     if(mask(im1, jm1) == 2 && mask(im1, j) == 2 && mask(im1, jp1) == 2 && mask(i, jm1) == 2 &&
                        mask(i, jp1) == 2 && mask(ip1, jm1) == 2 && mask(ip1, j) == 2 && mask(ip1, jp1) == 2)
                     {
                         continue;
                     }
 
-                    /*
-                    This pixel is only seen by an ennemy.
-                    Enforce its domination by stating that removing this pixel
-                    from ennemy territory is infinitly costly (impossible).
-                    */
+                    //This pixel is only seen by an ennemy.
+                    //Enforce its domination by stating that removing this pixel
+                    //from ennemy territory is infinitly costly (impossible).
                     gc.addNodeToSink(node_id, 100000);
                 }
                 else if(mask(i, j) == 3)
                 {
 
-                    /*
-                    This pixel is seen by both alpha and enemies but is owned by ennemy.
-                    Make sure that changing node owner will have no direct cost.
-                    Connect it to both alpha and ennemy for the moment
-                    (Graph cut will not allow a pixel to have both owners at the end).
-                    */
+                    // This pixel is seen by both alpha and enemies but is owned by ennemy.
+                    // Make sure that changing node owner will have no direct cost.
+                    // Connect it to both alpha and ennemy for the moment
+                    // (Graph cut will not allow a pixel to have both owners at the end).
                     gc.addNodeToSource(node_id, 0);
                     gc.addNodeToSink(node_id, 0);
                     countValid++;
@@ -767,17 +761,16 @@ public:
 
         if(countValid == 0)
         {
-            /* We have no possibility for territory expansion */
-            /* let's exit */
+            // We have no possibility for territory expansion 
+            // let's exit
             return true;
         }
 
-        /*
-        Loop over alpha bounding box.
-        Let's define the transition cost.
-        When two neighboor pixels have different labels, there is a seam (border) cost.
-        Graph cut will try to make sure the territory will have a minimal border cost
-        */
+        // Loop over alpha bounding box.
+        // Let's define the transition cost.
+        // When two neighboor pixels have different labels, there is a seam (border) cost.
+        // Graph cut will try to make sure the territory will have a minimal border cost
+        
         for(int i = 0; i < rect.height; i++)
         {
             for(int j = 0; j < rect.width; j++)
@@ -790,11 +783,11 @@ public:
 
                 int node_id = ids(i, j);
 
-                /* Make sure it is possible to estimate this horizontal border */
+                // Make sure it is possible to estimate this horizontal border
                 if(i < mask.Height() - 1)
                 {
 
-                    /* Make sure the other pixel is owned by someone */
+                    // Make sure the other pixel is owned by someone
                     if(mask(i + 1, j))
                     {
 

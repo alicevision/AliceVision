@@ -89,31 +89,36 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
 bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize) 
 {   
 
-    //Compute finest level possible for graph cut
+    //Compute coarsest level possible for graph cut
     int initial_level = 0;
-    int max_width_for_graphcut = 5000;
-    double ratio = double(panoramaSize.first) / double(max_width_for_graphcut);
+    int min_width_for_graphcut = 1000;
+    double ratio = double(panoramaSize.first) / double(min_width_for_graphcut);
     if (ratio > 1.0) {
       initial_level = int(ceil(log2(ratio)));
     }  
 
-    for (int l = initial_level; l>= 0; l--) 
+    for (int l = initial_level; l>= initial_level; l--) 
     {
-        HierarchicalGraphcutSeams seams(panoramaSize.first, panoramaSize.second, l);
+        
+        HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, l);
 
-        if (!seams.initialize(cacheManager)) 
+         
+        if (!seams.initialize()) 
         {
             return false;
         }
 
-        seams.setOriginalLabels(labels);
-        
+        if (!seams.setOriginalLabels(labels)) 
+        {
+            return false;
+        }
+
         if (l != initial_level) 
         {
             seams.setMaximalDistance(100);
         }
 
-        for (const auto& viewIt : sfmData.getViews())
+        /*for (const auto& viewIt : sfmData.getViews())
         {
             if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
             {
@@ -142,12 +147,13 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
             seams.append(colors, mask, viewIt.first, offsetX, offsetY);
         }
 
-        if (seams.process()) 
+        if (!seams.process()) 
         {
-            labels = seams.getLabels();
+            return false;
         }
-    }
 
+        labels = seams.getLabels();*/
+    }
 
     return true;
 }
@@ -294,11 +300,15 @@ int aliceVision_main(int argc, char** argv)
     }
 
 
-    /*if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
+    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
     {
         ALICEVISION_LOG_ERROR("Error computing graph cut labels");
         return EXIT_FAILURE;
-    }*/
+    }
+
+    labels.writeImage("/home/mmoc/labels.exr");
+
+    return EXIT_SUCCESS;
 
 
     //Get a list of views ordered by their image scale

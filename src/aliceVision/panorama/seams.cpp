@@ -143,11 +143,7 @@ bool WTASeams::initialize(image::TileCacheManager::shared_ptr & cacheManager)
         return false;
     }
 
-    if(!_weights.perPixelOperation(
-        [](float ) -> float
-        { 
-            return 0.0f; 
-        }))
+    if(!_weights.fill(0.0f))
     {
         return false;
     }
@@ -157,11 +153,7 @@ bool WTASeams::initialize(image::TileCacheManager::shared_ptr & cacheManager)
         return false;
     }
 
-    if(!_labels.perPixelOperation(
-        [](IndexT ) -> IndexT
-        { 
-            return UndefinedIndexT; 
-        }))
+    if(!_labels.fill(UndefinedIndexT))
     {
         return false;
     }
@@ -232,42 +224,93 @@ bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
     return true;
 }
 
-void HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
+bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
 {
+    if (_levelOfInterest == 0)
+    {    
+        return _graphcut->setOriginalLabels(labels);
+    }
+    
+    int scale = pow(2, _levelOfInterest);
+    int nw = _outputWidth / scale;
+    int nh = _outputHeight / scale;
 
-    /*
-    First of all, Propagate label to all levels
-    */
-    /*image::Image<IndexT> current_label = labels;
-
-    for(int l = 1; l <= _levelOfInterest; l++)
+    CachedImage<IndexT> smallLabels;
+    if(!smallLabels.createImage(_cacheManager, nw, nh))
     {
-
-        aliceVision::image::Image<IndexT> next_label(current_label.Width() / 2, current_label.Height() / 2);
-
-        for(int i = 0; i < next_label.Height(); i++)
-        {
-            int di = i * 2;
-
-            for(int j = 0; j < next_label.Width(); j++)
-            {
-                int dj = j * 2;
-
-                next_label(i, j) = current_label(di, dj);
-            }
-        }
-
-        current_label = next_label;
+        return false;
     }
 
-    _graphcut->setOriginalLabels(current_label);*/
+    int processingSize = 256;
+    int largeSize = 256 * scale;
+
+    for (int i = 0; i < smallLabels.getHeight(); i+= processingSize)
+    {
+        for (int j = 0; j < smallLabels.getWidth(); j+= processingSize)
+        {
+            BoundingBox smallBb;
+            smallBb.left = j;
+            smallBb.top = i;
+            smallBb.width = processingSize;
+            smallBb.height = processingSize;
+            smallBb.clampRight(smallLabels.getWidth() - 1);
+            smallBb.clampBottom(smallLabels.getHeight() - 1);
+
+            BoundingBox smallInputBb;
+            smallInputBb.left = 0;
+            smallInputBb.top = 0;
+            smallInputBb.width = smallBb.width;
+            smallInputBb.height = smallBb.height;
+            
+
+            image::Image<IndexT> smallView(smallBb.width, smallBb.height);
+            
+            if (!smallLabels.extract(smallView, smallInputBb, smallBb)) 
+            {
+                return false;
+            }
+
+            BoundingBox largeBb;
+            largeBb.left = smallBb.left * scale;
+            largeBb.top = smallBb.top * scale;
+            largeBb.width = smallBb.width * scale;
+            largeBb.height = smallBb.height * scale;
+
+            BoundingBox largeInputBb;
+            largeInputBb.left = 0;
+            largeInputBb.top = 0;
+            largeInputBb.width = largeBb.width;
+            largeInputBb.height = largeBb.height;
+
+            image::Image<IndexT> largeView(largeBb.width, largeBb.height);
+            if (!labels.extract(largeView, largeInputBb, largeBb)) 
+            {
+                return false;
+            }
+
+            for (int y = 0; y < smallBb.height; y++) 
+            {
+                for (int x = 0; x < smallBb.width; x++)
+                {
+                    smallView(y, x) = largeView(y * scale, x * scale);
+                }
+            }
+
+            if (!smallLabels.assign(smallView, smallInputBb, smallBb))
+            {
+                return false;
+            }
+        }
+    }
+
+    return _graphcut->setOriginalLabels(smallLabels);
 }
 
 bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RGBfColor>& input,
                                        const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex,
                                        size_t offset_x, size_t offset_y)
 {
-    /*image::Image<image::RGBfColor> current_color = input;
+    image::Image<image::RGBfColor> current_color = input;
     image::Image<unsigned char> current_mask = inputMask;
 
     for(int l = 1; l <= _levelOfInterest; l++)
@@ -306,9 +349,12 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
         offset_y /= 2;
     }
 
-    return _graphcut->append(current_color, current_mask, currentIndex, offset_x, offset_y);*/
 
-    return true;
+    char filename[FILENAME_MAX];
+    sprintf(filename, "/home/mmoc/test%d.exr", int(offset_x));
+    image::writeImage(filename, current_color, image::EImageColorSpace::NO_CONVERSION);
+
+    return _graphcut->append(current_color, current_mask, currentIndex, offset_x, offset_y);
 }
 
 bool HierarchicalGraphcutSeams::process()
@@ -353,8 +399,23 @@ bool HierarchicalGraphcutSeams::process()
     return true;
 }
 
-bool HierarchicalGraphcutSeams::initialize(image::TileCacheManager::shared_ptr & cacheManager) 
+bool HierarchicalGraphcutSeams::initialize() 
 {
+    if (!_graphcut->initialize(_cacheManager))
+    {
+        return false;
+    }
+
+    if(!_labels.createImage(_cacheManager, _outputWidth, _outputHeight))
+    {
+        return false;
+    }
+
+    if(!_labels.fill(UndefinedIndexT))
+    {
+        return false;
+    }
+
     return true;
 }
 
