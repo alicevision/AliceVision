@@ -1,6 +1,20 @@
 # Headers
 set(panorama_files_headers
+  alphaCompositer.hpp
   boundingBox.hpp
+  boundingBoxMap.hpp
+  compositer.hpp
+  coordinatesMap.hpp
+  distance.hpp
+  feathering.hpp
+  gaussian.hpp
+  graphcut.hpp
+  imageOps.hpp
+  laplacianCompositer.hpp
+  laplacianPyramid.hpp
+  remapBbox.hpp
+  seams.hpp
+  sphericalMapping.hpp
   warper.hpp
 )
 
@@ -17,6 +31,7 @@ set(panorama_files_sources
   seams.cpp
   imageOps.cpp
   cachedImage.cpp
+  boundingBoxMap.cpp
 )
 
 alicevision_add_library(aliceVision_panorama

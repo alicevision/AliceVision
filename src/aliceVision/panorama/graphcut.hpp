@@ -212,6 +212,14 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
 class GraphcutSeams
 {
 public:
+    struct InputData 
+    {
+        IndexT id;
+        BoundingBox rect;
+        CachedImage<image::RGBfColor> color;
+        CachedImage<unsigned char> mask;
+    };
+    
     using PixelInfo = std::pair<IndexT, image::RGBfColor>;
     using ImageOwners = image::Image<std::vector<PixelInfo>>;
 
@@ -231,15 +239,6 @@ public:
             return false;
         }
         
-        if (!_original_labels.deepCopy(existing_labels)) 
-        {
-            return false;
-        }
-
-        /*image::Image<unsigned char> seams(_labels.Width(), _labels.Height());
-        computeSeamsMap(seams, _labels);
-        computeDistanceMap(_distancesSeams, seams);*/
-
         return true;
     }
 
@@ -250,32 +249,34 @@ public:
             return false;
         }
 
-        if(!_original_labels.createImage(cacheManager, _outputWidth, _outputHeight))
-        {
-            return false;
-        }
-
-        /*if(!_distancesSeams.createImage(cacheManager, _outputWidth, _outputHeight))
-        {
-            return false;
-        }
-
-        if(!_distancesSeams.fill(0.0f)) 
-        {
-            return false;
-        }    */
-
-
         return true;
     }
 
-    bool append(const aliceVision::image::Image<image::RGBfColor>& input, const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
+    bool append(const CachedImage<image::RGBfColor>& input, const CachedImage<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
     {
 
-       /* if(inputMask.size() != input.size())
+        if(inputMask.getWidth() != input.getWidth())
         {
             return false;
         }
+
+        if(inputMask.getHeight() != input.getHeight())
+        {
+            return false;
+        }
+
+        InputData data;
+        data.id = currentIndex;
+        data.color = input;
+        data.mask = inputMask;
+        data.rect.width = input.getWidth();
+        data.rect.height = input.getHeight();
+        data.rect.left = offset_x;
+        data.rect.top = offset_y;
+
+        _inputs[currentIndex] = data;
+
+        /*
 
         BoundingBox rect;
 
@@ -319,7 +320,7 @@ public:
 
                 // If too far away from seam, do not add a contender
                 int dist = _distancesSeams(di, dj);
-                if(dist > _maximal_distance_change + 10)
+                if (dist > _maximal_distance_change + 10)
                 {
                     continue;
                 }
@@ -392,7 +393,7 @@ public:
     double cost(IndexT currentLabel)
     {
 
-        BoundingBox rect = _rects[currentLabel];
+        //BoundingBox rect = _rects[currentLabel];
 
         double cost = 0.0;
 
@@ -874,14 +875,13 @@ public:
 
 private:
 
-    std::map<IndexT, BoundingBox> _rects;
+    std::map<IndexT, InputData> _inputs;
+
     int _outputWidth;
     int _outputHeight;
     size_t _maximal_distance_change;
 
     CachedImage<IndexT> _labels;
-    CachedImage<IndexT> _original_labels;
-    CachedImage<int> _distancesSeams;
     ImageOwners _owners;
 };
 

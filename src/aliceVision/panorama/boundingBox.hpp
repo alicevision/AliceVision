@@ -1,5 +1,12 @@
 #pragma once
 
+#include <algorithm>
+#include <stdint.h>
+#include <cmath>
+
+namespace aliceVision
+{
+
 struct BoundingBox
 {
 
@@ -24,9 +31,17 @@ struct BoundingBox
     {
     }
 
-    int getRight() const { return left + width - 1; }
+    constexpr int getRight() const { 
+        return left + width - 1; 
+    }
 
-    int getBottom() const { return top + height - 1; }
+    constexpr int getBottom() const { 
+        return top + height - 1; 
+    }
+
+    constexpr bool isEmpty() const {
+        return (width <= 0 || height <= 0);
+    }
 
     void snapToGrid(uint32_t gridSize)
     {
@@ -34,10 +49,10 @@ struct BoundingBox
         int right = getRight();
         int bottom = getBottom();
 
-        int leftBounded = int(floor(double(left) / double(gridSize))) * int(gridSize);
-        int topBounded = int(floor(double(top) / double(gridSize))) * int(gridSize);
-        int widthBounded = int(ceil(double(right - leftBounded + 1) / double(gridSize))) * int(gridSize);
-        int heightBounded = int(ceil(double(bottom - topBounded + 1) / double(gridSize))) * int(gridSize);
+        int leftBounded = int(std::floor(double(left) / double(gridSize))) * int(gridSize);
+        int topBounded = int(std::floor(double(top) / double(gridSize))) * int(gridSize);
+        int widthBounded = int(std::ceil(double(right - leftBounded + 1) / double(gridSize))) * int(gridSize);
+        int heightBounded = int(std::ceil(double(bottom - topBounded + 1) / double(gridSize))) * int(gridSize);
 
         left = leftBounded;
         top = topBounded;
@@ -45,16 +60,17 @@ struct BoundingBox
         height = heightBounded;
     }
 
-    void unionWith(const BoundingBox& other)
+    BoundingBox unionWith(const BoundingBox& other) const
     {
+        BoundingBox ret;
 
-        if(left < 0 && top < 0)
+        if (left < 0 && top < 0)
         {
-            left = other.left;
-            top = other.top;
-            width = other.width;
-            height = other.height;
-            return;
+            ret.left = other.left;
+            ret.top = other.top;
+            ret.width = other.width;
+            ret.height = other.height;
+            return ret;
         }
 
         int rt = getRight();
@@ -62,14 +78,32 @@ struct BoundingBox
         int bt = getBottom();
         int bo = other.getBottom();
 
-        left = std::min(left, other.left);
-        top = std::min(top, other.top);
+        ret.left = std::min(left, other.left);
+        ret.top = std::min(top, other.top);
 
         int maxr = std::max(rt, ro);
         int maxb = std::max(bt, bo);
 
-        width = maxr - left + 1;
-        height = maxb - top + 1;
+        ret.width = maxr - left + 1;
+        ret.height = maxb - top + 1;
+
+        return ret;
+    }
+
+    BoundingBox intersectionWith(const BoundingBox& other) const
+    {
+        BoundingBox intersection;
+
+        intersection.left = std::max(left, other.left);
+        intersection.top = std::max(top, other.top);
+
+        int right = std::min(getRight(), other.getRight());
+        int bottom = std::min(getBottom(), other.getBottom());
+
+        intersection.width = std::max(0, right - intersection.left + 1);
+        intersection.height = std::max(0, bottom - intersection.top + 1);
+
+        return intersection;
     }
 
     bool isInside(const BoundingBox& other) const 
@@ -143,4 +177,30 @@ struct BoundingBox
 
         return b;
     }
+
+    BoundingBox multiply(int factor)
+    {
+        BoundingBox b;
+
+        b.left = left * factor;
+        b.top = top * factor;
+        b.width = width * factor;
+        b.height = height * factor;
+
+        return b;
+    }
+
+    BoundingBox divide(int factor)
+    {
+        BoundingBox b;
+
+        b.left = left / factor;
+        b.top = top / factor;
+        b.width = width / factor;
+        b.height = height / factor;
+
+        return b;
+    }
 };
+
+}

@@ -313,7 +313,7 @@ int aliceVision_main(int argc, char** argv)
 
 					#pragma omp critical 
 					{
-						globalBbox.unionWith(map.getBoundingBox());
+						globalBbox = globalBbox.unionWith(map.getBoundingBox());
 					}
 				}
 

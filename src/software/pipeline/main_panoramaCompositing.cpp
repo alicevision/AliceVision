@@ -32,6 +32,7 @@
 #include <aliceVision/panorama/alphaCompositer.hpp>
 #include <aliceVision/panorama/laplacianCompositer.hpp>
 #include <aliceVision/panorama/seams.hpp>
+#include <aliceVision/panorama/boundingBoxMap.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -43,6 +44,42 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
 namespace fs = boost::filesystem;
+
+bool buildMap(BoundingBoxMap & map, const sfmData::SfMData& sfmData, const std::string & inputPath)
+{
+    for (const auto& viewIt : sfmData.getViews())
+    {
+        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
+        {
+            // skip unreconstructed views
+            continue;
+        }
+        
+        // Load mask
+        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+        oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+
+        const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+        const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+        const std::size_t contentX = metadata.find("AliceVision:contentX")->get_int();
+        const std::size_t contentY = metadata.find("AliceVision:contentY")->get_int();
+        const std::size_t contentW = metadata.find("AliceVision:contentW")->get_int();
+        const std::size_t contentH = metadata.find("AliceVision:contentH")->get_int();
+
+        BoundingBox bb;
+        bb.left = offsetX + contentX;
+        bb.top = offsetY + contentY;
+        bb.width = contentW;
+        bb.height = contentH;
+
+        if (!map.append(viewIt.first, bb)) 
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize)
 {
@@ -86,7 +123,7 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
     return true;
 }
 
-bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize) 
+bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize, const BoundingBoxMap & map) 
 {   
 
     //Compute coarsest level possible for graph cut
@@ -100,7 +137,7 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
     for (int l = initial_level; l>= initial_level; l--) 
     {
         
-        HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, l);
+        HierarchicalGraphcutSeams seams(cacheManager, map, panoramaSize.first, panoramaSize.second, l);
 
          
         if (!seams.initialize()) 
@@ -118,30 +155,30 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
             seams.setMaximalDistance(100);
         }
 
-        /*for (const auto& viewIt : sfmData.getViews())
+        for (const auto& viewIt : sfmData.getViews())
         {
             if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
             {
                 // skip unreconstructed views
                 continue;
             }
-            
+
             // Load mask
             const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
             ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
             image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
-            // Get offset
-            oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
-            const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
-            const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
-
             // Load Color
             const std::string colorsPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + ".exr")).string();
             ALICEVISION_LOG_INFO("Load colors with path " << colorsPath);
             image::Image<image::RGBfColor> colors;
             image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
+
+            // Get offset
+            oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+            const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+            const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
             // Append to graph cut
             seams.append(colors, mask, viewIt.first, offsetX, offsetY);
@@ -152,7 +189,7 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
             return false;
         }
 
-        labels = seams.getLabels();*/
+        //labels = seams.getLabels();
     }
 
     return true;
@@ -292,6 +329,13 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    BoundingBoxMap map;
+    if (!buildMap(map, sfmData, warpingFolder))
+    {
+        ALICEVISION_LOG_ERROR("Error Building map");
+        return EXIT_FAILURE;
+    }
+
     CachedImage<IndexT> labels;
     if (!computeWTALabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
     {
@@ -300,7 +344,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
 
-    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
+    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize, map)) 
     {
         ALICEVISION_LOG_ERROR("Error computing graph cut labels");
         return EXIT_FAILURE;

@@ -5,6 +5,7 @@
 
 #include "cachedImage.hpp"
 #include "graphcut.hpp"
+#include "boundingBoxMap.hpp"
 
 namespace aliceVision
 {
@@ -48,8 +49,9 @@ private:
 class HierarchicalGraphcutSeams
 {
 public:
-    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, size_t outputWidth, size_t outputHeight, size_t levelOfInterest)
+    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, const BoundingBoxMap & map, size_t outputWidth, size_t outputHeight, size_t levelOfInterest)
         : _cacheManager(cacheManager)
+        , _originalMap(map)
         , _outputWidth(outputWidth)
         , _outputHeight(outputHeight)
         , _levelOfInterest(levelOfInterest)
@@ -86,7 +88,10 @@ private:
     std::unique_ptr<GraphcutSeams> _graphcut;
     image::TileCacheManager::shared_ptr _cacheManager;
     CachedImage<IndexT> _labels;
-    
+
+    //Original bounding box map at level 0
+    BoundingBoxMap _originalMap;
+
     size_t _levelOfInterest;
     size_t _outputWidth;
     size_t _outputHeight;

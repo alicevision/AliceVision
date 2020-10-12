@@ -308,58 +308,67 @@ bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
 
 bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RGBfColor>& input,
                                        const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex,
-                                       size_t offset_x, size_t offset_y)
+                                       size_t offsetX, size_t offsetY)
 {
-    image::Image<image::RGBfColor> current_color = input;
-    image::Image<unsigned char> current_mask = inputMask;
+    image::Image<image::RGBfColor> resizedColor;
+    image::Image<unsigned char> resizedMask;
 
-    for(int l = 1; l <= _levelOfInterest; l++)
+    int scale = pow(2, _levelOfInterest);
+    int levelOffsetX = offsetX / scale;
+    int levelOffsetY = offsetY / scale;
+
+    
+
+    if (!downscaleByPowerOfTwo(resizedColor, resizedMask, input, inputMask, _levelOfInterest))
     {
+        return false;
+    }
 
-        aliceVision::image::Image<image::RGBfColor> buf(current_color.Width(), current_color.Height());
-        aliceVision::image::Image<image::RGBfColor> next_color(current_color.Width() / 2, current_color.Height() / 2);
-        aliceVision::image::Image<unsigned char> next_mask(current_color.Width() / 2, current_color.Height() / 2);
+    BoundingBox bb;
+    bb.left = 0;
+    bb.top = 0;
+    bb.width = resizedColor.Width();
+    bb.height = resizedColor.Height();
 
-        convolveGaussian5x5<image::RGBfColor>(buf, current_color);
-        downscale(next_color, buf);
+    CachedImage<image::RGBfColor> destColor;
+    if (!destColor.createImage(_cacheManager, resizedColor.Width(), resizedColor.Height())) 
+    {
+        return false;
+    }
 
-        for(int i = 0; i < next_mask.Height(); i++)
-        {
-            int di = i * 2;
+    if (!destColor.fill(image::RGBfColor(0.0f)))
+    {
+        return false;
+    }
 
-            for(int j = 0; j < next_mask.Width(); j++)
-            {
-                int dj = j * 2;
-
-                if(current_mask(di, dj) && current_mask(di, dj + 1) && current_mask(di + 1, dj) &&
-                   current_mask(di + 1, dj + 1))
-                {
-                    next_mask(i, j) = 255;
-                }
-                else
-                {
-                    next_mask(i, j) = 0;
-                }
-            }
-        }
-
-        current_color = next_color;
-        current_mask = next_mask;
-        offset_x /= 2;
-        offset_y /= 2;
+    if (!destColor.assign(resizedColor, bb, bb)) 
+    {
+        return false;
     }
 
 
-    char filename[FILENAME_MAX];
-    sprintf(filename, "/home/mmoc/test%d.exr", int(offset_x));
-    image::writeImage(filename, current_color, image::EImageColorSpace::NO_CONVERSION);
+    CachedImage<unsigned char> destMask;
+    if (!destMask.createImage(_cacheManager, resizedMask.Width(), resizedMask.Height())) 
+    {
+        return false;
+    }
 
-    return _graphcut->append(current_color, current_mask, currentIndex, offset_x, offset_y);
+    if (!destMask.fill(0))
+    {
+        return false;
+    }
+
+    if (!destMask.assign(resizedMask, bb, bb)) 
+    {
+        return false;
+    }
+    
+
+    return true;
 }
 
 bool HierarchicalGraphcutSeams::process()
-{
-
+{  
     /*if(!_graphcut->process())
     {
         return false;

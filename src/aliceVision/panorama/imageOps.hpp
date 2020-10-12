@@ -112,6 +112,8 @@ bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Im
     return true;
 }
 
+bool downscaleByPowerOfTwo(image::Image<image::RGBfColor> & output, image::Image<unsigned char> & outputMask, const image::Image<image::RGBfColor> & input, const image::Image<unsigned char> & inputMask, const int timesDividedBy2);
+
 void removeNegativeValues(CachedImage<image::RGBfColor>& img);
 
 } // namespace aliceVision
