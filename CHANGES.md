@@ -1,5 +1,10 @@
 # AliceVision Changelog
 
+## Release 2.3.1 (2020.10.14)
+
+ - [software] FeatureExtraction: minor update to SIFT memory estimation [PR](https://github.com/alicevision/AliceVision/pull/917)
+
+
 ## Release 2.3.0 (2020.10.09)
 
 ### Release Notes Summary
