@@ -124,7 +124,7 @@ public:
     , _K1(K1)
     , _K2(K2)
   {
-    ALICEVISION_LOG_INFO("RelativePoseKernel_K: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
+    ALICEVISION_LOG_TRACE("RelativePoseKernel_K: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
     assert(2 == x1.rows());
     assert(x1.rows() == x2.rows());
     assert(x1.cols() == x2.cols());
