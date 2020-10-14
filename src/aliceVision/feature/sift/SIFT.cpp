@@ -15,10 +15,10 @@ std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, co
 {
   double scaleFactor = 1.0;
   if(params._firstOctave > 0)
-    scaleFactor = 1.0/params._firstOctave;
+      scaleFactor = 1.0 / std::pow(2.0, params._firstOctave);
   else if(params._firstOctave < 0)
-    scaleFactor = 2.0 * -params._firstOctave;
-  std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
+      scaleFactor = std::pow(2.0, std::abs(params._firstOctave));
+  const std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
 
   std::size_t pyramidMemoryConsuption = 0;
   double downscale = 1.0;
@@ -29,7 +29,10 @@ std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, co
   }
   pyramidMemoryConsuption *= params._numScales * sizeof(float);
 
-  return 4 * pyramidMemoryConsuption + (3 * width * height * sizeof(float)) + (params._maxTotalKeypoints * 128 * sizeof(float));
+  const int nbTempPyramids = 4; // Gaussian + DOG + Gradiant + orientation (Note: DOG use 1 layer less, but this is ignored here)
+  return fullImgSize * 4 * sizeof(float) + // input RGBA image
+         nbTempPyramids * pyramidMemoryConsuption + // pyramids
+         (params._maxTotalKeypoints * 128 * sizeof(float)); // output keypoints
 }
 
 void VLFeatInstance::initialize()

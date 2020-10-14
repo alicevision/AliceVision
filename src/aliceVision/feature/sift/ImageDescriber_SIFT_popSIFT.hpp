@@ -66,7 +66,8 @@ public:
    */
   std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    return 3 * width * height * sizeof(float); //  GPU only
+    //  GPU only
+    return 4 * width * height * sizeof(float); // only use the input RGBA image
   }
 
   /**
