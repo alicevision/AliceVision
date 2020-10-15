@@ -215,6 +215,7 @@ int aliceVision_main(int argc, char** argv)
 				rangeStart = 0;
 				rangeSize = int(viewsOrderedByName.size());
 		}
+
 		ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
 
 
@@ -260,6 +261,11 @@ int aliceVision_main(int argc, char** argv)
 					continue;
 				}
 
+				/*if (view.getViewId() != 828178699) 
+				{
+					continue;
+				}*/
+
 				ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
 
 				// Get intrinsics and extrinsics
@@ -296,14 +302,9 @@ int aliceVision_main(int argc, char** argv)
 				}
 
 				#pragma omp parallel for
-				for (int i = 0; i < boxes.size(); i++) {
+				for (int boxId = 0; boxId < boxes.size(); boxId++) {
 
-					BoundingBox localBbox = boxes[i];
-
-					/*int stillToProcess = coarseBbox.width - localBbox.left;
-					if (stillToProcess < tileSize) {
-						localBbox.width = stillToProcess;
-					}*/
+					BoundingBox localBbox = boxes[boxId];
 
 					// Prepare coordinates map
 					CoordinatesMap map;
@@ -311,12 +312,23 @@ int aliceVision_main(int argc, char** argv)
 						continue;
 					}
 
+					if (map.getBoundingBox().isEmpty()) 
+					{
+						continue;
+					}
+
+
 					#pragma omp critical 
 					{
 						globalBbox = globalBbox.unionWith(map.getBoundingBox());
 					}
 				}
 
+				//Rare case ... When all boxes valid are after the loop
+				if (globalBbox.left >= panoramaSize.first)
+				{
+					globalBbox.left -= panoramaSize.first;
+				}
 
 				// Update bounding box
 				BoundingBox snappedGlobalBbox;
@@ -403,16 +415,14 @@ int aliceVision_main(int argc, char** argv)
 				}
 
 
-				//#pragma omp parallel for 
+				#pragma omp parallel for 
 				{
-					for (int i = 0; i < boxes.size(); i++) 
+					for (int boxId = 0; boxId < boxes.size(); boxId++) 
 					{
-						BoundingBox localBbox = boxes[i];
+						BoundingBox localBbox = boxes[boxId];
 
 						int x = localBbox.left - snappedGlobalBbox.left;
 						int y = localBbox.top - snappedGlobalBbox.top;
-
-						
 
 						// Prepare coordinates map
 						CoordinatesMap map;

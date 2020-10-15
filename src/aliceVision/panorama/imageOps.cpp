@@ -1,5 +1,6 @@
 #include "imageOps.hpp"
 #include "gaussian.hpp"
+#include "feathering.hpp"
 
 namespace aliceVision
 {
@@ -38,7 +39,13 @@ void removeNegativeValues(CachedImage<image::RGBfColor> & img)
 
 bool downscaleByPowerOfTwo(image::Image<image::RGBfColor> & output, image::Image<unsigned char> & outputMask, const image::Image<image::RGBfColor> & input, const image::Image<unsigned char> & inputMask, const int timesDividedBy2) 
 {
-    image::Image<image::RGBfColor> currentColor = input;
+    image::Image<image::RGBfColor> currentColor(input.Width(), input.Height());
+
+    if (!feathering(currentColor, input, inputMask)) 
+    {
+        return false;
+    }
+
     image::Image<unsigned char> currentMask = inputMask;
 
     for(int l = 1; l <= timesDividedBy2; l++)

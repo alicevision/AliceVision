@@ -22,6 +22,7 @@ set(panorama_files_headers
 set(panorama_files_sources
   warper.cpp
   gaussian.cpp
+  boundingBox.cpp
   coordinatesMap.cpp
   distance.cpp
   remapBbox.cpp

@@ -120,10 +120,12 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
 
     labels = seams.getLabels();
 
+    
+
     return true;
 }
 
-bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize, const BoundingBoxMap & map) 
+bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize) 
 {   
 
     //Compute coarsest level possible for graph cut
@@ -134,10 +136,10 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
       initial_level = int(ceil(log2(ratio)));
     }  
 
-    for (int l = initial_level; l>= initial_level; l--) 
+    for (int l = initial_level; l>= 0; l--) 
     {
         
-        HierarchicalGraphcutSeams seams(cacheManager, map, panoramaSize.first, panoramaSize.second, l);
+        HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, l);
 
          
         if (!seams.initialize()) 
@@ -180,8 +182,12 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
             const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
             const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
+
             // Append to graph cut
-            seams.append(colors, mask, viewIt.first, offsetX, offsetY);
+            if (!seams.append(colors, mask, viewIt.first, offsetX, offsetY)) 
+            {
+                return false;
+            }
         }
 
         if (!seams.process()) 
@@ -189,7 +195,7 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
             return false;
         }
 
-        //labels = seams.getLabels();
+        labels = seams.getLabels();
     }
 
     return true;
@@ -344,15 +350,13 @@ int aliceVision_main(int argc, char** argv)
     }
 
 
-    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize, map)) 
+    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
     {
         ALICEVISION_LOG_ERROR("Error computing graph cut labels");
         return EXIT_FAILURE;
     }
 
     labels.writeImage("/home/mmoc/labels.exr");
-
-    return EXIT_SUCCESS;
 
 
     //Get a list of views ordered by their image scale
@@ -380,6 +384,8 @@ int aliceVision_main(int argc, char** argv)
     }
 
     size_t pos = 0;
+
+    std::cout << "compositing" << std::endl;
 
     for(const auto & view : viewOrderedByScale)
     {
@@ -432,6 +438,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
+        std::cout << pos << std::endl;
         compositer.append(source, mask, seams, offsetX, offsetY, imageContent);
     }
 

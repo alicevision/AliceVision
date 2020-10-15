@@ -30,8 +30,8 @@ public:
     bool initialize(image::TileCacheManager::shared_ptr & cacheManager);
 
     bool append(const aliceVision::image::Image<unsigned char>& inputMask,
-                        const aliceVision::image::Image<float>& inputWeights, IndexT currentIndex, size_t offset_x,
-                        size_t offset_y);
+                        const aliceVision::image::Image<float>& inputWeights, 
+                        IndexT currentIndex, size_t offset_x, size_t offset_y);
 
     CachedImage<IndexT> & getLabels() 
     {
@@ -49,9 +49,8 @@ private:
 class HierarchicalGraphcutSeams
 {
 public:
-    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, const BoundingBoxMap & map, size_t outputWidth, size_t outputHeight, size_t levelOfInterest)
+    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, size_t outputWidth, size_t outputHeight, size_t levelOfInterest)
         : _cacheManager(cacheManager)
-        , _originalMap(map)
         , _outputWidth(outputWidth)
         , _outputHeight(outputHeight)
         , _levelOfInterest(levelOfInterest)
@@ -74,8 +73,8 @@ public:
     }
 
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& input,
-                        const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x,
-                        size_t offset_y);
+                        const aliceVision::image::Image<unsigned char>& inputMask, 
+                        IndexT currentIndex, size_t offset_x, size_t offset_y);
 
     bool process();
 
@@ -88,9 +87,6 @@ private:
     std::unique_ptr<GraphcutSeams> _graphcut;
     image::TileCacheManager::shared_ptr _cacheManager;
     CachedImage<IndexT> _labels;
-
-    //Original bounding box map at level 0
-    BoundingBoxMap _originalMap;
 
     size_t _levelOfInterest;
     size_t _outputWidth;

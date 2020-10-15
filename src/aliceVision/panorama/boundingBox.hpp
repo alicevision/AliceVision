@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <stdint.h>
 #include <cmath>
+#include <iostream>
 
 namespace aliceVision
 {
@@ -84,8 +85,8 @@ struct BoundingBox
         int maxr = std::max(rt, ro);
         int maxb = std::max(bt, bo);
 
-        ret.width = maxr - left + 1;
-        ret.height = maxb - top + 1;
+        ret.width = maxr - ret.left + 1;
+        ret.height = maxb - ret.top + 1;
 
         return ret;
     }
@@ -202,5 +203,7 @@ struct BoundingBox
         return b;
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const BoundingBox& in);
 
 }

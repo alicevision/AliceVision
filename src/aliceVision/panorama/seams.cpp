@@ -307,8 +307,8 @@ bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
 }
 
 bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RGBfColor>& input,
-                                       const aliceVision::image::Image<unsigned char>& inputMask, IndexT currentIndex,
-                                       size_t offsetX, size_t offsetY)
+                                       const aliceVision::image::Image<unsigned char>& inputMask, 
+                                       IndexT currentIndex, size_t offsetX, size_t offsetY)
 {
     image::Image<image::RGBfColor> resizedColor;
     image::Image<unsigned char> resizedMask;
@@ -316,8 +316,6 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
     int scale = pow(2, _levelOfInterest);
     int levelOffsetX = offsetX / scale;
     int levelOffsetY = offsetY / scale;
-
-    
 
     if (!downscaleByPowerOfTwo(resizedColor, resizedMask, input, inputMask, _levelOfInterest))
     {
@@ -364,46 +362,76 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
     }
     
 
-    return true;
+    return _graphcut->append(destColor, destMask, currentIndex, levelOffsetX, levelOffsetY);
 }
 
 bool HierarchicalGraphcutSeams::process()
 {  
-    /*if(!_graphcut->process())
+    if(!_graphcut->process())
     {
         return false;
     }
 
-    image::Image<IndexT> current_labels = _graphcut->getLabels();
+    CachedImage<IndexT> smallLabels = _graphcut->getLabels();
 
-    for(int l = _levelOfInterest - 1; l >= 0; l--)
+    int scale = pow(2, _levelOfInterest);
+
+    int processingSize = 256;
+    int largeSize = 256 * scale;
+
+    for (int i = 0; i < smallLabels.getHeight(); i+= processingSize)
     {
-
-        int nw = current_labels.Width() * 2;
-        int nh = current_labels.Height() * 2;
-        if(l == 0)
+        for (int j = 0; j < smallLabels.getWidth(); j+= processingSize)
         {
-            nw = _outputWidth;
-            nh = _outputHeight;
-        }
+            BoundingBox smallBb;
+            smallBb.left = j;
+            smallBb.top = i;
+            smallBb.width = processingSize;
+            smallBb.height = processingSize;
+            smallBb.clampRight(smallLabels.getWidth() - 1);
+            smallBb.clampBottom(smallLabels.getHeight() - 1);
 
-        aliceVision::image::Image<IndexT> next_label(nw, nh);
-        for(int i = 0; i < nh; i++)
-        {
-            int hi = i / 2;
+            BoundingBox smallInputBb;
+            smallInputBb.left = 0;
+            smallInputBb.top = 0;
+            smallInputBb.width = smallBb.width;
+            smallInputBb.height = smallBb.height;
+            
 
-            for(int j = 0; j < nw; j++)
+            image::Image<IndexT> smallView(smallBb.width, smallBb.height);
+            if (!smallLabels.extract(smallView, smallInputBb, smallBb)) 
             {
-                int hj = j / 2;
+                return false;
+            }
 
-                next_label(i, j) = current_labels(hi, hj);
+            BoundingBox largeBb;
+            largeBb.left = smallBb.left * scale;
+            largeBb.top = smallBb.top * scale;
+            largeBb.width = smallBb.width * scale;
+            largeBb.height = smallBb.height * scale;
+
+            BoundingBox largeInputBb;
+            largeInputBb.left = 0;
+            largeInputBb.top = 0;
+            largeInputBb.width = largeBb.width;
+            largeInputBb.height = largeBb.height;
+
+            image::Image<IndexT> largeView(largeBb.width, largeBb.height);
+            for (int y = 0; y < largeBb.height; y++) 
+            {
+                for (int x = 0; x < largeBb.width; x++)
+                {
+                    largeView(y, x) = smallView(y / scale, x / scale);
+                }
+            }
+
+            if (!_labels.assign(largeView, largeInputBb, largeBb))
+            {
+                return false;
             }
         }
-
-        current_labels = next_label;
     }
 
-    _labels = current_labels;*/
 
     return true;
 }

@@ -7,6 +7,7 @@
 
 #include "distance.hpp"
 #include "boundingBox.hpp"
+#include "imageOps.hpp"
 
 namespace aliceVision
 {
@@ -219,9 +220,9 @@ public:
         CachedImage<image::RGBfColor> color;
         CachedImage<unsigned char> mask;
     };
+
+    using PixelInfo = std::map<IndexT, image::RGBfColor>;
     
-    using PixelInfo = std::pair<IndexT, image::RGBfColor>;
-    using ImageOwners = image::Image<std::vector<PixelInfo>>;
 
 public:
     GraphcutSeams(size_t outputWidth, size_t outputHeight)
@@ -274,60 +275,9 @@ public:
         data.rect.left = offset_x;
         data.rect.top = offset_y;
 
+
         _inputs[currentIndex] = data;
 
-        /*
-
-        BoundingBox rect;
-
-        rect.left = offset_x;
-        rect.top = offset_y;
-        rect.width = input.Width() + 1;
-        rect.height = input.Height() + 1;
-
-        //Extend rect for borders
-        rect.dilate(3);
-        rect.clampLeft();
-        rect.clampTop();
-        rect.clampBottom(_owners.Height() - 1)
-
-        _rects[currentIndex] = rect;
-
-        
-        //_owners will get for each pixel of the panorama a list of pixels
-        //in the sources which may have seen this point.
-        
-        for(int i = 0; i < input.Height(); i++)
-        {
-
-            int di = i + offset_y;
-
-            for(int j = 0; j < input.Width(); j++)
-            {
-
-                if(!inputMask(i, j))
-                    continue;
-
-                int dj = j + offset_x;
-                if(dj >= _owners.Width())
-                {
-                    dj = dj - _owners.Width();
-                }
-
-                PixelInfo info;
-                info.first = currentIndex;
-                info.second = input(i, j);
-
-                // If too far away from seam, do not add a contender
-                int dist = _distancesSeams(di, dj);
-                if (dist > _maximal_distance_change + 10)
-                {
-                    continue;
-                }
-
-                _owners(di, dj).push_back(info);
-            }
-        }*/
 
         return true;
     }
@@ -337,90 +287,227 @@ public:
         _maximal_distance_change = dist; 
     }
 
-    bool process()
+    bool processInput(bool & hasChanged, InputData & input)
     {
+        //Get bounding box of input in panoram
+        //Dilate to have some pixels outside of the input
+        BoundingBox localBbox = input.rect.dilate(3);
+        localBbox.clampLeft();
+        localBbox.clampTop();
+        localBbox.clampBottom(_labels.getHeight() - 1);
+        
+        //Output must keep a margin also
+        BoundingBox outputBbox = input.rect;
+        outputBbox.left = input.rect.left - localBbox.left;
+        outputBbox.top = input.rect.top - localBbox.top;
 
-        /*for(int i = 0; i < 10; i++)
+
+        image::Image<IndexT> localLabels(localBbox.width, localBbox.height);
+        if (!loopyCachedImageExtract(localLabels, _labels, localBbox)) 
         {
+            return false;
+        }   
 
-            // For each possible label, try to extends its domination on the label's world
-            bool change = false;
+        image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
+        
+        for (auto  & otherInput : _inputs)
+        {
+            BoundingBox otherBbox = otherInput.second.rect;
+            BoundingBox otherBboxLoop = otherInput.second.rect;
+            otherBboxLoop.left = otherBbox.left - _outputWidth;
+            BoundingBox otherBboxLoopRight = otherInput.second.rect;
+            otherBboxLoopRight.left = otherBbox.left + _outputWidth;
 
-            for(auto & info : _rects)
+            BoundingBox otherInputBbox = otherBbox;
+            otherInputBbox.left = 0;
+            otherInputBbox.top = 0;
+
+            BoundingBox intersection = localBbox.intersectionWith(otherBbox);
+            BoundingBox intersectionLoop = localBbox.intersectionWith(otherBboxLoop);
+            BoundingBox intersectionLoopRight = localBbox.intersectionWith(otherBboxLoopRight);
+            if (intersection.isEmpty() && intersectionLoop.isEmpty() && intersectionLoopRight.isEmpty())
             {
+                continue;
+            }
+            
+            image::Image<image::RGBfColor> otherColor(otherInputBbox.width, otherInputBbox.height);
+            if (!otherInput.second.color.extract(otherColor, otherInputBbox, otherInputBbox)) 
+            {
+                return false;
+            }
 
-                ALICEVISION_LOG_INFO("Graphcut expansion (iteration " << i << ") for label " << info.first);
+            image::Image<unsigned char> otherMask(otherInputBbox.width, otherInputBbox.height);
+            if (!otherInput.second.mask.extract(otherMask, otherInputBbox, otherInputBbox)) 
+            {
+                return false;
+            }
 
-                int p1 = info.second.left;
-                int w1 = info.second.width;
-                int p2 = 0;
-                int w2 = 0;
 
-                if(p1 + w1 > _labels.Width())
+            if (!intersection.isEmpty())
+            {        
+                BoundingBox interestOther = intersection;
+                interestOther.left -= otherBbox.left;
+                interestOther.top -= otherBbox.top;
+
+                BoundingBox interestThis = intersection;
+                interestThis.left -= localBbox.left;
+                interestThis.top -= localBbox.top;
+
+                for (int y = 0; y < intersection.height; y++)
                 {
-                    w1 = _labels.Width() - p1;
-                    p2 = 0;
-                    w2 = info.second.width - w1;
-                }
+                    int y_other = interestOther.top + y;
+                    int y_current = interestThis.top + y;
 
-                Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_1 = _labels.block(info.second.top, p1, info.second.height, w1);
-                Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> backup_2 = _labels.block(info.second.top, p2, info.second.height, w2);
+                    for (int x = 0; x < intersection.width; x++)
+                    {
+                        int x_other = interestOther.left + x;
+                        int x_current = interestThis.left + x;
+                        
+                        if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
 
-                double base_cost = cost(info.first);
-                alphaExpansion(info.first);
-                double new_cost = cost(info.first);
-
-                if(new_cost > base_cost)
-                {
-                    _labels.block(info.second.top, p1, info.second.height, w1) = backup_1;
-                    _labels.block(info.second.top, p2, info.second.height, w2) = backup_2;
-                }
-                else if(new_cost < base_cost)
-                {
-                    change = true;
+                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        pix[otherInput.first] = otherColor(y_other, x_other);
+                    }
                 }
             }
 
-            if(!change)
+            if (!intersectionLoop.isEmpty())
             {
-                break;
+                BoundingBox interestOther = intersectionLoop;
+                interestOther.left -= otherBboxLoop.left;
+                interestOther.top -= otherBboxLoop.top;
+
+                BoundingBox interestThis = intersectionLoop;
+                interestThis.left -= localBbox.left;
+                interestThis.top -= localBbox.top;
+
+                
+                for (int y = 0; y < intersectionLoop.height; y++)
+                {
+                    int y_other = interestOther.top + y;
+                    int y_current = interestThis.top + y;
+
+                    for (int x = 0; x < intersectionLoop.width; x++)
+                    {
+                        int x_other = interestOther.left + x;
+                        int x_current = interestThis.left + x;
+
+                        if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
+
+                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        pix[otherInput.first] = otherColor(y_other, x_other);
+                    }
+                }
             }
-        }*/
+
+            if (!intersectionLoopRight.isEmpty())
+            {
+                BoundingBox interestOther = intersectionLoopRight;
+                interestOther.left -= otherBboxLoopRight.left;
+                interestOther.top -= otherBboxLoopRight.top;
+
+                BoundingBox interestThis = intersectionLoopRight;
+                interestThis.left -= localBbox.left;
+                interestThis.top -= localBbox.top;
+
+                
+                for (int y = 0; y < intersectionLoopRight.height; y++)
+                {
+                    int y_other = interestOther.top + y;
+                    int y_current = interestThis.top + y;
+
+                    for (int x = 0; x < intersectionLoopRight.width; x++)
+                    {
+                        int x_other = interestOther.left + x;
+                        int x_current = interestThis.left + x;
+
+                        if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
+
+                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        pix[otherInput.first] = otherColor(y_other, x_other);
+                    }
+                }
+            }
+        }
+
+        double costBefore = cost(localLabels, graphCutInput, input.id);
+        if (!alphaExpansion(localLabels, graphCutInput, input.id)) 
+        {
+            return false;
+        }
+        double costAfter = cost(localLabels, graphCutInput, input.id);
+
+        hasChanged = false;
+        if (costAfter < costBefore)
+        {   
+            hasChanged = true;
+            BoundingBox inputBb = localBbox;
+            inputBb.left = 0;
+            inputBb.top = 0;
+
+            if (!loopyCachedImageAssign(_labels, localLabels, localBbox, inputBb)) 
+            {
+                return false;
+            }
+        }
+
 
         return true;
     }
 
-    double cost(IndexT currentLabel)
+    bool process()
     {
+        for (int i = 0; i < 3; i++)
+        {   
+            std::cout << "**************************" << std::endl;
+            // For each possible label, try to extends its domination on the label's world
+            bool change = false;
 
-        //BoundingBox rect = _rects[currentLabel];
+            for (auto & info : _inputs)
+            {   
+                bool lchange = true;
+                if (!processInput(lchange, info.second)) 
+                {
+                    return false;
+                }
 
+                change &= lchange;
+            }
+
+            if (!change)
+            {
+                break;
+            }
+        }
+
+        _labels.writeImage("/home/mmoc/test.exr");
+
+        return true;
+    }
+
+    double cost(const image::Image<IndexT> localLabels, const image::Image<PixelInfo> & input, IndexT currentLabel)
+    {
         double cost = 0.0;
 
-        /*for(int i = 0; i < rect.height - 1; i++)
+        for (int y = 0; y < input.Height() - 1; y++)
         {
-
-            int y = rect.top + i;
-            int yp = y + 1;
-
-            for(int j = 0; j < rect.width; j++)
+            for(int x = 0; x < input.Width() - 1; x++) 
             {
-
-                int x = rect.left + j;
-                if(x >= _owners.Width())
-                {
-                    x = x - _owners.Width();
-                }
-
                 int xp = x + 1;
-                if(xp >= _owners.Width())
-                {
-                    xp = xp - _owners.Width();
-                }
+                int yp = y + 1;
 
-                IndexT label = _labels(y, x);
-                IndexT labelx = _labels(y, xp);
-                IndexT labely = _labels(yp, x);
+                IndexT label = localLabels(y, x);
+                IndexT labelx = localLabels(y, xp);
+                IndexT labely = localLabels(yp, x);
 
                 if(label == UndefinedIndexT)
                     continue;
@@ -429,77 +516,69 @@ public:
                 if(labely == UndefinedIndexT)
                     continue;
 
-                if(label == labelx)
-                {
-                    continue;
-                }
-
                 image::RGBfColor CColorLC;
                 image::RGBfColor CColorLX;
                 image::RGBfColor CColorLY;
-                bool hasCLC = false;
-                bool hasCLX = false;
-                bool hasCLY = false;
-
-                for(int l = 0; l < _owners(y, x).size(); l++)
-                {
-                    if(_owners(y, x)[l].first == label)
-                    {
-                        hasCLC = true;
-                        CColorLC = _owners(y, x)[l].second;
-                    }
-
-                    if(_owners(y, x)[l].first == labelx)
-                    {
-                        hasCLX = true;
-                        CColorLX = _owners(y, x)[l].second;
-                    }
-
-                    if(_owners(y, x)[l].first == labely)
-                    {
-                        hasCLY = true;
-                        CColorLY = _owners(y, x)[l].second;
-                    }
-                }
-
                 image::RGBfColor XColorLC;
                 image::RGBfColor XColorLX;
-                bool hasXLC = false;
-                bool hasXLX = false;
-
-                for(int l = 0; l < _owners(y, xp).size(); l++)
-                {
-                    if(_owners(y, xp)[l].first == label)
-                    {
-                        hasXLC = true;
-                        XColorLC = _owners(y, xp)[l].second;
-                    }
-
-                    if(_owners(y, xp)[l].first == labelx)
-                    {
-                        hasXLX = true;
-                        XColorLX = _owners(y, xp)[l].second;
-                    }
-                }
-
                 image::RGBfColor YColorLC;
                 image::RGBfColor YColorLY;
                 bool hasYLC = false;
                 bool hasYLY = false;
+                bool hasXLC = false;
+                bool hasXLX = false;
+                bool hasCLC = false;
+                bool hasCLX = false;
+                bool hasCLY = false;
 
-                for(int l = 0; l < _owners(yp, x).size(); l++)
+
+                auto it = input(y, x).find(label);
+                if (it != input(y, x).end())
                 {
-                    if(_owners(yp, x)[l].first == label)
-                    {
-                        hasYLC = true;
-                        YColorLC = _owners(yp, x)[l].second;
-                    }
+                    hasCLC = true;
+                    CColorLC = it->second;
+                }
 
-                    if(_owners(yp, x)[l].first == labely)
-                    {
-                        hasYLY = true;
-                        YColorLY = _owners(yp, x)[l].second;
-                    }
+                it = input(y, x).find(labelx);
+                if (it != input(y, x).end())
+                {
+                    hasCLX = true;
+                    CColorLX = it->second;
+                }
+
+                it = input(y, x).find(labely);
+                if (it != input(y, x).end())
+                {
+                    hasCLY = true;
+                    CColorLY = it->second;
+                }
+
+                it = input(y, xp).find(label);
+                if (it != input(y, xp).end())
+                {
+                    hasXLC = true;
+                    XColorLC = it->second;
+                }
+
+                it = input(y, xp).find(labelx);
+                if (it != input(y, xp).end())
+                {
+                    hasXLX = true;
+                    XColorLX = it->second;
+                }
+
+                it = input(yp, x).find(label);
+                if (it != input(yp, x).end())
+                {
+                    hasYLC = true;
+                    YColorLC = it->second;
+                }
+
+                it = input(yp, x).find(labely);
+                if (it != input(yp, x).end())
+                {
+                    hasYLY = true;
+                    YColorLY = it->second;
                 }
 
                 if(!hasCLC || !hasXLX || !hasYLY)
@@ -532,52 +611,41 @@ public:
                 cost += (XColorLC - XColorLX).norm();
                 cost += (YColorLC - YColorLY).norm();
             }
-        }*/
+        }
 
         return cost;
     }
 
-    bool alphaExpansion(IndexT currentLabel)
+    bool alphaExpansion(image::Image<IndexT> & labels, const image::Image<PixelInfo> & input, IndexT currentLabel)
     {
-        /*
-        BoundingBox rect = _rects[currentLabel];
-
-        image::Image<unsigned char> mask(rect.width, rect.height, true, 0);
-        image::Image<int> ids(rect.width, rect.height, true, -1);
-        image::Image<image::RGBfColor> color_label(rect.width, rect.height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
-        image::Image<image::RGBfColor> color_other(rect.width, rect.height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+        image::Image<unsigned char> mask(labels.Width(), labels.Height(), true, 0);
+        image::Image<int> ids(labels.Width(), labels.Height(), true, -1);
+        image::Image<image::RGBfColor> color_label(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+        image::Image<image::RGBfColor> color_other(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
 
         // Compute distance map to seams
-        image::Image<int> distanceMap(rect.width, rect.height);
+        image::Image<int> distanceMap(labels.Width(), labels.Height());
         {
-            image::Image<IndexT> binarizedWorld(rect.width, rect.height);
+            image::Image<IndexT> binarizedWorld(labels.Width(), labels.Height());
 
-            for(int i = 0; i < rect.height; i++)
+            for(int y = 0; y < labels.Height(); y++)
             {
-                int y = rect.top + i;
-
-                for(int j = 0; j < rect.width; j++)
+                for(int x = 0; x < labels.Width(); x++)
                 {
+                    IndexT label = labels(y, x);
 
-                    int x = rect.left + j;
-                    if(x >= _owners.Width())
-                    {
-                        x = x - _owners.Width();
-                    }
-
-                    IndexT label = _original_labels(y, x);
                     if(label == currentLabel)
                     {
-                        binarizedWorld(i, j) = 1;
+                        binarizedWorld(y, x) = 1;
                     }
                     else
                     {
-                        binarizedWorld(i, j) = 0;
+                        binarizedWorld(y, x) = 0;
                     }
                 }
             }
 
-            image::Image<unsigned char> seams(rect.width, rect.height);
+            image::Image<unsigned char> seams(labels.Width(), labels.Height());
             if(!computeSeamsMap(seams, binarizedWorld))
             {
                 return false;
@@ -589,139 +657,108 @@ public:
             }
         }
 
-        
-        //A warped input has valid pixels only in some parts of the final image.
-        //Rect is the bounding box of these valid pixels.
-        //Let's build a mask :
-        // - 0 if the pixel is not viewed by anyone
-        // - 1 if the pixel is viewed by the current label alpha
-        // - 2 if the pixel is viewed by *another* label and this label is marked as current valid label
-        // - 3 if the pixel is 1 + 2 : the pixel is not selected as alpha territory, but alpha is looking at it
-        
-        for(int i = 0; i < rect.height; i++)
+        for (int y = 0; y < labels.Height(); y++) 
         {
-
-            int y = rect.top + i;
-
-            for(int j = 0; j < rect.width; j++)
+            for (int x = 0; x < labels.Width(); x++)
             {
+                IndexT label = labels(y, x);
 
-                int x = rect.left + j;
-                if(x >= _owners.Width())
-                {
-                    x = x - _owners.Width();
-                }
-
-                std::vector<PixelInfo>& infos = _owners(y, x);
-                IndexT label = _labels(y, x);
+                int dist = distanceMap(y, x);
 
                 image::RGBfColor currentColor;
                 image::RGBfColor otherColor;
 
-                int dist = distanceMap(i, j);
-
-                // Loop over observations
-                for(int l = 0; l < infos.size(); l++)
+                auto it = input(y, x).find(currentLabel);
+                if (it != input(y, x).end())
                 {
+                    currentColor = it->second;
+                    mask(y, x) = 1;
+                }
 
-                    if(dist > _maximal_distance_change)
+                if (label != currentLabel)
+                {
+                    it = input(y, x).find(label);
+                    if (it != input(y, x).end())
                     {
+                        otherColor = it->second;
 
-                        if(infos[l].first == label)
+                        if (dist > _maximal_distance_change)
                         {
-                            if(label == currentLabel)
-                            {
-                                mask(i, j) = 1;
-                                currentColor = infos[l].second;
-                            }
-                            else
-                            {
-                                mask(i, j) = 2;
-                                otherColor = infos[l].second;
-                            }
+                            mask(y, x) = 2;
                         }
-                    }
-                    else
-                    {
-                        if(infos[l].first == currentLabel)
+                        else 
                         {
-                            mask(i, j) |= 1;
-                            currentColor = infos[l].second;
-                        }
-                        else if(infos[l].first == label)
-                        {
-                            mask(i, j) |= 2;
-                            otherColor = infos[l].second;
+                            mask(y, x) |= 2;
                         }
                     }
                 }
 
                 // If the pixel may be a new kingdom for alpha 
-                if(mask(i, j) == 1)
+                if(mask(y, x) == 1)
                 {
-                    color_label(i, j) = currentColor;
-                    color_other(i, j) = currentColor;
+                    color_label(y, x) = currentColor;
+                    color_other(y, x) = currentColor;
                 }
-                else if(mask(i, j) == 2)
+                else if(mask(y, x) == 2)
                 {
-                    color_label(i, j) = otherColor;
-                    color_other(i, j) = otherColor;
+                    color_label(y, x) = otherColor;
+                    color_other(y, x) = otherColor;
                 }
-                else if(mask(i, j) == 3)
+                else if(mask(y, x) == 3)
                 {
-                    color_label(i, j) = currentColor;
-                    color_other(i, j) = otherColor;
+                    color_label(y, x) = currentColor;
+                    color_other(y, x) = otherColor;
                 }
             }
-        }
+        }     
 
         // The rectangle is a grid.
         // However we want to ignore a lot of pixel.
         // Let's create an index per valid pixels for graph cut reference
         int count = 0;
-        for(int i = 0; i < rect.height; i++)
+        for(int y = 0; y < labels.Height(); y++)
         {
-            for(int j = 0; j < rect.width; j++)
+            for(int x = 0; x < labels.Width(); x++)
             {
-                if(mask(i, j) == 0)
+                if(mask(y, x) == 0)
                 {
                     continue;
                 }
 
-                ids(i, j) = count;
+                ids(y, x) = count;
                 count++;
             }
-        }
+        }  
 
         //Create graph
         MaxFlow_AdjList gc(count);
         size_t countValid = 0;
 
-        for(int i = 0; i < rect.height; i++)
+        for(int y = 0; y < labels.Height(); y++)
         {
-            for(int j = 0; j < rect.width; j++)
+            for(int x = 0; x < labels.Width(); x++)
             {
 
                 // If this pixel is not valid, ignore 
-                if(mask(i, j) == 0)
+                if(mask(y, x) == 0)
                 {
                     continue;
                 }
 
                 // Get this pixel ID 
-                int node_id = ids(i, j);
+                int node_id = ids(y, x);
 
-                int im1 = std::max(i - 1, 0);
-                int jm1 = std::max(j - 1, 0);
-                int ip1 = std::min(i + 1, rect.height - 1);
-                int jp1 = std::min(j + 1, rect.width - 1);
+                int ym1 = std::max(y - 1, 0);
+                int xm1 = std::max(x - 1, 0);
+                int yp1 = std::min(y + 1, labels.Height() - 1);
+                int xp1 = std::min(x + 1, labels.Width() - 1);
 
-                if(mask(i, j) == 1)
+                if(mask(y, x) == 1)
                 {
-
                     // Only add nodes close to borders 
-                    if(mask(im1, jm1) == 1 && mask(im1, j) == 1 && mask(im1, jp1) == 1 && mask(i, jm1) == 1 &&
-                       mask(i, jp1) == 1 && mask(ip1, jm1) == 1 && mask(ip1, j) == 1 && mask(ip1, jp1) == 1)
+                    if(mask(ym1, xm1) == 1 && mask(ym1, x) == 1 && mask(ym1, xp1) == 1 &&
+                       mask(y, xm1) == 1 && mask(y, xp1) == 1 && 
+                       mask(yp1, xm1) == 1 && mask(yp1, x) == 1 && mask(yp1, xp1) == 1)
                     {
                         continue;
                     }
@@ -732,11 +769,12 @@ public:
                     //from alpha territoy is infinitly costly (impossible).
                     gc.addNodeToSource(node_id, 100000);
                 }
-                else if(mask(i, j) == 2)
+                else if(mask(y, x) == 2)
                 {
                     // Only add nodes close to borders
-                    if(mask(im1, jm1) == 2 && mask(im1, j) == 2 && mask(im1, jp1) == 2 && mask(i, jm1) == 2 &&
-                       mask(i, jp1) == 2 && mask(ip1, jm1) == 2 && mask(ip1, j) == 2 && mask(ip1, jp1) == 2)
+                    if(mask(ym1, xm1) == 2 && mask(ym1, x) == 2 && mask(ym1, xp1) == 2 &&
+                       mask(y, xm1) == 2 && mask(y, xp1) == 2 && 
+                       mask(yp1, xm1) == 2 && mask(yp1, x) == 2 && mask(yp1, xp1) == 2)
                     {
                         continue;
                     }
@@ -746,7 +784,7 @@ public:
                     //from ennemy territory is infinitly costly (impossible).
                     gc.addNodeToSink(node_id, 100000);
                 }
-                else if(mask(i, j) == 3)
+                else if(mask(y, x) == 3)
                 {
 
                     // This pixel is seen by both alpha and enemies but is owned by ennemy.
@@ -760,6 +798,7 @@ public:
             }
         }
 
+
         if(countValid == 0)
         {
             // We have no possibility for territory expansion 
@@ -767,38 +806,38 @@ public:
             return true;
         }
 
+
         // Loop over alpha bounding box.
         // Let's define the transition cost.
         // When two neighboor pixels have different labels, there is a seam (border) cost.
         // Graph cut will try to make sure the territory will have a minimal border cost
-        
-        for(int i = 0; i < rect.height; i++)
+
+        for(int y = 0; y < labels.Height(); y++)
         {
-            for(int j = 0; j < rect.width; j++)
+            for(int x = 0; x < labels.Width(); x++)
             {
 
-                if(mask(i, j) == 0)
+                if(mask(y, x) == 0)
                 {
                     continue;
                 }
 
-                int node_id = ids(i, j);
+                int node_id = ids(y, x);
 
                 // Make sure it is possible to estimate this horizontal border
-                if(i < mask.Height() - 1)
+                if(y < mask.Height() - 1)
                 {
-
                     // Make sure the other pixel is owned by someone
-                    if(mask(i + 1, j))
+                    if(mask(y + 1, x))
                     {
 
-                        int other_node_id = ids(i + 1, j);
+                        int other_node_id = ids(y + 1, x);
                         float w = 1000;
 
-                        if(((mask(i, j) & 1) && (mask(i + 1, j) & 2)) || ((mask(i, j) & 2) && (mask(i + 1, j) & 1)))
+                        if(((mask(y, x) & 1) && (mask(y + 1, x) & 2)) || ((mask(y, x) & 2) && (mask(y + 1, x) & 1)))
                         {
-                            float d1 = (color_label(i, j) - color_other(i, j)).norm();
-                            float d2 = (color_label(i + 1, j) - color_other(i + 1, j)).norm();
+                            float d1 = (color_label(y, x) - color_other(y, x)).norm();
+                            float d2 = (color_label(y + 1, x) - color_other(y + 1, x)).norm();
 
                             d1 = std::min(2.0f, d1);
                             d2 = std::min(2.0f, d2);
@@ -810,19 +849,19 @@ public:
                     }
                 }
 
-                if(j < mask.Width() - 1)
+                if(x < mask.Width() - 1)
                 {
 
-                    if(mask(i, j + 1))
+                    if(mask(y, x + 1))
                     {
 
-                        int other_node_id = ids(i, j + 1);
+                        int other_node_id = ids(y, x + 1);
                         float w = 1000;
 
-                        if(((mask(i, j) & 1) && (mask(i, j + 1) & 2)) || ((mask(i, j) & 2) && (mask(i, j + 1) & 1)))
+                        if(((mask(y, x) & 1) && (mask(y, x + 1) & 2)) || ((mask(y, x) & 2) && (mask(y, x + 1) & 1)))
                         {
-                            float d1 = (color_label(i, j) - color_other(i, j)).norm();
-                            float d2 = (color_label(i, j + 1) - color_other(i, j + 1)).norm();
+                            float d1 = (color_label(y, x) - color_other(y, x)).norm();
+                            float d2 = (color_label(y, x + 1) - color_other(y, x + 1)).norm();
                             w = (d1 + d2) * 100.0 + 1.0;
                         }
 
@@ -835,22 +874,12 @@ public:
         gc.compute();
 
         int changeCount = 0;
-        for(int i = 0; i < rect.height; i++)
+        for(int y = 0; y < labels.Height(); y++)
         {
-
-            int y = rect.top + i;
-
-            for(int j = 0; j < rect.width; j++)
+            for(int x = 0; x < labels.Width(); x++)
             {
-
-                int x = rect.left + j;
-                if(x >= _owners.Width())
-                {
-                    x = x - _owners.Width();
-                }
-
-                IndexT label = _labels(y, x);
-                int id = ids(i, j);
+                IndexT label = labels(y, x);
+                int id = ids(y, x);
 
                 if(gc.isSource(id))
                 {
@@ -860,10 +889,10 @@ public:
                         changeCount++;
                     }
 
-                    _labels(y, x) = currentLabel;
+                    labels(y, x) = currentLabel;
                 }
             }
-        }*/
+        }
 
         return true;
     }
@@ -880,9 +909,7 @@ private:
     int _outputWidth;
     int _outputHeight;
     size_t _maximal_distance_change;
-
     CachedImage<IndexT> _labels;
-    ImageOwners _owners;
 };
 
 } // namespace aliceVision

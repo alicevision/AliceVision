@@ -13,20 +13,20 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
     _coordinates = aliceVision::image::Image<Eigen::Vector2d>(coarseBbox.width, coarseBbox.height, false);
     _mask = aliceVision::image::Image<unsigned char>(coarseBbox.width, coarseBbox.height, true, 0);
 
-    size_t max_x = 0;
-    size_t max_y = 0;
-    size_t min_x = panoramaSize.first;
-    size_t min_y = panoramaSize.second;
+    int max_x = 0;
+    int max_y = 0;
+    int min_x = std::numeric_limits<int>::max();
+    int min_y = std::numeric_limits<int>::max();
 
-    for(size_t y = 0; y < coarseBbox.height; y++)
+    for(int y = 0; y < coarseBbox.height; y++)
     {
 
-        size_t cy = y + coarseBbox.top;
+        int cy = y + coarseBbox.top;
 
-        for(size_t x = 0; x < coarseBbox.width; x++)
+        for(int x = 0; x < coarseBbox.width; x++)
         {
 
-            size_t cx = x + coarseBbox.left;
+            int cx = x + coarseBbox.left;
 
             Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(cx, cy), panoramaSize.first, panoramaSize.second);
 
@@ -68,8 +68,8 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
 
     _boundingBox.left = min_x;
     _boundingBox.top = min_y;
-    _boundingBox.width = max_x - min_x + 1;
-    _boundingBox.height = max_y - min_y + 1;
+    _boundingBox.width = std::max(0, max_x - min_x + 1);
+    _boundingBox.height = std::max(0, max_y - min_y + 1);
 
     return true;
 }
