@@ -308,7 +308,35 @@ _tileWidth(tileWidth), _tileHeight(tileHeight)
 {
 }
 
+static unsigned int bitCount (unsigned int value) 
+{
+    unsigned int count = 0;
+
+    while (value > 0) 
+    {
+        if ((value & 1) == 1)
+        {
+            count++;
+        }
+
+        value >>= 1;
+    }
+
+    return count;
+}
+
+
 std::shared_ptr<TileCacheManager> TileCacheManager::create(const std::string & path_storage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex) {
+
+  if (bitCount(tileWidth) != 1) 
+  {
+    return nullptr;
+  }
+
+  if (bitCount(tileHeight) != 1) 
+  {
+    return nullptr;
+  }
 
   TileCacheManager * obj = new TileCacheManager(path_storage, tileWidth, tileHeight, maxTilesPerIndex);
     

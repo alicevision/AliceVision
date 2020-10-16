@@ -237,8 +237,8 @@ int aliceVision_main(int argc, char** argv)
 		}
 		
 		// Make sure panorama size has required size properties
-		double max_scale = 1.0 / pow(2.0, 10);
-		panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);
+		/*double max_scale = 1.0 / pow(2.0, 10);
+		panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);*/
 		panoramaSize.second = panoramaSize.first / 2;
 		ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
 
@@ -260,11 +260,6 @@ int aliceVision_main(int argc, char** argv)
 				{
 					continue;
 				}
-
-				/*if (view.getViewId() != 828178699) 
-				{
-					continue;
-				}*/
 
 				ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
 
@@ -295,8 +290,12 @@ int aliceVision_main(int argc, char** argv)
 						BoundingBox localBbox;
 						localBbox.left = x + snappedCoarseBbox.left;
 						localBbox.top = y + snappedCoarseBbox.top;
-						localBbox.width = tileSize;
+					    localBbox.width = tileSize;
 						localBbox.height = tileSize;
+
+						localBbox.clampRight(snappedCoarseBbox.getRight());
+						localBbox.clampBottom(snappedCoarseBbox.getBottom());
+
 						boxes.push_back(localBbox);
 					}
 				}
@@ -335,7 +334,7 @@ int aliceVision_main(int argc, char** argv)
 
 				// Once again, snap to grid
 				snappedGlobalBbox = globalBbox;
-				snappedGlobalBbox.snapToGrid(tileSize);
+				//snappedGlobalBbox.snapToGrid(tileSize);
 				if (snappedGlobalBbox.width <= 0 || snappedGlobalBbox.height <= 0)  continue;
 
 
@@ -414,7 +413,7 @@ int aliceVision_main(int argc, char** argv)
 					}
 				}
 
-
+				
 				#pragma omp parallel for 
 				{
 					for (int boxId = 0; boxId < boxes.size(); boxId++) 
