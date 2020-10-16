@@ -479,8 +479,8 @@ public:
                 {
                     return false;
                 }
-
-                change &= lchange;
+                
+                change |= lchange;
             }
 
             if (!change)

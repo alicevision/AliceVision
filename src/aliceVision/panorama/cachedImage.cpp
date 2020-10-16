@@ -13,7 +13,7 @@ bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 4, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec spec(_width, _height, 4, oiio::TypeDesc::FLOAT);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
@@ -56,7 +56,7 @@ bool CachedImage<image::RGBfColor>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 3, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec spec(_width, _height, 3, oiio::TypeDesc::FLOAT);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
@@ -99,7 +99,7 @@ bool CachedImage<IndexT>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 1, oiio::TypeDesc::UINT32);
+    oiio::ImageSpec spec(_width, _height, 1, oiio::TypeDesc::UINT32);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
@@ -142,7 +142,7 @@ bool CachedImage<float>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 1, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec spec(_width, _height, 1, oiio::TypeDesc::FLOAT);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
@@ -185,7 +185,7 @@ bool CachedImage<unsigned char>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_memoryWidth, _memoryHeight, 1, oiio::TypeDesc::UINT8);
+    oiio::ImageSpec spec(_width, _height, 1, oiio::TypeDesc::UINT8);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
