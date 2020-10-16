@@ -349,15 +349,16 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    labels.writeImage("/home/mmoc/labels_wta.exr");
 
-    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
+   /* if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
     {
         ALICEVISION_LOG_ERROR("Error computing graph cut labels");
         return EXIT_FAILURE;
     }
 
-    labels.writeImage("/home/mmoc/labels.exr");
-
+    labels.writeImage("/home/mmoc/labels_gc.exr");
+*/
 
     //Get a list of views ordered by their image scale
     std::vector<std::shared_ptr<sfmData::View>> viewOrderedByScale;

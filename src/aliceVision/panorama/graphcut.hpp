@@ -210,6 +210,7 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
     return true;
 }
 
+
 class GraphcutSeams
 {
 public:
@@ -301,13 +302,49 @@ public:
         outputBbox.left = input.rect.left - localBbox.left;
         outputBbox.top = input.rect.top - localBbox.top;
 
-
+        //Extract labels for the ROI
         image::Image<IndexT> localLabels(localBbox.width, localBbox.height);
         if (!loopyCachedImageExtract(localLabels, _labels, localBbox)) 
         {
             return false;
         }   
 
+        // Compute distance map to borders of the input seams
+        image::Image<int> distanceMap(localLabels.Width(), localLabels.Height());
+        {
+            image::Image<IndexT> binarizedWorld(localLabels.Width(), localLabels.Height());
+
+            for(int y = 0; y < localLabels.Height(); y++)
+            {
+                for(int x = 0; x < localLabels.Width(); x++)
+                {
+                    IndexT label = localLabels(y, x);
+
+                    if(label == input.id)
+                    {
+                        binarizedWorld(y, x) = 1;
+                    }
+                    else
+                    {
+                        binarizedWorld(y, x) = 0;
+                    }
+                }
+            }
+
+            image::Image<unsigned char> seams(localLabels.Width(), localLabels.Height());
+            if(!computeSeamsMap(seams, binarizedWorld))
+            {
+                return false;
+            }
+
+            if(!computeDistanceMap(distanceMap, seams))
+            {
+                return false;
+            }
+        }
+
+
+        //Build the input
         image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
         
         for (auto  & otherInput : _inputs)
@@ -367,6 +404,12 @@ public:
                         {
                             continue;
                         }
+                        
+                        float dist = sqrt(float(distanceMap(y_current, x_current)));
+                        if (dist > _maximal_distance_change)
+                        {
+                            continue;
+                        }
 
                         PixelInfo & pix = graphCutInput(y_current, x_current);
                         pix[otherInput.first] = otherColor(y_other, x_other);
@@ -396,6 +439,12 @@ public:
                         int x_current = interestThis.left + x;
 
                         if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
+
+                        float dist = sqrt(float(distanceMap(y_current, x_current)));
+                        if (dist > _maximal_distance_change)
                         {
                             continue;
                         }
@@ -432,6 +481,12 @@ public:
                             continue;
                         }
 
+                        float dist = sqrt(float(distanceMap(y_current, x_current)));
+                        if (dist > _maximal_distance_change)
+                        {
+                            continue;
+                        }
+
                         PixelInfo & pix = graphCutInput(y_current, x_current);
                         pix[otherInput.first] = otherColor(y_other, x_other);
                     }
@@ -440,11 +495,12 @@ public:
         }
 
         double costBefore = cost(localLabels, graphCutInput, input.id);
-        if (!alphaExpansion(localLabels, graphCutInput, input.id)) 
+        if (!alphaExpansion(localLabels, distanceMap, graphCutInput, input.id)) 
         {
             return false;
         }
         double costAfter = cost(localLabels, graphCutInput, input.id);
+
 
         hasChanged = false;
         if (costAfter < costBefore)
@@ -466,12 +522,13 @@ public:
 
     bool process()
     {
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 10; i++)
         {   
             std::cout << "**************************" << std::endl;
             // For each possible label, try to extends its domination on the label's world
             bool change = false;
 
+            int pos = 0;
             for (auto & info : _inputs)
             {   
                 bool lchange = true;
@@ -489,7 +546,9 @@ public:
             }
         }
 
-        _labels.writeImage("/home/mmoc/test.exr");
+        char filename[512];
+        sprintf(filename, "/home/mmoc/test%d.exr", _outputWidth);
+        _labels.writeImage(filename);
 
         return true;
     }
@@ -616,46 +675,13 @@ public:
         return cost;
     }
 
-    bool alphaExpansion(image::Image<IndexT> & labels, const image::Image<PixelInfo> & input, IndexT currentLabel)
+    bool alphaExpansion(image::Image<IndexT> & labels, const image::Image<int> & distanceMap, const image::Image<PixelInfo> & input, IndexT currentLabel)
     {
         image::Image<unsigned char> mask(labels.Width(), labels.Height(), true, 0);
         image::Image<int> ids(labels.Width(), labels.Height(), true, -1);
         image::Image<image::RGBfColor> color_label(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
         image::Image<image::RGBfColor> color_other(labels.Width(), labels.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
 
-        // Compute distance map to seams
-        image::Image<int> distanceMap(labels.Width(), labels.Height());
-        {
-            image::Image<IndexT> binarizedWorld(labels.Width(), labels.Height());
-
-            for(int y = 0; y < labels.Height(); y++)
-            {
-                for(int x = 0; x < labels.Width(); x++)
-                {
-                    IndexT label = labels(y, x);
-
-                    if(label == currentLabel)
-                    {
-                        binarizedWorld(y, x) = 1;
-                    }
-                    else
-                    {
-                        binarizedWorld(y, x) = 0;
-                    }
-                }
-            }
-
-            image::Image<unsigned char> seams(labels.Width(), labels.Height());
-            if(!computeSeamsMap(seams, binarizedWorld))
-            {
-                return false;
-            }
-
-            if(!computeDistanceMap(distanceMap, seams))
-            {
-                return false;
-            }
-        }
 
         for (int y = 0; y < labels.Height(); y++) 
         {
@@ -663,7 +689,7 @@ public:
             {
                 IndexT label = labels(y, x);
 
-                int dist = distanceMap(y, x);
+                float dist = sqrt(float(distanceMap(y, x)));
 
                 image::RGBfColor currentColor;
                 image::RGBfColor otherColor;
