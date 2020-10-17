@@ -115,7 +115,10 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
-        seams.append(mask, weights, viewIt.first, offsetX, offsetY);
+        if (!seams.append(mask, weights, viewIt.first, offsetX, offsetY)) 
+        {
+            return false;
+        }
     }
 
     labels = seams.getLabels();
@@ -440,10 +443,16 @@ int aliceVision_main(int argc, char** argv)
         }
 
         std::cout << pos << std::endl;
-        compositer.append(source, mask, seams, offsetX, offsetY, imageContent);
+        if (!compositer.append(source, mask, seams, offsetX, offsetY, imageContent)) 
+        {
+            return EXIT_FAILURE;
+        }
     }
 
-    compositer.terminate();
+    if (!compositer.terminate()) 
+    {
+        return EXIT_FAILURE;
+    }
 
     compositer.save(outputPanorama);
 

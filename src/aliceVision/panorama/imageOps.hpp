@@ -138,15 +138,16 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
         inputBb.height = outputBb.height;
     }
 
-    if (assignedOutputBb.getRight() < output.getWidth()) {
+    if (assignedOutputBb.getRight() < output.getWidth()) 
+    {
         
         if (!output.assign(input, inputBb, outputBb)) 
         {
             return false;
         }
     }
-    else {
-
+    else 
+    {
         int left_1 = assignedOutputBb.left;
         int left_2 = 0;
         int width1 = output.getWidth() - assignedOutputBb.left;
@@ -192,46 +193,45 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
     outputBb.top = 0;
     outputBb.width = output.Width();
     outputBb.height = output.Height();
-    
+
     inputBb = extractedInputBb;
     if (inputBb.getBottom() >= input.getHeight())
     {
         inputBb.height =  input.getHeight() - inputBb.top;
         outputBb.height = inputBb.height;
     }
-
+    
     if (extractedInputBb.getRight() < input.getWidth()) 
     {
-        if (!input.extract(output, outputBb, inputBb)) 
+        if (!input.extract(output, outputBb, extractedInputBb)) 
         {
             return false;
         }
     }
     else 
-    {
-        int left_1 = extractedInputBb.left;
-        int left_2 = 0;
-        int width_1 = input.getWidth() - extractedInputBb.left;
-        int width_2 = output.Width() - width_1;
-
-        outputBb.left = 0;
-        inputBb.left = left_1;
-        outputBb.width = width_1;
-        inputBb.width = width_1;
-
-        if (!input.extract(output, outputBb, inputBb))
+    {        
+        int availableWidth = output.Width();
+        while (availableWidth > 0)   
         {
-            return false;
-        }
+            inputBb.clampRight(input.getWidth() - 1);
+            int extractedWidth = std::min(inputBb.width, availableWidth);
+            
 
-        outputBb.left = width_1;
-        inputBb.left = 0;
-        outputBb.width = width_2;
-        inputBb.width = width_2;
+            inputBb.width = extractedWidth;
+            outputBb.width = extractedWidth;
 
-        if (!input.extract(output, outputBb, inputBb))
-        {
-            return false;
+            if (!input.extract(output, outputBb, inputBb)) 
+            {
+                return false;
+            }
+            
+            //Update the bouding box for output
+            outputBb.left += extractedWidth;
+            availableWidth -= extractedWidth;
+            
+            //All the input is available.
+            inputBb.left = 0;
+            inputBb.width = input.getWidth();
         }
     }
 
