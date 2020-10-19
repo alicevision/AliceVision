@@ -112,8 +112,6 @@ bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Im
     return true;
 }
 
-bool downscaleByPowerOfTwo(image::Image<image::RGBfColor> & output, image::Image<unsigned char> & outputMask, const image::Image<image::RGBfColor> & input, const image::Image<unsigned char> & inputMask, const int timesDividedBy2);
-
 void removeNegativeValues(CachedImage<image::RGBfColor>& img);
 
 template <class T>
@@ -130,12 +128,6 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
     if (inputBb.height != outputBb.height) 
     {
         return false;
-    }
-
-    if (outputBb.getBottom() >= output.getHeight())
-    {
-        outputBb.height =  output.getHeight() - outputBb.top;
-        inputBb.height = outputBb.height;
     }
 
     if (assignedOutputBb.getRight() < output.getWidth()) 
@@ -192,18 +184,13 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
     outputBb.left = 0;
     outputBb.top = 0;
     outputBb.width = output.Width();
-    outputBb.height = output.Height();
+    outputBb.height = std::min(extractedInputBb.height, output.Height());
 
     inputBb = extractedInputBb;
-    if (inputBb.getBottom() >= input.getHeight())
-    {
-        inputBb.height =  input.getHeight() - inputBb.top;
-        outputBb.height = inputBb.height;
-    }
     
-    if (extractedInputBb.getRight() < input.getWidth()) 
+    if (inputBb.getRight() < input.getWidth()) 
     {
-        if (!input.extract(output, outputBb, extractedInputBb)) 
+        if (!input.extract(output, outputBb, inputBb)) 
         {
             return false;
         }
@@ -237,5 +224,67 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
 
     return true;
 }
+
+
+template <class T>
+bool makeImagePyramidCompatible(image::Image<T>& output, 
+                                size_t& out_offset_x, size_t& out_offset_y,
+                                const image::Image<T>& input,
+                                size_t offset_x, size_t offset_y, 
+                                size_t num_levels)
+{
+
+    if(num_levels == 0)
+    {
+        return false;
+    }
+
+    double max_scale = 1.0 / pow(2.0, num_levels - 1);
+
+    double low_offset_x = double(offset_x) * max_scale;
+    double low_offset_y = double(offset_y) * max_scale;
+
+    /*Make sure offset is integer even at the lowest level*/
+    double corrected_low_offset_x = floor(low_offset_x);
+    double corrected_low_offset_y = floor(low_offset_y);
+
+    /*Add some borders on the top and left to make sure mask can be smoothed*/
+    corrected_low_offset_x = std::max(0.0, corrected_low_offset_x - 3.0);
+    corrected_low_offset_y = std::max(0.0, corrected_low_offset_y - 3.0);
+
+    /*Compute offset at largest level*/
+    out_offset_x = size_t(corrected_low_offset_x / max_scale);
+    out_offset_y = size_t(corrected_low_offset_y / max_scale);
+
+    /*Compute difference*/
+    double doffset_x = double(offset_x) - double(out_offset_x);
+    double doffset_y = double(offset_y) - double(out_offset_y);
+
+    /* update size with border update */
+    double large_width = double(input.Width()) + doffset_x;
+    double large_height = double(input.Height()) + doffset_y;
+
+    /* compute size at largest scale */
+    double low_width = large_width * max_scale;
+    double low_height = large_height * max_scale;
+
+    /*Make sure width is integer event at the lowest level*/
+    double corrected_low_width = ceil(low_width);
+    double corrected_low_height = ceil(low_height);
+
+    /*Add some borders on the right and bottom to make sure mask can be smoothed*/
+    corrected_low_width = corrected_low_width + 3;
+    corrected_low_height = corrected_low_height + 3;
+
+    /*Compute size at largest level*/
+    size_t width = size_t(corrected_low_width / max_scale);
+    size_t height = size_t(corrected_low_height / max_scale);
+
+    output = image::Image<T>(width, height, true, T(0.0f));
+    output.block(doffset_y, doffset_x, input.Height(), input.Width()) = input;
+
+    return true;
+}
+
 
 } // namespace aliceVision

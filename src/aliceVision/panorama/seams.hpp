@@ -49,16 +49,12 @@ private:
 class HierarchicalGraphcutSeams
 {
 public:
-    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, size_t outputWidth, size_t outputHeight, size_t levelOfInterest)
+    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, size_t outputWidth, size_t outputHeight, size_t countLevels)
         : _cacheManager(cacheManager)
         , _outputWidth(outputWidth)
         , _outputHeight(outputHeight)
-        , _levelOfInterest(levelOfInterest)
+        , _countLevels(countLevels)
     {
-        double scale = 1.0 / pow(2.0, levelOfInterest);
-        size_t width = size_t(floor(double(outputWidth) * scale));
-        size_t height = size_t(floor(double(outputHeight) * scale));
-        _graphcut = std::unique_ptr<GraphcutSeams>(new GraphcutSeams(width, height));
     }
 
     virtual ~HierarchicalGraphcutSeams() = default;
@@ -66,11 +62,6 @@ public:
     bool initialize();
 
     bool setOriginalLabels(CachedImage<IndexT>& labels);
-
-    void setMaximalDistance(int distance) 
-    { 
-        _graphcut->setMaximalDistance(distance); 
-    }
 
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& input,
                         const aliceVision::image::Image<unsigned char>& inputMask, 
@@ -80,15 +71,14 @@ public:
 
     CachedImage<IndexT>& getLabels() 
     { 
-        return _labels; 
+        return _graphcuts[0].getLabels();
     }
 
 private:
-    std::unique_ptr<GraphcutSeams> _graphcut;
+    std::vector<GraphcutSeams> _graphcuts;
     image::TileCacheManager::shared_ptr _cacheManager;
-    CachedImage<IndexT> _labels;
 
-    size_t _levelOfInterest;
+    size_t _countLevels;
     size_t _outputWidth;
     size_t _outputHeight;
 };

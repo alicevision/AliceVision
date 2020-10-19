@@ -288,7 +288,7 @@ public:
         _maximal_distance_change = dist; 
     }
 
-    bool processInput(bool & hasChanged, InputData & input)
+    bool processInput(double & newCost, InputData & input)
     {
         //Get bounding box of input in panoram
         //Dilate to have some pixels outside of the input
@@ -494,18 +494,45 @@ public:
             }
         }
 
-        double costBefore = cost(localLabels, graphCutInput, input.id);
+        //Because of upscaling, some labels may be incorrect
+        //Some pixels may be affected to labels they don't see.
+        for (int y = 0; y < graphCutInput.Height(); y++) 
+        {
+            for (int x = 0; x < graphCutInput.Width(); x++) 
+            {
+                IndexT label = localLabels(y, x);
+
+                if (label == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                PixelInfo & pix = graphCutInput(y, x);
+
+                if (pix.size() == 0)
+                {
+                    localLabels(y, x) = UndefinedIndexT;
+                    continue;
+                }
+
+                auto it = pix.find(label);
+                if (it == pix.end())
+                {
+                    localLabels(y, x) = pix.begin()->first;
+                }
+            }
+        }
+
+        double oldCost = cost(localLabels, graphCutInput, input.id);
         if (!alphaExpansion(localLabels, distanceMap, graphCutInput, input.id)) 
         {
             return false;
         }
-        double costAfter = cost(localLabels, graphCutInput, input.id);
+        newCost = cost(localLabels, graphCutInput, input.id);
 
 
-        hasChanged = false;
-        if (costAfter < costBefore)
+        if (newCost < oldCost)
         {   
-            hasChanged = true;
             BoundingBox inputBb = localBbox;
             inputBb.left = 0;
             inputBb.top = 0;
@@ -515,6 +542,10 @@ public:
                 return false;
             }
         }
+        else 
+        {
+            newCost = oldCost;
+        }
 
 
         return true;
@@ -522,25 +553,38 @@ public:
 
     bool process()
     {
+        std::map<IndexT, double> costs;
+        for (auto & info : _inputs)
+        {
+            costs[info.first] = std::numeric_limits<double>::max();
+        }
+
         for (int i = 0; i < 10; i++)
         {   
             std::cout << "**************************" << std::endl;
             // For each possible label, try to extends its domination on the label's world
-            bool change = false;
+
+            bool hasChange = false;
 
             int pos = 0;
             for (auto & info : _inputs)
             {   
-                bool lchange = true;
-                if (!processInput(lchange, info.second)) 
+                double cost;
+                if (!processInput(cost, info.second)) 
                 {
                     return false;
                 }
-                
-                change |= lchange;
+
+                if (costs[info.first] != cost)
+                {
+                    std::cout << costs[info.first] << " ----> " << cost << std::endl;
+
+                    costs[info.first] = cost;
+                    hasChange = true;
+                }
             }
 
-            if (!change)
+            if (!hasChange)
             {
                 break;
             }
@@ -665,10 +709,17 @@ public:
                     YColorLC = YColorLY;
                 }
 
-                cost += (CColorLC - CColorLX).norm();
-                cost += (CColorLC - CColorLY).norm();
-                cost += (XColorLC - XColorLX).norm();
-                cost += (YColorLC - YColorLY).norm();
+                double c1 = (CColorLC - CColorLX).norm();
+                double c2 = (CColorLC - CColorLY).norm();
+                double c3 = (XColorLC - XColorLX).norm();
+                double c4 = (YColorLC - YColorLY).norm();
+
+                c1 = std::min(2.0, c1);
+                c2 = std::min(2.0, c2);
+                c3 = std::min(2.0, c3);
+                c4 = std::min(2.0, c4);
+
+                cost += c1 + c2 + c3 + c4;
             }
         }
 
@@ -888,6 +939,10 @@ public:
                         {
                             float d1 = (color_label(y, x) - color_other(y, x)).norm();
                             float d2 = (color_label(y, x + 1) - color_other(y, x + 1)).norm();
+
+                            d1 = std::min(2.0f, d1);
+                            d2 = std::min(2.0f, d2);
+
                             w = (d1 + d2) * 100.0 + 1.0;
                         }
 

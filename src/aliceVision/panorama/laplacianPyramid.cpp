@@ -329,7 +329,6 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
     int width = source.Width();
     int height = source.Height();
 
-    
     /* Convert mask to alpha layer */
     image::Image<float> mask_float(width, height);
     for(int i = 0; i < height; i++)
@@ -435,7 +434,10 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         convolveGaussian5x5<float>(buf_float, current_weights);
         downscale(next_weights, buf_float);
 
-        merge(current_color, current_weights, l, offset_x, offset_y);
+        if (!merge(current_color, current_weights, l, offset_x, offset_y)) 
+        {
+            return false;
+        }
 
         current_color = next_color;
         current_weights = next_weights;
@@ -447,8 +449,12 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         offset_y /= 2;
     }
 
-    merge(current_color, current_weights, _levels.size() - 1, offset_x, offset_y);
+    if (!merge(current_color, current_weights, _levels.size() - 1, offset_x, offset_y))
+    {
+        return false;
+    }
     pos++;
+
     return true;
 }
 
@@ -462,13 +468,16 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
     aliceVision::image::Image<image::RGBfColor> extractedColor(oimg.Width(), oimg.Height());
     aliceVision::image::Image<float> extractedWeight(oimg.Width(), oimg.Height());
 
-
     BoundingBox extractBb;
     extractBb.left = offset_x;
     extractBb.top = offset_y;
     extractBb.width = oimg.Width();
     extractBb.height = oimg.Height();
+    extractBb.clampBottom(img.getHeight() - 1);
 
+    BoundingBox inputBb = extractBb;
+    inputBb.left = 0;
+    inputBb.top = 0;
 
     if (!loopyCachedImageExtract(extractedColor, img, extractBb)) 
     {
@@ -480,9 +489,9 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
         return false;
     }
     
-    for(int i = 0; i < oimg.Height(); i++)
+    for(int i = 0; i < inputBb.height; i++)
     {
-        for(int j = 0; j < oimg.Width(); j++)
+        for(int j = 0; j < inputBb.width; j++)
         {
             extractedColor(i, j).r() += oimg(i, j).r() * oweight(i, j);
             extractedColor(i, j).g() += oimg(i, j).g() * oweight(i, j);
@@ -490,14 +499,6 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
             extractedWeight(i, j) += oweight(i, j);
         }
     }
-
-    BoundingBox inputBb;
-    inputBb.left = 0;
-    inputBb.top = 0;
-    inputBb.width = extractedColor.Width();
-    inputBb.height = extractedColor.Height();
-
-   
 
     if (!loopyCachedImageAssign(img, extractedColor, extractBb, inputBb)) {
         return false;
@@ -551,7 +552,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
         int x = 0;
         int y = 0;
         
-        
+
         for (int y = 0; y < _levels[halfLevel].getHeight(); y += processingSize)
         {
             for (int x = 0; x < _levels[halfLevel].getWidth(); x += processingSize) 
@@ -574,6 +575,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
                 //If the box has a negative left border,
                 //it is equivalent (with the loop, to shifting at the end)
                 int leftBorder = extractedBb.left - dilatedBb.left;
+                int topBorder = extractedBb.top - dilatedBb.top;
                 if (dilatedBb.left < 0)
                 {
                     dilatedBb.left = _levels[halfLevel].getWidth() + dilatedBb.left;
@@ -582,12 +584,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
                 BoundingBox doubleDilatedBb = dilatedBb.doubleSize();
                 BoundingBox doubleBb = extractedBb.doubleSize();
 
-
-                std::cout << extractedBb << std::endl;
-                std::cout << dilatedBb << std::endl;
-                std::cout << doubleDilatedBb << std::endl;
-                std::cout << doubleBb << std::endl;
-
+                
 
                 aliceVision::image::Image<image::RGBfColor> extracted(dilatedBb.width, dilatedBb.height);
                 if (!loopyCachedImageExtract(extracted, _levels[halfLevel], dilatedBb)) 
@@ -619,9 +616,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
 
                 BoundingBox inputAssigmentBb = doubleBb;
                 inputAssigmentBb.left = 2 * leftBorder;
-                inputAssigmentBb.top = 0;
-
-                std::cout << inputAssigmentBb << std::endl;
+                inputAssigmentBb.top = 2 * topBorder;
 
                 if (!loopyCachedImageAssign(_levels[currentLevel], extractedNext, doubleBb, inputAssigmentBb)) 
                 {
