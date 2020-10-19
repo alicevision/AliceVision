@@ -411,6 +411,13 @@ bool HierarchicalGraphcutSeams::process()
 {  
     for (int level = _countLevels - 1; level >= 0; level--) 
     {
+        ALICEVISION_LOG_INFO("Hierachical graphcut processing level #" << level);
+
+        if (level < _countLevels - 1)
+        {
+            _graphcuts[level].setMaximalDistance(10);
+        }
+
         if(!_graphcuts[level].process())
         {
             return false;

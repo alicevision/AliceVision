@@ -507,6 +507,12 @@ public:
                     continue;
                 }
 
+                float dist = sqrt(float(distanceMap(y, x)));
+                if (dist > _maximal_distance_change)
+                {
+                    continue;
+                }
+
                 PixelInfo & pix = graphCutInput(y, x);
 
                 if (pix.size() == 0)
@@ -561,9 +567,8 @@ public:
 
         for (int i = 0; i < 10; i++)
         {   
-            std::cout << "**************************" << std::endl;
+            ALICEVISION_LOG_INFO("GraphCut processing iteration #" << i);
             // For each possible label, try to extends its domination on the label's world
-
             bool hasChange = false;
 
             int pos = 0;
@@ -577,8 +582,6 @@ public:
 
                 if (costs[info.first] != cost)
                 {
-                    std::cout << costs[info.first] << " ----> " << cost << std::endl;
-
                     costs[info.first] = cost;
                     hasChange = true;
                 }
@@ -590,9 +593,9 @@ public:
             }
         }
 
-        char filename[512];
+        /*char filename[512];
         sprintf(filename, "/home/mmoc/test%d.exr", _outputWidth);
-        _labels.writeImage(filename);
+        _labels.writeImage(filename);*/
 
         return true;
     }
