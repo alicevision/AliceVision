@@ -9,13 +9,9 @@ namespace aliceVision
 template <class T>
 bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)
 {
-
-    size_t output_width = inputColor.Width() / 2;
-    size_t output_height = inputColor.Height() / 2;
-
-    for(int i = 0; i < output_height; i++)
+    for(int i = 0; i < outputColor.Height(); i++)
     {
-        for(int j = 0; j < output_width; j++)
+        for(int j = 0; j < outputColor.Width(); j++)
         {
             outputColor(i, j) = inputColor(i * 2, j * 2);
         }
@@ -30,13 +26,14 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
 
     size_t width = inputColor.Width();
     size_t height = inputColor.Height();
+    size_t dwidth = outputColor.Width();
+    size_t dheight = outputColor.Height();
 
-    for(int i = 0; i < height; i++)
+    for(int i = 0; i < height - 1; i++)
     {
-
         int di = i * 2;
 
-        for(int j = 0; j < width; j++)
+        for(int j = 0; j < width - 1; j++)
         {
             int dj = j * 2;
 
@@ -44,6 +41,54 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
             outputColor(di, dj + 1) = T();
             outputColor(di + 1, dj) = T();
             outputColor(di + 1, dj + 1) = inputColor(i, j);
+        }
+    }
+
+    for (int i = 0; i < height; i++)
+    {
+        int j = width - 1;
+        int di = i * 2;
+        int dj = j * 2;
+
+        outputColor(di, dj) = T();
+
+        if (dj < dwidth - 1)
+        {
+            outputColor(di, dj + 1) = T();
+        }
+
+        if (di < dheight - 1)
+        {
+            outputColor(di + 1, dj) = T();
+
+            if (dj < dwidth - 1)
+            {
+                outputColor(di + 1, dj + 1) = inputColor(i, j);
+            }
+        }
+    }
+
+    for (int j = 0; j < width; j++)
+    {
+        int i = height - 1;
+        int di = i * 2;
+        int dj = j * 2;
+
+        outputColor(di, dj) = T();
+
+        if (dj < dwidth - 1)
+        {
+            outputColor(di, dj + 1) = T();
+        }
+
+        if (di < dheight - 1)
+        {
+            outputColor(di + 1, dj) = T();
+
+            if (dj < dwidth - 1)
+            {
+                outputColor(di + 1, dj + 1) = inputColor(i, j);
+            }
         }
     }
 

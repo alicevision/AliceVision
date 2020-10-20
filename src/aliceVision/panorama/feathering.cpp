@@ -84,6 +84,49 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
         lvl++;
     }
 
+    //Now we want to make sure we have no masked pixel with undefined color
+    //So we compute the mean of all valid pixels, and set the invalid pixels to this value
+    image::Image<image::RGBfColor> & lastImage = feathering[feathering.size() - 1];
+    image::Image<unsigned char> & lastMask = feathering_mask[feathering_mask.size() - 1];
+    image::RGBfColor sum(0.0f);
+    int count = 0;
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            if (lastMask(y, x))
+            {
+                sum.r() += lastImage(y, x).r();
+                sum.g() += lastImage(y, x).g();
+                sum.b() += lastImage(y, x).b();
+                count++;
+            }
+        }
+    }
+
+    if (count > 0) 
+    {
+        image::RGBfColor mean;
+        mean.r() = sum.r() / float(count);
+        mean.g() = sum.g() / float(count);
+        mean.b() = sum.b() / float(count);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (!lastMask(y, x))
+                {
+                    lastImage(y, x) = mean;
+                    lastMask(y, x) = 255;
+                }
+            }
+        }
+    }
+
+
+    //Now, level by level, we fill masked pixel with the estimated value from
+    //The lower level.
     for(int lvl = feathering.size() - 2; lvl >= 0; lvl--)
     {
 

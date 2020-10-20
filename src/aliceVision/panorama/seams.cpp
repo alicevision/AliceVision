@@ -260,6 +260,8 @@ bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
                 smallInputBb.height = smallBb.height;
 
                 BoundingBox largeBb = smallBb.doubleSize();
+                largeBb.clampRight(largerLabels.getWidth() - 1);
+                largeBb.clampBottom(largerLabels.getHeight() - 1);
 
                 BoundingBox largeInputBb;
                 largeInputBb.left = 0;
@@ -384,8 +386,24 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
             {
                 int dj = j * 2;
 
-                if(potMask(di, dj) && potMask(di, dj + 1) 
-                   && potMask(di + 1, dj) && potMask(di + 1, dj + 1))
+                bool valid = potMask(di, dj);
+
+                if (j < nextMask.Width() - 1) 
+                {
+                    valid = valid && potMask(di, dj + 1);
+                }
+
+                if (i < nextMask.Height() - 1)
+                {
+                    valid = valid && potMask(di + 1, dj);
+
+                    if (j < nextMask.Width() - 1) 
+                    {
+                        valid = valid && potMask(di + 1, dj + 1);
+                    }
+                }
+
+                if (valid)
                 {
                     nextMask(i, j) = 255;
                 }
@@ -458,6 +476,9 @@ bool HierarchicalGraphcutSeams::process()
                 }
 
                 BoundingBox largeBb = smallBb.doubleSize();
+                largeBb.clampRight(largeLabels.getWidth() - 1);
+                largeBb.clampBottom(largeLabels.getHeight() - 1);
+
                 BoundingBox largeInputBb = largeBb;
                 largeInputBb.left = 0;
                 largeInputBb.top = 0;
@@ -502,6 +523,7 @@ bool HierarchicalGraphcutSeams::initialize()
 
         _graphcuts.push_back(gcs);
 
+        //Divide by 2 (rounding to the superior integer)
         width = int(ceil(float(width) / 2.0f));
         height = int(ceil(float(height) / 2.0f));
     }

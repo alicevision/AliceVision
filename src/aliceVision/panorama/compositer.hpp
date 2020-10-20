@@ -22,7 +22,7 @@ public:
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
-                        int offset_x, int offset_y, const BoundingBox & contentBox)
+                        int offset_x, int offset_y)
     {
         aliceVision::image::Image<image::RGBAfColor> masked(color.Width(), color.Height());
 

@@ -22,6 +22,10 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
     {
 
         int cy = y + coarseBbox.top;
+        if (cy < 0 || cy >= panoramaSize.second)
+        {
+            continue;
+        }
 
         for(int x = 0; x < coarseBbox.width; x++)
         {

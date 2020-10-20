@@ -47,9 +47,10 @@ public:
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
-                        size_t offset_x, size_t offset_y, const BoundingBox & contentBox)
+                        size_t offset_x, size_t offset_y)
     {
-        size_t optimalScale = getOptimalScale(contentBox.width, contentBox.height);
+        size_t optimalScale = getOptimalScale(color.Width(), color.Height());
+        std::cout << optimalScale << std::endl;
         if(optimalScale < _bands)
         {
             ALICEVISION_LOG_ERROR("Decreasing scale !");
@@ -58,11 +59,11 @@ public:
 
         //If the input scale is more important than previously processed, 
         // The pyramid must be deepened accordingly
-        if(optimalScale > _bands)
+        /*if(optimalScale > _bands)
         {
             _bands = optimalScale;
             _pyramidPanorama.augment(_cacheManager, _bands);
-        }
+        }*/
 
         // Make sure input is compatible with pyramid processing
         size_t new_offset_x, new_offset_y;

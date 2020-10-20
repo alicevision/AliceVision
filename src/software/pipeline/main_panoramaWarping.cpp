@@ -329,14 +329,10 @@ int aliceVision_main(int argc, char** argv)
 					globalBbox.left -= panoramaSize.first;
 				}
 
-				// Update bounding box
-				BoundingBox snappedGlobalBbox;
+				globalBbox.width = std::min(globalBbox.width, panoramaSize.first);
 
-				// Once again, snap to grid
-				snappedGlobalBbox = globalBbox;
-				//snappedGlobalBbox.snapToGrid(tileSize);
-				if (snappedGlobalBbox.width <= 0 || snappedGlobalBbox.height <= 0)  continue;
 
+				globalBbox.height = std::min(globalBbox.height, panoramaSize.second);
 
 				// Load image and convert it to linear colorspace
 				std::string imagePath = view.getImagePath();
@@ -346,12 +342,8 @@ int aliceVision_main(int argc, char** argv)
 
 				// Load metadata and update for output
 				oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
-				metadata.push_back(oiio::ParamValue("AliceVision:offsetX", snappedGlobalBbox.left));
-				metadata.push_back(oiio::ParamValue("AliceVision:offsetY", snappedGlobalBbox.top));
-				metadata.push_back(oiio::ParamValue("AliceVision:contentX", globalBbox.left - snappedGlobalBbox.left));
-				metadata.push_back(oiio::ParamValue("AliceVision:contentY", globalBbox.top - snappedGlobalBbox.top));
-				metadata.push_back(oiio::ParamValue("AliceVision:contentW", globalBbox.width));
-				metadata.push_back(oiio::ParamValue("AliceVision:contentH", globalBbox.height));
+				metadata.push_back(oiio::ParamValue("AliceVision:offsetX", globalBbox.left));
+				metadata.push_back(oiio::ParamValue("AliceVision:offsetY", globalBbox.top));
 				metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
 				metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
 				metadata.push_back(oiio::ParamValue("AliceVision:tileSize", tileSize));
@@ -372,9 +364,9 @@ int aliceVision_main(int argc, char** argv)
 				std::unique_ptr<oiio::ImageOutput> out_weights = oiio::ImageOutput::create(weightFilepath);
 
 				// Define output properties
-				oiio::ImageSpec spec_view(snappedGlobalBbox.width, snappedGlobalBbox.height, 3, (storageDataType == image::EStorageDataType::Half)?oiio::TypeDesc::HALF:oiio::TypeDesc::FLOAT);
-				oiio::ImageSpec spec_mask(snappedGlobalBbox.width, snappedGlobalBbox.height, 1, oiio::TypeDesc::UCHAR);
-				oiio::ImageSpec spec_weights(snappedGlobalBbox.width, snappedGlobalBbox.height, 1, oiio::TypeDesc::HALF);
+				oiio::ImageSpec spec_view(globalBbox.width, globalBbox.height, 3, (storageDataType == image::EStorageDataType::Half)?oiio::TypeDesc::HALF:oiio::TypeDesc::FLOAT);
+				oiio::ImageSpec spec_mask(globalBbox.width, globalBbox.height, 1, oiio::TypeDesc::UCHAR);
+				oiio::ImageSpec spec_weights(globalBbox.width, globalBbox.height, 1, oiio::TypeDesc::HALF);
 
 				spec_view.tile_width = tileSize;
 				spec_view.tile_height = tileSize;
@@ -400,13 +392,13 @@ int aliceVision_main(int argc, char** argv)
 				}
 
 				boxes.clear();
-				for (int y = 0; y < snappedGlobalBbox.height; y += tileSize) 
+				for (int y = 0; y < globalBbox.height; y += tileSize) 
 				{
-					for (int x = 0; x < snappedGlobalBbox.width; x += tileSize) 
+					for (int x = 0; x < globalBbox.width; x += tileSize) 
 					{
 						BoundingBox localBbox;
-						localBbox.left = x + snappedGlobalBbox.left;
-						localBbox.top = y + snappedGlobalBbox.top;
+						localBbox.left = x + globalBbox.left;
+						localBbox.top = y + globalBbox.top;
 						localBbox.width = tileSize;
 						localBbox.height = tileSize;
 						boxes.push_back(localBbox);
@@ -420,8 +412,8 @@ int aliceVision_main(int argc, char** argv)
 					{
 						BoundingBox localBbox = boxes[boxId];
 
-						int x = localBbox.left - snappedGlobalBbox.left;
-						int y = localBbox.top - snappedGlobalBbox.top;
+						int x = localBbox.left - globalBbox.left;
+						int y = localBbox.top - globalBbox.top;
 
 						// Prepare coordinates map
 						CoordinatesMap map;
