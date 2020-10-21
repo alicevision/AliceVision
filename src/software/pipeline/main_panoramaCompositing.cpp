@@ -316,7 +316,7 @@ int aliceVision_main(int argc, char** argv)
     // Configure the cache manager memory
     cacheManager->setInCoreMaxObjectCount(1000);
 
-    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 5);
+    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 6);
     
     if (!compositer.initialize()) 
     {
@@ -352,13 +352,29 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::shared_ptr<sfmData::View>> viewOrderedByScale;
     {
         std::map<size_t, std::vector<std::shared_ptr<sfmData::View>>> mapViewsScale;
-        for(const auto& it : sfmData.getViews()) 
+        for(const auto & it : sfmData.getViews()) 
         {
-            size_t scale = compositer.getOptimalScale(it.second->getWidth(), it.second->getHeight());
+            auto view = it.second;
+            IndexT viewId = view->getViewId();
+
+            if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
+            {
+                // skip unreconstructed views
+                continue;
+            }
+
+            // Load mask
+            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
+            image::Image<unsigned char> mask;
+            image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+            //Estimate scale
+            size_t scale = compositer.getOptimalScale(mask.Width(), mask.Height());
             mapViewsScale[scale].push_back(it.second);
         }
         for (auto scaledList : mapViewsScale)
         {
+            std::cout << scaledList.first << std::endl;
             for (auto item : scaledList.second) 
             {   
                 viewOrderedByScale.push_back(item);

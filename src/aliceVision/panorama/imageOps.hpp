@@ -11,14 +11,19 @@ bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::ima
 {
     for(int i = 0; i < outputColor.Height(); i++)
     {
+        int di = i * 2;
+
         for(int j = 0; j < outputColor.Width(); j++)
         {
-            outputColor(i, j) = inputColor(i * 2, j * 2);
+            int dj = j * 2;
+
+            outputColor(i, j) = inputColor(di, dj);
         }
     }
 
     return true;
 }
+
 
 template <class T>
 bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)
