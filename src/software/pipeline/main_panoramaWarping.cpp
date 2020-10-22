@@ -407,50 +407,48 @@ int aliceVision_main(int argc, char** argv)
 
 				
 				#pragma omp parallel for 
+				for (int boxId = 0; boxId < boxes.size(); boxId++) 
 				{
-					for (int boxId = 0; boxId < boxes.size(); boxId++) 
+					BoundingBox localBbox = boxes[boxId];
+
+					int x = localBbox.left - globalBbox.left;
+					int y = localBbox.top - globalBbox.top;
+
+					// Prepare coordinates map
+					CoordinatesMap map;
+					if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
 					{
-						BoundingBox localBbox = boxes[boxId];
+						continue;
+					}
 
-						int x = localBbox.left - globalBbox.left;
-						int y = localBbox.top - globalBbox.top;
+					// Warp image
+					GaussianWarper warper;
+					if (!warper.warp(map, pyramid)) {
+						continue;
+					}
 
-						// Prepare coordinates map
-						CoordinatesMap map;
-						if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
-						{
-							continue;
-						}
+					// Alpha mask
+					aliceVision::image::Image<float> weights;
+					if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
+						continue;
+					}
 
-						// Warp image
-						GaussianWarper warper;
-						if (!warper.warp(map, pyramid)) {
-							continue;
-						}
+					// Store
+					#pragma omp critical 
+					{
+						out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
+					}
 
-						// Alpha mask
-						aliceVision::image::Image<float> weights;
-						if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
-							continue;
-						}
+					// Store
+					#pragma omp critical 
+					{
+						out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
+					}
 
-						// Store
-						#pragma omp critical 
-						{
-							out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
-						}
-
-						// Store
-						#pragma omp critical 
-						{
-							out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
-						}
-
-						// Store
-						#pragma omp critical 
-						{
-							out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
-						}
+					// Store
+					#pragma omp critical 
+					{
+						out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
 					}
 				}
 

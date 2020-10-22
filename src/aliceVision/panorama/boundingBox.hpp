@@ -32,15 +32,15 @@ struct BoundingBox
     {
     }
 
-    constexpr int getRight() const { 
+    int getRight() const { 
         return left + width - 1; 
     }
 
-    constexpr int getBottom() const { 
+    int getBottom() const { 
         return top + height - 1; 
     }
 
-    constexpr bool isEmpty() const {
+    bool isEmpty() const {
         return (width <= 0 || height <= 0);
     }
 
