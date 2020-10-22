@@ -324,17 +324,17 @@ int aliceVision_main(int argc, char** argv)
     }
     else if (compositerType == "alpha")
     {
-        /*compositer = std::unique_ptr<Compositer>(new AlphaCompositer(cacheManager, panoramaSize.first, panoramaSize.second));
+        compositer = std::unique_ptr<Compositer>(new AlphaCompositer(cacheManager, panoramaSize.first, panoramaSize.second));
         useGraphCut = false;
         useSeams = false;
-        useWeights = true;*/
+        useWeights = true;
     }
     else 
     {
-        /*compositer = std::unique_ptr<Compositer>(new Compositer(cacheManager, panoramaSize.first, panoramaSize.second));
+        compositer = std::unique_ptr<Compositer>(new Compositer(cacheManager, panoramaSize.first, panoramaSize.second));
         useGraphCut = false;
         useSeams = false;
-        useWeights = false;*/
+        useWeights = false;
     }
 
     if (!compositer->initialize()) 
@@ -501,7 +501,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     ALICEVISION_LOG_INFO("Saving panorama to file");
-    if (!compositer->save(outputPanorama)) 
+    if (!compositer->save(outputPanorama, storageDataType)) 
     {
         ALICEVISION_LOG_ERROR("Impossible to save file");
         return EXIT_FAILURE;

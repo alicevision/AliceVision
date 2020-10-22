@@ -68,7 +68,7 @@ public:
         return true;
     }
 
-    bool writeImage(const std::string& path)
+    bool writeImage(const std::string& path, const image::EStorageDataType &storageDataType = image::EStorageDataType::Auto)
     {
 
         ALICEVISION_LOG_ERROR("incorrect template function");
@@ -484,18 +484,18 @@ private:
 };
 
 template <>
-bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path);
+bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType);
 
 template <>
-bool CachedImage<image::RGBfColor>::writeImage(const std::string& path);
+bool CachedImage<image::RGBfColor>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType);
 
 template <>
-bool CachedImage<IndexT>::writeImage(const std::string& path);
+bool CachedImage<IndexT>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType);
 
 template <>
-bool CachedImage<float>::writeImage(const std::string& path);
+bool CachedImage<float>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType);
 
 template <>
-bool CachedImage<unsigned char>::writeImage(const std::string& path);
+bool CachedImage<unsigned char>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType);
 
 } // namespace aliceVision

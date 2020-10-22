@@ -4,7 +4,7 @@ namespace aliceVision
 {
 
 template <>
-bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path)
+bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
 {
 
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
@@ -13,7 +13,14 @@ bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_width, _height, 4, oiio::TypeDesc::FLOAT);
+    oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
+    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
+    {
+        typeColor = oiio::TypeDesc::HALF;
+    } 
+		
+
+    oiio::ImageSpec spec(_width, _height, 4, typeColor);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
@@ -47,7 +54,7 @@ bool CachedImage<image::RGBAfColor>::writeImage(const std::string& path)
 }
 
 template <>
-bool CachedImage<image::RGBfColor>::writeImage(const std::string& path)
+bool CachedImage<image::RGBfColor>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
 {
 
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
@@ -56,7 +63,13 @@ bool CachedImage<image::RGBfColor>::writeImage(const std::string& path)
         return false;
     }
 
-    oiio::ImageSpec spec(_width, _height, 3, oiio::TypeDesc::FLOAT);
+    oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
+    if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
+    {
+        typeColor = oiio::TypeDesc::HALF;
+    } 
+
+    oiio::ImageSpec spec(_width, _height, 3, typeColor);
     spec.tile_width = _tileSize;
     spec.tile_height = _tileSize;
 
@@ -90,7 +103,7 @@ bool CachedImage<image::RGBfColor>::writeImage(const std::string& path)
 }
 
 template <>
-bool CachedImage<IndexT>::writeImage(const std::string& path)
+bool CachedImage<IndexT>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
 {
 
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
@@ -133,7 +146,7 @@ bool CachedImage<IndexT>::writeImage(const std::string& path)
 }
 
 template <>
-bool CachedImage<float>::writeImage(const std::string& path)
+bool CachedImage<float>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
 {
 
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);
@@ -176,7 +189,7 @@ bool CachedImage<float>::writeImage(const std::string& path)
 }
 
 template <>
-bool CachedImage<unsigned char>::writeImage(const std::string& path)
+bool CachedImage<unsigned char>::writeImage(const std::string& path, const image::EStorageDataType &storageDataType)
 {
 
     std::unique_ptr<oiio::ImageOutput> out = oiio::ImageOutput::create(path);

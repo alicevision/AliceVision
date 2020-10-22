@@ -6,6 +6,7 @@
 #include "imageOps.hpp"
 #include "seams.hpp"
 
+use
 namespace aliceVision
 {
 
@@ -90,9 +91,26 @@ public:
 
     virtual bool terminate() { return true; }
 
-    bool save(const std::string &path) 
+    bool save(const std::string &path, const image::EStorageDataType &storageDataType) 
     {
-        if(!_panorama.writeImage(path))
+        if (storageDataType == image::EStorageDataType::HalfFinite)
+        {
+            _panorama.perPixelOperation([](const image::RGBAfColor & c) 
+            {
+                image::RGBAfColor ret;
+
+                const float limit = float(HALF_MAX);
+                
+                ret.r() = clamp(c.r(), -limit, limit);
+                ret.g() = clamp(c.g(), -limit, limit);
+                ret.b() = clamp(c.b(), -limit, limit);
+                ret.a() = c.a();
+
+                return ret;
+            });
+        }
+
+        if(!_panorama.writeImage(path, storageDataType))
         {
             return false;
         }

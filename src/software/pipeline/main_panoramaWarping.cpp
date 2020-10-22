@@ -169,6 +169,12 @@ int aliceVision_main(int argc, char** argv)
 		// Set verbose level given command line
 		system::Logger::get()->setLogLevel(verboseLevel);
 
+		oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
+		if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
+		{
+			typeColor = oiio::TypeDesc::HALF;
+		} 
+		
 		// Load information about inputs
 		// Camera images
 		// Camera intrinsics
@@ -363,8 +369,9 @@ int aliceVision_main(int argc, char** argv)
 				std::unique_ptr<oiio::ImageOutput> out_mask = oiio::ImageOutput::create(maskFilepath);
 				std::unique_ptr<oiio::ImageOutput> out_weights = oiio::ImageOutput::create(weightFilepath);
 
+
 				// Define output properties
-				oiio::ImageSpec spec_view(globalBbox.width, globalBbox.height, 3, (storageDataType == image::EStorageDataType::Half)?oiio::TypeDesc::HALF:oiio::TypeDesc::FLOAT);
+				oiio::ImageSpec spec_view(globalBbox.width, globalBbox.height, 3, typeColor);
 				oiio::ImageSpec spec_mask(globalBbox.width, globalBbox.height, 1, oiio::TypeDesc::UCHAR);
 				oiio::ImageSpec spec_weights(globalBbox.width, globalBbox.height, 1, oiio::TypeDesc::HALF);
 
