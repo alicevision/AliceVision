@@ -7,111 +7,6 @@
 namespace aliceVision
 {
 
-template <class T>
-bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor, int posLoop)
-{
-    for(int i = 0; i < outputColor.Height(); i++)
-    {
-        int di = i * 2;
-
-        for(int j = 0; j < outputColor.Width(); j++)
-        {
-            int dj = j * 2;
-            if (dj > posLoop) {
-                dj = dj - 1;
-            }
-
-            outputColor(i, j) = inputColor(di, dj);
-        }
-    }
-
-    return true;
-}
-
-template <class T>
-bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor, int posLoop)
-{
-
-    size_t width = inputColor.Width();
-    size_t height = inputColor.Height();
-    size_t dwidth = outputColor.Width();
-    size_t dheight = outputColor.Height();
-
-    for(int i = 0; i < height - 1; i++)
-    {
-        int di = i * 2;
-
-        for(int j = 0; j < width - 1; j++)
-        {
-            int dj = j * 2;
-            if (dj >= posLoop) 
-            {
-                dj = dj - 1;
-            }
-
-            outputColor(di, dj) = T();
-            outputColor(di, dj + 1) = T();
-            outputColor(di + 1, dj) = T();
-            outputColor(di + 1, dj + 1) = inputColor(i, j);
-        }
-    }
-
-    for (int i = 0; i < height; i++)
-    {
-        int j = width - 1;
-        int di = i * 2;
-        int dj = j * 2;
-        if (dj >= posLoop) 
-        {
-            dj = dj - 1;
-        }
-
-        outputColor(di, dj) = T();
-
-        if (dj < dwidth - 1)
-        {
-            outputColor(di, dj + 1) = T();
-        }
-
-        if (di < dheight - 1)
-        {
-            outputColor(di + 1, dj) = T();
-
-            if (dj < dwidth - 1)
-            {
-                outputColor(di + 1, dj + 1) = inputColor(i, j);
-            }
-        }
-    }
-
-    for (int j = 0; j < width; j++)
-    {
-        int i = height - 1;
-        int di = i * 2;
-        int dj = j * 2;
-
-        outputColor(di, dj) = T();
-
-        if (dj < dwidth - 1)
-        {
-            outputColor(di, dj + 1) = T();
-        }
-
-        if (di < dheight - 1)
-        {
-            outputColor(di + 1, dj) = T();
-
-            if (dj < dwidth - 1)
-            {
-                outputColor(di + 1, dj + 1) = inputColor(i, j);
-            }
-        }
-    }
-
-    return true;
-}
-
-
 LaplacianPyramid::LaplacianPyramid(size_t base_width, size_t base_height, size_t max_levels) :
 _baseWidth(base_width),
 _baseHeight(base_height),
@@ -133,6 +28,15 @@ bool LaplacianPyramid::initialize(image::TileCacheManager::shared_ptr & cacheMan
     {
         CachedImage<image::RGBfColor> color;
         CachedImage<float> weights;
+
+        //If the level width is odd, it is a problem.
+        //Let update this level to an even size. we'll manage it later
+        //Store the real size to know we updated it
+        _realWidths.push_back(width);
+        if (width % 2)
+        {
+            width++;
+        }
 
         if(!color.createImage(cacheManager, width, height))
         {
@@ -157,8 +61,8 @@ bool LaplacianPyramid::initialize(image::TileCacheManager::shared_ptr & cacheMan
         _levels.push_back(color);
         _weights.push_back(weights);
 
+        width = width / 2;
         height = int(ceil(float(height) / 2.0f));
-        width = int(ceil(float(width) / 2.0f));
     }
 
     return true;
@@ -240,6 +144,7 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
         }
     );
 
+
     // Put colors in masked areas
     if (!feathering(largerColor, largerMask))
     {
@@ -254,8 +159,18 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
 
         int width = _levels[_levels.size() - 1].getWidth();
         int height = _levels[_levels.size() - 1].getHeight();
-        int nextWidth = int(ceil(float(width) / 2.0f));
+        
+        int nextWidth = width / 2;
         int nextHeight = int(ceil(float(height) / 2.0f));
+
+        //If the level width is odd, it is a problem.
+        //Let update this level to an even size. we'll manage it later
+        //Store the real size to know we updated it
+        _realWidths.push_back(nextWidth);
+        if (nextWidth % 2)
+        {
+            nextWidth++;
+        }
 
         if(!pyramidImage.createImage(cacheManager, nextWidth, nextHeight))
         {
@@ -274,6 +189,7 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
         _weights.push_back(pyramidWeights);
     }
 
+    std::cout << "ok" << std::endl;
 
     const int processingSize = 512;
     const size_t borderSize = 5;
@@ -307,9 +223,9 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
 
 
         //Process image rectangle by rectangle
-        for (int y = 0; y < currentImage.getHeight(); y += processingSize)
+        for (int y = 0; y < nextImage.getHeight(); y += processingSize)
         {
-            for (int x = 0; x < currentImage.getWidth(); x += processingSize)
+            for (int x = 0; x < nextImage.getWidth(); x += processingSize)
             {
                 //Compute the initial bouding box for this rectangle
                 BoundingBox nextBbox;
@@ -322,14 +238,11 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
                 nextBbox.clampRight(nextImage.getWidth() - 1);
                 nextBbox.clampBottom(nextImage.getHeight() - 1);
 
+
                 // Dilate the bounding box to account for filtering
                 BoundingBox dilatedNextBbox = nextBbox.dilate(borderSize);
                 dilatedNextBbox.clampTop();
                 dilatedNextBbox.clampBottom(nextImage.getHeight() - 1);
-                if (dilatedNextBbox.width % 2)
-                {
-                    dilatedNextBbox.width++;
-                }
 
                 //If the box has a negative left border,
                 //it is equivalent (with the loop, to shifting at the end)
@@ -337,7 +250,7 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
                 int topBorder = nextBbox.top - dilatedNextBbox.top;
                 if (dilatedNextBbox.left < 0)
                 {
-                    dilatedNextBbox.left = nextImage.getWidth() + dilatedNextBbox.left;
+                    dilatedNextBbox.left += nextImage.getWidth();
                 }
 
                 //Same box in the current level
@@ -350,8 +263,8 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
                 //Dilated box in the current level
                 BoundingBox dilatedCurrentBbox = dilatedNextBbox.doubleSize(); 
                 currentBbox.clampTop();
-                currentBbox.clampBottom(nextImage.getHeight() - 1);             
-                
+                currentBbox.clampBottom(currentImage.getHeight() - 1);         
+
                 //Extract the image with borders in the current level
                 aliceVision::image::Image<image::RGBfColor> extractedColor(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
                 if (!loopyCachedImageExtract(extractedColor, currentImage, dilatedCurrentBbox)) 
@@ -361,11 +274,10 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
 
                 //Extract the weights with borders in the current level
                 aliceVision::image::Image<float> extractedWeight(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
-                if (!loopyCachedImageExtract(extractedWeight, currentWeights, currentBbox)) 
+                if (!loopyCachedImageExtract(extractedWeight, currentWeights, dilatedCurrentBbox)) 
                 {
                     return false;
                 }
-
 
                 //Filter current image
                 aliceVision::image::Image<image::RGBfColor> buf(dilatedCurrentBbox.width, dilatedCurrentBbox.height);
@@ -378,7 +290,6 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
                 aliceVision::image::Image<float> weightDownscaled(dilatedNextBbox.width, dilatedNextBbox.height);
                 downscale(colorDownscaled, buf);
                 downscale(weightDownscaled, bufw);
-
 
                 BoundingBox saveBoundingBox;
                 saveBoundingBox.left = leftBorder;
@@ -403,6 +314,7 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
 
                 for (int i = 0; i  < buf2.Height(); i++) {
                     for (int j = 0; j < buf2.Width(); j++) {
+                        
                         buf2(i,j) *= 4.0f;
                     }
                 }
@@ -419,7 +331,6 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
                     }
                 }
 
-                
                 saveBoundingBox.left = leftBorder * 2;
                 saveBoundingBox.top = topBorder * 2;
                 saveBoundingBox.width = currentBbox.width;
@@ -490,13 +401,13 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         }
     }
 
+
     image::Image<image::RGBfColor> currentColor = source;
     image::Image<image::RGBfColor> nextColor;
     image::Image<float> currentWeights = weights;
     image::Image<float> nextWeights;
     image::Image<float> currentMask = mask_float;
-    image::Image<float> next_mask;
-
+    image::Image<float> nextMask;
 
     for(int l = 0; l < _levels.size() - 1; l++)
     {
@@ -512,26 +423,70 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         //It is a big problem
         bool specialLoop = false;
         int loopPosition = std::numeric_limits<int>::max();
-        if (img.getWidth() % 2) 
+        int realLevelWidth = _realWidths[l];
+        int offset = 0;
+
+        if (img.getWidth() != realLevelWidth) 
         {
             //Do we cross the loop ?
             if (inputBbox.getRight() > img.getWidth())
             {
                 specialLoop = true;
-                loopPosition = img.getWidth() - inputBbox.left;
+                loopPosition = realLevelWidth - inputBbox.left;
+                offset = 2;
             }
         }
 
-        image::Image<image::RGBfColor> bufMasked(width, height);
-        image::Image<image::RGBfColor> buf(width, height);
-        image::Image<image::RGBfColor> buf2(width, height);
-        image::Image<float> bufFloat(width, height);
-
-        
-        /*Apply mask to content before convolution*/
-        for(int i = 0; i < currentColor.Height(); i++)
+        //Create aligned images if necessary
+        if (specialLoop)
         {
-            for(int j = 0; j < currentColor.Width(); j++)
+            image::Image<image::RGBfColor> alignedColor(width + offset, height);
+            image::Image<float> alignedWeights(width + offset, height);
+            image::Image<float> alignedMask(width + offset, height);
+            
+            for(int i = 0; i < currentColor.Height(); i++)
+            {
+                int dj = 0;
+
+                for(int j = 0; j < currentColor.Width(); j++)
+                {
+                    if (j == loopPosition)
+                    {
+                        dj++;
+                    }
+
+                    alignedMask(i, dj) = currentMask(i, j);
+                    alignedColor(i, dj) = currentColor(i, j);
+                    alignedWeights(i, dj) = currentWeights(i, j);
+
+                    dj++;
+                }
+
+                if (specialLoop)
+                {
+                    alignedColor(i, loopPosition) = alignedColor(i, loopPosition + 1);
+                    alignedMask(i, loopPosition) = alignedMask(i, loopPosition + 1);
+                    alignedWeights(i, loopPosition) = alignedWeights(i, loopPosition + 1);
+                    alignedMask(i, width + 1) = 0;
+                    alignedWeights(i, width + 1) = 0;
+                }
+            }
+
+            currentColor = alignedColor;
+            currentWeights = alignedWeights;
+            currentMask = alignedMask;
+        }
+
+
+        image::Image<image::RGBfColor> bufMasked(width + offset, height);
+        image::Image<image::RGBfColor> buf(width + offset, height);
+        image::Image<image::RGBfColor> buf2(width + offset, height);
+        image::Image<float> bufFloat(width + offset, height);
+
+        /*Apply mask to content before convolution*/
+        for(int i = 0; i < height; i++)
+        {
+            for(int j = 0; j < width; j++)
             {
                 if(std::abs(currentMask(i, j)) > 1e-6)
                 {
@@ -546,15 +501,23 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
                 }
             }
         }
+        
 
-        convolveGaussian5x5<image::RGBfColor>(buf, bufMasked);
-        convolveGaussian5x5<float>(bufFloat, currentMask);
+        if (!convolveGaussian5x5<image::RGBfColor>(buf, bufMasked)) 
+        {
+            return false;
+        }
+
+        if (!convolveGaussian5x5<float>(bufFloat, currentMask)) 
+        {
+            return false;
+        }
 
         //Normalize given mask
         //(Make sure the convolution sum is 1)
-        for(int i = 0; i < currentColor.Height(); i++)
+        for(int i = 0; i < buf.Height(); i++)
         {
-            for(int j = 0; j < currentColor.Width(); j++)
+            for(int j = 0; j < buf.Width(); j++)
             {
                 float m = bufFloat(i, j);
 
@@ -576,42 +539,60 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         }
 
 
-        int offset = 0;
-        if (specialLoop)
-        {
-            offset = 1;
-        }
-
-        int nextWidth = int(floor(float(width + offset) / 2.0f));
+        int nextWidth = width / 2;
         int nextHeight = int(floor(float(height) / 2.0f));
 
         nextColor = aliceVision::image::Image<image::RGBfColor>(nextWidth, nextHeight);
         nextWeights = aliceVision::image::Image<float>(nextWidth, nextHeight);
-        next_mask = aliceVision::image::Image<float>(nextWidth, nextHeight);
+        nextMask = aliceVision::image::Image<float>(nextWidth, nextHeight);
 
-        downscale(nextColor, buf, loopPosition);
-        downscale(next_mask, bufFloat, loopPosition);
-        upscale(buf, nextColor, loopPosition);
+        if (!downscale(nextColor, buf)) 
+        {
+            return false;
+        }
+
+        if (!downscale(nextMask, bufFloat)) 
+        {
+            return false;
+        }
+
+        if (!upscale(buf, nextColor)) 
+        {
+            return false;
+        }
 
         //Filter
-        convolveGaussian5x5<image::RGBfColor>(buf2, buf);
+        if (!convolveGaussian5x5<image::RGBfColor>(buf2, buf)) 
+        {
+            return false;
+        }
 
         //Values must be multiplied by 4 as our upscale was using 
         //filling of 0 values
         for(int i = 0; i < buf2.Height(); i++)
         {
             for(int j = 0; j < buf2.Width(); j++)
-            {
+            {   
                 buf2(i, j) *= 4.0f;
             }
         }
 
         //Only keep the difference (Band pass)
-        substract(currentColor, currentColor, buf2);
+        if (!substract(currentColor, currentColor, buf2)) 
+        {
+            return false;
+        }
         
         //Downscale weights
-        convolveGaussian5x5<float>(bufFloat, currentWeights);
-        downscale(nextWeights, bufFloat, loopPosition);
+        if (!convolveGaussian5x5<float>(bufFloat, currentWeights)) 
+        {
+            return false;
+        }
+
+        if (!downscale(nextWeights, bufFloat))
+        {
+            return false;
+        }
 
         //Merge this view with previous ones
         if (!merge(currentColor, currentWeights, l, offsetX, offsetY)) 
@@ -622,7 +603,7 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         //Swap buffers
         currentColor = nextColor;
         currentWeights = nextWeights;
-        currentMask = next_mask;
+        currentMask = nextMask;
         width = nextWidth;
         height = nextHeight;
 
@@ -722,22 +703,11 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
 
     for(int l = _levels.size() - 2; l >= 0; l--)
     {
-
-        std::cout << _levels[l].getWidth() << " " << _levels[l].getHeight() << std::endl;
         const size_t processingSize = 512;
         const size_t borderSize = 5;
 
         int halfLevel = l + 1;
         int currentLevel = l;
-
-        int x = 0;
-        int y = 0;
-
-        bool specialBorder = false;
-        if (_levels[halfLevel].getWidth() % 2)
-        {
-            specialBorder = true;
-        }
 
         for (int py = 0; py < _levels[halfLevel].getHeight(); py += processingSize)
         {
@@ -790,8 +760,16 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
                 aliceVision::image::Image<image::RGBfColor> buf(dilatedBb.width * 2, dilatedBb.height * 2);
                 aliceVision::image::Image<image::RGBfColor> buf2(dilatedBb.width * 2, dilatedBb.height * 2);
 
-                upscale(buf, extracted);
-                convolveGaussian5x5<image::RGBfColor>(buf2, buf, false);
+                if (!upscale(buf, extracted)) 
+                {
+                    return false;
+                }
+
+
+                if (!convolveGaussian5x5<image::RGBfColor>(buf2, buf, false)) 
+                {
+                    return false;
+                }
 
                 for(int y = 0; y < buf2.Height(); y++)
                 {
@@ -823,12 +801,7 @@ bool LaplacianPyramid::rebuild(CachedImage<image::RGBAfColor>& output)
         }
 
         removeNegativeValues(_levels[currentLevel]);
-
-        
     }
-
-    
-
 
     for(int i = 0; i < output.getTiles().size(); i++)
     {

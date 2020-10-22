@@ -124,18 +124,13 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
     return true;
 }
 
-bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize) 
+bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize, int smallestViewScale) 
 {   
 
-    //Compute coarsest level possible for graph cut
-    int initial_level = 0;
-    int min_width_for_graphcut = 1000;
-    double ratio = double(panoramaSize.first) / double(min_width_for_graphcut);
-    if (ratio > 1.0) {
-      initial_level = int(floor(log2(ratio)));
-    }
+    int pyramidSize = std::max(0, smallestViewScale - 1);
+    ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
 
-    HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, initial_level + 1);
+    HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, pyramidSize);
 
     if (!seams.initialize()) 
     {
@@ -316,7 +311,7 @@ int aliceVision_main(int argc, char** argv)
     // Configure the cache manager memory
     cacheManager->setInCoreMaxObjectCount(1000);
 
-    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 6);
+    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 5);
     
     if (!compositer.initialize()) 
     {
@@ -331,24 +326,8 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    CachedImage<IndexT> labels;
-    if (!computeWTALabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
-    {
-        ALICEVISION_LOG_ERROR("Error computing initial labels");
-        return EXIT_FAILURE;
-    }
-
-    labels.writeImage("/home/mmoc/labels_wta.exr");
-
-    /*if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
-    {
-        ALICEVISION_LOG_ERROR("Error computing graph cut labels");
-        return EXIT_FAILURE;
-    }
-
-    labels.writeImage("/home/mmoc/labels_gc.exr");*/
-
     //Get a list of views ordered by their image scale
+    size_t smallestScale = 1;
     std::vector<std::shared_ptr<sfmData::View>> viewOrderedByScale;
     {
         std::map<size_t, std::vector<std::shared_ptr<sfmData::View>>> mapViewsScale;
@@ -372,15 +351,41 @@ int aliceVision_main(int argc, char** argv)
             size_t scale = compositer.getOptimalScale(mask.Width(), mask.Height());
             mapViewsScale[scale].push_back(it.second);
         }
+        
+        if (mapViewsScale.size() == 0) 
+        {
+            ALICEVISION_LOG_ERROR("No valid view");
+            return EXIT_FAILURE;
+        }
+
+        smallestScale = mapViewsScale.begin()->first;
+
         for (auto scaledList : mapViewsScale)
         {
-            std::cout << scaledList.first << std::endl;
             for (auto item : scaledList.second) 
             {   
                 viewOrderedByScale.push_back(item);
             }
         }
     }
+
+    CachedImage<IndexT> labels;
+    if (!computeWTALabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
+    {
+        ALICEVISION_LOG_ERROR("Error computing initial labels");
+        return EXIT_FAILURE;
+    }
+
+    labels.writeImage("/home/mmoc/labels_wta.exr");
+
+    
+    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize, smallestScale)) 
+    {
+        ALICEVISION_LOG_ERROR("Error computing graph cut labels");
+        return EXIT_FAILURE;
+    }
+
+    labels.writeImage("/home/mmoc/labels_gc.exr");
 
     size_t pos = 0;
 

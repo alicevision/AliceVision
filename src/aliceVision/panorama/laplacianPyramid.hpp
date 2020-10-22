@@ -32,6 +32,7 @@ private:
 
     std::vector<CachedImage<image::RGBfColor>> _levels;
     std::vector<CachedImage<float>> _weights;
+    std::vector<int> _realWidths;
 };
 
 } // namespace aliceVision

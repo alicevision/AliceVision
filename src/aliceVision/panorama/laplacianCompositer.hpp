@@ -40,7 +40,7 @@ public:
         size_t minsize = std::min(width, height);
         const float gaussian_filter_size = 5.0f;
         size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussian_filter_size)));
-        return 6;//optimal_scale;
+        return optimal_scale;
     }
 
     
@@ -50,7 +50,6 @@ public:
                         size_t offset_x, size_t offset_y)
     {
         size_t optimalScale = getOptimalScale(color.Width(), color.Height());
-        std::cout << "---" << optimalScale << std::endl;
         if(optimalScale < _bands)
         {
             ALICEVISION_LOG_ERROR("Decreasing scale !");

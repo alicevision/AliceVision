@@ -7,7 +7,6 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
                 const aliceVision::image::Image<image::RGBfColor>& color,
                 const aliceVision::image::Image<unsigned char>& inputMask)
 {
-
     std::vector<image::Image<image::RGBfColor>> feathering;
     std::vector<image::Image<unsigned char>> feathering_mask;
     feathering.push_back(color);
@@ -17,7 +16,7 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
     int width = color.Width();
     int height = color.Height();
 
-    while(1)
+    while (!(width < 2 || height < 2))
     {
         const image::Image<image::RGBfColor>& src = feathering[lvl];
         const image::Image<unsigned char>& src_mask = feathering_mask[lvl];
@@ -77,9 +76,6 @@ bool feathering(aliceVision::image::Image<image::RGBfColor>& output,
 
         width = half.Width();
         height = half.Height();
-
-        if(width < 2 || height < 2)
-            break;
 
         lvl++;
     }
@@ -296,11 +292,12 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
         }
     }
 
+
     if (!feathering(featheredGrid, colorGrid, maskGrid)) 
     {
         return false;
     }
-
+    
     for (int i = 0; i < tilesColor.size(); i++)
     {   
         std::vector<image::CachedTile::smart_pointer> rowColor = tilesColor[i];
@@ -397,6 +394,7 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
                 mask(0, 0) = 255;
                 img(0, 0) = featheredGrid(i, j);
             }
+            
 
             for(int lvl = pyramid_colors.size() - 2; lvl >= 0; lvl--)
             {
