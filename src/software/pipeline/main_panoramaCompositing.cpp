@@ -77,8 +77,10 @@ bool buildMap(BoundingBoxMap & map, const sfmData::SfMData& sfmData, const std::
     return true;
 }
 
-bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize)
+bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, std::pair<int, int> & panoramaSize)
 {
+    ALICEVISION_LOG_INFO("Estimating initial labels for panorama");
+
     WTASeams seams(panoramaSize.first, panoramaSize.second);
 
     if (!seams.initialize(cacheManager))
@@ -86,17 +88,13 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
         return false;
     }
 
-    for(const auto& viewIt : sfmData.getViews())
+    for (const auto& viewIt : views)
     {
-        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
-        {
-            // skip unreconstructed views
-            continue;
-        }
+        IndexT viewId = viewIt->getViewId();
 
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
-        ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
+        ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
@@ -106,12 +104,12 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
         // Load Weights
-        const std::string weightsPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_weight.exr")).string();
-        ALICEVISION_LOG_INFO("Load weights with path " << weightsPath);
+        const std::string weightsPath = (fs::path(inputPath) / (std::to_string(viewId) + "_weight.exr")).string();
+        ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
-        if (!seams.append(mask, weights, viewIt.first, offsetX, offsetY)) 
+        if (!seams.append(mask, weights, viewId, offsetX, offsetY)) 
         {
             return false;
         }
@@ -119,13 +117,12 @@ bool computeWTALabels(CachedImage<IndexT> & labels, image::TileCacheManager::sha
 
     labels = seams.getLabels();
 
-    
-
     return true;
 }
 
-bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const sfmData::SfMData& sfmData, const std::string & inputPath, std::pair<int, int> & panoramaSize, int smallestViewScale) 
+bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, std::pair<int, int> & panoramaSize, int smallestViewScale) 
 {   
+    ALICEVISION_LOG_INFO("Estimating smart seams for panorama");
 
     int pyramidSize = std::max(0, smallestViewScale - 1);
     ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
@@ -142,23 +139,19 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
         return false;
     }
 
-    for (const auto& viewIt : sfmData.getViews())
+    for (const auto& viewIt : views)
     {
-        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
-        {
-            // skip unreconstructed views
-            continue;
-        }
+        IndexT viewId = viewIt->getViewId();
 
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
-        ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
+        ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
         // Load Color
-        const std::string colorsPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + ".exr")).string();
-        ALICEVISION_LOG_INFO("Load colors with path " << colorsPath);
+        const std::string colorsPath = (fs::path(inputPath) / (std::to_string(viewId) + ".exr")).string();
+        ALICEVISION_LOG_TRACE("Load colors with path " << colorsPath);
         image::Image<image::RGBfColor> colors;
         image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
 
@@ -169,7 +162,7 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
 
 
         // Append to graph cut
-        if (!seams.append(colors, mask, viewIt.first, offsetX, offsetY)) 
+        if (!seams.append(colors, mask, viewId, offsetX, offsetY)) 
         {
             return false;
         }
@@ -194,6 +187,8 @@ int aliceVision_main(int argc, char** argv)
     std::string compositerType = "multiband";
     std::string overlayType = "none";
     bool useGraphCut = true;
+    bool useSeams = false;
+    bool useWeights = false;
     bool showBorders = false;
     bool showSeams = false;
 
@@ -311,18 +306,40 @@ int aliceVision_main(int argc, char** argv)
     // Configure the cache manager memory
     cacheManager->setInCoreMaxObjectCount(1000);
 
-    LaplacianCompositer compositer(cacheManager, panoramaSize.first, panoramaSize.second, 5);
-    
-    if (!compositer.initialize()) 
+    if (overlayType == "borders" || overlayType == "all")
     {
-        ALICEVISION_LOG_ERROR("Failed to initialize compositer");
-        return EXIT_FAILURE;
+        showBorders = true;
     }
 
-    BoundingBoxMap map;
-    if (!buildMap(map, sfmData, warpingFolder))
+    if (overlayType == "seams" || overlayType == "all") {
+        showSeams = true;
+    }
+
+    std::unique_ptr<Compositer> compositer;
+    if (compositerType == "multiband") 
     {
-        ALICEVISION_LOG_ERROR("Error Building map");
+        compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(cacheManager, panoramaSize.first, panoramaSize.second, 1));
+        useSeams = true;
+        useWeights = false;
+    }
+    else if (compositerType == "alpha")
+    {
+        /*compositer = std::unique_ptr<Compositer>(new AlphaCompositer(cacheManager, panoramaSize.first, panoramaSize.second));
+        useGraphCut = false;
+        useSeams = false;
+        useWeights = true;*/
+    }
+    else 
+    {
+        /*compositer = std::unique_ptr<Compositer>(new Compositer(cacheManager, panoramaSize.first, panoramaSize.second));
+        useGraphCut = false;
+        useSeams = false;
+        useWeights = false;*/
+    }
+
+    if (!compositer->initialize()) 
+    {
+        ALICEVISION_LOG_ERROR("Failed to initialize compositer");
         return EXIT_FAILURE;
     }
 
@@ -348,7 +365,7 @@ int aliceVision_main(int argc, char** argv)
             image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
             //Estimate scale
-            size_t scale = compositer.getOptimalScale(mask.Width(), mask.Height());
+            size_t scale = compositer->getOptimalScale(mask.Width(), mask.Height());
             mapViewsScale[scale].push_back(it.second);
         }
         
@@ -369,83 +386,126 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    ALICEVISION_LOG_INFO(viewOrderedByScale.size() << " views to process");
+
     CachedImage<IndexT> labels;
-    if (!computeWTALabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize)) 
+    if (useSeams) 
     {
-        ALICEVISION_LOG_ERROR("Error computing initial labels");
-        return EXIT_FAILURE;
+        if (!computeWTALabels(labels, cacheManager, viewOrderedByScale, warpingFolder, panoramaSize)) 
+        {
+            ALICEVISION_LOG_ERROR("Error computing initial labels");
+            return EXIT_FAILURE;
+        }
+
+        if (useGraphCut)
+        {
+            if (!computeGCLabels(labels, cacheManager, viewOrderedByScale, warpingFolder, panoramaSize, smallestScale)) 
+            {
+                ALICEVISION_LOG_ERROR("Error computing graph cut labels");
+                return EXIT_FAILURE;
+            }
+        }
     }
-
-    labels.writeImage("/home/mmoc/labels_wta.exr");
-
-    
-    if (!computeGCLabels(labels, cacheManager, sfmData, warpingFolder, panoramaSize, smallestScale)) 
-    {
-        ALICEVISION_LOG_ERROR("Error computing graph cut labels");
-        return EXIT_FAILURE;
-    }
-
-    labels.writeImage("/home/mmoc/labels_gc.exr");
 
     size_t pos = 0;
-
-    std::cout << "compositing" << std::endl;
-
     for(const auto & view : viewOrderedByScale)
     {
         IndexT viewId = view->getViewId();
-        if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
-        {
-            // skip unreconstructed views
-            continue;
-        }
         pos++;
 
+        ALICEVISION_LOG_INFO("Processing input " << pos << "/" << viewOrderedByScale.size());
     
         // Load image and convert it to linear colorspace
         const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewId) + ".exr")).string();
-        //ALICEVISION_LOG_INFO("Load image with path " << imagePath);
+        ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
         image::Image<image::RGBfColor> source;
         image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
+        // Retrieve position of image in panorama
         oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
         const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
-        
-        //ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+        ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
         // Load Weights
-        /*const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_weight.exr")).string();
-        ALICEVISION_LOG_INFO("Load weights with path " << weightsPath);
         image::Image<float> weights;
-        image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
-
-        
-        image::Image<float> seams(mask.Width(), mask.Height());
-        if (!getMaskFromLabels(seams, labels, viewId, offsetX, offsetY)) 
+        if (useWeights)
         {
-            ALICEVISION_LOG_ERROR("Error estimating seams image");
-            return EXIT_FAILURE;
+            const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_weight.exr")).string();
+            ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
+            image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
+        }
+        else if (useSeams)
+        {
+            weights = image::Image<float>(mask.Width(), mask.Height());
+            if (!getMaskFromLabels(weights, labels, viewId, offsetX, offsetY)) 
+            {
+                ALICEVISION_LOG_ERROR("Error estimating seams image");
+                return EXIT_FAILURE;
+            }
         }
 
-        std::cout << pos << std::endl;
-        if (!compositer.append(source, mask, seams, offsetX, offsetY)) 
+        if (!compositer->append(source, mask, weights, offsetX, offsetY)) 
         {
             return EXIT_FAILURE;
         }
     }
 
-    if (!compositer.terminate()) 
+    ALICEVISION_LOG_INFO("Final processing");
+    if (!compositer->terminate()) 
     {
+        ALICEVISION_LOG_ERROR("Error terminating panorama");
         return EXIT_FAILURE;
     }
 
-    compositer.save(outputPanorama);
+    if (showBorders)
+    {
+        ALICEVISION_LOG_INFO("Drawing borders on panorama");
+
+        for(const auto & view : viewOrderedByScale)
+        {
+            IndexT viewId = view->getViewId();
+
+            // Load mask
+            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
+            ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
+            image::Image<unsigned char> mask;
+            image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+            oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+            const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
+            const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+            if (!compositer->drawBorders(mask, offsetX, offsetY)) 
+            {
+                ALICEVISION_LOG_ERROR("Failed to draw borders");
+                return EXIT_FAILURE;
+            }
+        }
+    }
+
+    if (showSeams && useSeams)
+    {
+        ALICEVISION_LOG_INFO("Drawing seams on panorama");
+
+        if (!compositer->drawSeams(labels)) 
+        {
+            ALICEVISION_LOG_ERROR("Failed to draw borders");
+            return EXIT_FAILURE;
+        }
+    }
+
+    ALICEVISION_LOG_INFO("Saving panorama to file");
+    if (!compositer->save(outputPanorama)) 
+    {
+        ALICEVISION_LOG_ERROR("Impossible to save file");
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }

@@ -189,8 +189,6 @@ bool LaplacianPyramid::augment(image::TileCacheManager::shared_ptr & cacheManage
         _weights.push_back(pyramidWeights);
     }
 
-    std::cout << "ok" << std::endl;
-
     const int processingSize = 512;
     const size_t borderSize = 5;
     CachedImage<image::RGBfColor> currentImage = largerColor;

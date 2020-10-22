@@ -27,7 +27,7 @@ public:
         return _pyramidPanorama.initialize(_cacheManager);
     }
 
-    size_t getOptimalScale(int width, int height) 
+    virtual size_t getOptimalScale(int width, int height) 
     {
         /*
         Look for the smallest scale such that the image is not smaller than the
@@ -47,7 +47,7 @@ public:
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
-                        size_t offset_x, size_t offset_y)
+                        int offset_x, int offset_y) 
     {
         size_t optimalScale = getOptimalScale(color.Width(), color.Height());
         if(optimalScale < _bands)
@@ -113,7 +113,6 @@ public:
             [](const image::RGBAfColor & a) -> image::RGBAfColor {
 
                 image::RGBAfColor out;
-
                 out.r() = std::exp(a.r());
                 out.g() = std::exp(a.g());
                 out.b() = std::exp(a.b());

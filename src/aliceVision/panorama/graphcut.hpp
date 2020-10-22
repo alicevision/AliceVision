@@ -8,6 +8,7 @@
 #include "distance.hpp"
 #include "boundingBox.hpp"
 #include "imageOps.hpp"
+#include "seams.hpp"
 
 namespace aliceVision
 {
@@ -131,85 +132,7 @@ protected:
     const NodeType _T; //< fullness
 };
 
-bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<IndexT>& labels)
-{
-
-    if(seams.size() != labels.size())
-    {
-        return false;
-    }
-
-    seams.fill(0);
-
-    for(int j = 1; j < labels.Width() - 1; j++)
-    {
-        IndexT label = labels(0, j);
-        IndexT same = true;
-
-        same &= (labels(0, j - 1) == label);
-        same &= (labels(0, j + 1) == label);
-        same &= (labels(1, j - 1) == label);
-        same &= (labels(1, j) == label);
-        same &= (labels(1, j + 1) == label);
-
-        if(same)
-        {
-            continue;
-        }
-
-        seams(0, j) = 255;
-    }
-
-    int lastrow = labels.Height() - 1;
-    for(int j = 1; j < labels.Width() - 1; j++)
-    {
-        IndexT label = labels(lastrow, j);
-        IndexT same = true;
-
-        same &= (labels(lastrow - 1, j - 1) == label);
-        same &= (labels(lastrow - 1, j + 1) == label);
-        same &= (labels(lastrow, j - 1) == label);
-        same &= (labels(lastrow, j) == label);
-        same &= (labels(lastrow, j + 1) == label);
-
-        if(same)
-        {
-            continue;
-        }
-
-        seams(lastrow, j) = 255;
-    }
-
-    for(int i = 1; i < labels.Height() - 1; i++)
-    {
-
-        for(int j = 1; j < labels.Width() - 1; j++)
-        {
-
-            IndexT label = labels(i, j);
-            IndexT same = true;
-
-            same &= (labels(i - 1, j - 1) == label);
-            same &= (labels(i - 1, j) == label);
-            same &= (labels(i - 1, j + 1) == label);
-            same &= (labels(i, j - 1) == label);
-            same &= (labels(i, j + 1) == label);
-            same &= (labels(i + 1, j - 1) == label);
-            same &= (labels(i + 1, j) == label);
-            same &= (labels(i + 1, j + 1) == label);
-
-            if(same)
-            {
-                continue;
-            }
-
-            seams(i, j) = 255;
-        }
-    }
-
-    return true;
-}
-
+bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<IndexT>& labels);
 
 class GraphcutSeams
 {
@@ -528,7 +451,7 @@ public:
                 }
             }
         }
-
+        
         double oldCost = cost(localLabels, graphCutInput, input.id);
         if (!alphaExpansion(localLabels, distanceMap, graphCutInput, input.id)) 
         {

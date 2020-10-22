@@ -4,6 +4,7 @@
 
 #include "cachedImage.hpp"
 #include "imageOps.hpp"
+#include "seams.hpp"
 
 namespace aliceVision
 {
@@ -25,7 +26,7 @@ public:
                         int offset_x, int offset_y)
     {
         aliceVision::image::Image<image::RGBAfColor> masked(color.Width(), color.Height());
-
+ 
         BoundingBox panoramaBb;
         panoramaBb.left = offset_x;
         panoramaBb.top = offset_y;
@@ -97,6 +98,21 @@ public:
         }
 
         return true;
+    }
+
+    virtual size_t getOptimalScale(int width, int height) 
+    {
+        return 1;
+    }
+
+    bool drawBorders(const aliceVision::image::Image<unsigned char>& mask, size_t offsetX, size_t offsetY) 
+    {
+        return ::aliceVision::drawBorders(_panorama, mask, offsetX, offsetY);
+    }
+
+    bool drawSeams(CachedImage<IndexT>& label) 
+    {
+        return ::aliceVision::drawSeams(_panorama, label);
     }
 
 protected:
