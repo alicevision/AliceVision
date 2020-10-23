@@ -390,7 +390,7 @@ int aliceVision_main(int argc, char** argv)
 
     ALICEVISION_LOG_INFO(viewOrderedByScale.size() << " views to process");
 
-    BoundingBoxPanoramaMap map(panoramaSize.first, panoramaSize.second);
+    /*BoundingBoxPanoramaMap map(panoramaSize.first, panoramaSize.second);
     if (!buildMap(map, viewOrderedByScale, warpingFolder, compositer))
     {
         ALICEVISION_LOG_ERROR("Error computing map");
@@ -402,7 +402,7 @@ int aliceVision_main(int argc, char** argv)
     {
         ALICEVISION_LOG_ERROR("Error computing best elements");
         return EXIT_SUCCESS;
-    }
+    }*/
 
     CachedImage<IndexT> labels;
     if (useSeams) 

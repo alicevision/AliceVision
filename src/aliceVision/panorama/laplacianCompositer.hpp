@@ -42,7 +42,8 @@ public:
         int gaussianFilterSize = 1 + 2 * _gaussianFilterRadius;
         
         size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
-        return optimal_scale;
+        
+        return (optimal_scale - 1/*Security*/);
     }
 
     virtual int getBorderSize() const 
@@ -53,7 +54,7 @@ public:
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
-                        int offset_x, int offset_y) 
+                        int offsetX, int offsetY) 
     {
         size_t optimalScale = getOptimalScale(color.Width(), color.Height());
         size_t optimalLevelsCount = optimalScale + 1;
@@ -69,23 +70,26 @@ public:
         if(optimalLevelsCount > _bands)
         {
             _bands = optimalLevelsCount;
-            _pyramidPanorama.augment(_cacheManager, _bands);
+            if (!_pyramidPanorama.augment(_cacheManager, _bands)) 
+            {
+                return false;
+            }
         }
 
         // Make sure input is compatible with pyramid processing
-        size_t new_offset_x, new_offset_y;
-        aliceVision::image::Image<image::RGBfColor> color_pot;
-        aliceVision::image::Image<unsigned char> mask_pot;
-        aliceVision::image::Image<float> weights_pot;
+        size_t newOffsetX, newOffsetY;
+        aliceVision::image::Image<image::RGBfColor> colorPot;
+        aliceVision::image::Image<unsigned char> maskPot;
+        aliceVision::image::Image<float> weightsPot;
 
-        makeImagePyramidCompatible(color_pot, new_offset_x, new_offset_y, color, offset_x, offset_y, _bands);
-        makeImagePyramidCompatible(mask_pot, new_offset_x, new_offset_y, inputMask, offset_x, offset_y, _bands);
-        makeImagePyramidCompatible(weights_pot, new_offset_x, new_offset_y, inputWeights, offset_x, offset_y, _bands);
+        makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, _bands);
+        makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, _bands);
+        makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, _bands);
 
         
         // Fill Color images masked parts with fake but coherent info
         aliceVision::image::Image<image::RGBfColor> feathered;
-        if (!feathering(feathered, color_pot, mask_pot)) 
+        if (!feathering(feathered, colorPot, maskPot)) 
         {
             return false;
         }
@@ -101,7 +105,24 @@ public:
             }
         }
 
-        if (!_pyramidPanorama.apply(feathered, mask_pot, weights_pot, new_offset_x, new_offset_y)) 
+        /* Convert mask to alpha layer */
+        image::Image<float> maskFloat(maskPot.Width(), maskPot.Height());
+        for(int i = 0; i < maskPot.Height(); i++)
+        {
+            for(int j = 0; j < maskPot.Width(); j++)
+            {
+                if(maskPot(i, j))
+                {
+                    maskFloat(i, j) = 1.0f;
+                }
+                else
+                {
+                    maskFloat(i, j) = 0.0f;
+                }
+            }
+        }
+
+        if (!_pyramidPanorama.apply(feathered, maskFloat, weightsPot, 0, newOffsetX, newOffsetY)) 
         {
             return false;
         }
@@ -134,7 +155,7 @@ public:
     }
 
 protected:
-    const float _gaussianFilterRadius = 2.0f;
+    const int _gaussianFilterRadius = 2;
     LaplacianPyramid _pyramidPanorama;
     size_t _bands;
 };
