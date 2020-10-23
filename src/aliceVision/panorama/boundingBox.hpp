@@ -44,6 +44,10 @@ struct BoundingBox
         return (width <= 0 || height <= 0);
     }
 
+    int area() const {
+        return width * height;
+    }
+
     void snapToGrid(uint32_t gridSize)
     {
 
@@ -167,7 +171,7 @@ struct BoundingBox
         }
     }
 
-    BoundingBox doubleSize()
+    BoundingBox doubleSize() const
     {
         BoundingBox b;
 
@@ -179,7 +183,7 @@ struct BoundingBox
         return b;
     }
 
-    BoundingBox multiply(int factor)
+    BoundingBox multiply(int factor) const
     {
         BoundingBox b;
 
@@ -191,7 +195,7 @@ struct BoundingBox
         return b;
     }
 
-    BoundingBox divide(int factor)
+    BoundingBox divide(int factor) const
     {
         BoundingBox b;
 

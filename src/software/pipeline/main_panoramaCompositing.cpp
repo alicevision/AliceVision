@@ -32,7 +32,7 @@
 #include <aliceVision/panorama/alphaCompositer.hpp>
 #include <aliceVision/panorama/laplacianCompositer.hpp>
 #include <aliceVision/panorama/seams.hpp>
-#include <aliceVision/panorama/boundingBoxMap.hpp>
+#include <aliceVision/panorama/boundingBoxPanoramaMap.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -45,34 +45,35 @@ namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
 namespace fs = boost::filesystem;
 
-bool buildMap(BoundingBoxMap & map, const sfmData::SfMData& sfmData, const std::string & inputPath)
+bool buildMap(BoundingBoxPanoramaMap & map, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, const std::unique_ptr<Compositer> & compositer)
 {
-    /*for (const auto& viewIt : sfmData.getViews())
+    for (const auto& viewIt : views)
     {
-        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
-        {
-            // skip unreconstructed views
-            continue;
-        }
-        
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt->getViewId()) + "_mask.exr")).string();
+        ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
+        image::Image<unsigned char> mask;
+        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
 
         const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
 
         BoundingBox bb;
-        bb.left = offsetX + contentX;
-        bb.top = offsetY + contentY;
-        bb.width = contentW;
-        bb.height = contentH;
+        bb.left = offsetX;
+        bb.top = offsetY;
+        bb.width = mask.Width();
+        bb.height = mask.Height();
 
-        if (!map.append(viewIt.first, bb)) 
+        int border = compositer->getBorderSize();
+        int scale = compositer->getOptimalScale(mask.Width(), mask.Height());
+
+        if (!map.append(viewIt->getViewId(), bb, border, scale)) 
         {
             return false;
         }
-    }*/
+    }
 
     return true;
 }
@@ -336,6 +337,7 @@ int aliceVision_main(int argc, char** argv)
         useSeams = false;
         useWeights = false;
     }
+    
 
     if (!compositer->initialize()) 
     {
@@ -344,7 +346,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     //Get a list of views ordered by their image scale
-    size_t smallestScale = 1;
+    size_t smallestScale = 0;
     std::vector<std::shared_ptr<sfmData::View>> viewOrderedByScale;
     {
         std::map<size_t, std::vector<std::shared_ptr<sfmData::View>>> mapViewsScale;
@@ -387,6 +389,20 @@ int aliceVision_main(int argc, char** argv)
     }
 
     ALICEVISION_LOG_INFO(viewOrderedByScale.size() << " views to process");
+
+    BoundingBoxPanoramaMap map(panoramaSize.first, panoramaSize.second);
+    if (!buildMap(map, viewOrderedByScale, warpingFolder, compositer))
+    {
+        ALICEVISION_LOG_ERROR("Error computing map");
+        return EXIT_FAILURE;
+    }
+
+    std::list<IndexT> bestInitials;
+    if (!map.getBestInitial(bestInitials)) 
+    {
+        ALICEVISION_LOG_ERROR("Error computing best elements");
+        return EXIT_SUCCESS;
+    }
 
     CachedImage<IndexT> labels;
     if (useSeams) 

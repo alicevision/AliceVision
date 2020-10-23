@@ -5,7 +5,6 @@
 
 #include "cachedImage.hpp"
 #include "graphcut.hpp"
-#include "boundingBoxMap.hpp"
 
 namespace aliceVision
 {

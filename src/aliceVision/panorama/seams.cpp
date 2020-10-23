@@ -269,31 +269,6 @@ bool drawSeams(CachedImage<image::RGBAfColor>& inout, CachedImage<IndexT>& label
 
     return true;
 }
-/*
-    for(int i = 1; i < labels.Height() - 1; i++)
-    {
-
-        for(int j = 1; j < labels.Width() - 1; j++)
-        {
-
-            IndexT label = labels(i, j);
-            IndexT same = true;
-
-            same &= (labels(i - 1, j - 1) == label);
-            same &= (labels(i - 1, j + 1) == label);
-            same &= (labels(i, j - 1) == label);
-            same &= (labels(i, j + 1) == label);
-            same &= (labels(i + 1, j - 1) == label);
-            same &= (labels(i + 1, j + 1) == label);
-
-            if(same)
-            {
-                continue;
-            }
-
-            inout(i, j) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
-        }
-    }*/
 
 bool WTASeams::initialize(image::TileCacheManager::shared_ptr & cacheManager) 
 {

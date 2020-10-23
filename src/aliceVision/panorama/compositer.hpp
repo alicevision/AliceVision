@@ -6,7 +6,6 @@
 #include "imageOps.hpp"
 #include "seams.hpp"
 
-use
 namespace aliceVision
 {
 
@@ -118,9 +117,14 @@ public:
         return true;
     }
 
-    virtual size_t getOptimalScale(int width, int height) 
+    virtual size_t getOptimalScale(int width, int height) const
     {
         return 1;
+    }
+
+    virtual int getBorderSize() const 
+    {
+        return 0;
     }
 
     bool drawBorders(const aliceVision::image::Image<unsigned char>& mask, size_t offsetX, size_t offsetY) 

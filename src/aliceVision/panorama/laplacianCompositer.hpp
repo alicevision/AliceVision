@@ -27,7 +27,7 @@ public:
         return _pyramidPanorama.initialize(_cacheManager);
     }
 
-    virtual size_t getOptimalScale(int width, int height) 
+    virtual size_t getOptimalScale(int width, int height) const
     {
         /*
         Look for the smallest scale such that the image is not smaller than the
@@ -38,11 +38,17 @@ public:
         */
 
         size_t minsize = std::min(width, height);
-        const float gaussian_filter_size = 5.0f;
-        size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussian_filter_size)));
+
+        int gaussianFilterSize = 1 + 2 * _gaussianFilterRadius;
+        
+        size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
         return optimal_scale;
     }
 
+    virtual int getBorderSize() const 
+    {
+        return _gaussianFilterRadius;
+    }
     
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
@@ -50,17 +56,19 @@ public:
                         int offset_x, int offset_y) 
     {
         size_t optimalScale = getOptimalScale(color.Width(), color.Height());
-        if(optimalScale < _bands)
+        size_t optimalLevelsCount = optimalScale + 1;
+
+        if(optimalLevelsCount < _bands)
         {
-            ALICEVISION_LOG_ERROR("Decreasing scale !");
+            ALICEVISION_LOG_ERROR("Decreasing level count !");
             return false;
         }
 
         //If the input scale is more important than previously processed, 
         // The pyramid must be deepened accordingly
-        if(optimalScale > _bands)
+        if(optimalLevelsCount > _bands)
         {
-            _bands = optimalScale;
+            _bands = optimalLevelsCount;
             _pyramidPanorama.augment(_cacheManager, _bands);
         }
 
@@ -126,6 +134,7 @@ public:
     }
 
 protected:
+    const float _gaussianFilterRadius = 2.0f;
     LaplacianPyramid _pyramidPanorama;
     size_t _bands;
 };

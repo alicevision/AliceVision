@@ -2,7 +2,7 @@
 set(panorama_files_headers
   alphaCompositer.hpp
   boundingBox.hpp
-  boundingBoxMap.hpp
+  boundingBoxPanoramaMap.hpp
   compositer.hpp
   coordinatesMap.hpp
   distance.hpp
@@ -32,7 +32,7 @@ set(panorama_files_sources
   seams.cpp
   imageOps.cpp
   cachedImage.cpp
-  boundingBoxMap.cpp
+  boundingBoxPanoramaMap.cpp
 )
 
 alicevision_add_library(aliceVision_panorama
