@@ -77,14 +77,15 @@ public:
         }
 
         // Make sure input is compatible with pyramid processing
+        // See comments inside function for details
         size_t newOffsetX, newOffsetY;
         aliceVision::image::Image<image::RGBfColor> colorPot;
         aliceVision::image::Image<unsigned char> maskPot;
         aliceVision::image::Image<float> weightsPot;
 
-        makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, _bands);
-        makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, _bands);
-        makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, _bands);
+        makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, getBorderSize(), _bands);
+        makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, getBorderSize(), _bands);
+        makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, getBorderSize(), _bands);
 
         
         // Fill Color images masked parts with fake but coherent info

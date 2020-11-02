@@ -279,9 +279,10 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
 
 template <class T>
 bool makeImagePyramidCompatible(image::Image<T>& output, 
-                                size_t& out_offset_x, size_t& out_offset_y,
+                                size_t& outOffsetX, size_t& outOffsetY,
                                 const image::Image<T>& input,
-                                size_t offset_x, size_t offset_y, 
+                                size_t offsetX, size_t offsetY, 
+                                size_t borderSize,
                                 size_t num_levels)
 {
 
@@ -290,49 +291,49 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
         return false;
     }
 
-    double max_scale = 1.0 / pow(2.0, num_levels - 1);
+    double maxScale = 1.0 / pow(2.0, num_levels - 1);
 
-    double low_offset_x = double(offset_x) * max_scale;
-    double low_offset_y = double(offset_y) * max_scale;
+    double lowOffsetX = double(offsetX) * maxScale;
+    double lowOffsetY = double(offsetY) * maxScale;
 
     /*Make sure offset is integer even at the lowest level*/
-    double corrected_low_offset_x = floor(low_offset_x);
-    double corrected_low_offset_y = floor(low_offset_y);
+    double correctedLowOffsetX = floor(lowOffsetX);
+    double correctedLowOffsetY = floor(lowOffsetY);
 
     /*Add some borders on the top and left to make sure mask can be smoothed*/
-    corrected_low_offset_x = std::max(0.0, corrected_low_offset_x - 3.0);
-    corrected_low_offset_y = std::max(0.0, corrected_low_offset_y - 3.0);
+    correctedLowOffsetX = std::max(0.0, correctedLowOffsetX - double(borderSize));
+    correctedLowOffsetY = std::max(0.0, correctedLowOffsetY - double(borderSize));
 
     /*Compute offset at largest level*/
-    out_offset_x = size_t(corrected_low_offset_x / max_scale);
-    out_offset_y = size_t(corrected_low_offset_y / max_scale);
+    outOffsetX = size_t(correctedLowOffsetX / maxScale);
+    outOffsetY = size_t(correctedLowOffsetY / maxScale);
 
     /*Compute difference*/
-    double doffset_x = double(offset_x) - double(out_offset_x);
-    double doffset_y = double(offset_y) - double(out_offset_y);
+    double doffsetX = double(offsetX) - double(outOffsetX);
+    double doffsetY = double(offsetY) - double(outOffsetY);
 
     /* update size with border update */
-    double large_width = double(input.Width()) + doffset_x;
-    double large_height = double(input.Height()) + doffset_y;
+    double large_width = double(input.Width()) + doffsetX;
+    double large_height = double(input.Height()) + doffsetY;
 
     /* compute size at largest scale */
-    double low_width = large_width * max_scale;
-    double low_height = large_height * max_scale;
+    double low_width = large_width * maxScale;
+    double low_height = large_height * maxScale;
 
     /*Make sure width is integer event at the lowest level*/
-    double corrected_low_width = ceil(low_width);
-    double corrected_low_height = ceil(low_height);
+    double correctedLowWidth = ceil(low_width);
+    double correctedLowHeight = ceil(low_height);
 
     /*Add some borders on the right and bottom to make sure mask can be smoothed*/
-    corrected_low_width = corrected_low_width + 3;
-    corrected_low_height = corrected_low_height + 3;
+    correctedLowWidth = correctedLowWidth + double(borderSize);
+    correctedLowHeight = correctedLowHeight + double(borderSize);
 
     /*Compute size at largest level*/
-    size_t width = size_t(corrected_low_width / max_scale);
-    size_t height = size_t(corrected_low_height / max_scale);
+    size_t width = size_t(correctedLowWidth / maxScale);
+    size_t height = size_t(correctedLowHeight / maxScale);
 
     output = image::Image<T>(width, height, true, T(0.0f));
-    output.block(doffset_y, doffset_x, input.Height(), input.Width()) = input;
+    output.block(doffsetY, doffsetX, input.Height(), input.Width()) = input;
 
     return true;
 }

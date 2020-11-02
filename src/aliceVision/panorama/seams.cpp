@@ -430,8 +430,8 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
     size_t newOffsetX, newOffsetY;
     aliceVision::image::Image<image::RGBfColor> potImage;
     aliceVision::image::Image<unsigned char> potMask;
-    makeImagePyramidCompatible(potImage, newOffsetX, newOffsetY, input, offsetX, offsetY, _countLevels);
-    makeImagePyramidCompatible(potMask, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, _countLevels);
+    makeImagePyramidCompatible(potImage, newOffsetX, newOffsetY, input, offsetX, offsetY, 2, _countLevels);
+    makeImagePyramidCompatible(potMask, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, 2, _countLevels);
 
     // Fill Color images masked parts with fake but coherent info
     aliceVision::image::Image<image::RGBfColor> feathered;
