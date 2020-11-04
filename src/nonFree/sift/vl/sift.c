@@ -1434,6 +1434,7 @@ vl_sift_detect (VlSiftFilt * f)
         k-> x     = xn * xper ;
         k-> y     = yn * xper ;
         k-> sigma = f->sigma0 * pow (2.0, sn/f->S) * xper ;
+        k-> peak_value = vl_abs_d(val);
         ++ k ;
       }
 
