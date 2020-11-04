@@ -127,9 +127,8 @@ int main(int argc, char **argv)
   std::string filenameLeft;
   std::string filenameRight;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string describerPreset = "NORMAL";
+  feature::ConfigurationPreset featDescPreset;
   float ratioThreshold{0.8f};
-
 
   po::options_description allParams("AliceVision Sample robustHomographyGrowing: it shows how "
                                     "to match the feature robustly using the growing homography algorithm.");
@@ -140,7 +139,7 @@ int main(int argc, char **argv)
            "Right image.")
           ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
            feature::EImageDescriberType_informations().c_str())
-          ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+          ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
            "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
            "Configuration 'ultra' can take long time !")
           ("distanceRatio", po::value<float>(&ratioThreshold)->default_value(ratioThreshold),
@@ -192,10 +191,7 @@ int main(int argc, char **argv)
     std::cerr << "Invalid ImageDescriber type" << std::endl;
     return EXIT_FAILURE;
   }
-  if(!describerPreset.empty())
-  {
-    imageDescriber->setConfigurationPreset(describerPreset);
-  }
+  imageDescriber->setConfigurationPreset(featDescPreset);
 
   //--
   // Detect regions thanks to the imageDescriber

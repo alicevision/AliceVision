@@ -55,7 +55,7 @@ std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset image
   if(imageDescriberPreset == EImageDescriberPreset::HIGH)   return "high";
   if(imageDescriberPreset == EImageDescriberPreset::ULTRA)  return "ultra";
 
-  throw std::invalid_argument("Unrecognized EImageDescriberPreset");
+  throw std::invalid_argument("Unrecognized EImageDescriberPreset: " + std::to_string(int(imageDescriberPreset)));
 }
 
 std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p)
@@ -69,6 +69,113 @@ std::istream& operator>>(std::istream& in, EImageDescriberPreset& p)
   in >> token;
   p = EImageDescriberPreset_stringToEnum(token);
   return in;
+}
+
+
+EFeatureQuality EFeatureQuality_stringToEnum(const std::string& imageDescriberPreset)
+{
+    std::string preset = imageDescriberPreset;
+    std::transform(preset.begin(), preset.end(), preset.begin(), ::tolower); // tolower
+
+    if(preset == "low")
+        return EFeatureQuality::LOW;
+    if(preset == "medium")
+        return EFeatureQuality::MEDIUM;
+    if(preset == "normal")
+        return EFeatureQuality::NORMAL;
+    if(preset == "high")
+        return EFeatureQuality::HIGH;
+    if(preset == "ultra")
+        return EFeatureQuality::ULTRA;
+
+    throw std::invalid_argument("Invalid descriptor preset: " + preset);
+}
+
+std::string EFeatureQuality_enumToString(const EFeatureQuality imageDescriberPreset)
+{
+    if(imageDescriberPreset == EFeatureQuality::LOW)
+        return "low";
+    if(imageDescriberPreset == EFeatureQuality::MEDIUM)
+        return "medium";
+    if(imageDescriberPreset == EFeatureQuality::NORMAL)
+        return "normal";
+    if(imageDescriberPreset == EFeatureQuality::HIGH)
+        return "high";
+    if(imageDescriberPreset == EFeatureQuality::ULTRA)
+        return "ultra";
+
+    throw std::invalid_argument("Unrecognized EFeatureQuality: " + std::to_string(int(imageDescriberPreset)));
+}
+
+std::ostream& operator<<(std::ostream& os, EFeatureQuality p)
+{
+    return os << EFeatureQuality_enumToString(p);
+}
+
+std::istream& operator>>(std::istream& in, EFeatureQuality& p)
+{
+    std::string token;
+    in >> token;
+    p = EFeatureQuality_stringToEnum(token);
+    return in;
+}
+
+
+EFeatureConstrastFiltering EFeatureConstrastFiltering_stringToEnum(const std::string& v)
+{
+    std::string value = v;
+    std::transform(value.begin(), value.end(), value.begin(), ::tolower); // tolower
+
+    if(value == "static")
+        return EFeatureConstrastFiltering::Static;
+    if(value == "adaptivetomedianvariance")
+        return EFeatureConstrastFiltering::AdaptiveToMedianVariance;
+    if(value == "nofiltering")
+        return EFeatureConstrastFiltering::NoFiltering;
+    if(value == "gridsortoctaves")
+        return EFeatureConstrastFiltering::GridSortOctaves;
+    if(value == "gridsort")
+        return EFeatureConstrastFiltering::GridSort;
+    if(value == "gridsortscalesteps")
+        return EFeatureConstrastFiltering::GridSortScaleSteps;
+    if(value == "gridsortoctavesteps")
+        return EFeatureConstrastFiltering::GridSortOctaveSteps;
+    throw std::invalid_argument("Invalid EFeatureConstrastFiltering: " + v);
+}
+
+std::string EFeatureConstrastFiltering_enumToString(const EFeatureConstrastFiltering v)
+{
+    switch(v)
+    {
+        case EFeatureConstrastFiltering::Static:
+            return "Static";
+        case EFeatureConstrastFiltering::AdaptiveToMedianVariance:
+            return "AdaptiveToMedianVariance";
+        case EFeatureConstrastFiltering::NoFiltering:
+            return "NoFiltering";
+        case EFeatureConstrastFiltering::GridSortOctaves:
+            return "GridSortOctaves";
+        case EFeatureConstrastFiltering::GridSort:
+            return "GridSort";
+        case EFeatureConstrastFiltering::GridSortScaleSteps:
+            return "GridSortScaleSteps";
+        case EFeatureConstrastFiltering::GridSortOctaveSteps:
+            return "GridSortOctaveSteps";
+    }
+    throw std::invalid_argument("Unrecognized EFeatureConstrastFiltering: " + std::to_string(int(v)));
+}
+
+std::ostream& operator<<(std::ostream& os, EFeatureConstrastFiltering p)
+{
+    return os << EFeatureConstrastFiltering_enumToString(p);
+}
+
+std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& p)
+{
+    std::string token;
+    in >> token;
+    p = EFeatureConstrastFiltering_stringToEnum(token);
+    return in;
 }
 
 void ImageDescriber::Save(const Regions* regions, const std::string& sfileNameFeats, const std::string& sfileNameDescs) const

@@ -31,35 +31,113 @@ enum class EImageDescriberPreset
   , ULTRA
 };
 
-/**
- * @brief It returns the preset from a string.
- * @param[in] imageDescriberPreset the input string.
- * @return the associated describer preset.
- */
+inline std::string EImageDescriberPreset_information()
+{
+    return "Feature preset controls the density of the feature extraction:\n"
+           "* LOW: Very low density (max 1K points).\n"
+           "* MEDIUM: Low density (max 5K points).\n"
+           "* NORMAL: Default feature density (max 10K points).\n"
+           "* HIGH: High density (max 50K points).\n"
+           "* ULTRA: Very high density (max 100K points). Can use large amount of storage and large amount of computation. Use only on small datasets.\n";
+}
+
 EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& imageDescriberPreset);
-
-/**
- * @brief It converts a preset to a string.
- * @param[in] imageDescriberPreset the describer preset enum to convert.
- * @return the string associated to the describer preset.
- */
 std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset imageDescriberPreset);
-
-/**
- * @brief It write a describer preset into a stream by converting it to a string. 
- * @param[in] os the stream where to write the preset.
- * @param[in] p the preset to write.
- * @return the modified stream.
- */
 std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p);
+std::istream& operator>>(std::istream& in, EImageDescriberPreset& p);
 
 /**
- * @brief It read a describer preset from a stream. 
- * @param[in] in the stream from which the preset is read.
- * @param[out] p the preset read from the stream.
- * @return the modified stream without the read preset.
+ * @brief The quality of the detection. It's a trade-off between performance and precision.
  */
-std::istream& operator>>(std::istream& in, EImageDescriberPreset& p);
+enum class EFeatureQuality
+{
+    LOW = 0,
+    MEDIUM,
+    NORMAL,
+    HIGH,
+    ULTRA,
+};
+
+inline std::string EFeatureQuality_information()
+{
+    return "Feature extraction contains a compromize between speed and precision:\n"
+           "* LOW: Very quick results.\n"
+           "* MEDIUM: Quick results.\n"
+           "* NORMAL: Default feature quality.\n"
+           "* HIGH: Improved quality over performances.\n"
+           "* ULTRA: Perfect quality at the expense of high computational cost.\n";
+}
+
+EFeatureQuality EFeatureQuality_stringToEnum(const std::string& v);
+std::string EFeatureQuality_enumToString(const EFeatureQuality v);
+std::ostream& operator<<(std::ostream& os, EFeatureQuality v);
+std::istream& operator>>(std::istream& in, EFeatureQuality& v);
+
+
+/**
+ * @brief The method used to filter out features with too low constrast (that can be considered as noise).
+ */
+enum class EFeatureConstrastFiltering
+{
+    Static = 0,
+    AdaptiveToMedianVariance,
+    NoFiltering,
+    GridSortOctaves,
+    GridSort,
+    GridSortScaleSteps,
+    GridSortOctaveSteps
+};
+
+inline std::string EFeatureConstrastFiltering_information()
+{
+    return "Contrast filtering method to ignore features with too low contrast that can be consided as noise:\n"
+           "* Static: Fixed threshold.\n"
+           "* AdaptiveToMedianVariance: Based on image content analysis.\n"
+           "* NoFiltering: Disable contrast filtering.\n";
+}
+
+EFeatureConstrastFiltering EFeatureConstrastFiltering_stringToEnum(const std::string& v);
+std::string EFeatureConstrastFiltering_enumToString(const EFeatureConstrastFiltering v);
+std::ostream& operator<<(std::ostream& os, EFeatureConstrastFiltering v);
+std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& v);
+
+
+struct ConfigurationPreset
+{
+    EImageDescriberPreset descPreset = EImageDescriberPreset::NORMAL;
+    EFeatureQuality quality = EFeatureQuality::NORMAL;
+    bool gridFiltering = true;
+    EFeatureConstrastFiltering contrastFiltering = EFeatureConstrastFiltering::Static;
+    float relativePeakThreshold = 0.02;
+
+    inline ConfigurationPreset& setDescPreset(EImageDescriberPreset v)
+    {
+        descPreset = v;
+        return *this;
+    }
+    inline ConfigurationPreset& setDescPreset(const std::string& v)
+    {
+        descPreset = EImageDescriberPreset_stringToEnum(v);
+        return *this;
+    }
+
+    inline ConfigurationPreset& setGridFiltering(bool v)
+    {
+        gridFiltering = v;
+        return *this;
+    }
+
+    inline ConfigurationPreset& setContrastFiltering(EFeatureConstrastFiltering v)
+    {
+        contrastFiltering = v;
+        return *this;
+    }
+    inline ConfigurationPreset& setContrastFiltering(const std::string& v)
+    {
+        contrastFiltering = EFeatureConstrastFiltering_stringToEnum(v);
+        return *this;
+    }
+};
 
 /**
  * @brief A pure virtual class for image description computation
@@ -120,17 +198,8 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  virtual void setConfigurationPreset(EImageDescriberPreset preset) = 0;
+  virtual void setConfigurationPreset(ConfigurationPreset preset) = 0;
 
-  /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration string
-   */
-  void setConfigurationPreset(const std::string& preset)
-  {
-    setConfigurationPreset(EImageDescriberPreset_stringToEnum(preset));
-  }
-  
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.

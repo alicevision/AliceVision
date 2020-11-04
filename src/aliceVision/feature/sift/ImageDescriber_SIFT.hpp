@@ -121,7 +121,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(ConfigurationPreset preset) override
   {
      _params.setPreset(preset);
      _imageDescriberImpl->setConfigurationPreset(preset);

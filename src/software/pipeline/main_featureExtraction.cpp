@@ -297,7 +297,7 @@ int aliceVision_main(int argc, char **argv)
   // user optional parameters
 
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string describerPreset = feature::EImageDescriberPreset_enumToString(feature::EImageDescriberPreset::NORMAL);
+  feature::ConfigurationPreset featDescConfig;
   int rangeStart = -1;
   int rangeSize = 1;
   int maxThreads = 0;
@@ -316,9 +316,17 @@ int aliceVision_main(int argc, char **argv)
   optionalParams.add_options()
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+    ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescConfig.descPreset)->default_value(featDescConfig.descPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !")
+    ("describerQuality", po::value<feature::EFeatureQuality>(&featDescConfig.quality)->default_value(featDescConfig.quality),
+      feature::EFeatureQuality_information().c_str())
+    ("gridFiltering", po::value<bool>(&featDescConfig.gridFiltering)->default_value(featDescConfig.gridFiltering),
+      "Enable grid filtering. Highly recommended to ensure usable number of features.")
+    ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
+      feature::EFeatureConstrastFiltering_information().c_str())
+    ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),
+       "Peak Threshold relative to median of gradiants.")
     ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
       "Use only CPU feature extraction methods.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
@@ -426,7 +434,7 @@ int aliceVision_main(int argc, char **argv)
     for(const auto& imageDescriberType: imageDescriberTypes)
     {
       std::shared_ptr<feature::ImageDescriber> imageDescriber = feature::createImageDescriber(imageDescriberType);
-      imageDescriber->setConfigurationPreset(describerPreset);
+      imageDescriber->setConfigurationPreset(featDescConfig);
       if(forceCpuExtraction)
         imageDescriber->setUseCuda(false);
 

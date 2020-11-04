@@ -85,7 +85,7 @@ public:
    * @param[in] preset The preset configuration
    * @return True if configuration succeed. (here always false)
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override;
+  void setConfigurationPreset(ConfigurationPreset preset) override;
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
