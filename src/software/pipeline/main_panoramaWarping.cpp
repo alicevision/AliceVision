@@ -101,6 +101,7 @@ int aliceVision_main(int argc, char** argv)
 		std::pair<int, int> panoramaSize = {0, 0};
 		int percentUpscale = 50;
 		int tileSize = 256;
+		int maxPanoramaWidth = 0;
 
 		image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
@@ -120,14 +121,14 @@ int aliceVision_main(int argc, char** argv)
 
 		// Description of optional parameters
 		po::options_description optionalParams("Optional parameters");
-		optionalParams.add_options()(
-				"panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
-				"Panorama Width in pixels.")("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale),
-																		 "Percentage of upscaled pixels.")(
-				"storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
-				("Storage data type: " + image::EStorageDataType_informations()).c_str())(
-				"rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-				"Range image index start.")("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+		optionalParams.add_options()
+				("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first), "Panorama Width in pixels.")
+				("maxPanoramaWidth", po::value<int>(&maxPanoramaWidth)->default_value(maxPanoramaWidth), "Max Panorama Width in pixels.")
+				("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale), "Percentage of upscaled pixels.")
+				("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+				("Storage data type: " + image::EStorageDataType_informations()).c_str())
+				("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
+				("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
 		allParams.add(optionalParams);
 
 		// Setup log level given command line
@@ -239,6 +240,12 @@ int aliceVision_main(int argc, char** argv)
 				{
 						ALICEVISION_LOG_INFO("Impossible to compute an optimal panorama size");
 						return EXIT_FAILURE;
+				}
+
+				if (maxPanoramaWidth != 0 && panoramaSize.first > maxPanoramaWidth)
+				{
+					ALICEVISION_LOG_INFO("The optimal size of the panorama exceeds the maximum size (estimated width: " << panoramaSize.first << ", max width: " << maxPanoramaWidth << ").");
+					panoramaSize.first = maxPanoramaWidth;
 				}
 		}
 		
