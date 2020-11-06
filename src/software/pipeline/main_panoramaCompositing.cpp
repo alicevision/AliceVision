@@ -184,6 +184,7 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilepath;
     std::string warpingFolder;
     std::string outputPanorama;
+    std::string temporaryCachePath;
 
     std::string compositerType = "multiband";
     std::string overlayType = "none";
@@ -204,9 +205,11 @@ int aliceVision_main(int argc, char** argv)
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
-    requiredParams.add_options()("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")(
-        "warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")(
-        "output,o", po::value<std::string>(&outputPanorama)->required(), "Path of the output panorama.");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
+        ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
+        ("output,o", po::value<std::string>(&outputPanorama)->required(), "Path of the output panorama.")
+        ("cacheFolder,f", po::value<std::string>(&temporaryCachePath)->required(), "Path of the temporary cache.");
     allParams.add(requiredParams);
 
     // Description of optional parameters
@@ -214,7 +217,7 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()("compositerType,c", po::value<std::string>(&compositerType)->required(),
                                  "Compositer Type [replace, alpha, multiband].")(
         "overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")(
-        "useGraphCut,c", po::value<bool>(&useGraphCut)->default_value(useGraphCut),
+        "useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut),
         "Do we use graphcut for ghost removal ?")(
         "storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
         ("Storage data type: " + image::EStorageDataType_informations()).c_str());
@@ -296,8 +299,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Create a cache manager
-    const std::string outputPath = boost::filesystem::path(outputPanorama).parent_path().string();
-    image::TileCacheManager::shared_ptr cacheManager = image::TileCacheManager::create(outputPath, 256, 256, 65536);
+    image::TileCacheManager::shared_ptr cacheManager = image::TileCacheManager::create(temporaryCachePath, 256, 256, 65536);
     if(!cacheManager)
     {
         ALICEVISION_LOG_ERROR("Error creating the cache manager");
