@@ -312,52 +312,50 @@ void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches
     }
 }
 
-void generateAllMatchesInOneMap(const std::map<IndexT, std::string>& descriptorsFiles, OrderedPairList& outPairList)
+void generateAllMatchesInOneMap(const std::set<IndexT>& viewIds, OrderedPairList& outPairList)
 {
-  for(const auto& descItA: descriptorsFiles)
-  {
-    const IndexT imgA = descItA.first;
-    OrderedListOfImageID outPerImg;
-
-    for(const auto& descItB: descriptorsFiles)
+    for(const IndexT imgA : viewIds)
     {
-      const IndexT imgB = descItB.first;
-      if(imgB > imgA)
-        outPerImg.insert(imgB);
-    }
+        OrderedListOfImageID outPerImg;
 
-    if(!outPerImg.empty())
-    {
-      OrderedPairList::iterator itFind = outPairList.find(imgA);
+        for(const IndexT imgB : viewIds)
+        {
+            if(imgB > imgA)
+                outPerImg.insert(imgB);
+        }
 
-      if(itFind == outPairList.end())
-        outPairList[imgA] = outPerImg;
-      else
-        itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        if(!outPerImg.empty())
+        {
+            OrderedPairList::iterator itFind = outPairList.find(imgA);
+
+            if(itFind == outPairList.end())
+                outPairList[imgA] = outPerImg;
+            else
+                itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        }
     }
-  }
 }
 
-void generateAllMatchesBetweenTwoMap(const std::map<IndexT, std::string>& descriptorsFilesA, const std::map<IndexT, std::string>& descriptorsFilesB, OrderedPairList& outPairList)
+void generateAllMatchesBetweenTwoMap(const std::set<IndexT>& viewIdsA,
+                                     const std::set<IndexT>& viewIdsB, OrderedPairList& outPairList)
 {
-  for(const auto& descItA: descriptorsFilesA)
-  {
-    const IndexT imgA = descItA.first;
-    OrderedListOfImageID outPerImg;
-
-    for(const auto& descItB: descriptorsFilesB)
-      outPerImg.insert(descItB.first);
-
-    if(!outPerImg.empty())
+    for(const IndexT imgA : viewIdsA)
     {
-      OrderedPairList::iterator itFind = outPairList.find(imgA);
+        OrderedListOfImageID outPerImg;
 
-      if(itFind == outPairList.end())
-        outPairList[imgA] = outPerImg;
-      else
-        itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        for(const IndexT imgB : viewIdsB)
+            outPerImg.insert(imgB);
+
+        if(!outPerImg.empty())
+        {
+            OrderedPairList::iterator itFind = outPairList.find(imgA);
+
+            if(itFind == outPairList.end())
+                outPairList[imgA] = outPerImg;
+            else
+                itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        }
     }
-  }
 }
 
 void generateFromVoctree(PairList& allMatches,
@@ -731,11 +729,14 @@ int aliceVision_main(int argc, char** argv)
 
   std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
 
-  // load descriptor filenames
-  aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
+  if(method != EImageMatchingMethod::EXHAUSTIVE)
+  {
+      // load descriptor filenames
+      aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
 
-  if(useMultiSfM)
-    aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
+      if(useMultiSfM)
+          aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
+  }
 
   if(method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
   {
@@ -790,12 +791,12 @@ int aliceVision_main(int argc, char** argv)
       if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
          (matchingMode == EImageMatchingMode::A_AB) ||
          (matchingMode == EImageMatchingMode::A_A))
-        generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
+          generateAllMatchesInOneMap(sfmDataA.getViewsKeys(), selectedPairs);
 
       if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
          (matchingMode == EImageMatchingMode::A_AB) ||
          (matchingMode == EImageMatchingMode::A_B))
-        generateAllMatchesBetweenTwoMap(descriptorsFilesA, descriptorsFilesB, selectedPairs);
+          generateAllMatchesBetweenTwoMap(sfmDataA.getViewsKeys(), sfmDataB.getViewsKeys(), selectedPairs);
       break;
     }
     case EImageMatchingMethod::VOCABULARYTREE:
