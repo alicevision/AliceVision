@@ -19,27 +19,17 @@ the terms of the BSD license (see the COPYING file).
 reports. Although the following list is certainly incomplete, we would
 like to thank: Wei Dong, Loic, Giuseppe, Liu, Erwin, P. Ivanov, and
 Q. S. Luo.
+@tableofcontents
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 
 @ref sift.h implements a @ref sift-usage "SIFT filter object", a
 reusable object to extract SIFT features @cite{lowe99object} from one
 or multiple images.
 
-- @ref sift-intro
-  - @ref sift-intro-detector
-  - @ref sift-intro-descriptor
-  - @ref sift-intro-extensions
-- @ref sift-usage
-- @ref sift-tech
-  - @ref sift-tech-ss
-  - @ref sift-tech-detector
-    -  @ref sift-tech-detector-peak
-    -  @ref sift-tech-detector-edge
-    -  @ref sift-tech-detector-orientation
-  - @ref sift-tech-descriptor
-    - @ref sift-tech-descriptor-can
-    - @ref sift-tech-descriptor-image
-    - @ref sift-tech-descriptor-std
+This is the original VLFeat implementation of SIFT, designed to be
+compatible with Lowe's original SIFT. See @ref covdet for a different
+version of SIFT integrated in the more general covariant feature
+detector engine.
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 @section sift-intro Overview
@@ -57,10 +47,6 @@ descriptors of custom keypoints).
 @subsection sift-intro-detector SIFT detector
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 
-@sa
-@ref sift-tech-ss "Scale space technical details",
-@ref sift-tech-detector "Detector technical details"
-
 A SIFT <em>keypoint</em> is a circular image region with an
 orientation. It is described by a geometric <em>frame</em> of four
 parameters: the keypoint center coordinates @e x and @e y, its @e
@@ -68,7 +54,7 @@ scale (the radius of the region), and its @e orientation (an angle
 expressed in radians). The SIFT detector uses as keypoints image
 structures which resemble &ldquo;blobs&rdquo;. By searching for blobs
 at multiple scales and positions, the SIFT detector is invariant (or,
-more accurately, covariant) to translation, rotations, and rescaling
+more accurately, covariant) to translation, rotations, and re scaling
 of the image.
 
 The keypoint orientation is also determined from the local image
@@ -448,7 +434,7 @@ center.
 
 Denote the gradient vector field computed at the scale @f$ \sigma @f$ by
 @f[
-  J(x,y) = \nalba I_\sigma(x,y)
+  J(x,y) = \nabla I_\sigma(x,y)
   =
   \left[\begin{array}{cc}
   \frac{\partial I_\sigma}{\partial x} &
@@ -533,19 +519,19 @@ the image frame). Assume that canonical and image frame are
 related by an affinity:
 
 @f[
-  \mathbf{x} = A \hat\mathbf{x} + T,
+  \mathbf{x} = A \hat{\mathbf{x}} + T,
   \qquad
   \mathbf{x} =
-  \left[\begin{array}{cc}
+  \begin{bmatrix}{c}
     x \\
     y
-  \end{arraty}\right],
+  \end{bmatrix},
   \quad
-  \hat\mathbf{x} =
-  \left[\begin{array}{cc}
+  \mathbf{x} =
+  \begin{bmatrix}{c}
     \hat x \\
     \hat y
-  \end{arraty}\right].
+  \end{bmatrix}.
 @f]
 
 @image html sift-image-frame.png
