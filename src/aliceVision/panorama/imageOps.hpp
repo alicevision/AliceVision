@@ -43,10 +43,10 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
         {
             int dj = j * 2;
 
-            outputColor(di, dj) = T();
+            outputColor(di, dj) = inputColor(i, j);
             outputColor(di, dj + 1) = T();
             outputColor(di + 1, dj) = T();
-            outputColor(di + 1, dj + 1) = inputColor(i, j);
+            outputColor(di + 1, dj + 1) = T();
         }
     }
 
@@ -56,7 +56,7 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
         int di = i * 2;
         int dj = j * 2;
 
-        outputColor(di, dj) = T();
+        outputColor(di, dj) = inputColor(i, j);
 
         if (dj < dwidth - 1)
         {
@@ -69,7 +69,7 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
 
             if (dj < dwidth - 1)
             {
-                outputColor(di + 1, dj + 1) = inputColor(i, j);
+                outputColor(di + 1, dj + 1) = T();
             }
         }
     }
@@ -80,7 +80,7 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
         int di = i * 2;
         int dj = j * 2;
 
-        outputColor(di, dj) = T();
+        outputColor(di, dj) = inputColor(i, j);
 
         if (dj < dwidth - 1)
         {
@@ -93,7 +93,7 @@ bool upscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image
 
             if (dj < dwidth - 1)
             {
-                outputColor(di + 1, dj + 1) = inputColor(i, j);
+                outputColor(di + 1, dj + 1) = T();
             }
         }
     }
