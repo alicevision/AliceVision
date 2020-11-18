@@ -145,7 +145,7 @@ public:
         CachedImage<unsigned char> mask;
     };
 
-    using PixelInfo = std::map<IndexT, image::RGBfColor>;
+    using PixelInfo = std::unordered_map<IndexT, image::RGBfColor>;
     
 
 public:
@@ -211,9 +211,257 @@ public:
         _maximal_distance_change = dist; 
     }
 
-    bool processInput(double & newCost, InputData & input)
+    bool createInputOverlappingObservations(image::Image<PixelInfo> & graphCutInput, const BoundingBox & interestBbox)
     {
-        //Get bounding box of input in panoram
+        for (auto  & otherInput : _inputs)
+        {
+            BoundingBox otherBbox = otherInput.second.rect;
+            BoundingBox otherBboxLoop = otherInput.second.rect;
+            otherBboxLoop.left = otherBbox.left - _outputWidth;
+            BoundingBox otherBboxLoopRight = otherInput.second.rect;
+            otherBboxLoopRight.left = otherBbox.left + _outputWidth;
+
+
+            BoundingBox otherInputBbox = otherBbox;
+            otherInputBbox.left = 0;
+            otherInputBbox.top = 0;
+
+            BoundingBox intersection = interestBbox.intersectionWith(otherBbox);
+            BoundingBox intersectionLoop = interestBbox.intersectionWith(otherBboxLoop);
+            BoundingBox intersectionLoopRight = interestBbox.intersectionWith(otherBboxLoopRight);
+            if (intersection.isEmpty() && intersectionLoop.isEmpty() && intersectionLoopRight.isEmpty())
+            {
+                continue;
+            }
+            
+            image::Image<image::RGBfColor> otherColor(otherInputBbox.width, otherInputBbox.height);
+            if (!otherInput.second.color.extract(otherColor, otherInputBbox, otherInputBbox)) 
+            {
+                return false;
+            }
+
+            image::Image<unsigned char> otherMask(otherInputBbox.width, otherInputBbox.height);
+            if (!otherInput.second.mask.extract(otherMask, otherInputBbox, otherInputBbox)) 
+            {
+                return false;
+            }
+
+            if (!intersection.isEmpty())
+            {        
+                BoundingBox interestOther = intersection;
+                interestOther.left -= otherBbox.left;
+                interestOther.top -= otherBbox.top;
+
+                BoundingBox interestThis = intersection;
+                interestThis.left -= interestBbox.left;
+                interestThis.top -= interestBbox.top;
+
+                for (int y = 0; y < intersection.height; y++)
+                {
+                    int y_other = interestOther.top + y;
+                    int y_current = interestThis.top + y;
+
+                    for (int x = 0; x < intersection.width; x++)
+                    {
+                        int x_other = interestOther.left + x;
+                        int x_current = interestThis.left + x;
+                        
+
+                        if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
+                      
+                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        pix[otherInput.first] = otherColor(y_other, x_other);
+                    }
+                }
+            }
+
+            if (!intersectionLoop.isEmpty())
+            {
+                BoundingBox interestOther = intersectionLoop;
+                interestOther.left -= otherBboxLoop.left;
+                interestOther.top -= otherBboxLoop.top;
+
+                BoundingBox interestThis = intersectionLoop;
+                interestThis.left -= interestBbox.left;
+                interestThis.top -= interestBbox.top;
+
+                
+                for (int y = 0; y < intersectionLoop.height; y++)
+                {
+                    int y_other = interestOther.top + y;
+                    int y_current = interestThis.top + y;
+
+                    for (int x = 0; x < intersectionLoop.width; x++)
+                    {
+                        int x_other = interestOther.left + x;
+                        int x_current = interestThis.left + x;
+
+                        if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
+
+                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        pix[otherInput.first] = otherColor(y_other, x_other);
+                    }
+                }
+            }
+
+            if (!intersectionLoopRight.isEmpty())
+            {
+                BoundingBox interestOther = intersectionLoopRight;
+                interestOther.left -= otherBboxLoopRight.left;
+                interestOther.top -= otherBboxLoopRight.top;
+
+                BoundingBox interestThis = intersectionLoopRight;
+                interestThis.left -= interestBbox.left;
+                interestThis.top -= interestBbox.top;
+
+                
+                for (int y = 0; y < intersectionLoopRight.height; y++)
+                {
+                    int y_other = interestOther.top + y;
+                    int y_current = interestThis.top + y;
+
+                    for (int x = 0; x < intersectionLoopRight.width; x++)
+                    {
+                        int x_other = interestOther.left + x;
+                        int x_current = interestThis.left + x;
+
+                        if (!otherMask(y_other, x_other))
+                        {
+                            continue;
+                        }
+
+                        PixelInfo & pix = graphCutInput(y_current, x_current);
+                        pix[otherInput.first] = otherColor(y_other, x_other);
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool fixUpscaling(image::Image<IndexT> & labels, const image::Image<PixelInfo> & graphCutInput) 
+    {
+        //Because of upscaling, some labels may be incorrect
+        //Some pixels may be affected to labels they don't see.
+        for (int y = 0; y < graphCutInput.Height(); y++) 
+        {
+            for (int x = 0; x < graphCutInput.Width(); x++) 
+            {
+                IndexT label = labels(y, x);
+
+                if (label == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                // If there is no input for this pixel, we can't do anything
+                const PixelInfo & pix = graphCutInput(y, x);
+                
+                // Check if the input associated to this label is seen by this pixel
+                auto it = pix.find(label);
+                if (it != pix.end())
+                {
+                    continue;
+                }
+
+                // Look for another label in the neighboorhood which is seen by this pixel
+                bool modified = false;
+                for (int l = -1; l <= 1; l++) 
+                {
+                    int ny = y + l;
+                    if (ny < 0 || ny >= labels.Height()) 
+                    {
+                        continue;
+                    } 
+
+                    for (int c = -1; c <= 1; c++)
+                    {
+                        int nx = x + c;
+                        if (nx < 0 || nx >= labels.Width()) 
+                        {
+                            continue;
+                        }
+
+                        IndexT otherLabel = labels(ny, nx);                     
+                        if (otherLabel == label || otherLabel == UndefinedIndexT)
+                        {
+                            continue;
+                        }
+
+                        // Check that this other label is seen by our pixel
+                        const PixelInfo & pixOther = graphCutInput(ny, nx); 
+                        auto itOther = pixOther.find(otherLabel);
+                        if (itOther == pixOther.end())
+                        {
+                            continue;
+                        }
+
+                        auto it = pix.find(otherLabel);
+                        if (it != pix.end())
+                        {
+                            labels(y, x) = otherLabel;
+                            modified = true;
+                        }
+                    }
+                }
+
+                if (!modified) 
+                {
+                    ALICEVISION_LOG_ERROR("Invalid upscaling " << label  << " "  << x << " " << y);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool computeInputDistanceMap(image::Image<int> & distanceMap, const image::Image<IndexT> & localLabels, IndexT inputId)
+    {
+        image::Image<IndexT> binarizedWorld(localLabels.Width(), localLabels.Height());
+
+        for(int y = 0; y < localLabels.Height(); y++)
+        {
+            for(int x = 0; x < localLabels.Width(); x++)
+            {
+                IndexT label = localLabels(y, x);
+
+                if(label == inputId)
+                {
+                    binarizedWorld(y, x) = 1;
+                }
+                else
+                {
+                    binarizedWorld(y, x) = 0;
+                }
+            }
+        }
+
+        image::Image<unsigned char> seams(localLabels.Width(), localLabels.Height());
+        if(!computeSeamsMap(seams, binarizedWorld))
+        {
+            return false;
+        }
+
+        if(!computeDistanceMap(distanceMap, seams))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool processInput(double & newCost, InputData & input, bool computeExpansion)
+    {       
+
+        //Get bounding box of input in panorama
         //Dilate to have some pixels outside of the input
         BoundingBox localBbox = input.rect.dilate(3);
         localBbox.clampLeft();
@@ -232,224 +480,54 @@ public:
             return false;
         }   
 
-        // Compute distance map to borders of the input seams
-        image::Image<int> distanceMap(localLabels.Width(), localLabels.Height());
-        {
-            image::Image<IndexT> binarizedWorld(localLabels.Width(), localLabels.Height());
-
-            for(int y = 0; y < localLabels.Height(); y++)
-            {
-                for(int x = 0; x < localLabels.Width(); x++)
-                {
-                    IndexT label = localLabels(y, x);
-
-                    if(label == input.id)
-                    {
-                        binarizedWorld(y, x) = 1;
-                    }
-                    else
-                    {
-                        binarizedWorld(y, x) = 0;
-                    }
-                }
-            }
-
-            image::Image<unsigned char> seams(localLabels.Width(), localLabels.Height());
-            if(!computeSeamsMap(seams, binarizedWorld))
-            {
-                return false;
-            }
-
-            if(!computeDistanceMap(distanceMap, seams))
-            {
-                return false;
-            }
-        }
-
-
+    
         //Build the input
         image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
-        
-        for (auto  & otherInput : _inputs)
+        if (!createInputOverlappingObservations(graphCutInput, localBbox))
         {
-            BoundingBox otherBbox = otherInput.second.rect;
-            BoundingBox otherBboxLoop = otherInput.second.rect;
-            otherBboxLoop.left = otherBbox.left - _outputWidth;
-            BoundingBox otherBboxLoopRight = otherInput.second.rect;
-            otherBboxLoopRight.left = otherBbox.left + _outputWidth;
-
-            BoundingBox otherInputBbox = otherBbox;
-            otherInputBbox.left = 0;
-            otherInputBbox.top = 0;
-
-            BoundingBox intersection = localBbox.intersectionWith(otherBbox);
-            BoundingBox intersectionLoop = localBbox.intersectionWith(otherBboxLoop);
-            BoundingBox intersectionLoopRight = localBbox.intersectionWith(otherBboxLoopRight);
-            if (intersection.isEmpty() && intersectionLoop.isEmpty() && intersectionLoopRight.isEmpty())
-            {
-                continue;
-            }
-            
-            image::Image<image::RGBfColor> otherColor(otherInputBbox.width, otherInputBbox.height);
-            if (!otherInput.second.color.extract(otherColor, otherInputBbox, otherInputBbox)) 
-            {
-                return false;
-            }
-
-            image::Image<unsigned char> otherMask(otherInputBbox.width, otherInputBbox.height);
-            if (!otherInput.second.mask.extract(otherMask, otherInputBbox, otherInputBbox)) 
-            {
-                return false;
-            }
-
-
-            if (!intersection.isEmpty())
-            {        
-                BoundingBox interestOther = intersection;
-                interestOther.left -= otherBbox.left;
-                interestOther.top -= otherBbox.top;
-
-                BoundingBox interestThis = intersection;
-                interestThis.left -= localBbox.left;
-                interestThis.top -= localBbox.top;
-
-                for (int y = 0; y < intersection.height; y++)
-                {
-                    int y_other = interestOther.top + y;
-                    int y_current = interestThis.top + y;
-
-                    for (int x = 0; x < intersection.width; x++)
-                    {
-                        int x_other = interestOther.left + x;
-                        int x_current = interestThis.left + x;
-                        
-                        if (!otherMask(y_other, x_other))
-                        {
-                            continue;
-                        }
-                        
-                        float dist = sqrt(float(distanceMap(y_current, x_current)));
-                        if (dist > _maximal_distance_change)
-                        {
-                            continue;
-                        }
-
-                        PixelInfo & pix = graphCutInput(y_current, x_current);
-                        pix[otherInput.first] = otherColor(y_other, x_other);
-                    }
-                }
-            }
-
-            if (!intersectionLoop.isEmpty())
-            {
-                BoundingBox interestOther = intersectionLoop;
-                interestOther.left -= otherBboxLoop.left;
-                interestOther.top -= otherBboxLoop.top;
-
-                BoundingBox interestThis = intersectionLoop;
-                interestThis.left -= localBbox.left;
-                interestThis.top -= localBbox.top;
-
-                
-                for (int y = 0; y < intersectionLoop.height; y++)
-                {
-                    int y_other = interestOther.top + y;
-                    int y_current = interestThis.top + y;
-
-                    for (int x = 0; x < intersectionLoop.width; x++)
-                    {
-                        int x_other = interestOther.left + x;
-                        int x_current = interestThis.left + x;
-
-                        if (!otherMask(y_other, x_other))
-                        {
-                            continue;
-                        }
-
-                        float dist = sqrt(float(distanceMap(y_current, x_current)));
-                        if (dist > _maximal_distance_change)
-                        {
-                            continue;
-                        }
-
-                        PixelInfo & pix = graphCutInput(y_current, x_current);
-                        pix[otherInput.first] = otherColor(y_other, x_other);
-                    }
-                }
-            }
-
-            if (!intersectionLoopRight.isEmpty())
-            {
-                BoundingBox interestOther = intersectionLoopRight;
-                interestOther.left -= otherBboxLoopRight.left;
-                interestOther.top -= otherBboxLoopRight.top;
-
-                BoundingBox interestThis = intersectionLoopRight;
-                interestThis.left -= localBbox.left;
-                interestThis.top -= localBbox.top;
-
-                
-                for (int y = 0; y < intersectionLoopRight.height; y++)
-                {
-                    int y_other = interestOther.top + y;
-                    int y_current = interestThis.top + y;
-
-                    for (int x = 0; x < intersectionLoopRight.width; x++)
-                    {
-                        int x_other = interestOther.left + x;
-                        int x_current = interestThis.left + x;
-
-                        if (!otherMask(y_other, x_other))
-                        {
-                            continue;
-                        }
-
-                        float dist = sqrt(float(distanceMap(y_current, x_current)));
-                        if (dist > _maximal_distance_change)
-                        {
-                            continue;
-                        }
-
-                        PixelInfo & pix = graphCutInput(y_current, x_current);
-                        pix[otherInput.first] = otherColor(y_other, x_other);
-                    }
-                }
-            }
+            return false;
         }
 
-        //Because of upscaling, some labels may be incorrect
-        //Some pixels may be affected to labels they don't see.
-        for (int y = 0; y < graphCutInput.Height(); y++) 
+        // Fix upscaling induced bad labeling
+        if (!fixUpscaling(localLabels, graphCutInput))
         {
-            for (int x = 0; x < graphCutInput.Width(); x++) 
+            return false;
+        }
+
+        // Backup update for upscaling 
+        BoundingBox inputBb = localBbox;
+        inputBb.left = 0;
+        inputBb.top = 0;
+        if (!loopyCachedImageAssign(_labels, localLabels, localBbox, inputBb)) 
+        {
+            return false;
+        }
+
+        if (!computeExpansion) 
+        {   
+            return true;
+        }
+
+        // Compute distance map to borders of the input seams
+        image::Image<int> distanceMap(localLabels.Width(), localLabels.Height());
+        if (!computeInputDistanceMap(distanceMap, localLabels, input.id))
+        {
+            return false;
+        }
+
+        //Remove pixels too far from seams
+        for (int i = 0; i < graphCutInput.Height(); i++) 
+        {
+            for (int j = 0; j < graphCutInput.Width(); j++)
             {
-                IndexT label = localLabels(y, x);
+                float d2 = float(distanceMap(i, j));
+                float d = sqrt(d2);
 
-                if (label == UndefinedIndexT)
+                if (d2 > _maximal_distance_change + 1.0f)
                 {
-                    continue;
+                    graphCutInput(i, j).clear();
                 }
-
-                float dist = sqrt(float(distanceMap(y, x)));
-                if (dist > _maximal_distance_change)
-                {
-                    continue;
-                }
-
-                PixelInfo & pix = graphCutInput(y, x);
-
-                if (pix.size() == 0)
-                {
-                    localLabels(y, x) = UndefinedIndexT;
-                    continue;
-                }
-
-                auto it = pix.find(label);
-                if (it == pix.end())
-                {
-                    localLabels(y, x) = pix.begin()->first;
-                }
-            }
+            } 
         }
         
         double oldCost = cost(localLabels, graphCutInput, input.id);
@@ -473,15 +551,28 @@ public:
         }
         else 
         {
-            newCost = oldCost;
+            newCost = oldCost;  
         }
-
 
         return true;
     }
 
-    bool process()
+    bool process(bool computeAlphaExpansion)
     {
+        if (!computeAlphaExpansion) 
+        {
+            for (auto & info : _inputs)
+            {   
+                double cost;
+                if (!processInput(cost, info.second, false)) 
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         std::map<IndexT, double> costs;
         for (auto & info : _inputs)
         {
@@ -498,7 +589,7 @@ public:
             for (auto & info : _inputs)
             {   
                 double cost;
-                if (!processInput(cost, info.second)) 
+                if (!processInput(cost, info.second, true)) 
                 {
                     return false;
                 }
@@ -515,10 +606,6 @@ public:
                 break;
             }
         }
-
-        /*char filename[512];
-        sprintf(filename, "/home/mmoc/test%d.exr", _outputWidth);
-        _labels.writeImage(filename);*/
 
         return true;
     }

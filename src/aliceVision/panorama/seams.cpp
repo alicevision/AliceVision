@@ -366,6 +366,11 @@ bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
         return false;
     }
 
+    //
+    // Simply downscale the labels
+    // [a b e f ]
+    // [c d g h ] --> [a e]
+
     for (int l = 1; l < _countLevels; l++)
     {
 
@@ -521,7 +526,7 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
 
                 bool valid = potMask(di, dj);
 
-                if (j < nextMask.Width() - 1) 
+                /*if (j < nextMask.Width() - 1) 
                 {
                     valid = valid && potMask(di, dj + 1);
                 }
@@ -534,7 +539,7 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
                     {
                         valid = valid && potMask(di + 1, dj + 1);
                     }
-                }
+                }*/
 
                 if (valid)
                 {
@@ -547,7 +552,6 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
             }
         }
 
-        
         std::swap(feathered, nextImage);
         std::swap(potMask, nextMask);
 
@@ -574,21 +578,16 @@ bool HierarchicalGraphcutSeams::process()
         }
         else 
         {
-            if (w < 2000)
-            {
-                _graphcuts[level].setMaximalDistance(100);
-            }
-            else if (w < 5000)
-            {
-                _graphcuts[level].setMaximalDistance(10);
-            }
-            else 
-            {
-                _graphcuts[level].setMaximalDistance(3);
-            }
+            _graphcuts[level].setMaximalDistance(100);
         }
 
-        if(!_graphcuts[level].process())
+        bool computeAlphaExpansion = false;
+        if (w < 7500) 
+        {
+            computeAlphaExpansion = true;
+        }
+
+        if(!_graphcuts[level].process(computeAlphaExpansion))
         {
             return false;
         }
