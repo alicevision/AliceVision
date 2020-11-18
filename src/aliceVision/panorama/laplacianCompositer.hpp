@@ -10,10 +10,10 @@ namespace aliceVision
 class LaplacianCompositer : public Compositer
 {
 public:
-    LaplacianCompositer(image::TileCacheManager::shared_ptr & cacheManager, size_t outputWidth, size_t outputHeight, size_t bands)
+    LaplacianCompositer(image::TileCacheManager::shared_ptr & cacheManager, size_t outputWidth, size_t outputHeight)
         : Compositer(cacheManager, outputWidth, outputHeight)
-        , _pyramidPanorama(outputWidth, outputHeight, bands)
-        , _bands(bands)
+        , _pyramidPanorama(outputWidth, outputHeight, 1)
+        , _bands(1)
     {
     }
 
@@ -67,7 +67,7 @@ public:
 
         //If the input scale is more important than previously processed, 
         // The pyramid must be deepened accordingly
-        if(optimalLevelsCount > _bands)
+        if(optimalLevelsCount > _bands && _bands == 1)
         {
             _bands = optimalLevelsCount;
             if (!_pyramidPanorama.augment(_cacheManager, _bands)) 
