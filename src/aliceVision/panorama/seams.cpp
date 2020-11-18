@@ -578,11 +578,11 @@ bool HierarchicalGraphcutSeams::process()
         }
         else 
         {
-            _graphcuts[level].setMaximalDistance(100);
+            _graphcuts[level].setMaximalDistance(200);
         }
 
         bool computeAlphaExpansion = false;
-        if (w < 7500) 
+        if (w < 5000) 
         {
             computeAlphaExpansion = true;
         }
