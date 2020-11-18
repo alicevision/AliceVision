@@ -321,7 +321,7 @@ int aliceVision_main(int argc, char** argv)
     std::unique_ptr<Compositer> compositer;
     if (compositerType == "multiband") 
     {
-        compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(cacheManager, panoramaSize.first, panoramaSize.second, 1));
+        compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(cacheManager, panoramaSize.first, panoramaSize.second));
         useSeams = true;
         useWeights = false;
     }
