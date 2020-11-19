@@ -76,8 +76,8 @@ void SiftParams::setPreset(ConfigurationPreset preset)
         }
         case EFeatureQuality::ULTRA:
         {
-            _firstOctave = -1;
-            _numScales = 6;
+            _firstOctave = 0,
+            _numScales = 9;
             break;
         }
     }
@@ -92,15 +92,19 @@ void SiftParams::setPreset(ConfigurationPreset preset)
 std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, const SiftParams& params)
 {
   double scaleFactor = 1.0;
-  if(params._firstOctave > 0)
-      scaleFactor = 1.0 / std::pow(2.0, params._firstOctave);
-  else if(params._firstOctave < 0)
-      scaleFactor = std::pow(2.0, std::abs(params._firstOctave));
+
+  // if image resolution is low, increase resolution for extraction
+  const int firstOctave = params._firstOctave - (width*height < 5000*4000 ? 1 : 0);
+  const int numOctaves = params._numOctaves + (firstOctave < 0 ? 1 : 0); // if first octave is -a, add one octave
+  if(firstOctave > 0)
+      scaleFactor = 1.0 / std::pow(2.0, firstOctave);
+  else if(firstOctave < 0)
+      scaleFactor = std::pow(2.0, std::abs(firstOctave));
   const std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
 
   std::size_t pyramidMemoryConsuption = 0;
   double downscale = 1.0;
-  for(int octave = 0; octave < params._numOctaves; ++octave)
+  for(int octave = 0; octave < numOctaves; ++octave)
   {
     pyramidMemoryConsuption += fullImgSize / (downscale*downscale);
     downscale *= 2.0;
@@ -134,8 +138,10 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
                  bool orientation, const image::Image<unsigned char>* mask)
 {
     const int w = image.Width(), h = image.Height();
-    const int numOctaves = params._numOctaves + (params._firstOctave < 0 ? 1 : 0); // if first octave is -a, add one octave
-    VlSiftFilt* filt = vl_sift_new(w, h, numOctaves, params._numScales, params._firstOctave);
+    // if image resolution is low, increase resolution for extraction
+    const int firstOctave = params._firstOctave - (w*h < 5000*4000 ? 1 : 0);
+    const int numOctaves = params._numOctaves + (firstOctave < 0 ? 1 : 0); // if first octave is -a, add one octave
+    VlSiftFilt* filt = vl_sift_new(w, h, numOctaves, params._numScales, firstOctave);
     if(params._edgeThreshold >= 0)
         vl_sift_set_edge_thresh(filt, params._edgeThreshold);
 
@@ -163,18 +169,12 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
             break;
         }
         case EFeatureConstrastFiltering::NoFiltering:
-        {
-            ALICEVISION_LOG_TRACE("SIFT constrastTreshold NoFiltering.");
-            break;
-        }
         case EFeatureConstrastFiltering::GridSortOctaves:
-        {
-            ALICEVISION_LOG_TRACE("SIFT constrastTreshold GridSortOctaves.");
-            break;
-        }
         case EFeatureConstrastFiltering::GridSort:
+        case EFeatureConstrastFiltering::GridSortScaleSteps:
+        case EFeatureConstrastFiltering::GridSortOctaveSteps:
         {
-            ALICEVISION_LOG_TRACE("SIFT constrastTreshold GridSort.");
+            ALICEVISION_LOG_TRACE("SIFT constrastTreshold: " << EFeatureConstrastFiltering_enumToString(params._contrastFiltering));
             break;
         }
         case EFeatureConstrastFiltering::GridSortScaleSteps:
@@ -202,7 +202,6 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
     std::vector<float> featuresPeakValue;
     featuresPeakValue.reserve(reserveSize);
 
-    // TODO: params._numOctaves
     size_t maxOctaveKeypoints = params._maxTotalKeypoints;
 
     while(true)

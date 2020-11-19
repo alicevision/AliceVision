@@ -34,44 +34,24 @@ namespace feature {
 
 struct SiftParams
 {
-  SiftParams(int firstOctave = 0,
-             int numOctaves = 6,
-             int numScales = 3,
-             float edgeThreshold = 10.0f,
-             float peakThreshold = 0.04f,
-             std::size_t gridSize = 4,
-             std::size_t maxTotalKeypoints = 1000,
-             bool rootSift = true)
-    : _firstOctave(firstOctave)
-    , _numOctaves(numOctaves)
-    , _numScales(numScales)
-    , _edgeThreshold(edgeThreshold)
-    , _peakThreshold(peakThreshold)
-    , _gridSize(gridSize)
-    , _maxTotalKeypoints(maxTotalKeypoints)
-    , _rootSift(rootSift)
-  {}
-
-  // Parameters
-
   /// Use original image, or perform an upscale if == -1
-  int _firstOctave;
+  int _firstOctave = 0;
   /// Max octaves count
-  int _numOctaves;
+  int _numOctaves = 6;
   /// Scales per octave
-  int _numScales;
+  int _numScales = 3;
   /// Max ratio of Hessian eigenvalues
-  float _edgeThreshold;
+  float _edgeThreshold = 10.0f;
   /// Min contrast
-  float _peakThreshold;
+  float _peakThreshold = 0.005f;
   /// Min contrast (relative to variance median)
-  float _relativePeakThreshold = 0.01;
-  EFeatureConstrastFiltering _contrastFiltering;
+  float _relativePeakThreshold = 0.01f;
+  EFeatureConstrastFiltering _contrastFiltering = EFeatureConstrastFiltering::GridSort;
 
-  std::size_t _gridSize;
-  std::size_t _maxTotalKeypoints;
+  std::size_t _gridSize = 4;
+  std::size_t _maxTotalKeypoints = 10000;
   /// see [1]
-  bool _rootSift;
+  bool _rootSift = true;
   
   void setPreset(ConfigurationPreset preset);
 };
