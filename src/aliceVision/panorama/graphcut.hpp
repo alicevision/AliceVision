@@ -373,6 +373,7 @@ public:
 
                 // Look for another label in the neighboorhood which is seen by this pixel
                 bool modified = false;
+                bool hadUndefined = false;
                 for (int l = -1; l <= 1; l++) 
                 {
                     int ny = y + l;
@@ -390,8 +391,14 @@ public:
                         }
 
                         IndexT otherLabel = labels(ny, nx);                     
-                        if (otherLabel == label || otherLabel == UndefinedIndexT)
+                        if (otherLabel == label)
                         {
+                            continue;
+                        }
+
+                        if (otherLabel == UndefinedIndexT) 
+                        {
+                            hadUndefined = true;
                             continue;
                         }
 
@@ -414,8 +421,7 @@ public:
 
                 if (!modified) 
                 {
-                    ALICEVISION_LOG_ERROR("Invalid upscaling " << label  << " "  << x << " " << y);
-                    return false;
+                    labels(y, x) = UndefinedIndexT;
                 }
             }
         }
