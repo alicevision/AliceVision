@@ -725,28 +725,17 @@ int aliceVision_main(int argc, char** argv)
     }
   }
 
-  OrderedPairList selectedPairs;
-
-  std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
-
-  if(method != EImageMatchingMethod::EXHAUSTIVE)
-  {
-      // load descriptor filenames
-      aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
-
-      if(useMultiSfM)
-          aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
-  }
-
   if(method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
   {
       // Frustum intersection is only implemented for pinhole cameras
       bool onlyPinhole = true;
-      for (auto & cam : sfmDataA.getIntrinsics()) {
-        if (!camera::isPinhole(cam.second->getType())) {
-          onlyPinhole = false;
-          break;
-        }
+      for(auto& cam : sfmDataA.getIntrinsics())
+      {
+          if(!camera::isPinhole(cam.second->getType()))
+          {
+              onlyPinhole = false;
+              break;
+          }
       }
 
       const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
@@ -757,7 +746,8 @@ int aliceVision_main(int argc, char** argv)
       }
       else if(!onlyPinhole)
       {
-          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as the scene contains non-pinhole cameras.");
+          ALICEVISION_LOG_INFO(
+              "FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as the scene contains non-pinhole cameras.");
           method = EImageMatchingMethod::VOCABULARYTREE;
       }
       else if(reconstructedViews == sfmDataA.getViews().size())
@@ -776,12 +766,25 @@ int aliceVision_main(int argc, char** argv)
   // if not enough images to use the VOCABULARYTREE use the EXHAUSTIVE method
   if(method == EImageMatchingMethod::VOCABULARYTREE || method == EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE)
   {
-    if((descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
-    {
-      ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
-      method = EImageMatchingMethod::EXHAUSTIVE;
-    }
+      if((sfmDataA.getViews().size() + sfmDataB.getViews().size()) < minNbImages)
+      {
+          ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
+          method = EImageMatchingMethod::EXHAUSTIVE;
+      }
   }
+
+  std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
+
+  if(method != EImageMatchingMethod::EXHAUSTIVE)
+  {
+      // load descriptor filenames
+      aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
+
+      if(useMultiSfM)
+          aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
+  }
+
+  OrderedPairList selectedPairs;
 
   switch(method)
   {
