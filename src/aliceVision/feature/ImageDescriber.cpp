@@ -140,6 +140,8 @@ EFeatureConstrastFiltering EFeatureConstrastFiltering_stringToEnum(const std::st
         return EFeatureConstrastFiltering::GridSortScaleSteps;
     if(value == "gridsortoctavesteps")
         return EFeatureConstrastFiltering::GridSortOctaveSteps;
+    if(value == "nonextremafiltering")
+        return EFeatureConstrastFiltering::NonExtremaFiltering;
     throw std::invalid_argument("Invalid EFeatureConstrastFiltering: " + v);
 }
 
@@ -161,6 +163,8 @@ std::string EFeatureConstrastFiltering_enumToString(const EFeatureConstrastFilte
             return "GridSortScaleSteps";
         case EFeatureConstrastFiltering::GridSortOctaveSteps:
             return "GridSortOctaveSteps";
+        case EFeatureConstrastFiltering::NonExtremaFiltering:
+            return "NonExtremaFiltering";
     }
     throw std::invalid_argument("Unrecognized EFeatureConstrastFiltering: " + std::to_string(int(v)));
 }

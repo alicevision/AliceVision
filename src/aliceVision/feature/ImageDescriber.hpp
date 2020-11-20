@@ -85,7 +85,8 @@ enum class EFeatureConstrastFiltering
     GridSortOctaves,
     GridSort,
     GridSortScaleSteps,
-    GridSortOctaveSteps
+    GridSortOctaveSteps,
+    NonExtremaFiltering
 };
 
 inline std::string EFeatureConstrastFiltering_information()
@@ -105,6 +106,7 @@ std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& v);
 struct ConfigurationPreset
 {
     EImageDescriberPreset descPreset = EImageDescriberPreset::NORMAL;
+    int maxNbFeatures = 0;
     EFeatureQuality quality = EFeatureQuality::NORMAL;
     bool gridFiltering = true;
     EFeatureConstrastFiltering contrastFiltering = EFeatureConstrastFiltering::Static;

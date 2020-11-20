@@ -323,6 +323,8 @@ int aliceVision_main(int argc, char **argv)
       feature::EFeatureQuality_information().c_str())
     ("gridFiltering", po::value<bool>(&featDescConfig.gridFiltering)->default_value(featDescConfig.gridFiltering),
       "Enable grid filtering. Highly recommended to ensure usable number of features.")
+    ("maxNbFeatures", po::value<int>(&featDescConfig.maxNbFeatures)->default_value(featDescConfig.maxNbFeatures),
+      "Max number of features extracted (0 means default value based on describerPreset).")
     ("contrastFiltering", po::value<feature::EFeatureConstrastFiltering>(&featDescConfig.contrastFiltering)->default_value(featDescConfig.contrastFiltering),
       feature::EFeatureConstrastFiltering_information().c_str())
     ("relativePeakThreshold", po::value<float>(&featDescConfig.relativePeakThreshold)->default_value(featDescConfig.relativePeakThreshold),

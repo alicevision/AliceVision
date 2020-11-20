@@ -31,13 +31,10 @@ namespace feature {
  * [1] R. Arandjelović, A. Zisserman.
  * Three things everyone should know to improve object retrieval. CVPR2012.
  */
-
 struct SiftParams
 {
   /// Use original image, or perform an upscale if == -1
   int _firstOctave = 0;
-  /// Max octaves count
-  int _numOctaves = 6;
   /// Scales per octave
   int _numScales = 3;
   /// Max ratio of Hessian eigenvalues
@@ -53,7 +50,7 @@ struct SiftParams
   /// see [1]
   bool _rootSift = true;
   
-  void setPreset(ConfigurationPreset preset);
+  virtual void setPreset(ConfigurationPreset preset);
 };
 
 // VLFeat Instance management

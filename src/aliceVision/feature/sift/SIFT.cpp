@@ -48,36 +48,39 @@ void SiftParams::setPreset(ConfigurationPreset preset)
         default:
             throw std::out_of_range("Invalid image describer preset enum");
     }
+    if(preset.maxNbFeatures > 0)
+    {
+        _maxTotalKeypoints = preset.maxNbFeatures;
+    }
+    _firstOctave = 0;
+    _numScales = 3;
     switch(preset.quality)
     {
         case EFeatureQuality::LOW:
         {
-            _firstOctave = 2;
-            _numScales = 3;
+            // Work on lower image resolution
+            _firstOctave = 1;
             break;
         }
         case EFeatureQuality::MEDIUM:
         {
-            _firstOctave = 1;
-            _numScales = 3;
             break;
         }
         case EFeatureQuality::NORMAL:
         {
-            _firstOctave = 0;
-            _numScales = 3;
             break;
         }
         case EFeatureQuality::HIGH:
         {
-            _firstOctave = 0;
+            // Increase scale space sampling to improve feature repeatability.
+            // "Aa analysis of scale-space sampling in SIFT, Ives Rey-Otero, Jean-Michel Morel, Mauricio Delbracio
+            // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.703.9294&rep=rep1&type=pdf
             _numScales = 6;
             break;
         }
         case EFeatureQuality::ULTRA:
         {
-            _firstOctave = 0,
-            _numScales = 9;
+            _numScales = 6;
             break;
         }
     }
@@ -95,12 +98,13 @@ std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, co
 
   // if image resolution is low, increase resolution for extraction
   const int firstOctave = params._firstOctave - (width*height < 5000*4000 ? 1 : 0);
-  const int numOctaves = params._numOctaves + (firstOctave < 0 ? 1 : 0); // if first octave is -a, add one octave
   if(firstOctave > 0)
       scaleFactor = 1.0 / std::pow(2.0, firstOctave);
   else if(firstOctave < 0)
       scaleFactor = std::pow(2.0, std::abs(firstOctave));
   const std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
+
+  const int numOctaves = std::max(int(std::floor(std::log2(std::min(width, height))) - params._firstOctave - 3), 1);
 
   std::size_t pyramidMemoryConsuption = 0;
   double downscale = 1.0;
@@ -138,9 +142,9 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
                  bool orientation, const image::Image<unsigned char>* mask)
 {
     const int w = image.Width(), h = image.Height();
+    const int numOctaves = -1; // auto
     // if image resolution is low, increase resolution for extraction
-    const int firstOctave = params._firstOctave - (w*h < 5000*4000 ? 1 : 0);
-    const int numOctaves = params._numOctaves + (firstOctave < 0 ? 1 : 0); // if first octave is -a, add one octave
+    const int firstOctave = params._firstOctave - (w * h < 5000 * 4000 ? 1 : 0);
     VlSiftFilt* filt = vl_sift_new(w, h, numOctaves, params._numScales, firstOctave);
     if(params._edgeThreshold >= 0)
         vl_sift_set_edge_thresh(filt, params._edgeThreshold);
@@ -173,19 +177,12 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
         case EFeatureConstrastFiltering::GridSort:
         case EFeatureConstrastFiltering::GridSortScaleSteps:
         case EFeatureConstrastFiltering::GridSortOctaveSteps:
+        case EFeatureConstrastFiltering::NonExtremaFiltering:
         {
             ALICEVISION_LOG_TRACE("SIFT constrastTreshold: " << EFeatureConstrastFiltering_enumToString(params._contrastFiltering));
             break;
         }
-        case EFeatureConstrastFiltering::GridSortScaleSteps:
-        case EFeatureConstrastFiltering::GridSortOctaveSteps:
-        {
-            break;
-        }
     }
-
-    Descriptor<vl_sift_pix, 128> vlFeatDescriptor;
-    Descriptor<T, 128> descriptor;
 
     // Process SIFT computation
     vl_sift_process_first_octave(filt, image.data());
@@ -314,6 +311,36 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
                                       << " * after grid filtering: " << filteredKeypointsIndex.size());
             }
         }
+        else if(params._maxTotalKeypoints &&
+                params._contrastFiltering == EFeatureConstrastFiltering::NonExtremaFiltering)
+        {
+            std::vector<float> radiusMaxima(nkeys, std::numeric_limits<float>::max());
+            for(IndexT i = 0; i < nkeys; ++i)
+            {
+                const auto& keypointI = keys[i];
+                for(IndexT j = 0; j < nkeys; ++j)
+                {
+                    const auto& keypointJ = keys[j];
+                    if(keypointJ.peak_value > keypointI.peak_value)
+                    {
+                        const float dx = (keypointJ.x - keypointI.x);
+                        const float dy = (keypointJ.y - keypointI.y);
+                        const float radius = dx * dx + dy * dy;
+                        if(radius < radiusMaxima[i])
+                            radiusMaxima[i] = radius;
+                    }
+                }
+            }
+            filteredKeypointsIndex.resize(nkeys);
+            std::iota(filteredKeypointsIndex.begin(), filteredKeypointsIndex.end(), 0);
+            const std::size_t maxKeypoints = std::min(params._maxTotalKeypoints, std::size_t(nkeys));
+            std::partial_sort(filteredKeypointsIndex.begin(),
+                              filteredKeypointsIndex.begin() + maxKeypoints,
+                              filteredKeypointsIndex.end(), [&](int a, int b) {
+                                  return radiusMaxima[a] * keys[a].sigma > radiusMaxima[b] * keys[b].sigma;
+                              });
+            filteredKeypointsIndex.resize(maxKeypoints);
+        }
 
         if(filteredKeypointsIndex.empty())
         {
@@ -325,18 +352,28 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
         // Update gradient before launching parallel extraction
         vl_sift_update_gradient(filt);
 
-#pragma omp parallel for private(vlFeatDescriptor, descriptor)
+        // Feature masking
+        if(mask)
+        {
+            std::vector<IndexT> newFilteredKeypointsIndex;
+            const image::Image<unsigned char>& maskIma = *mask;
+
+            for(int ii = 0; ii < filteredKeypointsIndex.size(); ++ii)
+            {
+                const int i = filteredKeypointsIndex[ii];
+                if(maskIma(keys[i].y, keys[i].x) > 0)
+                    continue;
+                newFilteredKeypointsIndex.push_back(i);
+            }
+            filteredKeypointsIndex.swap(newFilteredKeypointsIndex);
+        }
+
+        std::vector<std::vector<double>> anglesPerKeypoint(filteredKeypointsIndex.size());
+
+#pragma omp parallel for
         for(int ii = 0; ii < filteredKeypointsIndex.size(); ++ii)
         {
             const int i = filteredKeypointsIndex[ii];
-
-            // Feature masking
-            if(mask)
-            {
-                const image::Image<unsigned char>& maskIma = *mask;
-                if(maskIma(keys[i].y, keys[i].x) > 0)
-                    continue;
-            }
 
             double angles[4] = {0.0, 0.0, 0.0, 0.0};
             int nangles = 1; // by default (1 upright feature)
@@ -345,11 +382,14 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
                 nangles = vl_sift_calc_keypoint_orientations(filt, angles, keys + i);
             }
 
+            Descriptor<vl_sift_pix, 128> vlFeatDescriptor;
+            Descriptor<T, 128> descriptor;
+
             for(int q = 0; q < nangles; ++q)
             {
-                vl_sift_calc_keypoint_descriptor(filt, &vlFeatDescriptor[0], keys + i, angles[q]);
                 const PointFeature fp(keys[i].x, keys[i].y, keys[i].sigma, static_cast<float>(angles[q]));
 
+                vl_sift_calc_keypoint_descriptor(filt, &vlFeatDescriptor[0], keys + i, angles[q]);
                 convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._rootSift);
 
 #pragma omp critical
@@ -366,12 +406,13 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
     }
     vl_sift_delete(filt);
 
-    const auto& features = regionsCasted->Features();
-    const auto& descriptors = regionsCasted->Descriptors();
-    assert(features.size() == descriptors.size());
+    assert(regionsCasted->Features().size() == regionsCasted->Descriptors().size());
 
     // Sorting the extracted features according to their scale
     {
+        const auto& features = regionsCasted->Features();
+        const auto& descriptors = regionsCasted->Descriptors();
+
         std::vector<std::size_t> indexSort(features.size());
         std::iota(indexSort.begin(), indexSort.end(), 0);
         if(params._contrastFiltering == EFeatureConstrastFiltering::GridSortScaleSteps)
@@ -389,7 +430,7 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
         else if(params._contrastFiltering == EFeatureConstrastFiltering::GridSortOctaveSteps)
         {
             std::sort(indexSort.begin(), indexSort.end(), [&](std::size_t a, std::size_t b) {
-                const int scaleA = int(log2(features[a].scale())); // 3 scale steps per octave
+                const int scaleA = int(log2(features[a].scale())); // 1 scale steps per octave
                 const int scaleB = int(log2(features[b].scale()));
                 if(scaleA == scaleB)
                 {
@@ -414,32 +455,80 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
 
         std::vector<PointFeature> sortedFeatures(features.size());
         std::vector<typename SIFT_Region_T::DescriptorT> sortedDescriptors(features.size());
+        std::vector<float> sortedFeaturesPeakValue(features.size());
         for(std::size_t i : indexSort)
         {
             sortedFeatures[i] = features[indexSort[i]];
             sortedDescriptors[i] = descriptors[indexSort[i]];
+            sortedFeaturesPeakValue[i] = featuresPeakValue[indexSort[i]];
         }
         regionsCasted->Features().swap(sortedFeatures);
         regionsCasted->Descriptors().swap(sortedDescriptors);
+        featuresPeakValue.swap(sortedFeaturesPeakValue);
     }
 
-    // Grid filtering of the keypoints to ensure a global repartition
-    if(params._gridSize && params._maxTotalKeypoints)
+    if(params._maxTotalKeypoints && params._contrastFiltering == EFeatureConstrastFiltering::NonExtremaFiltering)
     {
+        const auto& features = regionsCasted->Features();
+        const auto& descriptors = regionsCasted->Descriptors();
+
         // Only filter features if we have more features than the maxTotalKeypoints
         if(features.size() > params._maxTotalKeypoints)
         {
-            std::vector<IndexT> filtered_indexes;
-            std::vector<IndexT> rejected_indexes;
-            filtered_indexes.reserve(std::min(features.size(), params._maxTotalKeypoints));
-            rejected_indexes.reserve(features.size());
+            std::vector<float> radiusMaxima(features.size(), std::numeric_limits<float>::max());
+            for(IndexT i = 0; i < features.size(); ++i)
+            {
+                const auto& keypointI = features[i];
+                for(IndexT j = 0; j < features.size(); ++j)
+                {
+                    const auto& keypointJ = features[j];
+                    if(featuresPeakValue[j] > featuresPeakValue[i])
+                    {
+                        const float dx = (keypointJ.x() - keypointI.x());
+                        const float dy = (keypointJ.y() - keypointI.y());
+                        const float radius = dx * dx + dy * dy;
+                        if(radius < radiusMaxima[i])
+                            radiusMaxima[i] = radius;
+                    }
+                }
+            }
+            std::vector<IndexT> indexSort(features.size());
+            std::iota(indexSort.begin(), indexSort.end(), 0);
+            std::partial_sort(indexSort.begin(),
+                              indexSort.begin() + std::min(params._maxTotalKeypoints, features.size()), indexSort.end(),
+                              [&](int a, int b) {
+                                  return radiusMaxima[a] * features[a].scale() > radiusMaxima[b] * features[b].scale();
+                              });
+            indexSort.resize(std::min(params._maxTotalKeypoints, features.size()));
+
+            std::vector<PointFeature> filteredFeatures(indexSort.size());
+            std::vector<typename SIFT_Region_T::DescriptorT> filteredDescriptors(indexSort.size());
+            for(IndexT i = 0; i < indexSort.size(); ++i)
+            {
+                filteredFeatures[i] = features[indexSort[i]];
+                filteredDescriptors[i] = descriptors[indexSort[i]];
+            }
+            ALICEVISION_LOG_TRACE("SIFT Features: before: " << features.size()
+                                                            << ", after grid filtering: " << filteredFeatures.size());
+            regionsCasted->Features().swap(filteredFeatures);
+            regionsCasted->Descriptors().swap(filteredDescriptors);
+        }
+    }
+    // Grid filtering of the keypoints to ensure a global repartition
+    else if(params._gridSize && params._maxTotalKeypoints)
+    {
+        const auto& features = regionsCasted->Features();
+        const auto& descriptors = regionsCasted->Descriptors();
+        // Only filter features if we have more features than the maxTotalKeypoints
+        if(features.size() > params._maxTotalKeypoints)
+        {
+            std::vector<IndexT> filteredIndexes;
+            std::vector<IndexT> rejectedIndexes;
+            filteredIndexes.reserve(std::min(features.size(), params._maxTotalKeypoints));
+            rejectedIndexes.reserve(features.size());
 
             const std::size_t sizeMat = params._gridSize * params._gridSize;
             std::vector<std::size_t> countFeatPerCell(sizeMat, 0);
-            for(int Indice = 0; Indice < sizeMat; Indice++)
-            {
-                countFeatPerCell[Indice] = 0;
-            }
             const std::size_t keypointsPerCell = params._maxTotalKeypoints / sizeMat;
             const double regionWidth = w / double(params._gridSize);
             const double regionHeight = h / double(params._gridSize);
@@ -455,38 +544,39 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
                 ++count;
 
                 if(count < keypointsPerCell)
-                    filtered_indexes.push_back(i);
+                    filteredIndexes.push_back(i);
                 else
-                    rejected_indexes.push_back(i);
+                    rejectedIndexes.push_back(i);
             }
-            // If we don't have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in
+            // If we do not have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in
             // the grid for example). We add the best other ones, without repartition constraint.
-            if(filtered_indexes.size() < params._maxTotalKeypoints)
+            if(filteredIndexes.size() < params._maxTotalKeypoints)
             {
                 const std::size_t remainingElements =
-                    std::min(rejected_indexes.size(), params._maxTotalKeypoints - filtered_indexes.size());
+                    std::min(rejectedIndexes.size(), params._maxTotalKeypoints - filteredIndexes.size());
                 ALICEVISION_LOG_TRACE("Grid filtering -- Copy remaining points: " << remainingElements);
-                filtered_indexes.insert(filtered_indexes.end(), rejected_indexes.begin(),
-                                        rejected_indexes.begin() + remainingElements);
+                filteredIndexes.insert(filteredIndexes.end(), rejectedIndexes.begin(),
+                                        rejectedIndexes.begin() + remainingElements);
             }
 
-            std::vector<PointFeature> filtered_features(filtered_indexes.size());
-            std::vector<typename SIFT_Region_T::DescriptorT> filtered_descriptors(filtered_indexes.size());
-            for(IndexT i = 0; i < filtered_indexes.size(); ++i)
+            std::vector<PointFeature> filteredFeatures(filteredIndexes.size());
+            std::vector<typename SIFT_Region_T::DescriptorT> filteredDescriptors(filteredIndexes.size());
+            for(IndexT i = 0; i < filteredIndexes.size(); ++i)
             {
-                filtered_features[i] = features[filtered_indexes[i]];
-                filtered_descriptors[i] = descriptors[filtered_indexes[i]];
+                filteredFeatures[i] = features[filteredIndexes[i]];
+                filteredDescriptors[i] = descriptors[filteredIndexes[i]];
             }
 
             ALICEVISION_LOG_TRACE("SIFT Features: before: " << features.size()
-                                                           << ", after grid filtering: " << filtered_features.size());
+                                                           << ", after grid filtering: " << filteredFeatures.size());
 
-            regionsCasted->Features().swap(filtered_features);
-            regionsCasted->Descriptors().swap(filtered_descriptors);
+            regionsCasted->Features().swap(filteredFeatures);
+            regionsCasted->Descriptors().swap(filteredDescriptors);
         }
     }
-    ALICEVISION_LOG_TRACE("SIFT Features: " << features.size() << " (max: " << params._maxTotalKeypoints << ").");
-    assert(features.size() == descriptors.size());
+    ALICEVISION_LOG_TRACE("SIFT Features: " << regionsCasted->Features().size()
+                                            << " (max: " << params._maxTotalKeypoints << ").");
+    assert(regionsCasted->Features().size() == regionsCasted->Descriptors().size());
 
     return true;
 }
