@@ -45,6 +45,9 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
     case EImageDescriberType::SIFT:          return "sift";
     case EImageDescriberType::SIFT_FLOAT:    return "sift_float";
     case EImageDescriberType::SIFT_UPRIGHT:  return "sift_upright";
+
+    case EImageDescriberType::DSPSIFT:       return "dspsift";
+
     case EImageDescriberType::AKAZE:         return "akaze";
     case EImageDescriberType::AKAZE_LIOP:    return "akaze_liop";
     case EImageDescriberType::AKAZE_MLDB:    return "akaze_mldb";
@@ -64,7 +67,7 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
     case EImageDescriberType::UNKNOWN:       return "unknown";
     case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
   }
-  throw std::out_of_range("Invalid imageDescriber enum");
+  throw std::out_of_range("Invalid imageDescriber enum: " + std::to_string(int(imageDescriberType)));
 }
 
 EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDescriberType)
@@ -75,6 +78,9 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
   if(type == "sift")          return EImageDescriberType::SIFT;
   if(type == "sift_float")    return EImageDescriberType::SIFT_FLOAT;
   if(type == "sift_upright")  return EImageDescriberType::SIFT_UPRIGHT;
+
+  if(type == "dspsift")       return EImageDescriberType::DSPSIFT;
+
   if(type == "akaze")         return EImageDescriberType::AKAZE;
   if(type == "akaze_liop")    return EImageDescriberType::AKAZE_LIOP;
   if(type == "akaze_mldb")    return EImageDescriberType::AKAZE_MLDB;

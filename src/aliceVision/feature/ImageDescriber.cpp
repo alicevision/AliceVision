@@ -10,6 +10,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeatFloat.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_DSPSIFT_vlfeat.hpp>
 #include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
@@ -205,6 +206,9 @@ std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDe
     case EImageDescriberType::SIFT:           describerPtr.reset(new ImageDescriber_SIFT(SiftParams(), true)); break;
     case EImageDescriberType::SIFT_FLOAT:     describerPtr.reset(new ImageDescriber_SIFT_vlfeatFloat(SiftParams())); break;
     case EImageDescriberType::SIFT_UPRIGHT:   describerPtr.reset(new ImageDescriber_SIFT(SiftParams(), false)); break;
+
+    case EImageDescriberType::DSPSIFT:        describerPtr.reset(new ImageDescriber_DSPSIFT_vlfeat(DspSiftParams(), true)); break;
+
     case EImageDescriberType::AKAZE:          describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEOptions(), feature::AKAZE_MSURF))); break;
     case EImageDescriberType::AKAZE_MLDB:     describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEOptions(), feature::AKAZE_MLDB))); break;
     case EImageDescriberType::AKAZE_LIOP:     describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEOptions(), feature::AKAZE_LIOP))); break;
