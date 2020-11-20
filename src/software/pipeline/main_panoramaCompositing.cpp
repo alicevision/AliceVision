@@ -125,7 +125,7 @@ bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shar
 {   
     ALICEVISION_LOG_INFO("Estimating smart seams for panorama");
 
-    int pyramidSize = std::max(0, smallestViewScale - 1);
+    int pyramidSize = 1 + std::max(0, smallestViewScale - 1);
     ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
 
     HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, pyramidSize);
@@ -307,7 +307,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Configure the cache manager memory
-    cacheManager->setInCoreMaxObjectCount(1000);
+    cacheManager->setInCoreMaxObjectCount(1000 * 100);
 
     if (overlayType == "borders" || overlayType == "all")
     {
@@ -391,20 +391,6 @@ int aliceVision_main(int argc, char** argv)
     }
 
     ALICEVISION_LOG_INFO(viewOrderedByScale.size() << " views to process");
-
-    /*BoundingBoxPanoramaMap map(panoramaSize.first, panoramaSize.second);
-    if (!buildMap(map, viewOrderedByScale, warpingFolder, compositer))
-    {
-        ALICEVISION_LOG_ERROR("Error computing map");
-        return EXIT_FAILURE;
-    }
-
-    std::list<IndexT> bestInitials;
-    if (!map.getBestInitial(bestInitials)) 
-    {
-        ALICEVISION_LOG_ERROR("Error computing best elements");
-        return EXIT_SUCCESS;
-    }*/
 
     CachedImage<IndexT> labels;
     if (useSeams) 

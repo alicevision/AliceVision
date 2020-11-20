@@ -119,7 +119,7 @@ public:
 
     virtual size_t getOptimalScale(int width, int height) const
     {
-        return 1;
+        return 0;
     }
 
     virtual int getBorderSize() const 
