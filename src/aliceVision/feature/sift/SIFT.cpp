@@ -17,19 +17,19 @@ void SiftParams::setPreset(ConfigurationPreset preset)
     {
         case EImageDescriberPreset::LOW:
         {
-            _maxTotalKeypoints = 1000;
+            _maxTotalKeypoints = 5000;
             _peakThreshold = 0.02f;
             break;
         }
         case EImageDescriberPreset::MEDIUM:
         {
-            _maxTotalKeypoints = 5000;
+            _maxTotalKeypoints = 10000;
             _peakThreshold = 0.01f;
             break;
         }
         case EImageDescriberPreset::NORMAL:
         {
-            _maxTotalKeypoints = 10000;
+            _maxTotalKeypoints = 20000;
             _peakThreshold = 0.005f;
             break;
         }

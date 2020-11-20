@@ -120,17 +120,17 @@ public:
     {
       case EImageDescriberPreset::LOW:
       {
-         _params.options.maxTotalKeypoints = 1000;
+         _params.options.maxTotalKeypoints = 5000;
          break;
       }
       case EImageDescriberPreset::MEDIUM:
       {
-         _params.options.maxTotalKeypoints = 5000;
+         _params.options.maxTotalKeypoints = 10000;
          break;
       }
       case EImageDescriberPreset::NORMAL:
       {
-         _params.options.maxTotalKeypoints = 10000;
+         _params.options.maxTotalKeypoints = 20000;
          _params.options.threshold = AKAZEOptions().threshold;
         break;
       }
