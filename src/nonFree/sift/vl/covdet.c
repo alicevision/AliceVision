@@ -2134,11 +2134,13 @@ vl_covdet_detect (VlCovDet * self)
   switch (self->method) {
     case VL_COVDET_METHOD_HARRIS_LAPLACE :
     case VL_COVDET_METHOD_HESSIAN_LAPLACE :
+    {
       VlCovDetBuffer internalBuffer;
       vl_covdetbuffer_init(&internalBuffer);
       vl_covdet_extract_laplacian_scales(self, &internalBuffer);
       vl_covdetbuffer_clear(&internalBuffer);
       break ;
+    }
     default:
       break ;
   }
