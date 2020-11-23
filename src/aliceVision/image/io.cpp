@@ -246,7 +246,7 @@ void readImage(const std::string& path,
                oiio::TypeDesc format,
                int nchannels,
                Image<T>& image,
-               EImageColorSpace imageColorSpace)
+               const ImageReadOptions & imageReadOptions)
 {
   // check requested channels number
   assert(nchannels == 1 || nchannels >= 3);
@@ -254,14 +254,16 @@ void readImage(const std::string& path,
   oiio::ImageSpec configSpec;
 
   // libRAW configuration
-  configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
-  configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
-  configSpec.attribute("raw:use_camera_matrix", 3); // want to use embeded color profile
+  // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
+  configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+  configSpec.attribute("raw:use_camera_wb", (imageReadOptions.applyWhiteBalance?1:0)); // white balance correction
+  // use_camera_matrix: Whether to use the embedded color profile, if it is present: 0=never, 1 (default)=only for DNG files, 3=always
+  configSpec.attribute("raw:use_camera_matrix", 3); // use embeded color profile
 #if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
-                                                    // In these previous versions of oiio, there was no Linear option
-  configSpec.attribute("raw:ColorSpace", "sRGB");   // want colorspace sRGB
+  // In old versions of oiio, there was no Linear option
+  configSpec.attribute("raw:ColorSpace", "sRGB"); // use colorspace sRGB
 #else
-  configSpec.attribute("raw:ColorSpace", "Linear");   // want linear colorspace with sRGB primaries
+  configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
 #endif
 
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
@@ -294,13 +296,13 @@ void readImage(const std::string& path,
     throw std::runtime_error("Can't load channels of image file '" + path + "'.");
 
   // color conversion
-  if(imageColorSpace == EImageColorSpace::AUTO)
+  if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
     throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
 
   const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
   ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
 
-  if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
+  if(imageReadOptions.outputColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
   {
     if (colorSpace != "sRGB")
     {
@@ -308,7 +310,7 @@ void readImage(const std::string& path,
       ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
     }
   }
-  else if(imageColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
+  else if(imageReadOptions.outputColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
   {
     if (colorSpace != "Linear")
     {
@@ -471,34 +473,34 @@ void writeImage(const std::string& path,
   fs::rename(tmpPath, path);
 }
 
-void readImage(const std::string& path, Image<float>& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace);
+  readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<unsigned char>& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace);
+  readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBAfColor>& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace);
+  readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBAColor>& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace);
+  readImage(path, oiio::TypeDesc::UINT8, 4, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBfColor>& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace);
+  readImage(path, oiio::TypeDesc::FLOAT, 3, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBColor>& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace);
+  readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
 void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)

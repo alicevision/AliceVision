@@ -284,7 +284,13 @@ int aliceVision_main(int argc, char* argv[])
 
         // Read input file
         image::Image<image::RGBfColor> originalImage;
-        image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::LINEAR);
+
+        image::ImageReadOptions options;
+        options.outputColorSpace = image::EImageColorSpace::LINEAR;
+        options.applyWhiteBalance = v.second->getApplyWhiteBalance();
+        
+
+        image::readImage(v.second->getImagePath(), originalImage, options);
         oiio::ImageBuf bufInput(
             oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT),
             originalImage.data());

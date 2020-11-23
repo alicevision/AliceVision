@@ -277,7 +277,11 @@ int aliceVision_main(int argc, char** argv)
         {
             const std::string filepath = group[i]->getImagePath();
             ALICEVISION_LOG_INFO("Load " << filepath);
-            image::readImage(filepath, images[i], image::EImageColorSpace::SRGB);
+
+            image::ImageReadOptions options;
+            options.outputColorSpace = image::EImageColorSpace::SRGB;
+            options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
+            image::readImage(filepath, images[i], options);
 
             exposures[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
         }
