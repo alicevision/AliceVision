@@ -85,7 +85,6 @@ void ImageDescriber_SIFT_popSIFT::resetConfiguration()
 
   // reset configuration
   popsift::Config config;
-  config.setOctaves(_params._numOctaves);
   config.setLevels(_params._numScales);
   config.setDownsampling(_params._firstOctave);
   config.setThreshold(_params._peakThreshold);

@@ -104,27 +104,14 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
             break;
         }
         case EFeatureConstrastFiltering::NoFiltering:
-        {
-            vl_covdet_set_peak_threshold(covdet.get(), 0.0);
-            ALICEVISION_LOG_TRACE("DSP-SIFT constrastTreshold NoFiltering.");
-            break;
-        }
         case EFeatureConstrastFiltering::GridSortOctaves:
-        {
-            vl_covdet_set_peak_threshold(covdet.get(), 0.0);
-            ALICEVISION_LOG_TRACE("DSP-SIFT constrastTreshold GridSortOctaves.");
-            break;
-        }
+        case EFeatureConstrastFiltering::GridSortOctaveSteps:
         case EFeatureConstrastFiltering::GridSort:
-        {
-            vl_covdet_set_peak_threshold(covdet.get(), 0.0);
-            ALICEVISION_LOG_TRACE("DSP-SIFT constrastTreshold GridSort.");
-            break;
-        }
+        case EFeatureConstrastFiltering::GridSortScaleSteps:
         case EFeatureConstrastFiltering::NonExtremaFiltering:
         {
             vl_covdet_set_peak_threshold(covdet.get(), 0.0);
-            ALICEVISION_LOG_TRACE("DSP-SIFT constrastTreshold NonExtremaFiltering.");
+            ALICEVISION_LOG_TRACE("DSP-SIFT constrastTreshold: " << EFeatureConstrastFiltering_enumToString(params._contrastFiltering));
             break;
         }
     }
