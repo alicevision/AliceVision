@@ -73,7 +73,7 @@ void SiftParams::setPreset(ConfigurationPreset preset)
         case EFeatureQuality::HIGH:
         {
             // Increase scale space sampling to improve feature repeatability.
-            // "Aa analysis of scale-space sampling in SIFT, Ives Rey-Otero, Jean-Michel Morel, Mauricio Delbracio
+            // "An analysis of scale-space sampling in SIFT, Ives Rey-Otero, Jean-Michel Morel, Mauricio Delbracio
             // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.703.9294&rep=rep1&type=pdf
             _numScales = 6;
             break;
