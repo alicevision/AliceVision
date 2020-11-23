@@ -103,10 +103,7 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector
     {
       std::stringstream ss;
 
-      for(const std::string& featureFolder : featuresFolders)
-        ss << "\t- " << featureFolder << std::endl;
-
-      for(const std::string& featureFolder : sfmData.getFeaturesFolders())
+      for(const std::string& featureFolder : allFeaturesFolders)
         ss << "\t- " << featureFolder << std::endl;
 
       throw std::runtime_error("Can't find descriptor of view " + std::to_string(view.first) + " in:\n" + ss.str());
