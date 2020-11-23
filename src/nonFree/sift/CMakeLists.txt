@@ -42,6 +42,7 @@ set(FEATS_H
 )
 
 set_source_files_properties(${FEATS} ${FEATS_H} PROPERTIES LANGUAGE C)
+set_source_files_properties(${FEATS_H} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 add_definitions(-DVL_DISABLE_AVX -DVL_BUILD_DLL)
 
