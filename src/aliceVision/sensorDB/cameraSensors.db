@@ -1246,6 +1246,7 @@ Cherry mobile;Cherry mobile Flare S7 Deluxe;4.68;devicespecifications
 Cherry mobile;Cherry mobile Flare S7 Plus;4.74;devicespecifications
 Cherry mobile;Cherry mobile M1;5.99;devicespecifications
 Cherry mobile;Cherry mobile Taiji;4.69;devicespecifications
+Chuwi;Chuwi Hi9 Pro;4.63;devicespecifications
 Chuwi;Chuwi Vi10 Dual Boot;2.84;devicespecifications
 Chuwi;Chuwi Vi10 Pro;2.84;devicespecifications
 Chuwi;Chuwi Vi7;2.84;devicespecifications
@@ -2270,6 +2271,7 @@ Huawei;Huawei P9;4.54;devicespecifications
 Huawei;Huawei P9 Lite;4.69;devicespecifications
 Huawei;Huawei P9 Lite Premium;4.69;devicespecifications
 Huawei;Huawei P9 Premium Edition;4.54;devicespecifications
+Huawei;Huawei Y6 Pro 2017;3.54;devicespecifications
 I-mobile;I-mobile IQ X Pro 2;6.17;devicespecifications
 Iberry;Iberry Prime P8000;4.69;devicespecifications
 IDS;UI 3360CP;8.8;usercontribution
@@ -3016,7 +3018,6 @@ Lg;Lg X420EM;4.65;devicespecifications,usercontribution
 Lg;Lg X420EMW;4.65;devicespecifications,usercontribution
 Lg;Lg X6;4.65;devicespecifications,usercontribution
 Lg;Lg Zero;3.7;devicespecifications
-Lg;LG-H815;5.08;usercontribution
 LG Electronics;LM-G810EAW;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820N;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820QM;5.64;devicespecifications,usercontribution
@@ -3024,6 +3025,7 @@ LG Electronics;LM-G820V;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G850EM;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G850UM;5.64;devicespecifications,usercontribution
 LG Electronics;LG-G900N;6.4;devicespecifications,usercontribution
+LG Electronics;LG-H815;5.95;devicespecifications,usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870DS;5.867;usercontribution
@@ -4259,6 +4261,7 @@ OLYMPUS_IMAGING_CORP.;D535Z;5.27;usercontribution
 OLYMPUS_IMAGING_CORP.;X450;5.27;usercontribution
 Onda;Onda V975i;3.67;devicespecifications
 Onda;Onda V989;3.68;devicespecifications
+OnePlus;AC2003;6.4;usercontribution
 Oneplus;Oneplus 2;5.55;devicespecifications
 Oneplus;Oneplus 3;5.22;devicespecifications
 Oneplus;Oneplus 3T;5.22;devicespecifications
