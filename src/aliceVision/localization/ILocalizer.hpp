@@ -13,6 +13,8 @@
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/localization/LocalizationResult.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace localization {
 
@@ -72,6 +74,7 @@ public:
     /**
    * @brief Localize one image
    * 
+   * @param[in] gen random seed.
    * @param[in] imageGrey The input greyscale image.
    * @param[in] param The parameters for the localization.
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration.
@@ -83,6 +86,7 @@ public:
    */
   virtual bool localize(const image::Image<float> & imageGrey,
                         const LocalizerParameters *param,
+                        std::mt19937 & gen,
                         bool useInputIntrinsics,
                         camera::PinholeRadialK3 &queryIntrinsics,
                         LocalizationResult & localizationResult,
@@ -91,6 +95,7 @@ public:
   virtual bool localize(const feature::MapRegionsPerDesc &queryRegions,
                         const std::pair<std::size_t, std::size_t> &imageSize,
                         const LocalizerParameters *param,
+                        std::mt19937 & gen,
                         bool useInputIntrinsics,
                         camera::PinholeRadialK3 &queryIntrinsics,
                         LocalizationResult & localizationResult,
@@ -98,6 +103,7 @@ public:
     
   virtual bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                            const LocalizerParameters *param,
+                           std::mt19937 & gen,
                            std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose, 
@@ -106,6 +112,7 @@ public:
   virtual bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                            const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                            const LocalizerParameters *param,
+                           std::mt19937 & gen,
                            std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose,

@@ -25,6 +25,7 @@ namespace sfm {
 
 bool SfMLocalizer::Localize(const Pair& imageSize,
                             const camera::IntrinsicBase* optionalIntrinsics,
+                            std::mt19937 &randomNumberGenerator, 
                             ImageLocalizerMatchData& resectionData,
                             geometry::Pose3& pose,
                             robustEstimation::ERobustEstimator estimator)
@@ -55,7 +56,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
     // robust estimation of the Projection matrix and its precision
     robustEstimation::Mat34Model model;
-    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &model, precision);
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, resectionData.vec_inliers, resectionData.max_iteration, &model, precision);
     P = model.getMatrix();
     // update the upper bound precision of the model found by AC-RANSAC
     resectionData.error_max = ACRansacOut.first;
@@ -90,7 +91,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
         // robust estimation of the Projection matrix and its precision
         robustEstimation::Mat34Model model;
-        const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &model, precision);
+        const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, resectionData.vec_inliers, resectionData.max_iteration, &model, precision);
 
         P = model.getMatrix();
 
@@ -130,7 +131,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
         const double threshold = resectionData.error_max * resectionData.error_max * (kernel.normalizer2()(0, 0) * kernel.normalizer2()(0, 0));
         robustEstimation::ScoreEvaluator<KernelT> scorer(threshold);
 
-        const robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, &resectionData.vec_inliers);
+        const robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &resectionData.vec_inliers);
         P = model.getMatrix();
 
         break;

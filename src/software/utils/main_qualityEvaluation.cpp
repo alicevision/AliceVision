@@ -101,6 +101,7 @@ int aliceVision_main(int argc, char **argv)
     fs::create_directory(outputFolder);
 
   // load GT camera rotations & positions [R|C]:
+  std::mt19937 randomNumberGenerator;
   sfmData::SfMData sfmData_gt;
 
   if(!sfmDataIO::Load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
@@ -156,7 +157,7 @@ int aliceVision_main(int argc, char **argv)
 
   // evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
-  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
+  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, randomNumberGenerator, &_htmlDocStream);
 
   std::ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
   htmlFileStream << _htmlDocStream.getDoc();

@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <cassert>
+#include <random>
 
 namespace aliceVision {
 namespace sfmData {

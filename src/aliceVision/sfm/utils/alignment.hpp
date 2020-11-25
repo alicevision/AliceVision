@@ -78,6 +78,7 @@ void matchViewsByMetadataMatching(
  *
  * @param[in] sfmDataA
  * @param[in] sfmDataB
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] out_S output scale factor
  * @param[out] out_R output rotation 3x3 matrix
  * @param[out] out_t output translation vector
@@ -85,6 +86,7 @@ void matchViewsByMetadataMatching(
  */
 bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
                        const sfmData::SfMData& sfmDataB,
+                      std::mt19937 & randomNumberGenerator,
                        double* out_S,
                        Mat3* out_R,
                        Vec3* out_t);
@@ -94,6 +96,7 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
 *
 * @param[in] sfmDataA
 * @param[in] sfmDataB
+* @param[in] randomNumberGenerator random number generator
 * @param[out] out_S output scale factor
 * @param[out] out_R output rotation 3x3 matrix
 * @param[out] out_t output translation vector
@@ -102,6 +105,7 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
 bool computeSimilarityFromCommonCameras_poseId(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
+    std::mt19937 & randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t);
@@ -110,6 +114,7 @@ bool computeSimilarityFromCommonCameras_imageFileMatching(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::string& filePatternMatching,
+    std::mt19937 &randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t);
@@ -118,6 +123,7 @@ bool computeSimilarityFromCommonCameras_metadataMatching(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::vector<std::string>& metadataList,
+    std::mt19937 &randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t);
@@ -126,6 +132,7 @@ bool computeSimilarityFromCommonCameras_metadataMatching(
 bool computeSimilarityFromCommonMarkers(
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
+    std::mt19937 &randomNumberGenerator,
     double* out_S,
     Mat3* out_R,
     Vec3* out_t);

@@ -77,6 +77,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
 
 bool robustRelativePose(const Mat3& K1, const Mat3& K2,
                         const Mat& x1, const Mat& x2,
+                        std::mt19937 &randomNumberGenerator,
                         RelativePoseInfo & relativePose_info,
                         const std::pair<size_t, size_t> & size_ima1,
                         const std::pair<size_t, size_t> & size_ima2,
@@ -95,7 +96,7 @@ bool robustRelativePose(const Mat3& K1, const Mat3& K2,
   robustEstimation::Mat3Model model;
 
   // robustly estimation of the Essential matrix and its precision
-  const std::pair<double,double> acRansacOut = robustEstimation::ACRANSAC(kernel,
+  const std::pair<double,double> acRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator,
                                                                           relativePose_info.vec_inliers,
                                                                           max_iteration_count,
                                                                           &model,

@@ -33,7 +33,7 @@ using namespace svg;
 using namespace std;
 
 int main() {
-
+  std::mt19937 randomNumberGenerator;
   const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
@@ -90,6 +90,7 @@ int main() {
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -140,7 +141,7 @@ int main() {
       true); // configure as point to line error model.
 
     robustEstimation::Mat3Model F;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     const double & thresholdF = ACRansacOut.first;
 

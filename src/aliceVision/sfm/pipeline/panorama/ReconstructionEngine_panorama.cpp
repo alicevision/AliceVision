@@ -56,6 +56,7 @@ bool robustRelativeRotation_fromE(
   const Mat & x1, const Mat & x2,
   const std::pair<size_t, size_t> & size_ima1,
   const std::pair<size_t, size_t> & size_ima2,
+  std::mt19937 &randomNumberGenerator,
   RelativePoseInfo & relativePose_info,
   const size_t max_iteration_count)
 {
@@ -71,7 +72,7 @@ bool robustRelativeRotation_fromE(
 
   // Robustly estimation of the Essential matrix and its precision
   robustEstimation::Mat3Model model;
-  const std::pair<double, double> acRansacOut = robustEstimation::ACRANSAC(kernel, relativePose_info.vec_inliers, max_iteration_count, &model,
+  const std::pair<double, double> acRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, relativePose_info.vec_inliers, max_iteration_count, &model,
       relativePose_info.initial_residual_tolerance);
   relativePose_info.essential_matrix = model.getMatrix();
   relativePose_info.found_residual_precision = acRansacOut.first;
@@ -136,6 +137,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
                                                            const Mat2X &x2,
                                                            const std::pair<std::size_t, std::size_t> &imgSize1,
                                                            const std::pair<std::size_t, std::size_t> &imgSize2,
+                                                           std::mt19937 &randomNumberGenerator,
                                                            Mat3 &H,
                                                            std::vector<std::size_t> &vec_inliers)
 {
@@ -148,7 +150,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
     KernelType kernel(x1, imgSize1.first, imgSize1.second, x2, imgSize2.first, imgSize2.second, false); // configure as point to point error model.
     
     robustEstimation::Mat3Model model;
-    /*const std::pair<double, double> ACRansacOut = */ robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
+    /*const std::pair<double, double> ACRansacOut = */ robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
     H = model.getMatrix();
 
     const bool valid{!vec_inliers.empty()};
@@ -168,7 +170,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
  * @param[out] vec_inliers The inliers satisfying the rotation as a list of indices.
  * @return the status of the estimation.
  */
-aliceVision::EstimationStatus robustRotationEstimationAC(const Mat &x1, const Mat &x2, const std::pair<std::size_t, std::size_t> &imgSize1, const std::pair<std::size_t, std::size_t> &imgSize2,  Mat3 &R, std::vector<std::size_t> &vec_inliers)
+aliceVision::EstimationStatus robustRotationEstimationAC(const Mat &x1, const Mat &x2, const std::pair<std::size_t, std::size_t> &imgSize1, const std::pair<std::size_t, std::size_t> &imgSize2, std::mt19937 &randomNumberGenerator,  Mat3 &R, std::vector<std::size_t> &vec_inliers)
 {
     // using KernelType = multiview::RelativePoseKernel<
     using KernelType = multiview::RelativePoseSphericalKernel<
@@ -180,7 +182,7 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat &x1, const Ma
     KernelType kernel(x1, x2); // configure as point to point error model.
 
     robustEstimation::Mat3Model model;
-    /*const std::pair<double, double> ACRansacOut =*/robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
+    /*const std::pair<double, double> ACRansacOut =*/robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
     R = model.getMatrix();
 
     const bool valid{!vec_inliers.empty()};
@@ -191,12 +193,12 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat &x1, const Ma
 }
 
 
-bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
+bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, std::mt19937 &randomNumberGenerator, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
 {
   std::vector<std::size_t> vec_inliers{};
 
   // estimate the homography
-  const auto status = robustHomographyEstimationAC(x1, x2, imgSize1, imgSize2, relativeRotationInfo._homography, relativeRotationInfo._inliers);
+  const auto status = robustHomographyEstimationAC(x1, x2, imgSize1, imgSize2, randomNumberGenerator, relativeRotationInfo._homography, relativeRotationInfo._inliers);
   if (!status.isValid && !status.hasStrongSupport) {
     return false;
   }
@@ -206,11 +208,11 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2, const std::p
   return true;
 }
 
-bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
+bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, std::mt19937 &randomNumberGenerator, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
 {
   std::vector<std::size_t> vec_inliers{};
 
-  const auto status = robustRotationEstimationAC(x1, x2, imgSize1, imgSize2, relativeRotationInfo._relativeRotation, relativeRotationInfo._inliers);
+  const auto status = robustRotationEstimationAC(x1, x2, imgSize1, imgSize2, randomNumberGenerator, relativeRotationInfo._relativeRotation, relativeRotationInfo._inliers);
   if (!status.isValid && !status.hasStrongSupport) {
     return false;
   }
@@ -630,7 +632,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       {
         case RELATIVE_ROTATION_FROM_E:
         {
-          if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, relativePose_info))
+          if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, _randomNumberGenerator, relativePose_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
@@ -642,7 +644,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
           
-          if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, relativeRotation_info))
+          if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
@@ -659,7 +661,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
           
-          if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, relativeRotation_info))
+          if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
             std::cout << view_I->getImagePath() << std::endl;
             std::cout << view_J->getImagePath() << std::endl;

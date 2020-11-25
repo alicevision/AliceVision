@@ -128,6 +128,7 @@ void Refine_RTS(const Mat &x1,
 
 bool ACRansac_FindRTS(const Mat& x1,
                       const Mat& x2,
+                      std::mt19937 &randomNumberGenerator,
                       double& S,
                       Vec3& t,
                       Mat3& R,
@@ -150,7 +151,7 @@ bool ACRansac_FindRTS(const Mat& x1,
   robustEstimation::MatrixModel<Mat4> RTS;
 
   // robust estimation of the Projection matrix and its precision
-  const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision);
+  const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, numIterations, &RTS, dPrecision);
 
   const bool good = decomposeRTS(RTS.getMatrix(), S, t, R);
 

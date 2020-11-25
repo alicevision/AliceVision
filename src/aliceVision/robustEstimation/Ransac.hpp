@@ -35,6 +35,7 @@ template<typename Kernel, typename Scorer>
 typename Kernel::ModelT RANSAC(
   const Kernel& kernel,
   const Scorer& scorer,
+  std::mt19937 & randomNumberGenerator,
   std::vector<std::size_t>* best_inliers = nullptr,
   double* best_score = nullptr,
   bool bVerbose = true,
@@ -72,7 +73,7 @@ typename Kernel::ModelT RANSAC(
     iteration < really_max_iterations; ++iteration) 
   {
       std::vector<size_t> sample;
-      uniformSample(min_samples, total_samples, sample);
+      uniformSample(randomNumberGenerator, min_samples, total_samples, sample);
 
       std::vector<typename Kernel::ModelT> models;
       kernel.fit(sample, models);

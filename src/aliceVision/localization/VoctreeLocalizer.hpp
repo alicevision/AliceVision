@@ -111,7 +111,7 @@ public:
    * @brief Just a wrapper around the different localization algorithm, the algorithm
    * used to localized is chosen using \p param._algorithm. This version extract the
    * sift features from the query image.
-   * 
+   * @param[in]  randomNumberGenerator, The random seed
    * @param[in] imageGrey The input greyscale image.
    * @param[in] param The parameters for the localization.
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration.
@@ -123,6 +123,7 @@ public:
    */
   bool localize(const image::Image<float> & imageGrey,
                 const LocalizerParameters *param,
+                std::mt19937 & randomNumberGenerator,
                 bool useInputIntrinsics,
                 camera::PinholeRadialK3 &queryIntrinsics,
                 LocalizationResult &localizationResult, 
@@ -132,7 +133,7 @@ public:
    * @brief Just a wrapper around the different localization algorithm, the algorithm
    * used to localized is chosen using \p param._algorithm. This version takes as
    * input the sift feature already extracted.
-   * 
+   * @param[in]  randomNumberGenerator, The random seed
    * @param[in] queryRegions The input features of the query image
    * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization.
@@ -146,6 +147,7 @@ public:
   bool localize(const feature::MapRegionsPerDesc & queryRegions,
                 const std::pair<std::size_t, std::size_t> &imageSize,
                 const LocalizerParameters *param,
+                std::mt19937 & randomNumberGenerator,
                 bool useInputIntrinsics,
                 camera::PinholeRadialK3 &queryIntrinsics,
                 LocalizationResult & localizationResult,
@@ -154,6 +156,7 @@ public:
   
   bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                    const LocalizerParameters *param,
+                   std::mt19937 & randomNumberGenerator,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
@@ -162,6 +165,7 @@ public:
   bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                    const LocalizerParameters *param,
+                   std::mt19937 & randomNumberGenerator,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
@@ -172,6 +176,7 @@ public:
   bool localizeRig_opengv(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,
+                          std::mt19937 & randomNumberGenerator,
                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                           const std::vector<geometry::Pose3 > &vec_subPoses,
                           geometry::Pose3 &rigPose,
@@ -181,6 +186,7 @@ public:
   bool localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
+                        std::mt19937 & randomNumberGenerator,
                         std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                         const std::vector<geometry::Pose3 > &vec_subPoses,
                         geometry::Pose3 &rigPose,
@@ -192,9 +198,11 @@ public:
    * retrieve \p numResults matching images and it tries to localize the query image
    * wrt the retrieve images in order of their score taking the first best result.
    *
+   
    * @param[in] queryRegions The input features of the query image
    * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization
+   * @param[in] randomNumberGenerator The random seed
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration
    * @param[in,out] queryIntrinsics Intrinsic parameters of the camera, they are used if the
    * flag useInputIntrinsics is set to true, otherwise they are estimated from the correspondences.
@@ -205,7 +213,8 @@ public:
    */
   bool localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
                                const std::pair<std::size_t, std::size_t> &imageSize,
-                               const Parameters &param,
+                               const Parameters &param, 
+                               std::mt19937 & randomNumberGenerator,
                                bool useInputIntrinsics,
                                camera::PinholeRadialK3 &queryIntrinsics,
                                LocalizationResult &localizationResult,
@@ -220,6 +229,7 @@ public:
    * @param[in] queryRegions The input features of the query image
    * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization
+   * @param[in] randomNumberGenerator The random seed
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration
    * @param[in,out] queryIntrinsics Intrinsic parameters of the camera, they are used if the
    * flag useInputIntrinsics is set to true, otherwise they are estimated from the correspondences.
@@ -231,6 +241,7 @@ public:
   bool localizeAllResults(const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> & imageSize,
                           const Parameters &param,
+                          std::mt19937 & randomNumberGenerator,
                           bool useInputIntrinsics,
                           camera::PinholeRadialK3 &queryIntrinsics,
                           LocalizationResult &localizationResult,
@@ -243,6 +254,7 @@ public:
    * @param[in] queryRegions
    * @param[in] imageSize
    * @param[in] param
+   * @param[in]  randomNumberGenerator,
    * @param[in] useInputIntrinsics
    * @param[in] queryIntrinsics
    * @param[out] out_occurences
@@ -255,6 +267,7 @@ public:
   void getAllAssociations(const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> &imageSize,
                           const Parameters &param,
+                          std::mt19937 & randomNumberGenerator,
                           bool useInputIntrinsics,
                           const camera::PinholeRadialK3 &queryIntrinsics,
                           OccurenceMap & out_occurences,
@@ -308,6 +321,7 @@ private:
                       bool useGuidedMatching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
+                      std::mt19937 & randomNumberGenerator,
                       matching::MatchesPerDescType & out_featureMatches,
                       robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC) const;
   
@@ -317,6 +331,7 @@ private:
                                  bool useInputIntrinsics,
                                  const camera::PinholeRadialK3 &queryIntrinsics,
                                  OccurenceMap &out_occurences,
+                                 std::mt19937 & randomNumberGenerator,
                                  const std::string& imagePath = std::string()) const;
   
   /**

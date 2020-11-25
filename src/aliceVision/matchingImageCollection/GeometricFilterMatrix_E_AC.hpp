@@ -45,6 +45,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
                                        const Regions_or_Features_ProviderT& regionsPerView,
                                        const Pair& pairIndex,
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
+                                       std::mt19937 & randomNumberGenerator,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
     out_geometricInliersPerType.clear();
@@ -96,7 +97,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
 
     std::vector<std::size_t> inliers;
     robustEstimation::Mat3Model model;
-    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, inliers, m_stIteration, &model, upperBoundPrecision);
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, inliers, m_stIteration, &model, upperBoundPrecision);
     m_E = model.getMatrix();
 
     if (inliers.empty())
