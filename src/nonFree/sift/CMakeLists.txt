@@ -44,15 +44,14 @@ set(FEATS_H
 set_source_files_properties(${FEATS} ${FEATS_H} PROPERTIES LANGUAGE C)
 set_source_files_properties(${FEATS_H} PROPERTIES HEADER_FILE_ONLY TRUE)
 
-add_definitions(-DVL_DISABLE_AVX -DVL_BUILD_DLL)
-
-add_library(vlsift ${FEATS} ${FEATS_H})
-
-
-install(TARGETS vlsift
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
+alicevision_add_library(vlsift
+  SOURCES
+    ${FEATS} ${FEATS_H}
+  PUBLIC_DEFINITIONS
+    -DVL_DISABLE_AVX
+  PRIVATE_DEFINITIONS
+    -DVL_BUILD_DLL
+  )
 
 set_property(TARGET vlsift
   PROPERTY FOLDER nonFree
