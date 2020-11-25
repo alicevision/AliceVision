@@ -12,7 +12,10 @@
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 
+#include <boost/algorithm/string/case_conv.hpp>
+
 #include <memory>
+
 
 namespace aliceVision {
 
@@ -22,6 +25,48 @@ enum EHistogramSelectionMethod
     eHistogramHarmonizeMatchedPoints = 1,
     eHistogramHarmonizeVLDSegment    = 2,
 };
+
+
+inline std::string EHistogramSelectionMethod_enumToString(EHistogramSelectionMethod v)
+{
+  switch(v)
+  {
+    case EHistogramSelectionMethod::eHistogramHarmonizeFullFrame:
+      return "FullFrame";
+    case EHistogramSelectionMethod::eHistogramHarmonizeMatchedPoints:
+      return "MatchedPoints";
+    case EHistogramSelectionMethod::eHistogramHarmonizeVLDSegment:
+      return "VLDSegment";
+  }
+  throw std::out_of_range("Invalid EHistogramSelectionMethod type: " + std::to_string(int(v)));
+}
+
+inline EHistogramSelectionMethod EHistogramSelectionMethod_stringToEnum(std::string s)
+{
+  boost::to_lower(s);
+  if(s == "fullframe")
+      return EHistogramSelectionMethod::eHistogramHarmonizeFullFrame;
+  if(s == "matchedpoints")
+      return EHistogramSelectionMethod::eHistogramHarmonizeMatchedPoints;
+  if(s == "vldsegment")
+      return EHistogramSelectionMethod::eHistogramHarmonizeVLDSegment;
+
+  throw std::out_of_range("Invalid rotation averaging method name : '" + s + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, EHistogramSelectionMethod e)
+{
+    return os << EHistogramSelectionMethod_enumToString(e);
+}
+
+inline std::istream& operator>>(std::istream& in, EHistogramSelectionMethod& out)
+{
+    std::string token;
+    in >> token;
+    out = EHistogramSelectionMethod_stringToEnum(token);
+    return in;
+}
+
 
 /**
  * @brief The ColorHarmonizationEngineGlobal class
@@ -40,7 +85,7 @@ public:
     const std::vector<std::string>& matchesFolders,
     const std::string& outputDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    int selectionMethod = -1,
+    EHistogramSelectionMethod selectionMethod,
     int imgRef = -1);
 
   ~ColorHarmonizationEngineGlobal();

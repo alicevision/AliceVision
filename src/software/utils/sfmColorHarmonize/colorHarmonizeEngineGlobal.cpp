@@ -59,40 +59,18 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
     const std::vector<std::string>& matchesFolders,
     const string& outputDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    int selectionMethod,
+    EHistogramSelectionMethod selectionMethod,
     int imgRef)
   : _sfmDataFilename(sfmDataFilename)
   , _featuresFolders(featuresFolders)
   , _matchesFolders(matchesFolders)
   , _outputDirectory(outputDirectory)
   , _descTypes(descTypes)
+  , _imgRef(imgRef)
+  , _selectionMethod(selectionMethod)
 {
   if(!fs::exists(outputDirectory))
     fs::create_directory(outputDirectory);
-
-  // choose image reference
-  while(imgRef < 0 || imgRef >= _fileNames.size())
-  {
-      cout << "Choose your reference image:\n";
-      for( int i = 0; i < _fileNames.size(); ++i )
-      {
-        cout << "id: " << i << "\t" << _fileNames[ i ] << endl;
-      }
-      cin >> imgRef;
-  }
-  _imgRef = imgRef;
-
-  // choose selection method
-  while(selectionMethod < 0 || selectionMethod > 2)
-  {
-    cout << "Choose your selection method:\n"
-      << "- FullFrame: 0\n"
-      << "- Matched Points: 1\n"
-      << "- VLD Segment: 2\n";
-    cin >> selectionMethod;
-  }
-  _selectionMethod = static_cast<EHistogramSelectionMethod>(selectionMethod);
-
 }
 
 ColorHarmonizationEngineGlobal::~ColorHarmonizationEngineGlobal()
@@ -203,20 +181,22 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     const size_t viewI = iter->first.first;
     const size_t viewJ = iter->first.second;
+    const size_t viewI_idx = map_cameraNodeToCameraIndex.at(viewI);
+    const size_t viewJ_idx = map_cameraNodeToCameraIndex.at(viewJ);
 
     //
     const MatchesPerDescType& matchesPerDesc = iter->second;
 
     //-- Edges names:
     std::pair< std::string, std::string > p_imaNames;
-    p_imaNames = make_pair( _fileNames[ viewI ], _fileNames[ viewJ ] );
+    p_imaNames = make_pair( _fileNames[ viewI_idx ], _fileNames[ viewJ_idx ] );
     std::cout << "Current edge : "
       << fs::path(p_imaNames.first).filename().string() << "\t"
       << fs::path(p_imaNames.second).filename().string() << std::endl;
 
     //-- Compute the masks from the data selection:
-    Image< unsigned char > maskI ( _imageSize[ viewI ].first, _imageSize[ viewI ].second );
-    Image< unsigned char > maskJ ( _imageSize[ viewJ ].first, _imageSize[ viewJ ].second );
+    Image< unsigned char > maskI ( _imageSize[ viewI_idx ].first, _imageSize[ viewI_idx ].second );
+    Image< unsigned char > maskJ ( _imageSize[ viewJ_idx ].first, _imageSize[ viewJ_idx ].second );
 
     switch(_selectionMethod)
     {
@@ -270,7 +250,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     bool bExportMask = false;
     if (bExportMask)
     {
-      string sEdge = _fileNames[ viewI ] + "_" + _fileNames[ viewJ ];
+      string sEdge = _fileNames[ viewI_idx ] + "_" + _fileNames[ viewJ_idx ];
       sEdge = (fs::path(_outputDirectory) / sEdge ).string();
 
       if( !fs::exists(sEdge) )
@@ -297,7 +277,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeR = map_relativeHistograms[channelIndex][i];
-    edgeR = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
+    edgeR = relativeColorHistogramEdge(viewI_idx, viewJ_idx,
       histoI.GetHist(), histoJ.GetHist());
 
     histoI = histoJ = utils::Histogram<double>(minvalue, maxvalue, bin);
@@ -305,7 +285,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeG = map_relativeHistograms[channelIndex][i];
-    edgeG = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
+    edgeG = relativeColorHistogramEdge(viewI_idx, viewJ_idx,
       histoI.GetHist(), histoJ.GetHist());
 
     histoI = histoJ = utils::Histogram<double>(minvalue, maxvalue, bin);
@@ -313,7 +293,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeB = map_relativeHistograms[channelIndex][i];
-    edgeB = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
+    edgeB = relativeColorHistogramEdge(viewI_idx, viewJ_idx,
       histoI.GetHist(), histoJ.GetHist());
   }
 
