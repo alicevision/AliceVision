@@ -116,7 +116,8 @@ int aliceVision_main(int argc, char** argv)
   /// the export file
   std::string exportFile = "trackedcameras.abc"; 
 #endif
-  
+  int randomSeed = std::mt19937::default_seed;
+
   std::size_t numCameras = 0;
   po::options_description allParams("This program is used to calibrate a camera rig composed of internally calibrated cameras."
   "It takes as input a synchronized sequence of N cameras and it saves the estimated "
@@ -157,7 +158,10 @@ int aliceVision_main(int argc, char** argv)
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
           "to 0 it lets the ACRansac select an optimal value.")
       ("maxInputFrames", po::value<std::size_t>(&maxInputFrames)->default_value(maxInputFrames), 
-          "Maximum number of frames to read in input. 0 means no limit.");
+          "Maximum number of frames to read in input. 0 means no limit.")
+      ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+      ;
 
   // parameters for voctree localizer
   po::options_description voctreeParams("Parameters specific for the vocabulary tree-based localizer");
@@ -182,8 +186,8 @@ int aliceVision_main(int argc, char** argv)
       ("nNearestKeyFrames", po::value<std::size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
           "[cctag] Number of images to retrieve in database")
 #endif
-  ;
-  
+      ;
+
   // output options
   po::options_description outputParams("Options for the output of the localizer");
   outputParams.add_options()  
@@ -253,8 +257,7 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-  std::random_device rd;
-  std::mt19937 generator(rd());
+  std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
   std::unique_ptr<localization::LocalizerParameters> param;
   
@@ -390,7 +393,7 @@ int aliceVision_main(int argc, char** argv)
       localizer->setCudaPipe( idCamera );
       const bool ok = localizer->localize(imageGrey,
                                           param.get(),
-                                          generator,
+                                          randomNumberGenerator,
                                           hasIntrinsics/*useInputIntrinsics*/,
                                           *queryIntrinsics,
                                           localizationResult);

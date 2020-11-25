@@ -77,6 +77,11 @@ public:
       aliceVision::sfm::retrieveMarkersId(_sfmData);
   }
 
+  void initRandomSeed(int seed)
+  {
+      _randomNumberGenerator.seed(seed == -1 ? std::random_device()() : seed);
+  }
+
 protected:
   /// Output folder where outputs will be stored
   std::string _outputFolder;
