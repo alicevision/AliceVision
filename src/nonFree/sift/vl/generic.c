@@ -1020,7 +1020,7 @@ vl_get_thread_specific_state (void)
   return vl_get_state()->threadState ;
 #else
   VlState * state ;
-  VlThreadState * threadState ;
+  VlThreadState * threadState = NULL;
 
   vl_lock_state() ;
   state = vl_get_state() ;
