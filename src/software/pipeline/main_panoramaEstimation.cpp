@@ -53,6 +53,8 @@ int aliceVision_main(int argc, char **argv)
   float offsetLongitude = 0.0f;
   float offsetLatitude = 0.0f;
 
+  int randomSeed = std::mt19937::default_seed;
+
   sfm::ReconstructionEngine_panorama::Params params;
 
   po::options_description allParams(
@@ -98,7 +100,10 @@ int aliceVision_main(int argc, char **argv)
     ("intermediateRefineWithFocalDist", po::value<bool>(&params.intermediateRefineWithFocalDist)->default_value(params.intermediateRefineWithFocalDist),
       "Add an intermediate refine with rotation+focal+distortion in the different BA steps.")
     ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-      "Path of the output SfMData file.");
+      "Path of the output SfMData file.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -216,6 +221,8 @@ int aliceVision_main(int argc, char **argv)
     params,
     outDirectory,
     (fs::path(outDirectory) / "sfm_log.html").string());
+
+  sfmEngine.initRandomSeed(randomSeed);
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
