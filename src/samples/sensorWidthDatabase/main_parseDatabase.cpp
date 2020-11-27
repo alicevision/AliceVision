@@ -73,7 +73,7 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  std::cout << "Result : " << std::endl << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorSize << std::endl;
+  std::cout << "Result : " << std::endl << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorWidth << "\t" << datasheet._sensorHeight << std::endl;
 
   return EXIT_SUCCESS;
 }

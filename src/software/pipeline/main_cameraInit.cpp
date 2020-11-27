@@ -514,14 +514,14 @@ int aliceVision_main(int argc, char **argv)
         ALICEVISION_LOG_TRACE("Sensor width found in database: " << std::endl
                               << "\t- brand: " << make << std::endl
                               << "\t- model: " << model << std::endl
-                              << "\t- sensor width: " << datasheet._sensorSize << " mm");
+                              << "\t- sensor width: " << datasheet._sensorWidth << " mm");
 
         if(datasheet._model != model) {
           // the camera model in database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
         }
 
-        sensorWidth = datasheet._sensorSize;
+        sensorWidth = datasheet._sensorWidth;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0) {
@@ -778,7 +778,7 @@ int aliceVision_main(int argc, char **argv)
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
                         << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
                         << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor size: " << unsureSensor.second.second._sensorSize << " mm");
+                        << "\t- database camera sensor size: " << unsureSensor.second.second._sensorWidth << " mm");
     ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
   }
 
