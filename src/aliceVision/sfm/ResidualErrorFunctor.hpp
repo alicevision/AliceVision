@@ -37,9 +37,10 @@ struct ResidualErrorFunctor_Pinhole
 
   // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
-    OFFSET_FOCAL_LENGTH = 0,
-    OFFSET_PRINCIPAL_POINT_X = 1,
-    OFFSET_PRINCIPAL_POINT_Y = 2
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3
   };
 
   template <typename T>
@@ -48,13 +49,14 @@ struct ResidualErrorFunctor_Pinhole
                                 const T y_u,
                                 T* out_residuals) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
 
     // Apply focal length and principal point to get the final image coordinates
-    const T projected_x = principal_point_x + focal * x_u;
-    const T projected_y = principal_point_y + focal * y_u;
+    const T projected_x = principal_point_x + focalX * x_u;
+    const T projected_y = principal_point_y + focalY * y_u;
 
     // Compute and return the error is the difference between the predicted
     //  and observed position
@@ -186,10 +188,11 @@ struct ResidualErrorFunctor_PinholeRadialK1
 
   // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
-    OFFSET_FOCAL_LENGTH = 0,
-    OFFSET_PRINCIPAL_POINT_X = 1,
-    OFFSET_PRINCIPAL_POINT_Y = 2,
-    OFFSET_DISTO_K1 = 3
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3,
+    OFFSET_DISTO_K1 = 4
   };
 
 
@@ -199,7 +202,8 @@ struct ResidualErrorFunctor_PinholeRadialK1
                                 const T y_u,
                                 T* out_residuals) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -211,8 +215,8 @@ struct ResidualErrorFunctor_PinholeRadialK1
     const T y_d = y_u * r_coeff;
 
     // Apply focal length and principal point to get the final image coordinates
-    const T projected_x = principal_point_x + focal * x_d;
-    const T projected_y = principal_point_y + focal * y_d;
+    const T projected_x = principal_point_x + focalX * x_d;
+    const T projected_y = principal_point_y + focalY * y_d;
 
     // Compute and return the error is the difference between the predicted
     //  and observed position
@@ -340,12 +344,13 @@ struct ResidualErrorFunctor_PinholeRadialK3
 
   // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
-    OFFSET_FOCAL_LENGTH = 0,
-    OFFSET_PRINCIPAL_POINT_X = 1,
-    OFFSET_PRINCIPAL_POINT_Y = 2,
-    OFFSET_DISTO_K1 = 3,
-    OFFSET_DISTO_K2 = 4,
-    OFFSET_DISTO_K3 = 5,
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3,
+    OFFSET_DISTO_K1 = 4,
+    OFFSET_DISTO_K2 = 5,
+    OFFSET_DISTO_K3 = 6,
   };
 
   template <typename T>
@@ -354,7 +359,8 @@ struct ResidualErrorFunctor_PinholeRadialK3
                                 const T y_u,
                                 T* out_residuals) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -370,8 +376,8 @@ struct ResidualErrorFunctor_PinholeRadialK3
     const T y_d = y_u * r_coeff;
 
     // Apply focal length and principal point to get the final image coordinates
-    const T projected_x = principal_point_x + focal * x_d;
-    const T projected_y = principal_point_y + focal * y_d;
+    const T projected_x = principal_point_x + focalX * x_d;
+    const T projected_y = principal_point_y + focalY * y_d;
 
     // Compute and return the error is the difference between the predicted
     //  and observed position
@@ -494,14 +500,15 @@ struct ResidualErrorFunctor_PinholeBrownT2
 
   // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
-    OFFSET_FOCAL_LENGTH = 0,
-    OFFSET_PRINCIPAL_POINT_X = 1,
-    OFFSET_PRINCIPAL_POINT_Y = 2,
-    OFFSET_DISTO_K1 = 3,
-    OFFSET_DISTO_K2 = 4,
-    OFFSET_DISTO_K3 = 5,
-    OFFSET_DISTO_T1 = 6,
-    OFFSET_DISTO_T2 = 7,
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3,
+    OFFSET_DISTO_K1 = 4,
+    OFFSET_DISTO_K2 = 5,
+    OFFSET_DISTO_K3 = 6,
+    OFFSET_DISTO_T1 = 7,
+    OFFSET_DISTO_T2 = 8,
   };
 
   template <typename T>
@@ -510,7 +517,8 @@ struct ResidualErrorFunctor_PinholeBrownT2
                                 const T y_u,
                                 T* out_residuals) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -530,8 +538,8 @@ struct ResidualErrorFunctor_PinholeBrownT2
     const T y_d = y_u * r_coeff + t_y;
 
     // Apply focal length and principal point to get the final image coordinates
-    const T projected_x = principal_point_x + focal * x_d;
-    const T projected_y = principal_point_y + focal * y_d;
+    const T projected_x = principal_point_x + focalX * x_d;
+    const T projected_y = principal_point_y + focalY * y_d;
 
     // Compute and return the error is the difference between the predicted
     //  and observed position
@@ -661,13 +669,14 @@ struct ResidualErrorFunctor_PinholeFisheye
 
   // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
-    OFFSET_FOCAL_LENGTH = 0,
-    OFFSET_PRINCIPAL_POINT_X = 1,
-    OFFSET_PRINCIPAL_POINT_Y = 2,
-    OFFSET_DISTO_K1 = 3,
-    OFFSET_DISTO_K2 = 4,
-    OFFSET_DISTO_K3 = 5,
-    OFFSET_DISTO_K4 = 6,
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3,
+    OFFSET_DISTO_K1 = 4,
+    OFFSET_DISTO_K2 = 5,
+    OFFSET_DISTO_K3 = 6,
+    OFFSET_DISTO_K4 = 7,
   };
 
   template <typename T>
@@ -676,7 +685,8 @@ struct ResidualErrorFunctor_PinholeFisheye
                                 const T y_u,
                                 T* out_residuals) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -698,8 +708,8 @@ struct ResidualErrorFunctor_PinholeFisheye
     const T y_d = y_u * cdist;
 
     // Apply focal length and principal point to get the final image coordinates
-    const T projected_x = principal_point_x + focal * x_d;
-    const T projected_y = principal_point_y + focal * y_d;
+    const T projected_x = principal_point_x + focalX * x_d;
+    const T projected_y = principal_point_y + focalY * y_d;
 
     // Compute and return the error is the difference between the predicted
     //  and observed position
@@ -828,10 +838,11 @@ struct ResidualErrorFunctor_PinholeFisheye1
 
   // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
-    OFFSET_FOCAL_LENGTH = 0,
-    OFFSET_PRINCIPAL_POINT_X = 1,
-    OFFSET_PRINCIPAL_POINT_Y = 2,
-    OFFSET_DISTO_K1 = 3
+    OFFSET_FOCAL_LENGTH_X = 0,
+    OFFSET_FOCAL_LENGTH_Y = 1,
+    OFFSET_PRINCIPAL_POINT_X = 2,
+    OFFSET_PRINCIPAL_POINT_Y = 3,
+    OFFSET_DISTO_K1 = 4
   };
 
   template <typename T>
@@ -840,7 +851,8 @@ struct ResidualErrorFunctor_PinholeFisheye1
                                 const T y_u,
                                 T* out_residuals) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
+    const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -853,8 +865,8 @@ struct ResidualErrorFunctor_PinholeFisheye1
     const T y_d = y_u * r_coeff;
 
     // Apply focal length and principal point to get the final image coordinates
-    const T projected_x = principal_point_x + focal * x_d;
-    const T projected_y = principal_point_y + focal * y_d;
+    const T projected_x = principal_point_x + focalX * x_d;
+    const T projected_y = principal_point_y + focalY * y_d;
 
     // Compute and return the error is the difference between the predicted
     //  and observed position
