@@ -32,8 +32,8 @@ public:
   {
   }
 
-  Pinhole(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
+  Pinhole(unsigned int w, unsigned int h, double focalLengthPixX, double focalLengthPixY, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPixX, focalLengthPixY, ppx, ppy, distortion)
   {
   }
 

@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   {
     // Create the intrinsic with unknown focal length
     sfmData2.intrinsics[1] = std::make_shared<camera::Pinhole>
-        (config._cx*2, config._cy*2, -1, config._cx, config._cy);
+        (config._cx*2, config._cy*2, -1, -1, config._cx, config._cy);
     // The 3rd view use this invalid intrinsic
     sfmData2.views[2]->setIntrinsicId(1);
   }

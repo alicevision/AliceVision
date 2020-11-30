@@ -23,8 +23,8 @@ class PinholeRadialK1 : public Pinhole
 {
 public:
 
-  explicit PinholeRadialK1(int w = 0, int h = 0, double focalLengthPix = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0)
-  :Pinhole(w, h, focalLengthPix, ppx, ppy, std::shared_ptr<Distortion>(new DistortionRadialK1(k1)))
+  explicit PinholeRadialK1(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0)
+  :Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionRadialK1(k1)))
   {
   }
 
@@ -42,8 +42,8 @@ class PinholeRadialK3 : public Pinhole
 {
   public:
 
-  explicit PinholeRadialK3(int w = 0, int h = 0, double focalLengthPix = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
-  : Pinhole(w, h, focalLengthPix, ppx, ppy, std::shared_ptr<Distortion>(new DistortionRadialK3(k1, k2, k3)))
+  explicit PinholeRadialK3(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionRadialK3(k1, k2, k3)))
   {
   }
 

@@ -453,6 +453,7 @@ int aliceVision_main(int argc, char **argv)
 
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
+    double sensorHeight = -1;
     enum class ESensorWidthSource {
         FROM_DB,
         FROM_METADATA_ESTIMATION,
@@ -506,6 +507,7 @@ int aliceVision_main(int argc, char **argv)
         }
 
         sensorWidth = datasheet._sensorWidth;
+        sensorHeight = datasheet._sensorHeight;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0) {
@@ -586,13 +588,21 @@ int aliceVision_main(int argc, char **argv)
     intrinsic->setInitializationMode(intrinsicInitMode);
 
     // Set sensor size
-    if (imageRatio > 1.0) {
+    if (sensorHeight > 0.0) 
+    {
       intrinsicBase->setSensorWidth(sensorWidth);
-      intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+      intrinsicBase->setSensorHeight(sensorHeight);
     }
-    else {
-      intrinsicBase->setSensorWidth(sensorWidth);
-      intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+    else 
+    {
+      if (imageRatio > 1.0) {
+        intrinsicBase->setSensorWidth(sensorWidth);
+        intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+      }
+      else {
+        intrinsicBase->setSensorWidth(sensorWidth);
+        intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+      }
     }
 
     if(intrinsic && intrinsic->isValid())
@@ -735,7 +745,8 @@ int aliceVision_main(int argc, char **argv)
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
                         << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
                         << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor size: " << unsureSensor.second.second._sensorWidth << " mm");
+                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth << std::endl
+                        << "\t- database camera sensor height: " << unsureSensor.second.second._sensorHeight << " mm");
     ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
   }
 
