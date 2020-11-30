@@ -109,13 +109,15 @@ int aliceVision_main(int argc, char **argv)
     
     if (!camera::isPinhole(cam->getType()))
         continue;
+
     const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
     
     // Extrinsic
     const Vec3& t = pose.translation();
     const Mat3& R = pose.rotation();
     // Intrinsic
-    const double f = pinhole_cam->getFocalLengthPix();
+    const double fx = pinhole_cam->getFocalLengthPixX();
+    const double fy = pinhole_cam->getFocalLengthPixY();
     const Vec2 pp = pinhole_cam->getPrincipalPoint();
 
     // Image size in px
@@ -131,7 +133,7 @@ int aliceVision_main(int argc, char **argv)
         << R(0,0) << " " << R(0,1) << " " << R(0,2) << " "
         << R(1,0) << " " << R(1,1) << " " << R(1,2) << " "
         << R(2,0) << " " << R(2,1) << " " << R(2,2) << "\n"
-        << f / largerDim << " 0 0 1 " << pp(0) / w << " " << pp(1) / h;
+        << fx / largerDim << " 0 0 " << fx / fy << " " << pp(0) / w << " " << pp(1) / h;
     outfile.close();
     
     if(cam->hasDistortion())
