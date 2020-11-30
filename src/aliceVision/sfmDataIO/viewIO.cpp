@@ -253,13 +253,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
       case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
     {
       if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
+        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
       break;
     }
       case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
     {
       if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 1.04});
+        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, ppx, ppy, 1.04});
       break;
     }
     default: break;
