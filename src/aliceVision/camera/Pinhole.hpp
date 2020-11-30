@@ -49,13 +49,24 @@ public:
     *this = dynamic_cast<const Pinhole&>(other); 
   }
 
-  double getFocalLengthPix() const { return _scale(0); }
+  double getFocalLengthPixX() const 
+  { 
+    return _scale(0); 
+  }
 
-  Vec2 getPrincipalPoint() const { return _offset; }
+  double getFocalLengthPixY() const 
+  { 
+    return _scale(0); 
+  }
+
+  Vec2 getPrincipalPoint() const 
+  { 
+    return _offset; 
+  }
 
   bool isValid() const override
   {
-    return getFocalLengthPix() > 0 && IntrinsicBase::isValid(); 
+    return getFocalLengthPixX() > 0 && getFocalLengthPixY() > 0 && IntrinsicBase::isValid(); 
   }
 
   EINTRINSIC getType() const override

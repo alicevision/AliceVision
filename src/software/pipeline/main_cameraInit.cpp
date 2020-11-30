@@ -493,7 +493,7 @@ int aliceVision_main(int argc, char **argv)
       camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
       if(intrinsic != nullptr)
       {
-        if(intrinsic->getFocalLengthPix() > 0)
+        if(intrinsic->getFocalLengthPixX() > 0)
         {
           // the view intrinsic is initialized
           #pragma omp atomic
