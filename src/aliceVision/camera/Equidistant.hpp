@@ -264,7 +264,7 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
 
-  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
   {
     const Vec3 X = pose(pt);
 
@@ -291,8 +291,9 @@ public:
     Eigen::Matrix<double, 1, 1> d_radius_d_fov;
     d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
 
-    Eigen::Matrix<double, 1, 1> d_fov_d_scale;
+    Eigen::Matrix<double, 1, 2> d_fov_d_scale;
     d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);
+    d_fov_d_scale(0, 1) = 0.0;
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
   }
@@ -303,7 +304,7 @@ public:
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const override {
-    return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 5);
+    return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 6);
   }
 
   Vec3 toUnitSphere(const Vec2 & pt) const override
@@ -350,7 +351,7 @@ public:
     return d_ret_d_angles * d_angles_d_pt;
   }
 
-  Eigen::Matrix<double, 3, 1> getDerivativetoUnitSphereWrtScale(const Vec2 & pt)
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtScale(const Vec2 & pt)
   {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -373,8 +374,9 @@ public:
     d_angles_d_fov(0, 0) = 0;
     d_angles_d_fov(1, 0) = pt.norm() * 0.5;
 
-    Eigen::Matrix<double, 1, 1> d_fov_d_scale;
+    Eigen::Matrix<double, 1, 2> d_fov_d_scale;
     d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);  
+    d_fov_d_scale(0, 1) = 0.0;  
 
     return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
   }
