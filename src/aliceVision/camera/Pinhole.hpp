@@ -56,7 +56,7 @@ public:
 
   double getFocalLengthPixY() const 
   { 
-    return _scale(0); 
+    return _scale(1); 
   }
 
   Vec2 getPrincipalPoint() const 
