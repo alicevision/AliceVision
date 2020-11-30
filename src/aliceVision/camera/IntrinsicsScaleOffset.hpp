@@ -55,8 +55,9 @@ public:
     return p.cwiseProduct(_scale) + _offset;
   }
 
-  virtual Vec2 getDerivativeCam2ImaWrtScale(const Vec2& p) const
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
   {
+    
     return p;
   }
 
@@ -106,15 +107,15 @@ public:
   // Data wrapper for non linear optimization (update from data)
   bool updateFromParams(const std::vector<double>& params) override
   {
-    if (params.size() != 3)
+    if (params.size() != 4)
     {
       return false;
     }
 
     _scale(0) = params[0];
-    _scale(1) = params[0];
-    _offset(0) = params[1];
-    _offset(1) = params[2];
+    _scale(1) = params[1];
+    _offset(0) = params[2];
+    _offset(1) = params[3];
 
     return true;
   }
