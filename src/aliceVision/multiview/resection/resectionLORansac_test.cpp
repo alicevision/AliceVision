@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     refinePoseAsItShouldbe(pts3D,
                            pts2Dnorm,
                            inliers,
-                           new camera::Pinhole(WIDTH, HEIGHT, 1, 0, 0),
+                           new camera::Pinhole(WIDTH, HEIGHT, 1, 1, 0, 0),
                            pose,
                            true,
                            false );

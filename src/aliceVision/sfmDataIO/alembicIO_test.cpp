@@ -56,12 +56,12 @@ SfMData createTestScene(IndexT singleViewsCount,
     {
       if(i == 0)
       {
-        sfm_data.intrinsics[0] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
+        sfm_data.intrinsics[0] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, 36.0, std::rand()%10000, std::rand()%10000);
       }
     }
     else
     {
-      sfm_data.intrinsics[i] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
+      sfm_data.intrinsics[i] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, 36.0, std::rand()%10000, std::rand()%10000);
     }
   }
 
@@ -84,7 +84,7 @@ SfMData createTestScene(IndexT singleViewsCount,
         rig.setSubPose(subPoseId, RigSubPose(geometry::Pose3(r, c), ERigSubPoseStatus::ESTIMATED));
       }
 
-      sfm_data.intrinsics[nbIntrinsics + subPoseId] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
+      sfm_data.intrinsics[nbIntrinsics + subPoseId] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, 36.0, std::rand()%10000, std::rand()%10000);
 
       for(std::size_t pose = 0; pose < nbRigPoses; ++pose)
       {

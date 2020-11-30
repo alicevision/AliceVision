@@ -23,27 +23,27 @@ namespace camera {
 
 inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
     unsigned int w = 0, unsigned int h = 0,
-    double focal_length_pix = 0.0,
+    double focalLengthPixX = 0.0, double focalLengthPixY = 0.0,
     double ppx = 0.0, double ppy = 0.0)
 {
   switch(intrinsicType)
   {
     case EINTRINSIC::PINHOLE_CAMERA:
-      return std::make_shared<Pinhole>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-      return std::make_shared<PinholeRadialK1>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<PinholeRadialK1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-      return std::make_shared<PinholeRadialK3>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return std::make_shared<PinholeBrownT2>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<PinholeBrownT2>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return std::make_shared<PinholeFisheye>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<PinholeFisheye>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return std::make_shared<PinholeFisheye1>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<PinholeFisheye1>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA:
-      return std::make_shared<EquiDistant>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<EquiDistant>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
-      return std::make_shared<EquiDistantRadialK3>(w, h, focal_length_pix, ppx, ppy);
+      return std::make_shared<EquiDistantRadialK3>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::UNKNOWN:
     case EINTRINSIC::VALID_PINHOLE:
     case EINTRINSIC::VALID_EQUIDISTANT:
