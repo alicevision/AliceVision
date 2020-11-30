@@ -129,9 +129,9 @@ public:
     }
 
     _scale(0) = params[0];
-    _scale(1) = params[0];
-    _offset(0) = params[1];
-    _offset(1) = params[2];
+    _scale(1) = params[1];
+    _offset(0) = params[2];
+    _offset(1) = params[3];
 
     setDistortionParams({params.begin() + 4, params.end()});
 

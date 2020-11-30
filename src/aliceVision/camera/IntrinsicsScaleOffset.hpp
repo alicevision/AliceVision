@@ -47,7 +47,10 @@ public:
     _offset(1) = offset_y;
   }
 
-  inline Vec2 getOffset() const { return _offset; }
+  inline Vec2 getOffset() const 
+  { 
+    return _offset; 
+  }
 
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
@@ -57,13 +60,22 @@ public:
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
   {
-    
-    return p;
+    Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
+
+    M(0, 0) = p(0);
+    M(1, 1) = p(1);
+      
+    return M;
   }
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const
   {
-    return Eigen::Matrix2d::Identity() * _scale(0);
+    Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
+
+    M(0, 0) = _scale(0);
+    M(1, 1) = _scale(1);
+
+    return M;
   }
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPoint() const
@@ -74,22 +86,42 @@ public:
   // Transform a point from the image plane to the camera plane
   Vec2 ima2cam(const Vec2& p) const override
   {
-    return (p - _offset) / _scale(0);
+    Vec2 np;
+
+    np(0) = (p(0) - _offset(0)) / _scale(0);
+    np(1) = (p(1) - _offset(1)) / _scale(1);
+
+    return np;
   }
 
-  virtual Eigen::Matrix<double, 2, 1> getDerivativeIma2CamWrtScale(const Vec2& p) const
+  virtual Eigen::Matrix<double, 2, 2> getDerivativeIma2CamWrtScale(const Vec2& p) const
   {
-      return -(p - _offset) / (_scale(0) * _scale(0));
+      Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
+
+      M(0, 0) = -(p(0) - _offset(0)) / (_scale(0) * _scale(0));
+      M(1, 1) = -(p(1) - _offset(1)) / (_scale(1) * _scale(1));
+
+      return M;
   }
 
   virtual Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const
   {
-      return Eigen::Matrix2d::Identity() * (1.0 / _scale(0));
+    Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
+
+    M(0, 0) = 1.0 / _scale(0);
+    M(1, 1) = 1.0 / _scale(1);
+
+    return M;
   }
 
   virtual Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const
   {
-    return Eigen::Matrix2d::Identity() * (-1.0 / _scale(0));
+    Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
+
+    M(0, 0) = - 1.0 / _scale(0);
+    M(1, 1) = - 1.0 / _scale(1);
+
+    return M;
   }
 
   /**
@@ -110,7 +142,7 @@ public:
     if (params.size() != 4)
     {
       return false;
-    }
+    }    
 
     _scale(0) = params[0];
     _scale(1) = params[1];
