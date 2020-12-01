@@ -181,6 +181,7 @@ private:
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
     _rigBlocks.clear();
+    _linearSolverOrdering.Clear();
   }
 
   /**
@@ -292,6 +293,10 @@ private:
   HashMap<IndexT, HashMap<IndexT, SE3::Matrix>> _rigBlocks;
   ///Rig pose to use when there is no rig
   SE3::Matrix _rigNull = SE3::Matrix::Identity();
+
+  /// hinted order for ceres to eliminate blocks when solving.
+  /// note: this ceres parameter is built internally and must be reset on each call to the solver.
+  ceres::ParameterBlockOrdering _linearSolverOrdering;
 };
 
 } // namespace sfm
