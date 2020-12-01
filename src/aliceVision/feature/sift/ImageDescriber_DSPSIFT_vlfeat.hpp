@@ -1,6 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2016 AliceVision contributors.
-// Copyright (c) 2012 openMVG contributors.
+// Copyright (c) 2020 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -22,13 +21,42 @@ extern "C" {
 namespace aliceVision {
 namespace feature {
 
+struct DspSiftParams : public SiftParams
+{
+    bool domainSizePooling = true;
+    bool estimateAffineShape = false;
+    double dspMinScale = 1.0 / 6.0;
+    double dspMaxScale = 3.0;
+    int dspNumScales = 10;
+
+    void setPreset(ConfigurationPreset preset) override;
+};
+
+
+template <typename T>
+bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& regions, const DspSiftParams& params,
+                    bool orientation, const image::Image<unsigned char>* mask);
+
 /**
- * @brief Create an ImageDescriber interface for VLFeat SIFT Float feature extractor
+ * @brief Create an ImageDescriber interface for VLFeat SIFT feature extractor
+ *
+ * "Domain-Size Pooling in Local Descriptors: DSP-SIFT", CVPR 2015
+ * Jingming Dong, Stefano Soatto, University of California
+ * https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Dong_Domain-Size_Pooling_in_2015_CVPR_paper.pdf
+ *
+ * "A Theory of Local Matching: SIFT and Beyond", 2016
+ * Hossein Mobahi CSAIL MIT, Stefano Soatto, CS Dept. UCLA
+ * https://arxiv.org/pdf/1601.05116.pdf
+ *
+ * DSP-SIFT has been shown to outperform other SIFT variants and learned descriptors in
+ * "Comparative Evaluation of Hand-Crafted and Learned Local Features", CVPR 2016
+ * Schönberger, Hardmeier, Sattler, Pollefeys
+ * https://openaccess.thecvf.com/content_cvpr_2017/papers/Schonberger_Comparative_Evaluation_of_CVPR_2017_paper.pdf
  */
-class ImageDescriber_SIFT_vlfeatFloat : public ImageDescriber
+class ImageDescriber_DSPSIFT_vlfeat : public ImageDescriber
 {
 public:
-  explicit ImageDescriber_SIFT_vlfeatFloat(const SiftParams& params = SiftParams(), bool isOriented = true)
+  explicit ImageDescriber_DSPSIFT_vlfeat(const DspSiftParams& params = DspSiftParams(), bool isOriented = true)
     : ImageDescriber()
     , _params(params)
     , _isOriented(isOriented)
@@ -37,7 +65,7 @@ public:
     VLFeatInstance::initialize();
   }
 
-  ~ImageDescriber_SIFT_vlfeatFloat() override
+  ~ImageDescriber_DSPSIFT_vlfeat() override
   {
     VLFeatInstance::destroy();
   }
@@ -66,7 +94,7 @@ public:
    */
   EImageDescriberType getDescriberType() const override
   {
-    return EImageDescriberType::SIFT_FLOAT;
+    return EImageDescriberType::DSPSIFT;
   }
 
   /**
@@ -80,7 +108,7 @@ public:
   {
     return getMemoryConsumptionVLFeat(width, height, _params);
   }
-  
+
   /**
    * @brief Set image describer always upRight
    * @param[in] upRight
@@ -96,7 +124,7 @@ public:
    */
   void setConfigurationPreset(ConfigurationPreset preset) override
   {
-    return _params.setPreset(preset);
+    _params.setPreset(preset);
   }
 
   /**
@@ -111,8 +139,9 @@ public:
     std::unique_ptr<Regions>& regions,
     const image::Image<unsigned char>* mask = nullptr) override
   {
-    return extractSIFT<float>(image, regions, _params, _isOriented, mask);
+    return extractDSPSIFT<unsigned char>(image, regions, _params, _isOriented, mask);
   }
+
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber
@@ -120,11 +149,11 @@ public:
    */
   void allocate(std::unique_ptr<Regions>& regions) const override
   {
-    regions.reset(new SIFT_Float_Regions);
+    regions.reset(new SIFT_Regions);
   }
-  
+
 private:
-  SiftParams _params;
+  DspSiftParams _params;
   bool _isOriented;
 };
 

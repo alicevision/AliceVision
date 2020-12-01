@@ -19,10 +19,10 @@
 namespace aliceVision {
 namespace feature {
 
-std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift = nullptr;
+std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift{nullptr};
 std::atomic<int> ImageDescriber_SIFT_popSIFT::_instanceCounter{0};
 
-void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(EImageDescriberPreset preset)
+void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(ConfigurationPreset preset)
 {
     _params.setPreset(preset);
     _popSift.reset(nullptr); // reset by describe method
@@ -85,7 +85,6 @@ void ImageDescriber_SIFT_popSIFT::resetConfiguration()
 
   // reset configuration
   popsift::Config config;
-  config.setOctaves(_params._numOctaves);
   config.setLevels(_params._numScales);
   config.setDownsampling(_params._firstOctave);
   config.setThreshold(_params._peakThreshold);

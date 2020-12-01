@@ -78,7 +78,7 @@ public:
    * @param[in] preset The preset configuration
    * @return True if configuration succeed. (here always false)
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(ConfigurationPreset preset) override
   {
     ALICEVISION_LOG_DEBUG("Image describer preset ignored for AKAZE_OCV.");
   }

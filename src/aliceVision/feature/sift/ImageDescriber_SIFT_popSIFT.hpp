@@ -83,7 +83,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override;
+  void setConfigurationPreset(ConfigurationPreset preset) override;
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
