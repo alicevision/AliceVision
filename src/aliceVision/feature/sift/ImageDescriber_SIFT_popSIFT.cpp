@@ -19,7 +19,7 @@
 namespace aliceVision {
 namespace feature {
 
-std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift = nullptr;
+std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift{nullptr};
 std::atomic<int> ImageDescriber_SIFT_popSIFT::_instanceCounter{0};
 
 void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(ConfigurationPreset preset)

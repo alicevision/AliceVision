@@ -60,12 +60,12 @@ enum class EFeatureQuality
 
 inline std::string EFeatureQuality_information()
 {
-    return "Feature extraction contains a compromize between speed and precision:\n"
+    return "Feature extraction contains a trade-off between speed and result accuracy:\n"
            "* LOW: Very quick results.\n"
            "* MEDIUM: Quick results.\n"
            "* NORMAL: Default feature quality.\n"
            "* HIGH: Improved quality over performances.\n"
-           "* ULTRA: Perfect quality at the expense of high computational cost.\n";
+           "* ULTRA: Highest quality at the expense of high computational cost.\n";
 }
 
 EFeatureQuality EFeatureQuality_stringToEnum(const std::string& v);
@@ -79,13 +79,21 @@ std::istream& operator>>(std::istream& in, EFeatureQuality& v);
  */
 enum class EFeatureConstrastFiltering
 {
+    /// Use a fixed threshold for all the pixels
     Static = 0,
+    /// Use a threshold for each image based on image statistics
     AdaptiveToMedianVariance,
+    /// Disable contrast filtering
     NoFiltering,
+    /// Grid sort by peak value per octave and by scale at the end
     GridSortOctaves,
+    /// Grid sort by scale*peakValue per octave and at the end
     GridSort,
+    /// Grid sort per scale steps and at the end (scale and then peak value)
     GridSortScaleSteps,
+    /// Grid sort per octaves and at the end (scale and then peak value)
     GridSortOctaveSteps,
+    /// Filter non-extrema peak values
     NonExtremaFiltering
 };
 
@@ -94,7 +102,12 @@ inline std::string EFeatureConstrastFiltering_information()
     return "Contrast filtering method to ignore features with too low contrast that can be consided as noise:\n"
            "* Static: Fixed threshold.\n"
            "* AdaptiveToMedianVariance: Based on image content analysis.\n"
-           "* NoFiltering: Disable contrast filtering.\n";
+           "* NoFiltering: Disable contrast filtering.\n"
+           "* GridSortOctaves: Grid sort by peak value per octave and by scale at the end.\n"
+           "* GridSort: Grid sort by scale*peakValue per octave and at the end.\n"
+           "* GridSortScaleSteps: Grid sort per scale steps and at the end (scale and then peak value).\n"
+           "* GridSortOctaveSteps: Grid sort per octaves and at the end (scale and then peak value).\n"
+           "* NonExtremaFiltering: Filter non-extrema peak values.\n";
 }
 
 EFeatureConstrastFiltering EFeatureConstrastFiltering_stringToEnum(const std::string& v);
@@ -105,12 +118,12 @@ std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& v);
 
 struct ConfigurationPreset
 {
-    EImageDescriberPreset descPreset = EImageDescriberPreset::NORMAL;
-    int maxNbFeatures = 0;
-    EFeatureQuality quality = EFeatureQuality::NORMAL;
-    bool gridFiltering = true;
-    EFeatureConstrastFiltering contrastFiltering = EFeatureConstrastFiltering::Static;
-    float relativePeakThreshold = 0.02;
+    EImageDescriberPreset descPreset{EImageDescriberPreset::NORMAL};
+    int maxNbFeatures{0};
+    EFeatureQuality quality{EFeatureQuality::NORMAL};
+    bool gridFiltering{true};
+    EFeatureConstrastFiltering contrastFiltering{EFeatureConstrastFiltering::Static};
+    float relativePeakThreshold{0.02};
 
     inline ConfigurationPreset& setDescPreset(EImageDescriberPreset v)
     {

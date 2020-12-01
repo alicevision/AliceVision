@@ -18,6 +18,7 @@ set(features_files_headers
   Hamming.hpp
   ImageDescriber.hpp
   imageDescriberCommon.hpp
+  imageStats.hpp
   KeypointSet.hpp
   metric.hpp
   PointFeature.hpp
@@ -36,6 +37,7 @@ set(features_files_sources
   FeaturesPerView.cpp
   ImageDescriber.cpp
   imageDescriberCommon.cpp
+  imageStats.cpp
 )
 
 # CCTAG ImageDescriber
