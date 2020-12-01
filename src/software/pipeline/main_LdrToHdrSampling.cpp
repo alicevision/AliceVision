@@ -206,15 +206,19 @@ int aliceVision_main(int argc, char** argv)
         std::vector<std::string> paths;
         std::vector<float> exposures;
 
+        bool applyWhiteBalance = true;
+
         for (auto & v : group)
         {
             paths.push_back(v->getImagePath());
             exposures.push_back(v->getCameraExposureSetting());
+
+            applyWhiteBalance = applyWhiteBalance && v->getApplyWhiteBalance();
         }
 
         ALICEVISION_LOG_INFO("Extracting samples from group " << groupIdx);
         std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB, params);
+        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB, applyWhiteBalance, params);
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);
