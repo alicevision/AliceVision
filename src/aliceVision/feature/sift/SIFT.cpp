@@ -97,14 +97,14 @@ std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, co
   double scaleFactor = 1.0;
 
   // if image resolution is low, increase resolution for extraction
-  const int firstOctave = params._firstOctave - (width*height < 5000*4000 ? 1 : 0);
+  const int firstOctave = params.getImageFirstOctave(width, height);
   if(firstOctave > 0)
       scaleFactor = 1.0 / std::pow(2.0, firstOctave);
   else if(firstOctave < 0)
       scaleFactor = std::pow(2.0, std::abs(firstOctave));
   const std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
 
-  const int numOctaves = std::max(int(std::floor(std::log2(std::min(width, height))) - params._firstOctave - 3), 1);
+  const int numOctaves = std::max(int(std::floor(std::log2(std::min(width, height))) - firstOctave - 3), 1);
 
   std::size_t pyramidMemoryConsuption = 0;
   double downscale = 1.0;
@@ -144,7 +144,7 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
     const int w = image.Width(), h = image.Height();
     const int numOctaves = -1; // auto
     // if image resolution is low, increase resolution for extraction
-    const int firstOctave = params._firstOctave - (w * h < 5000 * 4000 ? 1 : 0);
+    const int firstOctave = params.getImageFirstOctave(w, h);
     VlSiftFilt* filt = vl_sift_new(w, h, numOctaves, params._numScales, firstOctave);
     if(params._edgeThreshold >= 0)
         vl_sift_set_edge_thresh(filt, params._edgeThreshold);

@@ -51,6 +51,11 @@ struct SiftParams
   bool _rootSift = true;
   
   virtual void setPreset(ConfigurationPreset preset);
+
+  int getImageFirstOctave(int w, int h) const
+  {
+    return _firstOctave - (w * h < 5000 * 4000 ? 1 : 0);
+  }
 };
 
 // VLFeat Instance management
