@@ -123,7 +123,7 @@ struct ConfigurationPreset
     EFeatureQuality quality{EFeatureQuality::NORMAL};
     bool gridFiltering{true};
     EFeatureConstrastFiltering contrastFiltering{EFeatureConstrastFiltering::Static};
-    float relativePeakThreshold{0.02};
+    float relativePeakThreshold{0.02f};
 
     inline ConfigurationPreset& setDescPreset(EImageDescriberPreset v)
     {
