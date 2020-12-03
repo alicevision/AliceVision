@@ -283,7 +283,8 @@ bool RefineRc::refinerc(bool checkIfExists)
 
 void RefineRc::writeDepthMap()
 {
-  _depthSimMapOpt->save(_rc, _refineTCams);
+  if(_depthSimMapOpt)
+    _depthSimMapOpt->save(_rc, _refineTCams);
 }
 
 void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams, int nbGPUs)
