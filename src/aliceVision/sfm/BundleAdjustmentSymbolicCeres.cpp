@@ -318,14 +318,7 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
       return;
     }
 
-    
-    if (refineRotation && refineTranslation)
-    {
-      problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization);
-    }
-    else {
-      ALICEVISION_LOG_ERROR("constant extrinsics not supported at this time");
-    }
+    problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization(refineRotation, refineTranslation));
 
     _statistics.addState(EParameter::POSE, EParameterState::REFINED);
   };

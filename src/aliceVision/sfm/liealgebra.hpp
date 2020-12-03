@@ -231,6 +231,12 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1> & algebra){
 
 class LocalParameterization : public ceres::LocalParameterization {
 public:
+  LocalParameterization(bool refineRotation, bool refineTranslation) :
+  _refineRotation(refineRotation), 
+  _refineTranslation(refineTranslation)
+  {
+  }
+
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
 
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T(x);
@@ -251,18 +257,24 @@ public:
 
     J.fill(0);
 
-    J(1, 2) = 1;
-    J(2, 1) = -1;
+    if (_refineRotation) 
+    {
+      J(1, 2) = 1;
+      J(2, 1) = -1;
 
-    J(4, 2) = -1;
-    J(6, 0) = 1;
+      J(4, 2) = -1;
+      J(6, 0) = 1;
 
-    J(8, 1) = 1;
-    J(9, 0) = -1;
+      J(8, 1) = 1;
+      J(9, 0) = -1;
+    }
 
-    J(12, 3) = 1;
-    J(13, 4) = 1;
-    J(14, 5) = 1;
+    if (_refineTranslation) 
+    {
+      J(12, 3) = 1;
+      J(13, 4) = 1;
+      J(14, 5) = 1;
+    }
 
     return true;
   }
@@ -274,6 +286,10 @@ public:
   int LocalSize() const override {
     return 6;
   }
+
+private:
+  bool _refineRotation;
+  bool _refineTranslation;
 };
 
 }
