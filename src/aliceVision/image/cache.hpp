@@ -81,7 +81,7 @@ public:
   
   /*
   Tells the system that we need the data for this tile.
-  This means that is the data is out of core, we want it back
+  This means that the data is out of core, we want it back.
   @return false if the process failed to grab data.
   */
   bool acquire();
@@ -187,11 +187,17 @@ public:
   virtual ~CacheManager();
 
   /**
+   * Set the maximal memory size
+   * @param max the maximal memory size
+   */
+  void setMaxMemory(size_t maxMemorySize);
+
+  /**
    * Set the maximal number number of items simultaneously in core
    * @param max the maximal number of items
    */
   void setInCoreMaxObjectCount(size_t max);
-  
+
   /**
    * Create a new object of size block count
    * @param objectId the created object index

@@ -4,15 +4,23 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/panorama/cachedImage.hpp>
+#include <aliceVision/panorama/compositer.hpp>
+#include <aliceVision/panorama/alphaCompositer.hpp>
+#include <aliceVision/panorama/laplacianCompositer.hpp>
+#include <aliceVision/panorama/seams.hpp>
+#include <aliceVision/panorama/boundingBoxPanoramaMap.hpp>
+
 // Input and geometry
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-// Image stuff
+// Image
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
 
-// Logging stuff
+// System
+#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 // Reading command line options
@@ -26,13 +34,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
-
-#include <aliceVision/panorama/cachedImage.hpp>
-#include <aliceVision/panorama/compositer.hpp>
-#include <aliceVision/panorama/alphaCompositer.hpp>
-#include <aliceVision/panorama/laplacianCompositer.hpp>
-#include <aliceVision/panorama/seams.hpp>
-#include <aliceVision/panorama/boundingBoxPanoramaMap.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -298,6 +299,11 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Output panorama size set to " << panoramaSize.first << "x" << panoramaSize.second);
     }
 
+    if(!temporaryCachePath.empty() && !fs::exists(temporaryCachePath))
+    {
+        fs::create_directory(temporaryCachePath);
+    }
+
     // Create a cache manager
     image::TileCacheManager::shared_ptr cacheManager = image::TileCacheManager::create(temporaryCachePath, 256, 256, 65536);
     if(!cacheManager)
@@ -307,7 +313,10 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Configure the cache manager memory
-    cacheManager->setInCoreMaxObjectCount(1000 * 100);
+    system::MemoryInfo memInfo = system::getMemoryInfo();
+    const double convertionGb = std::pow(2,30);
+    ALICEVISION_LOG_INFO("Available RAM is " << std::setw(5) << memInfo.availableRam / convertionGb << "GB (" << memInfo.availableRam << " octets).");
+    cacheManager->setMaxMemory(memInfo.freeRam);
 
     if (overlayType == "borders" || overlayType == "all")
     {

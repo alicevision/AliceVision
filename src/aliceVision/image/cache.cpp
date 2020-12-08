@@ -1,5 +1,9 @@
 #include "cache.hpp"
+
+#include <aliceVision/system/Logger.hpp>
+
 #include <boost/filesystem.hpp>
+
 
 namespace aliceVision
 {
@@ -30,6 +34,11 @@ void CacheManager::wipe() {
   _nextObjectId = 0;
 }
 
+
+void CacheManager::setMaxMemory(size_t maxMemorySize) {
+  _incoreBlockUsageMax = maxMemorySize / _blockSize;
+}
+
 void CacheManager::setInCoreMaxObjectCount(size_t max) {
   _incoreBlockUsageMax = max;
 }
@@ -50,16 +59,25 @@ std::string CacheManager::getPathForIndex(size_t indexId) {
 
 void CacheManager::deleteIndexFiles() {
 
-  /* Remove all cache files */
-  for (std::pair<const size_t, std::string> & p : _indexPaths) {
+  std::size_t cacheSize = 0;
+  for (std::pair<const size_t, std::string> & p : _indexPaths)
+  {
+    const std::size_t s = boost::filesystem::file_size(p.second);
+    ALICEVISION_LOG_TRACE("CacheManager::deleteIndexFiles: '" << p.second << "': " << s / (1024*1024) << "MB.");
+    cacheSize += s;
+  }
+  ALICEVISION_LOG_DEBUG("CacheManager::deleteIndexFiles: cache size is " << cacheSize / (1024*1024) << "MB.");
 
+  // Remove all cache files
+  for (std::pair<const size_t, std::string> & p : _indexPaths)
+  {
     boost::filesystem::path path(p.second);
     boost::filesystem::remove(path);
   }
 
-  /* Remove list of cache files */
+  // Remove list of cache files
   _indexPaths.clear();
-}  
+}
 
 bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount) {
 
@@ -82,7 +100,9 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount) {
   if (!file_index.is_open()) {
     return false;
   }
-  
+
+  ALICEVISION_LOG_TRACE("CacheManager::prepareBlockGroup: " << blocksCount * _blockSize << " bytes to '" << path << "'.");
+
   /*write a dummy byte at the end of the tile to "book" this place on disk*/
   file_index.seekp(position_in_index + len - 1, file_index.beg);
   if (!file_index) {
@@ -98,12 +118,12 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount) {
 
 std::unique_ptr<unsigned char> CacheManager::load(size_t startBlockId, size_t blockCount) {
     
-  size_t indexId = startBlockId / _blockCountPerIndex;
-  size_t blockIdInIndex = startBlockId % _blockCountPerIndex;
-  size_t positionInIndex = blockIdInIndex * _blockSize;
-  size_t groupLength = _blockSize * blockCount;
+  const size_t indexId = startBlockId / _blockCountPerIndex;
+  const size_t blockIdInIndex = startBlockId % _blockCountPerIndex;
+  const size_t positionInIndex = blockIdInIndex * _blockSize;
+  const size_t groupLength = _blockSize * blockCount;
 
-  std::string path = getPathForIndex(indexId);
+  const std::string path = getPathForIndex(indexId);
   
   std::ifstream file_index(path, std::ios::binary);
   if (!file_index.is_open()) {
@@ -114,6 +134,8 @@ std::unique_ptr<unsigned char> CacheManager::load(size_t startBlockId, size_t bl
   if (file_index.fail()) {
     return std::unique_ptr<unsigned char>();
   }
+
+  ALICEVISION_LOG_TRACE("CacheManager::load: read " << groupLength << " bytes from '" << path << "' at position " << positionInIndex << ".");
 
   std::unique_ptr<unsigned char> data(new unsigned char[groupLength]);
   file_index.read(reinterpret_cast<char *>(data.get()), groupLength);
@@ -126,29 +148,30 @@ std::unique_ptr<unsigned char> CacheManager::load(size_t startBlockId, size_t bl
 
 bool CacheManager::save(std::unique_ptr<unsigned char> && data, size_t startBlockId, size_t blockCount) {
     
-  size_t indexId = startBlockId / _blockCountPerIndex;
-  size_t blockIdInIndex = startBlockId % _blockCountPerIndex;
-  size_t positionInIndex = blockIdInIndex * _blockSize;
-  size_t groupLength = _blockSize * blockCount;
+  const size_t indexId = startBlockId / _blockCountPerIndex;
+  const size_t blockIdInIndex = startBlockId % _blockCountPerIndex;
+  const size_t positionInIndex = blockIdInIndex * _blockSize;
+  const size_t groupLength = _blockSize * blockCount;
 
-  std::string path = getPathForIndex(indexId);
-    
+  const std::string path = getPathForIndex(indexId);
+
   std::ofstream file_index(path, std::ios::binary | std::ios::out | std::ios::in);
   if (!file_index.is_open()) {
     return false;
-  }  
+  }
 
   file_index.seekp(positionInIndex, std::ios::beg);
   if (file_index.fail()) {
     return false;
   }
-  
+
   const unsigned char * bytesToWrite = data.get();
   if (bytesToWrite == nullptr) {
     return false;
   }
   else {
-    /*Write data*/
+    // Write data
+    ALICEVISION_LOG_TRACE("CacheManager::save: write " << groupLength << " bytes to '" << path << "' at position " << positionInIndex << ".");
     file_index.write(reinterpret_cast<const char*>(bytesToWrite), groupLength);
   }
 
@@ -203,7 +226,7 @@ bool CacheManager::acquireObject(std::unique_ptr<unsigned char> & data, size_t o
   item.objectId = objectId;
   item.objectSize = memitem.countBlock;
 
-  /* Check mur */
+  /* Check mru */
   std::pair<MRUType::iterator, bool> p = _mru.push_front(item);
   if (p.second) {
     
@@ -242,8 +265,6 @@ bool CacheManager::acquireObject(std::unique_ptr<unsigned char> & data, size_t o
 
     onRemovedFromMRU(item.objectId);
   }
-
-
 
   return true;
 }
