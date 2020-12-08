@@ -15,6 +15,8 @@
 #include <windows.h>
 #elif defined(__LINUX__)
 #include <sys/sysinfo.h>
+#include <fstream>
+#include <limits>
 #elif defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -31,6 +33,28 @@
 namespace aliceVision {
 namespace system {
 
+#if defined(__LINUX__)
+unsigned long linuxGetAvailableRam()
+{
+    std::string token;
+    std::ifstream file("/proc/meminfo");
+    while(file >> token) {
+        if(token == "MemAvailable:") {
+            unsigned long mem;
+            if(file >> mem) {
+                // read in kB and convert to bytes
+                return mem * 1024;
+            } else {
+                return 0;
+            }
+        }
+        // ignore rest of the line
+        file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    return 0; // nothing found
+}
+#endif
+
 MemoryInfo getMemoryInfo()
 {
     MemoryInfo infos;
@@ -41,7 +65,7 @@ MemoryInfo getMemoryInfo()
 
     // memory.dwMemoryLoad;
     infos.totalRam = memory.dwTotalPhys;
-    infos.freeRam = memory.dwAvailPhys;
+    infos.availableRam = infos.freeRam = memory.dwAvailPhys;
     // memory.dwTotalPageFile;
     // memory.dwAvailPageFile;
     infos.totalSwap = memory.dwTotalVirtual;
@@ -52,6 +76,11 @@ MemoryInfo getMemoryInfo()
 
     infos.totalRam = sys_info.totalram * sys_info.mem_unit;
     infos.freeRam = sys_info.freeram * sys_info.mem_unit;
+
+    infos.availableRam = linuxGetAvailableRam();
+    if(infos.availableRam == 0)
+        infos.availableRam = infos.freeRam;
+
     // infos.sharedRam = sys_info.sharedram * sys_info.mem_unit;
     // infos.bufferRam = sys_info.bufferram * sys_info.mem_unit;
     infos.totalSwap = sys_info.totalswap * sys_info.mem_unit;
@@ -89,11 +118,12 @@ MemoryInfo getMemoryInfo()
         // (int64_t)page_size;
         // infos.freeRam = infos.totalRam - used;
         infos.freeRam = (int64_t)vm_stat.free_count * (int64_t)page_size;
+        infos.availableRam = infos.freeRam;
     }
 #else
     // TODO: could be done on FreeBSD too
     // see https://github.com/xbmc/xbmc/blob/master/xbmc/linux/XMemUtils.cpp
-    infos.totalRam = infos.freeRam = infos.totalSwap = infos.freeSwap = std::numeric_limits<std::size_t>::max();
+    infos.totalRam = infos.freeRam = infos.availableRam = infos.totalSwap = infos.freeSwap = std::numeric_limits<std::size_t>::max();
 #endif
 
     return infos;
@@ -101,12 +131,13 @@ MemoryInfo getMemoryInfo()
 
 std::ostream& operator<<(std::ostream& os, const MemoryInfo& infos)
 {
-  const float convertionGb = std::pow(2,30);
+  const double convertionGb = std::pow(2,30);
   os << std::setw(5)
-     << "\t- Total RAM:  " << (infos.totalRam  / convertionGb) << " GB" << std::endl
-     << "\t- Free RAM:   " << (infos.freeRam   / convertionGb) << " GB" << std::endl
-     << "\t- Total swap: " << (infos.totalSwap / convertionGb) << " GB" << std::endl
-     << "\t- Free swap:  " << (infos.freeSwap  / convertionGb) << " GB" << std::endl;
+     << "\t- Total RAM:     " << (infos.totalRam  / convertionGb) << " GB" << std::endl
+     << "\t- Free RAM:      " << (infos.freeRam   / convertionGb) << " GB" << std::endl
+     << "\t- Available RAM: " << (infos.availableRam   / convertionGb) << " GB" << std::endl
+     << "\t- Total swap:    " << (infos.totalSwap / convertionGb) << " GB" << std::endl
+     << "\t- Free swap:     " << (infos.freeSwap  / convertionGb) << " GB" << std::endl;
   return os;
 }
 
