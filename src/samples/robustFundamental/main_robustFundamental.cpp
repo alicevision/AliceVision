@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 {
   std::string jpgFilenameL;
   std::string jpgFilenameR;
-  std::string describerPreset;
+  feature::ConfigurationPreset featDescPreset;
   
   po::options_description allParams("AliceVision Sample robustFundamental");
   allParams.add_options()
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
       "Left image.")
     ("jpgFilenameR,r", po::value<std::string>(&jpgFilenameR)->required(),
       "Right image.")
-    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+    ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !");
 
@@ -76,6 +76,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 randomNumberGenerator;
+
   Image<unsigned char> imageL, imageR;
   readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
   readImage(jpgFilenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
@@ -85,10 +87,7 @@ int main(int argc, char **argv)
   //--
   using namespace aliceVision::feature;
   std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT);
-  if (!describerPreset.empty())
-  {
-    image_describer->setConfigurationPreset(describerPreset);
-  }
+  image_describer->setConfigurationPreset(featDescPreset);
  
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->describe(imageL, regions_perImage[0]);
@@ -132,6 +131,7 @@ int main(int argc, char **argv)
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
       true); // configure as point to line error model.
 
     robustEstimation::Mat3Model F;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     
     const double & thresholdF = ACRansacOut.first;

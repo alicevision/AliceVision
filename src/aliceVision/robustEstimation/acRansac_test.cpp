@@ -29,6 +29,7 @@ using namespace aliceVision::robustEstimation;
 // test ACRANSAC with the AC-adapted Line kernel in a noise/outlier free dataset
 BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree)
 {
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 5);
 
   // y = 2x + 1
@@ -42,7 +43,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree)
   std::vector<std::size_t> inliers;
 
   robustEstimation::MatrixModel<Vec2> model;
-  ACRANSAC(lineKernel, inliers, 300, &model);
+  ACRANSAC(lineKernel, randomNumberGenerator, inliers, 300, &model);
 
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
@@ -52,6 +53,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree)
 // test without getting back the model
 BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree_DoNotGetBackModel)
 {
+  std::mt19937 randomNumberGenerator;
 
   Mat2X xy(2, 5);
   // y = 2x + 1
@@ -61,14 +63,14 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree_DoNotGetBackModel)
   LineKernel lineKernel(xy, 12, 12);
   std::vector<std::size_t> inliers;
 
-  ACRANSAC(lineKernel, inliers);
+  ACRANSAC(lineKernel, randomNumberGenerator, inliers);
 
   BOOST_CHECK_EQUAL(5, inliers.size());
 }
 
 BOOST_AUTO_TEST_CASE(RansacLineFitter_OneOutlier)
 {
-
+  std::mt19937 randomNumberGenerator;
   Mat2X xy(2, 6);
   // y = 2x + 1 with an outlier
   xy << 1, 2, 3, 4, 5, 100, // (100,-123) is the outlier
@@ -82,7 +84,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OneOutlier)
   std::vector<std::size_t> inliers;
   robustEstimation::MatrixModel<Vec2> model;
 
-  ACRANSAC(lineKernel, inliers, 300, &model);
+  ACRANSAC(lineKernel, randomNumberGenerator, inliers, 300, &model);
 
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
@@ -94,14 +96,14 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OneOutlier)
 // was given for an estimation.
 BOOST_AUTO_TEST_CASE(RansacLineFitter_TooFewPoints)
 {
-
+  std::mt19937 randomNumberGenerator;
   Vec2 xy;
   // y = 2x + 1
   xy << 1, 2;
   LineKernel lineKernel(xy, 12, 12);
   std::vector<std::size_t> inliers;
 
-  ACRANSAC(lineKernel, inliers);
+  ACRANSAC(lineKernel, randomNumberGenerator, inliers);
 
   BOOST_CHECK_EQUAL(0, inliers.size());
 }
@@ -112,7 +114,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_TooFewPoints)
 //  Check that the number of inliers and the model are correct.
 BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
 {
-
+  std::mt19937 randomNumberGenerator;
   const int NbPoints = 100;
   const float outlierRatio = .3;
   Mat2X xy(2, NbPoints);
@@ -150,7 +152,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
   std::vector<std::size_t> inliers;
   robustEstimation::MatrixModel<Vec2> model;
 
-  ACRANSAC(lineKernel, inliers, 300, &model);
+  ACRANSAC(lineKernel, randomNumberGenerator, inliers, 300, &model);
 
   BOOST_CHECK_EQUAL(NbPoints - nbPtToNoise, inliers.size());
   BOOST_CHECK_SMALL(GTModel(0) - model.getMatrix()[0], 1e-9);
@@ -179,7 +181,7 @@ void generateLine(Mat & points, std::size_t nbPoints, int W, int H, float noise,
   // generate outlier
   std::normal_distribution<> d_outlier(0, 0.2);
   std::size_t count = outlierRatio * nbPoints;
-  const auto vec_indices = randSample<std::size_t>(0, nbPoints, count);
+  const auto vec_indices = randSample<std::size_t>(gen, 0, nbPoints, count);
 //  std::copy(vec_indices.begin(), vec_indices.end(), std::ostream_iterator<int>(std::cout, " "));
 //  std::cout  << "\n";
   assert(vec_indices.size() == count);
@@ -256,7 +258,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
     // Check the best model that fit the most of the data
     //  in a robust framework (ACRANSAC).
     std::vector<std::size_t> vec_inliers;
-    const std::pair<double,double> ret = ACRANSAC(lineKernel, vec_inliers, 1000, &model);
+    const std::pair<double,double> ret = ACRANSAC(lineKernel, gen, vec_inliers, 1000, &model);
     const double errorMax = ret.first;
 
     std::cout << "gaussianNoiseLevel " << gaussianNoiseLevel << " \tsqrt(errorMax) " << sqrt(errorMax) << std::endl;

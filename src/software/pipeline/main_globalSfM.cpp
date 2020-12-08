@@ -48,6 +48,7 @@ int aliceVision_main(int argc, char **argv)
   sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
   sfm::ETranslationAveragingMethod translationAveragingMethod = sfm::TRANSLATION_AVERAGING_SOFTL1;
   bool lockAllIntrinsics = false;
+  int randomSeed = std::mt19937::default_seed;
 
   po::options_description allParams("Implementation of the paper\n"
     "\"Global Fusion of Relative Motions for "
@@ -64,7 +65,8 @@ int aliceVision_main(int argc, char **argv)
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
       "Path to folder(s) containing the extracted features.")
     ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+      "Path to folder(s) in which computed matches are stored.")
+    ;
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -82,7 +84,10 @@ int aliceVision_main(int argc, char **argv)
       "* 2: L2 minimization of sum of squared Chordal distances\n"
       "* 3: L1 soft minimization")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
-      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.");
+      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -188,6 +193,8 @@ int aliceVision_main(int argc, char **argv)
     sfmData,
     extraInfoFolder,
     (fs::path(extraInfoFolder) / "sfm_log.html").string());
+
+  sfmEngine.initRandomSeed(randomSeed);
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);

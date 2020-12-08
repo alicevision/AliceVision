@@ -359,6 +359,16 @@ public:
     return static_cast<EEXIFOrientation>(orientation);
   }
 
+  const bool getApplyWhiteBalance() const 
+  {
+    if (getIntMetadata({"AliceVision:useWhiteBalance"}) == 0)
+    {
+      return false;
+    }
+    
+    return true;
+  }
+
   const bool hasMetadataDateTimeOriginal() const
   {
       return hasMetadata(
@@ -509,7 +519,7 @@ public:
    */
   void addMetadata(const std::string& key, const std::string& value)
   {
-    _metadata.emplace(key, value);
+    _metadata[key] = value;
   }
 
 private:

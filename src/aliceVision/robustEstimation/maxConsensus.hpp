@@ -32,6 +32,7 @@ namespace robustEstimation{
 template<typename Kernel, typename Scorer>
 typename Kernel::ModelT maxConsensus(const Kernel& kernel,
                                      const Scorer& scorer,
+                                     std::mt19937 & randomNumberGenerator,
                                      std::vector<std::size_t>* best_inliers = nullptr,
                                      std::size_t max_iteration = 1024) {
 
@@ -62,7 +63,7 @@ typename Kernel::ModelT maxConsensus(const Kernel& kernel,
     for(std::size_t iteration = 0;  iteration < max_iteration; ++iteration) 
     {
       std::vector<std::size_t> sample;
-      uniformSample(min_samples, total_samples, sample);
+      uniformSample(randomNumberGenerator, min_samples, total_samples, sample);
 
       std::vector<typename Kernel::ModelT> models;
       kernel.fit(sample, models);

@@ -11,6 +11,7 @@
 #include <aliceVision/sfmData/colorize.hpp>
 
 #include <string>
+#include <random>
 
 namespace aliceVision {
 namespace sfm {
@@ -76,11 +77,18 @@ public:
       aliceVision::sfm::retrieveMarkersId(_sfmData);
   }
 
+  void initRandomSeed(int seed)
+  {
+      _randomNumberGenerator.seed(seed == -1 ? std::random_device()() : seed);
+  }
+
 protected:
   /// Output folder where outputs will be stored
   std::string _outputFolder;
   /// Internal SfMData
   sfmData::SfMData _sfmData;
+  //Random engine
+  std::mt19937 _randomNumberGenerator;
 };
 
 

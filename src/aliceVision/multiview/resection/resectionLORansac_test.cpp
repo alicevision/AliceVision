@@ -80,6 +80,8 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
 // test LORansac repetability over the same test case
 BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
 {
+  std::mt19937 randomNumberGenerator;
+
   // camera and image parameters
   const std::size_t WIDTH = 1600;
   const std::size_t HEIGHT = 1200;
@@ -195,7 +197,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     const double threshold = 2*gaussianNoiseLevel;
     const double normalizedThreshold = Square(threshold / FOCAL);
     robustEstimation::ScoreEvaluator<KernelType> scorer(normalizedThreshold);
-    robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, &inliers);
+    robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &inliers);
     Mat34 Pest = model.getMatrix();
     const std::size_t numInliersFound = inliers.size();
     const std::size_t numInliersExpected = nbPoints-vec_outliers.size();

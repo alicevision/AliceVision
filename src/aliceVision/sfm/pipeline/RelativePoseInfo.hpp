@@ -11,6 +11,7 @@
 #include <aliceVision/geometry/Pose3.hpp>
 
 #include <vector>
+#include <random>
 
 namespace aliceVision {
 namespace sfm {
@@ -58,6 +59,7 @@ struct RelativePoseInfo
  * @param[in] K2 camera 2 intrinsics
  * @param[in] x1 camera 1 image points
  * @param[in] x2 camera 2 image points
+ * @param[in] randomNumberGenerator random number generator
  * @param[out] relativePose_info relative pose information
  * @param[in] size_ima1 width, height of image 1
  * @param[in] size_ima2 width, height of image 2
@@ -67,6 +69,7 @@ bool robustRelativePose
 (
   const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
+  std::mt19937 &randomNumberGenerator,
   RelativePoseInfo & relativePose_info,
   const std::pair<size_t, size_t> & size_ima1,
   const std::pair<size_t, size_t> & size_ima2,

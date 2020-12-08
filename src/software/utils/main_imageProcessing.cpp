@@ -750,9 +750,14 @@ int aliceVision_main(int argc, char * argv[])
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
+
+            image::ImageReadOptions options;
+            options.outputColorSpace = image::EImageColorSpace::LINEAR;
+            options.applyWhiteBalance = view.getApplyWhiteBalance();
+
             // Read original image
             image::Image<image::RGBAfColor> image;
-            image::readImage(viewPath, image, image::EImageColorSpace::LINEAR);
+            image::readImage(viewPath, image, options);
 
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)

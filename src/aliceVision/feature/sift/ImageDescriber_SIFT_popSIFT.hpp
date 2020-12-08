@@ -66,7 +66,8 @@ public:
    */
   std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    return 3 * width * height * sizeof(float); //  GPU only
+    //  GPU only
+    return 4 * width * height * sizeof(float); // only use the input RGBA image
   }
 
   /**
@@ -82,7 +83,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override;
+  void setConfigurationPreset(ConfigurationPreset preset) override;
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)

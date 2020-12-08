@@ -31,6 +31,7 @@ class ImageCollectionMatcher_cascadeHashing : public IImageCollectionMatcher
 
   /// Find corresponding points between some pair of view Ids
   void Match(
+    std::mt19937 & randomNumberGenerator,
     const feature::RegionsPerView& regionsPerView,
     const PairSet & pairs,
     feature::EImageDescriberType descType,

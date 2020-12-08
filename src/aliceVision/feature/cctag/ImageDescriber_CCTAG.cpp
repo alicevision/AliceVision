@@ -67,9 +67,9 @@ void ImageDescriber_CCTAG::allocate(std::unique_ptr<Regions> &regions) const
   regions.reset( new CCTAG_Regions );
 }
 
-void ImageDescriber_CCTAG::setConfigurationPreset(EImageDescriberPreset preset)
+void ImageDescriber_CCTAG::setConfigurationPreset(ConfigurationPreset preset)
 {
-  _params.setPreset(preset);
+  _params.setPreset(preset.descPreset);
 }
 
 EImageDescriberType ImageDescriber_CCTAG::getDescriberType() const

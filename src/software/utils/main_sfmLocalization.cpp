@@ -108,6 +108,8 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
+  std::mt19937 randomNumberGenerator;
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
@@ -195,6 +197,7 @@ int aliceVision_main(int argc, char **argv)
     Pair(imageGray.Width(), imageGray.Height()),
     optional_intrinsic.get(),
     *(query_regions.get()),
+    randomNumberGenerator,
     pose,
     &matching_data))
   {

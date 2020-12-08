@@ -61,13 +61,14 @@ void PointsToMat(
 void StructureEstimationFromKnownPoses::run(SfMData& sfmData,
   const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView,
+  std::mt19937 &randomNumberGenerator, 
   double geometricErrorMax)
 {
   sfmData.structure.clear();
 
   match(sfmData, pairs, regionsPerView, geometricErrorMax);
   filter(sfmData, pairs, regionsPerView);
-  triangulate(sfmData, regionsPerView);
+  triangulate(sfmData, regionsPerView, randomNumberGenerator);
 }
 
 // #define ALICEVISION_EXHAUSTIVE_MATCHING
@@ -264,7 +265,8 @@ void StructureEstimationFromKnownPoses::filter(
 /// Init & triangulate landmark observations from validated 3-view correspondences
 void StructureEstimationFromKnownPoses::triangulate(
   SfMData& sfmData,
-  const feature::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView, 
+  std::mt19937 &randomNumberGenerator)
 {
   track::TracksMap map_tracksCommon;
   track::TracksBuilder tracksBuilder;
@@ -299,7 +301,7 @@ void StructureEstimationFromKnownPoses::triangulate(
 
   // Triangulate them using a robust triangulation scheme
   StructureComputation_robust structure_estimator(true);
-  structure_estimator.triangulate(sfmData);
+  structure_estimator.triangulate(sfmData, randomNumberGenerator);
 }
 
 } // namespace sfm

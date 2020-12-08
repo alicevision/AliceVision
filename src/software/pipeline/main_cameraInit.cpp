@@ -181,7 +181,6 @@ int aliceVision_main(int argc, char **argv)
   std::string outputFilePath;
 
   // user optional parameters
-
   std::string defaultIntrinsicKMatrix;
   std::string defaultCameraModelName;
   std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
@@ -193,6 +192,7 @@ int aliceVision_main(int argc, char **argv)
   std::string viewIdRegex = ".*?(\\d+)";
 
   bool allowSingleView = false;
+  bool useInternalWhiteBalance = true;
 
   po::options_description allParams("AliceVision cameraInit");
 
@@ -231,6 +231,8 @@ int aliceVision_main(int argc, char **argv)
       " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
     ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
       "Regex used to catch number used as viewId in filename.")
+    ("useInternalWhiteBalance", po::value<bool>(&useInternalWhiteBalance)->default_value(useInternalWhiteBalance),
+      "Apply the white balance included in the image metadata (Only for raw images)")
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
@@ -772,6 +774,15 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_LOG_ERROR("At least " << std::string(allowSingleView ? "one image" : "two images") << " should have an initialized intrinsic." << std::endl
                           << "Check your input images metadata (brand, model, focal length, ...), more should be set and correct." << std::endl);
     return EXIT_FAILURE;
+  }
+
+  // Add the white balance option to the image metadata
+  for (auto vitem : sfmData.getViews())
+  {
+    if (vitem.second) 
+    {
+      vitem.second->addMetadata("AliceVision:useWhiteBalance", (useInternalWhiteBalance)?"1":"0");
+    }
   }
   
   // store SfMData views & intrinsic data

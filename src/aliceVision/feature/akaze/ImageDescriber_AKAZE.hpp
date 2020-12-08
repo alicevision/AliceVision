@@ -114,23 +114,23 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(ConfigurationPreset preset) override
   {
-    switch(preset)
+    switch(preset.descPreset)
     {
       case EImageDescriberPreset::LOW:
-      {
-         _params.options.maxTotalKeypoints = 1000;
-         break;
-      }
-      case EImageDescriberPreset::MEDIUM:
       {
          _params.options.maxTotalKeypoints = 5000;
          break;
       }
-      case EImageDescriberPreset::NORMAL:
+      case EImageDescriberPreset::MEDIUM:
       {
          _params.options.maxTotalKeypoints = 10000;
+         break;
+      }
+      case EImageDescriberPreset::NORMAL:
+      {
+         _params.options.maxTotalKeypoints = 20000;
          _params.options.threshold = AKAZEOptions().threshold;
         break;
       }
@@ -148,6 +148,11 @@ public:
       }
       default:
         throw std::out_of_range("Invalid image describer preset enum");
+    }
+    if(!preset.gridFiltering)
+    {
+        // disable grid filtering
+        _params.options.maxTotalKeypoints = 0;
     }
   }
 

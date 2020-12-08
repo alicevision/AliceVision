@@ -74,6 +74,7 @@ public:
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
            const HashMap<IndexT, Mat3>& map_globalR,
+           std::mt19937 & randomNumberGenerator,
            matching::PairwiseMatches& tripletWise_matches);
 
 private:
@@ -85,6 +86,7 @@ private:
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
            const HashMap<IndexT, Mat3>& map_globalR,
+           std::mt19937 & randomNumberGenerator,
            matching::PairwiseMatches& tripletWise_matches);
 
   /**
@@ -97,6 +99,7 @@ private:
            const HashMap<IndexT, Mat3>& map_globalR,
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
+           std::mt19937 & randomNumberGenerator,
            translationAveraging::RelativeInfoVec& vec_initialEstimates,
            matching::PairwiseMatches& newpairMatches);
 
@@ -108,6 +111,7 @@ private:
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
            const graph::Triplet& poses_id,
+           std::mt19937 & randomNumberGenerator,
            std::vector<Vec3>& vec_tis,
            double& precision, // UpperBound of the precision found by the AContrario estimator
            std::vector<size_t>& vec_inliers,

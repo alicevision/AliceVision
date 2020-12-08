@@ -33,6 +33,7 @@ void lineFittingTest(std::size_t numPoints,
                     Vec2& estimatedModel,
                     std::vector<std::size_t>& vec_inliers)
 {
+
   assert(outlierRatio >= 0 && outlierRatio < 1);
   assert(gaussianNoiseLevel >= 0);
   
@@ -44,7 +45,7 @@ void lineFittingTest(std::size_t numPoints,
   const std::size_t expectedInliers = numPoints - (std::size_t) numPoints * outlierRatio;
   const double threshold = (withNoise) ? 3 * gaussianNoiseLevel : 0.3;
   LineKernel kernel(xy);
-  LineKernel::ModelT model = LO_RANSAC(kernel, ScoreEvaluator<LineKernel>(threshold), &vec_inliers);
+  LineKernel::ModelT model = LO_RANSAC(kernel, ScoreEvaluator<LineKernel>(threshold), gen, &vec_inliers);
   estimatedModel = model.getMatrix();
 
   ALICEVISION_LOG_DEBUG("#inliers found : " << vec_inliers.size() << " expected: " << numPoints - expectedInliers);
@@ -65,7 +66,6 @@ void lineFittingTest(std::size_t numPoints,
 
 BOOST_AUTO_TEST_CASE(LoRansacLineFitter_IdealCaseLoRansac)
 {
-
   const std::size_t numPoints = 300;
   const double outlierRatio = .3;
   const double gaussianNoiseLevel = 0.0;
@@ -92,7 +92,6 @@ BOOST_AUTO_TEST_CASE(LoRansacLineFitter_IdealCaseLoRansac)
 
 BOOST_AUTO_TEST_CASE(LoRansacLineFitter_RealCaseLoRansac)
 {
-
   const std::size_t numPoints = 300;
   const double outlierRatio = .3;
   const double gaussianNoiseLevel = 0.01;

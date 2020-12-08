@@ -32,6 +32,7 @@ namespace impl
 template <typename ScalarT>
 void Match
 (
+  std::mt19937 & gen,
   const feature::RegionsPerView& regionsPerView,
   const PairSet & pairs,
   EImageDescriberType descType,
@@ -62,7 +63,7 @@ void Match
     const IndexT I = *used_index.begin();
     const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
     const size_t dimension = regionsI.DescriptorLength();
-    cascade_hasher.Init(dimension);
+    cascade_hasher.Init(gen, dimension);
   }
 
   std::map<IndexT, HashedDescriptions> hashed_base_;
@@ -209,12 +210,14 @@ void Match
 
 void ImageCollectionMatcher_cascadeHashing::Match
 (
+  std::mt19937 & gen,
   const feature::RegionsPerView& regionsPerView,
   const PairSet & pairs,
   feature::EImageDescriberType descType,
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 ) const
 {
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
   ALICEVISION_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
@@ -230,6 +233,7 @@ void ImageCollectionMatcher_cascadeHashing::Match
   if(regions.Type_id() == typeid(unsigned char).name())
   {
     impl::Match<unsigned char>(
+      gen,
       regionsPerView,
       pairs,
       descType,
@@ -240,6 +244,7 @@ void ImageCollectionMatcher_cascadeHashing::Match
   if(regions.Type_id() == typeid(float).name())
   {
     impl::Match<float>(
+      gen,
       regionsPerView,
       pairs,
       descType,

@@ -162,6 +162,11 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("The input SfMData file is not compatible with the number of brackets.");
         return EXIT_FAILURE;
     }
+    if(nbBrackets == 1 && !byPass)
+    {
+        ALICEVISION_LOG_WARNING("Enable bypass as there is only one input bracket.");
+        byPass = true;
+    }
 
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
@@ -229,9 +234,12 @@ int aliceVision_main(int argc, char** argv)
         // Export a new sfmData with HDR images as new Views.
         for(std::size_t g = 0; g < groupedViews.size(); ++g)
         {
-            const std::string hdrImagePath = getHdrImagePath(outputPath, g);
             std::shared_ptr<sfmData::View> hdrView = std::make_shared<sfmData::View>(*targetViews[g]);
-            hdrView->setImagePath(hdrImagePath);
+            if(!byPass)
+            {
+                const std::string hdrImagePath = getHdrImagePath(outputPath, g);
+                hdrView->setImagePath(hdrImagePath);
+            }
             outputSfm.getViews()[hdrView->getViewId()] = hdrView;
         }
 
@@ -241,6 +249,11 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilepath);
             return EXIT_FAILURE;
         }
+    }
+    if(byPass)
+    {
+        ALICEVISION_LOG_INFO("Bypass enabled, nothing to compute.");
+        return EXIT_SUCCESS;
     }
 
     hdr::rgbCurve fusionWeight(channelQuantization);
@@ -264,7 +277,11 @@ int aliceVision_main(int argc, char** argv)
         {
             const std::string filepath = group[i]->getImagePath();
             ALICEVISION_LOG_INFO("Load " << filepath);
-            image::readImage(filepath, images[i], image::EImageColorSpace::SRGB);
+
+            image::ImageReadOptions options;
+            options.outputColorSpace = image::EImageColorSpace::SRGB;
+            options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
+            image::readImage(filepath, images[i], options);
 
             exposures[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
         }

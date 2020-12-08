@@ -247,6 +247,7 @@ Asus;Asus ZenFone Zoom;4.7;devicespecifications
 Asus;Asus ZenFone Zoom ZX551ML;4.7;devicespecifications
 Asus;Asus ZenPad S 8.0 Z580CA;3.6;devicespecifications
 Asus;Asus ZenPad S 8.0 Z580CA 16GB;3.6;devicespecifications
+Asus;ASUS_I001DC;12.7;devicespecifications
 Asus;ASUS_Z00ED;4.69;devicespecifications
 Axgio;Axgio N3;4.69;devicespecifications
 BenQ;BenQ AC100;6.16;digicamdb
@@ -1245,6 +1246,7 @@ Cherry mobile;Cherry mobile Flare S7 Deluxe;4.68;devicespecifications
 Cherry mobile;Cherry mobile Flare S7 Plus;4.74;devicespecifications
 Cherry mobile;Cherry mobile M1;5.99;devicespecifications
 Cherry mobile;Cherry mobile Taiji;4.69;devicespecifications
+Chuwi;Chuwi Hi9 Pro;4.63;devicespecifications
 Chuwi;Chuwi Vi10 Dual Boot;2.84;devicespecifications
 Chuwi;Chuwi Vi10 Pro;2.84;devicespecifications
 Chuwi;Chuwi Vi7;2.84;devicespecifications
@@ -1492,6 +1494,7 @@ Epson;Epson R-D1;23.7;dpreview,digicamdb
 Epson;Epson R-D1x;23.7;dpreview
 Epson;Epson R-D1xG;23.7;digicamdb
 Epson;Epson RD-1s;23.7;digicamdb
+Essential Products;PH-1;4.731;devicespecifications
 Estar;Estar Takee 1;4.69;devicespecifications
 Eton;Eton Extreme 95;4.69;devicespecifications
 Fairphone;Fairphone 2;4.61;devicespecifications
@@ -2042,6 +2045,7 @@ Google;Google Pixel XL;6.25;devicespecifications
 Google;Pixel 2 XL;5.5;devicespecifications
 Google;Pixel 3 XL;5.76;techradar
 Google;Pixel 3a;5.76;devicespecifications
+Google;Pixel 4 XL;5.98;usercontribution
 GoPro;GoPro Fusion;6.17;dpreview
 GoPro;GoPro Hero 2018;6.17;dpreview
 GoPro;GoPro Hero3-Silver Edition;5.37;usercontribution
@@ -2268,6 +2272,7 @@ Huawei;Huawei P9;4.54;devicespecifications
 Huawei;Huawei P9 Lite;4.69;devicespecifications
 Huawei;Huawei P9 Lite Premium;4.69;devicespecifications
 Huawei;Huawei P9 Premium Edition;4.54;devicespecifications
+Huawei;Huawei Y6 Pro 2017;3.54;devicespecifications
 I-mobile;I-mobile IQ X Pro 2;6.17;devicespecifications
 Iberry;Iberry Prime P8000;4.69;devicespecifications
 IDS;UI 3360CP;8.8;usercontribution
@@ -3014,7 +3019,6 @@ Lg;Lg X420EM;4.65;devicespecifications,usercontribution
 Lg;Lg X420EMW;4.65;devicespecifications,usercontribution
 Lg;Lg X6;4.65;devicespecifications,usercontribution
 Lg;Lg Zero;3.7;devicespecifications
-Lg;LG-H815;5.08;usercontribution
 LG Electronics;LM-G810EAW;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820N;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820QM;5.64;devicespecifications,usercontribution
@@ -3022,6 +3026,7 @@ LG Electronics;LM-G820V;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G850EM;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G850UM;5.64;devicespecifications,usercontribution
 LG Electronics;LG-G900N;6.4;devicespecifications,usercontribution
+LG Electronics;LG-H815;5.95;devicespecifications,usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870DS;5.867;usercontribution
@@ -4257,6 +4262,7 @@ OLYMPUS_IMAGING_CORP.;D535Z;5.27;usercontribution
 OLYMPUS_IMAGING_CORP.;X450;5.27;usercontribution
 Onda;Onda V975i;3.67;devicespecifications
 Onda;Onda V989;3.68;devicespecifications
+OnePlus;AC2003;6.4;usercontribution
 Oneplus;Oneplus 2;5.55;devicespecifications
 Oneplus;Oneplus 3;5.22;devicespecifications
 Oneplus;Oneplus 3T;5.22;devicespecifications
@@ -5365,6 +5371,15 @@ Samsung;Samsung Galaxy Note FE SD820;3.6;devicespecifications
 Samsung;Samsung Galaxy Note5;5.95;devicespecifications
 Samsung;Samsung Galaxy Note7 Exynos;3.6;devicespecifications
 Samsung;Samsung Galaxy Note7 SD820;3.6;devicespecifications
+Samsung;Samsung Galaxy Note8 N950A;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 N950P;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 N950T;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 N950V;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 N9500;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 SM-N950P;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 SM-N950T;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 SM-N950V;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 SM-N9500;5.75;usercontribution
 Samsung;Samsung Galaxy Note9 SM-N960U;5.644;devicespecifications
 Samsung;Samsung Galaxy NX;23.5;dpreview,digicamdb
 Samsung;Samsung Galaxy Round;4.54;devicespecifications
@@ -5403,9 +5418,7 @@ Samsung;Samsung Galaxy S7 Edge SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S8;5.75;usercontribution
 Samsung;Samsung Galaxy S9;5.75;usercontribution
-Samsung;Samsung SM-G935F;3.2;devicespecifications
-Samsung;Samsung SM-G975U;5.66;devicespecifications
-Samsung;Samsung Galaxy S7 SD820;3.2;devicespecifications
+Samsung;Samsung Galaxy S10 Plus;5.75;digicamdb
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 Wi-Fi;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 8.4 LTE;3.6;devicespecifications
@@ -5548,10 +5561,12 @@ Samsung;Samsung SM-C200;6.16;usercontribution
 Samsung;Samsung SM-G9198;5.95;devicespecifications
 Samsung;Samsung SM-G930F;5.76;usercontribution
 Samsung;Samsung SM-G935F;3.2;devicespecifications
-Samsung;Samsung SM-G935F;5.76;usercontribution
 Samsung;Samsung SM-G950F;5.76;usercontribution
+Samsung;Samsung SM-G950U;2.68;usercontribution
 Samsung;Samsung SM-G955F;5.76;usercontribution
 Samsung;Samsung SM-G965F;5.64;usercontribution
+Samsung;Samsung SM-G975U;5.66;devicespecifications
+Samsung;Samsung SM-M315F;7.42;devicespecifications
 Samsung;Samsung ST10;5.744;dpreview,digicamdb
 Samsung;Samsung ST100;6.17;dpreview,digicamdb
 Samsung;Samsung ST1000;6.16;digicamdb
@@ -5626,11 +5641,12 @@ Samsung;Samsung WB850F;6.17;dpreview,digicamdb
 Samsung;Samsung Wi-Fi;6.17;dpreview
 Samsung;Samsung WP10;6.08;dpreview,digicamdb
 Samsung;Samsung-SGH-I537;3.0;usercontribution
-samsung;SM-G920F;5.95;usercontribution
-samsung;SM-G930F;5.76;usercontribution
-samsung;SM-G970F;5.65;digicamdb
-samsung;SM-J111M;3.6;usercontribution
-SAMSUNG;SM-N9005;4.69;usercontribution
+Samsung;SM-G920F;5.95;usercontribution
+Samsung;SM-G930F;5.76;usercontribution
+Samsung;SM-G970F;5.65;digicamdb
+Samsung;SM-J111M;3.6;usercontribution
+Samsung;SM-N9005;4.69;usercontribution
+Samsung;SM-N960F;5.65;usercontribution
 Santin;Santin Max 4 Pro;4.74;devicespecifications
 Santin;Santin N1;4.71;devicespecifications
 Santin;Santin N1 Max;4.75;devicespecifications
@@ -5790,7 +5806,7 @@ Sony;ILCE-5000;23.2;usercontribution
 Sony;ILCE-5100;23.5;usercontribution
 Sony;ILCE-6000;23.5;usercontribution
 Sony;ILCE-6300;23.5;usercontribution
-Sony;ILCE-6400;23.5;sony
+Sony;ILCE-6400;23.5;usercontribution
 Sony;ILCE-6500;23.5;usercontribution
 Sony;ILCE-7;35.8;usercontribution
 Sony;ILCE-7M2;35.8;usercontribution
@@ -6420,10 +6436,12 @@ Sony;Sony ILCE 6000;23.5;usercontribution
 Sony;Sony ILCE-3500;23.5;usercontribution
 Sony;Sony ILCE-6000;23.5;usercontribution
 Sony;Sony ILCE-6300;23.5;dpreview
+Sony;Sony ILCE-6400;23.5;usercontribution
 Sony;Sony ILCE-7M3;35.6;usercontribution
 Sony;Sony ILCE-7RM3;35.9;usercontribution
 Sony;Sony ILCE-QX1;23.2;usercontribution
 Sony;Sony IMX179;6.18;usercontribution
+Sony;Sony IMX298;5.22;dpreview,digicamdb
 Sony;Sony Mavica CD1000;5.312;dpreview,digicamdb
 Sony;Sony Mavica CD200;5.312;dpreview,digicamdb
 Sony;Sony Mavica CD250;5.312;dpreview,digicamdb

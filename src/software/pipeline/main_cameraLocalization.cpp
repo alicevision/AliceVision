@@ -75,7 +75,7 @@ int aliceVision_main(int argc, char** argv)
   /// the describer types name to use for the matching
   std::string matchDescTypeNames = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
-  feature::EImageDescriberPreset featurePreset = feature::EImageDescriberPreset::NORMAL;
+  feature::ConfigurationPreset featDescPreset;
   /// the describer types to use for the matching
   std::vector<feature::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
@@ -132,6 +132,7 @@ int aliceVision_main(int argc, char** argv)
   
   /// whether to save visual debug info
   std::string visualDebug = "";
+  int randomSeed = std::mt19937::default_seed;
 
   po::options_description allParams(
       "This program takes as input a media (image, image sequence, video) and a database (vocabulary tree, 3D scene data) \n"
@@ -152,7 +153,7 @@ int aliceVision_main(int argc, char** argv)
           "Folder containing the descriptors for all the images (ie the *.desc.)")
       ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
           "The describer types to use for the matching")
-      ("preset", po::value<feature::EImageDescriberPreset>(&featurePreset)->default_value(featurePreset), 
+      ("preset", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
       ("resectionEstimator", po::value<robustEstimation::ERobustEstimator>(&resectionEstimator)->default_value(resectionEstimator),
@@ -167,7 +168,10 @@ int aliceVision_main(int argc, char** argv)
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
-          "to 0 it lets the ACRansac select an optimal value.");
+          "to 0 it lets the ACRansac select an optimal value.")
+      ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+          ;
   
 // voctree specific options
   po::options_description voctreeParams("Parameters specific for the vocabulary tree-based localizer");
@@ -264,6 +268,8 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+
+  std::mt19937 generator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
   const double defaultLoRansacMatchingError = 4.0;
   const double defaultLoRansacResectionError = 4.0;
@@ -362,7 +368,7 @@ int aliceVision_main(int argc, char** argv)
   assert(param);
   
   // set other common parameters
-  param->_featurePreset = featurePreset;
+  param->_featurePreset = featDescPreset;
   param->_refineIntrinsics = refineIntrinsics;
   param->_visualDebug = visualDebug;
   param->_errorMax = resectionErrorMax;
@@ -418,6 +424,7 @@ int aliceVision_main(int argc, char** argv)
     auto detect_start = std::chrono::steady_clock::now();
     localizer->localize(imageGrey, 
                        param.get(),
+                       generator,
                        hasIntrinsics /*useInputIntrinsics*/,
                        queryIntrinsics,
                        localizationResult,

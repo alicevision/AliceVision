@@ -23,6 +23,7 @@ Individuals
 - Nicolas Rondaud
 - Pierre Gurdjos
 - Simone Gasparini
+- Théo Leplomb
 - Tomas Pajdla
 - Yann Lanthony
 - Zeljko Vrba
