@@ -239,13 +239,13 @@ protected:
   
 
 protected:
-  size_t _blockSize;
-  size_t _incoreBlockUsageCount;
-  size_t _incoreBlockUsageMax;
-  size_t _blockCountPerIndex;
-  size_t _nextStartBlockId;
-  size_t _nextObjectId;
-  
+  size_t _blockSize{0};
+  size_t _incoreBlockUsageCount{0};
+  size_t _incoreBlockUsageMax{0};
+  size_t _blockCountPerIndex{0};
+  size_t _nextStartBlockId{0};
+  size_t _nextObjectId{0};
+
   std::string _basePathStorage;
   IndexedStoragePaths _indexPaths;
   IndexedFreeBlocks _freeBlocks;
@@ -323,7 +323,7 @@ public:
 
 protected:
 
-  TileCacheManager(const std::string & path_storage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex);
+  TileCacheManager(const std::string & pathStorage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex);
 
   virtual void onRemovedFromMRU(size_t objectId);
 

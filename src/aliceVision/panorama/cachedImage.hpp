@@ -195,7 +195,7 @@ public:
                 T * dataSource = (T*)ptrSource->getDataPointer();
                 
                 std::memcpy(data, dataSource, _tileSize * _tileSize * sizeof(T));
-            }   
+            }
         }
 
         return true;
