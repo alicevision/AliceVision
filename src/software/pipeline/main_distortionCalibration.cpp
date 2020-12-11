@@ -39,6 +39,13 @@ struct EdgeStatistics
     double crossCorrelation;
 };
 
+struct Line
+{
+    double angle;
+    double distance;
+    std::vector<EdgeInformation> edges;
+};
+
 double unsignedAngleDistance(double angle1, double angle2) 
 {
     double diff = std::abs(angle1 - angle2);
@@ -349,6 +356,156 @@ bool filterEdgesList(std::vector<EdgeInformation> & edgeInformations, size_t wid
     return true;
 }
 
+bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformation> & edgeInformations, size_t width, size_t height)
+{
+    const double stepDistance = 1.0;
+    const double stepAngle = 1.0;
+    const double maxAngleEdgeToLine = 2;
+    const double maxDistanceEdgeToLine = 10;
+    const int maxAngleBinsTolerancy = 3;
+    const int maxDistanceBinsTolerancy = 4;
+    const double minAngleBetweenLines = 2;
+    const double minDistanceBetweenLines = 20;
+
+    double hwidth = double(width) / 2.0;    
+    double hheight = double(height) / 2.0;
+    double minAngle = 0.0;
+    double maxAngle = 359.0;    
+    
+    double mindistance = 0.0;
+    double maxdistance = sqrt(hwidth * hwidth + hheight * hheight);    
+
+    int countBinsAngle = int((maxAngle - minAngle) / stepAngle);
+    int countBinsDistance = int((maxdistance - mindistance) / stepDistance);
+
+    struct binInfo
+    {
+        double angle;
+        double distance;
+        double score;
+    };
+
+    //Initialize all bins for voting
+    std::vector<binInfo> bins(countBinsAngle * countBinsDistance);
+    for (int idAngle = 0; idAngle < countBinsAngle; idAngle++) 
+    {
+        for (int idDistance = 0; idDistance < countBinsDistance; idDistance++) 
+        {
+            bins[idAngle * countBinsDistance + idDistance].angle = double(idAngle) * stepAngle;
+            bins[idAngle * countBinsDistance + idDistance].distance = double(idDistance) * stepDistance;
+            bins[idAngle * countBinsDistance + idDistance].score = 0;
+        }
+    }
+
+    // Loop over edges to assign them to bins
+    for (const EdgeInformation & einfo : edgeInformations) 
+    {
+        double edgeAngle = radianToDegree(atan2(einfo.sinAngle, einfo.cosAngle));
+
+        int binAngleEdge = int(edgeAngle / stepAngle);
+
+        //Loop over possible angles
+        for (int binAngle = binAngleEdge - maxAngleBinsTolerancy; binAngle <= binAngleEdge + maxAngleBinsTolerancy; binAngle++) 
+        {
+            int correctedBinAngle = binAngle;
+            if (binAngle >= countBinsAngle)
+            {
+                correctedBinAngle = binAngle - countBinsAngle;
+            }
+
+            if (binAngle < 0)
+            {
+                correctedBinAngle = binAngle + countBinsAngle;
+            }
+
+            double curAngle = (double(correctedBinAngle) * stepAngle) * M_PI / 180.0;
+            double sinAngle = sin(curAngle);
+            double cosAngle = cos(curAngle);
+
+
+            double x = einfo.x - hwidth;
+            double y = einfo.y - hheight;
+
+            double md = std::abs(cosAngle * x + sinAngle * y);
+            int currentDistance = int(md / stepDistance);
+
+            // Loop over possible distances for this angle 
+            for (int binDistance = std::max(0, currentDistance - maxDistanceBinsTolerancy); binDistance < std::min(countBinsDistance, currentDistance + maxDistanceBinsTolerancy); binDistance++)
+            {
+                double distance = double(binDistance) * stepDistance;
+                double error = fabs(md - distance);
+
+                //Assign a score inversely proportionnal to this error
+                bins[correctedBinAngle * countBinsDistance + binDistance].score += 1.0 / (1.0 + error);
+            }
+        }
+    }
+
+    // Sort bins by decreasing score
+    std::sort(bins.begin(), bins.end(), [](const binInfo &a, const binInfo &b) { return a.score > b.score; } );
+
+    // Add lines and make sure we don't have too much duplicates
+    std::vector<Line> added;
+    for (int id = 0; id < bins.size(); id++)
+    {
+        bool found = false;
+        for (const Line & prev : added) 
+        {
+            double diff = unsignedAngleDistance(bins[id].angle, prev.angle);
+            double diffd = std::abs(bins[id].distance - prev.distance);
+
+            if (diff < minAngleBetweenLines && diffd < minDistanceBetweenLines)
+            {
+                found = true;
+            }
+        }
+
+
+        if (found) 
+        {
+            continue;
+        }
+
+        Line l;
+        l.angle = bins[id].angle;
+        l.distance = bins[id].distance;
+
+        added.push_back(l);
+    }
+
+
+    // Attach measured edges to those lines
+    lines.clear();
+    for (Line & l : added) 
+    {
+        for (const EdgeInformation & einfo : edgeInformations) 
+        {
+            double edgeAngle = radianToDegree(atan2(einfo.sinAngle, einfo.cosAngle));
+
+            if (unsignedAngleDistance(l.angle, edgeAngle) > maxAngleEdgeToLine)
+            {
+                continue;
+            }
+
+            if (std::abs(std::abs(cos(l.angle) * (einfo.x - hwidth) + sin(l.angle) * (einfo.y - hheight)) - l.distance) > maxDistanceEdgeToLine)
+            {
+                continue;
+            }
+
+            l.edges.push_back(einfo);
+        }
+
+        if (l.edges.size() < 50) 
+        {
+            continue;
+        }
+
+        lines.push_back(l);
+    }
+
+    return true;
+}
+
 bool process(const cv::Mat & input) 
 {
     cv::Mat preprocessed;
@@ -368,159 +525,31 @@ bool process(const cv::Mat & input)
         return false;
     }
     
-    
-    /*
-
-    std::remove_if(einfos.begin(), einfos.end(), [](const EdgeInformation & ei) { return !ei.valid;});
-
-    char filename[FILENAME_MAX];
-    sprintf(filename, "/home/servantf/test%d.png", iter);
-    cv::imwrite(filename, edges);   
-
-    double hwidth = double(input.cols) / 2.0;    
-    double hheight = double(input.rows) / 2.0;
-    double minAngle = 0.0;
-    double maxAngle = 359.0;    
-    double stepAngle = 1;
-    double mindistance = 0.0;
-    double maxdistance = sqrt(hwidth * hwidth + hheight * hheight);
-    double stepDistance = 1.0;
-    double minParameter = 0.5;
-    double maxParameter = 1.5;
-    double stepParameter = 0.1;
-
-    int countBinsAngle = int((maxAngle - minAngle) / stepAngle);
-    int countBinsDistance = int((maxdistance - mindistance) / stepDistance);
-    int countBinsParameter = int((maxParameter - minParameter) / stepParameter);
-
-    struct binInfo
+    std::vector<Line> lines;
+    if (!computeHoughLines(lines, edgeInformations, preprocessed.cols, preprocessed.rows))
     {
-        double angle;
-        double distance;
-        double score;
-    };
-    
-    std::vector<binInfo> bins(countBinsAngle * countBinsDistance);
-    for (int idAngle = 0; idAngle < countBinsAngle; idAngle++) 
-    {
-        for (int idDistance = 0; idDistance < countBinsDistance; idDistance++) 
-        {
-            bins[idAngle * countBinsDistance + idDistance].angle = double(idAngle) * stepAngle;
-            bins[idAngle * countBinsDistance + idDistance].distance = double(idDistance) * stepDistance;
-            bins[idAngle * countBinsDistance + idDistance].score = 0;
-        }
-    }
-    
-
-    for (const EdgeInformation & einfo : einfos) 
-    {
-        double edgeAngle = einfo.angle;
-        int binAngleEdge = int(edgeAngle / stepAngle);
-
-        for (int binAngle = binAngleEdge - 3; binAngle <= binAngleEdge + 3; binAngle++) 
-        {
-            int correctedBinAngle = binAngle;
-            if (binAngle >= countBinsAngle)
-            {
-                correctedBinAngle = binAngle - countBinsAngle;
-            }
-
-            if (binAngle < 0)
-            {
-                correctedBinAngle = binAngle + countBinsAngle;
-            }
-
-            double curAngle = (double(correctedBinAngle) * stepAngle) * M_PI / 180.0;
-            double sinAngle = sin(curAngle);
-            double cosAngle = cos(curAngle);
-
-            double x = einfo.x - hwidth;
-            double y = einfo.y - hheight;
-
-            double md = std::abs(cosAngle * x + sinAngle * y);
-            int currentDistance = int(md / stepDistance);
-
-
-            for (int binDistance = std::max(0, currentDistance - 4); binDistance < std::min(countBinsDistance, currentDistance + 4); binDistance++)
-            {
-                double distance = double(binDistance) * stepDistance;
-                double error = fabs(md - distance);
-
-                bins[correctedBinAngle * countBinsDistance + binDistance].score += 1.0 / (1.0 + error);
-            }
-        }
-    }
-
-    std::sort(bins.begin(), bins.end(), [](const binInfo &a, const binInfo &b) { return a.score > b.score; } );
-    
-    struct Line
-    {
-        double angle;
-        double distance;
-
-        std::vector<EdgeInformation> edges;
-    };
-
-    std::vector<Line> added;
-    for (int id = 0; id < bins.size(); id++)
-    {
-        if (bins[id].score < 10.0) break;
-
-        bool found = false;
-        for (const Line & prev : added) 
-        {
-            double diff = unsignedAngleDistance(bins[id].angle, prev.angle);
-            double diffd = std::abs(bins[id].distance - prev.distance);
-
-            if (diff < 2 && diffd < 20)
-            {
-                found = true;
-            }
-        }
-
-
-        if (found) 
-        {
-            continue;
-        }
-
-        Line l;
-        l.angle = bins[id].angle;
-        l.distance = bins[id].distance;
-
-        added.push_back(l);
-    }
-    
-    for (Line & l : added) 
-    {
-        for (const EdgeInformation & einfo : einfos) 
-        {
-            if (unsignedAngleDistance(l.angle, einfo.angle) > 2)
-            {
-                continue;
-            }
-
-            if (std::abs(std::abs(cos(l.angle) * (einfo.x - hwidth) + sin(l.angle) * (einfo.y - hheight)) - l.distance) > 10)
-            {
-                continue;
-            }
-
-            l.edges.push_back(einfo);
-        }
-    }
+        return false;
+    }   
 
     cv::Mat res(input.rows, input.cols, CV_8UC1);
     res = 0;
 
-    for (auto bin : added) 
+    double hwidth = input.cols / 2;
+    double hheight = input.rows / 2;
+
+    for (auto bin : lines) 
     {
-        if (bin.edges.size() < 100) continue;
+        //if (bin.edges.size() < 100) continue;
 
         for (EdgeInformation & e : bin.edges) 
         {
             cv::line(res, cv::Point(e.x - 1, e.y), cv::Point(e.x + 1, e.y), cv::Scalar(255));
             cv::line(res, cv::Point(e.x, e.y - 1), cv::Point(e.x, e.y + 1), cv::Scalar(255));
         }
+
+        std::cout << bin.angle << " " << bin.distance << std::endl;
+
+
         double ca = cos(bin.angle * M_PI / 180.0);
         double sa = sin(bin.angle * M_PI / 180.0);
         
@@ -553,7 +582,7 @@ bool process(const cv::Mat & input)
         }
     }
 
-    cv::imwrite("lines.png", res);*/
+    cv::imwrite("lines.png", res);
     
     return true;
 }
