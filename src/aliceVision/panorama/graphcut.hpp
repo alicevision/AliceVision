@@ -132,6 +132,7 @@ protected:
     const NodeType _T; //< fullness
 };
 
+
 bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<IndexT>& labels);
 
 class GraphcutSeams
@@ -145,7 +146,8 @@ public:
         CachedImage<unsigned char> mask;
     };
 
-    using PixelInfo = std::unordered_map<IndexT, image::RGBfColor>;
+    using IndexedColor = std::pair<IndexT, image::RGBfColor>;
+    using PixelInfo = std::vector<IndexedColor>;
     
 
 public:
@@ -156,6 +158,32 @@ public:
     }
 
     virtual ~GraphcutSeams() = default;
+
+    std::pair<IndexT, image::RGBfColor> findIndex(const PixelInfo & pix, IndexT id) 
+    {
+        for (int i = 0; i  < pix.size(); i++)
+        {
+            if (pix[i].first == id)
+            {
+                return pix[i];
+            }
+        }
+
+        return std::make_pair(UndefinedIndexT, image::RGBfColor(0.0f));
+    }
+
+    bool existIndex(const PixelInfo & pix, IndexT id) 
+    {
+        for (int i = 0; i  < pix.size(); i++)
+        {
+            if (pix[i].first == id)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     bool setOriginalLabels(CachedImage<IndexT> & existing_labels)
     {   
@@ -211,7 +239,7 @@ public:
         _maximal_distance_change = dist; 
     }
 
-    bool createInputOverlappingObservations(image::Image<PixelInfo> & graphCutInput, const BoundingBox & interestBbox)
+    bool createInputOverlappingObservations(image::Image<PixelInfo> & graphCutInput, const BoundingBox & interestBbox, bool loadColors)
     {
         for (auto  & otherInput : _inputs)
         {
@@ -235,9 +263,12 @@ public:
             }
             
             image::Image<image::RGBfColor> otherColor(otherInputBbox.width, otherInputBbox.height);
-            if (!otherInput.second.color.extract(otherColor, otherInputBbox, otherInputBbox)) 
+            if (loadColors)
             {
-                return false;
+                if (!otherInput.second.color.extract(otherColor, otherInputBbox, otherInputBbox)) 
+                {
+                    return false;
+                }
             }
 
             image::Image<unsigned char> otherMask(otherInputBbox.width, otherInputBbox.height);
@@ -273,7 +304,7 @@ public:
                         }
                       
                         PixelInfo & pix = graphCutInput(y_current, x_current);
-                        pix[otherInput.first] = otherColor(y_other, x_other);
+                        pix.push_back(std::make_pair(otherInput.first, otherColor(y_other, x_other)));
                     }
                 }
             }
@@ -305,7 +336,7 @@ public:
                         }
 
                         PixelInfo & pix = graphCutInput(y_current, x_current);
-                        pix[otherInput.first] = otherColor(y_other, x_other);
+                        pix.push_back(std::make_pair(otherInput.first, otherColor(y_other, x_other)));
                     }
                 }
             }
@@ -337,7 +368,7 @@ public:
                         }
 
                         PixelInfo & pix = graphCutInput(y_current, x_current);
-                        pix[otherInput.first] = otherColor(y_other, x_other);
+                        pix.push_back(std::make_pair(otherInput.first, otherColor(y_other, x_other)));
                     }
                 }
             }
@@ -365,8 +396,8 @@ public:
                 const PixelInfo & pix = graphCutInput(y, x);
                 
                 // Check if the input associated to this label is seen by this pixel
-                auto it = pix.find(label);
-                if (it != pix.end())
+                auto it = existIndex(pix, label);
+                if (it)
                 {
                     continue;
                 }
@@ -404,14 +435,14 @@ public:
 
                         // Check that this other label is seen by our pixel
                         const PixelInfo & pixOther = graphCutInput(ny, nx); 
-                        auto itOther = pixOther.find(otherLabel);
-                        if (itOther == pixOther.end())
+                        auto itOther = existIndex(pixOther, otherLabel);
+                        if (!itOther)
                         {
                             continue;
                         }
 
-                        auto it = pix.find(otherLabel);
-                        if (it != pix.end())
+                        auto it = existIndex(pix, otherLabel);
+                        if (it)
                         {
                             labels(y, x) = otherLabel;
                             modified = true;
@@ -488,12 +519,14 @@ public:
 
     
         //Build the input
+        ALICEVISION_LOG_INFO("build input");
         image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
-        if (!createInputOverlappingObservations(graphCutInput, localBbox))
+        if (!createInputOverlappingObservations(graphCutInput, localBbox, computeExpansion))
         {
             return false;
         }
 
+        ALICEVISION_LOG_INFO("fix input");
         // Fix upscaling induced bad labeling
         if (!fixUpscaling(localLabels, graphCutInput))
         {
@@ -501,6 +534,7 @@ public:
         }
 
         // Backup update for upscaling 
+        ALICEVISION_LOG_INFO("save input");
         BoundingBox inputBb = localBbox;
         inputBb.left = 0;
         inputBb.top = 0;
@@ -570,6 +604,8 @@ public:
             for (auto & info : _inputs)
             {   
                 double cost;
+                ALICEVISION_LOG_INFO("process input");
+                
                 if (!processInput(cost, info.second, false)) 
                 {
                     return false;
@@ -654,53 +690,53 @@ public:
                 bool hasCLY = false;
 
 
-                auto it = input(y, x).find(label);
-                if (it != input(y, x).end())
+                auto it = findIndex(input(y, x), label);
+                if (it.first != UndefinedIndexT)
                 {
                     hasCLC = true;
-                    CColorLC = it->second;
+                    CColorLC = it.second;
                 }
 
-                it = input(y, x).find(labelx);
-                if (it != input(y, x).end())
+                it = findIndex(input(y, x), labelx);
+                if (it.first != UndefinedIndexT)
                 {
                     hasCLX = true;
-                    CColorLX = it->second;
+                    CColorLX = it.second;
                 }
 
-                it = input(y, x).find(labely);
-                if (it != input(y, x).end())
+                it = findIndex(input(y, x), labely);
+                if (it.first != UndefinedIndexT)
                 {
                     hasCLY = true;
-                    CColorLY = it->second;
+                    CColorLY = it.second;
                 }
 
-                it = input(y, xp).find(label);
-                if (it != input(y, xp).end())
+                it = findIndex(input(y, xp), label);
+                if (it.first != UndefinedIndexT)
                 {
                     hasXLC = true;
-                    XColorLC = it->second;
+                    XColorLC = it.second;
                 }
 
-                it = input(y, xp).find(labelx);
-                if (it != input(y, xp).end())
+                it = findIndex(input(y, xp), labelx);
+                if (it.first != UndefinedIndexT)
                 {
                     hasXLX = true;
-                    XColorLX = it->second;
+                    XColorLX = it.second;
                 }
 
-                it = input(yp, x).find(label);
-                if (it != input(yp, x).end())
+                it = findIndex(input(yp, x), label);
+                if (it.first != UndefinedIndexT)
                 {
                     hasYLC = true;
-                    YColorLC = it->second;
+                    YColorLC = it.second;
                 }
 
-                it = input(yp, x).find(labely);
-                if (it != input(yp, x).end())
+                it = findIndex(input(yp, x), labely);
+                if (it.first != UndefinedIndexT)
                 {
                     hasYLY = true;
-                    YColorLY = it->second;
+                    YColorLY = it.second;
                 }
 
                 if(!hasCLC || !hasXLX || !hasYLY)
@@ -764,19 +800,19 @@ public:
                 image::RGBfColor currentColor;
                 image::RGBfColor otherColor;
 
-                auto it = input(y, x).find(currentLabel);
-                if (it != input(y, x).end())
+                auto it = findIndex(input(y, x), currentLabel);
+                if (it.first != UndefinedIndexT)
                 {
-                    currentColor = it->second;
+                    currentColor = it.second;
                     mask(y, x) = 1;
                 }
 
                 if (label != currentLabel)
                 {
-                    it = input(y, x).find(label);
-                    if (it != input(y, x).end())
+                    auto it = findIndex(input(y, x), label);
+                    if (it.first != UndefinedIndexT)
                     {
-                        otherColor = it->second;
+                        otherColor = it.second;
 
                         if (dist > _maximal_distance_change)
                         {
