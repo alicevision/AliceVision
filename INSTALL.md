@@ -206,6 +206,10 @@ CMake Options
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
+* `ALICEVISION_USE_APRILTAG` (default: `AUTO`)
+  Build with AprilTag markers support.
+  `-Dapriltag_DIR:PATH=/path/to/apriltag/install/share/apriltag/cmake` (where apriltagConfig.cmake can be found)
+
 * `ALICEVISION_USE_OPENGV` (default `AUTO`)
   Enable use of OpenGV algorithms. Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
