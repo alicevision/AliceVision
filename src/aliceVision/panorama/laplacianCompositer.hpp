@@ -10,10 +10,10 @@ namespace aliceVision
 class LaplacianCompositer : public Compositer
 {
 public:
-    LaplacianCompositer(size_t outputWidth, size_t outputHeight)
+    LaplacianCompositer(size_t outputWidth, size_t outputHeight, size_t scale)
         : Compositer(outputWidth, outputHeight)
-        , _pyramidPanorama(outputWidth, outputHeight, 1)
-        , _bands(1)
+        , _pyramidPanorama(outputWidth, outputHeight, scale + 1)
+        , _bands(scale + 1)
     {
     }
 
@@ -27,25 +27,6 @@ public:
         return _pyramidPanorama.initialize();
     }
 
-    virtual size_t getOptimalScale(int width, int height) const
-    {
-        /*
-        Look for the smallest scale such that the image is not smaller than the
-        convolution window size.
-        minsize / 2^x = 5
-        minsize / 5 = 2^x
-        x = log2(minsize/5)
-        */
-
-        size_t minsize = std::min(width, height);
-
-        int gaussianFilterSize = 1 + 2 * _gaussianFilterRadius;
-        
-        size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
-        
-        return 5;//(optimal_scale - 1/*Security*/);
-    }
-
     virtual int getBorderSize() const 
     {
         return _gaussianFilterRadius;
@@ -54,28 +35,8 @@ public:
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
-                        int offsetX, int offsetY, size_t optimalScale) 
+                        int offsetX, int offsetY) 
     {
-        size_t optimalScale = getOptimalScale(color.Width(), color.Height());
-        size_t optimalLevelsCount = optimalScale + 1;
-
-        if(optimalLevelsCount < _bands)
-        {
-            ALICEVISION_LOG_ERROR("Decreasing level count !");
-            return false;
-        }
-
-        //If the input scale is more important than previously processed, 
-        // The pyramid must be deepened accordingly
-        if(optimalLevelsCount > _bands && _bands == 1)
-        {
-            _bands = optimalLevelsCount;
-            if (!_pyramidPanorama.augment(_bands)) 
-            {
-                return false;
-            }
-        }
-
         // Make sure input is compatible with pyramid processing
         // See comments inside function for details
         int newOffsetX, newOffsetY;

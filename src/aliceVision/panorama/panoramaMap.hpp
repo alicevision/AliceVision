@@ -36,6 +36,11 @@ public:
         return _panoramaHeight;
     }
 
+    size_t getScale() const
+    {
+        return _scale;
+    }
+
     bool getEnhancedBoundingBox(BoundingBox & bb, const IndexT & id)
     {
         if (_map.find(id) == _map.end()) 

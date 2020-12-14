@@ -156,6 +156,8 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     std::string temporaryCachePath;
     std::string compositerType = "multiband";
+    int rangeStart = -1;
+	int rangeSize = 1;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
@@ -179,7 +181,9 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
-        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str());
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
+		("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
     allParams.add(optionalParams);
 
     // Setup log level given command line
@@ -228,98 +232,126 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Define range to compute
+    size_t viewsCount = sfmData.getViews().size();
+    if(rangeStart != -1)
+    {
+        if(rangeStart < 0 || rangeSize < 0 ||
+            std::size_t(rangeStart) > viewsCount)
+        {
+            ALICEVISION_LOG_ERROR("Range is incorrect");
+            return EXIT_FAILURE;
+        }
+
+        if(std::size_t(rangeStart + rangeSize) > viewsCount)
+        {
+            rangeSize = int(viewsCount) - rangeStart;
+        }
+    }
+    else
+    {
+        rangeStart = 0;
+        rangeSize = int(viewsCount);
+    }
+
     const size_t borderSize = 2;
     std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize);
-    if (sfmData.getViews().size() == 0) 
+    if (viewsCount == 0) 
     {
         ALICEVISION_LOG_ERROR("No valid views");
         return EXIT_FAILURE;
     }
 
-    IndexT viewReference = sfmData.getViews().begin()->first;
-    std::list<IndexT> overlaps;
-    if (!panoramaMap->getOverlaps(overlaps, viewReference)) 
+    int posReference = 0;
+    for (auto & vIterator : sfmData.getViews())
     {
-        ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
-        return EXIT_FAILURE;
-    }
-    overlaps.push_back(viewReference);
-
-    BoundingBox referenceBoundingBox;
-    if (!panoramaMap->getEnhancedBoundingBox(referenceBoundingBox, viewReference)) 
-    {
-        ALICEVISION_LOG_ERROR("Problem getting reference bounding box");
-        return EXIT_FAILURE;
-    }
-
-    std::unique_ptr<Compositer> compositer;
-    compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(referenceBoundingBox.width, referenceBoundingBox.height));
-
-    if (!compositer->initialize())
-    {
-        ALICEVISION_LOG_ERROR("Error initializing panorama");
-        return false;
-    }
-
-    image::Image<IndexT> labels;
-    if (!computeWTALabels(labels, overlaps, warpingFolder, referenceBoundingBox)) 
-    {
-        ALICEVISION_LOG_ERROR("Error estimating panorama labels for this input");
-        return false;
-    }
-
-    image::writeImage("/home/servantf/labels.exr", labels, image::EImageColorSpace::LINEAR);
-
-    int pos = 0;
-    for (IndexT viewCurrent : overlaps)
-    {
-        ALICEVISION_LOG_INFO("Processing input " << pos << "/" << overlaps.size());
-    
-        // Load image and convert it to linear colorspace
-        const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
-        ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
-        image::Image<image::RGBfColor> source;
-        image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
-
-        // Load mask
-        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
-        ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
-        image::Image<unsigned char> mask;
-        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
-
-        // Retrieve position of image in panorama
-        oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
-        const int offsetX = metadata.find("AliceVision:offsetX")->get_int();
-        const int offsetY = metadata.find("AliceVision:offsetY")->get_int();
-
-        image::Image<float> weights;        
-        /*const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
-        ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
-        image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
-        weights = image::Image<float>(mask.Width(), mask.Height());
-        if (!getMaskFromLabels(weights, labels, viewCurrent, offsetX - referenceBoundingBox.left, offsetY - referenceBoundingBox.top)) 
+        posReference++;
+        ALICEVISION_LOG_INFO("processing input region " << posReference << "/" << sfmData.getViews().size());
+        
+        IndexT viewReference = vIterator.first;
+        std::list<IndexT> overlaps;
+        if (!panoramaMap->getOverlaps(overlaps, viewReference)) 
         {
-            ALICEVISION_LOG_ERROR("Error estimating seams image");
+            ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
+            return EXIT_FAILURE;
+        }
+        overlaps.push_back(viewReference);
+
+        BoundingBox referenceBoundingBox;
+        if (!panoramaMap->getEnhancedBoundingBox(referenceBoundingBox, viewReference)) 
+        {
+            ALICEVISION_LOG_ERROR("Problem getting reference bounding box");
             return EXIT_FAILURE;
         }
 
-        if (!compositer->append(source, mask, weights, offsetX - referenceBoundingBox.left, offsetY - referenceBoundingBox.top))
+        std::unique_ptr<Compositer> compositer;
+        compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(referenceBoundingBox.width, referenceBoundingBox.height, panoramaMap->getScale()));
+
+        if (!compositer->initialize())
         {
-            ALICEVISION_LOG_INFO("Error in compositer append");
-            return EXIT_FAILURE;
-        }    
+            ALICEVISION_LOG_ERROR("Error initializing panorama");
+            return false;
+        }
 
-        pos++;
-    }
+        image::Image<IndexT> labels;
+        if (!computeWTALabels(labels, overlaps, warpingFolder, referenceBoundingBox)) 
+        {
+            ALICEVISION_LOG_ERROR("Error estimating panorama labels for this input");
+            return false;
+        }
 
-    if (!compositer->terminate())
-    {
-        ALICEVISION_LOG_ERROR("Error terminating panorama");
-    }
+        int posCurrent = 0;
+        for (IndexT viewCurrent : overlaps)
+        {
+            posCurrent++;
+            ALICEVISION_LOG_INFO("Processing input " << posCurrent << "/" << overlaps.size());
+        
+            // Load image and convert it to linear colorspace
+            const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
+            ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
+            image::Image<image::RGBfColor> source;
+            image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
-    if (!compositer->save("/home/servantf/test.exr", image::EStorageDataType::HalfFinite))
-    {
-        ALICEVISION_LOG_ERROR("Error terminating panorama");
+            // Load mask
+            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
+            image::Image<unsigned char> mask;
+            image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+            // Retrieve position of image in panorama
+            oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
+            const int offsetX = metadata.find("AliceVision:offsetX")->get_int();
+            const int offsetY = metadata.find("AliceVision:offsetY")->get_int();
+
+            image::Image<float> weights;        
+            /*const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
+            ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
+            image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
+            weights = image::Image<float>(mask.Width(), mask.Height());
+            if (!getMaskFromLabels(weights, labels, viewCurrent, offsetX - referenceBoundingBox.left, offsetY - referenceBoundingBox.top)) 
+            {
+                ALICEVISION_LOG_ERROR("Error estimating seams image");
+                return EXIT_FAILURE;
+            }
+
+            if (!compositer->append(source, mask, weights, offsetX - referenceBoundingBox.left, offsetY - referenceBoundingBox.top))
+            {
+                ALICEVISION_LOG_INFO("Error in compositer append");
+                return EXIT_FAILURE;
+            }   
+        }
+
+        if (!compositer->terminate())
+        {
+            ALICEVISION_LOG_ERROR("Error terminating panorama");
+        }
+
+        const std::string viewIdStr = std::to_string(viewReference);
+        const std::string outputFilePath = (fs::path(outputFolder) / (viewIdStr + ".exr")).string();
+        if (!compositer->save(outputFilePath, storageDataType))
+        {
+            ALICEVISION_LOG_ERROR("Error terminating panorama");
+        }
     }
 
     return EXIT_SUCCESS;
