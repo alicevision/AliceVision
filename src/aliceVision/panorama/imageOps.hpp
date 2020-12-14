@@ -163,7 +163,7 @@ bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Im
     return true;
 }
 
-void removeNegativeValues(CachedImage<image::RGBfColor>& img);
+void removeNegativeValues(image::Image<image::RGBfColor>& img);
 
 template <class T>
 bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb, const BoundingBox & assignedInputBb) 
@@ -279,9 +279,9 @@ bool loopyCachedImageExtract(aliceVision::image::Image<T> & output, CachedImage<
 
 template <class T>
 bool makeImagePyramidCompatible(image::Image<T>& output, 
-                                size_t& outOffsetX, size_t& outOffsetY,
+                                int & outOffsetX, int & outOffsetY,
                                 const image::Image<T>& input,
-                                size_t offsetX, size_t offsetY, 
+                                int offsetX, int offsetY, 
                                 size_t borderSize,
                                 size_t num_levels)
 {
@@ -301,12 +301,12 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
     double correctedLowOffsetY = floor(lowOffsetY);
 
     /*Add some borders on the top and left to make sure mask can be smoothed*/
-    correctedLowOffsetX = std::max(0.0, correctedLowOffsetX - double(borderSize));
-    correctedLowOffsetY = std::max(0.0, correctedLowOffsetY - double(borderSize));
+    correctedLowOffsetX = correctedLowOffsetX - double(borderSize);
+    correctedLowOffsetY = correctedLowOffsetY - double(borderSize);
 
     /*Compute offset at largest level*/
-    outOffsetX = size_t(correctedLowOffsetX / maxScale);
-    outOffsetY = size_t(correctedLowOffsetY / maxScale);
+    outOffsetX = int(correctedLowOffsetX / maxScale);
+    outOffsetY = int(correctedLowOffsetY / maxScale);
 
     /*Compute difference*/
     double doffsetX = double(offsetX) - double(outOffsetX);

@@ -270,89 +270,36 @@ bool drawSeams(CachedImage<image::RGBAfColor>& inout, CachedImage<IndexT>& label
     return true;
 }
 
-bool WTASeams::initialize(image::TileCacheManager::shared_ptr & cacheManager) 
-{
-    if(!_weights.createImage(cacheManager, _panoramaWidth, _panoramaHeight))
-    {
-        return false;
-    }
-
-    if(!_weights.fill(0.0f))
-    {
-        return false;
-    }
-
-    if(!_labels.createImage(cacheManager, _panoramaWidth, _panoramaHeight))
-    {
-        return false;
-    }
-
-    if(!_labels.fill(UndefinedIndexT))
-    {
-        return false;
-    }
-
-    return true;
-}
-
 bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
-                      const aliceVision::image::Image<float>& inputWeights, IndexT currentIndex, size_t offset_x,
-                      size_t offset_y)
+                      const aliceVision::image::Image<float>& inputWeights, 
+                      IndexT currentIndex, size_t offset_x, size_t offset_y)
 {
-    if( inputMask.size() != inputWeights.size())
+    if (inputMask.size() != inputWeights.size())
     {
         return false;
-    }
+    }    
 
-    aliceVision::image::Image<float> weights(inputMask.Width(), inputMask.Height());
-    aliceVision::image::Image<IndexT> labels(inputMask.Width(), inputMask.Height());
-
-    BoundingBox globalBb;
-    globalBb.left = offset_x;
-    globalBb.top = offset_y;
-    globalBb.width = inputMask.Width();
-    globalBb.height = inputMask.Height();
-
-    if (!loopyCachedImageExtract(weights, _weights, globalBb)) 
+    for (size_t i = 0; i < inputWeights.Height(); i++)
     {
-        return false;
-    }
+        int y = i + offset_y;
+        if (y < 0 || y >= _panoramaHeight) continue;
 
-    if (!loopyCachedImageExtract(labels, _labels, globalBb)) 
-    {
-        return false;
-    }
-    
-
-    for(size_t i = 0; i < weights.Height(); i++)
-    {
-        for(size_t j = 0; j < weights.Width(); j++)
+        for (size_t j = 0; j < inputWeights.Width(); j++)
         {
-            if(!inputMask(i, j))
+            int x = j + offset_x;
+            if (x < 0 || x >= _panoramaWidth) continue;
+
+            if (!inputMask(i, j))
             {
                 continue;
             }
 
-            if (inputWeights(i, j) > weights(i, j))
+            if (inputWeights(i, j) > _weights(y, x))
             {
-                labels(i, j) = currentIndex;
-                weights(i, j) = inputWeights(i, j);
+                _labels(y, x) = currentIndex;
+                _weights(y, x) = inputWeights(i, j);
             }
         }
-    }
-
-    BoundingBox inputBb;
-    inputBb.left = 0;
-    inputBb.top = 0;
-    inputBb.width = labels.Width();
-    inputBb.height = labels.Height();
-
-    if (!loopyCachedImageAssign(_weights, weights, globalBb, inputBb)) {
-        return false;
-    }
-
-    if (!loopyCachedImageAssign(_labels, labels, globalBb, inputBb)) {
-        return false;
     }
 
     return true;
@@ -432,7 +379,7 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
                                        IndexT currentIndex, size_t offsetX, size_t offsetY)
 {
     // Make sure input is compatible with pyramid processing
-    size_t newOffsetX, newOffsetY;
+    int newOffsetX, newOffsetY;
     aliceVision::image::Image<image::RGBfColor> potImage;
     aliceVision::image::Image<unsigned char> potMask;
     makeImagePyramidCompatible(potImage, newOffsetX, newOffsetY, input, offsetX, offsetY, 2, _countLevels);
@@ -681,32 +628,24 @@ bool HierarchicalGraphcutSeams::initialize()
     return true;
 }
 
-bool getMaskFromLabels(aliceVision::image::Image<float> & mask, CachedImage<IndexT> & labels, IndexT index, size_t offset_x, size_t offset_y) {
+bool getMaskFromLabels(aliceVision::image::Image<float> & mask, image::Image<IndexT> & labels, IndexT index, int offset_x, int offset_y) 
+{
 
-    image::Image<IndexT> extractedLabels(mask.Width(), mask.Height());
-
-    BoundingBox bb;
-    bb.left = offset_x;
-    bb.top = offset_y;
-    bb.width = mask.Width();
-    bb.height = mask.Height();
-
-    if (!loopyCachedImageExtract(extractedLabels, labels, bb))
+    for (int i = 0; i < mask.Height(); i++) 
     {
-        return false;
-    }
+        int y = i + offset_y;
 
-    for (int i = 0; i < extractedLabels.Height(); i++) 
-    {
-        for (int j = 0; j < extractedLabels.Width(); j++) 
+        for (int j = 0; j < mask.Width(); j++) 
         {
-            if (extractedLabels(i, j) == index) 
+            int x = j + offset_x;
+            mask(i, j) = 0;
+
+            if (y < 0 || y >= labels.Height()) continue;
+            if (x < 0 || x >= labels.Width()) continue;
+
+            if (labels(y, x) == index) 
             {
                 mask(i, j) = 1.0f;
-            }
-            else 
-            {
-                mask(i, j) = 0.0f;
             }
         }
     }

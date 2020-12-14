@@ -1,5 +1,3 @@
-#pragma once
-
 #include "remapBbox.hpp"
 #include "sphericalMapping.hpp"
 

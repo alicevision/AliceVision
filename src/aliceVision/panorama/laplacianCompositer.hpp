@@ -10,8 +10,8 @@ namespace aliceVision
 class LaplacianCompositer : public Compositer
 {
 public:
-    LaplacianCompositer(image::TileCacheManager::shared_ptr & cacheManager, size_t outputWidth, size_t outputHeight)
-        : Compositer(cacheManager, outputWidth, outputHeight)
+    LaplacianCompositer(size_t outputWidth, size_t outputHeight)
+        : Compositer(outputWidth, outputHeight)
         , _pyramidPanorama(outputWidth, outputHeight, 1)
         , _bands(1)
     {
@@ -24,7 +24,7 @@ public:
             return false;
         }
 
-        return _pyramidPanorama.initialize(_cacheManager);
+        return _pyramidPanorama.initialize();
     }
 
     virtual size_t getOptimalScale(int width, int height) const
@@ -43,7 +43,7 @@ public:
         
         size_t optimal_scale = size_t(floor(std::log2(double(minsize) / gaussianFilterSize)));
         
-        return (optimal_scale - 1/*Security*/);
+        return 5;//(optimal_scale - 1/*Security*/);
     }
 
     virtual int getBorderSize() const 
@@ -54,7 +54,7 @@ public:
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
-                        int offsetX, int offsetY) 
+                        int offsetX, int offsetY, size_t optimalScale) 
     {
         size_t optimalScale = getOptimalScale(color.Width(), color.Height());
         size_t optimalLevelsCount = optimalScale + 1;
@@ -70,7 +70,7 @@ public:
         if(optimalLevelsCount > _bands && _bands == 1)
         {
             _bands = optimalLevelsCount;
-            if (!_pyramidPanorama.augment(_cacheManager, _bands)) 
+            if (!_pyramidPanorama.augment(_bands)) 
             {
                 return false;
             }
@@ -78,11 +78,12 @@ public:
 
         // Make sure input is compatible with pyramid processing
         // See comments inside function for details
-        size_t newOffsetX, newOffsetY;
+        int newOffsetX, newOffsetY;
         aliceVision::image::Image<image::RGBfColor> colorPot;
         aliceVision::image::Image<unsigned char> maskPot;
         aliceVision::image::Image<float> weightsPot;
 
+    
         makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, getBorderSize(), _bands);
         makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, getBorderSize(), _bands);
         makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, getBorderSize(), _bands);
@@ -95,7 +96,7 @@ public:
             return false;
         }
 
-        /*To log space for hdr*/
+        //  To log space for hdr
         for(int i = 0; i < feathered.Height(); i++)
         {
             for(int j = 0; j < feathered.Width(); j++)
@@ -106,7 +107,7 @@ public:
             }
         }
 
-        /* Convert mask to alpha layer */
+        // Convert mask to alpha layer 
         image::Image<float> maskFloat(maskPot.Width(), maskPot.Height());
         for(int i = 0; i < maskPot.Height(); i++)
         {
@@ -133,24 +134,26 @@ public:
 
     virtual bool terminate()
     {
-
         if (!_pyramidPanorama.rebuild(_panorama)) 
         {
             return false;
         }
 
-        _panorama.perPixelOperation(
-            [](const image::RGBAfColor & a) -> image::RGBAfColor {
+        for (int i = 0; i < _panorama.Height(); i++) 
+        {
+            for (int j = 0; j < _panorama.Width(); j++)
+            {
+                image::RGBAfColor c = _panorama(i, j);
 
                 image::RGBAfColor out;
-                out.r() = std::exp(a.r());
-                out.g() = std::exp(a.g());
-                out.b() = std::exp(a.b());
-                out.a() = a.a();
+                out.r() = std::exp(c.r());
+                out.g() = std::exp(c.g());
+                out.b() = std::exp(c.b());
+                out.a() = c.a();
 
-                return out;
+                _panorama(i, j) = out;
             }
-        );
+        }
 
         return true;
     }

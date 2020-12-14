@@ -12,8 +12,7 @@ namespace aliceVision
 class Compositer
 {
 public:
-    Compositer(image::TileCacheManager::shared_ptr & cacheManager, int width, int height) :
-    _cacheManager(cacheManager),
+    Compositer(int width, int height) :
     _panoramaWidth(width),
     _panoramaHeight(height)
     {
@@ -25,44 +24,26 @@ public:
                         const aliceVision::image::Image<float>& inputWeights, 
                         int offset_x, int offset_y)
     {
-        aliceVision::image::Image<image::RGBAfColor> masked(color.Width(), color.Height());
- 
-        BoundingBox panoramaBb;
-        panoramaBb.left = offset_x;
-        panoramaBb.top = offset_y;
-        panoramaBb.width = color.Width();
-        panoramaBb.height = color.Height();
-
-        if (!loopyCachedImageExtract(masked, _panorama, panoramaBb)) 
+        for(int i = 0; i < color.Height(); i++)
         {
-            return false;
-        }
-        
+            int y = i + offset_y;
+            if (y < 0 || y >= _panoramaHeight) continue;
 
-        for(size_t i = 0; i < color.Height(); i++)
-        {
-            for(size_t j = 0; j < color.Width(); j++)
+            for (int j = 0; j < color.Width(); j++)
             {
-                if(!inputMask(i, j))
+                int x = j + offset_x;
+                if (x < 0 || x >= _panoramaWidth) continue;
+
+                if (!inputMask(i, j))
                 {
                     continue;
                 }
 
-                masked(i, j).r() = color(i, j).r();
-                masked(i, j).g() = color(i, j).g();
-                masked(i, j).b() = color(i, j).b();
-                masked(i, j).a() = 1.0f;
+                _panorama(y, x).r() = color(i, j).r();
+                _panorama(y, x).g() = color(i, j).g();
+                _panorama(y, x).b() = color(i, j).b();
+                _panorama(y, x).a() = 1.0f;
             }
-        }
-
-        BoundingBox inputBb;
-        inputBb.left = 0;
-        inputBb.top = 0;
-        inputBb.width = color.Width();
-        inputBb.height = color.Height();
-
-        if (!loopyCachedImageAssign(_panorama, masked, panoramaBb, inputBb)) {
-            return false;
         }
 
         return true;
@@ -70,20 +51,7 @@ public:
 
     virtual bool initialize() { 
 
-        if(!_panorama.createImage(_cacheManager, _panoramaWidth, _panoramaHeight))
-        {
-            return false;
-        }
-
-        if(!_panorama.perPixelOperation(
-            [](image::RGBAfColor ) -> image::RGBAfColor 
-            { 
-                return image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f); 
-            })
-          )
-        {
-            return false;
-        }
+        _panorama = image::Image<image::RGBAfColor>(_panoramaWidth, _panoramaHeight, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
         return true; 
     }
@@ -94,25 +62,28 @@ public:
     {
         if (storageDataType == image::EStorageDataType::HalfFinite)
         {
-            _panorama.perPixelOperation([](const image::RGBAfColor & c) 
+            for (int i = 0; i < _panorama.Height(); i++) 
             {
-                image::RGBAfColor ret;
+                for (int j = 0; j < _panorama.Width(); j++)
+                {
+                    image::RGBAfColor ret;
+                    image::RGBAfColor c = _panorama(i, j);
 
-                const float limit = float(HALF_MAX);
-                
-                ret.r() = clamp(c.r(), -limit, limit);
-                ret.g() = clamp(c.g(), -limit, limit);
-                ret.b() = clamp(c.b(), -limit, limit);
-                ret.a() = c.a();
+                    const float limit = float(HALF_MAX);
+                    
+                    ret.r() = clamp(c.r(), -limit, limit);
+                    ret.g() = clamp(c.g(), -limit, limit);
+                    ret.b() = clamp(c.b(), -limit, limit);
+                    ret.a() = c.a();
 
-                return ret;
-            });
+                    _panorama(i, j) = ret;
+                }
+            }
         }
 
-        if(!_panorama.writeImage(path, storageDataType))
-        {
-            return false;
-        }
+        oiio::ParamValueList metadata;
+        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType", EStorageDataType_enumToString(storageDataType)));
+        image::writeImage(path, _panorama, image::EImageColorSpace::LINEAR, metadata);
 
         return true;
     }
@@ -127,19 +98,9 @@ public:
         return 0;
     }
 
-    bool drawBorders(const aliceVision::image::Image<unsigned char>& mask, size_t offsetX, size_t offsetY) 
-    {
-        return ::aliceVision::drawBorders(_panorama, mask, offsetX, offsetY);
-    }
-
-    bool drawSeams(CachedImage<IndexT>& label) 
-    {
-        return ::aliceVision::drawSeams(_panorama, label);
-    }
-
 protected:
     image::TileCacheManager::shared_ptr _cacheManager;
-    CachedImage<image::RGBAfColor> _panorama;
+    image::Image<image::RGBAfColor> _panorama;
     int _panoramaWidth;
     int _panoramaHeight;
 };

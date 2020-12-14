@@ -8,8 +8,8 @@ namespace aliceVision
 class AlphaCompositer : public Compositer
 {
 public:
-    AlphaCompositer(image::TileCacheManager::shared_ptr & cacheManager, size_t outputWidth, size_t outputHeight) 
-    : Compositer(cacheManager, outputWidth, outputHeight)
+    AlphaCompositer(size_t outputWidth, size_t outputHeight) 
+    : Compositer(outputWidth, outputHeight)
     {
     }
 
@@ -18,47 +18,28 @@ public:
                         const aliceVision::image::Image<float>& inputWeights, 
                         int offset_x, int offset_y)
     {
-
-        aliceVision::image::Image<image::RGBAfColor> masked(color.Width(), color.Height());
-
-        BoundingBox panoramaBb;
-        panoramaBb.left = offset_x;
-        panoramaBb.top = offset_y;
-        panoramaBb.width = color.Width();
-        panoramaBb.height = color.Height();
-
-        if (!loopyCachedImageExtract(masked, _panorama, panoramaBb)) 
+       for(int i = 0; i < color.Height(); i++)
         {
-            return false;
-        }
-        
+            int y = i + offset_y;
+            if (y < 0 || y >= _panoramaHeight) continue;
 
-        for(size_t i = 0; i < color.Height(); i++)
-        {
-            for(size_t j = 0; j < color.Width(); j++)
+            for (int j = 0; j < color.Width(); j++)
             {
-                if(!inputMask(i, j))
+                int x = j + offset_x;
+                if (x < 0 || x >= _panoramaWidth) continue;
+
+                if (!inputMask(i, j))
                 {
                     continue;
                 }
 
                 float wc = inputWeights(i, j);
 
-                masked(i, j).r() += wc * color(i, j).r();
-                masked(i, j).g() += wc * color(i, j).g();
-                masked(i, j).b() += wc * color(i, j).b();
-                masked(i, j).a() += wc;
+                _panorama(y, x).r() += wc * color(i, j).r();
+                _panorama(y, x).g() += wc * color(i, j).g();
+                _panorama(y, x).b() += wc * color(i, j).b();
+                _panorama(y, x).a() += wc;
             }
-        }
-
-        BoundingBox inputBb;
-        inputBb.left = 0;
-        inputBb.top = 0;
-        inputBb.width = masked.Width();
-        inputBb.height = masked.Height();
-
-        if (!loopyCachedImageAssign(_panorama, masked, panoramaBb, inputBb)) {
-            return false;
         }
 
         return true;
@@ -66,11 +47,12 @@ public:
 
     virtual bool terminate()
     {
-        
-        _panorama.perPixelOperation(
-            [](image::RGBAfColor c) -> image::RGBAfColor
+        for (int i = 0; i < _panorama.Height(); i++) 
+        {
+            for (int j = 0; j < _panorama.Width(); j++)
             {
                 image::RGBAfColor r;
+                image::RGBAfColor c = _panorama(i, j);
 
                 if (c.a() < 1e-6f) 
                 {
@@ -87,9 +69,9 @@ public:
                     r.a() = 1.0f;
                 }
 
-                return r;
+                _panorama(i, j) = r;
             }
-        );
+        }
 
         return true;
     }

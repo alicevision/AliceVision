@@ -519,14 +519,12 @@ public:
 
     
         //Build the input
-        ALICEVISION_LOG_INFO("build input");
         image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
         if (!createInputOverlappingObservations(graphCutInput, localBbox, computeExpansion))
         {
             return false;
         }
 
-        ALICEVISION_LOG_INFO("fix input");
         // Fix upscaling induced bad labeling
         if (!fixUpscaling(localLabels, graphCutInput))
         {
@@ -534,7 +532,6 @@ public:
         }
 
         // Backup update for upscaling 
-        ALICEVISION_LOG_INFO("save input");
         BoundingBox inputBb = localBbox;
         inputBb.left = 0;
         inputBb.top = 0;

@@ -199,10 +199,14 @@ struct BoundingBox
     {
         BoundingBox b;
 
-        b.left = left / factor;
-        b.top = top / factor;
-        b.width = width / factor;
-        b.height = height / factor;
+        b.left = int(floor(double(left) / double(factor)));
+        b.top = int(floor(double(top) / double(factor)));
+
+        int right = int(ceil(double(getRight()) / double(factor)));
+        int bottom = int(ceil(double(getBottom()) / double(factor)));
+
+        b.width = right - b.left + 1;
+        b.height = bottom - b.top + 1;
 
         return b;
     }

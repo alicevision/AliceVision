@@ -12,33 +12,33 @@ bool drawBorders(CachedImage<image::RGBAfColor> & inout, const aliceVision::imag
 
 bool drawSeams(CachedImage<image::RGBAfColor>& inout, CachedImage<IndexT>& labels);
 
-bool getMaskFromLabels(aliceVision::image::Image<float> & mask, CachedImage<IndexT> & labels, IndexT index, size_t offset_x, size_t offset_y);
+bool getMaskFromLabels(aliceVision::image::Image<float> & mask, image::Image<IndexT> & labels, IndexT index, int offset_x, int offset_y);
 
 class WTASeams
 {
 public:
     WTASeams(size_t outputWidth, size_t outputHeight)
-        : _panoramaWidth(outputWidth)
+        : _weights(outputWidth, outputHeight, true, 0.0f)
+        , _labels(outputWidth, outputHeight, true, UndefinedIndexT)
+        , _panoramaWidth(outputWidth)
         , _panoramaHeight(outputHeight)
     {
     }
 
     virtual ~WTASeams() = default;
-
-    bool initialize(image::TileCacheManager::shared_ptr & cacheManager);
-
+    
     bool append(const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
                         IndexT currentIndex, size_t offset_x, size_t offset_y);
 
-    CachedImage<IndexT> & getLabels() 
+    image::Image<IndexT> & getLabels() 
     {
         return _labels; 
     }
 
 private:
-    CachedImage<float> _weights;
-    CachedImage<IndexT> _labels;
+    image::Image<float> _weights;
+    image::Image<IndexT> _labels;
 
     int _panoramaWidth;
     int _panoramaHeight;

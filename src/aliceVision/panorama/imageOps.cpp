@@ -5,17 +5,18 @@
 namespace aliceVision
 {
 
-void removeNegativeValues(CachedImage<image::RGBfColor> & img)
+void removeNegativeValues(image::Image<image::RGBfColor> & img)
 {
-    img.perPixelOperation(
-        [](const image::RGBfColor & c) -> image::RGBfColor 
+    for (int i = 0; i < img.Height(); i++) 
+    {
+        for (int j = 0; j < img.Width(); j++)
         {
             image::RGBfColor rpix;
-            image::RGBfColor ret = c;
+            image::RGBfColor ret = img(i, j);
 
-            rpix.r() = std::exp(c.r());
-            rpix.g() = std::exp(c.g());
-            rpix.b() = std::exp(c.b());
+            rpix.r() = std::exp(ret.r());
+            rpix.g() = std::exp(ret.g());
+            rpix.b() = std::exp(ret.b());
 
             if (rpix.r() < 0.0)
             {
@@ -32,9 +33,9 @@ void removeNegativeValues(CachedImage<image::RGBfColor> & img)
                 ret.b() = 0.0;
             }
 
-            return ret;
+            img(i, j) = ret;
         }
-    );
+    }
 }
 
 } // namespace aliceVision
