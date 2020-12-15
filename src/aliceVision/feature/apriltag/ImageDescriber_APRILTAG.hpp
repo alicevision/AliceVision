@@ -93,7 +93,7 @@ public:
 
   struct AprilTagParameters
   {
-    explicit AprilTagParameters();
+    explicit AprilTagParameters() = default;
 
     ~AprilTagParameters() = default;
 

@@ -11,14 +11,9 @@
 
 #include <apriltag/apriltag.h>
 #include <apriltag/tag16h5.h>
-#include <opencv2/core/core.hpp>
 
 namespace aliceVision {
 namespace feature {
-
-ImageDescriber_APRILTAG::AprilTagParameters::AprilTagParameters()
-{
-}
 
 void ImageDescriber_APRILTAG::AprilTagParameters::setPreset(EImageDescriberPreset preset)
 {
@@ -61,12 +56,11 @@ bool ImageDescriber_APRILTAG::describe(const image::Image<unsigned char>& image,
   td->debug = 0;
   td->refine_edges = 1;
 
-  const cv::Mat graySrc(cv::Size(image.Width(), image.Height()), CV_8UC1, (unsigned char *) image.data(), cv::Mat::AUTO_STEP);
-  // Make an image_u8_t header for the Mat data
-  image_u8_t im = { .width = graySrc.cols,
-      .height = graySrc.rows,
-      .stride = graySrc.cols,
-      .buf = graySrc.data
+  // Make an image_u8_t header for the image
+  image_u8_t im = { .width = image.Width(),
+      .height = image.Height(),
+      .stride = image.Width(),
+      .buf = (uint8_t*) image.data()
   };
   zarray_t *detections = apriltag_detector_detect(td, &im);
   // Draw detection outlines
@@ -76,20 +70,20 @@ bool ImageDescriber_APRILTAG::describe(const image::Image<unsigned char>& image,
     if (det->hamming == 0) {
       // compute center point as the intersection of the two diagonals
       // note: AprilTag corner points are listed counter-clockwise:
-      cv::Point2d tl(det->p[0][0], det->p[0][1]);
-      cv::Point2d bl(det->p[1][0], det->p[1][1]);
-      cv::Point2d br(det->p[2][0], det->p[2][1]);
-      cv::Point2d tr(det->p[3][0], det->p[3][1]);
-      double denominator = ((tl.x-br.x) * (bl.y-tr.y) - (tl.y-br.y) * (bl.x-tr.x));
-      cv::Point2d center(
-        ((tl.x*br.y - tl.y*br.x) * (bl.x-tr.x) - (tl.x-br.x) * (bl.x*tr.y - bl.y*tr.x)) / denominator,
-        ((tl.x*br.y - tl.y*br.x) * (bl.y-tr.y) - (tl.y-br.y) * (bl.x*tr.y - bl.y*tr.x)) / denominator
+      Vec2 tl(det->p[0][0], det->p[0][1]);
+      Vec2 bl(det->p[1][0], det->p[1][1]);
+      Vec2 br(det->p[2][0], det->p[2][1]);
+      Vec2 tr(det->p[3][0], det->p[3][1]);
+      double denominator = ((tl[0]-br[0]) * (bl[1]-tr[1]) - (tl[1]-br[1]) * (bl[0]-tr[0]));
+      Vec2 center(
+        ((tl[0]*br[1] - tl[1]*br[0]) * (bl[0]-tr[0]) - (tl[0]-br[0]) * (bl[0]*tr[1] - bl[1]*tr[0])) / denominator,
+        ((tl[0]*br[1] - tl[1]*br[0]) * (bl[1]-tr[1]) - (tl[1]-br[1]) * (bl[0]*tr[1] - bl[1]*tr[0])) / denominator
       );
-      cv::Point2d points[5] = { center, tl, bl, br, tr };
+      Vec2 points[5] = { center, tl, bl, br, tr };
       std::size_t indices[5] = { det->id, 30 + det->id, 60 + det->id, 90 + det->id, 120 + det->id};
       // compute scale from max side length and diagonals (divided by sqare root of 2):
-      double scale = std::max({cv::norm(tl-bl), cv::norm(bl-br), cv::norm(br-tr), cv::norm(tr-tl), 0.707*cv::norm(tl-br), 0.707*cv::norm(tr-bl)});
-      ALICEVISION_LOG_DEBUG(" New AprilTag: Id " << det->id << " ; Center location ( " << center.x << " , " << center.y << " ) ; Scale " << scale);
+      const double scale = 0.5 * std::max({(tl-bl).norm(), (bl-br).norm(), (br-tr).norm(), (tr-tl).norm(), 0.707*(tl-br).norm(), 0.707*(tr-bl).norm()});
+      ALICEVISION_LOG_DEBUG(" New AprilTag: Id " << det->id << " ; Center location ( " << center[0] << " , " << center[1] << " ) ; Scale " << scale);
       // ignore orientation for now:
       const float orientation = 0.0f;
       for (size_t j = 0; j < 5; ++j) {
@@ -101,7 +95,7 @@ bool ImageDescriber_APRILTAG::describe(const image::Image<unsigned char>& image,
         }
         desc[indices[j]] = (unsigned char) 255;
         regionsCasted->Descriptors().push_back(desc);
-        regionsCasted->Features().push_back(PointFeature(points[j].x, points[j].y, scale, orientation));
+        regionsCasted->Features().push_back(PointFeature(points[j][0], points[j][1], scale, orientation));
       }
     }
   }
