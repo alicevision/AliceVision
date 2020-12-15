@@ -3,6 +3,7 @@
 #include "coordinatesMap.hpp"
 #include "gaussian.hpp"
 
+
 namespace aliceVision
 {
 
@@ -30,7 +31,7 @@ protected:
 class GaussianWarper : public Warper
 {
 public:
-    virtual bool warp(const CoordinatesMap& map, const GaussianPyramidNoMask& pyramid);
+    virtual bool warp(const CoordinatesMap& map, const GaussianPyramidNoMask& pyramid, bool clamp);
 };
 
 } // namespace aliceVision

@@ -26,22 +26,13 @@ bool LaplacianPyramid::initialize()
     /*Prepare pyramid*/
     for(int lvl = 0; lvl < _maxLevels; lvl++)
     {
-        //If the level width is odd, it is a problem.
-        //Let update this level to an even size. we'll manage it later
-        //Store the real size to know we updated it
-        _realWidths.push_back(width);
-        if (width % 2)
-        {
-            width++;
-        }
-
         image::Image<image::RGBfColor> color(width, height, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
         image::Image<float> weights(width, height, true, 0.0f);
 
         _levels.push_back(color);
         _weights.push_back(weights);
 
-        width = width / 2;
+        width = int(ceil(float(width) / 2.0f));
         height = int(ceil(float(height) / 2.0f));
     }
 
@@ -67,17 +58,8 @@ bool LaplacianPyramid::augment(size_t newMaxLevels)
         int width = _levels[_levels.size() - 1].Width();
         int height = _levels[_levels.size() - 1].Height();
         
-        int nextWidth = width / 2;
+        int nextWidth = int(ceil(float(width) / 2.0f));
         int nextHeight = int(ceil(float(height) / 2.0f));
-
-        //If the level width is odd, it is a problem.
-        //Let update this level to an even size. we'll manage it later
-        //Store the real size to know we updated it
-        _realWidths.push_back(nextWidth);
-        if (nextWidth % 2)
-        {
-            nextWidth++;
-        }
 
         image::Image<image::RGBfColor> pyramidImage(nextWidth, nextHeight, true, image::RGBfColor(0.0f));
         image::Image<float> pyramidWeights(nextWidth, nextHeight, true, 0.0f);
@@ -372,7 +354,7 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output)
                 buf2(y, x) *= 4.0f;
             }
         }
-                
+        
         if (!addition(_levels[currentLevel], _levels[currentLevel], buf2))
         {
             return false;

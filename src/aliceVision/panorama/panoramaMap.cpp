@@ -15,6 +15,7 @@ bool PanoramaMap::append(IndexT index, const BoundingBox & box)
     BoundingBox scaledWithBorders = scaled.dilate(_borderSize);
 
     _map[index] = scaledWithBorders.multiply(maxFactor);
+    _mapRaw[index] = box;
 
     return true;
 }
@@ -40,7 +41,7 @@ bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) 
         return true;
     }
 
-    if (!box1.intersectionWith(otherBbox).isEmpty()) 
+    if (!box1.intersectionWith(otherBboxLoop).isEmpty()) 
     {
         /*BoundingBox sbox1 = box1.divide(_scale);
         BoundingBox sotherBbox = otherBboxLoop.divide(_scale);
@@ -84,6 +85,8 @@ bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, IndexT reference)
         {
             continue;
         }
+
+        std::cout << it.first << " " << it.second  << " " << bbref << std::endl;
 
         if (intersect(bbref, it.second))
         {

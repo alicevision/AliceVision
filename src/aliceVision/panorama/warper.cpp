@@ -1,4 +1,5 @@
 #include "warper.hpp"
+#include <OpenEXR/half.h>
 
 namespace aliceVision
 {
@@ -46,7 +47,7 @@ bool Warper::warp(const CoordinatesMap& map, const aliceVision::image::Image<ima
     return true;
 }
 
-bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask& pyramid)
+bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask& pyramid, bool clamp)
 {
 
     /**
@@ -133,6 +134,12 @@ bool GaussianWarper::warp(const CoordinatesMap& map, const GaussianPyramidNoMask
             }
 
             _color(i, j) = sampler(mlsource[blevel], y, x);
+            if (clamp)
+            {
+                if (_color(i, j).r() > HALF_MAX) _color(i, j).r() = HALF_MAX;
+                if (_color(i, j).g() > HALF_MAX) _color(i, j).g() = HALF_MAX;
+                if (_color(i, j).b() > HALF_MAX) _color(i, j).b() = HALF_MAX;
+            }
         }
     }
 

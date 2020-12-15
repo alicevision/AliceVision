@@ -170,10 +170,15 @@ int aliceVision_main(int argc, char** argv)
 		// Set verbose level given command line
 		system::Logger::get()->setLogLevel(verboseLevel);
 
+		bool clampHalf = false;
 		oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
 		if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
 		{
 			typeColor = oiio::TypeDesc::HALF;
+			if (storageDataType == image::EStorageDataType::HalfFinite) 
+			{
+				clampHalf = true;
+			}
 		} 
 		
 		// Load information about inputs
@@ -229,24 +234,24 @@ int aliceVision_main(int argc, char** argv)
 		// If panorama width is undefined, estimate it
 		if(panoramaSize.first <= 0)
 		{
-				float ratioUpscale = clamp(float(percentUpscale) / 100.0f, 0.0f, 1.0f);
+			float ratioUpscale = clamp(float(percentUpscale) / 100.0f, 0.0f, 1.0f);
 
-				std::pair<int, int> optimalPanoramaSize;
-				if(computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
-				{
-						panoramaSize = optimalPanoramaSize;
-				}
-				else
-				{
-						ALICEVISION_LOG_INFO("Impossible to compute an optimal panorama size");
-						return EXIT_FAILURE;
-				}
+			std::pair<int, int> optimalPanoramaSize;
+			if(computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
+			{
+					panoramaSize = optimalPanoramaSize;
+			}
+			else
+			{
+					ALICEVISION_LOG_INFO("Impossible to compute an optimal panorama size");
+					return EXIT_FAILURE;
+			}
 
-				if (maxPanoramaWidth != 0 && panoramaSize.first > maxPanoramaWidth)
-				{
-					ALICEVISION_LOG_INFO("The optimal size of the panorama exceeds the maximum size (estimated width: " << panoramaSize.first << ", max width: " << maxPanoramaWidth << ").");
-					panoramaSize.first = maxPanoramaWidth;
-				}
+			if (maxPanoramaWidth != 0 && panoramaSize.first > maxPanoramaWidth)
+			{
+				ALICEVISION_LOG_INFO("The optimal size of the panorama exceeds the maximum size (estimated width: " << panoramaSize.first << ", max width: " << maxPanoramaWidth << ").");
+				panoramaSize.first = maxPanoramaWidth;
+			}
 		}
 		
 		// Make sure panorama size has required size properties
@@ -437,7 +442,7 @@ int aliceVision_main(int argc, char** argv)
 
 					// Warp image
 					GaussianWarper warper;
-					if (!warper.warp(map, pyramid)) {
+					if (!warper.warp(map, pyramid, clampHalf)) {
 						continue;
 					}
 

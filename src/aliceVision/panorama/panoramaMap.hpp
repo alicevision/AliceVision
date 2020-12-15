@@ -53,11 +53,25 @@ public:
         return true;
     }
 
+    bool getBoundingBox(BoundingBox & bb, const IndexT & id)
+    {
+        if (_mapRaw.find(id) == _mapRaw.end()) 
+        {
+            return false;
+        }
+
+        bb = _mapRaw[id];
+
+        return true;
+    }
+
+
 private:
     bool intersect(const BoundingBox & box1, const BoundingBox & box2) const;
 
 private:
     std::map<IndexT, BoundingBox> _map;
+    std::map<IndexT, BoundingBox> _mapRaw;
 
     int _panoramaWidth;
     int _panoramaHeight;

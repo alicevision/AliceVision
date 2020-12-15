@@ -44,7 +44,6 @@ private:
 
     std::vector<image::Image<image::RGBfColor>> _levels;
     std::vector<image::Image<float>> _weights;
-    std::vector<int> _realWidths;
     std::vector<InputInfo> _inputInfos;
 };
 
