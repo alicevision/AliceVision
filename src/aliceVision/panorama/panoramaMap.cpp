@@ -86,8 +86,6 @@ bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, IndexT reference)
             continue;
         }
 
-        std::cout << it.first << " " << it.second  << " " << bbref << std::endl;
-
         if (intersect(bbref, it.second))
         {
             overlaps.push_back(it.first);

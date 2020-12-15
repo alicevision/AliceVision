@@ -308,7 +308,7 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << views.size());
         
         IndexT viewReference = views[posReference]->getViewId();
-        /*if (viewReference != 347875201) 
+        /*if (viewReference != 672262770) 
         {
             continue;
         }*/
@@ -329,7 +329,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         bool shifted = false;
-        if (referenceBoundingBox.getRight() >= panoramaMap->getWidth()) 
+        if (referenceBoundingBox.getRight() >= panoramaMap->getWidth() && referenceBoundingBox.width < panoramaMap->getWidth()) 
         {
             referenceBoundingBox.left -= panoramaMap->getWidth();
             shifted = true;
@@ -363,7 +363,6 @@ int aliceVision_main(int argc, char** argv)
             posCurrent++;
             ALICEVISION_LOG_INFO("Processing input " << posCurrent << "/" << overlaps.size());
 
-        
             // Load image and convert it to linear colorspace
             const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
             ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
@@ -404,7 +403,7 @@ int aliceVision_main(int argc, char** argv)
                 return EXIT_FAILURE;
             }  
 
-            if (mask.Width() >= panoramaMap->getWidth())
+            if (mask.Width() >= panoramaMap->getWidth() || referenceBoundingBox.width >= panoramaMap->getWidth())
             {
                 if (!getMaskFromLabels(weights, labels, viewCurrent, offsetX - panoramaMap->getWidth() - referenceBoundingBox.left, offsetY - referenceBoundingBox.top)) 
                 {
