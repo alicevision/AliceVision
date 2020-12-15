@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 
 //---------------------------------
 //  Universal Image Processing Algorithm
@@ -23,7 +24,6 @@ namespace aliceVision
 {
   namespace image
   {
-
     template <typename T>
     class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
     {
@@ -141,6 +141,16 @@ namespace aliceVision
       inline int Depth() const
       {
         return sizeof( Tpixel );
+      }
+
+
+      /**
+      * @brief Return the number of channels
+      * @return number of channels
+      */
+      inline int Channels() const
+      {
+        return NbChannels<Tpixel>::size;
       }
 
       /**
