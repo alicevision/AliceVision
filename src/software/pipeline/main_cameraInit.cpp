@@ -427,6 +427,8 @@ int aliceVision_main(int argc, char **argv)
   // create missing intrinsics
   auto viewPairItBegin = sfmData.getViews().begin();
 
+  std::map<IndexT, std::vector<IndexT>> poseGroups;
+
   #pragma omp parallel for
   for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
@@ -451,6 +453,18 @@ int aliceVision_main(int argc, char **argv)
       {
         ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
       }
+    }
+    
+    if(boost::algorithm::starts_with(parentPath.stem().string(), "ps_") ||
+       boost::algorithm::starts_with(parentPath.stem().string(), "hdr_"))
+    {
+        std::hash<std::string> hash;
+        IndexT tmpPoseID = hash(parentPath.string()); // use a temporary pose Id to group the images
+
+#pragma omp critical
+        {
+            poseGroups[tmpPoseID].push_back(view.getViewId());
+        }
     }
 
     IndexT intrinsicId = view.getIntrinsicId();
@@ -705,6 +719,33 @@ int aliceVision_main(int argc, char **argv)
 
       sfmData.getRigs().emplace(rigId, sfmData::Rig(nbSubPose));
     }
+  }
+
+  // Update poseId for detected multi-exposure or multi-lighting images (multiple shots with the same camera pose)
+  if(!poseGroups.empty())
+  {
+      for(const auto& poseGroup : poseGroups)
+      {
+          // Sort views of the poseGroup per timestamps
+          std::vector<std::pair<int64_t, IndexT>> sortedViews;
+          for(const IndexT vId : poseGroup.second)
+          {
+              int64_t t = sfmData.getView(vId).getMetadataDateTimestamp();
+              sortedViews.push_back(std::make_pair(t, vId));
+          }
+          std::sort(sortedViews.begin(), sortedViews.end());
+
+          // Get the view which was taken at the middle of the sequence
+          int median = sortedViews.size() / 2;
+          IndexT middleViewId = sortedViews[median].second;
+
+          for(const auto it : sortedViews)
+          {
+              const IndexT vId = it.second;
+              // Update poseId with middle view id
+              sfmData.getView(vId).setPoseId(middleViewId);
+          }
+      }
   }
 
   if(!noMetadataImagePaths.empty())
