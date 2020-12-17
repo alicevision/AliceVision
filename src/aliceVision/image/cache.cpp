@@ -11,11 +11,11 @@ namespace image
 {
 
 CacheManager::CacheManager(const std::string & pathStorage, size_t blockSize, size_t maxBlocksPerIndex) :
-_basePathStorage(pathStorage),
 _blockSize(blockSize),
 _incoreBlockUsageCount(0),
 _incoreBlockUsageMax(10),
-_blockCountPerIndex(maxBlocksPerIndex)
+_blockCountPerIndex(maxBlocksPerIndex),
+_basePathStorage(pathStorage)
 {
   wipe();
 }
@@ -323,8 +323,8 @@ bool CachedTile::acquire() {
   return true;
 }
 
-TileCacheManager::TileCacheManager(const std::string & path_storage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex) :
-CacheManager(path_storage, tileWidth * tileHeight, maxTilesPerIndex),
+TileCacheManager::TileCacheManager(const std::string & pathStorage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex) :
+CacheManager(pathStorage, tileWidth * tileHeight, maxTilesPerIndex),
 _tileWidth(tileWidth), _tileHeight(tileHeight)
 {
 }

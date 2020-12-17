@@ -320,7 +320,7 @@ bool makeImagePyramidCompatible(image::Image<T>& output,
     double low_width = large_width * maxScale;
     double low_height = large_height * maxScale;
 
-    /*Make sure width is integer event at the lowest level*/
+    /*Make sure width is integer even at the lowest level*/
     double correctedLowWidth = ceil(low_width);
     double correctedLowHeight = ceil(low_height);
 

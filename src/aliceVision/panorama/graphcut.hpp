@@ -599,7 +599,7 @@ public:
         if (!computeAlphaExpansion) 
         {
             for (auto & info : _inputs)
-            {   
+            {
                 double cost;
                 ALICEVISION_LOG_INFO("process input");
                 
@@ -619,7 +619,7 @@ public:
         }
 
         for (int i = 0; i < 10; i++)
-        {   
+        {
             ALICEVISION_LOG_INFO("GraphCut processing iteration #" << i);
             // For each possible label, try to extends its domination on the label's world
             bool hasChange = false;
