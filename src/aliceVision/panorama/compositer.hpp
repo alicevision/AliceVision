@@ -19,6 +19,11 @@ public:
         
     }
 
+    virtual ~Compositer()
+    {
+        
+    }
+
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
                         const aliceVision::image::Image<unsigned char>& inputMask,
                         const aliceVision::image::Image<float>& inputWeights, 
@@ -94,7 +99,6 @@ public:
     }
 
 protected:
-    image::TileCacheManager::shared_ptr _cacheManager;
     image::Image<image::RGBAfColor> _panorama;
     int _panoramaWidth;
     int _panoramaHeight;

@@ -17,6 +17,11 @@ public:
     {
     }
 
+    virtual ~LaplacianCompositer()
+    {
+        
+    }
+
     virtual bool initialize() 
     { 
         if (!Compositer::initialize()) 
