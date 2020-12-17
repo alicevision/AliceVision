@@ -210,6 +210,40 @@ struct BoundingBox
 
         return b;
     }
+
+    BoundingBox limitInside(const BoundingBox & other) const
+    {
+        BoundingBox b;
+
+        b.left = left;
+        if (b.left < other.left) 
+        {
+            b.left = other.left;
+        }
+
+        b.top = top;
+        if (b.top < other.top) 
+        {
+            b.top = other.top;
+        }
+
+        int nright = getRight();
+        if (nright > other.getRight()) 
+        {
+            nright = other.getRight();
+        }
+
+        int nbottom = getBottom();
+        if (nbottom > other.getBottom()) 
+        {
+            nbottom = other.getBottom();
+        }
+
+        b.width = nright - b.left + 1;
+        b.height = nbottom - b.top + 1;
+
+        return b;
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const BoundingBox& in);

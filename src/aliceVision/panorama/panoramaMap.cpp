@@ -8,76 +8,57 @@ namespace aliceVision
 
 bool PanoramaMap::append(IndexT index, const BoundingBox & box)
 {
-    int maxFactor = pow(2, _scale);
+    BoundingBox bbox = box;
     
-    BoundingBox scaled = box.divide(maxFactor);
+    // if the reference bounding box is looping on the right of the panorama, 
+    // make it loop on the left instead to reduce the number of further possibilities
+    if (bbox.getRight() >= _panoramaWidth && bbox.width < _panoramaWidth) 
+    {
+        bbox.left -= _panoramaWidth;    
+    }
 
-    BoundingBox scaledWithBorders = scaled.dilate(_borderSize);
-
-    _map[index] = scaledWithBorders.multiply(maxFactor);
-    _mapRaw[index] = box;
+    _map[index] = bbox;
 
     return true;
 }
 
 bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) const
 {
-    BoundingBox otherBbox = box2;
-    BoundingBox otherBboxLoop = box2;
+    BoundingBox extentedBox1 = box1.divide(_scale).dilate(_borderSize).multiply(_scale);
+    BoundingBox extentedBox2 = box2.divide(_scale).dilate(_borderSize).multiply(_scale);
+
+    BoundingBox otherBbox = extentedBox2;
+    BoundingBox otherBboxLoop = extentedBox2;
     otherBboxLoop.left = otherBbox.left - _panoramaWidth;
-    BoundingBox otherBboxLoopRight = box2;
+    BoundingBox otherBboxLoopRight = extentedBox2;
     otherBboxLoopRight.left = otherBbox.left + _panoramaWidth;
 
-    if (!box1.intersectionWith(otherBbox).isEmpty()) 
+    if (!extentedBox1.intersectionWith(otherBbox).isEmpty()) 
     {
-        /*BoundingBox sbox1 = box1.divide(_scale);
-        BoundingBox sotherBbox = otherBbox.divide(_scale);
-        BoundingBox bb = sbox1.intersectionWith(sotherBbox);
-        BoundingBox bbb = bb.multiply(_scale);
-
-        std::cout << bbb << std::endl;
-        std::cout << "(" << box2 << ")" << std::endl;*/
-
         return true;
     }
 
-    if (!box1.intersectionWith(otherBboxLoop).isEmpty()) 
+    if (!extentedBox1.intersectionWith(otherBboxLoop).isEmpty()) 
     {
-        /*BoundingBox sbox1 = box1.divide(_scale);
-        BoundingBox sotherBbox = otherBboxLoop.divide(_scale);
-        BoundingBox bb = sbox1.intersectionWith(sotherBbox);
-        BoundingBox bbb = bb.multiply(_scale);
-
-        std::cout << bbb << std::endl;
-        std::cout << "(" << box2 << ")" << std::endl;*/
-
         return true;
     }
 
-    if (!box1.intersectionWith(otherBboxLoopRight).isEmpty()) 
+    if (!extentedBox1.intersectionWith(otherBboxLoopRight).isEmpty()) 
     {
-        /*BoundingBox sbox1 = box1.divide(_scale);
-        BoundingBox sotherBbox = otherBboxLoopRight.divide(_scale);
-        BoundingBox bb = sbox1.intersectionWith(sotherBbox);
-        BoundingBox bbb = bb.multiply(_scale);
-
-        std::cout << bbb << std::endl;
-        std::cout << "(" << box2 << ")" << std::endl;*/
-
         return true;
     }
 
     return false;
 }
 
-bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, IndexT reference)
+bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, IndexT reference) const
 {
     if (_map.find(reference) == _map.end())
     {
         return false;
     }
 
-    BoundingBox bbref = _map[reference];
+    BoundingBox bbref = _map.at(reference);
 
     for (auto it : _map)
     {
@@ -95,15 +76,57 @@ bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, IndexT reference)
     return true;
 }
 
-bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, BoundingBox bbref)
+bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const IndexT & referenceIndex, const IndexT & otherIndex) const
 {
+    BoundingBox referenceBoundingBox = _map.at(referenceIndex);
+    BoundingBox referenceBoundingBoxReduced = referenceBoundingBox.divide(_scale).dilate(_borderSize);
 
+    
+    BoundingBox otherBoundingBox = _map.at(otherIndex);
 
-    for (auto it : _map)
+    // Base compare
     {
-        if (intersect(bbref, it.second))
+        BoundingBox otherBoundingBoxReduced = otherBoundingBox.divide(_scale).dilate(_borderSize);
+        BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
+        if (!intersectionSmall.isEmpty())
         {
-            overlaps.push_back(it.first);
+            currentBoundingBoxes.push_back(otherBoundingBox);
+
+            BoundingBox intersection = intersectionSmall.multiply(_scale);
+            intersection = intersection.limitInside(otherBoundingBox);
+            intersections.push_back(intersection);
+        }
+    }
+
+    // Shift to check loop
+    {
+        BoundingBox otherBoundingBoxLoop = otherBoundingBox;
+        otherBoundingBoxLoop.left -= _panoramaWidth;
+        BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
+        BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
+        if (!intersectionSmall.isEmpty())
+        {
+            currentBoundingBoxes.push_back(otherBoundingBoxLoop);
+            
+            BoundingBox intersection = intersectionSmall.multiply(_scale);
+            intersection = intersection.limitInside(otherBoundingBoxLoop);
+            intersections.push_back(intersection);
+        }
+    }
+
+    // Shift to check loop
+    {
+        BoundingBox otherBoundingBoxLoop = otherBoundingBox;
+        otherBoundingBoxLoop.left += _panoramaWidth;
+        BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
+        BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
+        if (!intersectionSmall.isEmpty())
+        {
+            currentBoundingBoxes.push_back(otherBoundingBoxLoop);
+            
+            BoundingBox intersection = intersectionSmall.multiply(_scale);
+            intersection = intersection.limitInside(otherBoundingBoxLoop);
+            intersections.push_back(intersection);
         }
     }
 

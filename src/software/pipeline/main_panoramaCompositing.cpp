@@ -113,12 +113,18 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
     return ret;
 }
 
-bool computeWTALabels(image::Image<IndexT> & labels, std::list<IndexT> & views, const std::string & inputPath, const BoundingBox & boundingBox, int panoramaWidth)
+bool computeWTALabels(image::Image<IndexT> & labels, std::list<IndexT> & views, const std::string & inputPath, const PanoramaMap & map, const IndexT & referenceIndex)
 {
     ALICEVISION_LOG_INFO("Estimating initial labels for panorama");
 
-    WTASeams seams(boundingBox.width, boundingBox.height);
+    BoundingBox referenceBoundingBox;
+    
+    if (!map.getBoundingBox(referenceBoundingBox, referenceIndex))
+    {
+        return false;
+    }
 
+    WTASeams seams(referenceBoundingBox.width, referenceBoundingBox.height);
 
     for (const IndexT & currentId : views)
     {
@@ -139,39 +145,17 @@ bool computeWTALabels(image::Image<IndexT> & labels, std::list<IndexT> & views, 
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
-        BoundingBox currentBb;
-        currentBb.top = offsetY;
-        currentBb.width = mask.Width();
-        currentBb.height = mask.Height();
-        currentBb.left = offsetX;
-        if (!boundingBox.intersectionWith(currentBb).isEmpty())
+        
+        std::vector<BoundingBox> intersections;
+        std::vector<BoundingBox> currentBoundingBoxes;
+        if (!map.getIntersectionsList(intersections, currentBoundingBoxes, referenceIndex, currentId))
         {
-            if (!seams.append(mask, weights, currentId, currentBb.left - boundingBox.left, offsetY - boundingBox.top)) 
-            {
-                return false;
-            }
+            continue;
         }
-
-    
-        currentBb.left = offsetX - panoramaWidth;
-        currentBb.top = offsetY;
-        currentBb.width = mask.Width();
-        currentBb.height = mask.Height();
-        if (!boundingBox.intersectionWith(currentBb).isEmpty())
+        
+        for (const BoundingBox & bbox : currentBoundingBoxes)
         {
-            if (!seams.append(mask, weights, currentId, currentBb.left - boundingBox.left, offsetY - boundingBox.top)) 
-            {
-                return false;
-            }
-        }
-
-        currentBb.left = offsetX + panoramaWidth;
-        currentBb.top = offsetY;
-        currentBb.width = mask.Width();
-        currentBb.height = mask.Height();
-        if (!boundingBox.intersectionWith(currentBb).isEmpty())
-        {
-            if (!seams.append(mask, weights, currentId, currentBb.left - boundingBox.left, offsetY - boundingBox.top)) 
+            if (!seams.append(mask, weights, currentId, bbox.left - referenceBoundingBox.left, bbox.top - referenceBoundingBox.top)) 
             {
                 return false;
             }
@@ -288,7 +272,8 @@ int aliceVision_main(int argc, char** argv)
         rangeSize = int(viewsCount);
     }
 
-
+    // Build the map of inputs in the final panorama
+    // This is mostly meant to compute overlaps between inputs
     const size_t borderSize = 2;
     std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize);
     if (viewsCount == 0) 
@@ -297,6 +282,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Build a list of views
     std::vector<std::shared_ptr<sfmData::View>> views;
     for (auto & vIterator : sfmData.getViews())
     {
@@ -308,19 +294,19 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << views.size());
         
         IndexT viewReference = views[posReference]->getViewId();
-        /*if (viewReference != 672262770) 
-        {
-            continue;
-        }*/
-
+        //if (viewReference != 137597937) continue;
+        // Get the list of input which should be processed for this reference view bounding box
         std::list<IndexT> overlaps;
         if (!panoramaMap->getOverlaps(overlaps, viewReference)) 
         {
             ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
             return EXIT_FAILURE;
         }
+
+        // Add the current input also for simpler processing
         overlaps.push_back(viewReference);
 
+        // Get the input bounding box to define the ROI
         BoundingBox referenceBoundingBox;
         if (!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference)) 
         {
@@ -328,16 +314,8 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        bool shifted = false;
-        if (referenceBoundingBox.getRight() >= panoramaMap->getWidth() && referenceBoundingBox.width < panoramaMap->getWidth()) 
-        {
-            referenceBoundingBox.left -= panoramaMap->getWidth();
-            shifted = true;
-        }
-
         std::unique_ptr<Compositer> compositer;
         compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(referenceBoundingBox.width, referenceBoundingBox.height, panoramaMap->getScale()));
-
         if (!compositer->initialize())
         {
             ALICEVISION_LOG_ERROR("Error initializing panorama");
@@ -345,17 +323,17 @@ int aliceVision_main(int argc, char** argv)
         }
 
         image::Image<IndexT> labels;
-        if (!computeWTALabels(labels, overlaps, warpingFolder, referenceBoundingBox, panoramaMap->getWidth())) 
+        if (!computeWTALabels(labels, overlaps, warpingFolder, *panoramaMap, viewReference)) 
         {
             ALICEVISION_LOG_ERROR("Error estimating panorama labels for this input");
             return false;
         }
         
-        {
+        /*{
         const std::string viewIdStr = std::to_string(viewReference);
         const std::string outputFilePath = (fs::path(outputFolder) / (viewIdStr + "_label.exr")).string();
         image::writeImage(outputFilePath, labels, image::EImageColorSpace::NO_CONVERSION);
-        }
+        }*/
     
         int posCurrent = 0;
         for (IndexT viewCurrent : overlaps)
@@ -375,47 +353,53 @@ int aliceVision_main(int argc, char** argv)
             image::Image<unsigned char> mask;
             image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
-            // Retrieve position of image in panorama
-            oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
-            int offsetX = metadata.find("AliceVision:offsetX")->get_int();
-            int offsetY = metadata.find("AliceVision:offsetY")->get_int();
-
-            if (offsetX > referenceBoundingBox.getRight())
+            std::vector<BoundingBox> intersections;
+            std::vector<BoundingBox> currentBoundingBoxes;
+            if (!panoramaMap->getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
             {
-                offsetX -= panoramaMap->getWidth();
+                continue;
             }
-
-            image::Image<float> weights;        
-            /*const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
-            ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
-            image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
-            weights = image::Image<float>(mask.Width(), mask.Height());
             
-            if (!getMaskFromLabels(weights, labels, viewCurrent, offsetX - referenceBoundingBox.left, offsetY - referenceBoundingBox.top)) 
+            for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
             {
-                ALICEVISION_LOG_ERROR("Error estimating seams image");
-                return EXIT_FAILURE;
-            }
+                const BoundingBox & bbox = currentBoundingBoxes[indexIntersection];
+                const BoundingBox & bboxIntersect = intersections[indexIntersection];
 
-            if (!compositer->append(source, mask, weights, offsetX - referenceBoundingBox.left, offsetY - referenceBoundingBox.top))
-            {
-                ALICEVISION_LOG_INFO("Error in compositer append");
-                return EXIT_FAILURE;
-            }  
+                BoundingBox cutBoundingBox;
+                cutBoundingBox.left = bboxIntersect.left - bbox.left;
+                cutBoundingBox.top = bboxIntersect.top - bbox.top;
+                cutBoundingBox.width = bboxIntersect.width;
+                cutBoundingBox.height = bboxIntersect.height;
+                if (cutBoundingBox.isEmpty())
+                {
+                    continue;
+                }
 
-            if (mask.Width() >= panoramaMap->getWidth() || referenceBoundingBox.width >= panoramaMap->getWidth())
-            {
-                if (!getMaskFromLabels(weights, labels, viewCurrent, offsetX - panoramaMap->getWidth() - referenceBoundingBox.left, offsetY - referenceBoundingBox.top)) 
+                /*const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
+                ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
+                image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
+                image::Image<float> weights; 
+                weights = image::Image<float>(mask.Width(), mask.Height());
+                
+                if (!getMaskFromLabels(weights, labels, viewCurrent, bbox.left - referenceBoundingBox.left, bbox.top - referenceBoundingBox.top)) 
                 {
                     ALICEVISION_LOG_ERROR("Error estimating seams image");
                     return EXIT_FAILURE;
                 }
 
-                if (!compositer->append(source, mask, weights, offsetX - panoramaMap->getWidth() - referenceBoundingBox.left, offsetY - referenceBoundingBox.top))
+                image::Image<image::RGBfColor> subsource(cutBoundingBox.width, cutBoundingBox.height); 
+                image::Image<unsigned char> submask(cutBoundingBox.width, cutBoundingBox.height); 
+                image::Image<float> subweights(cutBoundingBox.width, cutBoundingBox.height); 
+
+                subsource = source.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+                submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+                subweights = weights.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+        
+                if (!compositer->append(subsource, submask, subweights, bboxIntersect.left - referenceBoundingBox.left, bboxIntersect.top - referenceBoundingBox.top))
                 {
                     ALICEVISION_LOG_INFO("Error in compositer append");
                     return EXIT_FAILURE;
-                } 
+                }
             }
         }
 

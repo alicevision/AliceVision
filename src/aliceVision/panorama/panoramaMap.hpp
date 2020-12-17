@@ -23,8 +23,7 @@ public:
 
     bool append(IndexT index, const BoundingBox & box);
 
-    bool getOverlaps(std::list<IndexT> & overlaps, IndexT reference);
-    bool getOverlaps(std::list<IndexT> & overlaps, BoundingBox bbref);
+    bool getOverlaps(std::list<IndexT> & overlaps, IndexT reference) const;
 
     size_t getWidth() const
     {
@@ -41,29 +40,19 @@ public:
         return _scale;
     }
 
-    bool getEnhancedBoundingBox(BoundingBox & bb, const IndexT & id)
+    bool getBoundingBox(BoundingBox & bb, const IndexT & id) const
     {
         if (_map.find(id) == _map.end()) 
         {
             return false;
         }
 
-        bb = _map[id];
+        bb = _map.at(id);
 
         return true;
     }
 
-    bool getBoundingBox(BoundingBox & bb, const IndexT & id)
-    {
-        if (_mapRaw.find(id) == _mapRaw.end()) 
-        {
-            return false;
-        }
-
-        bb = _mapRaw[id];
-
-        return true;
-    }
+    bool getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const IndexT & referenceIndex, const IndexT & otherIndex) const;
 
 
 private:
@@ -71,7 +60,6 @@ private:
 
 private:
     std::map<IndexT, BoundingBox> _map;
-    std::map<IndexT, BoundingBox> _mapRaw;
 
     int _panoramaWidth;
     int _panoramaHeight;
