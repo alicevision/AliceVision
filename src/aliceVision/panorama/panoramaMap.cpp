@@ -133,4 +133,41 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
     return true;
 }
 
+bool PanoramaMap::optimizeChunks(std::vector<std::vector<IndexT>> & chunks, int chunkSize) {
+
+    int countViews = _map.size();
+    int countChunks =  int(std::ceil(double(countViews) / double(chunkSize)));
+
+    chunks.clear();
+    chunks.resize(countChunks);
+
+    for (auto item : _map) 
+    {
+        std::sort(chunks.begin(), chunks.end(), 
+            [this](const std::vector<IndexT> & first, const std::vector<IndexT> & second)
+            {
+                size_t size_first = 0;
+                for (int i = 0; i < first.size(); i++) 
+                {
+                    IndexT curIndex = first[i];
+                    size_first += _map.at(curIndex).area();
+                }
+
+                size_t size_second = 0;
+                for (int i = 0; i < second.size(); i++) 
+                {
+                    IndexT curIndex = second[i];
+                    size_second += _map.at(curIndex).area();
+                }
+
+                return (size_first < size_second);
+            }
+        );
+
+        chunks[0].push_back(item.first);
+    }
+
+    return true;
+}
+
 }

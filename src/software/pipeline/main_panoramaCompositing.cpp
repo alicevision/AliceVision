@@ -174,7 +174,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     std::string temporaryCachePath;
     std::string compositerType = "multiband";
-    int rangeStart = -1;
+    int rangeIteration = -1;
 	int rangeSize = 1;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
@@ -200,7 +200,7 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
-        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Range chunk id.")
 		("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
     allParams.add(optionalParams);
 
@@ -251,24 +251,26 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Define range to compute
-    size_t viewsCount = sfmData.getViews().size();
-    if(rangeStart != -1)
+    int viewsCount = sfmData.getViews().size();
+    if(rangeIteration != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 ||
-            std::size_t(rangeStart) > viewsCount)
+        if(rangeIteration < 0 || rangeSize < 0)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(std::size_t(rangeStart + rangeSize) > viewsCount)
+        int countIterations = int(std::ceil(double(viewsCount) / double(rangeSize)));
+       
+        if(rangeIteration >= countIterations)
         {
-            rangeSize = int(viewsCount) - rangeStart;
+            ALICEVISION_LOG_ERROR("Range is incorrect");
+            return EXIT_FAILURE;
         }
     }
     else
     {
-        rangeStart = 0;
+        rangeIteration = 0;
         rangeSize = int(viewsCount);
     }
 
@@ -282,19 +284,22 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Build a list of views
-    std::vector<std::shared_ptr<sfmData::View>> views;
-    for (auto & vIterator : sfmData.getViews())
+    // Distribute more smartly inputs among chunks
+    std::vector<std::vector<IndexT>> chunks;
+    if (!panoramaMap->optimizeChunks(chunks, rangeSize))
     {
-        views.push_back(vIterator.second);
+        ALICEVISION_LOG_ERROR("Can't build chunks");
+        return EXIT_FAILURE;
     }
+    
 
-    for (std::size_t posReference = std::size_t(rangeStart); posReference < std::size_t(rangeStart + rangeSize); ++posReference)
+    const std::vector<IndexT> & chunk = chunks[rangeIteration];
+    for (std::size_t posReference = 0; posReference < chunk.size(); posReference++)
     {
-        ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << views.size());
+        ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
+
+        IndexT viewReference = chunk[posReference];
         
-        IndexT viewReference = views[posReference]->getViewId();
-        //if (viewReference != 137597937) continue;
         // Get the list of input which should be processed for this reference view bounding box
         std::list<IndexT> overlaps;
         if (!panoramaMap->getOverlaps(overlaps, viewReference)) 

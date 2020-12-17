@@ -54,6 +54,7 @@ public:
 
     bool getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const IndexT & referenceIndex, const IndexT & otherIndex) const;
 
+    bool optimizeChunks(std::vector<std::vector<IndexT>> & chunks, int chunkSize);
 
 private:
     bool intersect(const BoundingBox & box1, const BoundingBox & box2) const;
