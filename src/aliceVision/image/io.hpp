@@ -48,13 +48,17 @@ enum class EImageFileType
  */
 struct ImageReadOptions
 {  
-  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true) :
-  outputColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance)
+  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
+  outputColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance), subROI(roi)
   {
   }
 
   EImageColorSpace outputColorSpace;
   bool applyWhiteBalance;
+
+  //ROI for this image.
+  //If the image contains an roi, this is the roi INSIDE the roi.
+  oiio::ROI subROI;
 };
 
 

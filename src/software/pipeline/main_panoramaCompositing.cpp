@@ -272,9 +272,22 @@ int aliceVision_main(int argc, char** argv)
         rangeSize = int(viewsCount);
     }
 
+    size_t borderSize;
+    if (compositerType == "multiband")
+    {
+        borderSize = 2;
+    }
+    else if (compositerType == "alpha")
+    {
+        borderSize = 0;
+    }
+    else 
+    {
+        borderSize = 0;
+    }
+
     // Build the map of inputs in the final panorama
     // This is mostly meant to compute overlaps between inputs
-    const size_t borderSize = 2;
     std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize);
     if (viewsCount == 0) 
     {
@@ -317,19 +330,45 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
+        //Create a compositer depending on what we need
+        bool needWeights;
+        bool needSeams;
         std::unique_ptr<Compositer> compositer;
-        compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(referenceBoundingBox.width, referenceBoundingBox.height, panoramaMap->getScale()));
+        if (compositerType == "multiband")
+        {
+            needWeights = false;
+            needSeams = true;
+            compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(referenceBoundingBox.width, referenceBoundingBox.height, panoramaMap->getScale()));
+        }
+        else if (compositerType == "alpha")
+        {
+            needWeights = true;
+            needSeams = false;
+            compositer = std::unique_ptr<Compositer>(new AlphaCompositer(referenceBoundingBox.width, referenceBoundingBox.height));
+        }
+        else 
+        {
+            needWeights = false;
+            needSeams = false;
+            compositer = std::unique_ptr<Compositer>(new Compositer(referenceBoundingBox.width, referenceBoundingBox.height));
+        }
+        
+        // Compositer initialization
         if (!compositer->initialize())
         {
             ALICEVISION_LOG_ERROR("Error initializing panorama");
             return false;
         }
 
+        // Compute initial seams
         image::Image<IndexT> labels;
-        if (!computeWTALabels(labels, overlaps, warpingFolder, *panoramaMap, viewReference)) 
+        if (needSeams)
         {
-            ALICEVISION_LOG_ERROR("Error estimating panorama labels for this input");
-            return false;
+            if (!computeWTALabels(labels, overlaps, warpingFolder, *panoramaMap, viewReference)) 
+            {
+                ALICEVISION_LOG_ERROR("Error estimating panorama labels for this input");
+                return false;
+            }
         }
     
         int posCurrent = 0;
@@ -350,6 +389,7 @@ int aliceVision_main(int argc, char** argv)
             image::Image<unsigned char> mask;
             image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
 
+            //Compute list of intersection between this view and the reference view
             std::vector<BoundingBox> intersections;
             std::vector<BoundingBox> currentBoundingBoxes;
             if (!panoramaMap->getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
@@ -372,16 +412,22 @@ int aliceVision_main(int argc, char** argv)
                     continue;
                 }
 
-                /*const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
-                ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
-                image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);*/
+
                 image::Image<float> weights; 
-                weights = image::Image<float>(mask.Width(), mask.Height());
-                
-                if (!getMaskFromLabels(weights, labels, viewCurrent, bbox.left - referenceBoundingBox.left, bbox.top - referenceBoundingBox.top)) 
+                if (needWeights)
                 {
-                    ALICEVISION_LOG_ERROR("Error estimating seams image");
-                    return EXIT_FAILURE;
+                    const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
+                    ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
+                    image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
+                }
+                else if (needSeams)
+                {
+                    weights = image::Image<float>(mask.Width(), mask.Height());
+                    if (!getMaskFromLabels(weights, labels, viewCurrent, bbox.left - referenceBoundingBox.left, bbox.top - referenceBoundingBox.top)) 
+                    {
+                        ALICEVISION_LOG_ERROR("Error estimating seams image");
+                        return EXIT_FAILURE;
+                    }
                 }
 
                 image::Image<image::RGBfColor> subsource(cutBoundingBox.width, cutBoundingBox.height); 
@@ -390,7 +436,11 @@ int aliceVision_main(int argc, char** argv)
 
                 subsource = source.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
                 submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
-                subweights = weights.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+
+                if (weights.Width() > 0)
+                {
+                    subweights = weights.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
+                }
         
                 if (!compositer->append(subsource, submask, subweights, bboxIntersect.left - referenceBoundingBox.left, bboxIntersect.top - referenceBoundingBox.top))
                 {
@@ -401,7 +451,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
 
-        std::cout << "terminate" << std::endl;
+        ALICEVISION_LOG_INFO("Terminate compositing for this view");
         if (!compositer->terminate())
         {
             ALICEVISION_LOG_ERROR("Error terminating panorama");

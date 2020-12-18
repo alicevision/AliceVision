@@ -269,18 +269,41 @@ void readImage(const std::string& path,
 
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-  inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
+  //Handle ROI option
+  oiio::ROI customROI = inBuf.roi();
+  oiio::ROI subROI = imageReadOptions.subROI;
+  if (imageReadOptions.subROI.defined())
+  {
+    //Make sure both roi are in the same frame
+    subROI.xbegin += inBuf.roi().xbegin;
+    subROI.ybegin += inBuf.roi().ybegin;
+    
+    //Keep the intersection
+    customROI = oiio::roi_intersection(subROI, customROI);
+    customROI.zbegin = inBuf.roi().zbegin;
+    customROI.zend = inBuf.roi().zend;
+    customROI.chbegin = inBuf.roi().chbegin;
+    customROI.chend = inBuf.roi().chend;
+  }
+
+  inBuf.read(0, 0, false, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
   if(!inBuf.initialized())
+  {
     throw std::runtime_error("Cannot find/open image file '" + path + "'.");
+  }
 
   // check picture channels number
   if(inBuf.spec().nchannels != 1 && inBuf.spec().nchannels < 3)
+  {
     throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+  }
 
   // color conversion
   if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
+  {
     throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
+  }
 
   const std::string& colorSpace = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
   ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
@@ -289,7 +312,7 @@ void readImage(const std::string& path,
   {
     if (colorSpace != "sRGB")
     {
-      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
+      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB", true, "", "", nullptr, customROI);
       ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
     }
   }
@@ -297,7 +320,7 @@ void readImage(const std::string& path,
   {
     if (colorSpace != "Linear")
     {
-      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear", true, "", "", nullptr, customROI);
       ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
     }
   }
@@ -306,15 +329,15 @@ void readImage(const std::string& path,
   if(nchannels == 1 && inBuf.spec().nchannels >= 3)
   {
     // convertion region of interest (for inBuf.spec().nchannels > 3)
-    oiio::ROI convertionROI = inBuf.roi();
-    convertionROI.chbegin = 0;
-    convertionROI.chend = 3;
+    oiio::ROI convertionROI = customROI;
+    customROI.chbegin = 0;
+    customROI.chend = 3;
 
     // compute luminance via a weighted sum of R,G,B
     // (assuming Rec709 primaries and a linear scale)
     const float weights[3] = {.2126f, .7152f, .0722f};
     oiio::ImageBuf grayscaleBuf;
-    oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
+    oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, customROI);
     inBuf.copy(grayscaleBuf);
 
     // TODO: if inBuf.spec().nchannels == 4: premult?
@@ -346,9 +369,9 @@ void readImage(const std::string& path,
   }
 
   // copy pixels from oiio to eigen
-  image.resize(inBuf.spec().width, inBuf.spec().height, false);
+  image.resize(customROI.width(), customROI.height(), false);
   {
-    oiio::ROI exportROI = inBuf.roi();
+    oiio::ROI exportROI = customROI;
     exportROI.chbegin = 0;
     exportROI.chend = nchannels;
 
