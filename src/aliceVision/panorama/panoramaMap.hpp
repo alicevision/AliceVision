@@ -30,7 +30,7 @@ public:
         return _panoramaWidth;
     }
 
-    size_t geHeight() const
+    size_t getHeight() const
     {
         return _panoramaHeight;
     }

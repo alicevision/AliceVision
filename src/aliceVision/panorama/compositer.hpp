@@ -63,34 +63,10 @@ public:
 
     virtual bool terminate() { return true; }
 
-    bool save(const std::string &path, const image::EStorageDataType &storageDataType) 
+    
+    image::Image<image::RGBAfColor> &  getOutput() 
     {
-        if (storageDataType == image::EStorageDataType::HalfFinite)
-        {
-            for (int i = 0; i < _panorama.Height(); i++) 
-            {
-                for (int j = 0; j < _panorama.Width(); j++)
-                {
-                    image::RGBAfColor ret;
-                    image::RGBAfColor c = _panorama(i, j);
-
-                    const float limit = float(HALF_MAX);
-                    
-                    ret.r() = clamp(c.r(), -limit, limit);
-                    ret.g() = clamp(c.g(), -limit, limit);
-                    ret.b() = clamp(c.b(), -limit, limit);
-                    ret.a() = c.a();
-
-                    _panorama(i, j) = ret;
-                }
-            }
-        }
-
-        oiio::ParamValueList metadata;
-        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType", EStorageDataType_enumToString(storageDataType)));
-        image::writeImage(path, _panorama, image::EImageColorSpace::LINEAR, metadata);
-
-        return true;
+        return _panorama;
     }
 
     virtual int getBorderSize() const 

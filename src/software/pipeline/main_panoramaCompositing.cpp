@@ -172,7 +172,6 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilepath;
     std::string warpingFolder;
     std::string outputFolder;
-    std::string temporaryCachePath;
     std::string compositerType = "multiband";
     int rangeIteration = -1;
 	int rangeSize = 1;
@@ -191,8 +190,7 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
         ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
-        ("output,o", po::value<std::string>(&outputFolder)->required(), "Path of the output panorama.")
-        ("cacheFolder,f", po::value<std::string>(&temporaryCachePath)->required(), "Path of the temporary cache.");
+        ("output,o", po::value<std::string>(&outputFolder)->required(), "Path of the output panorama.");
     allParams.add(requiredParams);
 
     // Description of optional parameters
@@ -333,12 +331,6 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("Error estimating panorama labels for this input");
             return false;
         }
-        
-        /*{
-        const std::string viewIdStr = std::to_string(viewReference);
-        const std::string outputFilePath = (fs::path(outputFolder) / (viewIdStr + "_label.exr")).string();
-        image::writeImage(outputFilePath, labels, image::EImageColorSpace::NO_CONVERSION);
-        }*/
     
         int posCurrent = 0;
         for (IndexT viewCurrent : overlaps)
@@ -417,10 +409,37 @@ int aliceVision_main(int argc, char** argv)
 
         const std::string viewIdStr = std::to_string(viewReference);
         const std::string outputFilePath = (fs::path(outputFolder) / (viewIdStr + ".exr")).string();
-        if (!compositer->save(outputFilePath, storageDataType))
+        image::Image<image::RGBAfColor> output = compositer->getOutput();
+
+         if (storageDataType == image::EStorageDataType::HalfFinite)
         {
-            ALICEVISION_LOG_ERROR("Error terminating panorama");
+            for (int i = 0; i < output.Height(); i++) 
+            {
+                for (int j = 0; j < output.Width(); j++)
+                {
+                    image::RGBAfColor ret;
+                    image::RGBAfColor c = output(i, j);
+
+                    const float limit = float(HALF_MAX);
+                    
+                    ret.r() = clamp(c.r(), -limit, limit);
+                    ret.g() = clamp(c.g(), -limit, limit);
+                    ret.b() = clamp(c.b(), -limit, limit);
+                    ret.a() = c.a();
+
+                    output(i, j) = ret;
+                }
+            }
         }
+
+        oiio::ParamValueList metadata;
+        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType", EStorageDataType_enumToString(storageDataType)));
+        metadata.push_back(oiio::ParamValue("AliceVision:offsetX", int(referenceBoundingBox.left)));
+		metadata.push_back(oiio::ParamValue("AliceVision:offsetY", int(referenceBoundingBox.top)));
+        metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", int(panoramaMap->getWidth())));
+		metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", int(panoramaMap->getHeight())));
+
+        image::writeImage(outputFilePath, output, image::EImageColorSpace::LINEAR, metadata);
     }
 
     return EXIT_SUCCESS;

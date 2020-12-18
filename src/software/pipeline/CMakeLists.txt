@@ -137,6 +137,16 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_panorama
           ${Boost_LIBRARIES}
   )
+  alicevision_add_software(aliceVision_panoramaMerging
+    SOURCE main_panoramaMerging.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          aliceVision_panorama
+          ${Boost_LIBRARIES}
+  )
   alicevision_add_software(aliceVision_panoramaCompositing
     SOURCE main_panoramaCompositing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
