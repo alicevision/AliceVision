@@ -536,10 +536,13 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       }
 
       // Select common bearing vectors
+
+      // if multiple views are sharing the same camera pose, we may end-up with multiple view pairs
       if (match_pairs.size() > 1)
       {
-        ALICEVISION_LOG_WARNING("Compute relative pose between more than two view is not supported");
-        continue;
+          ALICEVISION_LOG_INFO("Compute relative pose: multiple views sharing the same pose. "
+                                   << match_pairs.size() << " image matching pairs between the 2 poses ("
+                                   << relative_pose_pair.first << ", " << relative_pose_pair.second << ").");
       }
 
       const Pair pairIterator = *(match_pairs.begin());
@@ -549,7 +552,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       const View* view_J = _sfmData.views[J].get();
 
       //Check that valid cameras are existing for the pair of view
-      if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 || _sfmData.getIntrinsics().count(view_J->getIntrinsicId()) == 0) {
+      if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 || _sfmData.getIntrinsics().count(view_J->getIntrinsicId()) == 0)
+      {
         continue;
       }
 
@@ -572,12 +576,14 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       }
     
       // Build a list of pairs in meters
-      const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
-      const std::size_t nbBearing = matchesPerDesc.getNbAllMatches();
+      std::size_t nbBearing = 0;
+      for(const auto& match_pair: match_pairs)
+      {
+          const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(match_pair);
+          nbBearing += matchesPerDesc.getNbAllMatches();
+      }
       std::size_t iBearing = 0;
-
       Mat x1, x2;
-      
       if (useSpherical)
       {
         x1 = Mat(3, nbBearing);
@@ -589,34 +595,40 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         x2 = Mat(2, nbBearing);
       }
 
-      for(const auto& matchesPerDescIt: matchesPerDesc)
+      for(const auto& match_pair : match_pairs)
       {
-        const feature::EImageDescriberType descType = matchesPerDescIt.first;
-        assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-        const matching::IndMatches & matches = matchesPerDescIt.second;
-
-        const feature::PointFeatures & feats_I = _featuresPerView->getFeatures(I, descType);
-        const feature::PointFeatures & feats_J = _featuresPerView->getFeatures(J, descType);
-
-        for (const auto & match : matches)
-        {
-          const feature::PointFeature & feat_I = feats_I[match._i];
-          const feature::PointFeature & feat_J = feats_J[match._j];
-
-          const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(feat_I.coords().cast<double>())));
-          const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(feat_J.coords().cast<double>())));
-
-          if (useSpherical)
+          const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(match_pair);
+          for(const auto& matchesPerDescIt : matchesPerDesc)
           {
-            x1.col(iBearing) = bearingVector_I;
-            x2.col(iBearing++) = bearingVector_J;
+              const feature::EImageDescriberType descType = matchesPerDescIt.first;
+              assert(descType != feature::EImageDescriberType::UNINITIALIZED);
+              const matching::IndMatches& matches = matchesPerDescIt.second;
+
+              const feature::PointFeatures& feats_I = _featuresPerView->getFeatures(I, descType);
+              const feature::PointFeatures& feats_J = _featuresPerView->getFeatures(J, descType);
+
+              for(const auto& match : matches)
+              {
+                  const feature::PointFeature& feat_I = feats_I[match._i];
+                  const feature::PointFeature& feat_J = feats_J[match._j];
+
+                  const Vec3 bearingVector_I =
+                      cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(feat_I.coords().cast<double>())));
+                  const Vec3 bearingVector_J =
+                      cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(feat_J.coords().cast<double>())));
+
+                  if(useSpherical)
+                  {
+                      x1.col(iBearing) = bearingVector_I;
+                      x2.col(iBearing++) = bearingVector_J;
+                  }
+                  else
+                  {
+                      x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
+                      x2.col(iBearing++) = bearingVector_J.head(2) / bearingVector_J(2);
+                  }
+              }
           }
-          else
-          {
-            x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
-            x2.col(iBearing++) = bearingVector_J.head(2) / bearingVector_J(2);
-          }
-        }
       }
       assert(nbBearing == iBearing);
 
@@ -716,37 +728,43 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       // Sort all inliers by increasing ids
       if (!relativePose_info.vec_inliers.empty())
       {
-        std::sort(relativePose_info.vec_inliers.begin(), relativePose_info.vec_inliers.end());
+          std::sort(relativePose_info.vec_inliers.begin(), relativePose_info.vec_inliers.end());
 
-        size_t index = 0;
-        size_t index_inlier = 0;
-        for(const auto& matchesPerDescIt: matchesPerDesc)
-        {
-          const feature::EImageDescriberType descType = matchesPerDescIt.first;
-          const matching::IndMatches & matches = matchesPerDescIt.second;
+          size_t index = 0;
+          size_t index_inlier = 0;
 
-          for (const auto & match : matches)
+          for(const auto& match_pair : match_pairs)
           {
-            if(index_inlier >= relativePose_info.vec_inliers.size())
-              break;
-            size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
-            if (index == next_inlier)
-            {
-              Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
-              Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+              const matching::MatchesPerDescType& matchesPerDesc = _pairwiseMatches->at(match_pair);
+              for(const auto& matchesPerDescIt : matchesPerDesc)
+              {
+                  const feature::EImageDescriberType descType = matchesPerDescIt.first;
+                  const matching::IndMatches& matches = matchesPerDescIt.second;
 
-              const PointFeature& pI = _featuresPerView->getFeatures(I, descType)[match._i];
-              const PointFeature& pJ = _featuresPerView->getFeatures(J, descType)[match._j];
+                  for(const auto& match : matches)
+                  {
+                      if(index_inlier >= relativePose_info.vec_inliers.size())
+                          break;
+                      size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
+                      if(index == next_inlier)
+                      {
+                          Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
+                          Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
 
-              const sfm::Constraint2D constraint(I, sfm::Observation(pt1, match._i, pI.scale()), J, sfm::Observation(pt2, match._j, pJ.scale()), descType);
-              constraints2d.push_back(constraint);
+                          const PointFeature& pI = _featuresPerView->getFeatures(I, descType)[match._i];
+                          const PointFeature& pJ = _featuresPerView->getFeatures(J, descType)[match._j];
 
-               ++index_inlier;
-            }
+                          const sfm::Constraint2D constraint(I, sfm::Observation(pt1, match._i, pI.scale()), J,
+                                                             sfm::Observation(pt2, match._j, pJ.scale()), descType);
+                          constraints2d.push_back(constraint);
 
-            ++index;
+                          ++index_inlier;
+                      }
+
+                      ++index;
+                  }
+              }
           }
-        }
       }
 
       // #pragma omp critical
