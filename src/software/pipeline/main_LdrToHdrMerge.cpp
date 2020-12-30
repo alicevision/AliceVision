@@ -57,7 +57,7 @@ int aliceVision_main(int argc, char** argv)
     int offsetRefBracketIndex = 0;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
-    float highlightCorrectionFactor = 1.0f;
+    float highlightCorrectionFactor = 0.0f;
     float highlightTargetLux = 120000.0f;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
@@ -291,7 +291,7 @@ int aliceVision_main(int argc, char** argv)
         if(images.size() > 1)
         {
             hdr::hdrMerge merge;
-            float targetCameraExposure = targetView->getCameraExposureSetting();
+            const float targetCameraExposure = targetView->getCameraExposureSetting();
             ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
             merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure);
             if(highlightCorrectionFactor > 0.0f)
