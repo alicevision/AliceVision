@@ -52,3 +52,19 @@ BOOST_AUTO_TEST_CASE(View_Metadata)
   }
 }
 
+
+BOOST_AUTO_TEST_CASE(View_ExposureValues)
+{
+    using namespace aliceVision::sfmData;
+
+    // See https://en.wikipedia.org/wiki/Exposure_value#EV_as_an_indicator_of_camera_settings
+    assert(std::round(getEV(60.0, 1.0, 100.0)) == -6);
+    assert(std::round(getEV(1.0, 8.0, 100.0)) == 6);
+    assert(std::round(getEV(1.0 / 500.0, 64.0, 100.0)) == 21);
+    assert(std::round(getEV(1.0 / 32000.0, 8.0, 100.0)) == 21);
+    // https://en.wikipedia.org/wiki/Sunny_16_rule
+    assert(std::round(getEV(1.0 / 100.0, 16.0, 100.0)) == 15);
+    // https://en.wikipedia.org/wiki/Looney_11_rule
+    assert(std::round(getEV(1.0 / 100.0, 11.0, 100.0)) == 14);
+}
+
