@@ -161,8 +161,15 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
         return;
 
     const image::Image<image::RGBfColor>& inputImage = images.front();
-    // Target Camera Exposure = 1 for EV-0 (iso=100, shutter=1, fnumber=1) => 2.5 lux
-    float highlightTarget = highlightTargetLux * targetCameraExposure * 2.5;
+    // See https://en.wikipedia.org/wiki/Exposure_value#Relationship_of_EV_to_lighting_conditions
+    // "Illuminance is measured using a flat sensor; if the common value of C = 250 (unit: lux s ISO=lm s/m2 ISO) is used,
+    // an EV of zero (e.g., an aperture of f/1 and a shutter time of 1 sec) for ISO = 100 corresponds to an illuminance of 2.5 lux (0.23 fc)."
+    // Target CameraExposure=1 <=> EV=0 <=> (iso=100, shutter=1, fnumber=1) <=> 2.5 lux
+    const float highlightTarget = (highlightTargetLux / 2.5) * targetCameraExposure;
+
+    ALICEVISION_LOG_DEBUG("highlightTargetLux: " << highlightTargetLux);
+    ALICEVISION_LOG_DEBUG("targetCameraExposure: " << targetCameraExposure);
+    ALICEVISION_LOG_DEBUG("highlightTarget: " << highlightTarget);
 
     // get images width, height
     const std::size_t width = inputImage.Width();
