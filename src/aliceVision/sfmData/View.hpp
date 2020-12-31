@@ -332,7 +332,16 @@ public:
    */
   double getMetadataShutter() const
   {
-      return getDoubleMetadata({"ExposureTime", "Shutter Speed Value"});
+      if(hasDigitMetadata({"ExposureTime"}))
+      {
+          return getDoubleMetadata({"ExposureTime"});
+      }
+      if(hasDigitMetadata({"ShutterSpeedValue", "Shutter Speed Value"}))
+      {
+          const double shutterSpeedValue = getDoubleMetadata({"ShutterSpeedValue", "Shutter Speed Value"});
+          // exposureTime = 1.0 / 2.0^(shutterSpeedValue)
+          return 1.0 / std::pow(2.0, shutterSpeedValue);
+      }
   }
 
   /**
