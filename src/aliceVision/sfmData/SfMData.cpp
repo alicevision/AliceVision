@@ -129,6 +129,10 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
       // fs::canonical can only be used if the path exists
       absolutePaths.push_back(fs::canonical(folders.at(i), fs::path(absolutePath).parent_path()).string());
     }
+    else
+    {
+      absolutePaths.push_back(folders.at(i));
+    }
   }
   return absolutePaths;
 }
