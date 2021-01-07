@@ -342,6 +342,7 @@ public:
           // exposureTime = 1.0 / 2.0^(shutterSpeedValue)
           return 1.0 / std::pow(2.0, shutterSpeedValue);
       }
+      return -1.0;
   }
 
   /**
@@ -360,7 +361,7 @@ public:
           // fnumber = 2^(aperture/2)
           return std::pow(2.0, aperture / 2.0);
       }
-      return -1;
+      return -1.0;
   }
 
   /**
