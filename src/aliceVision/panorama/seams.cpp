@@ -305,9 +305,62 @@ bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
     return true;
 }
 
-bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
+bool WTASeams::appendWithLoop(const aliceVision::image::Image<unsigned char>& inputMask,
+                      const aliceVision::image::Image<float>& inputWeights, 
+                      IndexT currentIndex, size_t offset_x, size_t offset_y)
 {
-    
+    if (inputMask.size() != inputWeights.size())
+    {
+        return false;
+    }    
+
+    for (size_t i = 0; i < inputWeights.Height(); i++)
+    {
+        int y = i + offset_y;
+        if (y < 0 || y >= _panoramaHeight) continue;
+
+        for (size_t j = 0; j < inputWeights.Width(); j++)
+        {
+            int x = j + offset_x;
+            if (x < 0) 
+            {
+                x += _panoramaWidth;
+            }
+            if (x >= _panoramaWidth)
+            {
+                x -= _panoramaWidth;
+            }
+
+            if (!inputMask(i, j))
+            {
+                continue;
+            }
+
+            if (inputWeights(i, j) > _weights(y, x))
+            {
+                _labels(y, x) = currentIndex;
+                _weights(y, x) = inputWeights(i, j);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool HierarchicalGraphcutSeams::initialize(const image::Image<IndexT> & labels) 
+{
+    int width = _outputWidth;
+    int height = _outputHeight;
+
+    for (int i = 0; i < _countLevels; i++)
+    {
+        _graphcuts.emplace_back(width, height);
+
+        //Divide by 2 (rounding to the superior integer)
+        width = int(ceil(float(width) / 2.0f));
+        height = int(ceil(float(height) / 2.0f));
+    }
+
     if (!_graphcuts[0].setOriginalLabels(labels)) 
     {
         return false;
@@ -321,56 +374,12 @@ bool HierarchicalGraphcutSeams::setOriginalLabels(CachedImage<IndexT>& labels)
     for (int l = 1; l < _countLevels; l++)
     {
 
-        CachedImage<IndexT> & largerLabels = _graphcuts[l - 1].getLabels();
-        CachedImage<IndexT> & smallerLabels = _graphcuts[l].getLabels();
+        image::Image<IndexT> & largerLabels = _graphcuts[l - 1].getLabels();
+        image::Image<IndexT> & smallerLabels = _graphcuts[l].getLabels();
 
-        int processingSize = 256;
-
-        for (int i = 0; i < smallerLabels.getHeight(); i+= processingSize)
-        {
-            for (int j = 0; j < smallerLabels.getWidth(); j+= processingSize)
-            {
-                BoundingBox smallBb;
-                smallBb.left = j;
-                smallBb.top = i;
-                smallBb.width = processingSize;
-                smallBb.height = processingSize;
-                smallBb.clampRight(smallerLabels.getWidth() - 1);
-                smallBb.clampBottom(smallerLabels.getHeight() - 1);
-
-                BoundingBox smallInputBb;
-                smallInputBb.left = 0;
-                smallInputBb.top = 0;
-                smallInputBb.width = smallBb.width;
-                smallInputBb.height = smallBb.height;
-
-                BoundingBox largeBb = smallBb.doubleSize();
-                largeBb.clampRight(largerLabels.getWidth() - 1);
-                largeBb.clampBottom(largerLabels.getHeight() - 1);
-
-                BoundingBox largeInputBb;
-                largeInputBb.left = 0;
-                largeInputBb.top = 0;
-                largeInputBb.width = largeBb.width;
-                largeInputBb.height = largeBb.height;
-
-                image::Image<IndexT> largeView(largeBb.width, largeBb.height);
-                if (!largerLabels.extract(largeView, largeInputBb, largeBb)) 
-                {
-                    return false;
-                }
-
-                image::Image<IndexT> smallView(smallBb.width, smallBb.height);
-                downscale(smallView, largeView);
-
-                if (!smallerLabels.assign(smallView, smallInputBb, smallBb))
-                {
-                    return false;
-                }
-            }
-        }
+        downscale(smallerLabels, largerLabels);
     }
-    
+
     return true;
 }
 
@@ -397,48 +406,8 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
 
     for (int level = 0; level < _countLevels; level++)
     {
-        BoundingBox bb;
-        bb.left = 0;
-        bb.top = 0;
-        bb.width = width;
-        bb.height = height;
-
-        //Create cached image and assign image
-        CachedImage<image::RGBfColor> destColor;
-        if (!destColor.createImage(_cacheManager, width, height)) 
-        {
-            return false;
-        }
-
-        if (!destColor.fill(image::RGBfColor(0.0f)))
-        {
-            return false;
-        }
-
-        if (!destColor.assign(feathered, bb, bb)) 
-        {
-            return false;
-        }
-
-        //Create cached mask and assign content
-        CachedImage<unsigned char> destMask;
-        if (!destMask.createImage(_cacheManager, width, height)) 
-        {
-            return false;
-        }
-
-        if (!destMask.fill(0))
-        {
-            return false;
-        }
-
-        if (!destMask.assign(potMask, bb, bb)) 
-        {
-            return false;
-        }
-
         //Assign content to graphcut
-        if (!_graphcuts[level].append(destColor, destMask, currentIndex, newOffsetX, newOffsetY))
+        if (!_graphcuts[level].append(feathered, potMask, currentIndex, newOffsetX, newOffsetY))
         {
             return false;
         }
@@ -473,21 +442,6 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
 
                 bool valid = potMask(di, dj);
 
-                /*if (j < nextMask.Width() - 1) 
-                {
-                    valid = valid && potMask(di, dj + 1);
-                }
-
-                if (i < nextMask.Height() - 1)
-                {
-                    valid = valid && potMask(di + 1, dj);
-
-                    if (j < nextMask.Width() - 1) 
-                    {
-                        valid = valid && potMask(di + 1, dj + 1);
-                    }
-                }*/
-
                 if (valid)
                 {
                     nextMask(i, j) = 255;
@@ -515,9 +469,9 @@ bool HierarchicalGraphcutSeams::process()
     {
         ALICEVISION_LOG_INFO("Hierachical graphcut processing level #" << level);
 
-        CachedImage<IndexT> & smallLabels = _graphcuts[level].getLabels();
-        int w = smallLabels.getWidth();
-        int h = smallLabels.getHeight();
+        image::Image<IndexT> & smallLabels = _graphcuts[level].getLabels();
+        int w = smallLabels.Width();
+        int h = smallLabels.Height();
         
         if (level == _countLevels - 1)
         {
@@ -528,13 +482,8 @@ bool HierarchicalGraphcutSeams::process()
             _graphcuts[level].setMaximalDistance(200);
         }
 
-        bool computeAlphaExpansion = false;
-        if (w < 5000) 
-        {
-            computeAlphaExpansion = true;
-        }
 
-        if(!_graphcuts[level].process(computeAlphaExpansion))
+        if(!_graphcuts[level].process())
         {
             return false;
         }
@@ -545,85 +494,20 @@ bool HierarchicalGraphcutSeams::process()
         }
         
         //Enlarge result of this level to be an initialization for next level
-        CachedImage<IndexT> & largeLabels = _graphcuts[level - 1].getLabels();
+        image::Image<IndexT> & largeLabels = _graphcuts[level - 1].getLabels();
 
-        const int processingSize = 256;
-
-        for (int i = 0; i < smallLabels.getHeight(); i+= processingSize)
+        for (int y = 0; y < largeLabels.Height(); y++) 
         {
-            for (int j = 0; j < smallLabels.getWidth(); j+= processingSize)
+            int hy = y / 2;
+            
+            for (int x = 0; x < largeLabels.Width(); x++)
             {
-                BoundingBox smallBb;
-                smallBb.left = j;
-                smallBb.top = i;
-                smallBb.width = processingSize;
-                smallBb.height = processingSize;
-                smallBb.clampRight(smallLabels.getWidth() - 1);
-                smallBb.clampBottom(smallLabels.getHeight() - 1);
-
-                BoundingBox smallInputBb = smallBb;
-                smallInputBb.left = 0;
-                smallInputBb.top = 0;
-                
-
-                image::Image<IndexT> smallView(smallBb.width, smallBb.height);
-                if (!smallLabels.extract(smallView, smallInputBb, smallBb)) 
-                {
-                    return false;
-                }
-
-                BoundingBox largeBb = smallBb.doubleSize();
-                largeBb.clampRight(largeLabels.getWidth() - 1);
-                largeBb.clampBottom(largeLabels.getHeight() - 1);
-
-                BoundingBox largeInputBb = largeBb;
-                largeInputBb.left = 0;
-                largeInputBb.top = 0;
-
-                image::Image<IndexT> largeView(largeBb.width, largeBb.height);
-                for (int y = 0; y < largeBb.height; y++) 
-                {
-                    int hy = y / 2;
-                    
-                    for (int x = 0; x < largeBb.width; x++)
-                    {
-                        int hx = x / 2;
-                        largeView(y, x) = smallView(hy, hx);
-                    }
-                }
-
-                if (!largeLabels.assign(largeView, largeInputBb, largeBb))
-                {
-                    return false;
-                }
+                int hx = x / 2;
+                largeLabels(y, x) = smallLabels(hy, hx);
             }
         }
     }
 
-
-    return true;
-}
-
-bool HierarchicalGraphcutSeams::initialize() 
-{
-    int width = _outputWidth;
-    int height = _outputHeight;
-
-    for (int i = 0; i < _countLevels; i++)
-    {
-        GraphcutSeams gcs(width, height);
-
-        if (!gcs.initialize(_cacheManager))
-        {
-            return false;
-        }
-
-        _graphcuts.push_back(gcs);
-
-        //Divide by 2 (rounding to the superior integer)
-        width = int(ceil(float(width) / 2.0f));
-        height = int(ceil(float(height) / 2.0f));
-    }
 
     return true;
 }

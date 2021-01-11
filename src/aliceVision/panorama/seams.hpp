@@ -31,6 +31,10 @@ public:
                         const aliceVision::image::Image<float>& inputWeights, 
                         IndexT currentIndex, size_t offset_x, size_t offset_y);
 
+    bool appendWithLoop(const aliceVision::image::Image<unsigned char>& inputMask,
+                        const aliceVision::image::Image<float>& inputWeights, 
+                        IndexT currentIndex, size_t offset_x, size_t offset_y);
+
     image::Image<IndexT> & getLabels() 
     {
         return _labels; 
@@ -47,9 +51,8 @@ private:
 class HierarchicalGraphcutSeams
 {
 public:
-    HierarchicalGraphcutSeams(image::TileCacheManager::shared_ptr cacheManager, size_t outputWidth, size_t outputHeight, size_t countLevels)
-        : _cacheManager(cacheManager)
-        , _outputWidth(outputWidth)
+    HierarchicalGraphcutSeams(size_t outputWidth, size_t outputHeight, size_t countLevels)
+        : _outputWidth(outputWidth)
         , _outputHeight(outputHeight)
         , _countLevels(countLevels)
     {
@@ -57,9 +60,7 @@ public:
 
     virtual ~HierarchicalGraphcutSeams() = default;
 
-    bool initialize();
-
-    bool setOriginalLabels(CachedImage<IndexT>& labels);
+    bool initialize(const image::Image<IndexT>& labels);
 
     virtual bool append(const aliceVision::image::Image<image::RGBfColor>& input,
                         const aliceVision::image::Image<unsigned char>& inputMask, 
@@ -67,14 +68,13 @@ public:
 
     bool process();
 
-    CachedImage<IndexT>& getLabels() 
+    image::Image<IndexT>& getLabels() 
     { 
         return _graphcuts[0].getLabels();
     }
 
 private:
     std::vector<GraphcutSeams> _graphcuts;
-    image::TileCacheManager::shared_ptr _cacheManager;
 
     size_t _countLevels;
     size_t _outputWidth;

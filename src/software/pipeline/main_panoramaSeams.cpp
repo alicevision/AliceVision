@@ -69,7 +69,7 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         image::Image<float> weights;
         image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
-        if (!seams.append(mask, weights, viewId, offsetX, offsetY)) 
+        if (!seams.appendWithLoop(mask, weights, viewId, offsetX, offsetY)) 
         {
             return false;
         }
@@ -80,22 +80,16 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
     return true;
 }
 
-bool computeGCLabels(CachedImage<IndexT> & labels, image::TileCacheManager::shared_ptr& cacheManager, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, std::pair<int, int> & panoramaSize, int smallestViewScale) 
+bool computeGCLabels(image::Image<IndexT> & labels, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, std::pair<int, int> & panoramaSize, int smallestViewScale) 
 {   
     ALICEVISION_LOG_INFO("Estimating smart seams for panorama");
 
     int pyramidSize = 1 + std::max(0, smallestViewScale - 1);
     ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
 
-    HierarchicalGraphcutSeams seams(cacheManager, panoramaSize.first, panoramaSize.second, pyramidSize);
+    HierarchicalGraphcutSeams seams(panoramaSize.first, panoramaSize.second, pyramidSize);
 
-
-    if (!seams.initialize()) 
-    {
-        return false;
-    }
-
-    if (!seams.setOriginalLabels(labels)) 
+    if (!seams.initialize(labels)) 
     {
         return false;
     }
@@ -181,8 +175,7 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
         ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
-        ("output,o", po::value<std::string>(&outputLabels)->required(), "Path of the output labels.")
-        ("cacheFolder,f", po::value<std::string>(&temporaryCachePath)->required(), "Path of the temporary cache.");
+        ("output,o", po::value<std::string>(&outputLabels)->required(), "Path of the output labels.");
     allParams.add(requiredParams);
 
     // Description of optional parameters
@@ -266,91 +259,51 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Output labels size set to " << panoramaSize.first << "x" << panoramaSize.second);
     }
 
-    if(!temporaryCachePath.empty() && !fs::exists(temporaryCachePath))
-    {
-        fs::create_directory(temporaryCachePath);
-    }
-
-    // Create a cache manager
-    image::TileCacheManager::shared_ptr cacheManager = image::TileCacheManager::create(temporaryCachePath, 256, 256, 65536);
-    if(!cacheManager)
-    {
-        ALICEVISION_LOG_ERROR("Error creating the cache manager");
-        return EXIT_FAILURE;
-    }
-
-    // Configure the cache manager memory
-    system::MemoryInfo memInfo = system::getMemoryInfo();
-    const double convertionGb = std::pow(2,30);
-    ALICEVISION_LOG_INFO("Available RAM is " << std::setw(5) << memInfo.availableRam / convertionGb << "GB (" << memInfo.availableRam << " octets).");
-    cacheManager->setMaxMemory(1024ll * 1024ll * 1024ll * 6ll);
-
-
     //Get a list of views ordered by their image scale
-    size_t smallestScale = 0;
-    std::vector<std::shared_ptr<sfmData::View>> viewOrderedByScale;
+    int smallestScale = 10000;
+    std::vector<std::shared_ptr<sfmData::View>> views;
+    for (const auto & it : sfmData.getViews()) 
     {
-        std::map<size_t, std::vector<std::shared_ptr<sfmData::View>>> mapViewsScale;
-        for(const auto & it : sfmData.getViews()) 
+        auto view = it.second;
+        IndexT viewId = view->getViewId();
+
+        if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
         {
-            auto view = it.second;
-            IndexT viewId = view->getViewId();
-
-            if(!sfmData.isPoseAndIntrinsicDefined(view.get()))
-            {
-                // skip unreconstructed views
-                continue;
-            }
-
-            // Load mask
-            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
-            image::Image<unsigned char> mask;
-            image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
-
-            //Estimate scale
-            size_t scale = getGraphcutOptimalScale(mask.Width(), mask.Height());
-            mapViewsScale[scale].push_back(it.second);
-        }
-        
-        if (mapViewsScale.size() == 0) 
-        {
-            ALICEVISION_LOG_ERROR("No valid view");
-            return EXIT_FAILURE;
+            // skip unreconstructed views
+            continue;
         }
 
-        smallestScale = mapViewsScale.begin()->first;
-        for (auto scaledList : mapViewsScale)
-        {
-            for (auto item : scaledList.second) 
-            {   
-                viewOrderedByScale.push_back(item);
-            }
-        }
+        // Load mask
+        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
+        int width, height;
+        image::readImageMetadata(maskPath, width, height);
+
+        //Estimate scale
+        int scale = getGraphcutOptimalScale(width, height);
+
+        smallestScale = std::min(scale, smallestScale);
+        views.push_back(view);
     }
 
-    ALICEVISION_LOG_INFO(viewOrderedByScale.size() << " views to process");
+    ALICEVISION_LOG_INFO(views.size() << " views to process");
 
     image::Image<IndexT> labels;
-    if (!computeWTALabels(labels, viewOrderedByScale, warpingFolder, panoramaSize)) 
+    if (!computeWTALabels(labels, views, warpingFolder, panoramaSize)) 
     {
         ALICEVISION_LOG_ERROR("Error computing initial labels");
         return EXIT_FAILURE;
     }
 
-    /*if (useGraphCut)
+    if (useGraphCut)
     {
-        if (!computeGCLabels(labels, cacheManager, viewOrderedByScale, warpingFolder, panoramaSize, smallestScale)) 
+        if (!computeGCLabels(labels, views, warpingFolder, panoramaSize, smallestScale)) 
         {
             ALICEVISION_LOG_ERROR("Error computing graph cut labels");
             return EXIT_FAILURE;
         }
     }
 
-    if (!labels.writeImage(outputLabels)) 
-    {
-        ALICEVISION_LOG_ERROR("Error writing labels to disk");
-        return EXIT_FAILURE;
-    }*/
+    image::writeImage(outputLabels, labels, image::EImageColorSpace::NO_CONVERSION);
 
     return EXIT_SUCCESS;
 }
