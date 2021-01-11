@@ -182,6 +182,7 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer);
  */
 void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions);
