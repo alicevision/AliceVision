@@ -14,6 +14,9 @@
 #include <regex>
 
 
+#include <iostream>
+
+
 namespace aliceVision {
 namespace sfmData {
 
@@ -33,10 +36,12 @@ float View::getCameraExposureSetting(const float referenceISO, const float refer
     const float iso = getMetadataISO();
     /*
     iso = qLt / aperture^2
-    isoratio = iso2 / iso1 = (qLt / aperture1^2) / (qLt / aperture2^2)
-    isoratio = aperture2^2 / aperture1^2
-    aperture2^2 = iso2 / iso1 * 1
-    aperture2 = sqrt(iso2 / iso1)
+    isoratio = iso2 / iso1 = (qLt / aperture2^2) / (qLt / aperture1^2)
+    isoratio = aperture1^2 / aperture2^2
+    aperture2^2 = aperture1^2 / isoratio
+    aperture2^2 = (aperture1^2 / (iso2 / iso1))
+    aperture2^2 = (iso1 / iso2)
+    aperture2 = sqrt(iso1 / iso2)
     */
     float iso_2_aperture = 1.0f;
     if(iso > 1e-6f && referenceISO > 1e-6f)
@@ -47,8 +52,9 @@ float View::getCameraExposureSetting(const float referenceISO, const float refer
 
     /*
     aperture = f / diameter
-    aperture2 / aperture1 = diameter2 / diameter1
-    (aperture2 / aperture1)^2 = (area2 / pi) / (area1 / pi)
+    aperture2 / aperture1 = diameter1 / diameter2
+    (aperture2 / aperture1)^2 = (area1 / pi) / (area2 / pi)
+    area2 = (aperture1 / aperture2)^2
     */
     float new_fnumber = fnumber * iso_2_aperture;
     float exp_increase = (new_fnumber / lReferenceFNumber) * (new_fnumber / lReferenceFNumber);
