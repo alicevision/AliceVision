@@ -24,20 +24,23 @@ public:
         
     }
 
-    virtual bool append(aliceVision::image::Image<image::RGBfColor>& color,
-                        aliceVision::image::Image<unsigned char>& inputMask,
-                        aliceVision::image::Image<float>& inputWeights, 
-                        int offset_x, int offset_y)
+    virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
+                        const aliceVision::image::Image<unsigned char>& inputMask,
+                        const aliceVision::image::Image<float>& inputWeights, 
+                        int offsetX, int offsetY)
     {
+        offsetX -= _outputRoi.left;
+        offsetY -= _outputRoi.top;
+
         for(int i = 0; i < color.Height(); i++)
         {
-            int y = i + offset_y;
-            if (y < 0 || y >= _panoramaHeight) continue;
+            int y = i + offsetY;
+            if (y < 0 || y >= _outputRoi.height) continue;
 
             for (int j = 0; j < color.Width(); j++)
             {
-                int x = j + offset_x;
-                if (x < 0 || x >= _panoramaWidth) continue;
+                int x = j + offsetX;
+                if (x < 0 || x >= _outputRoi.width) continue;
 
                 if (!inputMask(i, j))
                 {
@@ -54,9 +57,16 @@ public:
         return true;
     }
 
-    virtual bool initialize() { 
+    virtual bool initialize(const BoundingBox & outputRoi) { 
 
-        _panorama = image::Image<image::RGBAfColor>(_panoramaWidth, _panoramaHeight, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+        _outputRoi = outputRoi;
+        
+        if (_outputRoi.left < 0) return false;
+        if (_outputRoi.top < 0) return false;
+        if (_outputRoi.getRight() >= _panoramaWidth) return false;
+        if (_outputRoi.getBottom() >= _panoramaHeight) return false;
+
+        _panorama = image::Image<image::RGBAfColor>(_outputRoi.width, _outputRoi.height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
         return true; 
     }
@@ -78,6 +88,7 @@ protected:
     image::Image<image::RGBAfColor> _panorama;
     int _panoramaWidth;
     int _panoramaHeight;
+    BoundingBox _outputRoi;
 };
 
 } // namespace aliceVision
