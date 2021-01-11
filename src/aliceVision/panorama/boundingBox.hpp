@@ -183,9 +183,11 @@ struct BoundingBox
         return b;
     }
 
-    BoundingBox multiply(int factor) const
+    BoundingBox multiply(int scale) const
     {
         BoundingBox b;
+
+        int factor = pow(2, scale);
 
         b.left = left * factor;
         b.top = top * factor;
@@ -195,18 +197,23 @@ struct BoundingBox
         return b;
     }
 
-    BoundingBox divide(int factor) const
+    BoundingBox divide(int scale) const
     {
         BoundingBox b;
+
+        int factor = pow(2, scale);
 
         b.left = int(floor(double(left) / double(factor)));
         b.top = int(floor(double(top) / double(factor)));
 
-        int right = int(ceil(double(getRight()) / double(factor)));
-        int bottom = int(ceil(double(getBottom()) / double(factor)));
+        int sleft = b.left * factor;
+        int stop = b.top * factor;
 
-        b.width = right - b.left + 1;
-        b.height = bottom - b.top + 1;
+        int nwidth = getRight() - sleft;
+        int nheight = getBottom() - stop;
+        
+        b.width = int(ceil(double(nwidth) / double(factor)));
+        b.height = int(ceil(double(nheight) / double(factor)));
 
         return b;
     }
