@@ -257,9 +257,8 @@ alicevision_add_software(aliceVision_utils_colorCheckerDetection
   SOURCE main_colorCheckerDetection.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
-        aliceVision_numeric
-        aliceVision_image
-        ${OPENIMAGEIO_LIBRARIES}
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         Boost::program_options
         Boost::filesystem
 )
