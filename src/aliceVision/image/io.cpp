@@ -444,7 +444,7 @@ void writeImage(const std::string& path,
 
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
   imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
-  imageSpec.attribute("compression", isEXR ? "none" : "none"); // if possible, set compression (piz for EXR, none for the other)
+  imageSpec.attribute("compression", isEXR ? "piz" : "none"); // if possible, set compression (piz for EXR, none for the other)
 
   const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
