@@ -22,8 +22,16 @@ public:
         
     }
 
-    virtual bool initialize() 
+    virtual bool initialize(const BoundingBox & outputRoi) 
     { 
+        _outputRoi = outputRoi;
+        
+        
+        if (_outputRoi.left < 0) return false;
+        if (_outputRoi.top < 0) return false;
+        if (_outputRoi.getRight() >= _panoramaWidth) return false;
+        if (_outputRoi.getBottom() >= _panoramaHeight) return false;
+
         return _pyramidPanorama.initialize();
     }
 
@@ -32,9 +40,9 @@ public:
         return _gaussianFilterRadius;
     }
     
-    virtual bool append(aliceVision::image::Image<image::RGBfColor>& color,
-                        aliceVision::image::Image<unsigned char>& inputMask,
-                        aliceVision::image::Image<float>& inputWeights, 
+    virtual bool append(const aliceVision::image::Image<image::RGBfColor>& color,
+                        const aliceVision::image::Image<unsigned char>& inputMask,
+                        const aliceVision::image::Image<float>& inputWeights, 
                         int offsetX, int offsetY) 
     {
         // Make sure input is compatible with pyramid processing
@@ -44,17 +52,12 @@ public:
         aliceVision::image::Image<unsigned char> maskPot;
         aliceVision::image::Image<float> weightsPot;
 
-    
-        makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, getBorderSize(), _bands);
-        color = aliceVision::image::Image<image::RGBfColor>();
-
-        makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, getBorderSize(), _bands);
-        inputMask = aliceVision::image::Image<unsigned char>();
-
-        makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, getBorderSize(), _bands);
-        inputWeights = aliceVision::image::Image<float>();
-
         
+        
+        makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, getBorderSize(), _bands);
+        makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, getBorderSize(), _bands);
+        makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, getBorderSize(), _bands);
+            
 
         // Fill Color images masked parts with fake but coherent info
         aliceVision::image::Image<image::RGBfColor> feathered;
@@ -101,16 +104,16 @@ public:
 
     virtual bool terminate()
     {
-        _panorama = image::Image<image::RGBAfColor>(_panoramaWidth, _panoramaHeight, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+        _panorama = image::Image<image::RGBAfColor>(_outputRoi.width, _outputRoi.height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
-        if (!_pyramidPanorama.rebuild(_panorama)) 
+        if (!_pyramidPanorama.rebuild(_panorama, _outputRoi)) 
         {
             return false;
         }
 
-        for (int i = 0; i < _panorama.Height(); i++) 
+        for (int i = 0; i < _outputRoi.height; i++) 
         {
-            for (int j = 0; j < _panorama.Width(); j++)
+            for (int j = 0; j < _outputRoi.width; j++)
             {
                 image::RGBAfColor c = _panorama(i, j);
 

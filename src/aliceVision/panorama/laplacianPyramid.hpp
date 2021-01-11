@@ -35,7 +35,7 @@ public:
                const aliceVision::image::Image<float>& oweight,
                size_t level, int offset_x, int offset_y);
 
-    bool rebuild(image::Image<image::RGBAfColor>& output);
+    bool rebuild(image::Image<image::RGBAfColor>& output, const BoundingBox & roi);
 
 private:
     int _baseWidth;

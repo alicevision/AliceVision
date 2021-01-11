@@ -24,6 +24,7 @@ bool PanoramaMap::append(IndexT index, const BoundingBox & box)
 
 bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) const
 {
+    
     BoundingBox extentedBox1 = box1.divide(_scale).dilate(_borderSize).multiply(_scale);
     BoundingBox extentedBox2 = box2.divide(_scale).dilate(_borderSize).multiply(_scale);
 
@@ -90,11 +91,14 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
         BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
         if (!intersectionSmall.isEmpty())
         {
-            currentBoundingBoxes.push_back(otherBoundingBox);
-
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBox);
-            intersections.push_back(intersection);
+
+            if (!intersection.isEmpty()) 
+            {
+                intersections.push_back(intersection);
+                currentBoundingBoxes.push_back(otherBoundingBox);
+            }
         }
     }
 
@@ -104,13 +108,17 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
         otherBoundingBoxLoop.left -= _panoramaWidth;
         BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
         BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
+        
         if (!intersectionSmall.isEmpty())
-        {
-            currentBoundingBoxes.push_back(otherBoundingBoxLoop);
-            
+        {            
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBoxLoop);
-            intersections.push_back(intersection);
+
+            if (!intersection.isEmpty()) 
+            {
+                intersections.push_back(intersection);
+                currentBoundingBoxes.push_back(otherBoundingBoxLoop);
+            }
         }
     }
 
@@ -121,12 +129,34 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
         BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
         BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
         if (!intersectionSmall.isEmpty())
-        {
-            currentBoundingBoxes.push_back(otherBoundingBoxLoop);
-            
+        {            
             BoundingBox intersection = intersectionSmall.multiply(_scale);
             intersection = intersection.limitInside(otherBoundingBoxLoop);
-            intersections.push_back(intersection);
+
+            if (!intersection.isEmpty()) 
+            {
+                intersections.push_back(intersection);
+                currentBoundingBoxes.push_back(otherBoundingBoxLoop);
+            }
+        }
+    }
+
+    // Shift to check loop
+    {
+        BoundingBox otherBoundingBoxLoop = otherBoundingBox;
+        otherBoundingBoxLoop.left += _panoramaWidth + _panoramaWidth;
+        BoundingBox otherBoundingBoxReduced = otherBoundingBoxLoop.divide(_scale).dilate(_borderSize);
+        BoundingBox intersectionSmall = referenceBoundingBoxReduced.intersectionWith(otherBoundingBoxReduced);
+        if (!intersectionSmall.isEmpty())
+        {            
+            BoundingBox intersection = intersectionSmall.multiply(_scale);
+            intersection = intersection.limitInside(otherBoundingBoxLoop);
+
+            if (!intersection.isEmpty()) 
+            {
+                intersections.push_back(intersection);
+                currentBoundingBoxes.push_back(otherBoundingBoxLoop);
+            }
         }
     }
 

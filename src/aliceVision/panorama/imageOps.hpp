@@ -166,6 +166,55 @@ bool addition(aliceVision::image::Image<T>& AplusB, const aliceVision::image::Im
 void removeNegativeValues(image::Image<image::RGBfColor>& img);
 
 template <class T>
+bool loopyImageAssign(image::Image<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb, const BoundingBox & assignedInputBb) 
+{
+    BoundingBox inputBb = assignedInputBb;
+    BoundingBox outputBb = assignedOutputBb;
+
+    if (inputBb.width != outputBb.width) 
+    {
+        return false;
+    }
+
+    if (inputBb.height != outputBb.height) 
+    {
+        return false;
+    }
+
+    if (assignedOutputBb.getRight() < output.Width()) 
+    {
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+    }
+    else 
+    {
+        int left_1 = assignedOutputBb.left;
+        int left_2 = 0;
+        int width1 = output.Width() - assignedOutputBb.left;
+        int width2 = input.Width() - width1;
+
+        inputBb.left = 0;
+        outputBb.left = left_1;
+        inputBb.width = width1;
+        outputBb.width = width1;
+
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+
+        inputBb.left = width1;
+        outputBb.left = 0;
+
+        //no overlap
+        int width2_clamped = std::min(width2, left_1);
+        inputBb.width = width2_clamped;
+        outputBb.width = width2_clamped;
+        if (width2_clamped == 0) return true;
+
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+    }
+
+    return true;
+}
+
+template <class T>
 bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::Image<T> & input, const BoundingBox & assignedOutputBb, const BoundingBox & assignedInputBb) 
 {
     BoundingBox inputBb = assignedInputBb;
@@ -220,6 +269,50 @@ bool loopyCachedImageAssign(CachedImage<T> & output, const aliceVision::image::I
         if (!output.assign(input, inputBb, outputBb))
         {
             return false;
+        }
+    }
+
+    return true;
+}
+
+template <class T>
+bool loopyImageExtract(image::Image<T> & output, const image::Image<T> & input, const BoundingBox & extractedInputBb) 
+{   
+    BoundingBox outputBb;
+    BoundingBox inputBb;
+
+    outputBb.left = 0;
+    outputBb.top = 0;
+    outputBb.width = output.Width();
+    outputBb.height = std::min(extractedInputBb.height, output.Height());
+
+    inputBb = extractedInputBb;
+    
+    if (inputBb.getRight() < input.Width()) 
+    {
+        output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+    }
+    else 
+    {        
+        int availableWidth = output.Width();
+        while (availableWidth > 0)   
+        {
+            inputBb.clampRight(input.Width() - 1);
+            int extractedWidth = std::min(inputBb.width, availableWidth);
+            
+
+            inputBb.width = extractedWidth;
+            outputBb.width = extractedWidth;
+
+            output.block(outputBb.top, outputBb.left, outputBb.height, outputBb.width) = input.block(inputBb.top, inputBb.left, inputBb.height, inputBb.width);
+            
+            //Update the bouding box for output
+            outputBb.left += extractedWidth;
+            availableWidth -= extractedWidth;
+            
+            //All the input is available.
+            inputBb.left = 0;
+            inputBb.width = input.Width();
         }
     }
 

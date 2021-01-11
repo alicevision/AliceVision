@@ -142,8 +142,8 @@ public:
     {
         IndexT id;
         BoundingBox rect;
-        CachedImage<image::RGBfColor> color;
-        CachedImage<unsigned char> mask;
+        image::Image<image::RGBfColor> color;
+        image::Image<unsigned char> mask;
     };
 
     using IndexedColor = std::pair<IndexT, image::RGBfColor>;
@@ -152,8 +152,10 @@ public:
 
 public:
     GraphcutSeams(size_t outputWidth, size_t outputHeight)
-        : _outputWidth(outputWidth), _outputHeight(outputHeight)
+        : _outputWidth(outputWidth)
+        , _outputHeight(outputHeight)
         , _maximal_distance_change(outputWidth + outputHeight)
+        , _labels(outputWidth, outputHeight, true, UndefinedIndexT)
     {
     }
 
@@ -185,48 +187,35 @@ public:
         return false;
     }
 
-    bool setOriginalLabels(CachedImage<IndexT> & existing_labels)
+    bool setOriginalLabels(const image::Image<IndexT> & existing_labels)
     {   
-        if (!_labels.deepCopy(existing_labels)) 
-        {
-            return false;
-        }
-        
-        return true;
-    }
-
-    bool initialize(image::TileCacheManager::shared_ptr & cacheManager) 
-    {
-        if(!_labels.createImage(cacheManager, _outputWidth, _outputHeight))
-        {
-            return false;
-        }
+        _labels = existing_labels;
 
         return true;
     }
 
-    bool append(const CachedImage<image::RGBfColor>& input, const CachedImage<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
+    bool append(const image::Image<image::RGBfColor>& input, const image::Image<unsigned char>& inputMask, IndexT currentIndex, size_t offset_x, size_t offset_y)
     {
 
-        if(inputMask.getWidth() != input.getWidth())
+        if(inputMask.Width() != input.Width())
         {
             return false;
         }
 
-        if(inputMask.getHeight() != input.getHeight())
+        if(inputMask.Height() != input.Height())
         {
             return false;
         }
 
         InputData data;
+
         data.id = currentIndex;
         data.color = input;
         data.mask = inputMask;
-        data.rect.width = input.getWidth();
-        data.rect.height = input.getHeight();
+        data.rect.width = input.Width();
+        data.rect.height = input.Height();
         data.rect.left = offset_x;
         data.rect.top = offset_y;
-
 
         _inputs[currentIndex] = data;
 
@@ -239,7 +228,7 @@ public:
         _maximal_distance_change = dist; 
     }
 
-    bool createInputOverlappingObservations(image::Image<PixelInfo> & graphCutInput, const BoundingBox & interestBbox, bool loadColors)
+    bool createInputOverlappingObservations(image::Image<PixelInfo> & graphCutInput, const BoundingBox & interestBbox)
     {
         for (auto  & otherInput : _inputs)
         {
@@ -248,7 +237,6 @@ public:
             otherBboxLoop.left = otherBbox.left - _outputWidth;
             BoundingBox otherBboxLoopRight = otherInput.second.rect;
             otherBboxLoopRight.left = otherBbox.left + _outputWidth;
-
 
             BoundingBox otherInputBbox = otherBbox;
             otherInputBbox.left = 0;
@@ -263,20 +251,11 @@ public:
             }
             
             image::Image<image::RGBfColor> otherColor(otherInputBbox.width, otherInputBbox.height);
-            if (loadColors)
-            {
-                if (!otherInput.second.color.extract(otherColor, otherInputBbox, otherInputBbox)) 
-                {
-                    return false;
-                }
-            }
+            otherColor.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width) = otherInput.second.color.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width);
 
             image::Image<unsigned char> otherMask(otherInputBbox.width, otherInputBbox.height);
-            if (!otherInput.second.mask.extract(otherMask, otherInputBbox, otherInputBbox)) 
-            {
-                return false;
-            }
-
+            otherMask.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width) = otherInput.second.mask.block(otherInputBbox.top, otherInputBbox.left, otherInputBbox.height, otherInputBbox.width);
+ 
             if (!intersection.isEmpty())
             {        
                 BoundingBox interestOther = intersection;
@@ -495,7 +474,7 @@ public:
         return true;
     }
 
-    bool processInput(double & newCost, InputData & input, bool computeExpansion)
+    bool processInput(double & newCost, InputData & input)
     {       
 
         //Get bounding box of input in panorama
@@ -503,7 +482,7 @@ public:
         BoundingBox localBbox = input.rect.dilate(3);
         localBbox.clampLeft();
         localBbox.clampTop();
-        localBbox.clampBottom(_labels.getHeight() - 1);
+        localBbox.clampBottom(_labels.Height() - 1);
         
         //Output must keep a margin also
         BoundingBox outputBbox = input.rect;
@@ -512,15 +491,14 @@ public:
 
         //Extract labels for the ROI
         image::Image<IndexT> localLabels(localBbox.width, localBbox.height);
-        if (!loopyCachedImageExtract(localLabels, _labels, localBbox)) 
+        if (!loopyImageExtract(localLabels, _labels, localBbox)) 
         {
             return false;
         }   
 
-    
         //Build the input
         image::Image<PixelInfo> graphCutInput(localBbox.width, localBbox.height, true);
-        if (!createInputOverlappingObservations(graphCutInput, localBbox, computeExpansion))
+        if (!createInputOverlappingObservations(graphCutInput, localBbox))
         {
             return false;
         }
@@ -535,14 +513,9 @@ public:
         BoundingBox inputBb = localBbox;
         inputBb.left = 0;
         inputBb.top = 0;
-        if (!loopyCachedImageAssign(_labels, localLabels, localBbox, inputBb)) 
+        if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb)) 
         {
             return false;
-        }
-
-        if (!computeExpansion) 
-        {   
-            return true;
         }
 
         // Compute distance map to borders of the input seams
@@ -581,7 +554,7 @@ public:
             inputBb.left = 0;
             inputBb.top = 0;
 
-            if (!loopyCachedImageAssign(_labels, localLabels, localBbox, inputBb)) 
+            if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb)) 
             {
                 return false;
             }
@@ -594,24 +567,8 @@ public:
         return true;
     }
 
-    bool process(bool computeAlphaExpansion)
+    bool process()
     {
-        if (!computeAlphaExpansion) 
-        {
-            for (auto & info : _inputs)
-            {
-                double cost;
-                ALICEVISION_LOG_INFO("process input");
-                
-                if (!processInput(cost, info.second, false)) 
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         std::map<IndexT, double> costs;
         for (auto & info : _inputs)
         {
@@ -621,6 +578,7 @@ public:
         for (int i = 0; i < 10; i++)
         {
             ALICEVISION_LOG_INFO("GraphCut processing iteration #" << i);
+
             // For each possible label, try to extends its domination on the label's world
             bool hasChange = false;
 
@@ -628,10 +586,11 @@ public:
             for (auto & info : _inputs)
             {   
                 double cost;
-                if (!processInput(cost, info.second, true)) 
+                if (!processInput(cost, info.second)) 
                 {
                     return false;
                 }
+                
 
                 if (costs[info.first] != cost)
                 {
@@ -1030,7 +989,7 @@ public:
         return true;
     }
 
-    CachedImage<IndexT> & getLabels() 
+    image::Image<IndexT> & getLabels() 
     { 
         return _labels; 
     }
@@ -1042,7 +1001,7 @@ private:
     int _outputWidth;
     int _outputHeight;
     size_t _maximal_distance_change;
-    CachedImage<IndexT> _labels;
+    image::Image<IndexT> _labels;
 };
 
 } // namespace aliceVision

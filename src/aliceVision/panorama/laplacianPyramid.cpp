@@ -104,8 +104,6 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
 
     for(int l = initialLevel; l < _levels.size() - 1; l++)
     {
-        image::Image<image::RGBfColor> & img = _levels[l];
-
         BoundingBox inputBbox;
         inputBbox.left = offsetX;
         inputBbox.top = offsetY;
@@ -287,7 +285,7 @@ bool LaplacianPyramid::merge(const aliceVision::image::Image<image::RGBfColor>& 
     return true;
 }
 
-bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output)
+bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output, const BoundingBox & roi)
 {
     for (InputInfo & iinfo : _inputInfos)
     {
@@ -365,15 +363,19 @@ bool LaplacianPyramid::rebuild(image::Image<image::RGBAfColor>& output)
     
     image::Image<image::RGBfColor> & level = _levels[0];
     image::Image<float> & weight = _weights[0];
-    for(int i = 0; i < output.Height(); i++)
+    for(int i = 0; i < roi.height; i++)
     {
-        for(int j = 0; j < output.Width(); j++)
-        {
-            output(i, j).r() = level(i, j).r();
-            output(i, j).g() = level(i, j).g();
-            output(i, j).b() = level(i, j).b();
+        int y = i + roi.top;
 
-            if (weight(i, j) < 1e-6)
+        for(int j = 0; j < roi.width; j++)
+        {
+            int x = j + roi.left;
+
+            output(i, j).r() = level(y, x).r();
+            output(i, j).g() = level(y, x).g();
+            output(i, j).b() = level(y, x).b();
+
+            if (weight(y, x) < 1e-6)
             {
                 output(i, j).a() = 0.0f;
             }

@@ -10,6 +10,7 @@
 namespace aliceVision
 {
 
+
 class PanoramaMap
 {
 public:
@@ -25,12 +26,12 @@ public:
 
     bool getOverlaps(std::list<IndexT> & overlaps, IndexT reference) const;
 
-    size_t getWidth() const
+    int getWidth() const
     {
         return _panoramaWidth;
     }
 
-    size_t getHeight() const
+    int getHeight() const
     {
         return _panoramaHeight;
     }
@@ -38,6 +39,11 @@ public:
     size_t getScale() const
     {
         return _scale;
+    }
+
+    size_t getBorderSize() const
+    {
+        return _borderSize;
     }
 
     bool getBoundingBox(BoundingBox & bb, const IndexT & id) const
