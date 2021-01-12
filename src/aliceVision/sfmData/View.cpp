@@ -59,6 +59,18 @@ float View::getCameraExposureSetting(const float referenceISO, const float refer
     float new_fnumber = fnumber * iso_2_aperture;
     float exp_increase = (new_fnumber / lReferenceFNumber) * (new_fnumber / lReferenceFNumber);
 
+    // If the aperture was more important for this image, this means that it received less light than with a default aperture
+    // This means also that if we want to simulate that all the image have the same aperture, we have to increase virtually th
+    // light received as if the aperture was smaller. So we increase the exposure time
+
+    // If the iso is larger than the default value, this means that it recevied more light than with a default iso
+    // This means also that if we want to simulate that all the image have the same iso, we have to decrease virtually th
+    // light received as if the iso was smaller. So we decrease the exposure time or equivalent, increase the aperture value
+
+    // Checks 
+    // iso 20, f/2 = 2500
+    // iso 40, f/2.8 = 2500
+
     return shutter * exp_increase;
 }
 
