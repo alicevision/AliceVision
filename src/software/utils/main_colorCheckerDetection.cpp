@@ -16,8 +16,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/mcc.hpp>
+#include <opencv2/mcc.hpp>
 
 #include <string>
 #include <fstream>
@@ -117,11 +119,72 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // ----------------------------------------------------------
+    // ----------------------------------------------------------
+    // ----------------------------------------------------------
+
     std::ofstream f;
     f.open(outputFolder + "/outputDebug.txt");
-    f << "SfMData: " << sfmDataFilename << "\n";
-    f << "SfMData views: " << sfmData.getViews() << "\n";
+
+    f << "Start" << std::endl;
+    assert(1 > 5 && "erreur");
+    // ----------------------------------------------------------
+    // Scroll down a bit (~40 lines) to find actual relevant code
+    // ----------------------------------------------------------
+
+    int nc = 1;
+    std::string path("C:/Users/ludch/Ludwig/samples/color checker/dataset1/rMPC_0086.jpg");
+    f << "Loading image" << std::endl;
+    cv::Mat image = cv::imread(path, 1);
+    if(image.cols == 0 || image.rows == 0)
+    {
+        f << "Loading image -- error: image is empty " << std::endl;
+        exit(-1);
+    }
+    f << "Loading image -- success: size: " << image.size() << std::endl;
+    if(atoi(argv[2]) != 0)
+    {
+        cv::resize(image, image, cv::Size(1000, 1000 * image.rows / image.cols));
+        f << "Image resized to: " << image.size() << std::endl;
+    }
+
+    //--------------------------------------------------------------------------
+    //-------------------------Actual Relevant Code-----------------------------
+    //--------------------------------------------------------------------------
+
+    cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
+
+    f << "Processing image" << std::endl;
+    if(!detector->process(image, cv::mcc::TYPECHART(0), nc))
+    {
+        f << "Processing image -- not detected" << std::endl;
+    }
+    else
+    {
+        f << "Processing image -- success" << std::endl;
+        // get checker
+        std::vector<cv::Ptr<cv::mcc::CChecker>> checkers = detector->getListColorChecker();
+
+        for(cv::Ptr<cv::mcc::CChecker> checker : checkers)
+        {
+            // current checker
+            cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker);
+            cdraw->draw(image);
+            if(atoi(argv[3]) == 1)
+            {
+                f << "Writing output in: " << outputFolder + "/output.jpg"  << std::endl;
+                cv::imwrite(outputFolder + "/output.jpg", image);
+            }
+        }
+    }
+
+    f << "End" << std::endl;
+
     f.close();
+
+    // ----------------------------------------------------------
+    // ----------------------------------------------------------
+    // ----------------------------------------------------------
 
     return EXIT_SUCCESS;
 }
