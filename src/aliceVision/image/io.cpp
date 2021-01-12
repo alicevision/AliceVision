@@ -356,34 +356,28 @@ void readImage(const std::string& path,
   }
 }
 
-void readImageIndexT(const std::string& path,
+template<typename T>
+void readImageNoFloat(const std::string& path,
                oiio::TypeDesc format,
                int nchannels,
-               Image<IndexT>& image,
+               Image<T>& image,
                const ImageReadOptions & imageReadOptions)
 {
     // check requested channels number
-  assert(nchannels == 1 || nchannels >= 3);
+  assert(nchannels == 1);
 
   oiio::ImageSpec configSpec;
 
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-  inBuf.read(0, 0, true, oiio::TypeDesc::UINT32); // force image convertion to float (for grayscale and color space convertion)
+  inBuf.read(0, 0, true, format);
 
   if(!inBuf.initialized())
     throw std::runtime_error("Cannot find/open image file '" + path + "'.");
 
   // check picture channels number
-  if(inBuf.spec().nchannels != 1 && inBuf.spec().nchannels < 3)
+  if(inBuf.spec().nchannels != 1)
     throw std::runtime_error("Can't load channels of image file '" + path + "'.");
-
-  // color conversion
-  if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
-    throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
-
-  const std::string& colorSpace = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
-  ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
 
   
   // copy pixels from oiio to eigen
@@ -497,10 +491,10 @@ void writeImage(const std::string& path,
   fs::rename(tmpPath, path);
 }
 
-void writeImageIndexT(const std::string& path,
+template<typename T>
+void writeImageNoFloat(const std::string& path,
                 oiio::TypeDesc typeDesc,
-                int nchannels,
-                const Image<IndexT>& image,
+                const Image<T>& image,
                 EImageColorSpace imageColorSpace,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
@@ -520,21 +514,21 @@ void writeImageIndexT(const std::string& path,
       imageColorSpace = EImageColorSpace::LINEAR;
   }
 
-  oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
+  oiio::ImageSpec imageSpec(image.Width(), image.Height(), 1, typeDesc);
   imageSpec.extra_attribs = metadata; // add custom metadata
 
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
   imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
   imageSpec.attribute("compression", isEXR ? "none" : "none"); // if possible, set compression (piz for EXR, none for the other)
 
-  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<IndexT*>(image.data())); // original image buffer
+  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
   {
     
-    formatBuf.copy(*outBuf, oiio::TypeDesc::UINT32); // override format, use half instead of float
+    formatBuf.copy(*outBuf, typeDesc); // override format, use half instead of float
     outBuf = &formatBuf;
   }
 
@@ -553,12 +547,12 @@ void readImage(const std::string& path, Image<float>& image, const ImageReadOpti
 
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
+  readImageNoFloat(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
 }
 
 void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImageIndexT(path, oiio::TypeDesc::UINT32, 1, image, imageReadOptions);
+  readImageNoFloat(path, oiio::TypeDesc::UINT32, 1, image, imageReadOptions);
 }
 
 void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
@@ -583,7 +577,7 @@ void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadO
 
 void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace, metadata);
+  writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, imageColorSpace, metadata);
 }
 
 void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
@@ -593,7 +587,7 @@ void writeImage(const std::string& path, const Image<int>& image, EImageColorSpa
 
 void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
-  writeImageIndexT(path, oiio::TypeDesc::UINT32, 1, image, imageColorSpace, metadata);
+  writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, imageColorSpace, metadata);
 }
 
 void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
