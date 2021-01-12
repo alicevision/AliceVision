@@ -359,13 +359,8 @@ void readImage(const std::string& path,
 template<typename T>
 void readImageNoFloat(const std::string& path,
                oiio::TypeDesc format,
-               int nchannels,
-               Image<T>& image,
-               const ImageReadOptions & imageReadOptions)
+               Image<T>& image)
 {
-    // check requested channels number
-  assert(nchannels == 1);
-
   oiio::ImageSpec configSpec;
 
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
@@ -373,19 +368,22 @@ void readImageNoFloat(const std::string& path,
   inBuf.read(0, 0, true, format);
 
   if(!inBuf.initialized())
+  {
     throw std::runtime_error("Cannot find/open image file '" + path + "'.");
+  }
 
   // check picture channels number
   if(inBuf.spec().nchannels != 1)
+  {
     throw std::runtime_error("Can't load channels of image file '" + path + "'.");
-
-  
+  }
+    
   // copy pixels from oiio to eigen
   image.resize(inBuf.spec().width, inBuf.spec().height, false);
   {
     oiio::ROI exportROI = inBuf.roi();
     exportROI.chbegin = 0;
-    exportROI.chend = nchannels;
+    exportROI.chend = 1;
 
     inBuf.get_pixels(exportROI, format, image.data());
   }
@@ -547,12 +545,17 @@ void readImage(const std::string& path, Image<float>& image, const ImageReadOpti
 
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions)
 {
-  readImageNoFloat(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
+  readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions & imageReadOptions)
+void readImageDirect(const std::string& path, Image<unsigned char>& image)
 {
-  readImageNoFloat(path, oiio::TypeDesc::UINT32, 1, image, imageReadOptions);
+  readImageNoFloat(path, oiio::TypeDesc::UINT8, image);
+}
+
+void readImageDirect(const std::string& path, Image<IndexT>& image)
+{
+  readImageNoFloat(path, oiio::TypeDesc::UINT32, image);
 }
 
 void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
@@ -582,7 +585,7 @@ void writeImage(const std::string& path, const Image<unsigned char>& image, EIma
 
 void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT32, 1, image, imageColorSpace, metadata);
+  writeImageNoFloat(path, oiio::TypeDesc::INT32, image, imageColorSpace, metadata);
 }
 
 void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)

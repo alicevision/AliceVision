@@ -195,7 +195,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
-        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+        image::readImageDirect(maskPath, mask);
 
         // Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
@@ -244,7 +244,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     if (needSeams)
     {
         image::Image<IndexT> panoramaLabels;
-        image::readImage(labelsFilePath, panoramaLabels, image::EImageColorSpace::NO_CONVERSION);
+        image::readImageDirect(labelsFilePath, panoramaLabels);
 
         double scaleX = double(panoramaLabels.Width()) / double(panoramaMap.getWidth());
         double scaleY = double(panoramaLabels.Height()) / double(panoramaMap.getHeight());
@@ -376,7 +376,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
-        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+        image::readImageDirect(maskPath, mask);
 
         // Load weights image if needed
         image::Image<float> weights; 

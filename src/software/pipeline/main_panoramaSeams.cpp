@@ -56,7 +56,7 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
-        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+        image::readImageDirect(maskPath, mask);
 
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
@@ -102,7 +102,7 @@ bool computeGCLabels(image::Image<IndexT> & labels, const std::vector<std::share
         const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
-        image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+        image::readImageDirect(maskPath, mask);
 
         // Load Color
         const std::string colorsPath = (fs::path(inputPath) / (std::to_string(viewId) + ".exr")).string();

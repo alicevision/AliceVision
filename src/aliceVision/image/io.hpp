@@ -189,6 +189,14 @@ void readImage(const std::string& path, Image<RGBfColor>& image, const ImageRead
 void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions);
 
 /**
+ * @brief read an image with a given path and buffer without any processing such as color conversion
+ * @param[in] path The given path to the image
+ * @param[out] image The output image buffer
+ */
+void readImageDirect(const std::string& path, Image<IndexT>& image);
+void readImageDirect(const std::string& path, Image<unsigned char>& image);
+
+/**
  * @brief write an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
