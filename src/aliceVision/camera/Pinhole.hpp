@@ -8,10 +8,11 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/camera/cameraCommon.hpp>
-#include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 
 #include <vector>
 #include <sstream>
@@ -20,202 +21,262 @@
 namespace aliceVision {
 namespace camera {
 
-/// Define a classic Pinhole camera (store a K 3x3 matrix)
-///  with intrinsic parameters defining the K calibration matrix
-class Pinhole : public IntrinsicBase
+/// Define a classic Pinhole camera
+class Pinhole : public IntrinsicsScaleOffsetDisto
 {
-  public:
-
+public:
   Pinhole() = default;
 
-  Pinhole(
-    unsigned int w, unsigned int h,
-    const Mat3 K)
-    :IntrinsicBase(w,h)
+  Pinhole(unsigned int w, unsigned int h, const Mat3& K) :
+  IntrinsicsScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
   {
-    _K = K;
-    _Kinv = _K.inverse();
   }
 
-  Pinhole(
-    unsigned int w, unsigned int h,
-    double focal_length_pix,
-    double ppx, double ppy, const std::vector<double>& distortionParams = {})
-    : IntrinsicBase(w,h)
-    , _distortionParams(distortionParams)
+  Pinhole(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
   {
-    setK(focal_length_pix, ppx, ppy);
   }
 
-  virtual ~Pinhole() {}
+  ~Pinhole() override = default;
 
-  virtual Pinhole* clone() const override { return new Pinhole(*this); }
-  virtual void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const Pinhole&>(other); }
+  Pinhole* clone() const override
+  {
+    return new Pinhole(*this); 
+  }
+
+  void assign(const IntrinsicBase& other) override
+  {
+    *this = dynamic_cast<const Pinhole&>(other); 
+  }
+
+  double getFocalLengthPix() const { return _scale(0); }
+
+  Vec2 getPrincipalPoint() const { return _offset; }
+
+  bool isValid() const override
+  {
+    return getFocalLengthPix() > 0 && IntrinsicBase::isValid(); 
+  }
+
+  EINTRINSIC getType() const override
+  {
+    return EINTRINSIC::PINHOLE_CAMERA; 
+  }
+
+  Mat3 K() const
+  {
+    Mat3 K;
+    K  << _scale(0), 0.0, _offset(0),
+          0.0, _scale(1), _offset(1),
+          0.0, 0.0, 1.0;
+    return K;
+  }
+
+  void setK(double focalLengthPix, double ppx, double ppy)
+  {
+    _scale(0) = focalLengthPix;
+    _scale(1) = focalLengthPix;
+    _offset(0) = ppx;
+    _offset(1) = ppy;
+  }
   
-  virtual bool isValid() const override { return focal() > 0 && IntrinsicBase::isValid(); }
+  void setK(const Mat3 & K)
+  {
+    _scale(0) = K(0, 0);
+    _scale(1) = K(1, 1);
+    _offset(0) = K(0, 2);
+    _offset(1) = K(1, 2);
+  }
+
+  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  {
+    const Vec3 X = pose(pt); // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
+    const Vec2 distorted = this->addDistortion(P);
+    const Vec2 impt = this->cam2ima(distorted);
+
+    return impt;
+  }
+
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
+  {
+    const Vec3 X = pose(pt); // apply pose
+
+    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
+  }
+
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3& pt) const override
+  {
+    const Vec3 X = pose(pt); // apply pose
+
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = pose.rotation();
+    T.block<3, 1>(0, 3) = pose.translation();
+
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt.homogeneous());
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) const override
+  {
+    const Vec3 X = pose(pt); // apply pose
+
+    const Eigen::Matrix<double, 3, 3>& d_X_d_P = pose.rotation();
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) const
+  {
+    const Vec3 X = pose(pt); // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) const
+  {
+    return getDerivativeCam2ImaWrtPrincipalPoint();
+  }
+
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) const
+  {
+
+    const Vec3 X = pose(pt); // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
+    const Vec2 distorted = this->addDistortion(P);
+
+    return getDerivativeCam2ImaWrtScale(distorted);
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const override {
+    
+    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
+
+    ret.block<2, 1>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
+    ret.block<2, 2>(0, 1) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+
+    if (hasDistortion()) {
+
+      size_t distortionSize = _pDistortion->getDistortionParametersCount();
+
+      ret.block(0, 3, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
+    }
+
+    return ret;
+  }
+
+  Vec3 toUnitSphere(const Vec2 & pt) const override
+  {
+    return pt.homogeneous().normalized();
+  }
+
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
+  {
+    double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
+    double norm = sqrt(norm2);
+
+    const Vec3 ptcam = pt.homogeneous();
+
+    Eigen::Matrix<double, 1, 2> d_norm_d_pt;
+    d_norm_d_pt(0, 0) = pt(0) / norm;
+    d_norm_d_pt(0, 1) = pt(1) / norm;
+
+    Eigen::Matrix<double, 3, 2> d_ptcam_d_pt;
+    d_ptcam_d_pt(0, 0) = 1.0;
+    d_ptcam_d_pt(0, 1) = 0.0;
+    d_ptcam_d_pt(1, 0) = 0.0;
+    d_ptcam_d_pt(1, 1) = 1.0;
+    d_ptcam_d_pt(2, 0) = 0.0;
+    d_ptcam_d_pt(2, 1) = 0.0;
+
+    return (norm * d_ptcam_d_pt - ptcam * d_norm_d_pt) / norm2;
+  }
   
-  virtual EINTRINSIC getType() const override { return PINHOLE_CAMERA; }
-  std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
-
-  double getFocalLengthPix() const { return _K(0,0); }
-
-  Vec2 getPrincipalPoint() const { return Vec2(_K(0,2), _K(1,2)); }
-
-  const Mat3& K() const { return _K; }
-  const Mat3& Kinv() const { return _Kinv; }
-  void setK(double focal_length_pix, double ppx, double ppy)
+  double imagePlaneToCameraPlaneError(double value) const override
   {
-    _K << focal_length_pix, 0., ppx, 0., focal_length_pix, ppy, 0., 0., 1.;
-    _Kinv = _K.inverse();
-  }
-  void setK(const Mat3 &K) { _K = K;}
-  /// Return the value of the focal in pixels
-  inline double focal() const {return _K(0,0);}
-  inline Vec2 principal_point() const {return Vec2(_K(0,2), _K(1,2));}
-
-  // Get bearing vector of p point (image coord)
-  Vec3 operator () (const Vec2& p) const override
-  {
-    Vec3 p3(p(0),p(1),1.0);
-    return (_Kinv * p3).normalized();
+    return value / _scale(0);
   }
 
-  // Transform a point from the camera plane to the image plane
-  Vec2 cam2ima(const Vec2& p) const override
-  {
-    return focal() * p + principal_point();
-  }
-
-  // Transform a point from the image plane to the camera plane
-  Vec2 ima2cam(const Vec2& p) const override
-  {
-    return ( p -  principal_point() ) / focal();
-  }
-
-  virtual bool have_disto() const override {  return false; }
-
-  virtual Vec2 add_disto(const Vec2& p) const override { return p; }
-
-  virtual Vec2 remove_disto(const Vec2& p) const override { return p; }
-
-  virtual double imagePlane_toCameraPlaneError(double value) const override
-  {
-    return value / focal();
-  }
-
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const override
+  Mat34 getProjectiveEquivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
-    P_From_KRt(K(), pose.rotation(), pose.translation(), &P);
+    Mat3 K = Eigen::Matrix3d::Identity();
+    K(0, 0) = _scale(0);
+    K(1, 1) = _scale(1);
+    K(0, 2) = _offset(0);
+    K(1, 2) = _offset(1);
+
+    P_from_KRt(K, pose.rotation(), pose.translation(), &P);
     return P;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const override
-  {
-    std::vector<double> params = {_K(0,0), _K(0,2), _K(1,2)};
-    params.insert(params.end(), _distortionParams.begin(), _distortionParams.end());
-    return params;
-  }
-
-  bool hasDistortion() const override
-  {
-    for(double d: _distortionParams)
-      if(d != 0.0)
-        return true;
-    return false;
-  }
-
-  const std::vector<double>& getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  void setDistortionParams(const std::vector<double>& distortionParams)
-  {
-    if(distortionParams.size() != _distortionParams.size())
-    {
-        std::stringstream s;
-        s << "Pinhole::setDistortionParams: wrong number of distortion parameters (expected: " << _distortionParams.size() << ", given:" << distortionParams.size() << ").";
-        throw std::runtime_error(s.str());
-    }
-    _distortionParams = distortionParams;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params) override
-  {
-    if (params.size() != (3 + _distortionParams.size()))
-      return false;
-
-    this->setK(params[0], params[1], params[2]);
-    setDistortionParams({params.begin() + 3, params.end()});
-
-    return true;
   }
 
   /**
    * @brief Return true if this ray should be visible in the image
-   * @return true if this ray is visible theorically
+   * @return true if this ray is visible theoretically
    */
-  virtual bool isVisibleRay(const Vec3 & ray) const override {
-    
-    if (ray(2) < 0) {
+  bool isVisibleRay(const Vec3 & ray) const override
+  {
+    // if(ray(2) <= 0.0)
+    if(ray(2) < std::numeric_limits<double>::epsilon())
+    {
       return false;
     }
 
-    Vec2 proj = ray.head(2) / ray(2);
+    const Vec2 proj = ray.head(2) / ray(2);
 
-    double xmin;
-    double ymin;
-    double xmax;
-    double ymax;
+    const Vec2 p1 = removeDistortion(ima2cam(Vec2(0,0)));
+    const Vec2 p2 = removeDistortion(ima2cam(Vec2(_w,0)));
+    const Vec2 p3 = removeDistortion(ima2cam(Vec2(_w,_h)));
+    const Vec2 p4 = removeDistortion(ima2cam(Vec2(0,_h)));
 
-    Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
-    Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
-    Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
-    Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
+    double xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
+    double ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
+    double xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
+    double ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
 
-    xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
-    ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
-    xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
-    ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
-
-    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax) {
+    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax)
+    {
       return false;
     }
 
     return true;
   }
-
-  /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const override {return p;}
-
-  /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const override {return p;}
-
-  /**
-   * @brief Rescale intrinsics to reflect a rescale of the camera image
-   * @param factor a scale factor
-   */
-  virtual void rescale(float factor) override {
-
-    IntrinsicBase::rescale(factor);
-
-    Mat3 scale;
-    scale.setIdentity();
-    scale(0, 0) = factor;
-    scale(1, 1) = factor;
-
-    _K = scale * _K;
-    _Kinv = _K.inverse();
-  }
-
-private:
-  // Focal & principal point are embed into the calibration matrix K
-  Mat3 _K, _Kinv;
-protected:
-  std::vector<double> _distortionParams;
 };
 
 } // namespace camera

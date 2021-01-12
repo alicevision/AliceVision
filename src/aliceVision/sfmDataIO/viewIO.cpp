@@ -10,17 +10,17 @@
 #include <aliceVision/sfmData/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/image/io.hpp>
-
-#include <boost/filesystem.hpp>
+#include "aliceVision/utils/filesIO.hpp"
 
 #include <stdexcept>
+#include <regex>
 
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
 
-void updateIncompleteView(sfmData::View& view)
+void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const std::string& viewIdRegex)
 {
   // check if the view is complete
   if(view.getViewId() != UndefinedIndexT &&
@@ -42,8 +42,52 @@ void updateIncompleteView(sfmData::View& view)
   if(view.getMetadata().empty())
     view.setMetadata(metadata);
 
-  // reset viewId
-  view.setViewId(sfmData::computeViewUID(view));
+  // Reset viewId
+  if(view.getViewId() == UndefinedIndexT)
+  {
+    if(viewIdMethod == EViewIdMethod::FILENAME)
+    {
+      std::regex re;
+      try
+      {
+        re = viewIdRegex;
+      }
+      catch(const std::regex_error& e)
+      {
+        throw std::invalid_argument("Invalid regex conversion, your regexfilename '" + viewIdRegex + "' may be invalid.");
+      }
+
+      // Get view image filename without extension
+      const std::string filename = boost::filesystem::path(view.getImagePath()).stem().string();
+
+      std::smatch match;
+      std::regex_search(filename, match, re);
+      if(match.size() == 2)
+      {
+          try
+          {
+            const IndexT id(std::stoul(match.str(1)));
+            view.setViewId(id);
+          }
+          catch(std::invalid_argument& e)
+          {
+            ALICEVISION_LOG_ERROR("ViewId captured in the filename '" << filename << "' can't be converted to a number. "
+                                  "The regex '" << viewIdRegex << "' is probably incorrect.");
+            throw;
+          }
+      }
+      else
+      {
+        ALICEVISION_LOG_ERROR("The Regex '" << viewIdRegex << "' must match a unique number in the filename " << filename << "' to be used as viewId.");
+        throw std::invalid_argument("The Regex '" + viewIdRegex + "' must match a unique number in the filename " + filename + "' to be used as viewId.");
+      }
+    }
+    else
+    {
+      // Use metadata
+      view.setViewId(sfmData::computeViewUID(view));
+    }
+  }
 
   if(view.getPoseId() == UndefinedIndexT)
   {
@@ -58,19 +102,16 @@ void updateIncompleteView(sfmData::View& view)
   }
   else if((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
   {
-    ALICEVISION_LOG_ERROR("Error: Bad poseId for image '" << fs::path(view.getImagePath()).filename().string() << "' (viewId should be equal to poseId)." << std::endl);
-    throw std::invalid_argument("Error: Bad poseId for image '" + fs::path(view.getImagePath()).filename().string() + "'.");
+    ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImagePath()).filename().string() << "'." << std::endl);
   }
 }
 
-std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view,
-                                                        double mmFocalLength,
-                                                        double sensorWidth,
-                                                        double defaultFocalLengthPx,
-                                                        double defaultFieldOfView,
-                                                        camera::EINTRINSIC defaultIntrinsicType,
-                                                        double defaultPPx,
-                                                        double defaultPPy)
+std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
+                    const sfmData::View& view, double mmFocalLength, double sensorWidth,
+                    double defaultFocalLengthPx, double defaultFieldOfView,
+                    camera::EINTRINSIC defaultIntrinsicType,
+                    camera::EINTRINSIC allowedEintrinsics, 
+                    double defaultPPx, double defaultPPy)
 {
   // can't combine defaultFocalLengthPx and defaultFieldOfView
   assert(defaultFocalLengthPx < 0 || defaultFieldOfView < 0);
@@ -104,11 +145,11 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
 
   bool isResized = false;
 
-  if(view.hasMetadata("Exif:PixelXDimension") && view.hasMetadata("Exif:PixelYDimension")) // has dimension metadata
+  if(view.hasMetadata({"Exif:PixelXDimension", "PixelXDimension"}) && view.hasMetadata({"Exif:PixelYDimension", "PixelYDimension"})) // has dimension metadata
   {
     // check if the image is resized
-    int exifWidth = std::stoi(view.getMetadata("Exif:PixelXDimension"));
-    int exifHeight = std::stoi(view.getMetadata("Exif:PixelYDimension"));
+    int exifWidth = std::stoi(view.getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
+    int exifHeight = std::stoi(view.getMetadata({"Exif:PixelYDimension", "PixelXDimension"}));
 
     // if metadata is rotated
     if(exifWidth == view.getHeight() && exifHeight == view.getWidth())
@@ -129,6 +170,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     ppx = defaultPPx;
     ppy = defaultPPy;
   }
+
 
   // handle case where focal length (mm) is unset or false
   if(mmFocalLength <= 0.0)
@@ -162,33 +204,58 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     intrinsicType = camera::PINHOLE_CAMERA;
   }
   */
-  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
+  else if((allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) &&
+          ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
+          )
   {
-    // if the focal lens is short, the fisheye model should fit better.
-    intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;
+    // If the focal lens is short, the fisheye model should fit better.
+      intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
   }
-  else if(intrinsicType == camera::PINHOLE_CAMERA_START)
+  else if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
   {
-    // choose a default camera model if no default type
-    // use standard lens with radial distortion by default
-    intrinsicType = camera::PINHOLE_CAMERA_RADIAL3;
+    // Choose a default camera model if no default type
+    static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {
+        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
+        camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
+        camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1
+    };
+
+    for(const auto& e : intrinsicsPriorities)
+    {
+        if(allowedEintrinsics & e)
+        {
+            intrinsicType = e;
+            break;
+        }
+    }
+    // If still unassigned
+    if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
+    {
+        throw std::invalid_argument("No intrinsic type can be attributed.");
+    }
   }
 
   // create the desired intrinsic
-  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createPinholeIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
-  if(hasFocalLengthInput)
-    intrinsic->setInitialFocalLengthPix(pxFocalLength);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
+  if(hasFocalLengthInput) {
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    if (intrinsicScaleOffset) {
+      intrinsicScaleOffset->setInitialScale(pxFocalLength);
+    }
+  }
 
   // initialize distortion parameters
   switch(intrinsicType)
   {
-    case camera::PINHOLE_CAMERA_FISHEYE:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
     {
       if(cameraBrand == "GoPro")
         intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
       break;
     }
-    case camera::PINHOLE_CAMERA_FISHEYE1:
+      case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
     {
       if(cameraBrand == "GoPro")
         intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 1.04});
@@ -201,6 +268,14 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   intrinsic->setSerialNumber(bodySerialNumber + lensSerialNumber);
 
   return intrinsic;
+}
+
+std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders)
+{
+    return utils::getFilesPathsFromFolders(folders, [&view](const boost::filesystem::path& path) {
+        const boost::filesystem::path stem = path.stem();
+        return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImagePath()).stem());
+    });
 }
 
 } // namespace sfmDataIO

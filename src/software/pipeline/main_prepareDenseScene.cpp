@@ -9,7 +9,9 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -33,6 +35,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
+using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -56,7 +59,7 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
   maskFunc(image);
 
   // undistort
-  if(cam->isValid() && cam->have_disto())
+  if(cam->isValid() && cam->hasDistortion())
   {
     // undistort the image and save it
     using Pix = typename ImageT::Tpixel;
@@ -163,7 +166,15 @@ bool prepareDenseScene(const SfMData& sfmData,
     {
       // get camera pose / projection
       const Pose3 pose = sfmData.getPose(*view).getTransform();
-      Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
+
+      std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+      std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+      if (!camPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+        continue;
+      }
+
+      Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
       // get camera intrinsics matrices
       const Mat3 K = dynamic_cast<const Pinhole*>(sfmData.getIntrinsicPtr(view->getIntrinsicId()))->K();
@@ -225,28 +236,21 @@ bool prepareDenseScene(const SfMData& sfmData,
     {      
       if(!imagesFolders.empty())
       {
-        bool found = false;
-        for(const std::string& folder : imagesFolders)
-        {
-          const fs::recursive_directory_iterator end;
-          const auto findIt = std::find_if(fs::recursive_directory_iterator(folder), end,
-                                   [&view](const fs::directory_entry& e) {
-                                      return (e.path().stem() == std::to_string(view->getViewId()) ||
-                                              e.path().stem() == fs::path(view->getImagePath()).stem());});
+          std::vector<std::string> paths = sfmDataIO::viewPathsFromFolders(*view, imagesFolders);
 
-          if(findIt != end)
+          // if path was not found
+          if(paths.empty())
           {
-            srcImage = (fs::path(folder) / (findIt->path().stem().string() + findIt->path().extension().string())).string();
-            found = true;
-            break;
+              throw std::runtime_error("Cannot find view '" + std::to_string(view->getViewId()) + "' image file in given folder(s)");
           }
-        }
+          else if(paths.size() > 1)
+          {
+              throw std::runtime_error( "Ambiguous case: Multiple source image files found in given folder(s) for the view '" + 
+                  std::to_string(view->getViewId()) + "'.");
+          }
 
-        if(!found)
-          throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in given folder(s)");
+          srcImage = paths[0];
       }
-
-
       const std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const IntrinsicBase* cam = iterIntrinsic->second.get();
 
@@ -294,7 +298,7 @@ bool prepareDenseScene(const SfMData& sfmData,
   return true;
 }
 
-int main(int argc, char *argv[])
+int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
 

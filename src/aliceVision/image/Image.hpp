@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 
 //---------------------------------
 //  Universal Image Processing Algorithm
@@ -23,7 +24,6 @@ namespace aliceVision
 {
   namespace image
   {
-
     template <typename T>
     class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
     {
@@ -49,7 +49,7 @@ namespace aliceVision
       * @param fInit Tell if the image should be initialized
       * @param val If fInit is true, set all pixel to the specified value
       */
-      inline Image( int width, int height, bool fInit = false, const T val = T() )
+      inline Image( int width, int height, bool fInit = false, const T val = T{} )
       {
         Base::resize( height, width );
         if ( fInit )
@@ -104,7 +104,7 @@ namespace aliceVision
       * @param fInit Indicate if new image should be initialized
       * @param val if fInit is true all pixel in the new image are set to this value
       */
-      inline void resize( int width, int height, bool fInit = true, const T val = T( 0 ) )
+      inline void resize( int width, int height, bool fInit = true, const T val = T{} )
       {
         Base::resize( height, width );
         if ( fInit )
@@ -141,6 +141,16 @@ namespace aliceVision
       inline int Depth() const
       {
         return sizeof( Tpixel );
+      }
+
+
+      /**
+      * @brief Return the number of channels
+      * @return number of channels
+      */
+      inline int Channels() const
+      {
+        return NbChannels<Tpixel>::size;
       }
 
       /**

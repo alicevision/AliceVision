@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DebevecCalibrate.hpp"
+#include "sampling.hpp"
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -12,8 +13,6 @@
 #include <aliceVision/image/io.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
-
-#include <Eigen/SparseQR>
 
 #include <iostream>
 #include <fstream>
@@ -23,210 +22,149 @@
 namespace aliceVision {
 namespace hdr {
 
-using T = Eigen::Triplet<double>;
 
-bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & imagePathsGroups,
-                               const std::size_t channelQuantization,
-                               const std::vector<std::vector<float> > &times,
-                               const int nbPoints,
-                               const int calibrationDownscale,
-                               const bool fisheye,
-                               const rgbCurve &weight,
-                               const float lambda,
-                               rgbCurve &response)
+bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
+                               const std::vector<std::vector<float>>& times, const std::size_t channelQuantization,
+                               const rgbCurve& weight, float lambda, rgbCurve& response)
 {
-  const int nbGroups = imagePathsGroups.size();
-  const int nbImages = imagePathsGroups.front().size();
-  const int samplesPerImage = nbPoints / (nbGroups*nbImages);
+    // Always 3 channels for the input images
+    static const std::size_t channelsCount = 3;
 
-  // Always 3 channels for the input images
-  static const std::size_t channelsCount = 3;
 
-  // Initialize response
-  response = rgbCurve(channelQuantization);
-
-  // Store intermediate data for all three channels
-  Vec b_array[channelsCount];
-  std::vector<T> tripletList_array[channelsCount];
-
-  // Initialize intermediate buffers
-  for(unsigned int channel=0; channel < channelsCount; ++channel)
-  {
-    Vec & b = b_array[channel];
-    b = Vec::Zero(nbPoints + channelQuantization + 1);
-    std::vector<T> & tripletList = tripletList_array[channel];
-    tripletList.reserve(2 * nbPoints + 1 + 3 * channelQuantization);
-  }
-
-  size_t count = 0;
-  for (unsigned int g = 0; g < nbGroups; g++)
-  {
-    const std::vector<std::string > &imagePaths = imagePathsGroups[g];
-    std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
- 
-    for (int i = 0; i < imagePaths.size(); i++)
+    // Count really extracted amount of points (observed in multiple brackets)
+    std::vector<size_t> countPointPerGroup;
+    size_t totalPoints = 0;
+    for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
     {
-      image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
-      if (calibrationDownscale != 1.0f)
-      {
-          image::Image<image::RGBfColor>& img = ldrImagesGroup[i];
-          unsigned int w = img.Width();
-          unsigned int h = img.Height();
-          unsigned int nw = (unsigned int)(floor(float(w) / calibrationDownscale));
-          unsigned int nh = (unsigned int)(floor(float(h) / calibrationDownscale));
-
-          image::Image<image::RGBfColor> rescaled(nw, nh);
-
-          oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
-          oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
-          oiio::ImageBuf bufferOrigin(imageSpecOrigin, img.data());
-          oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
-          oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
-
-          const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, 3, oiio::TypeDesc::FLOAT), img.data());
-          oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, 3, oiio::TypeDesc::FLOAT), rescaled.data());
-
-          oiio::ImageBufAlgo::resize(outBuf, inBuf);
-          img.swap(rescaled);
-      }
+        const std::vector<ImageSample> & group = ldrSamples[groupId];
+        totalPoints += group.size();
     }
 
-    const std::vector<float> & ldrTimes = times[g];
-    const std::size_t width = ldrImagesGroup.front().Width();
-    const std::size_t height = ldrImagesGroup.front().Height();
+    ALICEVISION_LOG_INFO("Debevec calibration with " << totalPoints << " samples.");
 
-    // If images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
-    if(fisheye)
+    // Initialize response
+    response = rgbCurve(channelQuantization);
+
+    // Store intermediate data for all three channels
+
+    // Initialize intermediate buffers
+    for(unsigned int channel = 0; channel < channelsCount; ++channel)
     {
-      const std::size_t minSize = std::min(width, height) * 0.97;
-      const Vec2i center(width/2, height/2);
+        Eigen::MatrixXd A(channelQuantization, channelQuantization);
+        Eigen::MatrixXd B(channelQuantization, totalPoints);
+        Eigen::DiagonalMatrix<double, Eigen::Dynamic> Dinv(totalPoints);
+        Eigen::VectorXd h1(channelQuantization);
+        Eigen::VectorXd h2(totalPoints);
 
-      const int xMin = std::ceil(center(0) - minSize/2);
-      const int yMin = std::ceil(center(1) - minSize/2);
-      const int xMax = std::floor(center(0) + minSize/2);
-      const int yMax = std::floor(center(1) + minSize/2);
-      const std::size_t maxDist2 = pow(minSize * 0.5, 2);
+        // Initialize
+        A.fill(0);
+        B.fill(0);
+        h1.fill(0);
+        h2.fill(0);
+        Dinv.setZero();
 
-      const int step = std::ceil(minSize / sqrt(samplesPerImage));
-      for(unsigned int j=0; j<nbImages; ++j)
-      {
-        int countValidPixels = 0;
-        
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        const float time = std::log(ldrTimes.at(j));
-        for(int y = yMin; y < yMax-step; y+=step)
+        size_t countPoints = 0;
+        for(size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
         {
-          for(int x = xMin; x < xMax-step; x+=step)
-          {
-            std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
+            /*Process a group of brackets*/
+            const std::vector<ImageSample>& group = ldrSamples[groupId];
+            const std::vector<float> & local_times = times[groupId];
 
-            if(dist2 > maxDist2)
-            {
-                continue;
+            for (size_t sampleId = 0; sampleId < group.size(); sampleId++) {
+                
+                const ImageSample & sample = group[sampleId];
+                
+                for (size_t bracketPos = 0; bracketPos < sample.descriptions.size(); bracketPos++) {
+                    
+                    const float time = std::log(sample.descriptions[bracketPos].exposure);
+
+                    const float value = clamp(sample.descriptions[bracketPos].mean(channel), 0.0f, 1.0f);
+                    const std::size_t quantizedValue = std::round(value * (channelQuantization - 1));
+                    const std::size_t index = quantizedValue;
+
+                    const float w_ij = std::max(1e-6f, weight(value, channel));
+                    
+                    const std::size_t pospoint = countPoints + sampleId;
+
+                    const double w_ij_2 = w_ij * w_ij;
+                    const double w_ij2_time = w_ij_2 * time;
+
+                    Dinv.diagonal()[pospoint] += w_ij_2;
+                    A(index, index) += w_ij_2;
+                    B(index, pospoint) -= w_ij_2;
+                    h1(index) += w_ij2_time;
+                    h2(pospoint) += -w_ij2_time;
+                }
             }
 
-            for (int channel = 0; channel < channelsCount; channel++)
-            {
-              float sample = clamp(image(y, x)(channel), 0.f, 1.f);
-              float w_ij = weight(sample, channel);
-              std::size_t index = std::round(sample * (channelQuantization - 1));
-
-              tripletList_array[channel].push_back(T(count, index, w_ij));
-              tripletList_array[channel].push_back(T(count, channelQuantization + g * samplesPerImage + countValidPixels, -w_ij));
-
-              b_array[channel](count) = w_ij * time;
-            }
-
-            count += 1;
-            countValidPixels += 1;
-          }
+            countPoints += group.size();
+            
         }
-      }
-    }
-    else
-    {
-      const int step = std::floor(width*height / samplesPerImage);
-      for(unsigned int j=0; j<nbImages; ++j)
-      {
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        const float time = std::log(ldrTimes.at(j));
-        
-        for(unsigned int i=0; i<samplesPerImage; ++i)
+
+        // Make sure the discrete response curve has a minimal second derivative
+        for(std::size_t k = 0; k < channelQuantization - 2; k++)
         {
-          for (int channel = 0; channel < channelsCount; channel++)
-          {
-            float sample = clamp(image(step*i)(channel), 0.f, 1.f);
-            float w_ij = weight(sample, channel);
-            std::size_t index = std::round(sample * (channelQuantization - 1));
+            // Simple derivatives of second derivative wrt to the k+1 element
+            // f''(x) = f(x + 1) - 2 * f(x) + f(x - 1)
+            const float w = weight.getValue(k + 1, channel);
 
-            tripletList_array[channel].push_back(T(count, index, w_ij));
-            tripletList_array[channel].push_back(T(count, channelQuantization + g*samplesPerImage + i, -w_ij));
+            const double v1 = lambda * w;
+            const double v2 = -2.0f * lambda * w;
+            const double v3 = lambda * w;
 
-            b_array[channel](count) = w_ij * time;
-          }
+            A(k, k) += v1 * v1;
+            A(k, k + 1) += v1 * v2;
+            A(k, k + 2) += v1 * v3;
 
-          count += 1;
+            A(k + 1, k) += v2 * v1;
+            A(k + 1, k + 1) += v2 * v2;
+            A(k + 1, k + 2) += v2 * v3;
+
+            A(k + 2, k) += v3 * v1;
+            A(k + 2, k + 1) += v3 * v2;
+            A(k + 2, k + 2) += v3 * v3;
         }
-      }
-    }
-  }
 
-  // fix the curve by setting its middle value to zero
-  for (int channel = 0; channel < channelsCount; channel++)
-  {
-    tripletList_array[channel].push_back(T(count, std::floor(channelQuantization/2), 1.f));
-  }
-  count += 1;
+        //
+        // Fix scale
+        // Enforce f(0.5) = 0.0
+        //
+        const size_t pos_middle = std::floor(channelQuantization / 2);
+        A(pos_middle, pos_middle) += 1.0f;
 
-  // include the smoothness equations
-  for(std::size_t k = 0; k<channelQuantization - 2; k++)
-  {
-    for (int channel = 0; channel < channelsCount; channel++)
-    {
-      float w = weight.getValue(k + 1, channel);
-      tripletList_array[channel].push_back(T(count, k, lambda * w));
-      tripletList_array[channel].push_back(T(count, k + 1, - 2.f * lambda * w));
-      tripletList_array[channel].push_back(T(count, k + 2, lambda * w));
-    }
+        // M is
+        //
+        // [ATL ATR]   [[Mgradient       ][     0]]
+        // [ABL ABR] = [[constraintMiddle][     0]]
+        //             [Mleft               Mright]
+        //
+        // [A B] = [Atl Atr]^T [Atl Atr] = [Atl   0]^T [Atl   0]
+        // [C D]   [Abl Abr]   [Abl Abr]   [Abl Abr]   [Abl Abr]
+        // [A B] = [Atl^T Abl^T][Atl   0] = [Atl^TAtl + Abl^TAbl Abl^TAbr]
+        // [C D]   [0     Abr^T][Abl Abr]   [Abr^TAbl            Abr^TAbr]
+        // [h1] = [Atl^T bh + Abl^T bb] = [Abl^T bb]
+        // [h2]   [Atr^T bh + Abr^T bb]   [Abr^T bb]
+        const Eigen::MatrixXd C = B.transpose();
 
-    count++;
-  }
+        for(int i = 0; i < Dinv.rows(); i++)
+        {
+            Dinv.diagonal()[i] = 1.0 / Dinv.diagonal()[i];
+        }
 
-  for (int channel = 0; channel < channelsCount; channel ++)
-  {
-    sMat A(count, channelQuantization + samplesPerImage * nbGroups);
-    A.setFromTriplets(tripletList_array[channel].begin(), tripletList_array[channel].end());
-    b_array[channel].conservativeResize(count);
+        const Eigen::MatrixXd Bdinv = B * Dinv;
+        const Eigen::MatrixXd left = A - Bdinv * C;
+        const Eigen::VectorXd right = h1 - Bdinv * h2;
 
-    // solve the system using SVD decomposition
-    A.makeCompressed();
-    Eigen::SparseQR<sMat, Eigen::COLAMDOrdering<int>> solver;
-    solver.compute(A);
+        const Eigen::VectorXd x = left.lu().solve(right);
 
-    // Check solver failure
-    if (solver.info() != Eigen::Success)
-    {
-      return false;
+        // Copy the result to the response curve
+        for(std::size_t k = 0; k < channelQuantization; ++k)
+        {
+            response.setValue(k, channel, x(k));
+        }
     }
 
-    Vec x = solver.solve(b_array[channel]);
-
-    // Check solver failure
-    if(solver.info() != Eigen::Success)
-    {
-      return false;
-    }
-
-    double relative_error = (A*x - b_array[channel]).norm() / b_array[channel].norm();
-
-    // Copy the result to the response curve
-    for(std::size_t k = 0; k < channelQuantization; ++k)
-    {
-      response.setValue(k, channel, x(k));
-    }
-  }
-
-  return true;
+    return true;
 }
 
 } // namespace hdr

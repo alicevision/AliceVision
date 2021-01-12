@@ -10,6 +10,7 @@
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
 #include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
+#include <aliceVision/matching/matchesFiltering.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
@@ -25,9 +26,9 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterType.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/feature/selection.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/stl/stl.hpp>
 
@@ -86,7 +87,7 @@ void getStatsMap(const PairwiseMatches& map)
 /// - Compute putative local feature matches (descriptors matching)
 /// - Compute geometric coherent feature matches (robust model estimation from putative matches)
 /// - Export computed data
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -116,6 +117,7 @@ int main(int argc, char **argv)
   bool exportDebugFiles = false;
   bool matchFromKnownCameraPoses = false;
   const std::string fileExtension = "txt";
+  int randomSeed = std::mt19937::default_seed;
 
   po::options_description allParams(
      "Compute corresponding features between a series of views:\n"
@@ -183,7 +185,10 @@ int main(int argc, char **argv)
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.");
+      "Range size.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -227,12 +232,15 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
+
   // check and set input options
   if(matchesFolder.empty() || !fs::is_directory(matchesFolder))
   {
     ALICEVISION_LOG_ERROR("Invalid output matches folder: " + matchesFolder);
     return EXIT_FAILURE;
   }
+  
 
   const matchingImageCollection::EGeometricFilterType geometricFilterType = matchingImageCollection::EGeometricFilterType_stringToEnum(geometricFilterTypeName);
 
@@ -360,7 +368,7 @@ int main(int argc, char **argv)
         ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
 
         // photometric matching of putative pairs
-        imageCollectionMatcher->Match(regionPerView, pairsPoseUnknown, descType, mapPutativesMatches);
+        imageCollectionMatcher->Match(randomNumberGenerator, regionPerView, pairsPoseUnknown, descType, mapPutativesMatches);
 
         // TODO: DELI
         // if(!guided_matching) regionPerView.clearDescriptors()
@@ -461,17 +469,31 @@ int main(int argc, char **argv)
         regionPerView,
         GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
         mapPutativesMatches,
+        randomNumberGenerator,
         guidedMatching);
     }
     break;
+
+  case EGeometricFilterType::FUNDAMENTAL_WITH_DISTORTION:
+  {
+    matchingImageCollection::robustModelEstimation(geometricMatches,
+      &sfmData,
+      regionPerView,
+      GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator, true),
+      mapPutativesMatches,
+      randomNumberGenerator,
+      guidedMatching);
+  }
+  break;
 
     case EGeometricFilterType::ESSENTIAL_MATRIX:
     {
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_E_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches,
+        randomNumberGenerator,
         guidedMatching);
 
       // perform an additional check to remove pairs with poor overlap
@@ -499,8 +521,8 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
-        mapPutativesMatches, guidedMatching,
+        GeometricFilterMatrix_H_AC(geometricErrorMax, maxIteration),
+        mapPutativesMatches, randomNumberGenerator, guidedMatching,
         onlyGuidedMatching ? -1.0 : 0.6);
     }
     break;
@@ -510,8 +532,9 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_HGrowing(geometricErrorMax, maxIteration),
         mapPutativesMatches,
+        randomNumberGenerator,
         guidedMatching);
     }
     break;
@@ -552,7 +575,9 @@ int main(int argc, char **argv)
           if(useGridSort)
           {
             // TODO: rename as matchesGridOrdering
-            matchesGridFiltering(*lRegions, *rRegions, indexImagePair, sfmData, outMatches);
+              matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImgSize(),
+                                   *rRegions, sfmData.getView(indexImagePair.second).getImgSize(),
+                                   indexImagePair, outMatches);
           }
           if(numMatchesToKeep > 0)
           {

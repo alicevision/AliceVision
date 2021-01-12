@@ -8,6 +8,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/DistortionFisheye1.hpp>
 
 #include <vector>
 
@@ -26,48 +27,24 @@ class PinholeFisheye1 : public Pinhole
 {
 public:
 
-  PinholeFisheye1(
-    int w = 0, int h = 0,
-    double focal = 0.0, double ppx = 0, double ppy = 0,
-    double k1 = 0.0)
-        :Pinhole(w, h, focal, ppx, ppy, {k1})
+  explicit PinholeFisheye1(int w = 0, int h = 0, double focalLengthPix = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0)
+  :Pinhole(w, h, focalLengthPix, ppx, ppy, std::shared_ptr<Distortion>(new DistortionFisheye1(k1)))
   {
   }
 
-  PinholeFisheye1* clone() const override { return new PinholeFisheye1(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeFisheye1&>(other); }
-
-  EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE1; }
-
-  virtual bool have_disto() const override { return true;}
-
-  virtual Vec2 add_disto(const Vec2 & p) const override
+  PinholeFisheye1* clone() const override
   {
-    const double k1 = _distortionParams.at(0);
-    const double r = std::hypot(p(0), p(1));
-    const double coef = (std::atan(2.0 * r * std::tan(0.5 * k1)) / k1) / r;
-    return  p * coef;
+      return new PinholeFisheye1(*this);
   }
 
-  virtual Vec2 remove_disto(const Vec2 & p) const override
+  void assign(const IntrinsicBase& other) override
   {
-    const double k1 = _distortionParams.at(0);
-    const double r = std::hypot(p(0), p(1));
-    const double coef = 0.5 * std::tan(r * k1) / (std::tan(0.5 * k1) * r);
-    return  p * coef;
+      *this = dynamic_cast<const PinholeFisheye1&>(other);
   }
 
-  /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const override
-  {
-    return cam2ima( remove_disto(ima2cam(p)) );
-  }
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1; }
 
-  /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const override
-  {
-    return cam2ima( add_disto(ima2cam(p)) );
-  }
+  ~PinholeFisheye1() override = default;
 };
 
 } // namespace camera

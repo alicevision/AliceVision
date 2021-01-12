@@ -5,7 +5,7 @@ Build instructions
 ------------------
 
 Required tools:
-* CMake >= 3.4
+* CMake >= 3.11
 * Git
 * C/C++ compiler (gcc or visual studio or clang) with C++14 support (i.e. gcc >= 5, clang >= 3.4, msvc >=19).
 
@@ -18,7 +18,7 @@ git clone https://github.com/alicevision/AliceVision.git --recursive
 ```
 
 As AliceVision use some C++11 features you must have a c++11 ready compiler:
-- Visual studio >= 2015
+- Visual studio >= 2015 (English language pack required for vcpkg)
 - GCC >= 4.7
 - Clang >= 3.3
 
@@ -27,7 +27,7 @@ Dependencies
 
 AliceVision depends on:
 
-* Boost >= 1.60.0
+* Boost >= 1.70.0
 * Eigen >= 3.3.4
 * Ceres >= 1.10.0
 * Flann >= 1.8.4 (internal)
@@ -35,10 +35,9 @@ AliceVision depends on:
 * Coin-or linear programming (Clp) (internal)
 * Open Solver Interface (Osi) >= 0.106.10 (internal)
 * Lemon >= 1.3 (internal)
-* OpenEXR >= 2.2.0
-* OpenImageIO >= 1.8.7
+* OpenEXR >= 2.4.0
+* OpenImageIO >= 2.1.0
 * Geogram >= 1.5.4 (https://gforge.inria.fr/frs/?group_id=5833)
-* OpenEXR >= 2.2
 * MeshSDFilter (internal)
 * OpenMesh (internal)
 * zlib
@@ -93,14 +92,17 @@ vcpkg install ^
           boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
           lz4 ^
           openexr ^
-          openimageio[libraw] ^
           alembic ^
           geogram ^
           eigen3 ^
-          ceres[suitesparse] ^
+          opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
+          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp,tools] ^
+          ceres[suitesparse,cxsparse] ^
           cuda ^
+          tbb ^
           --triplet x64-windows
 ```
+
 3. Build AliceVision
 ```bash
 # With VCPKG_ROOT being the path to the root of vcpkg installation

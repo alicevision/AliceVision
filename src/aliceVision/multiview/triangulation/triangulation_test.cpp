@@ -6,8 +6,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/multiview/triangulation/Triangulation.hpp"
-#include "aliceVision/multiview/NViewDataSet.hpp"
+#include <aliceVision/multiview/triangulation/Triangulation.hpp>
+#include <aliceVision/multiview/NViewDataSet.hpp>
 
 #define BOOST_TEST_MODULE Triangulation
 
@@ -18,7 +18,7 @@
 
 using namespace aliceVision;
 
-BOOST_AUTO_TEST_CASE(Triangulate_NView_FiveViews)
+BOOST_AUTO_TEST_CASE(TriangulateNView_FiveViews)
 {
   const int nviews = 5;
   const int npoints = 6;
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NView_FiveViews)
       xs.col(j) = d._x[j].col(i);
     }
     Vec4 X;
-    TriangulateNView(xs, Ps, &X);
+    multiview::TriangulateNView(xs, Ps, &X);
 
     // Check reprojection error. Should be nearly zero.
     for (int j = 0; j < nviews; ++j)
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NView_FiveViews)
   }
 }
 
-BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_FiveViews) {
+BOOST_AUTO_TEST_CASE(TriangulateNViewAlgebraic_FiveViews) {
   const int nviews = 5;
   const int npoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints);
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_FiveViews) {
       xs.col(j) = d._x[j].col(i);
     }
     Vec4 X;
-    TriangulateNViewAlgebraic(xs, Ps, &X);
+    multiview::TriangulateNViewAlgebraic(xs, Ps, &X);
 
     // Check reprojection error. Should be nearly zero.
     for (int j = 0; j < nviews; ++j)
@@ -95,12 +95,12 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_FiveViews) {
 // is considered).
 BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_WithWeights)
 {
-  const std::size_t numviews = 20;
-  const std::size_t outliers = 8;
+  const std::size_t nbViews = 20;
+  const std::size_t nbOutliers = 8;
   
   // Collect random P matrices together.
-  std::vector<Mat34> Ps(numviews);
-  for(std::size_t j = 0; j < numviews; ++j)
+  std::vector<Mat34> Ps(nbViews);
+  for(std::size_t j = 0; j < nbViews; ++j)
   {
     Ps[j] = Mat34::Random();
   }
@@ -110,11 +110,11 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_WithWeights)
   
   // project the 3D point and prepare weights
   const double w = 1e8;
-  std::vector<double> weights(numviews, w);
-  Mat2X pt2d(2, numviews);
-  for(std::size_t j = 0; j < numviews; ++j)
+  std::vector<double> weights(nbViews, w);
+  Mat2X pt2d(2, nbViews);
+  for(std::size_t j = 0; j < nbViews; ++j)
   {
-    if(j < numviews - outliers)
+    if(j < nbViews - nbOutliers)
     {
       // project the 3D point
       pt2d.col(j) = (Ps[j] * pt3d).hnormalized();
@@ -129,10 +129,10 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_WithWeights)
   }
 
   Vec4 X;
-  TriangulateNViewAlgebraic(pt2d, Ps, &X, &weights);
+  multiview::TriangulateNViewAlgebraic(pt2d, Ps, &X, &weights);
 
   // Check the reprojection error is nearly zero for inliers.
-  for (std::size_t j = 0; j < numviews - outliers; ++j)
+  for (std::size_t j = 0; j < nbViews - nbOutliers; ++j)
   {
     const Vec2 x_reprojected = (Ps[j] * X).hnormalized();
     const double error = (x_reprojected - pt2d.col(j)).norm();
@@ -146,10 +146,10 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_FiveViews)
   const int npoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints);
 
-  for (int i = 0; i < npoints; ++i)
+  for(int i = 0; i < npoints; ++i)
   {
 
-    Triangulation triangulationObj;
+    multiview::Triangulation triangulationObj;
     for (int j = 0; j < nviews; ++j)
       triangulationObj.add(d.P(j), d._x[j].col(i));
 
@@ -174,16 +174,18 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_FiveViews)
 //// is considered).
 BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
 {
+  std::mt19937 randomNumberGenerator;
+  
   const std::size_t numTrials = 100;
   for(std::size_t trial = 0; trial < numTrials; ++ trial)
   {
-    const std::size_t numviews = 20;
-    const std::size_t outliers = 8;
-    const std::size_t inliers = numviews - outliers;
+    const std::size_t nbViews = 20;
+    const std::size_t nbOutliers = 8;
+    const std::size_t nbInliers = nbViews - nbOutliers;
 
     // Collect random P matrices together.
-    std::vector<Mat34> Ps(numviews);
-    for(std::size_t j = 0; j < numviews; ++j)
+    std::vector<Mat34> Ps(nbViews);
+    for(std::size_t j = 0; j < nbViews; ++j)
     {
       Ps[j] = Mat34::Random();
     }
@@ -192,10 +194,10 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
     Vec4 pt3d(Vec3::Random().homogeneous());
 
     // project the 3D point and prepare weights
-    Mat2X pt2d(2, numviews);
-    for(std::size_t j = 0; j < numviews; ++j)
+    Mat2X pt2d(2, nbViews);
+    for(std::size_t j = 0; j < nbViews; ++j)
     {
-      if(j < numviews - outliers)
+      if(j < nbViews - nbOutliers)
       {
         // project the 3D point
         pt2d.col(j) = (Ps[j] * pt3d).hnormalized();
@@ -208,16 +210,16 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
       }
     }
 
-    std::vector<std::size_t> vec_inliers;
+    std::vector<std::size_t> inliers;
     Vec4 X;
     double const threshold = 0.01; // modify the default value: 4 pixels is too much in this configuration.
-    TriangulateNViewLORANSAC(pt2d, Ps, &X, &vec_inliers, threshold);
+    multiview::TriangulateNViewLORANSAC(pt2d, Ps, randomNumberGenerator, &X, &inliers, threshold);
     
     // check inliers are correct
-    BOOST_CHECK_EQUAL(vec_inliers.size(), inliers);
+    BOOST_CHECK_EQUAL(inliers.size(), nbInliers);
 
     // Check the reprojection error is nearly zero for inliers.
-    for (std::size_t j = 0; j < inliers; ++j)
+    for (std::size_t j = 0; j < nbInliers; ++j)
     {
       const Vec2 x_reprojected = (Ps[j] * X).hnormalized();
       const double error = (x_reprojected - pt2d.col(j)).norm();

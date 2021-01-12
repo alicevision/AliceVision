@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -29,7 +30,7 @@ using namespace aliceVision::sfmData;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -127,8 +128,14 @@ int main(int argc, char **argv)
 
     // We have a valid view with a corresponding camera & pose
     const std::string srcImage = view->getImagePath();
-    const IntrinsicBase * cam = iterIntrinsic->second.get();
-    Mat34 P = cam->get_projective_equivalent(pose);
+    std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+    std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+    if (!camPinHole) {
+      ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+      continue;
+    }
+    
+    Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
     for ( int i = 1; i < 3 ; ++i)
       for ( int j = 0; j < 4; ++j)
@@ -136,7 +143,7 @@ int main(int argc, char **argv)
 
     Mat3 R, K;
     Vec3 t;
-    KRt_From_P( P, &K, &R, &t);
+    KRt_from_P( P, &K, &R, &t);
 
     const Vec3 optical_center = R.transpose() * t;
 

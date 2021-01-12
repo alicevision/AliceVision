@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -218,9 +219,12 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
  * @param[in] filename The filename
  * @param[in] partFlag The ESfMData load flag
  * @param[in] incompleteViews If true, try to load incomplete views
+ * @param[in] viewIdMethod ViewId generation method to use if incompleteViews is true
+ * @param[in] viewIdRegex Optional regex used when viewIdMethod is FILENAME
  * @return true if completed
  */
-bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag, bool incompleteViews = false);
+bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag, bool incompleteViews = false,
+              EViewIdMethod viewIdMethod = EViewIdMethod::METADATA, const std::string& viewIdRegex = "");
 
 } // namespace sfmDataIO
 } // namespace aliceVision

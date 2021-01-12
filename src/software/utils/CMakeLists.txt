@@ -24,10 +24,10 @@ if(ALICEVISION_HAVE_UNCERTAINTYTE)
 # message(warning "CUDA_cusparse_LIBRARY: ${CUDA_cusparse_LIBRARY}")
 endif()
 
-alicevision_add_software(aliceVision_utils_imageProcessing
-SOURCE main_imageProcessing.cpp
-FOLDER ${FOLDER_SOFTWARE_UTILS}
-LINKS aliceVision_system
+alicevision_add_software(aliceVision_utils_imageProcessing 
+    SOURCE main_imageProcessing.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
         aliceVision_sfm
@@ -35,6 +35,10 @@ LINKS aliceVision_system
         aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
+
+if(ALICEVISION_HAVE_OPENCV)
+  target_link_libraries(aliceVision_utils_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
+endif()
 
 # Voctree creation
 alicevision_add_software(aliceVision_utils_voctreeCreation
@@ -228,6 +232,20 @@ alicevision_add_software(aliceVision_utils_fisheyeProjection
         aliceVision_numeric
         aliceVision_image
         ${OPENIMAGEIO_LIBRARIES}
+        ${Boost_LIBRARIES}
+)
+
+# Lighting estimation from picture, albedo and geometry
+alicevision_add_software(aliceVision_utils_lightingEstimation
+  SOURCE main_lightingEstimation.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_numeric
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_mvsUtils
+        aliceVision_image
+        aliceVision_lightingEstimation
         ${Boost_LIBRARIES}
 )
 

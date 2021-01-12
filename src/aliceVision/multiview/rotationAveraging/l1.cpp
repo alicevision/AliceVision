@@ -490,7 +490,7 @@ REAL RelRotationAvgError(const RelativeRotations& RelRs, const Matrix3x3Arr& Rs,
     const RelativeRotation& relR = RelRs[i];
     vec_err[i] = aliceVision::FrobeniusNorm(relR.Rij  - (Rs[relR.j]*Rs[relR.i].transpose()));
   }
-  MinMaxMeanMedian<float> stats(vec_err.begin(), vec_err.end());
+  BoxStats<float> stats(vec_err.begin(), vec_err.end());
   if (pMin)
     *pMin = stats.min;
   if (pMax)

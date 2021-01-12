@@ -19,14 +19,19 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+
+#include <Eigen/Geometry>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+#include <cmath>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -62,15 +67,12 @@ enum ERepartitionMode
 {
     eRepartitionUndefined = 0,
     eRepartitionMultiResolution = 1,
-    eRepartitionRegularGrid = 2,
 };
 
 ERepartitionMode ERepartitionMode_stringToEnum(const std::string& s)
 {
     if(s == "multiResolution")
         return eRepartitionMultiResolution;
-    if(s == "regularGrid")
-        return eRepartitionRegularGrid;
     return eRepartitionUndefined;
 }
 
@@ -128,8 +130,124 @@ void removeLandmarksWithoutObservations(sfmData::SfMData& sfmData)
   }
 }
 
+/// BoundingBox Structure stocking ordered values from the command line
+struct BoundingBox
+{
+    Eigen::Vector3d translation = Eigen::Vector3d::Zero();
+    Eigen::Vector3d rotation = Eigen::Vector3d::Zero();
+    Eigen::Vector3d scale = Eigen::Vector3d::Zero();
 
-int main(int argc, char* argv[])
+    inline bool isInitialized() const 
+    { 
+        return scale(0) != 0.0;
+    }
+
+    Eigen::Matrix4d modelMatrix() const
+    {
+        // Compute the translation matrix
+        Eigen::Matrix4d translateMat = Eigen::Matrix4d::Identity();
+        translateMat.col(3).head<3>() << translation.x(), translation.y(), translation.z();
+
+        // Compute the rotation matrix from quaternion made with Euler angles in that order: ZXY (same as Qt algorithm)
+        Eigen::Matrix4d rotateMat = Eigen::Matrix4d::Identity();
+
+        {
+            double pitch = rotation.x() * M_PI / 180;
+            double yaw = rotation.y() * M_PI / 180;
+            double roll = rotation.z() * M_PI / 180;
+
+            pitch *= 0.5;
+            yaw *= 0.5;
+            roll *= 0.5;
+
+            const double cy = std::cos(yaw);
+            const double sy = std::sin(yaw);
+            const double cr = std::cos(roll);
+            const double sr = std::sin(roll);
+            const double cp = std::cos(pitch);
+            const double sp = std::sin(pitch);
+            const double cycr = cy * cr;
+            const double sysr = sy * sr;
+
+            const double w = cycr * cp + sysr * sp;
+            const double x = cycr * sp + sysr * cp;
+            const double y = sy * cr * cp - cy * sr * sp;
+            const double z = cy * sr * cp - sy * cr * sp;
+
+            Eigen::Quaterniond quaternion(w, x, y, z);
+            rotateMat.block<3, 3>(0, 0) = quaternion.matrix();
+        }
+
+        // Compute the scale matrix
+        Eigen::Matrix4d scaleMat = Eigen::Matrix4d::Identity();
+        scaleMat.diagonal().head<3>() << scale.x(), scale.y(), scale.z();
+
+        // Model matrix
+        Eigen::Matrix4d modelMat = translateMat * rotateMat * scaleMat;
+
+        return modelMat;
+    }
+
+    void toHexahedron(Point3d* hexah) const
+    {
+        Eigen::Matrix4d modelMat = modelMatrix();
+
+        // Retrieve the eight vertices of the bounding box
+        // Based on VoxelsGrid::getHexah implementation
+        Eigen::Vector4d origin = Eigen::Vector4d(-1, -1, -1, 1);
+        Eigen::Vector4d vvx = Eigen::Vector4d(2, 0, 0, 0);
+        Eigen::Vector4d vvy = Eigen::Vector4d(0, 2, 0, 0);
+        Eigen::Vector4d vvz = Eigen::Vector4d(0, 0, 2, 0);
+
+        Eigen::Vector4d vertex0 = modelMat * origin;
+        Eigen::Vector4d vertex1 = modelMat * (origin + vvx);
+        Eigen::Vector4d vertex2 = modelMat * (origin + vvx + vvy);
+        Eigen::Vector4d vertex3 = modelMat * (origin + vvy);
+        Eigen::Vector4d vertex4 = modelMat * (origin + vvz);
+        Eigen::Vector4d vertex5 = modelMat * (origin + vvz + vvx);
+        Eigen::Vector4d vertex6 = modelMat * (origin + vvz + vvx + vvy);
+        Eigen::Vector4d vertex7 = modelMat * (origin + vvz + vvy);
+
+        // Apply those eight vertices to the hexah
+        hexah[0] = Point3d(vertex0.x(), vertex0.y(), vertex0.z());
+        hexah[1] = Point3d(vertex1.x(), vertex1.y(), vertex1.z());
+        hexah[2] = Point3d(vertex2.x(), vertex2.y(), vertex2.z());
+        hexah[3] = Point3d(vertex3.x(), vertex3.y(), vertex3.z());
+        hexah[4] = Point3d(vertex4.x(), vertex4.y(), vertex4.z());
+        hexah[5] = Point3d(vertex5.x(), vertex5.y(), vertex5.z());
+        hexah[6] = Point3d(vertex6.x(), vertex6.y(), vertex6.z());
+        hexah[7] = Point3d(vertex7.x(), vertex7.y(), vertex7.z());
+    }
+};
+
+inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
+{
+    std::string s;
+    in >> s;
+
+    std::vector<std::string> dataStr;
+    boost::split(dataStr, s, boost::is_any_of(","));
+    if(dataStr.size() != 9)
+    {
+        throw std::runtime_error("Invalid number of values for bounding box.");
+    }
+
+    std::vector<double> data;
+    data.reserve(9);
+    for (const std::string& elt : dataStr) 
+    {
+        data.push_back(boost::lexical_cast<double>(elt));
+    }
+
+    out_bbox.translation << data[0], data[1], data[2];
+    out_bbox.rotation << data[3], data[4], data[5];
+    out_bbox.scale << data[6], data[7], data[8];
+
+    return in;
+}
+
+
+int aliceVision_main(int argc, char* argv[])
 {
     system::Timer timer;
 
@@ -138,7 +256,6 @@ int main(int argc, char* argv[])
     std::string outputMesh;
     std::string outputDensePointCloud;
     std::string depthMapsFolder;
-    std::string depthMapsFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     std::size_t estimateSpaceMinObservations = 3;
@@ -150,6 +267,9 @@ int main(int argc, char* argv[])
     bool addLandmarksToTheDensePointCloud = false;
     bool saveRawDensePointCloud = false;
     bool colorizeOutput = false;
+    float forceTEdgeDelta = 0.1f;
+    unsigned int seed = 0;
+    BoundingBox boundingBox;
 
     fuseCut::FuseParams fuseParams;
 
@@ -167,9 +287,9 @@ int main(int argc, char* argv[])
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
-            "Input depth maps folder.")
-        ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder),
             "Input filtered depth maps folder.")
+        ("boundingBox", po::value<BoundingBox>(&boundingBox),
+            "Specifies a bounding box to reconstruct: position, rotation (Euler ZXY) and scale.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
@@ -183,6 +303,8 @@ int main(int argc, char* argv[])
             "simFactor")
         ("angleFactor", po::value<float>(&fuseParams.angleFactor)->default_value(fuseParams.angleFactor),
             "angleFactor")
+        ("minVis", po::value<int>(&fuseParams.minVis)->default_value(fuseParams.minVis),
+            "Filter points based on their number of observations")
         ("partitioning", po::value<EPartitioningMode>(&partitioningMode)->default_value(partitioningMode),
             "Partitioning: 'singleBlock' or 'auto'.")
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
@@ -219,7 +341,11 @@ int main(int argc, char* argv[])
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
             "refineFuse")
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
-            "Save dense point cloud before cut and filtering.");
+            "Save dense point cloud before cut and filtering.")
+        ("forceTEdgeDelta", po::value<float>(&forceTEdgeDelta)->default_value(forceTEdgeDelta),
+            "0 to disable force T edge in graphcut. Threshold for emptiness/fullness variation.")
+        ("seed", po::value<unsigned int>(&seed)->default_value(seed),
+         "Seed used in random processes. (0 to use a random seed)."); 
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -261,10 +387,9 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    if(depthMapsFolder.empty() || depthMapsFilterFolder.empty())
+    if(depthMapsFolder.empty())
     {
       if(depthMapsFolder.empty() &&
-         depthMapsFilterFolder.empty() &&
          repartitionMode == eRepartitionMultiResolution &&
          partitioningMode == ePartitioningSingleBlock)
       {
@@ -274,7 +399,7 @@ int main(int argc, char* argv[])
       else
       {
         ALICEVISION_LOG_ERROR("Invalid input options:\n"
-                              "- Meshing from depth maps require --depthMapsFolder and --depthMapsFilterFolder options.\n"
+                              "- Meshing from depth maps require --depthMapsFolder option.\n"
                               "- Meshing from SfM require option --partitioning set to 'singleBlock' and option --repartition set to 'multiResolution'.");
         return EXIT_FAILURE;
       }
@@ -289,9 +414,11 @@ int main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, depthMapsFilterFolder, meshingFromDepthMaps);
+    mvsUtils::MultiViewParams mp(sfmData, "", "", depthMapsFolder, meshingFromDepthMaps);
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
+    mp.userParams.put("delaunaycut.forceTEdgeDelta", forceTEdgeDelta);
+    mp.userParams.put("delaunaycut.seed", seed);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
@@ -310,103 +437,6 @@ int main(int argc, char* argv[])
 
     switch(repartitionMode)
     {
-        case eRepartitionRegularGrid:
-        {
-            switch(partitioningMode)
-            {
-                case ePartitioningAuto:
-                {
-                    ALICEVISION_LOG_INFO("Meshing mode: regular Grid, partitioning: auto.");
-                    fuseCut::LargeScale lsbase(&mp, tmpDirectory.string() + "/");
-                    lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim, true);
-                    std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
-                    StaticVector<Point3d>* voxelsArray = nullptr;
-                    if(fs::exists(voxelsArrayFileName))
-                    {
-                        // If already computed reload it.
-                        ALICEVISION_LOG_INFO("Voxels array already computed, reload from file: " << voxelsArrayFileName);
-                        voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
-                    }
-                    else
-                    {
-                        ALICEVISION_LOG_INFO("Compute voxels array.");
-                        fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.spaceVoxelsFolderName);
-                        voxelsArray = rp.computeReconstructionPlanBinSearch(fuseParams.maxPoints);
-                        saveArrayToFile<Point3d>(voxelsArrayFileName, voxelsArray);
-                    }
-                    fuseCut::reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase);
-                    // Join meshes and ptsCams
-                    mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
-                    fuseCut::loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray), ptsCams);
-                    break;
-                }
-                case ePartitioningSingleBlock:
-                {
-                    ALICEVISION_LOG_INFO("Meshing mode: regular Grid, partitioning: single block.");
-                    fuseCut::LargeScale ls0(&mp, tmpDirectory.string() + "/");
-                    ls0.generateSpace(maxPtsPerVoxel, ocTreeDim, true);
-                    unsigned long ntracks = std::numeric_limits<unsigned long>::max();
-                    while(ntracks > fuseParams.maxPoints)
-                    {
-                        fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
-                        fuseCut::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
-                        fuseCut::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
-                        ntracks = vg.getNTracks();
-                        delete ls;
-                        ALICEVISION_LOG_INFO("Number of track candidates: " << ntracks);
-                        if(ntracks > fuseParams.maxPoints)
-                        {
-                            ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
-                            double t = (double)ntracks / (double)fuseParams.maxPoints;
-                            ALICEVISION_LOG_INFO("downsample: " << ((t < 2.0) ? "slow" : "fast"));
-                            ocTreeDim = (t < 2.0) ? ocTreeDim-100 : ocTreeDim*0.5;
-                        }
-                    }
-                    ALICEVISION_LOG_INFO("Number of tracks: " << ntracks);
-                    ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
-                    fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
-                    fuseCut::LargeScale lsbase(&mp, dirName.string()+"/");
-                    lsbase.loadSpaceFromFile();
-                    fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.spaceVoxelsFolderName);
-
-                    StaticVector<int> voxelNeighs;
-                    voxelNeighs.resize(rp.voxels->size() / 8);
-                    ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
-                    for(int i = 0; i < voxelNeighs.size(); ++i)
-                        voxelNeighs[i] = i;
-
-                    Point3d* hexah = &lsbase.space[0];
-
-                    StaticVector<int> cams;
-                    if(hexah)
-                    {
-                      cams = mp.findCamsWhichIntersectsHexahedron(hexah);
-                    }
-                    else
-                    {
-                      cams.resize(mp.getNbCameras());
-                      for(int i = 0; i < cams.size(); ++i)
-                          cams[i] = i;
-                    }
-
-                    if(cams.size() < 1)
-                        throw std::logic_error("No camera to make the reconstruction");
-
-                    fuseCut::DelaunayGraphCut delaunayGC(mp);
-                    delaunayGC.createDensePointCloudFromPrecomputedDensePoints(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp);
-                    delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
-                    delaunayGC.graphCutPostProcessing();
-                    mesh = delaunayGC.createMesh();
-                    delaunayGC.createPtsCams(ptsCams);
-                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, hexah);
-                    break;
-                }
-                case ePartitioningUndefined:
-                default:
-                    throw std::invalid_argument("Partitioning mode is not defined");
-            }
-            break;
-        }
         case eRepartitionMultiResolution:
         {
             switch(partitioningMode)
@@ -423,31 +453,12 @@ int main(int argc, char* argv[])
                     float minPixSize;
                     fuseCut::Fuser fs(mp);
 
-                    if(meshingFromDepthMaps && !estimateSpaceFromSfM)
+                    if (boundingBox.isInitialized())
+                        boundingBox.toHexahedron(&hexah[0]);
+                    else if(meshingFromDepthMaps && !estimateSpaceFromSfM)
                       fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
                     else
                       fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
-
-                    Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim, (meshingFromDepthMaps && !estimateSpaceFromSfM) ? nullptr : &sfmData);
-                    StaticVector<Point3d>* voxels = mvsUtils::computeVoxels(&hexah[0], dimensions);
-
-                    StaticVector<int> voxelNeighs;
-                    voxelNeighs.resize(voxels->size() / 8);
-                    ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
-
-                    for(int i = 0; i < voxelNeighs.size(); ++i)
-                        voxelNeighs[i] = i;
-
-                    Point3d spaceSteps;
-                    {
-                        Point3d vx = hexah[1] - hexah[0];
-                        Point3d vy = hexah[3] - hexah[0];
-                        Point3d vz = hexah[4] - hexah[0];
-                        spaceSteps.x = (vx.size() / (double)dimensions.x) / (double)ocTreeDim;
-                        spaceSteps.y = (vy.size() / (double)dimensions.y) / (double)ocTreeDim;
-                        spaceSteps.z = (vz.size() / (double)dimensions.z) / (double)ocTreeDim;
-                    }
-                    delete voxels;
 
                     StaticVector<int> cams;
                     if(meshingFromDepthMaps)
@@ -479,7 +490,7 @@ int main(int argc, char* argv[])
                       sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
-                    delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
+                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false);
                     delaunayGC.graphCutPostProcessing();
                     mesh = delaunayGC.createMesh();
                     delaunayGC.createPtsCams(ptsCams);

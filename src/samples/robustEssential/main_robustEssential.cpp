@@ -45,6 +45,7 @@ bool exportToPly(const std::vector<Vec3> & vec_points,
 
 int main() {
 
+  std::mt19937 randomNumberGenerator;
   const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
   const string jpg_filenameR = sInputDir + "100_7102.jpg";
@@ -100,6 +101,7 @@ int main() {
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -156,7 +158,7 @@ int main() {
     std::pair<size_t, size_t> size_imaL(imageL.Width(), imageL.Height());
     std::pair<size_t, size_t> size_imaR(imageR.Width(), imageR.Height());
     sfm::RelativePoseInfo relativePose_info;
-    if (!sfm::robustRelativePose(K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
+    if (!sfm::robustRelativePose(K, K, xL, xR, randomNumberGenerator, relativePose_info, size_imaL, size_imaR, 256))
     {
       std::cerr << " /!\\ Robust relative pose estimation failure."
         << std::endl;
@@ -198,8 +200,8 @@ int main() {
     const Pose3 pose1 = relativePose_info.relativePose;
 
     // Init structure by inlier triangulation
-    const Mat34 P1 = intrinsic0.get_projective_equivalent(pose0);
-    const Mat34 P2 = intrinsic1.get_projective_equivalent(pose1);
+    const Mat34 P1 = intrinsic0.getProjectiveEquivalent(pose0);
+    const Mat34 P2 = intrinsic1.getProjectiveEquivalent(pose1);
     std::vector<double> vec_residuals;
     vec_residuals.reserve(relativePose_info.vec_inliers.size() * 4);
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
@@ -207,7 +209,7 @@ int main() {
       const PointFeature & RR = regionsR->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j];
       // Point triangulation
       Vec3 X;
-      TriangulateDLT(P1, LL.coords().cast<double>(), P2, RR.coords().cast<double>(), &X);
+      multiview::TriangulateDLT(P1, LL.coords().cast<double>(), P2, RR.coords().cast<double>(), &X);
       // Reject point that is behind the camera
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
         continue;
@@ -222,14 +224,10 @@ int main() {
     }
 
     // Display some statistics of reprojection errors
-    MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+    BoxStats<float> stats(vec_residuals.begin(), vec_residuals.end());
 
     std::cout << std::endl
-      << "Triangulation residuals statistics:" << "\n"
-      << "\t-- Residual min:\t" << stats.min << "\n"
-      << "\t-- Residual median:\t" << stats.median << "\n"
-      << "\t-- Residual max:\t " << stats.max << "\n"
-      << "\t-- Residual mean:\t " << stats.mean << std::endl;
+      << "Triangulation residuals statistics:" << "\n" << stats << std::endl;
 
       // Export as PLY (camera pos + 3Dpoints)
       std::vector<Vec3> vec_camPos;

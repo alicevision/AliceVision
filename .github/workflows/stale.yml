@@ -20,9 +20,4 @@ jobs:
         days-before-stale: 360
         days-before-close: 7
         exempt-pr-label: 'type:pr'
-        exempt-issue-label: 
-        - 'feature'
-        - 'do not close'
-        - 'feature request'
-        - 'scope:doc'
-        - 'new feature'
+        exempt-issue-label: 'feature,do not close,feature request,scope:doc,new feature'

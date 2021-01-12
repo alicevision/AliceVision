@@ -52,7 +52,7 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K);
 ///   way 1: independent cameras [R|t|f] and structure
 ///   way 2: independent cameras motion [R|t], shared focal [f] and structure
 int main() {
-
+  std::mt19937 randomNumberGenerator;
   const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
@@ -109,6 +109,7 @@ int main() {
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::BRUTE_FORCE_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -165,7 +166,7 @@ int main() {
     std::pair<size_t, size_t> size_imaL(imageL.Width(), imageL.Height());
     std::pair<size_t, size_t> size_imaR(imageR.Width(), imageR.Height());
     RelativePoseInfo relativePose_info;
-    if (!robustRelativePose(K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
+    if (!robustRelativePose(K, K, xL, xR, randomNumberGenerator, relativePose_info, size_imaL, size_imaR, 256))
     {
       std::cerr << " /!\\ Robust relative pose estimation failure."
         << std::endl;
@@ -243,15 +244,17 @@ int main() {
     tinyScene.setPose(*tinyScene.views.at(1), sfmData::CameraPose(pose1));
 
     // Init structure by inlier triangulation
-    const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]->get_projective_equivalent(pose0);
-    const Mat34 P2 = tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]->get_projective_equivalent(pose1);
+    std::shared_ptr<camera::Pinhole> pinhole1 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]);
+    std::shared_ptr<camera::Pinhole> pinhole2 = std::dynamic_pointer_cast<camera::Pinhole>(tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]);
+    const Mat34 P1 = pinhole1->getProjectiveEquivalent(pose0);
+    const Mat34 P2 = pinhole2->getProjectiveEquivalent(pose1);
     sfmData::Landmarks & landmarks = tinyScene.structure;
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
       const PointFeature & LL = regionsL->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i];
       const PointFeature & RR = regionsR->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j];
       // Point triangulation
       Vec3 X;
-      TriangulateDLT(P1, LL.coords().cast<double>(), P2, RR.coords().cast<double>(), &X);
+      multiview::TriangulateDLT(P1, LL.coords().cast<double>(), P2, RR.coords().cast<double>(), &X);
       // Reject point that is behind the camera
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
           continue;

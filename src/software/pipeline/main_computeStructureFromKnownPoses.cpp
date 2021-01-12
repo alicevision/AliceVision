@@ -12,6 +12,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
@@ -29,7 +30,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 /// Compute the structure of a scene according existing camera poses.
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -38,10 +39,11 @@ int main(int argc, char **argv)
   std::string outSfMDataFilename;
   std::vector<std::string> featuresFolders;
   double geometricErrorMax = 5.0;
-  // user optional parameters
 
+  // user optional parameters
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::vector<std::string> matchesFolders;
+  int randomSeed = std::mt19937::default_seed;
 
   po::options_description allParams("AliceVision ComputeStructureFromKnownPoses");
 
@@ -62,7 +64,10 @@ int main(int argc, char **argv)
       "Path to folder(s) in which computed matches are stored.")
     ("geometricErrorMax", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
         "Maximum error (in pixels) allowed for features matching during geometric verification for known camera poses. "
-        "If set to 0 it lets the ACRansac select an optimal value.");
+        "If set to 0 it lets the ACRansac select an optimal value.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+        "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -98,6 +103,8 @@ int main(int argc, char **argv)
 
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
+
+  std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
@@ -164,7 +171,7 @@ int main(int argc, char **argv)
   structureEstimator.filter(sfmData, pairs, regionsPerView);
 
   // create 3D landmarks
-  structureEstimator.triangulate(sfmData, regionsPerView);
+  structureEstimator.triangulate(sfmData, regionsPerView, randomNumberGenerator);
 
   sfm::RemoveOutliers_AngleError(sfmData, 2.0);
 

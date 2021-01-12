@@ -44,7 +44,7 @@ const Mat LocalizationResult::retrieveUndistortedPt2D() const
 {
   const auto& intrinsics =  getIntrinsics();
   const auto& distorted = getPt2D();
-  if(!intrinsics.have_disto() || !intrinsics.isValid())
+  if(!intrinsics.hasDistortion() || !intrinsics.isValid())
   {
     return getPt2D();
   }

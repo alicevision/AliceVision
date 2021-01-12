@@ -28,7 +28,7 @@ namespace feature {
 class ImageDescriber_SIFT_vlfeat : public ImageDescriber
 {
 public:
-  ImageDescriber_SIFT_vlfeat(const SiftParams& params = SiftParams(), bool isOriented = true)
+  explicit ImageDescriber_SIFT_vlfeat(const SiftParams& params = SiftParams(), bool isOriented = true)
     : ImageDescriber()
     , _params(params)
     , _isOriented(isOriented)
@@ -37,7 +37,7 @@ public:
     VLFeatInstance::initialize();
   }
 
-  ~ImageDescriber_SIFT_vlfeat()
+  ~ImageDescriber_SIFT_vlfeat() override
   {
     VLFeatInstance::destroy();
   }
@@ -96,7 +96,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(ConfigurationPreset preset) override
   {
     _params.setPreset(preset);
   }

@@ -9,8 +9,9 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/stl/regex.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
@@ -32,7 +33,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 // convert from a SfMData format to another
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -149,7 +150,7 @@ int main(int argc, char **argv)
     imageWhiteRegexList.reserve(imageWhiteList.size());
     for (const std::string& exp : imageWhiteList)
     {
-      imageWhiteRegexList.emplace_back(simpleFilterToRegex_noThrow(exp));
+      imageWhiteRegexList.emplace_back(utils::filterToRegex(exp));
     }
     
     std::vector<IndexT> viewsToRemove;
@@ -177,7 +178,8 @@ int main(int argc, char **argv)
       if(toRemove)
       {
         viewsToRemove.push_back(view.getViewId());
-        if(view.isPoseIndependant())
+        // remove pose only if it exists and it is independent
+        if(view.isPoseIndependant() && sfmData.existsPose(view))
           posesToRemove.push_back(view.getPoseId());
       }
     }

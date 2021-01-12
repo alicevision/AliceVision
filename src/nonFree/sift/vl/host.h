@@ -1,10 +1,11 @@
 /** @file host.h
  ** @brief Host
  ** @author Andrea Vedaldi
+ ** @sa @ref portability
  **/
 
 /*
-Copyright (C) 2007-12 Andrea Vedaldi and Brian Fulkerson.
+Copyright (C) 2007-12,18 Andrea Vedaldi and Brian Fulkerson.
 All rights reserved.
 
 This file is part of the VLFeat library and is made available under
@@ -18,13 +19,10 @@ the terms of the BSD license (see the COPYING file).
  ** @name Configuration options
  ** @{ */
 
- #if defined __clang__
-#define VL_DISABLE_THREADS
-#endif
-
 #if defined(__DOXYGEN__)
 #define VL_DISABLE_THREADS
 #define VL_DISABLE_SSE2
+#define VL_DISABLE_OPENMP
 #endif
 
 /** @} */
@@ -45,7 +43,6 @@ the terms of the BSD license (see the COPYING file).
  ** @{ */
 
 /** @brief Convert the argument to a string
- **
  ** @param x value to be stringified.
  **
  ** This macro stringifies the argument @a x by means of the
@@ -69,7 +66,6 @@ the terms of the BSD license (see the COPYING file).
 #define VL_STRINGIFY(x) # x
 
 /** @brief Expand and then convert the argument to a string
- **
  ** @param x value to be macro-expanded and converted.
  **
  ** This macro macro-expands the argument @a x and stringifies the
@@ -89,7 +85,6 @@ the terms of the BSD license (see the COPYING file).
 #define VL_XSTRINGIFY(x) VL_STRINGIFY(x)
 
 /** @brief Concatenate two arguments into a lexical unit
- **
  ** @param x first argument to be concatenated.
  ** @param y second argument to be concatenated.
  **
@@ -105,7 +100,6 @@ the terms of the BSD license (see the COPYING file).
 #define VL_CAT(x,y) x ## y
 
 /** @brief Expand and then concatenate two arguments into a lexical unit
- **
  ** @param x first argument to be concatenated.
  ** @param y second argument to be concatenated.
  **
@@ -118,7 +112,6 @@ the terms of the BSD license (see the COPYING file).
 #define VL_XCAT(x,y) VL_CAT(x,y)
 
 /** @brief Expand and then concatenate three arguments into a lexical unit
- **
  ** @param x first argument to be concatenated.
  ** @param y second argument to be concatenated.
  ** @param z third argument to be concatenated.
@@ -131,7 +124,6 @@ the terms of the BSD license (see the COPYING file).
 #define VL_XCAT3(x,y,z) VL_XCAT(VL_XCAT(x,y),z)
 
 /** @brief Expand and then concatenate four arguments into a lexical unit
- **
  ** @param x first argument to be concatenated.
  ** @param y second argument to be concatenated.
  ** @param z third argument to be concatenated.
@@ -145,7 +137,6 @@ the terms of the BSD license (see the COPYING file).
 #define VL_XCAT4(x,y,z,u) VL_XCAT(VL_XCAT3(x,y,z),u)
 
 /** @brief Expand and then concatenate five arguments into a lexical unit
- **
  ** @param x first argument to be concatenated.
  ** @param y second argument to be concatenated.
  ** @param z third argument to be concatenated.
@@ -159,12 +150,12 @@ the terms of the BSD license (see the COPYING file).
 
 #define VL_XCAT5(x,y,z,u,v) VL_XCAT(VL_XCAT4(x,y,z,u),v)
 
-/** @} */
-
 /** @brief Convert a boolean to "yes" or "no" strings
  ** @param x boolean to convert.
+ **
  ** A pointer to either the string "yes" (if @a x is true)
  ** or the string "no".
+ **
  ** @par Example
  ** @code
  ** VL_PRINTF("Is x true? %s.", VL_YESNO(x))
@@ -172,6 +163,8 @@ the terms of the BSD license (see the COPYING file).
  **/
 
 #define VL_YESNO(x) ((x)?"yes":"no")
+
+/** @} */
 
 /*
  The following macros identify the host OS, architecture and compiler.
@@ -316,14 +309,13 @@ defined(__DOXYGEN__)
 #endif
 /** @} */
 
-
 #if defined(VL_COMPILER_MSC) & ! defined(__DOXYGEN__)
 #  define VL_UNUSED
 #  define VL_INLINE static __inline
-#if _MSC_VER <= 1800
-#  define snprintf _snprintf
-#  define isnan _isnan
-#endif
+#  if _MSC_VER <= 1800
+#    define snprintf _snprintf
+#    define isnan _isnan
+#  endif
 #  ifdef VL_BUILD_DLL
 #    ifdef __cplusplus
 #      define VL_EXPORT extern "C" __declspec(dllexport)
@@ -332,13 +324,12 @@ defined(__DOXYGEN__)
 #    endif
 #  else
 #    ifdef __cplusplus
-#      define VL_EXPORT extern "C" //__declspec(dllimport)
+#      define VL_EXPORT extern "C" __declspec(dllimport)
 #    else
-#      define VL_EXPORT extern //__declspec(dllimport)
+#      define VL_EXPORT extern __declspec(dllimport)
 #    endif
 #  endif
 #endif
-
 
 #if defined(VL_COMPILER_LCC) & ! defined(__DOXYGEN__)
 #  define VL_UNUSED
@@ -370,12 +361,6 @@ VL_INLINE float fabsf(float x) { return (float) fabs((double) x) ; }
 #    endif
 #  endif
 #endif
-
-# if defined(VL_OS_MACOSX)
-# undef VL_EXPORT
-# define VL_EXPORT extern
-#endif
-
 
 VL_EXPORT char * vl_static_configuration_to_string_copy () ;
 
@@ -439,6 +424,34 @@ typedef vl_uint32           vl_uintptr ;
 typedef vl_uint32           vl_size ;
 typedef vl_int32            vl_index ;
 typedef vl_uint32           vl_uindex ;
+#endif
+/** @} */
+
+/** @name Creating integer constants
+ ** @{ */
+#if defined(VL_COMPILER_LP64) || defined(__DOXYGEN__)
+#define VL_INT8_C(x) x
+#define VL_INT16_C(x) x
+#define VL_INT32_C(x) x
+#define VL_INT64_C(x) x ## L
+
+#define VL_UINT8_C(x) x
+#define VL_UINT16_C(x) x
+#define VL_UINT32_C(x) x ## U
+#define VL_UINT64_C(x) x ## UL
+#endif
+
+#if (defined(VL_COMPILER_LLP64) || defined(VL_COMPILER_ILP32)) \
+    & !defined(__DOXYGEN__)
+#define VL_INT8_C(x) x
+#define VL_INT16_C(x) x
+#define VL_INT32_C(x) x
+#define VL_INT64_C(x) x ## LL
+
+#define VL_UINT8_C(x) x
+#define VL_UINT16_C(x) x
+#define VL_UINT32_C(x) x ## U
+#define VL_UINT64_C(x) x ## ULL
 #endif
 /** @} */
 
@@ -549,6 +562,7 @@ typedef struct _VlX86CpuInfo
     char string [0x20] ;
     vl_uint32 words [0x20 / 4] ;
   } vendor ;
+  vl_bool hasAVX ;
   vl_bool hasSSE42 ;
   vl_bool hasSSE41 ;
   vl_bool hasSSE3 ;
@@ -643,6 +657,11 @@ vl_swap_host_big_endianness_2 (void *dst, void* src)
     dst_ [1] = src_ [0] ;
 #endif
 }
+
+/* Linux: limit glibc to old versions for compatibility */
+#if defined(VL_COMPILER_GNUC) & defined(VL_OS_LINUX) & ! defined(__DOXYGEN__)
+__asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
+#endif
 
 /* VL_HOST_H */
 #endif

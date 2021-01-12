@@ -7,6 +7,8 @@
 
 #include "SfMData.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
@@ -17,6 +19,14 @@ using namespace aliceVision::camera;
 using namespace aliceVision::image;
 
 namespace fs = boost::filesystem;
+
+SfMData::SfMData()
+{
+}
+
+SfMData::~SfMData()
+{
+}
 
 bool SfMData::operator==(const SfMData& other) const {
 
@@ -110,9 +120,20 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
   if(absolutePath.empty())
     return folders;
   // else, convert relative paths to absolute paths
-  std::vector<std::string> absolutePaths(folders.size());
-  for(int i = 0; i < absolutePaths.size(); ++i)
-    absolutePaths.at(i) = fs::canonical(folders.at(i), fs::path(absolutePath).parent_path()).string();
+  std::vector<std::string> absolutePaths;
+  absolutePaths.reserve(folders.size());
+  for(const auto& folder: folders)
+  {
+    if(fs::exists(folder))
+    {
+      // fs::canonical can only be used if the path exists
+      absolutePaths.push_back(fs::canonical(folder, fs::path(absolutePath).parent_path()).string());
+    }
+    else
+    {
+      absolutePaths.push_back(folder);
+    }
+  }
   return absolutePaths;
 }
 
@@ -260,6 +281,24 @@ void SfMData::combine(const SfMData& sfmData)
 
   // constraints
   constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
+}
+
+void SfMData::clear()
+{
+    views.clear();
+    intrinsics.clear();
+    structure.clear();
+    control_points.clear();
+    _posesUncertainty.clear();
+    _landmarksUncertainty.clear();
+    constraints2d.clear();
+    rotationpriors.clear();
+
+    _absolutePath.clear();
+    _featuresFolders.clear();
+    _matchesFolders.clear();
+    _poses.clear();
+    _rigs.clear();
 }
 
 } // namespace sfmData

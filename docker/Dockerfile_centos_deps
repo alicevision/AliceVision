@@ -1,0 +1,120 @@
+ARG CUDA_VERSION
+ARG CENTOS_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-devel-centos${CENTOS_VERSION}
+LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+
+# use CUDA_VERSION to select the image version to use
+# see https://hub.docker.com/r/nvidia/cuda/
+#
+# AV_VERSION=2.2.8.develop
+# CUDA_VERSION=10.2
+# CENTOS_VERSION=20.04
+# docker build \
+#    --build-arg CUDA_VERSION=${CUDA_VERSION} \
+#    --build-arg CENTOS_VERSION=${CENTOS_VERSION} \
+#    --tag alicevision/alicevision-deps:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_TAG} \
+#     -f Dockerfile_deps .
+
+# OS/Version (FILE): cat /etc/issue.net
+# Cuda version (ENV): $CUDA_VERSION
+
+ENV AV_DEV=/opt/AliceVisionDeps_git \
+    AV_BUILD=/tmp/AliceVisionDeps_build \
+    AV_INSTALL=/opt/AliceVision_install \
+    VERBOSE=1 \
+    YUM_INSTALL='yum install -y --setopt=tsflags=nodocs'
+
+#
+# Install all compilation tools
+# - file and openssl are needed for cmake
+#
+# Workaround to give access to deprecated devtoolset-6 is taken from ASWF container:
+# https://github.com/AcademySoftwareFoundation/aswf-docker/blob/master/scripts/common/install_yumpackages.sh#L119
+#
+# Install packages one by one with yum to ensure that it creates an error if a package is missing.
+#
+RUN $YUM_INSTALL centos-release-scl-rh && \
+    $YUM_INSTALL yum-utils && \
+    sed -i 's/7/7.6.1810/g; s|^#\s*\(baseurl=http://\)mirror|\1vault|g; /mirrorlist/d' /etc/yum.repos.d/CentOS-SCLo-*.repo && \
+    yum clean all && \
+    $YUM_INSTALL devtoolset-6-toolchain --nogpgcheck && \
+    $YUM_INSTALL --enablerepo=extras epel-release && \
+    $YUM_INSTALL file \
+		git \
+		wget \
+		unzip \
+		yasm \
+		pkgconfig \
+		libtool \
+		nasm \
+		automake \
+		which \
+		openssl-devel
+
+# Okay, change our shell to specifically use our software collections.
+# (default was SHELL [ "/bin/sh", "-c" ])
+# https://docs.docker.com/engine/reference/builder/#shell
+#
+# See also `scl` man page for enabling multiple packages if desired:
+# https://linux.die.net/man/1/scl
+# SHELL [ "/usr/bin/scl", "enable", "devtoolset-6" ]
+ENV PATH="/opt/rh/devtoolset-6/root/usr/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/rh/devtoolset-6/root/usr/lib:/opt/rh/devtoolset-6/root/usr/lib64:/opt/rh/devtoolset-6/root/usr/lib64/dyninst:${LD_LIBRARY_PATH}" \
+    MAKE=/opt/rh/devtoolset-6/root/usr/bin/make
+
+COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
+
+# Manually install cmake 3.16
+WORKDIR /opt
+COPY dl/cmake-3.16.3.tar.gz /tmp
+RUN tar zxf /tmp/cmake-3.16.3.tar.gz && \
+    rm /tmp/cmake-3.16.3.tar.gz && \
+    cd cmake-3.16.3 && \
+    ./bootstrap --parallel="$(nproc)" --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
+    make -j"$(nproc)" && \
+    make install
+
+
+COPY CMakeLists.txt ${AV_DEV}/
+
+COPY dl/deps ${AV_BUILD}/external/download/
+
+WORKDIR "${AV_BUILD}"
+RUN cmake "${AV_DEV}" \
+     -DCMAKE_BUILD_TYPE=Release \
+     -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
+     -DAV_BUILD_ALICEVISION:BOOL=OFF \
+     -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
+
+# Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
+RUN mkdir -p "${AV_INSTALL}/lib" && \
+	ln -s lib "${AV_INSTALL}/lib64"
+
+#RUN make -j"$(nproc)" zlib
+#RUN make -j"$(nproc)" geogram
+#RUN make -j"$(nproc)" tbb
+#RUN make -j"$(nproc)" eigen
+#RUN make -j"$(nproc)" opengv
+#RUN make -j"$(nproc)" lapack
+
+RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
+#RUN make -j"$(nproc)" suitesparse
+#RUN make -j"$(nproc)" ceres
+#RUN make -j"$(nproc)" openexr
+#RUN make -j"$(nproc)" tiff
+#RUN make -j"$(nproc)" png
+#RUN make -j"$(nproc)" turbojpeg
+#RUN make -j"$(nproc)" libraw
+#RUN make -j"$(nproc)" boost
+#RUN make -j"$(nproc)" openimageio
+#RUN make -j"$(nproc)" alembic
+#RUN make -j"$(nproc)" popsift
+#RUN make -j"$(nproc)" ffmpeg
+#RUN make -j"$(nproc)" opencv
+#RUN make -j"$(nproc)" cctag
+
+RUN cmake --build . -j "$(nproc)" && \
+    mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
+    rm -rf "${AV_BUILD}"
+

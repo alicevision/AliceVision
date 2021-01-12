@@ -10,8 +10,8 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 
+#include <aliceVision/utils/Histogram.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
-#include <dependencies/histogram/histogram.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/filesystem.hpp>
@@ -28,6 +28,7 @@ namespace aliceVision
 inline bool computeSimilarity(
   const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
+  std::mt19937 &randomNumberGenerator,
   std::vector<Vec3> & vec_camPosComputed_T,
   double *Sout, Mat3 * Rout, Vec3 * tout)
 {
@@ -49,7 +50,7 @@ inline bool computeSimilarity(
   Vec3 t;
   Mat3 R;
   std::vector<std::size_t> inliers;
-  if(!aliceVision::geometry::ACRansac_FindRTS(x1, x2, S, t, R, inliers, true))
+  if(!aliceVision::geometry::ACRansac_FindRTS(x1, x2, randomNumberGenerator, S, t, R, inliers, true))
     return false;
 
   vec_camPosComputed_T.resize(vec_camPosGT.size());
@@ -110,6 +111,7 @@ inline void EvaluteToGT(
   const std::vector<Mat3> & vec_camRotGT,
   const std::vector<Mat3> & vec_camRotComputed,
   const std::string & sOutPath,
+  std::mt19937 &randomNumberGenerator,
   htmlDocument::htmlDocumentStream * htmlDocStream
   )
 {
@@ -125,7 +127,7 @@ inline void EvaluteToGT(
   Vec3 t;
   double scale;
   
-  computeSimilarity(vec_camCenterGT, vec_camCenterComputed, vec_camPosComputed_T, &scale, &R, &t);
+  computeSimilarity(vec_camCenterGT, vec_camCenterComputed, randomNumberGenerator, vec_camPosComputed_T, &scale, &R, &t);
   
   std::cout << "\nEstimated similarity transformation between the sequences\n";
   std::cout << "R\n" << R << std::endl;
@@ -169,10 +171,10 @@ inline void EvaluteToGT(
 //  std::cout << "\nAngular residuals (Degree) \n";
 //  copy(vec_angularErrors.begin(), vec_angularErrors.end(), std::ostream_iterator<double>(std::cout, " , "));
 
-  MinMaxMeanMedian<double> statsBaseline(vec_baselineErrors.begin(), vec_baselineErrors.end());
+  BoxStats<double> statsBaseline(vec_baselineErrors.begin(), vec_baselineErrors.end());
   std::cout << std::endl << "\nBaseline error statistics:\n" << statsBaseline;
 
-  MinMaxMeanMedian<double> statsAngular(vec_angularErrors.begin(), vec_angularErrors.end());
+  BoxStats<double> statsAngular(vec_angularErrors.begin(), vec_angularErrors.end());
   std::cout << std::endl << "\nAngular error statistics:\n" << statsAngular;
 
   // Export camera position (viewable)
@@ -218,7 +220,7 @@ inline void EvaluteToGT(
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     const double maxRange = *std::max_element(vec_baselineErrors.begin(), vec_baselineErrors.end());
-    Histogram<double> baselineHistogram(0.0, maxRange, 50);
+    utils::Histogram<double> baselineHistogram(0.0, maxRange, 50);
     baselineHistogram.Add(vec_baselineErrors.begin(), vec_baselineErrors.end());
 
     svg::svgHisto svg_BaselineHistogram;
@@ -277,7 +279,7 @@ inline void EvaluteToGT(
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
     
     const double maxRangeAngular = *std::max_element(vec_angularErrors.begin(), vec_angularErrors.end());
-    Histogram<double> angularHistogram(0.0, maxRangeAngular, 50);
+    utils::Histogram<double> angularHistogram(0.0, maxRangeAngular, 50);
     angularHistogram.Add(vec_angularErrors.begin(), vec_angularErrors.end());
 
     svg::svgHisto svg_AngularHistogram;

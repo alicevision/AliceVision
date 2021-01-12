@@ -13,6 +13,7 @@ set(sfmData_files_headers
 set(sfmData_files_sources
   SfMData.cpp
   uid.cpp
+  View.cpp
   colorize.cpp
 )
 
@@ -37,4 +38,8 @@ alicevision_add_test(sfmData_test.cpp
   NAME "sfmData"
   LINKS aliceVision_sfmData
         aliceVision_system
+)
+alicevision_add_test(view_test.cpp
+  NAME "view"
+  LINKS aliceVision_sfmData
 )

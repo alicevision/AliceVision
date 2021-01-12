@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include "aliceVision/image/all.hpp"
-#include "dependencies/histogram/histogram.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/utils/Histogram.hpp>
+
 #include <string>
+
 
 namespace aliceVision {
 namespace colorHarmonization {
@@ -45,7 +47,7 @@ public:
    */
   template< typename ImageType >
   static void computeHisto(
-    Histogram< double > & histo,
+    utils::Histogram< double > & histo,
     const image::Image< unsigned char >& mask,
     std::size_t channelIndex,
     const image::Image< ImageType >& image )

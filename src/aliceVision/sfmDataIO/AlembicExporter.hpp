@@ -78,7 +78,7 @@ public:
   void addCamera(const std::string& name,
                  const sfmData::View& view,
                  const sfmData::CameraPose* pose = nullptr,
-                 const camera::IntrinsicBase* intrinsic = nullptr,
+                 std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
                  const Vec6* uncertainty = nullptr);
 
   /**

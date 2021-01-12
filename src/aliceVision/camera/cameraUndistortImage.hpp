@@ -29,7 +29,7 @@ void UndistortImage(
   T fillcolor,
   bool correctPrincipalPoint = false)
 {
-  if (!intrinsicPtr->have_disto()) // no distortion, perform a direct copy
+  if (!intrinsicPtr->hasDistortion()) // no distortion, perform a direct copy
   {
     image_ud = imageIn;
   }
@@ -43,7 +43,7 @@ void UndistortImage(
       if(camera::isPinhole(intrinsicPtr->getType()))
       {
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
-        ppCorrection = pinholePtr->principal_point() - center;
+        ppCorrection = pinholePtr->getPrincipalPoint() - center;
       }
     }
 

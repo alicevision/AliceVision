@@ -43,6 +43,21 @@ enum class EImageFileType
 };
 
 /**
+ * @brief aggregate for multiple image reading options
+ */
+struct ImageReadOptions
+{  
+  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true) :
+  outputColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance)
+  {
+  }
+
+  EImageColorSpace outputColorSpace;
+  bool applyWhiteBalance;
+};
+
+
+/**
  * @brief get informations about each image file type
  * @return String
  */
@@ -79,11 +94,36 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
 /**
+ * @brief Return a list of extensions supported by openImageIO ie exists in extension_list from imageio.h
+ * @return A vector containing all supported extensions
+ */
+std::vector<std::string> getSupportedExtensions();
+
+/**
  * @brief Check if input image extension is supported by openImageIO ie exists in extension_list from imageio.h
  * @param[in] ext - image extension
  * @return true if valid extension
  */
-bool isSupported(const std::string &ext);
+bool isSupported(const std::string& ext);
+
+
+/**
+* @brief Data type use to write the image
+*/
+enum class EStorageDataType
+{
+    Float, //< Use full floating point precision to store
+    Half, //< Use half (values our of range could become inf or nan)
+    HalfFinite, //< Use half, but ensures out-of-range pixels are clamps to keep finite pixel values
+    Auto //< Use half if all pixels can be stored in half without clamp, else use full float
+};
+
+std::string EStorageDataType_informations();
+EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType);
+std::string EStorageDataType_enumToString(const EStorageDataType dataType);
+std::ostream& operator<<(std::ostream& os, EStorageDataType dataType);
+std::istream& operator>>(std::istream& in, EStorageDataType& dataType);
+
 
 /**
  * @brief convert a metadata string map into an oiio::ParamValueList
@@ -135,12 +175,12 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer);
  * @param[out] image The output image buffer
  * @param[in] image color space
  */
-void readImage(const std::string& path, Image<float>& image, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, Image<unsigned char>& image, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, Image<RGBAfColor>& image, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, Image<RGBAColor>& image, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, Image<RGBfColor>& image, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, Image<RGBColor>& image, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions);
 
 /**
  * @brief write an image with a given path and buffer

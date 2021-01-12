@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include "aliceVision/matching/ArrayMatcher.hpp"
-#include "aliceVision/matching/CascadeHasher.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/feature/metric.hpp>
+#include <aliceVision/matching/ArrayMatcher.hpp>
+#include <aliceVision/matching/CascadeHasher.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -32,7 +33,7 @@ namespace matching {
 // Implementation of descriptor matching using the cascade hashing method of [1].
 // If you use this matcher, please cite the paper.
 // template Metric parameter is ignored (by default compute square(L2 distance)).
-template < typename Scalar = float, typename Metric = L2_Simple<Scalar> >
+template < typename Scalar = float, typename Metric = feature::L2_Simple<Scalar> >
 class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
 {
   public:
@@ -52,7 +53,7 @@ class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
    *
    * \return True if success.
    */
-  bool Build(const Scalar * dataset, int nbRows, int dimension) {
+  bool Build(std::mt19937 & randomNumberGenerator,const Scalar * dataset, int nbRows, int dimension) {
     if (nbRows < 1) {
       memMapping.reset(nullptr);
       return false;
@@ -60,7 +61,7 @@ class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
     memMapping.reset(new Eigen::Map<BaseMat>( (Scalar*)dataset, nbRows, dimension) );
 
     // Init the cascade hasher (hashing projection matrices)
-    cascade_hasher_.Init(dimension);
+    cascade_hasher_.Init(randomNumberGenerator, dimension);
     // Index the input descriptors
     zero_mean_descriptor_ = CascadeHasher::GetZeroMeanDescriptor(*memMapping);
     hashed_base_ = cascade_hasher_.CreateHashedDescriptions(

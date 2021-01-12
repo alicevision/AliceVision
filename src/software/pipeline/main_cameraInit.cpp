@@ -10,7 +10,9 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/image/io.cpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -32,6 +34,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
+using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -169,7 +172,7 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
  * @brief Create the description of an input image dataset for AliceVision toolsuite
  * - Export a SfMData file with View & Intrinsic data
  */
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -180,14 +183,18 @@ int main(int argc, char **argv)
   std::string outputFilePath;
 
   // user optional parameters
-
   std::string defaultIntrinsicKMatrix;
   std::string defaultCameraModelName;
+  std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
+
   double defaultFocalLengthPixel = -1.0;
   double defaultFieldOfView = -1.0;
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
+  EViewIdMethod viewIdMethod = EViewIdMethod::METADATA;
+  std::string viewIdRegex = ".*?(\\d+)";
 
   bool allowSingleView = false;
+  bool useInternalWhiteBalance = true;
 
   po::options_description allParams("AliceVision cameraInit");
 
@@ -211,13 +218,23 @@ int main(int argc, char **argv)
     ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+      "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+    ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
+      "Permitted model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
     ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
       std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
       "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
       " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::GLOBAL) + ": all images may come from a single device (make/model/focal will still be a differentiator).\n"
       " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::FOLDER) + ": different folders will be considered as different devices\n"
       " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::IMAGE) + ": consider that each image has different internal camera parameters").c_str())
+    ("viewIdMethod", po::value<EViewIdMethod>(&viewIdMethod)->default_value(viewIdMethod),
+      std::string("Allows to choose the way the viewID is generated:\n"
+      " * " + EViewIdMethod_enumToString(EViewIdMethod::METADATA) + ": Generate viewId from image metadata.\n"
+      " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
+    ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
+      "Regex used to catch number used as viewId in filename.")
+    ("useInternalWhiteBalance", po::value<bool>(&useInternalWhiteBalance)->default_value(useInternalWhiteBalance),
+      "Apply the white balance included in the image metadata (Only for raw images)")
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
@@ -261,7 +278,7 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // set user camera model
-  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_START;
+  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::UNKNOWN;
   if(!defaultCameraModelName.empty())
       defaultCameraModel = camera::EINTRINSIC_stringToEnum(defaultCameraModelName);
 
@@ -354,6 +371,8 @@ int main(int argc, char **argv)
     }
   }
 
+  camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);
+
   // use current time as seed for random generator for intrinsic Id without metadata
   std::srand(std::time(0));
 
@@ -373,7 +392,7 @@ int main(int argc, char **argv)
   if(imageFolder.empty())
   {
     // fill SfMData from the JSON file
-    sfmDataIO::loadJSON(sfmData, sfmFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS), true);
+    loadJSON(sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true, viewIdMethod, viewIdRegex);
   }
   else
   {
@@ -381,7 +400,7 @@ int main(int argc, char **argv)
     sfmData::Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
+    if(listFiles(imageFolder, image::getSupportedExtensions(), imagePaths))
     {
       std::vector<sfmData::View> incompleteViews(imagePaths.size());
 
@@ -390,14 +409,15 @@ int main(int argc, char **argv)
       {
         sfmData::View& view = incompleteViews.at(i);
         view.setImagePath(imagePaths.at(i));
-        sfmDataIO::updateIncompleteView(view);
+        updateIncompleteView(view, viewIdMethod, viewIdRegex);
       }
 
       for(const auto& view : incompleteViews)
         views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
     }
-    else
+    else {
       return EXIT_FAILURE;
+    }
   }
 
   if(sfmData.getViews().empty())
@@ -412,6 +432,9 @@ int main(int argc, char **argv)
   boost::regex extractComposedNumberRegex("\\d+(?:[\\-\\:\\_\\.]\\d+)*");
   boost::regex extractNumberRegex("\\d+");
 
+  std::map<IndexT, std::vector<IndexT>> poseGroups;
+
+  #pragma omp parallel for
   for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
@@ -439,7 +462,7 @@ int main(int argc, char **argv)
         {
             // Extract the frame ID which will be used to associate the frames from the different cameras of the rig.
             IndexT frameId = 0;
-            std::string p = fs::path(view.getImagePath()).stem().string();
+            const std::string p = fs::path(view.getImagePath()).stem().string();
 
             {
                 boost::smatch matches;
@@ -478,6 +501,18 @@ int main(int argc, char **argv)
             view.setFrameId(frameId);
         }
     }
+    
+    if(boost::algorithm::starts_with(parentPath.stem().string(), "ps_") ||
+       boost::algorithm::starts_with(parentPath.stem().string(), "hdr_"))
+    {
+        std::hash<std::string> hash;
+        IndexT tmpPoseID = hash(parentPath.string()); // use a temporary pose Id to group the images
+
+#pragma omp critical
+        {
+            poseGroups[tmpPoseID].push_back(view.getViewId());
+        }
+    }
 
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
@@ -491,8 +526,8 @@ int main(int argc, char **argv)
     const std::string& make = view.getMetadataMake();
     const std::string& model = view.getMetadataModel();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
-    const bool hasFocalIn35mmMetadata = view.hasDigitMetadata("Exif:FocalLengthIn35mmFilm");
-    const double focalIn35mm = hasFocalIn35mmMetadata ? std::stod(view.getMetadata("Exif:FocalLengthIn35mmFilm")) : -1.0;
+    const bool hasFocalIn35mmMetadata = view.hasDigitMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"});
+    const double focalIn35mm = hasFocalIn35mmMetadata ? view.getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"}) : -1.0;
     const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
     camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
@@ -528,25 +563,28 @@ int main(int argc, char **argv)
                               << "\t- model: " << model << std::endl
                               << "\t- sensor width: " << datasheet._sensorSize << " mm");
 
-        if(datasheet._model != model) // the camera model in database is slightly different
+        if(datasheet._model != model) {
+          // the camera model in database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
+        }
 
         sensorWidth = datasheet._sensorSize;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
-        if(focalLengthmm > 0.0)
+        if(focalLengthmm > 0.0) {
           intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        }
       }
     }
 
     // try to find / compute with 'FocalLengthIn35mmFilm' metadata
-    if(hasFocalIn35mmMetadata)
+    if (hasFocalIn35mmMetadata)
     {
-      if(sensorWidth == -1.0)
+      if (sensorWidth == -1.0)
       {
         const double invRatio = 1.0 / imageRatio;
 
-        if(focalLengthmm > 0.0)
+        if (focalLengthmm > 0.0)
         {
           // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce sensorWith approximation
           const double sensorDiag = (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
@@ -593,21 +631,34 @@ int main(int argc, char **argv)
     else
     {
       // we have a valid sensorWidth information, so se store it into the metadata (where it would have been nice to have it in the first place)
-      if(sensorWidthSource == ESensorWidthSource::FROM_DB)
+      if(sensorWidthSource == ESensorWidthSource::FROM_DB) {
         view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
-      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+      }
+      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION) {
         view.addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
-      // else it is just a guess, so there is no need to put it into the metadata.
+      }
     }
 
     // build intrinsic
-    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmDataIO::getViewIntrinsic(view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
-    camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
+    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
+        view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel,
+        allowedCameraModels, defaultPPx, defaultPPy);
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
 
     // set initialization mode
     intrinsic->setInitializationMode(intrinsicInitMode);
 
-    if(intrinsic && intrinsic->getFocalLengthPix() > 0)
+    // Set sensor size
+    if (imageRatio > 1.0) {
+      intrinsicBase->setSensorWidth(sensorWidth);
+      intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+    }
+    else {
+      intrinsicBase->setSensorWidth(sensorWidth);
+      intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+    }
+
+    if(intrinsic && intrinsic->isValid())
     {
       // the view intrinsic is initialized
       #pragma omp atomic
@@ -666,13 +717,13 @@ int main(int argc, char **argv)
         }
       }
 
-      // If we have not managed to initialize the focal length, we need to use the
-      if(intrinsic->getFocalLengthPix() <= 0 && focalLengthmm > 0)
+      // If we have not managed to initialize the focal length, we need to use the focalLength in mm
+      if(intrinsic->getScale()(0) <= 0 && focalLengthmm > 0)
       {
         intrinsic->setSerialNumber(intrinsic->serialNumber() + "_FocalLengthMM_" + std::to_string(focalLengthmm));
       }
     }
-
+    
     // create intrinsic id
     // group camera that share common properties (leads to more faster & stable BA).
     if(intrinsicId == UndefinedIndexT)
@@ -719,6 +770,33 @@ int main(int argc, char **argv)
 
       sfmData.getRigs().emplace(rigId, sfmData::Rig(nbSubPose));
     }
+  }
+
+  // Update poseId for detected multi-exposure or multi-lighting images (multiple shots with the same camera pose)
+  if(!poseGroups.empty())
+  {
+      for(const auto& poseGroup : poseGroups)
+      {
+          // Sort views of the poseGroup per timestamps
+          std::vector<std::pair<int64_t, IndexT>> sortedViews;
+          for(const IndexT vId : poseGroup.second)
+          {
+              int64_t t = sfmData.getView(vId).getMetadataDateTimestamp();
+              sortedViews.push_back(std::make_pair(t, vId));
+          }
+          std::sort(sortedViews.begin(), sortedViews.end());
+
+          // Get the view which was taken at the middle of the sequence
+          int median = sortedViews.size() / 2;
+          IndexT middleViewId = sortedViews[median].second;
+
+          for(const auto it : sortedViews)
+          {
+              const IndexT vId = it.second;
+              // Update poseId with middle view id
+              sfmData.getView(vId).setPoseId(middleViewId);
+          }
+      }
   }
 
   if(!noMetadataImagePaths.empty())
@@ -790,8 +868,17 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  // Add the white balance option to the image metadata
+  for (auto vitem : sfmData.getViews())
+  {
+    if (vitem.second) 
+    {
+      vitem.second->addMetadata("AliceVision:useWhiteBalance", (useInternalWhiteBalance)?"1":"0");
+    }
+  }
+  
   // store SfMData views & intrinsic data
-  if(!sfmDataIO::Save(sfmData, outputFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }

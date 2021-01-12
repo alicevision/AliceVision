@@ -28,17 +28,9 @@ namespace mvsUtils {
 bool FileExists(const std::string& filePath);
 bool FolderExists(const std::string& folderPath);
 
-std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix);
-inline std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale = 0)
-{
-  return getFileNameFromViewId(mp, viewId, fileType, scale, "");
-}
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
 
-std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale, const std::string& customSuffix);
-inline std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale = 0)
-{
-  return getFileNameFromIndex(mp, index, fileType, scale, "");
-}
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
 
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);

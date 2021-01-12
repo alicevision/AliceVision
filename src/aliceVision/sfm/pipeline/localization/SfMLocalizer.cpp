@@ -6,43 +6,36 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SfMLocalizer.hpp"
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/multiview/resection/ResectionKernel.hpp>
-#include <aliceVision/multiview/resection/P3PSolver.hpp>
-#include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
-#include <aliceVision/robustEstimation/LORansac.hpp>
-#include <aliceVision/robustEstimation/LORansacKernelAdaptor.hpp>
-#include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/LORansac.hpp>
+#include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
+#include <aliceVision/multiview/resection/P3PSolver.hpp>
+#include <aliceVision/multiview/resection/ResectionKernel.hpp>
+#include <aliceVision/multiview/resection/Resection6PSolver.hpp>
+#include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
+#include <aliceVision/multiview/ResectionKernel.hpp>
 
 namespace aliceVision {
 namespace sfm {
 
-struct ResectionSquaredResidualError 
-{
-  // Compute the residual of the projection distance(pt2D, Project(P,pt3D))
-  // Return the squared error
-  static double Error(const Mat34& P, const Vec2& pt2D, const Vec3& pt3D)
-  {
-    const Vec2 x = Project(P, pt3D);
-    return (x - pt2D).squaredNorm();
-  }
-};
-
 bool SfMLocalizer::Localize(const Pair& imageSize,
                             const camera::IntrinsicBase* optionalIntrinsics,
+                            std::mt19937 &randomNumberGenerator, 
                             ImageLocalizerMatchData& resectionData,
                             geometry::Pose3& pose,
                             robustEstimation::ERobustEstimator estimator)
 {
-  // --
-  // Compute the camera pose (resectioning)
-  // --
+  // compute the camera pose (resectioning)
+
   Mat34 P;
   resectionData.vec_inliers.clear();
 
-  // Setup the admissible upper bound residual error
+  // setup the admissible upper bound residual error
   const double precision =
     resectionData.error_max == std::numeric_limits<double>::infinity() ?
     std::numeric_limits<double>::infinity() :
@@ -51,29 +44,28 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
   std::size_t minimumSamples = 0;
   const camera::Pinhole* pinholeCam = dynamic_cast<const camera::Pinhole*>(optionalIntrinsics);
 
-  if (pinholeCam == nullptr || !pinholeCam->isValid())
+  if(pinholeCam == nullptr || !pinholeCam->isValid())
   {
-    //--
-    // Classic resection (try to compute the entire P matrix)
-    typedef aliceVision::resection::kernel::SixPointResectionSolver SolverType;
-    minimumSamples = SolverType::MINIMUM_SAMPLES;
+    // classic resection (try to compute the entire P matrix)
+    using SolverT = multiview::resection::Resection6PSolver;
+    using KernelT = multiview::ResectionKernel<SolverT, multiview::resection::ProjectionDistanceSquaredError, multiview::UnnormalizerResection, robustEstimation::Mat34Model>;
 
-    typedef aliceVision::robustEstimation::ACKernelAdaptorResection<
-      SolverType, ResectionSquaredResidualError, aliceVision::robustEstimation::UnnormalizerResection, Mat34>
-      KernelType;
+    const KernelT kernel(resectionData.pt2D, resectionData.pt3D, imageSize.first, imageSize.second);
 
-    KernelType kernel(resectionData.pt2D, imageSize.first, imageSize.second, resectionData.pt3D);
-    // Robust estimation of the Projection matrix and its precision
-    const std::pair<double,double> ACRansacOut =
-      aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
-    // Update the upper bound precision of the model found by AC-RANSAC
+    minimumSamples = kernel.getMinimumNbRequiredSamples();
+
+    // robust estimation of the Projection matrix and its precision
+    robustEstimation::Mat34Model model;
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, resectionData.vec_inliers, resectionData.max_iteration, &model, precision);
+    P = model.getMatrix();
+    // update the upper bound precision of the model found by AC-RANSAC
     resectionData.error_max = ACRansacOut.first;
   }
   else
   {
     // undistort the points if the camera has a distortion model
     Mat pt2Dundistorted;
-    const bool hasDistortion = pinholeCam->have_disto();
+    const bool hasDistortion = pinholeCam->hasDistortion();
     if(hasDistortion)
     {
       const std::size_t numPts = resectionData.pt2D.cols();
@@ -88,22 +80,22 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     {
       case robustEstimation::ERobustEstimator::ACRANSAC:
       {
-        //--
-        // Since K calibration matrix is known, compute only [R|t]
-        typedef aliceVision::resection::P3PSolver SolverType;
-        minimumSamples = SolverType::MINIMUM_SAMPLES;
-
-        typedef aliceVision::robustEstimation::ACKernelAdaptorResection_K<
-                SolverType, ResectionSquaredResidualError,
-                aliceVision::robustEstimation::UnnormalizerResection, Mat34> KernelType;
+        // since K calibration matrix is known, compute only [R|t]
+        using SolverT = multiview::resection::P3PSolver;
+        using KernelT = multiview::ResectionKernel_K<SolverT, multiview::resection::ProjectionDistanceSquaredError, multiview::UnnormalizerResection, robustEstimation::Mat34Model>;
 
         // otherwise we just pass the input points
-        KernelType kernel = KernelType(hasDistortion ? pt2Dundistorted : resectionData.pt2D, resectionData.pt3D, pinholeCam->K());
+        const KernelT kernel = KernelT(hasDistortion ? pt2Dundistorted : resectionData.pt2D, resectionData.pt3D, pinholeCam->K());
 
-        // Robust estimation of the Projection matrix and its precision
-        const std::pair<double, double> ACRansacOut =
-                aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
-        // Update the upper bound precision of the model found by AC-RANSAC
+        minimumSamples = kernel.getMinimumNbRequiredSamples();
+
+        // robust estimation of the Projection matrix and its precision
+        robustEstimation::Mat34Model model;
+        const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, resectionData.vec_inliers, resectionData.max_iteration, &model, precision);
+
+        P = model.getMatrix();
+
+        // update the upper bound precision of the model found by AC-RANSAC
         resectionData.error_max = ACRansacOut.first;
         break;
       }
@@ -121,27 +113,27 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
         }
 
         // use the P3P solver for generating the model
-        typedef aliceVision::resection::P3PSolver SolverType;
-        minimumSamples = SolverType::MINIMUM_SAMPLES;
-        // use the six point algorithm as Least square solution to refine the model
-        typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
+        using SolverT = multiview::resection::P3PSolver;
+        using SolverLsT = multiview::resection::Resection6PSolver;
 
-        typedef aliceVision::robustEstimation::KernelAdaptorResectionLORansac_K<SolverType,
-                ResectionSquaredResidualError,
-                aliceVision::robustEstimation::UnnormalizerResection,
-                SolverLSType,
-                Mat34> KernelType;
+        // use the six point algorithm as Least square solution to refine the model
+        using KernelT = multiview::ResectionKernel_K<SolverT, multiview::resection::ProjectionDistanceSquaredError, multiview::UnnormalizerResection, robustEstimation::Mat34Model, SolverLsT>;
 
         // otherwise we just pass the input points
-        KernelType kernel = KernelType(hasDistortion ? pt2Dundistorted : resectionData.pt2D, resectionData.pt3D, pinholeCam->K());
+        const KernelT kernel = KernelT(hasDistortion ? pt2Dundistorted : resectionData.pt2D, resectionData.pt3D, pinholeCam->K());
+
+        minimumSamples = kernel.getMinimumNbRequiredSamples();
 
         // this is just stupid and ugly, the threshold should be always give as pixel
         // value, the scorer should be not aware of the fact that we treat squared errors
         // and normalization inside the kernel
         // @todo refactor, maybe move scorer directly inside the kernel
         const double threshold = resectionData.error_max * resectionData.error_max * (kernel.normalizer2()(0, 0) * kernel.normalizer2()(0, 0));
-        robustEstimation::ScoreEvaluator<KernelType> scorer(threshold);
-        P = robustEstimation::LO_RANSAC(kernel, scorer, &resectionData.vec_inliers);
+        robustEstimation::ScoreEvaluator<KernelT> scorer(threshold);
+
+        const robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &resectionData.vec_inliers);
+        P = model.getMatrix();
+
         break;
       }
 
@@ -150,7 +142,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     }
   }
 
-  const bool resection = robustEstimation::hasStrongSupport(resectionData.vec_inliers, resectionData.vec_descType, minimumSamples);
+  const bool resection = matching::hasStrongSupport(resectionData.vec_inliers, resectionData.vec_descType, minimumSamples);
 
   if(!resection)
   {
@@ -164,7 +156,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     resectionData.projection_matrix = P;
     Mat3 K, R;
     Vec3 t;
-    KRt_From_P(P, &K, &R, &t);
+    KRt_from_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
 

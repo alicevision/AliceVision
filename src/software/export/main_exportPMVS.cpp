@@ -8,6 +8,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -86,8 +87,15 @@ bool exportToPMVSFormat(
       // View Id re-indexing
       map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size()));
 
+      std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+      std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+      if (!camPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+        continue;
+      }
+
       // We have a valid view with a corresponding camera & pose
-      const Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
+      const Mat34 P = camPinHole->getProjectiveEquivalent(pose);
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       std::ofstream file((fs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
@@ -113,7 +121,7 @@ bool exportToPMVSFormat(
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       const std::string dstImage = (fs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
       const IntrinsicBase * cam = iterIntrinsic->second.get();
-      if (cam->isValid() && cam->have_disto())
+      if (cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
         readImage( srcImage, image, image::EImageColorSpace::NO_CONVERSION);
@@ -260,7 +268,7 @@ bool exportToBundlerFormat(
       if(isPinhole(iterIntrinsic->second.get()->getType()))
       {
         const Pinhole * cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
-        const double focal = cam->focal();
+        const double focal = cam->getFocalLengthPix();
         const Mat3 R = D * pose.rotation();
         const Vec3 t = D * pose.translation();
 
@@ -304,7 +312,7 @@ bool exportToBundlerFormat(
   return true;
 }
 
-int main(int argc, char *argv[])
+int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
 

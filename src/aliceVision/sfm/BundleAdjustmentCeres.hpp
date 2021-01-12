@@ -11,8 +11,12 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <ceres/ceres.h>
+
+#include <memory>
+
 
 namespace aliceVision {
 
@@ -36,6 +40,7 @@ public:
       , nbThreads(multithreaded ? omp_get_max_threads() : 1) // set number of threads, 1 if OpenMP is not enabled
     {
       setDenseBA(); // use dense BA by default
+      lossFunction.reset(new ceres::HuberLoss(Square(4.0)));
     }
 
     void setDenseBA();
@@ -44,7 +49,7 @@ public:
     ceres::LinearSolverType linearSolverType;
     ceres::PreconditionerType preconditionerType;
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
-    ceres::ParameterBlockOrdering linearSolverOrdering;
+    std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
     bool useParametersOrdering = true;
     bool summary = false;
@@ -166,16 +171,7 @@ private:
   /**
    * @brief Clear structures for a new problem
    */
-  inline void resetProblem()
-  {
-    _statistics = Statistics();
-
-    _allParametersBlocks.clear();
-    _posesBlocks.clear();
-    _intrinsicsBlocks.clear();
-    _landmarksBlocks.clear();
-    _rigBlocks.clear();
-  }
+  void resetProblem();
 
   /**
    * @brief Set user Ceres options to the solver
@@ -301,6 +297,10 @@ private:
   /// rig sub-poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
   HashMap<IndexT, HashMap<IndexT, std::array<double,6>>> _rigBlocks;
+
+  /// hinted order for ceres to eliminate blocks when solving.
+  /// note: this ceres parameter is built internally and must be reset on each call to the solver.
+  ceres::ParameterBlockOrdering _linearSolverOrdering;
 
 };
 

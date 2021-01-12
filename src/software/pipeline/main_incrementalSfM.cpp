@@ -12,10 +12,11 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <boost/program_options.hpp>
@@ -70,7 +71,7 @@ bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
 }
 
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -91,6 +92,8 @@ int main(int argc, char **argv)
   int maxNbMatches = 0;
   int minNbMatches = 0;
   bool useOnlyMatchesFromInputFolder = false;
+
+  int randomSeed = std::mt19937::default_seed;
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -174,7 +177,10 @@ int main(int argc, char **argv)
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
       "Lock/Unlock scene previously reconstructed.\n")
     ("observationConstraint", po::value<EFeatureConstraint>(&sfmParams.featureConstraint)->default_value(sfmParams.featureConstraint),
-      "Use of an observation constraint : basic, scale the observation or use of the covariance.\n");
+      "Use of an observation constraint : basic, scale the observation or use of the covariance.\n")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+      "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -307,6 +313,8 @@ int main(int argc, char **argv)
     sfmParams,
     extraInfoFolder,
     (fs::path(extraInfoFolder) / "sfm_log.html").string());
+
+  sfmEngine.initRandomSeed(randomSeed);
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);

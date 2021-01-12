@@ -9,10 +9,11 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
@@ -41,7 +42,7 @@ using namespace svg;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char ** argv)
+int aliceVision_main(int argc, char ** argv)
 {
   // command-line parameters
 
@@ -153,7 +154,7 @@ int main(int argc, char ** argv)
     // output filename
     fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
 
-    feature::saveFeatures2SVG(viewImagePath,
+    matching::saveFeatures2SVG(viewImagePath,
                                dimImage,
                                featuresPerView.getData().at(view->getViewId()),
                                outputFilename.string());

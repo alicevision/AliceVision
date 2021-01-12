@@ -1,27 +1,31 @@
-/**
- * Input and geometry
-*/
+// This file is part of the AliceVision project.
+// Copyright (c) 2020 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// Input and geometry
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-/**
- * Image stuff
- */
+// Image stuff
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
 
-/*Logging stuff*/
+// Logging stuff
 #include <aliceVision/system/Logger.hpp>
 
-/*Reading command line options*/
+// Reading command line options
 #include <boost/program_options.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
-/*IO*/
+// IO
 #include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -32,259 +36,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-
-
-Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
-  
-  Eigen::VectorXd x;
-  x.setLinSpaced(kernel_length + 1, -sigma, +sigma);
-
-  Eigen::VectorXd cdf(kernel_length + 1);
-  for (int i = 0; i < kernel_length + 1; i++) {
-    cdf(i) = 0.5 * (1 + std::erf(x(i)/sqrt(2.0)));
-  }
-
-  Eigen::VectorXd k1d(kernel_length);
-  for (int i = 0; i < kernel_length; i++) {
-    k1d(i) = cdf(i + 1) - cdf(i);
-  }
-
-  double sum = k1d.sum();
-  k1d = k1d / sum;
-
-  return k1d.cast<float>();
-}
-
-Eigen::MatrixXf gaussian_kernel(size_t kernel_length, float sigma) {
-  
-  Eigen::VectorXf k1d = gaussian_kernel_vector(kernel_length, sigma);
-  Eigen::MatrixXf K = k1d * k1d.transpose();
-  
-
-  double sum = K.sum();
-  K = K / sum;
-
-  return K;
-}
-
-
-
-bool convolve(image::Image<float> & output, const image::Image<float> & input, const image::Image<unsigned char> & mask, const Eigen::MatrixXf & kernel) {
-
-  if (output.size() != input.size()) {
-    return false;
-  }
-
-  if (output.size() != mask.size()) {
-    return false;
-  }
-
-  if (kernel.size() % 2 == 0) {
-    return false;
-  }
-
-  if (kernel.rows() != kernel.cols()) {
-    return false;
-  }
-
-  int radius = kernel.rows() / 2;
-
-  Eigen::MatrixXf kernel_scaled = kernel;
-
-  for (int i = 0; i < output.Height(); i++) {
-    for (int j = 0; j < output.Width(); j++) {
-
-      float sum = 0.0f;
-      float sum_mask = 0.0f;
-
-      if (!mask(i, j)) {
-        output(i, j) = 0.0f; 
-        continue;
-      }
-
-      for (int k = 0; k < kernel.rows(); k++) {
-        float ni = i + k - radius;
-        if (ni < 0 || ni >= output.Height()) {
-          continue;
-        }
-
-        for (int l = 0; l < kernel.cols(); l++) {
-          float nj = j + l - radius;
-          if (nj < 0 || nj >= output.Width()) {
-            continue;
-          }
-
-          if (!mask(ni, nj)) {
-            continue;
-          }
-
-          float val = kernel(k, l) * input(ni, nj);
-          sum += val;
-          sum_mask += kernel(k, l);
-        }
-      } 
-
-      output(i, j) = sum / sum_mask;
-    }
-  }
-
-  return true;
-}
-
-bool convolve(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input, const image::Image<unsigned char> & mask, const Eigen::MatrixXf & kernel) {
-
-  if (output.size() != input.size()) {
-    return false;
-  }
-
-  if (output.size() != mask.size()) {
-    return false;
-  }
-
-  if (kernel.size() % 2 == 0) {
-    return false;
-  }
-
-  if (kernel.rows() != kernel.cols()) {
-    return false;
-  }
-
-  int radius = kernel.rows() / 2;
-
-  Eigen::MatrixXf kernel_scaled = kernel;
-
-  for (int i = 0; i < output.Height(); i++) {
-    for (int j = 0; j < output.Width(); j++) {
-
-      image::RGBfColor sum(0.0f);
-      float sum_mask = 0.0f;
-
-      if (!mask(i, j)) {
-        output(i, j) = sum; 
-        continue;
-      }
-
-      for (int k = 0; k < kernel.rows(); k++) {
-        float ni = i + k - radius;
-        if (ni < 0 || ni >= output.Height()) {
-          continue;
-        }
-
-        for (int l = 0; l < kernel.cols(); l++) {
-          float nj = j + l - radius;
-          if (nj < 0 || nj >= output.Width()) {
-            continue;
-          }
-
-          if (!mask(ni, nj)) {
-            continue;
-          }
-
-          sum.r() += kernel(k, l) * input(ni, nj).r();
-          sum.g() += kernel(k, l) * input(ni, nj).g();
-          sum.b() += kernel(k, l) * input(ni, nj).b();
-          sum_mask += kernel(k, l);
-        }
-      } 
-
-      output(i, j) = sum / sum_mask;
-    }
-  }
-
-  return true;
-}
-
-bool computeDistanceMap(image::Image<int> & distance, const image::Image<unsigned char> & mask) {
-
-  int m = mask.Height();
-  int n = mask.Width();
-
-  int maxval = m * n;
-
-  distance = image::Image<int> (n, m, false); 
-  for(int x = 0; x < n; ++x) {
-
-    //A corner is when mask becomes 0
-    bool b = !mask(0, x);
-    if (b) {
-      distance(0, x) = 0;
-    }
-    else {
-      distance(0, x) = maxval * maxval;
-    }
-
-    for (int y = 1; y < m; y++) {
-      bool b = !mask(y, x);
-      if (b) {
-        distance(y, x) = 0;
-      }
-      else {          
-        distance(y, x) = 1 + distance(y - 1, x);
-      }
-    }
-
-    for (int y = m - 2; y >= 0; y--) {
-      if (distance(y + 1, x) < distance(y, x)) {
-        distance(y, x) = 1 + distance(y + 1, x);
-      }
-    }
-  }
-
-  for (int y = 0; y < m; y++) {  
-    int q;
-    std::map<int, int> s;
-    std::map<int, int> t;
-
-    q = 0;
-    s[0] = 0;
-    t[0] = 0;
-
-    std::function<int (int, int)> f = [distance, y](int x, int i) { 
-      int gi = distance(y, i);
-      return (x - i)*(x - i) + gi * gi; 
-    };
-
-    std::function<int (int, int)> sep = [distance, y](int i, int u) { 
-      int gu = distance(y, u);
-      int gi = distance(y, i);
-
-      int nom = (u * u) - (i * i) + (gu * gu) - (gi * gi);
-      int denom = 2 * (u - i);
-
-      return nom / denom;
-    };
-
-    for (int u = 1; u < n; u++) {
-
-      while (q >= 0 && (f(t[q], s[q]) > f(t[q], u))) {
-        q = q - 1;
-      }
-
-      if (q < 0) {
-        q = 0;
-        s[0] = u;
-      }
-      else {
-        int w = 1 + sep(s[q], u);
-        if (w  < n) {
-          q = q + 1;
-          s[q] = u;
-          t[q] = w;
-        }
-      }
-    }
-
-    for (int u = n - 1; u >= 0; u--) {
-      distance(y, u) = f(u, s[q]);
-      if (u == t[q]) {
-        q = q - 1;
-      }
-    }
-  }
-
-  return true;
-}
-
+namespace fs = boost::filesystem;
 
 namespace SphericalMapping
 {
@@ -373,7 +125,7 @@ public:
     if (input.Height() != _pyramid_color[0].Height()) return false;
     if (input.Width() != _pyramid_color[0].Width()) return false;
 
-
+    
     /**
      * Kernel
      */
@@ -459,8 +211,8 @@ public:
     if (!computeCoarseBB(coarse_bbox, panoramaSize, pose, intrinsics)) {
       return false;
     }
-    
 
+    
     /* Effectively compute the warping map */
     aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(coarse_bbox.width, coarse_bbox.height, false);
     aliceVision::image::Image<unsigned char> buffer_mask(coarse_bbox.width, coarse_bbox.height, true, 0);
@@ -513,7 +265,6 @@ public:
           continue;
         }
 
-
         buffer_coordinates(y, x) = pix_disto;
         buffer_mask(y, x) = 1;
   
@@ -536,7 +287,7 @@ public:
       _offset_x = ox;
     }
     _offset_y = coarse_bbox.top + min_y;
-    
+
     size_t real_width = max_x - min_x + 1;
     size_t real_height = max_y - min_y + 1;
 
@@ -550,14 +301,14 @@ public:
     return true;
   }
 
-  bool computeScale(double & result) {
+  bool computeScale(double & result, float ratioUpscale) {
     
     std::vector<double> scales;
     size_t real_height = _coordinates.Height();
     size_t real_width = _coordinates.Width();
 
-    for (int i = 0; i < real_height - 1; i++) {
-      for (int j = 0; j < real_width - 1; j++) {
+    for (int i = 1; i < real_height - 2; i++) {
+      for (int j = 1; j < real_width - 2; j++) {
         if (!_mask(i, j) || !_mask(i, j + 1) || !_mask(i + 1, j)) {
           continue;
         }
@@ -568,15 +319,22 @@ public:
         double dyy = _coordinates(i + 1, j).y() - _coordinates(i, j).y();
 
         double det = std::abs(dxx*dyy - dxy*dyx);
+        if (det < 1e-12) continue;
+        
         scales.push_back(det);
       }
     }
 
-    if (scales.size() <= 1) return false;
+    if (scales.empty()) return false;
 
-    std::nth_element(scales.begin(), scales.begin() + scales.size() / 2, scales.end());
-    result = sqrt(scales[scales.size() / 2]);
-    
+    std::sort(scales.begin(), scales.end());
+    const float indexRatio = float(scales.size() - 1) * ratioUpscale;
+    float intPart = 0.0f;
+    const float fractPart = std::modf(indexRatio, &intPart);
+    const size_t indexL = int(intPart);
+    const size_t indexU = std::min(scales.size() - 1, size_t(std::ceil(indexRatio)));
+    const double scale = scales[indexL] * (1.0f - fractPart) + scales[indexU] * fractPart;
+    result = std::sqrt(scale);
 
     return true;
   }
@@ -600,11 +358,159 @@ public:
 private:
 
   bool computeCoarseBB(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
+    
+    bool ret = true;
 
-    coarse_bbox.left = 0;
+    if (isPinhole(intrinsics.getType())) {
+      ret = computeCoarseBB_Pinhole(coarse_bbox, panoramaSize, pose, intrinsics);
+    }
+    else if (isEquidistant(intrinsics.getType())) {
+      ret = computeCoarseBB_Equidistant(coarse_bbox, panoramaSize, pose, intrinsics);
+    }
+    else {
+      coarse_bbox.left = 0;
+      coarse_bbox.top = 0;
+      coarse_bbox.width = panoramaSize.first;
+      coarse_bbox.height = panoramaSize.second;
+      ret = true;
+    }
+
+    return ret;
+  }
+
+  bool computeCoarseBB_Equidistant(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
+    
+    const aliceVision::camera::EquiDistant & cam = dynamic_cast<const camera::EquiDistant&>(intrinsics);
+    
+
+    bool loop = false;
+    std::vector<bool> vec_bool(panoramaSize.second, false);
+
+    for (int i = 0; i < panoramaSize.second; i++) {
+      
+      {
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(0, i), panoramaSize.first, panoramaSize.second);
+
+        /**
+        * Check that this ray should be visible.
+        * This test is camera type dependent
+        */
+        Vec3 transformedRay = pose(ray);
+        if (!intrinsics.isVisibleRay(transformedRay)) {
+          continue;
+        }
+
+        /**
+         * Project this ray to camera pixel coordinates
+         */
+        const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+        /**
+         * Ignore invalid coordinates
+         */
+        if (!intrinsics.isVisible(pix_disto)) {
+          continue;
+        }
+      }
+
+      {
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(panoramaSize.first - 1, i), panoramaSize.first, panoramaSize.second);
+
+        /**
+        * Check that this ray should be visible.
+        * This test is camera type dependent
+        */
+        Vec3 transformedRay = pose(ray);
+        if (!intrinsics.isVisibleRay(transformedRay)) {
+          continue;
+        }
+
+        /**
+         * Project this ray to camera pixel coordinates
+         */
+        const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+        /**
+         * Ignore invalid coordinates
+         */
+        if (!intrinsics.isVisible(pix_disto)) {
+          continue;
+        }
+
+        vec_bool[i] = true;
+        loop = true;
+      }
+    }
+
+    if (vec_bool[0] || vec_bool[panoramaSize.second - 1]) {
+      loop = false;
+    }
+
+    if (!loop) {
+      coarse_bbox.left = 0;
+      coarse_bbox.top = 0;
+      coarse_bbox.width = panoramaSize.first;
+      coarse_bbox.height = panoramaSize.second;
+      return true;
+    }
+
+    int last_x = 0;
+
+    for (int x = panoramaSize.first - 1; x >= 0; x--) {
+      
+      size_t count = 0;
+
+      for (int i = 0; i < panoramaSize.second; i++) {
+        
+        if (vec_bool[i] == false) {
+          continue;
+        }
+
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x, i), panoramaSize.first, panoramaSize.second);
+
+        /**
+        * Check that this ray should be visible.
+        * This test is camera type dependent
+        */
+        Vec3 transformedRay = pose(ray);
+        if (!intrinsics.isVisibleRay(transformedRay)) {
+          vec_bool[i] = false;
+          continue;
+        }
+
+        /**
+         * Project this ray to camera pixel coordinates
+         */
+        const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+
+        /**
+         * Ignore invalid coordinates
+         */
+        if (!intrinsics.isVisible(pix_disto)) {
+          vec_bool[i] = false;
+          continue;
+        }
+        
+        count++;
+      }
+
+      if (count == 0) {
+        break;
+      }
+
+      last_x = x;
+    }
+
+    
+    coarse_bbox.left = last_x;
     coarse_bbox.top = 0;
     coarse_bbox.width = panoramaSize.first;
     coarse_bbox.height = panoramaSize.second;
+
+    return true;
+  }
+
+  bool computeCoarseBB_Pinhole(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
 
     int bbox_left, bbox_top;
     int bbox_right, bbox_bottom;
@@ -621,7 +527,7 @@ private:
     }
 
     /* Estimate undistorted maximal distance from optical center */
-    float max_radius_distorted = intrinsics.getMaximalDistortion(0.0, max_radius);
+    float max_radius_distorted = max_radius;//intrinsics.getMaximalDistortion(0.0, max_radius);
 
     /* 
     Coarse rectangle bouding box in camera space 
@@ -645,7 +551,7 @@ private:
     */
     Vec3 rotated_pts[8];
     for (int i = 0; i < 8; i++) {
-      Vec3 pt3d = pts_radius[i].homogeneous().normalized();
+      Vec3 pt3d = intrinsics.toUnitSphere(pts_radius[i]);
       rotated_pts[i] = pose.rotation().transpose() * pt3d;
     }
 
@@ -780,6 +686,7 @@ private:
     coarse_bbox.width = bbox_width;
     coarse_bbox.height = bbox_height;
     
+
     return true;
   }
 
@@ -1032,7 +939,7 @@ public:
   }
 };
 
-bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData::SfMData & sfmData) {
+bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData::SfMData & sfmData, const float ratioUpscale) {
 
   optimalSize.first = 512;
   optimalSize.second = 256;
@@ -1065,8 +972,8 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
       continue;
     }
 
-    double scale;
-    if (!map.computeScale(scale)) {
+    double scale = 0.0;
+    if (!map.computeScale(scale, ratioUpscale)) {
       continue;
     }
 
@@ -1074,63 +981,78 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   }
 
   
-  if (scales.size() > 1) {
-    double median_scale;
-    std::nth_element(scales.begin(), scales.begin() + scales.size() / 2, scales.end());
-    median_scale = scales[scales.size() / 2];
-
-    double multiplier = pow(2.0, int(floor(log2(median_scale))));
-    
-    optimalSize.first = optimalSize.first * multiplier;
-    optimalSize.second = optimalSize.second * multiplier;
+  if (scales.empty()) {
+    return false;
   }
+
+  std::sort(scales.begin(), scales.end());
+  const float indexRatio = float(scales.size() - 1) * ratioUpscale;
+  float intPart = 0.0f;
+  const float fractPart = std::modf(indexRatio, &intPart);
+  const size_t indexL = int(intPart);
+  const size_t indexU = std::min(scales.size() - 1, size_t(std::ceil(indexRatio)));
+  const double selectedScale = scales[indexL] * (1.0f - fractPart) + scales[indexU] * fractPart;
+
+  optimalSize.first = optimalSize.first * selectedScale;
+  optimalSize.second = optimalSize.second * selectedScale;
+
+  ALICEVISION_LOG_INFO("Estimated panorama size: "  << optimalSize.first << "x" << optimalSize.second);
 
   return true;
 }
 
-int main(int argc, char **argv) {
+int aliceVision_main(int argc, char **argv)
+{
+  std::string sfmDataFilename;
+  std::string outputDirectory;
 
-  /**
-   * Program description
-  */
+  std::pair<int, int> panoramaSize = {0, 0};
+  int percentUpscale = 50;
+  int maxPanoramaWidth = 0;
+
+  image::EStorageDataType storageDataType = image::EStorageDataType::Float;
+
+  int rangeStart = -1;
+  int rangeSize = 1;
+
+  // Program description
   po::options_description allParams (
     "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
     "AliceVision PanoramaWarping"
   );
 
-  /**
-   * Description of mandatory parameters
-   */
-  std::string sfmDataFilename;
-  std::string outputDirectory;
+  // Description of mandatory parameters
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
     ("output,o", po::value<std::string>(&outputDirectory)->required(), "Path of the output folder.");
   allParams.add(requiredParams);
 
-  /**
-   * Description of optional parameters
-   */
-  std::pair<int, int> panoramaSize = {1024, 0};
+  // Description of optional parameters
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first), "Panorama Width in pixels.");
+    ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first),
+     "Panorama Width in pixels.")
+    ("percentUpscale", po::value<int>(&percentUpscale)->default_value(percentUpscale),
+     "Percentage of upscaled pixels.")
+    ("maxPanoramaWidth", po::value<int>(&maxPanoramaWidth)->default_value(maxPanoramaWidth),
+     "Max Panorama Width in pixels.")
+    ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+      ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+     "Range image index start.")
+    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+     "Range size.");
   allParams.add(optionalParams);
 
-  /**
-   * Setup log level given command line
-   */
+  // Setup log level given command line
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
   allParams.add(logParams);
 
-
-  /**
-   * Effectively parse command line given parse options
-   */
+  // Effectively parse command line given parse options
   po::variables_map vm;
   try
   {
@@ -1159,18 +1081,13 @@ int main(int argc, char **argv) {
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-
-  /**
-   * Set verbose level given command line
-   */
+  // Set verbose level given command line
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  /**
-   * Load information about inputs
-   * Camera images
-   * Camera intrinsics
-   * Camera extrinsics
-   */
+  // Load information about inputs
+  // Camera images
+  // Camera intrinsics
+  // Camera extrinsics
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS| sfmDataIO::INTRINSICS| sfmDataIO::EXTRINSICS)))
   {
@@ -1178,8 +1095,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-
-  /*Order views by their image names for easier debugging*/
+  // Order views by their image names for easier debugging
   std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
   for (auto & viewIt: sfmData.getViews()) {
     viewsOrderedByName.push_back(viewIt.second);
@@ -1189,138 +1105,137 @@ int main(int argc, char **argv) {
     return (a->getImagePath() < b->getImagePath());
   });
 
+  // If panorama width is undefined, estimate it
+  if (panoramaSize.first <= 0)
+  {
+    float ratioUpscale = clamp(float(percentUpscale) / 100.0f, 0.0f, 1.0f);
 
-  /*If panorama width is undefined, estimate it*/
-  if (panoramaSize.first <= 0) {
     std::pair<int, int> optimalPanoramaSize;
-    if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
+    if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData, ratioUpscale))
+    {
       panoramaSize = optimalPanoramaSize;
     }
-  }
-  else {
-    double max_scale = 1.0 / pow(2.0, 10);
-    panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);
-    panoramaSize.second = panoramaSize.first / 2;
+    else
+    {
+      ALICEVISION_LOG_INFO("Impossible to compute an optimal panorama size");
+      return EXIT_FAILURE;
+    }
+    if(maxPanoramaWidth != 0 && panoramaSize.first > maxPanoramaWidth)
+    {
+        ALICEVISION_LOG_INFO("The optimal size of the panorama exceeds the maximum size (estimated width: "
+                             << panoramaSize.first << ", max width: " << maxPanoramaWidth << ").");
+        panoramaSize.first = maxPanoramaWidth;
+        panoramaSize.second = panoramaSize.first / 2;
+    }
   }
 
-
+  const double maxScale = 1.0 / pow(2.0, 10); // max levels in the image pyramid is 10.
+  panoramaSize.first = int(ceil(double(panoramaSize.first) * maxScale) / maxScale);
+  panoramaSize.second = panoramaSize.first / 2;
 
   ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
 
-  bpt::ptree viewsTree;
+  // Define range to compute
+  if(rangeStart != -1)
+  {
+    if(rangeStart < 0 || rangeSize < 0 ||
+       std::size_t(rangeStart) > viewsOrderedByName.size())
+    {
+      ALICEVISION_LOG_ERROR("Range is incorrect");
+      return EXIT_FAILURE;
+    }
 
-  /**
-   * Preprocessing per view
-   */
-  size_t pos = 0;
-  for (const std::shared_ptr<sfmData::View> & viewIt: viewsOrderedByName) {
-    
-    /**
-     * Retrieve view
-     */
+    if(std::size_t(rangeStart + rangeSize) > viewsOrderedByName.size())
+    {
+      rangeSize = int(viewsOrderedByName.size()) - rangeStart;
+    }
+  }
+  else
+  {
+      rangeStart = 0;
+      rangeSize = int(viewsOrderedByName.size());
+  }
+  ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
+
+  // Preprocessing per view
+  for(std::size_t i = std::size_t(rangeStart); i < std::size_t(rangeStart + rangeSize); ++i)
+  {
+    const std::shared_ptr<sfmData::View> & viewIt = viewsOrderedByName[i];
+
+    // Retrieve view
     const sfmData::View& view = *viewIt;
-    if (!sfmData.isPoseAndIntrinsicDefined(&view)) {
+    if (!sfmData.isPoseAndIntrinsicDefined(&view))
+    {
       continue;
     }
 
-    ALICEVISION_LOG_INFO("Processing view " << view.getViewId());
+    ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
 
-    /**
-     * Get intrinsics and extrinsics
-     */
-    const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-    const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
+    // Get intrinsics and extrinsics
+    geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
 
-    /**
-     * Prepare coordinates map
-    */
+    // Prepare coordinates map
     CoordinatesMap map;
-    map.build(panoramaSize, camPose, intrinsic);
+    map.build(panoramaSize, camPose, *(intrinsic.get()));
 
-    /**
-     * Load image and convert it to linear colorspace
-     */
+    // Load image and convert it to linear colorspace
     std::string imagePath = view.getImagePath();
     ALICEVISION_LOG_INFO("Load image with path " << imagePath);
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
 
-    /**
-     * Warp image
-     */
+    // Warp image
     GaussianWarper warper;
     warper.warp(map, source);
 
-    /**
-    * Alpha mask
-    */
+    // Alpha mask
     AlphaBuilder alphabuilder;
-    alphabuilder.build(map, intrinsic);
+    alphabuilder.build(map, *(intrinsic.get()));
 
-
-    /**
-     * Combine mask and image
-     */
-    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
-    const aliceVision::image::Image<unsigned char> & mask = warper.getMask();
-    const aliceVision::image::Image<float> & weights = alphabuilder.getWeights();
-
-    /**
-     * Store result image
-     */
-    bpt::ptree viewTree;
-    std::string path;
-
+    // Export mask and image
     {
-    std::stringstream ss;
-    ss << outputDirectory << "/view_" << pos << ".exr";
-    path = ss.str();
-    viewTree.put("filename_view", path);
-    ALICEVISION_LOG_INFO("Store view " << pos << " with path " << path);
-    image::writeImage(path, cam, image::EImageColorSpace::AUTO);
-    }
+        const std::string viewIdStr = std::to_string(view.getViewId());
 
-    {
-    std::stringstream ss;
-    ss << outputDirectory << "/mask_" << pos << ".png";
-    path = ss.str();
-    viewTree.put("filename_mask", path);
-    ALICEVISION_LOG_INFO("Store mask " << pos << " with path " << path);
-    image::writeImage(path, mask, image::EImageColorSpace::NO_CONVERSION);
-    }
+        oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
+        const int offsetX = int(warper.getOffsetX());
+        const int offsetY = int(warper.getOffsetY());
+        metadata.push_back(oiio::ParamValue("AliceVision:offsetX", offsetX));
+        metadata.push_back(oiio::ParamValue("AliceVision:offsetY", offsetY));
+        metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));
+        metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", panoramaSize.second));
 
-    {
-    std::stringstream ss;
-    ss << outputDirectory << "/weightmap_" << pos << ".exr";
-    path = ss.str();
-    viewTree.put("filename_weights", path);
-    ALICEVISION_LOG_INFO("Store weightmap " << pos << " with path " << path);
-    image::writeImage(path, weights, image::EImageColorSpace::AUTO);
-    }
-  
-    /**
-    * Store view info
-    */
-    viewTree.put("offsetx", warper.getOffsetX());
-    viewTree.put("offsety", warper.getOffsetY());
-    viewsTree.push_back(std::make_pair("", viewTree));
+        // Images will be converted in Panorama coordinate system, so there will be no more extra orientation.
+        metadata.remove("Orientation");
+        metadata.remove("orientation");
 
-    pos++;
+        {
+            const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
+
+            oiio::ParamValueList viewMetadata = metadata;
+            viewMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
+
+            const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + ".exr")).string();
+            ALICEVISION_LOG_INFO("Store view " << i << " with path " << viewFilepath);
+            image::writeImage(viewFilepath, cam, image::EImageColorSpace::AUTO, viewMetadata);
+        }
+        {
+            const aliceVision::image::Image<unsigned char> & mask = warper.getMask();
+
+            const std::string maskFilepath = (fs::path(outputDirectory) / (viewIdStr + "_mask.exr")).string();
+            ALICEVISION_LOG_INFO("Store mask " << i << " with path " << maskFilepath);
+            image::writeImage(maskFilepath, mask, image::EImageColorSpace::NO_CONVERSION, metadata);
+        }
+        {
+            const aliceVision::image::Image<float> & weights = alphabuilder.getWeights();
+
+            const std::string weightFilepath = (fs::path(outputDirectory) / (viewIdStr + "_weight.exr")).string();
+            ALICEVISION_LOG_INFO("Store weightmap " << i << " with path " << weightFilepath);
+            image::writeImage(weightFilepath, weights, image::EImageColorSpace::AUTO, metadata);
+        }
+    }
   }
-
-  
-  /**
-   * Config output
-   */
-  bpt::ptree configTree;
-  configTree.put("panoramaWidth", panoramaSize.first);
-  configTree.put("panoramaHeight", panoramaSize.second);
-  configTree.add_child("views", viewsTree);
-
-  std::stringstream ss;
-  ss << outputDirectory << "/config_views.json";
-  ALICEVISION_LOG_INFO("Save config with path " << ss.str());
-  bpt::write_json(ss.str(), configTree, std::locale(), true);
 
   return EXIT_SUCCESS;
 }

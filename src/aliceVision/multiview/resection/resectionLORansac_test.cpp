@@ -4,14 +4,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
-#include <aliceVision/robustEstimation/LORansacKernelAdaptor.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
-#include <aliceVision/multiview/projection.hpp>
 #include <aliceVision/multiview/resection/ResectionKernel.hpp>
 #include <aliceVision/multiview/resection/P3PSolver.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/multiview/ResectionKernel.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -28,18 +29,6 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision;
-
-struct ResectionSquaredResidualError
-{
-  // Compute the residual of the projection distance(pt2D, Project(P,pt3D))
-  // Return the squared error
-
-  static double Error(const Mat34 & P, const Vec2 & pt2D, const Vec3 & pt3D)
-  {
-    const Vec2 x = Project(P, pt3D);
-    return (x - pt2D).squaredNorm();
-  }
-};
 
 bool refinePoseAsItShouldbe(const Mat & pt3D,
                             const Mat & pt2D,
@@ -91,6 +80,8 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
 // test LORansac repetability over the same test case
 BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
 {
+  std::mt19937 randomNumberGenerator;
+
   // camera and image parameters
   const std::size_t WIDTH = 1600;
   const std::size_t HEIGHT = 1200;
@@ -187,36 +178,36 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
   for(std::size_t trial = 0; trial < NUMTRIALS; ++trial)
   {
     ALICEVISION_LOG_DEBUG("Trial #" << trial);
-    typedef aliceVision::resection::P3PSolver SolverType;
-    typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
+    typedef multiview::resection::P3PSolver SolverType;
+    typedef multiview::resection::Resection6PSolver SolverLSType;
   
-    typedef aliceVision::robustEstimation::KernelAdaptorResectionLORansac_K<SolverType,
-                                                              ResectionSquaredResidualError,
-                                                              aliceVision::robustEstimation::UnnormalizerResection,
-                                                              SolverLSType,
-                                                              Mat34> KernelType;
+    typedef aliceVision::multiview::ResectionKernel_K<SolverType,
+                                                      multiview::resection::ProjectionDistanceSquaredError,
+                                                      multiview::UnnormalizerResection,
+                                                      robustEstimation::Mat34Model,
+                                                      SolverLSType> KernelType;
 
     // this is just to simplify and use image plane coordinates instead of camera
     // (pixel) coordinates
     Mat pts2Dnorm;
-    ApplyTransformationToPoints(pts2D, Kgt.inverse(), &pts2Dnorm);
+    robustEstimation::applyTransformationToPoints(pts2D, Kgt.inverse(), &pts2Dnorm);
     KernelType kernel(pts2Dnorm, pts3D, Mat3::Identity());
 
-    std::vector<std::size_t> vec_inliers;
+    std::vector<std::size_t> inliers;
     const double threshold = 2*gaussianNoiseLevel;
     const double normalizedThreshold = Square(threshold / FOCAL);
     robustEstimation::ScoreEvaluator<KernelType> scorer(normalizedThreshold);
-    Mat34 Pest = robustEstimation::LO_RANSAC(kernel, scorer, &vec_inliers);
-    
-    const std::size_t numInliersFound = vec_inliers.size();
+    robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, randomNumberGenerator, &inliers);
+    Mat34 Pest = model.getMatrix();
+    const std::size_t numInliersFound = inliers.size();
     const std::size_t numInliersExpected = nbPoints-vec_outliers.size();
     
-    BOOST_CHECK(numInliersFound > KernelType::MINIMUM_SAMPLES *2.5);
+    BOOST_CHECK(numInliersFound > kernel.getMinimumNbRequiredSamples()  *2.5);
     
     Mat3 Rest;
     Mat3 Kest;
     Vec3 Test;
-    KRt_From_P(Pest, &Kest, &Rest, &Test);
+    KRt_from_P(Pest, &Kest, &Rest, &Test);
 
     ALICEVISION_LOG_DEBUG("Est: Pest:\n" << Pest
             << "\nRest:\n" << Rest
@@ -235,7 +226,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     geometry::Pose3 pose = geometry::poseFromRT(Rest, Test);
     refinePoseAsItShouldbe(pts3D,
                            pts2Dnorm,
-                           vec_inliers,
+                           inliers,
                            new camera::Pinhole(WIDTH, HEIGHT, 1, 0, 0),
                            pose,
                            true,
@@ -258,8 +249,8 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     {
       // test if inliers found and outliers GT have a empty intersection
       std::vector<std::size_t> inters(nbPoints);
-      std::sort(vec_inliers.begin(), vec_inliers.end());
-      auto it = std::set_intersection(vec_inliers.begin(), vec_inliers.end(),
+      std::sort(inliers.begin(), inliers.end());
+      auto it = std::set_intersection(inliers.begin(), inliers.end(),
                                       vec_outliers.begin(), vec_outliers.end(),
                                       inters.begin());
       inters.resize(it-inters.begin());

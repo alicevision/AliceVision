@@ -4,19 +4,19 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
-#include <aliceVision/feature/selection.hpp>
-#include "aliceVision/matching/filters.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
+#include <aliceVision/matching/matchesFiltering.hpp>
+#include <aliceVision/matching/filters.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/matching/svgVisualization.hpp>
 
 #include <aliceVision/system/cmdline.hpp>
 #include <boost/program_options.hpp>
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -127,9 +127,8 @@ int main(int argc, char **argv)
   std::string filenameLeft;
   std::string filenameRight;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string describerPreset = "NORMAL";
+  feature::ConfigurationPreset featDescPreset;
   float ratioThreshold{0.8f};
-
 
   po::options_description allParams("AliceVision Sample robustHomographyGrowing: it shows how "
                                     "to match the feature robustly using the growing homography algorithm.");
@@ -140,7 +139,7 @@ int main(int argc, char **argv)
            "Right image.")
           ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
            feature::EImageDescriberType_informations().c_str())
-          ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+          ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
            "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
            "Configuration 'ultra' can take long time !")
           ("distanceRatio", po::value<float>(&ratioThreshold)->default_value(ratioThreshold),
@@ -169,6 +168,7 @@ int main(int argc, char **argv)
   ALICEVISION_COUT(vm);
 
   Image<RGBColor> image;
+  std::mt19937 randomNumberGenerator;
 
   Image<float> imageLeft, imageRight;
   readImage(filenameLeft, imageLeft, image::EImageColorSpace::NO_CONVERSION);
@@ -191,10 +191,7 @@ int main(int argc, char **argv)
     std::cerr << "Invalid ImageDescriber type" << std::endl;
     return EXIT_FAILURE;
   }
-  if(!describerPreset.empty())
-  {
-    imageDescriber->setConfigurationPreset(describerPreset);
-  }
+  imageDescriber->setConfigurationPreset(featDescPreset);
 
   //--
   // Detect regions thanks to the imageDescriber
@@ -208,9 +205,8 @@ int main(int argc, char **argv)
   // Display images sides by side with extracted features
   //--
   {
-
     const string out_filename = "01.features."+describerTypesName+".svg";
-    drawKeypointsSideBySide(filenameLeft,
+    matching::drawKeypointsSideBySide(filenameLeft,
                             imageLeftSize,
                             regions_perImage.at(0).get()->Features(),
                             filenameRight,
@@ -226,7 +222,8 @@ int main(int argc, char **argv)
   matching::IndMatches vec_PutativeMatches;
 
 
-  matching::DistanceRatioMatch(ratioThreshold,
+  matching::DistanceRatioMatch(randomNumberGenerator,
+                               ratioThreshold,
                                matching::BRUTE_FORCE_L2,
                                *regions_perImage[0],
                                *regions_perImage[1],

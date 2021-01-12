@@ -1,6 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2016 AliceVision contributors.
-// Copyright (c) 2012 openMVG contributors.
+// Copyright (c) 2020 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -8,176 +7,463 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
-#include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/multiview/projection.hpp>
+
+#include "DistortionFisheye1.hpp"
 
 #include <vector>
 #include <sstream>
+#include <cmath>
 
 
 namespace aliceVision {
 namespace camera {
 
-/// Define an equidistant camera (store a K 3x3 matrix)
-///  with intrinsic parameters defining the K calibration matrix
-class Equidistant : public IntrinsicBase
+/**
+ * @brief EquiDistant is a camera model used for fisheye optics.
+ * See https://en.wikipedia.org/wiki/Fisheye_lens
+ * 
+ */
+class EquiDistant : public IntrinsicsScaleOffsetDisto
 {
-  public:
+public:
+  EquiDistant() = default;
 
-  Equidistant() = default;
-
-  Equidistant(
-    unsigned int w, unsigned int h,
-    const Mat3 K)
-    :IntrinsicBase(w,h)
+  EquiDistant(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy,
+              std::shared_ptr<Distortion> distortion = nullptr)
+      : IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
+      , _circleRadius(std::min(w, h) * 0.5)
+      , _circleCenter(w / 2.0, h / 2.0)
   {
-    _K = K;
-    _Kinv = _K.inverse();
   }
 
-  Equidistant(
-    unsigned int w, unsigned int h,
-    double focal_length_pix,
-    double ppx, double ppy, const std::vector<double>& distortionParams = {})
-    : IntrinsicBase(w,h)
-    , _distortionParams(distortionParams)
+  EquiDistant(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy, double circleRadiusPix,
+              std::shared_ptr<Distortion> distortion = nullptr)
+      : IntrinsicsScaleOffsetDisto(w, h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
+      , _circleRadius(circleRadiusPix)
+      , _circleCenter(w / 2.0, h / 2.0)
   {
-    setK(focal_length_pix, ppx, ppy);
   }
 
-  virtual ~Equidistant() {}
+  ~EquiDistant() override = default;
 
-  virtual Equidistant* clone() const override { return new Equidistant(*this); }
-  virtual void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const Equidistant&>(other); }
+  EquiDistant* clone() const override
+  {
+    return new EquiDistant(*this); 
+  }
+
+  void assign(const IntrinsicBase& other) override
+  {
+    *this = dynamic_cast<const EquiDistant&>(other); 
+  }
+
+  bool isValid() const override
+  {
+    return _scale(0) > 0 && IntrinsicBase::isValid(); 
+  }
+
+  EINTRINSIC getType() const override
+  {
+    return EQUIDISTANT_CAMERA; 
+  }
+
+  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  {
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const Vec3 X = pose(pt);
+
+    // Compute angle with optical center
+    const double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
+    
+    // Ignore depth component and compute radial angle
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    const double radius = angle_Z / (0.5 * fov);
+
+    // radius = focal * angle_Z
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    const Vec2 pt_disto = applyDistortion ? this->addDistortion(P) : P;
+    const Vec2 pt_ima = this->cam2ima(pt_disto);
+
+    return pt_ima;
+  }
+
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt) 
+  {
+    const Vec3 X = pose(pt);
+
+    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
+
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    const double angle_Z = std::atan2(len2d, X(2));
+    const double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double radius = angle_Z / (0.5 * fov);
+
+    const double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
+  }
+
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3 & pt) const override
+  {
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = pose.rotation();
+    T.block<3, 1>(0, 3) = pose.translation();
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt.homogeneous());
+
+    const Vec3 X = pose(pt);
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    const double angle_Z = std::atan2(len2d, X(2));
+    const double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double radius = angle_Z / (0.5 * fov);
+
+    const double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) const override
+  {
+    Vec3 X = pose(pt);
+
+    const Eigen::Matrix3d& d_X_d_pt = pose.rotation();
+
+    /* Compute angle with optical center */
+    const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    const double angle_Z = std::atan2(len2d, X(2));
+    const double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+    const double radius = angle_Z / (0.5 * fov);
+
+    double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt)
+  {
+    const Vec3 X = pose(pt);
+
+    /* Compute angle with optical center */
+    const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    const double angle_Z = std::atan2(len2d, X(2));
   
-  virtual bool isValid() const override { return focal() > 0 && IntrinsicBase::isValid(); }
-  
-  virtual EINTRINSIC getType() const override { return EQUIDISTANT_CAMERA; }
-  std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
 
-  double getFocalLengthPix() const { return _K(0,0); }
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+    const double radius = angle_Z / (0.5 * fov);
 
-  Vec2 getPrincipalPoint() const { return Vec2(_K(0,2), _K(1,2)); }
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
-  const Mat3& K() const { return _K; }
-  const Mat3& Kinv() const { return _Kinv; }
-  void setK(double focal_length_pix, double ppx, double ppy)
-  {
-    _K << focal_length_pix, 0., ppx, 0., focal_length_pix, ppy, 0., 0., 1.;
-    _Kinv = _K.inverse();
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
-  void setK(const Mat3 &K) { _K = K;}
-  /// Return the value of the focal in pixels
-  inline double focal() const {return _K(0,0);}
-  inline Vec2 principal_point() const {return Vec2(_K(0,2), _K(1,2));}
 
-  // Get bearing vector of p point (image coord)
-  Vec3 operator () (const Vec2& p) const override
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    Vec3 p3(p(0),p(1),1.0);
-    return (_Kinv * p3).normalized();
+    const Vec3 X = pose(pt);
+
+    /* Compute angle with optical center */
+    const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    const double angle_Z = std::atan2(len2d, X(2));
+  
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+    const double radius = angle_Z / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    Eigen::Matrix<double, 2, 1> d_P_d_radius;
+    d_P_d_radius(0, 0) = cos(angle_radial);
+    d_P_d_radius(1, 0) = sin(angle_radial);
+
+    Eigen::Matrix<double, 1, 1> d_radius_d_fov;
+    d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
+
+    Eigen::Matrix<double, 1, 1> d_fov_d_scale;
+    d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt)
+  {
+    return getDerivativeCam2ImaWrtPrincipalPoint();
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const override {
+    return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 5);
+  }
+
+  Vec3 toUnitSphere(const Vec2 & pt) const override
+  {
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double angle_radial = atan2(pt(1), pt(0));
+    const double angle_Z = pt.norm() * 0.5 * fov;
+
+    const Vec3 ret{cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z),
+                   sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z),
+                   cos(angle_Z)};
+
+    return ret;
+  }
+
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
+  {
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double angle_radial = atan2(pt(1), pt(0));
+    const double angle_Z = pt.norm() * 0.5 * fov;
+
+    Eigen::Matrix<double, 3, 2> d_ret_d_angles;
+    d_ret_d_angles(0, 0) = -sin(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(0, 1) = cos(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(1, 0) = cos(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(1, 1) = sin(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(2, 0) = 0;
+    d_ret_d_angles(2, 1) = -sin(angle_Z);
+
+    Eigen::Matrix<double, 2, 2> d_angles_d_pt;
+    d_angles_d_pt(0, 0) = - pt(1) / (pt(0) * pt(0) + pt(1) * pt(1));
+    d_angles_d_pt(0, 1) = pt(0) / (pt(0) * pt(0) + pt(1) * pt(1));
+    d_angles_d_pt(1, 0) = 0.5 * fov * pt(0) / pt.norm();
+    d_angles_d_pt(1, 1) = 0.5 * fov * pt(1) / pt.norm();
+
+    return d_ret_d_angles * d_angles_d_pt;
+  }
+
+  Eigen::Matrix<double, 3, 1> getDerivativetoUnitSphereWrtScale(const Vec2 & pt)
+  {
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double angle_radial = atan2(pt(1), pt(0));
+    const double angle_Z = pt.norm() * 0.5 * fov;
+
+    Eigen::Matrix<double, 3, 2> d_ret_d_angles;
+    d_ret_d_angles(0, 0) = -sin(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(0, 1) = cos(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(1, 0) = cos(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(1, 1) = sin(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(2, 0) = 0;
+    d_ret_d_angles(2, 1) = -sin(angle_Z);
+
+    Eigen::Matrix<double, 2, 1> d_angles_d_fov;
+
+    d_angles_d_fov(0, 0) = 0;
+    d_angles_d_fov(1, 0) = pt.norm() * 0.5;
+
+    Eigen::Matrix<double, 1, 1> d_fov_d_scale;
+    d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);  
+
+    return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
+  }
+
+  double imagePlaneToCameraPlaneError(double value) const override
+  {
+    return value / _scale(0);
   }
 
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return focal() * p + principal_point();
+    return _circleRadius * p  + _offset;
+  }
+
+  Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const override
+  {
+    return Eigen::Matrix2d::Identity() * _circleRadius;
   }
 
   // Transform a point from the image plane to the camera plane
   Vec2 ima2cam(const Vec2& p) const override
   {
-    return ( p -  principal_point() ) / focal();
+    return (p - _offset) / _circleRadius;
   }
 
-  virtual bool have_disto() const override {  return false; }
-
-  virtual Vec2 add_disto(const Vec2& p) const override { return p; }
-
-  virtual Vec2 remove_disto(const Vec2& p) const override { return p; }
-
-  virtual double imagePlane_toCameraPlaneError(double value) const override
+  Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const override
   {
-    return value / focal();
+    return Eigen::Matrix2d::Identity() * (1.0 / _circleRadius);
   }
 
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const override
+  Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const override
   {
-    Mat34 P;
-    P_From_KRt(K(), pose.rotation(), pose.translation(), &P);
-    return P;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const override
-  {
-    std::vector<double> params = {_K(0,0), _K(0,2), _K(1,2)};
-    params.insert(params.end(), _distortionParams.begin(), _distortionParams.end());
-    return params;
-  }
-
-  bool hasDistortion() const override
-  {
-    for(double d: _distortionParams)
-      if(d != 0.0)
-        return true;
-    return false;
-  }
-
-  const std::vector<double>& getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  void setDistortionParams(const std::vector<double>& distortionParams)
-  {
-    if(distortionParams.size() != _distortionParams.size())
-    {
-        std::stringstream s;
-        s << "Pinhole::setDistortionParams: wrong number of distortion parameters (expected: " << _distortionParams.size() << ", given:" << distortionParams.size() << ").";
-        throw std::runtime_error(s.str());
-    }
-    _distortionParams = distortionParams;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params) override
-  {
-    if (params.size() != (3 + _distortionParams.size()))
-      return false;
-
-    this->setK(params[0], params[1], params[2]);
-    setDistortionParams({params.begin() + 3, params.end()});
-
-    return true;
+    return Eigen::Matrix2d::Identity() * (-1.0 / _circleRadius);
   }
 
   /**
    * @brief Return true if this ray should be visible in the image
    * @return true if this ray is visible theorically
    */
-  virtual bool isVisibleRay(const Vec3 & ray) const override {
-    
-    if (ray(2) < 0) {
-      return false;
-    }
+  bool isVisibleRay(const Vec3 & ray) const override
+  {
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
 
-    return true;
+    double angle = std::acos(ray.normalized().dot(Eigen::Vector3d::UnitZ()));
+    if(std::abs(angle) > 1.2 * (0.5 * fov))
+      return false;
+
+    const Vec2 proj = project(geometry::Pose3(), ray, true);
+    const Vec2 centered = proj - Vec2(_circleCenter(0), _circleCenter(1));
+    return  centered.norm() <= _circleRadius;
   }
 
-  /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const override {return p;}
+  double getCircleRadius() const
+  {
+    return _circleRadius;
+  }
 
-  /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const override {return p;}
+  void setCircleRadius(double radius)
+  {
+    _circleRadius = radius;
+  }
 
-private:
-  // Focal & principal point are embed into the calibration matrix K
-  Mat3 _K, _Kinv;
+  double getCircleCenterX() const
+  {
+    return _circleCenter(0);
+  }
+
+  void setCircleCenterX(double x)
+  {
+    _circleCenter(0) = x;
+  }
+
+  double getCircleCenterY() const
+  {
+    return _circleCenter(1);
+  }
+
+  void setCircleCenterY(double y)
+  {
+    _circleCenter(1) = y;
+  }
+
 protected:
-  std::vector<double> _distortionParams;
+  double _circleRadius{0.0};
+  Vec2 _circleCenter{0.0, 0.0};
 };
 
 } // namespace camera

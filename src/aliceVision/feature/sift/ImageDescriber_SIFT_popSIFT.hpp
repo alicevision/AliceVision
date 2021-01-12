@@ -26,11 +26,7 @@ namespace feature {
 class ImageDescriber_SIFT_popSIFT : public ImageDescriber
 {
 public:
-  ImageDescriber_SIFT_popSIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
-    : ImageDescriber()
-    , _params(params)
-    , _isOriented(isOriented)
-  {}
+  explicit ImageDescriber_SIFT_popSIFT(const SiftParams& params = SiftParams(), bool isOriented = true);
 
   /**
    * @brief Check if the image describer use CUDA
@@ -68,9 +64,10 @@ public:
    * @param[in] height The image height
    * @return total amount of memory needed
    */
-  virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    return 3 * width * height * sizeof(float); //  GPU only
+    //  GPU only
+    return 4 * width * height * sizeof(float); // only use the input RGBA image
   }
 
   /**
@@ -86,7 +83,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override;
+  void setConfigurationPreset(ConfigurationPreset preset) override;
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
@@ -98,7 +95,7 @@ public:
    */
   bool describe(const image::Image<float>& image,
                 std::unique_ptr<Regions>& regions,
-                const image::Image<unsigned char>* mask = NULL) override;
+                const image::Image<unsigned char>* mask = nullptr) override;
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber
@@ -109,6 +106,11 @@ public:
     regions.reset(new SIFT_Regions);
   }
 
+  /**
+   * @brief Destructor
+   */
+  ~ImageDescriber_SIFT_popSIFT() override;
+
 private:
 
   void resetConfiguration();
@@ -116,6 +118,7 @@ private:
   SiftParams _params;
   bool _isOriented = true;
   static std::unique_ptr<PopSift> _popSift;
+  static std::atomic<int> _instanceCounter;
 };
 
 } // namespace feature

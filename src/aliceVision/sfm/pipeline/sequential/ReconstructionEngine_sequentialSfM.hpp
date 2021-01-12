@@ -14,9 +14,9 @@
 #include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -220,7 +220,7 @@ private:
     /// tracks index for resection
     std::set<std::size_t> tracksId;
     /// features index for resection
-    std::vector<track::tracksUtilsMap::FeatureId> featuresId;
+    std::vector<track::FeatureId> featuresId;
     /// pose estimated by the resection
     geometry::Pose3 pose;
     /// intrinsic estimated by resection
@@ -242,28 +242,7 @@ private:
    * @param[in] filterViewId If defined, each output pairs must contain filterViewId
    * @return
    */
-  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT) const;
-
-  /**
-   * @brief Compute MSE (Mean Square Error) and a histogram of residual values.
-   * @param[out] histogram
-   * @return the mean number of residual values
-   */
-  double computeResidualsHistogram(Histogram<double>* histogram) const;
-
-  /**
-   * @brief Compute MSE (Mean Square Error) and a histogram of landmarks' observations size.
-   * @param[out] histogram
-   * @return the mean number of observations per landmark
-   */
-  double computeObservationsLengthsHistogram(Histogram<double>* histogram) const;
-
-  /**
-  * @brief Compute MSE (Mean Square Error) and a histogram of landmarks per view.
-  * @param[out] histogram
-  * @return the mean number of landmarks per view or -1 if no landmarks
-  */
-  double computeLandmarksPerViewHistogram(Histogram<double> * histo) const;
+  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT);
 
   /**
    * @brief Compute a score of the view for a subset of features. This is

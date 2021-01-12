@@ -11,6 +11,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
+namespace multiview {
 
 /// Linear DLT triangulation: HZ 12.2 pag.312
 void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
@@ -22,4 +23,5 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
                     const Mat34 &P2, const Vec2 &x2,
                     Vec3 *X_euclidean);
 
+} // namespace multiview
 } // namespace aliceVision

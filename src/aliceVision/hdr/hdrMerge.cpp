@@ -206,7 +206,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
         {
             image::RGBfColor& radianceColor = radiance(y, x);
 
-            double clampingCompensation = highlightCorrectionFactor * (isPixelClamped_g(y, x) / 3.0);
+            double clampingCompensation = highlightCorrectionFactor * isPixelClamped_g(y, x);
             double clampingCompensationInv = (1.0 - clampingCompensation);
             assert(clampingCompensation <= 1.0);
 
@@ -214,7 +214,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
             {
                 if(highlightTarget > radianceColor(channel))
                 {
-                    radianceColor(channel) = clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel);
+                    radianceColor(channel) = float(clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel));
                 }
             }
         }

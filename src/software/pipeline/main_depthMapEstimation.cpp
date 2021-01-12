@@ -12,8 +12,10 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
-#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 
@@ -29,7 +31,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-int main(int argc, char* argv[])
+int aliceVision_main(int argc, char* argv[])
 {
     ALICEVISION_COMMANDLINE_START
 

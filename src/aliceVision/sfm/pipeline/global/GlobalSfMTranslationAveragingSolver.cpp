@@ -16,19 +16,19 @@
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/graph/graph.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
 #include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/progress.hpp>
 
@@ -45,6 +45,7 @@ bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTrans
                     const feature::FeaturesPerView& normalizedFeaturesPerView,
                     const matching::PairwiseMatches& pairwiseMatches,
                     const HashMap<IndexT, Mat3>& map_globalR,
+                    std::mt19937 & randomNumberGenerator,
                     matching::PairwiseMatches& tripletWise_matches)
 {
   // Compute the relative translations and save them to vec_initialRijTijEstimates:
@@ -52,6 +53,7 @@ bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTrans
         normalizedFeaturesPerView,
         pairwiseMatches,
         map_globalR,
+        randomNumberGenerator,
         tripletWise_matches);
 
   const bool translation = Translation_averaging(eTranslationAveragingMethod, sfmData, map_globalR);
@@ -279,6 +281,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sf
           const feature::FeaturesPerView & normalizedFeaturesPerView,
           const matching::PairwiseMatches & pairwiseMatches,
           const HashMap<IndexT, Mat3> & map_globalR,
+          std::mt19937 & randomNumberGenerator,
           matching::PairwiseMatches & tripletWise_matches)
 {
   ALICEVISION_LOG_DEBUG(
@@ -293,6 +296,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sf
     map_globalR,
     normalizedFeaturesPerView,
     pairwiseMatches,
+    randomNumberGenerator,
     m_vec_initialRijTijEstimates,
     tripletWise_matches);
 }
@@ -303,6 +307,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
   const HashMap<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
+  std::mt19937 & randomNumberGenerator,
   translationAveraging::RelativeInfoVec & vec_initialEstimates,
   matching::PairwiseMatches & newpairMatches)
 {
@@ -465,6 +470,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
               normalizedFeaturesPerView,
               pairwiseMatches,
               triplet,
+              randomNumberGenerator,
               vec_tis,
               dPrecision,
               vec_inliers,
@@ -491,15 +497,15 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
               Mat3 Rij;
               Vec3 tij;
-              RelativeCameraMotion(RI, ti, RJ, tj, &Rij, &tij);
+              relativeCameraMotion(RI, ti, RJ, tj, &Rij, &tij);
 
               Mat3 Rjk;
               Vec3 tjk;
-              RelativeCameraMotion(RJ, tj, RK, tk, &Rjk, &tjk);
+              relativeCameraMotion(RJ, tj, RK, tk, &Rjk, &tjk);
 
               Mat3 Rik;
               Vec3 tik;
-              RelativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
+              relativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
               // set number of threads, 1 if openMP is not enabled
               const int thread_id = omp_get_thread_num();
@@ -586,6 +592,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   const feature::FeaturesPerView& normalizedFeaturesPerView,
   const matching::PairwiseMatches& pairwiseMatches,
   const graph::Triplet& poses_id,
+  std::mt19937 & randomNumberGenerator,
   std::vector<Vec3>& vec_tis,
   double& precision, // UpperBound of the precision found by the AContrario estimator
   std::vector<std::size_t>& vec_inliers,
@@ -648,7 +655,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
     const camera::Pinhole * intrinsic = dynamic_cast< const camera::Pinhole * > (intrinsicPtr);
     if (intrinsic && intrinsic->isValid())
     {
-      min_focal = std::min(min_focal, intrinsic->focal());
+      min_focal = std::min(min_focal, intrinsic->getFocalLengthPix());
     }
   }
   if (min_focal == std::numeric_limits<double>::max())
@@ -674,7 +681,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   TrifocalTensorModel T;
   const std::pair<double,double> acStat =
-    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal);
+    robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, ORSA_ITER, &T, precision/min_focal);
   // If robust estimation fails => stop.
   if (precision == std::numeric_limits<double>::infinity())
     return false;
@@ -684,9 +691,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   vec_tis.resize(3);
   Mat3 K, R;
-  KRt_From_P(T.P1, &K, &R, &vec_tis[0]);
-  KRt_From_P(T.P2, &K, &R, &vec_tis[1]);
-  KRt_From_P(T.P3, &K, &R, &vec_tis[2]);
+  KRt_from_P(T.P1, &K, &R, &vec_tis[0]);
+  KRt_from_P(T.P2, &K, &R, &vec_tis[1]);
+  KRt_from_P(T.P3, &K, &R, &vec_tis[2]);
 
 #ifdef DEBUG_TRIPLET
   // compute 3D scene base on motion estimation
@@ -732,7 +739,6 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
       const View * view = sfm_data.getViews().at(viewIndex).get();
       const camera::IntrinsicBase *  cam = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second.get();
       const camera::Pinhole * intrinsicPtr = dynamic_cast< const camera::Pinhole * >(cam);
-      const Vec2 principal_point = intrinsicPtr->principal_point();
 
       // get normalized feature
       const feature::PointFeature & pt = normalizedFeaturesPerView.getFeatures(viewIndex)[featIndex];

@@ -11,7 +11,10 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
+#include <aliceVision/sfm/sfmStatistics.hpp>
+
 #include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/graph/connectedComponent.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
@@ -19,11 +22,12 @@
 #include <aliceVision/multiview/triangulation/NViewsTriangulationLORansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
-#include <aliceVision/graph/connectedComponent.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cpu.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -254,7 +258,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
         // create an entry in the map
         _map_tracksPerView[viewIt.first];
     }
-    track::tracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
+    track::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
             _map_tracksPerView, _map_tracks, _sfmData.views, *_featuresPerView, _params.pyramidBase, _params.pyramidDepth, _map_featsPyramidPerView);
@@ -262,14 +266,14 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     // display stats
     {
       std::set<size_t> imagesId;
-      track::tracksUtilsMap::imageIdInTracks(_map_tracksPerView, imagesId);
+      track::imageIdInTracks(_map_tracksPerView, imagesId);
 
       ALICEVISION_LOG_INFO("Fuse matches into tracks: " << std::endl
         << "\t- # tracks: " << tracksBuilder.nbTracks() << std::endl
         << "\t- # images in tracks: " << imagesId.size());
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      track::tracksUtilsMap::tracksLength(_map_tracks, map_Occurence_TrackLength);
+      track::tracksLength(_map_tracks, map_Occurence_TrackLength);
       ALICEVISION_LOG_INFO("TrackLength, Occurrence");
       for(const auto& iter: map_Occurence_TrackLength)
       {
@@ -738,19 +742,41 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   }
 
   // residual histogram
-  Histogram<double> residualHistogram;
-  computeResidualsHistogram(&residualHistogram);
-  ALICEVISION_LOG_INFO("Histogram of residuals:" << residualHistogram.ToString("", 2));
+  utils::Histogram<double> residualHistogram;
+  {
+      BoxStats<double> residualStats;
+      computeResidualsHistogram(_sfmData, residualStats, &residualHistogram);
+      ALICEVISION_LOG_DEBUG(
+        "\t- # Landmarks: " << _sfmData.getLandmarks().size() << std::endl <<
+        "\t- Residual min: " << residualStats.min << std::endl <<
+        "\t- Residual median: " << residualStats.median << std::endl <<
+        "\t- Residual max: "  << residualStats.max << std::endl <<
+        "\t- Residual mean: " << residualStats.mean << std::endl <<
+        "\t- Residual first quartile: " << residualStats.firstQuartile << std::endl <<
+        "\t- Residual third quartile: " << residualStats.thirdQuartile);
+      ALICEVISION_LOG_INFO("Histogram of residuals:" << residualHistogram.ToString("", 2));
+  }
 
   // tracks lengths histogram
-  Histogram<double> observationsLengthHistogram;
-  computeObservationsLengthsHistogram(&observationsLengthHistogram);
-  ALICEVISION_LOG_INFO("Histogram of observations length:" << observationsLengthHistogram.ToString("", 6));
+  utils::Histogram<double> observationsLengthHistogram;
+  {
+      BoxStats<double> observationsLengthStats;
+      int overallNbObservations = 0;
+      computeObservationsLengthsHistogram(_sfmData, observationsLengthStats, overallNbObservations, &observationsLengthHistogram);
+      ALICEVISION_LOG_INFO("# landmarks: " << _sfmData.getLandmarks().size());
+      ALICEVISION_LOG_INFO("# overall observations: " << overallNbObservations);
+      ALICEVISION_LOG_INFO("Landmarks observations length min: " << observationsLengthStats.min << ", mean: " << observationsLengthStats.mean << ", median: " << observationsLengthStats.median << ", max: "  << observationsLengthStats.max);
+      ALICEVISION_LOG_INFO("Histogram of observations length:" << observationsLengthHistogram.ToString("", 6));
+  }
 
   // nb landmarks per view histogram
-  Histogram<double> landmarksPerViewHistogram;
-  computeLandmarksPerViewHistogram(&landmarksPerViewHistogram);
-  ALICEVISION_LOG_INFO("Histogram of nb landmarks per view:" << landmarksPerViewHistogram.ToString<int>("", 3));
+  utils::Histogram<double> landmarksPerViewHistogram;
+  {
+      BoxStats<double> landmarksPerViewStats;
+      computeLandmarksPerViewHistogram(_sfmData, landmarksPerViewStats, &landmarksPerViewHistogram);
+      ALICEVISION_LOG_INFO("Landmarks per view min: " << landmarksPerViewStats.min << ", mean: " << landmarksPerViewStats.mean << ", median: " << landmarksPerViewStats.median << ", max: " << landmarksPerViewStats.max);
+      ALICEVISION_LOG_INFO("Histogram of nb landmarks per view:" << landmarksPerViewHistogram.ToString<int>("", 3));
+  }
 
   // html log file
   if(!_htmlLogFile.empty())
@@ -1058,7 +1084,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   // b. get common features between the two views
   // use the track to have a more dense match correspondence set
   aliceVision::track::TracksMap commonTracks;
-  track::tracksUtilsMap::getCommonTracksInImagesFast({I, J}, _map_tracks, _map_tracksPerView, commonTracks);
+  track::getCommonTracksInImagesFast({I, J}, _map_tracks, _map_tracksPerView, commonTracks);
 
   // copy point to arrays
   const std::size_t n = commonTracks.size();
@@ -1085,7 +1111,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   const std::pair<std::size_t, std::size_t> imageSizeI(camI->w(), camI->h());
   const std::pair<std::size_t, std::size_t> imageSizeJ(camJ->w(), camJ->h());
 
-  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
+  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, _randomNumberGenerator, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
   {
     ALICEVISION_LOG_WARNING("Robust estimation failed to compute E for this pair");
     return false;
@@ -1129,8 +1155,10 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
     }
 
     // save outlier residual information
-    Histogram<double> histoResiduals;
-    ALICEVISION_LOG_DEBUG("MSE Residual initial pair inlier: " << computeResidualsHistogram(&histoResiduals));
+    utils::Histogram<double> residualHistogram;
+    BoxStats<double> residualStats;
+    computeResidualsHistogram(_sfmData, residualStats, &residualHistogram);
+    ALICEVISION_LOG_DEBUG("MSE Residual initial pair inlier: " << residualStats.mean);
 
     if(!_htmlLogFile.empty())
     {
@@ -1154,15 +1182,15 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
 
       _htmlDocStream->pushInfo(htmlMarkup("h3","Histogram of residuals"));
 
-      std::vector<double> xBin = histoResiduals.GetXbinsValue();
+      std::vector<double> xBin = residualHistogram.GetXbinsValue();
       std::pair< std::pair<double,double>, std::pair<double,double> > range =
-          autoJSXGraphViewport<double>(xBin, histoResiduals.GetHist());
+          autoJSXGraphViewport<double>(xBin, residualHistogram.GetHist());
 
       htmlDocument::JSXGraphWrapper jsxGraph;
       jsxGraph.init("InitialPairTriangulationKeptInfo",600,300);
-      jsxGraph.addXYChart(xBin, histoResiduals.GetHist(), "line,point");
+      jsxGraph.addXYChart(xBin, residualHistogram.GetHist(), "line,point");
       jsxGraph.addLine(relativePoseInfo.found_residual_precision, 0,
-                       relativePoseInfo.found_residual_precision, histoResiduals.GetHist().front());
+                       relativePoseInfo.found_residual_precision, residualHistogram.GetHist().front());
       jsxGraph.UnsuspendUpdate();
       jsxGraph.setViewport(range);
       jsxGraph.close();
@@ -1178,8 +1206,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   return !_sfmData.structure.empty();
 }
 
-bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId) const
-{
+bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId) {
   // From the k view pairs with the highest number of verified matches
   // select a pair that have the largest baseline (mean angle between its bearing vectors).
   
@@ -1250,7 +1277,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
     aliceVision::track::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
-    track::tracksUtilsMap::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+    track::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
@@ -1282,7 +1309,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     
     const bool relativePoseSuccess = robustRelativePose(
           camI->K(), camJ->K(),
-          xI, xJ, relativePose_info,
+          xI, xJ, _randomNumberGenerator, relativePose_info,
           std::make_pair(camI->w(), camI->h()), std::make_pair(camJ->w(), camJ->h()),
           1024);
     
@@ -1293,18 +1320,18 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
       std::vector<std::size_t> validCommonTracksIds(relativePose_info.vec_inliers.size());
       const Pose3 pose_I = Pose3(Mat3::Identity(), Vec3::Zero());
       const Pose3 pose_J = relativePose_info.relativePose;
-      const Mat34 PI = camI->get_projective_equivalent(pose_I);
-      const Mat34 PJ = camJ->get_projective_equivalent(pose_J);
+      const Mat34 PI = camI->getProjectiveEquivalent(pose_I);
+      const Mat34 PJ = camJ->getProjectiveEquivalent(pose_J);
       std::size_t i = 0;
       for (const size_t inlier_idx: relativePose_info.vec_inliers)
       {
         Vec3 X;
-        TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
+        multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
         IndexT trackId = commonTracksIds[inlier_idx];
         auto iter = map_tracksCommon[trackId].featPerView.begin();
         const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
         const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second].coords().cast<double>();
-        vec_angles[i] = AngleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
+        vec_angles[i] = angleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
         validCommonTracksIds[i] = trackId;
         ++i;
       }
@@ -1352,125 +1379,6 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     out_bestImagePairs.push_back(std::get<4>(imagePair));
   
   return true;
-}
-
-double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<double> * histo) const
-{
-  if (_sfmData.getLandmarks().empty())
-    return -1.0;
-  
-  // Collect residuals for each observation
-  std::vector<double> vec_residuals;
-  vec_residuals.reserve(_sfmData.structure.size());
-  for(const auto &track : _sfmData.getLandmarks())
-  {
-    const Observations & observations = track.second.observations;
-    for(const auto& obs: observations)
-    {
-      const View* view = _sfmData.getViews().find(obs.first)->second.get();
-      const Pose3 pose = _sfmData.getPose(*view).getTransform();
-      const std::shared_ptr<IntrinsicBase> intrinsic = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
-      const Vec2 residual = intrinsic->residual(pose, track.second.X, obs.second.x);
-      vec_residuals.push_back( fabs(residual(0)) );
-      vec_residuals.push_back( fabs(residual(1)) );
-    }
-  }
-  
-  assert(!vec_residuals.empty());
-
-  MinMaxMeanMedian<double> stats(vec_residuals.begin(), vec_residuals.end());
-  
-  if (histo)  {
-    *histo = Histogram<double>(0.0, std::ceil(stats.max), std::ceil(stats.max)*2);
-    histo->Add(vec_residuals.begin(), vec_residuals.end());
-  }
-
-  ALICEVISION_LOG_DEBUG("ReconstructionEngine_sequentialSfM::ComputeResidualsMSE." << std::endl
-    << "\t- # Landmarks: " << _sfmData.getLandmarks().size() << std::endl
-    << "\t- Residual min: " << stats.min << std::endl
-    << "\t- Residual median: " << stats.median << std::endl
-    << "\t- Residual max: "  << stats.max << std::endl
-    << "\t- Residual mean: " << stats.mean);
-
-  return stats.mean;
-}
-
-double ReconstructionEngine_sequentialSfM::computeObservationsLengthsHistogram(Histogram<double> * histo) const
-{
-  if (_sfmData.getLandmarks().empty())
-    return -1.0;
-  
-  // Collect tracks size: number of 2D observations per 3D points
-  std::vector<double> nbObservations;
-  int overallNbObservations = 0;
-  nbObservations.reserve(_sfmData.getLandmarks().size());
-  
-  for(const auto &track : _sfmData.getLandmarks())
-  {
-    const Observations & observations = track.second.observations;
-    nbObservations.push_back(observations.size());
-    overallNbObservations += observations.size();
-  }
-  
-  assert(!nbObservations.empty());
-
-  MinMaxMeanMedian<double> stats(nbObservations.begin(), nbObservations.end());
-
-  if (histo)
-  {
-    *histo = Histogram<double>(stats.min, stats.max + 1, stats.max - stats.min + 1);
-    histo->Add(nbObservations.begin(), nbObservations.end());
-  }
-
-  ALICEVISION_LOG_INFO("# landmarks: " << _sfmData.getLandmarks().size());
-  ALICEVISION_LOG_INFO("# overall observations: " << overallNbObservations);
-  ALICEVISION_LOG_INFO("Landmarks observations length min: " << stats.min << ", mean: " << stats.mean << ", median: " << stats.median << ", max: "  << stats.max);
-
-  return stats.mean;
-}
-
-double ReconstructionEngine_sequentialSfM::computeLandmarksPerViewHistogram(Histogram<double> * histo) const
-{
-  if (_sfmData.getLandmarks().empty())
-    return -1.0;
-
-  // Collect tracks size: number of 2D observations per 3D points
-  std::vector<int> nbLandmarksPerView;
-  nbLandmarksPerView.reserve(_sfmData.getViews().size());
-
-  std::set<std::size_t> landmarksId;
-  std::transform(_sfmData.getLandmarks().begin(), _sfmData.getLandmarks().end(),
-    std::inserter(landmarksId, landmarksId.begin()),
-    stl::RetrieveKey());
-
-  for (const auto &viewIt : _sfmData.getViews())
-  {
-    const View & view = *viewIt.second;
-    if (!_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
-      continue;
-
-    aliceVision::track::TrackIdSet viewLandmarksIds;
-    {
-      const aliceVision::track::TrackIdSet& viewTracksIds = _map_tracksPerView.at(view.getViewId());
-      // Get the ids of the already reconstructed tracks
-      std::set_intersection(viewTracksIds.begin(), viewTracksIds.end(),
-        landmarksId.begin(), landmarksId.end(),
-        std::inserter(viewLandmarksIds, viewLandmarksIds.begin()));
-    }
-    nbLandmarksPerView.push_back(viewLandmarksIds.size());
-  }
-
-  MinMaxMeanMedian<double> stats(nbLandmarksPerView.begin(), nbLandmarksPerView.end());
-
-  if (histo)
-  {
-    *histo = Histogram<double>(stats.min, (stats.max + 1), 10);
-    histo->Add(nbLandmarksPerView.begin(), nbLandmarksPerView.end());
-  }
-
-  ALICEVISION_LOG_INFO("Landmarks per view min: " << stats.min << ", mean: " << stats.mean << ", median: " << stats.median << ", max: " << stats.max);
-
-  return stats.mean;
 }
 
 std::size_t ReconstructionEngine_sequentialSfM::computeCandidateImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const
@@ -1537,7 +1445,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   
   // Get back featId associated to a tracksID already reconstructed.
   // These 2D/3D associations will be used for the resection.
-  tracksUtilsMap::getFeatureIdInViewPerTrack(_map_tracks,
+  getFeatureIdInViewPerTrack(_map_tracks,
                                              resectionData.tracksId,
                                              viewId,
                                              &resectionData.featuresId);
@@ -1553,7 +1461,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
-  for (std::vector<tracksUtilsMap::FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
+  for (std::vector<FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
        iterfeatId != resectionData.featuresId.end();
        ++iterfeatId, ++iterTrackId, ++cpt)
   {
@@ -1569,6 +1477,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
       resectionData.optionalIntrinsic.get(),
+      _randomNumberGenerator,
       resectionData,
       resectionData.pose, 
       _params.localizerEstimator
@@ -1620,7 +1529,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_From_P(resectionData.projection_matrix, &K, &R, &t);
+      KRt_from_P(resectionData.projection_matrix, &K, &R, &t);
       
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
@@ -1698,7 +1607,7 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
     {
       if (viewIdA < viewIdB)
       {
-        double angle_deg = AngleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()).getTransform(),
+        double angle_deg = angleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()).getTransform(),
                                            scene.getPose(*scene.getViews().at(viewIdB).get()).getTransform(),
                                            pt3D);
         if (angle_deg >= kMinAngle)
@@ -1718,7 +1627,7 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
   allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
   
   std::set<IndexT> allTracksInNewViews;
-  track::tracksUtilsMap::getTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
+  track::getTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
   
   std::set<IndexT>::iterator it;
 #pragma omp parallel private(it)
@@ -1794,20 +1703,33 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       IndexT J =  *(observations.rbegin());
       const View* viewI = scene.getViews().at(I).get();
       const View* viewJ = scene.getViews().at(J).get();
-      const IntrinsicBase* camI = scene.getIntrinsics().at(viewI->getIntrinsicId()).get();
-      const IntrinsicBase* camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId()).get();
+
+      std::shared_ptr<camera::IntrinsicBase> camI = scene.getIntrinsics().at(viewI->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camI);
+      if (!camIPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+
+      std::shared_ptr<camera::IntrinsicBase> camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camJ);
+      if (!camJPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+
       const Pose3 poseI = scene.getPose(*viewI).getTransform();
       const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
       const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
   
       // -- Triangulate:
-      TriangulateDLT(camI->get_projective_equivalent(poseI), 
-                     camI->get_ud_pixel(xI), 
-                     camJ->get_projective_equivalent(poseJ), 
-                     camI->get_ud_pixel(xJ), 
+      multiview::TriangulateDLT(camIPinHole->getProjectiveEquivalent(poseI),
+                     camI->get_ud_pixel(xI),
+                     camJPinHole->getProjectiveEquivalent(poseJ),
+                     camI->get_ud_pixel(xJ),
                      &X_euclidean);
-      
+
       // -- Check:
       //  - angle (small angle leads imprecise triangulation)
       //  - positive depth
@@ -1818,7 +1740,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ) < _params.minAngleForTriangulation ||
+      if (angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ) < _params.minAngleForTriangulation ||
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
@@ -1841,11 +1763,18 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
         for (const IndexT& viewId : observations)
         {
           const View* view = scene.getViews().at(viewId).get();
-          const IntrinsicBase* cam = scene.getIntrinsics().at(view->getIntrinsicId()).get();
+  
+          std::shared_ptr<camera::IntrinsicBase> cam = scene.getIntrinsics().at(view->getIntrinsicId());
+          std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+          if (!camPinHole) {
+            ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+            continue;
+          }
+
           const Vec2 x_ud = cam->get_ud_pixel(_featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>()); // undistorted 2D point
           features(0,i) = x_ud(0); 
           features(1,i) = x_ud(1);  
-          Ps.push_back(cam->get_projective_equivalent(scene.getPose(*view).getTransform()));
+          Ps.push_back(camPinHole->getProjectiveEquivalent(scene.getPose(*view).getTransform()));
           i++;
         }
       }
@@ -1854,9 +1783,9 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
+      multiview::TriangulateNViewLORANSAC(features, Ps, _randomNumberGenerator, &X_homogeneous, &inliersIndex, 8.0);
       
-      HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
+      homogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       
       // observations = {350, 380, 442} | inliersIndex = [0, 1] | inliers = {350, 380}
       for (const auto & id : inliersIndex)
@@ -1937,12 +1866,26 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I, J };
       track::TracksMap map_tracksCommonIJ;
-      track::tracksUtilsMap::getCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
+      track::getCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
       const View* viewI = scene.getViews().at(I).get();
       const View* viewJ = scene.getViews().at(J).get();
-      const IntrinsicBase* camI = scene.getIntrinsics().at(viewI->getIntrinsicId()).get();
-      const IntrinsicBase* camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId()).get();
+      
+      std::shared_ptr<camera::IntrinsicBase> camI = scene.getIntrinsics().at(viewI->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camI);
+      if (!camIPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+
+      std::shared_ptr<camera::IntrinsicBase> camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camJ);
+      if (!camJPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+      
+
       const Pose3 poseI = scene.getPose(*viewI).getTransform();
       const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
       
@@ -1972,6 +1915,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
             if (landmark.observations.count(I) == 0)
             {
               const Vec2 residual = camI->residual(poseI, landmark.X, xI);
+              // TODO: scale in residual
               const auto& acThresholdIt = _map_ACThreshold.find(I);
               // TODO assert(acThresholdIt != _map_ACThreshold.end());
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
@@ -2008,16 +1952,16 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           Vec3 X_euclidean = Vec3::Zero();
           const Vec2 xI_ud = camI->get_ud_pixel(xI);
           const Vec2 xJ_ud = camJ->get_ud_pixel(xJ);
-          const Mat34 pI = camI->get_projective_equivalent(poseI);
-          const Mat34 pJ = camJ->get_projective_equivalent(poseJ);
+          const Mat34 pI = camIPinHole->getProjectiveEquivalent(poseI);
+          const Mat34 pJ = camJPinHole->getProjectiveEquivalent(poseJ);
           
-          TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
+          multiview::TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
           
           // Check triangulation results
           //  - Check angle (small angle leads imprecise triangulation)
           //  - Check positive depth
           //  - Check residual values
-          const double angle = AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ);
+          const double angle = angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ);
           const Vec2 residualI = camI->residual(poseI, X_euclidean, xI);
           const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
           

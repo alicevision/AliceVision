@@ -1,0 +1,44 @@
+ARG AV_VERSION
+ARG CUDA_VERSION
+ARG CENTOS_VERSION
+FROM alicevision/alicevision-deps:${AV_VERSION}-centos${CENTOS_VERSION}-cuda${CUDA_VERSION}
+LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+ARG TARGET_ARCHITECTURE=core
+
+# use CUDA_TAG to select the image version to use
+# see https://hub.docker.com/r/nvidia/cuda/
+#
+# CUDA_TAG=8.0-devel
+# docker build --build-arg CUDA_TAG=$CUDA_TAG --tag alicevision:$CUDA_TAG .
+#
+# then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime=nvidia alicevision
+
+ENV AV_DEV=/opt/AliceVision_git \
+    AV_BUILD=/tmp/AliceVision_build \
+    AV_INSTALL=/opt/AliceVision_install \
+    AV_BUNDLE=/opt/AliceVision_bundle \
+    VERBOSE=1
+
+COPY CMakeLists.txt *.md ${AV_DEV}/
+COPY src ${AV_DEV}/src
+
+WORKDIR "${AV_BUILD}"
+
+RUN cmake -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS:BOOL=ON \
+      -DTARGET_ARCHITECTURE=${TARGET_ARCHITECTURE} \
+      -DALICEVISION_BUILD_DEPENDENCIES:BOOL=OFF \
+      -DCMAKE_PREFIX_PATH:PATH="${AV_INSTALL}" \
+      -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
+      -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}" \
+      -DALICEVISION_USE_ALEMBIC=ON -DMINIGLOG=ON -DALICEVISION_USE_CCTAG=ON -DALICEVISION_USE_OPENCV=ON -DALICEVISION_USE_OPENGV=ON \
+      -DALICEVISION_USE_POPSIFT=ON -DALICEVISION_USE_CUDA=ON -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF \
+      "${AV_DEV}" && \
+    make -j"$(nproc)" && \
+    make install && \
+    make bundle && \
+    rm -rf "${AV_DEV}" "${AV_BUILD}" && \
+    echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh
+
+

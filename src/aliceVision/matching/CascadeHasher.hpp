@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/matching/metric.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/stl/DynamicBitset.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/feature/metric.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/stl/DynamicBitset.hpp>
+
 #include <iostream>
 #include <random>
 #include <cmath>
@@ -76,6 +77,7 @@ public:
   // Creates the hashing projections (cascade of two level of hash codes)
   bool Init
   (
+    std::mt19937 & generator,
     const uint8_t nb_hash_code = 128,
     const uint8_t nb_bucket_groups = 6,
     const uint8_t nb_bits_per_bucket = 10)
@@ -89,8 +91,6 @@ public:
     // Box Muller transform is used in the original paper to get fast random number
     // from a normal distribution with <mean = 0> and <variance = 1>.
     // Here we use C++11 normal distribution random number generator
-    std::random_device rd;
-    std::mt19937 gen(rd());
     std::normal_distribution<> d(0,1);
 
     primary_hash_projection_.resize(nb_hash_code, nb_hash_code);
@@ -99,7 +99,7 @@ public:
     for (int i = 0; i < nb_hash_code; ++i)
     {
       for (int j = 0; j < nb_hash_code; ++j)
-        primary_hash_projection_(i, j) = d(gen);
+        primary_hash_projection_(i, j) = d(generator);
     }
 
     // Initialize secondary hash projection.
@@ -111,7 +111,7 @@ public:
       for (int j = 0; j < nb_bits_per_bucket_; ++j)
       {
         for (int k = 0; k < nb_hash_code; ++k)
-          secondary_hash_projection_[i](j, k) = d(gen);
+          secondary_hash_projection_[i](j, k) = d(generator);
       }
     }
     return true;
@@ -229,7 +229,7 @@ public:
     const int NN = 2
   ) const
   {
-    typedef L2_Vectorized<typename MatrixT::Scalar> MetricT;
+    typedef feature::L2_Vectorized<typename MatrixT::Scalar> MetricT;
     MetricT metric;
 
     static const int kNumTopCandidates = 10;
@@ -254,7 +254,7 @@ public:
     // feature for matching (i.e., prevents duplicates).
     std::vector<bool> used_descriptor(hashed_descriptions2.hashed_desc.size());
 
-    typedef matching::Hamming<stl::dynamic_bitset::BlockType> HammingMetricType;
+    typedef feature::Hamming<stl::dynamic_bitset::BlockType> HammingMetricType;
     static const HammingMetricType metricH = {};
     for (int i = 0; i < hashed_descriptions1.hashed_desc.size(); ++i)
     {

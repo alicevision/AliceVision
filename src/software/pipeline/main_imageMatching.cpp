@@ -11,6 +11,7 @@
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
@@ -107,7 +108,8 @@ enum class EImageMatchingMethod
   VOCABULARYTREE = 1,
   SEQUENTIAL = 2,
   SEQUENTIAL_AND_VOCABULARYTREE = 3,
-  FRUSTUM=4
+  FRUSTUM = 4,
+  FRUSTUM_OR_VOCABULARYTREE = 5
 };
 
 /**
@@ -118,11 +120,18 @@ inline std::string EImageMatchingMethod_enumToString(EImageMatchingMethod m)
 {
   switch(m)
   {
-    case EImageMatchingMethod::EXHAUSTIVE: return "Exhaustive";
-    case EImageMatchingMethod::VOCABULARYTREE: return "VocabularyTree";
-    case EImageMatchingMethod::SEQUENTIAL: return "Sequential";
-    case EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE: return "SequentialAndVocabularyTree";
-    case EImageMatchingMethod::FRUSTUM: return "Frustum";
+    case EImageMatchingMethod::EXHAUSTIVE:
+        return "Exhaustive";
+    case EImageMatchingMethod::VOCABULARYTREE:
+        return "VocabularyTree";
+    case EImageMatchingMethod::SEQUENTIAL:
+        return "Sequential";
+    case EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE:
+        return "SequentialAndVocabularyTree";
+    case EImageMatchingMethod::FRUSTUM:
+        return "Frustum";
+    case EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE:
+        return "FrustumOrVocabularyTree";
   }
   throw std::out_of_range("Invalid EImageMatchingMethod enum: " + std::to_string(int(m)));
 }
@@ -137,11 +146,18 @@ inline EImageMatchingMethod EImageMatchingMethod_stringToEnum(const std::string&
   std::string mode = m;
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower);
 
-  if(mode == "exhaustive") return EImageMatchingMethod::EXHAUSTIVE;
-  if(mode == "vocabularytree") return EImageMatchingMethod::VOCABULARYTREE;
-  if(mode == "sequential") return EImageMatchingMethod::SEQUENTIAL;
-  if(mode == "sequentialandvocabularytree") return EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE;
-  if(mode == "frustum") return EImageMatchingMethod::FRUSTUM;
+  if(mode == "exhaustive")
+      return EImageMatchingMethod::EXHAUSTIVE;
+  if(mode == "vocabularytree")
+      return EImageMatchingMethod::VOCABULARYTREE;
+  if(mode == "sequential")
+      return EImageMatchingMethod::SEQUENTIAL;
+  if(mode == "sequentialandvocabularytree")
+      return EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE;
+  if(mode == "frustum")
+      return EImageMatchingMethod::FRUSTUM;
+  if(mode == "frustumorvocabularytree")
+      return EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE;
 
   throw std::out_of_range("Invalid EImageMatchingMethod: " + m);
 }
@@ -296,52 +312,50 @@ void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches
     }
 }
 
-void generateAllMatchesInOneMap(const std::map<IndexT, std::string>& descriptorsFiles, OrderedPairList& outPairList)
+void generateAllMatchesInOneMap(const std::set<IndexT>& viewIds, OrderedPairList& outPairList)
 {
-  for(const auto& descItA: descriptorsFiles)
-  {
-    const IndexT imgA = descItA.first;
-    OrderedListOfImageID outPerImg;
-
-    for(const auto& descItB: descriptorsFiles)
+    for(const IndexT imgA : viewIds)
     {
-      const IndexT imgB = descItB.first;
-      if(imgB > imgA)
-        outPerImg.insert(imgB);
-    }
+        OrderedListOfImageID outPerImg;
 
-    if(!outPerImg.empty())
-    {
-      OrderedPairList::iterator itFind = outPairList.find(imgA);
+        for(const IndexT imgB : viewIds)
+        {
+            if(imgB > imgA)
+                outPerImg.insert(imgB);
+        }
 
-      if(itFind == outPairList.end())
-        outPairList[imgA] = outPerImg;
-      else
-        itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        if(!outPerImg.empty())
+        {
+            OrderedPairList::iterator itFind = outPairList.find(imgA);
+
+            if(itFind == outPairList.end())
+                outPairList[imgA] = outPerImg;
+            else
+                itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        }
     }
-  }
 }
 
-void generateAllMatchesBetweenTwoMap(const std::map<IndexT, std::string>& descriptorsFilesA, const std::map<IndexT, std::string>& descriptorsFilesB, OrderedPairList& outPairList)
+void generateAllMatchesBetweenTwoMap(const std::set<IndexT>& viewIdsA,
+                                     const std::set<IndexT>& viewIdsB, OrderedPairList& outPairList)
 {
-  for(const auto& descItA: descriptorsFilesA)
-  {
-    const IndexT imgA = descItA.first;
-    OrderedListOfImageID outPerImg;
-
-    for(const auto& descItB: descriptorsFilesB)
-      outPerImg.insert(descItB.first);
-
-    if(!outPerImg.empty())
+    for(const IndexT imgA : viewIdsA)
     {
-      OrderedPairList::iterator itFind = outPairList.find(imgA);
+        OrderedListOfImageID outPerImg;
 
-      if(itFind == outPairList.end())
-        outPairList[imgA] = outPerImg;
-      else
-        itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        for(const IndexT imgB : viewIdsB)
+            outPerImg.insert(imgB);
+
+        if(!outPerImg.empty())
+        {
+            OrderedPairList::iterator itFind = outPairList.find(imgA);
+
+            if(itFind == outPairList.end())
+                outPairList[imgA] = outPerImg;
+            else
+                itFind->second.insert(outPerImg.begin(), outPerImg.end());
+        }
     }
-  }
 }
 
 void generateFromVoctree(PairList& allMatches,
@@ -543,7 +557,7 @@ void conditionVocTree(const std::string& treeName, bool withWeights, const std::
     }
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
 
@@ -609,7 +623,8 @@ int main(int argc, char** argv)
       " * Sequential: use images neighbors based on filename\n"
       " * SequentialAndVocabularyTree: combine both previous approaches\n"
       " * Exhaustive: all images combinations\n"
-      " * Frustum: images with camera frustum intersection (only for cameras with known poses)\n")
+      " * Frustum: images with camera frustum intersection (only for cameras with known poses)\n"
+      " * FrustumOrVocTree: frustum intersection if cameras with known poses else use VocTree.\n")
     ("minNbImages", po::value<std::size_t>(&minNbImages)->default_value(minNbImages),
       "Minimal number of images to use the vocabulary tree. If we have less images than this threshold, we will compute all matching combinations.")
     ("maxDescriptors", po::value<std::size_t>(&nbMaxDescriptors)->default_value(nbMaxDescriptors),
@@ -710,54 +725,99 @@ int main(int argc, char** argv)
     }
   }
 
-  OrderedPairList selectedPairs;
+  if(method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
+  {
+      // Frustum intersection is only implemented for pinhole cameras
+      bool onlyPinhole = true;
+      for(auto& cam : sfmDataA.getIntrinsics())
+      {
+          if(!camera::isPinhole(cam.second->getType()))
+          {
+              onlyPinhole = false;
+              break;
+          }
+      }
 
-  std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
-
-  // load descriptor filenames
-  aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
-
-  if(useMultiSfM)
-    aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
+      const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
+      if(reconstructedViews == 0)
+      {
+          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as there is no known pose.");
+          method = EImageMatchingMethod::VOCABULARYTREE;
+      }
+      else if(!onlyPinhole)
+      {
+          ALICEVISION_LOG_INFO(
+              "FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as the scene contains non-pinhole cameras.");
+          method = EImageMatchingMethod::VOCABULARYTREE;
+      }
+      else if(reconstructedViews == sfmDataA.getViews().size())
+      {
+          ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use FRUSTUM intersection from known poses.");
+          method = EImageMatchingMethod::FRUSTUM;
+      }
+      else
+      {
+          ALICEVISION_LOG_ERROR(reconstructedViews << " reconstructed views for " << sfmDataA.getViews().size()
+                                                   << " views.");
+          throw std::runtime_error("FRUSTUM_OR_VOCABULARYTREE: Mixing reconstructed and unreconstructed Views.");
+      }
+  }
 
   // if not enough images to use the VOCABULARYTREE use the EXHAUSTIVE method
   if(method == EImageMatchingMethod::VOCABULARYTREE || method == EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE)
   {
-    if((descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
-    {
-      ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
-      method = EImageMatchingMethod::EXHAUSTIVE;
-    }
+      if((sfmDataA.getViews().size() + sfmDataB.getViews().size()) < minNbImages)
+      {
+          ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
+          method = EImageMatchingMethod::EXHAUSTIVE;
+      }
   }
+
+  std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
+
+  if(method != EImageMatchingMethod::EXHAUSTIVE)
+  {
+      // load descriptor filenames
+      aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
+
+      if(useMultiSfM)
+          aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
+  }
+
+  OrderedPairList selectedPairs;
 
   switch(method)
   {
     case EImageMatchingMethod::EXHAUSTIVE:
     {
+      ALICEVISION_LOG_INFO("Use EXHAUSTIVE method.");
       if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
          (matchingMode == EImageMatchingMode::A_AB) ||
          (matchingMode == EImageMatchingMode::A_A))
-        generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
+          generateAllMatchesInOneMap(sfmDataA.getViewsKeys(), selectedPairs);
 
       if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
          (matchingMode == EImageMatchingMode::A_AB) ||
          (matchingMode == EImageMatchingMode::A_B))
-        generateAllMatchesBetweenTwoMap(descriptorsFilesA, descriptorsFilesB, selectedPairs);
+          generateAllMatchesBetweenTwoMap(sfmDataA.getViewsKeys(), sfmDataB.getViewsKeys(), selectedPairs);
       break;
     }
     case EImageMatchingMethod::VOCABULARYTREE:
     {
+      ALICEVISION_LOG_INFO("Use VOCABULARYTREE matching.");
       conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
                        sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
       break;
     }
     case EImageMatchingMethod::SEQUENTIAL:
     {
+      ALICEVISION_LOG_INFO("Use SEQUENTIAL matching.");
       generateSequentialMatches(sfmDataA, numImageQuerySequential, selectedPairs);
       break;
     }
     case EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE:
     {
+      ALICEVISION_LOG_INFO("Use SEQUENTIAL and VOCABULARYTREE matching.");
       generateSequentialMatches(sfmDataA, numImageQuerySequential, selectedPairs);
       conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
                        sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
@@ -765,6 +825,11 @@ int main(int argc, char** argv)
     }
     case EImageMatchingMethod::FRUSTUM:
     {
+      ALICEVISION_LOG_INFO("Use FRUSTUM intersection from known poses.");
+      if(sfmDataA.getValidViews().empty())
+      {
+        throw std::runtime_error("No camera with valid pose and intrinsic.");
+      }
       // For all cameras with valid extrinsic/intrinsic, we select the camera with common visibilities based on cameras' frustum.
       // We use an epsilon near value for the frustum, to ensure that mulitple images with a pure rotation will not intersect at the nodal point.
       PairSet pairs = sfm::FrustumFilter(sfmDataA, 0.01).getFrustumIntersectionPairs();
@@ -773,6 +838,10 @@ int main(int argc, char** argv)
           selectedPairs[p.first].insert(p.second);
       }
       break;
+    }
+    case EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE:
+    {
+        throw std::runtime_error("FRUSTUM_OR_VOCABULARYTREE should have been decided before.");
     }
   }
 
@@ -786,6 +855,13 @@ int main(int argc, char** argv)
       ALICEVISION_LOG_ERROR("Unable to create folders: " << basePath);
       return EXIT_FAILURE;
     }
+  }
+
+  {
+    std::size_t nbImagePairs = 0;
+    for(auto& it : selectedPairs)
+        nbImagePairs += it.second.size();
+    ALICEVISION_LOG_INFO("Number of selected image pairs: " << nbImagePairs);
   }
 
   // write it to file

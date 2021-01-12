@@ -17,6 +17,7 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 
 #include <vector>
+#include <random>
 
 namespace aliceVision {
 namespace matching {
@@ -25,7 +26,7 @@ namespace matching {
  * @brief Match two Regions according to a chosen MatcherType using the ratio test
  * to assure the robustness of the matches.
  * It returns the matching features.
- * 
+ * @param[in] randomNumberGenerator random Number generator
  * @param[in] dist_ratio The threshold for the ratio test.
  * @param[in] eMatcherType The type of matcher to use.
  * @param[in] regions_I The first Region to match
@@ -34,6 +35,7 @@ namespace matching {
  */
 void DistanceRatioMatch
 (
+  std::mt19937 & randomNumberGenerator, 
   float dist_ratio,   // Distance ratio
   matching::EMatcherType eMatcherType, // Matcher
   const feature::Regions & regions_I, // database
@@ -110,14 +112,14 @@ public:
    * @param b_squared_metric Whether to use a squared metric for the ratio test 
    * when matching two Regions.
    */
-  RegionsMatcher(const feature::Regions& regions, bool b_squared_metric = false)
+  RegionsMatcher(std::mt19937 & randomNumberGenerator,const feature::Regions& regions, bool b_squared_metric = false)
     : IRegionsMatcher(regions), b_squared_metric_(b_squared_metric)
   {
     if (regions_.RegionCount() == 0)
       return;
 
     const Scalar * tab = reinterpret_cast<const Scalar *>(regions_.DescriptorRawData());
-    matcher_.Build(tab, regions_.RegionCount(), regions_.DescriptorLength());
+    matcher_.Build(randomNumberGenerator, tab, regions_.RegionCount(), regions_.DescriptorLength());
   }
 
   /**
@@ -208,6 +210,7 @@ class RegionsDatabaseMatcher
      * match other Regions (query).
      */
     RegionsDatabaseMatcher(
+      std::mt19937 & randomNumberGenerator,
       matching::EMatcherType matcherType,
       const feature::Regions & database_regions);
 
@@ -238,13 +241,14 @@ class RegionsDatabaseMatcherPerDesc
 {
 public:
   RegionsDatabaseMatcherPerDesc(
+      std::mt19937 & randomNumberGenerator,
       matching::EMatcherType matcherType,
       const feature::MapRegionsPerDesc & queryRegions)
     : _databaseRegions(queryRegions)
   {
     for(const auto& queryRegionsIt: queryRegions)
     {
-      _mapMatchers[queryRegionsIt.first] = RegionsDatabaseMatcher(matcherType, *queryRegionsIt.second);
+      _mapMatchers[queryRegionsIt.first] = RegionsDatabaseMatcher(randomNumberGenerator, matcherType, *queryRegionsIt.second);
     }
   }
 
@@ -276,7 +280,7 @@ private:
   std::map<feature::EImageDescriberType, RegionsDatabaseMatcher> _mapMatchers;
 };
 
-std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType);
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(std::mt19937 & randomNumberGenerator,const feature::Regions & regions, matching::EMatcherType matcherType);
 
 }  // namespace matching
 }  // namespace aliceVision

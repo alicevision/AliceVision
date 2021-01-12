@@ -11,15 +11,19 @@ Individuals
 - Clement Aymard
 - Clement Debize
 - Cyril Pichard
+- Enguerrand De Smet
 - Fabien Castan
+- Fabien Servant
 - Gregoire De Lillo
 - Havard Espeland
 - Jean Melou
+- Julien Haudegond
 - Lilian Calvet
 - Michal Polic
 - Nicolas Rondaud
 - Pierre Gurdjos
 - Simone Gasparini
+- Théo Leplomb
 - Tomas Pajdla
 - Yann Lanthony
 - Zeljko Vrba

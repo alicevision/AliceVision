@@ -1,0 +1,58 @@
+ARG AV_VERSION
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM alicevision/alicevision-deps:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+
+# use CUDA_VERSION to select the image version to use
+# see https://hub.docker.com/r/nvidia/cuda/
+#
+# AV_VERSION=2.2.8.develop
+# CUDA_VERSION=11.0
+# UBUNTU_VERSION=20.04
+# docker build \
+#    --build-arg CUDA_VERSION=${CUDA_VERSION} \
+#    --build-arg UBUNTU_VERSION${UBUNTU_VERSION} \
+#    --build-arg AV_VERSION=2.2.8.develop \
+#    --tag alicevision/alicevision:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
+#     -f Dockerfile_ubuntu .
+#
+# then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime=nvidia alicevision/alicevision:{AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+
+
+# OS/Version (FILE): cat /etc/issue.net
+# Cuda version (ENV): $CUDA_VERSION
+
+ENV AV_DEV=/opt/AliceVision_git \
+    AV_BUILD=/tmp/AliceVision_build \
+    AV_INSTALL=/opt/AliceVision_install \
+    PATH="${PATH}:${AV_BUNDLE}" \
+    VERBOSE=1
+
+COPY CMakeLists.txt *.md ${AV_DEV}/
+COPY src ${AV_DEV}/src
+
+WORKDIR "${AV_BUILD}"
+
+RUN cmake -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DTARGET_ARCHITECTURE=core \
+        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=OFF \
+        -DCMAKE_PREFIX_PATH:PATH="${AV_INSTALL}" \
+        -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}" \
+        -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}" \
+        -DALICEVISION_USE_ALEMBIC:BOOL=ON \
+        -DMINIGLOG:BOOL=ON \
+        -DALICEVISION_USE_CCTAG:BOOL=ON \
+        -DALICEVISION_USE_OPENCV:BOOL=ON \
+        -DALICEVISION_USE_OPENGV:BOOL=ON \
+        -DALICEVISION_USE_POPSIFT:BOOL=ON \
+        -DALICEVISION_USE_CUDA:BOOL=ON \
+        -DALICEVISION_BUILD_DOC:BOOL=OFF \
+        -DALICEVISION_BUILD_EXAMPLES:BOOL=OFF \
+        "${AV_DEV}" && \
+   make install -j"$(nproc)" && \
+   rm -rf "${AV_BUILD}" "${AV_DEV}" && \
+   echo "export ALICEVISION_SENSOR_DB=${AV_INSTALL}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh
+

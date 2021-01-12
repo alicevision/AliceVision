@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <cassert>
+#include <random>
 
 namespace aliceVision {
 namespace sfmData {
@@ -72,6 +73,9 @@ public:
   Constraints2D constraints2d;
   /// Rotation priors
   RotationPriors rotationpriors;
+
+  SfMData();
+  ~SfMData();
 
   // Operators
 
@@ -204,6 +208,17 @@ public:
    * @param[in] intrinsicId
    */
   std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId);
+    return nullptr;
+  }
+
+  /**
+   * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
+   * @param[in] intrinsicId
+   */
+  const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId);
@@ -496,7 +511,9 @@ public:
    */
   void combine(const SfMData& sfmData);
 
-private:
+  void clear();
+
+ private:
   /// Absolute path to the SfMData file (should not be saved)
   std::string _absolutePath;
   /// Features folders path

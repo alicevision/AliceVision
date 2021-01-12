@@ -7,6 +7,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -27,7 +28,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace oiio = OIIO;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -118,7 +119,7 @@ int main(int argc, char **argv)
     image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
 
     // compute undistorted image
-    if(intrinsicPtr->isValid() && intrinsicPtr->have_disto())
+    if(intrinsicPtr->isValid() && intrinsicPtr->hasDistortion())
       camera::UndistortImage(image, intrinsicPtr.get(), imageUd, image::BLACK, true);
     else
       imageUd = image;

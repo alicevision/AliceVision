@@ -103,6 +103,8 @@ int ImageScale::getIndex( const double r )const
 template< typename T >
 VLD::VLD( const ImageScale& series, T const& P1, T const& P2 ) : contrast( 0.0 )
 {
+  using namespace boost::math;
+
   //============== initializing============//
   principleAngle.fill( 0 );
   descriptor.fill( 0 );
@@ -161,12 +163,12 @@ VLD::VLD( const ImageScale& series, T const& P1, T const& P2 ) : contrast( 0.0 )
 
           //cout<<angle<<endl;
           while( angle < 0 )
-            angle += 2 * PI_;
-          while( angle >= 2 * PI_)
-            angle -= 2 * PI_;
+              angle += 2 * constants::pi<double>();
+          while(angle >= 2 * constants::pi<double>())
+              angle -= 2 * constants::pi<double>();
 
           //===============principle angle==============================//
-          const int index = int( angle * binNum / ( 2 * PI_ ) + 0.5 );
+          const int index = int(angle * binNum / (2 * constants::pi<double>()) + 0.5);
 
           double Gweight = exp( -d * d / 4.5 / sigma2 ) * ( m( y, x ) );
           if( index < binNum )
@@ -175,7 +177,7 @@ VLD::VLD( const ImageScale& series, T const& P1, T const& P2 ) : contrast( 0.0 )
             statistic[ 0 ] += Gweight;
 
           //==============the descriptor===============================//
-          const int index2 = int( angle * subdirection / ( 2 * PI_ ) + 0.5 );
+          const int index2 = int(angle * subdirection / (2 * constants::pi<double>()) + 0.5);
           assert( index2 >= 0 && index2 <= subdirection );
 
           if( index2 < subdirection )
@@ -431,3 +433,11 @@ float KVLD( const Image< float >& I1,
   return float( matchesFiltered.size() ) / matches.size();
 }
 
+double VLD::get_orientation() const
+{
+    const float dy = end_point[1] - begin_point[1];
+    const float dx = end_point[0] - begin_point[0];
+    float angle;
+    anglefrom(dx, dy, angle);
+    return angle;
+}

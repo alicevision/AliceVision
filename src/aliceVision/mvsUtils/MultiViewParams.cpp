@@ -15,7 +15,8 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -64,22 +65,34 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
           if(readFromDepthMaps)
           {
-            path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap, 1);
+              // use output of DepthMapFilter if scale==0
+              // use output of DepthMap if scale==1
+              const int scale = (depthMapsFolder.empty() ? 0 : 1);
+              path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap, scale);
           }
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
             // find folder file extension
-            const fs::recursive_directory_iterator end;
-            const auto findIt = std::find_if(fs::recursive_directory_iterator(_imagesFolder), end,
-                                     [&view](const fs::directory_entry& e) {
-                                        return (e.path().stem() == std::to_string(view.getViewId()) &&
-                                        (imageIO::isSupportedUndistortFormat(e.path().extension().string())));
-                                     });
+            std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder, 
+                [&view](const fs::path& path) 
+                {
+                    return (path.stem() == std::to_string(view.getViewId()) && (imageIO::isSupportedUndistortFormat(path.extension().string())));
+                }
+            );
 
-            if(findIt == end)
-              throw std::runtime_error("Cannot find image file " + std::to_string(view.getViewId()) + " in folder " + _imagesFolder);
+            // if path was not found
+            if(paths.empty())
+            {
+                throw std::runtime_error("Cannot find image file coresponding to the view '" + 
+                    std::to_string(view.getViewId()) + "' in folder '" + _imagesFolder + "'.");
+            }
+            else if(paths.size() > 1)
+            {
+                throw std::runtime_error("Ambiguous case: Multiple image file found for the view '" + 
+                    std::to_string(view.getViewId()) + "' in folder '" + _imagesFolder + "'.");
+            }
 
-            path = _imagesFolder + std::to_string(view.getViewId()) + findIt->path().extension().string();
+            path = _imagesFolder + std::to_string(view.getViewId()) + fs::path(paths[0]).extension().string();
           }
 
           dimensions.emplace(view.getWidth(), view.getHeight());
@@ -103,10 +116,16 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         const ImageParams& imgParams = _imagesParams.at(i);
 
         oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(imgParams.path, metadata);
-
-        const auto scaleIt = metadata.find("AliceVision:downscale");
-        const auto pIt = metadata.find("AliceVision:P");
+        oiio::ParamValueList::const_iterator scaleIt = metadata.end();
+        oiio::ParamValueList::const_iterator pIt = metadata.end();
+        
+        const bool fileExists = fs::exists(imgParams.path);
+        if(fileExists)
+        {
+            imageIO::readImageMetadata(imgParams.path, metadata);
+            scaleIt = metadata.find("AliceVision:downscale");
+            pIt = metadata.find("AliceVision:P");
+        }
 
         // find image scale information
         if(scaleIt != metadata.end() && scaleIt->type() == oiio::TypeDesc::INT)
@@ -114,7 +133,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             // use aliceVision image metadata
             _imagesScale.at(i) = scaleIt->get_int();
         }
-        else
+        else if(fileExists)
         {
             // use image dimension
             int w, h, channels;
@@ -146,16 +165,16 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const std::string fileNameP = getFileNameFromIndex(*this, i, EFileType::P);
             const std::string fileNameD = getFileNameFromIndex(*this, i, EFileType::D);
 
-            if(fs::exists(fileNameP), fs::exists(fileNameD))
+            if(fs::exists(fileNameP) && fs::exists(fileNameD))
             {
-              ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
+                ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
 
-              loadMatricesFromTxtFile(i, fileNameP, fileNameD);
+                loadMatricesFromTxtFile(i, fileNameP, fileNameD);
             }
             else
             {
-              ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from SfMData.");
-              loadMatricesFromSfM(i);
+                ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from SfMData.");
+                loadMatricesFromSfM(i);
             }
         }
 
@@ -279,7 +298,15 @@ void MultiViewParams::loadMatricesFromSfM(int index)
 
   const sfmData::View& view = *(_sfmData.getViews().at(getViewId(index)));
   sfmData::Intrinsics::const_iterator intrinsicIt = _sfmData.getIntrinsics().find(view.getIntrinsicId());
-  const Mat34 P = intrinsicIt->second.get()->get_projective_equivalent(_sfmData.getPose(view).getTransform());
+
+  std::shared_ptr<camera::IntrinsicBase> ptrIntrinsic = intrinsicIt->second;
+  std::shared_ptr<camera::Pinhole> ptrPinHole = std::dynamic_pointer_cast<camera::Pinhole>(ptrIntrinsic);
+  if (!ptrPinHole) {
+    ALICEVISION_LOG_ERROR("Camera is not pinhole in loadMatricesFromRawProjectionMatrix");
+    return;
+  }
+
+  const Mat34 P = ptrPinHole->getProjectiveEquivalent(_sfmData.getPose(view).getTransform());
   std::vector<double> vP(P.size());
   Eigen::Map<RowMatrixXd>(vP.data(), P.rows(), P.cols()) = P;
 
@@ -572,7 +599,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
       const geometry::Pose3 otherPose = _sfmData.getPose(otherView).getTransform();
       const camera::IntrinsicBase* otherIntrinsicPtr = _sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
 
-      const double angle = camera::AngleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+      const double angle = camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
 
       if(angle < _minViewAngle || angle > _maxViewAngle)
         continue;

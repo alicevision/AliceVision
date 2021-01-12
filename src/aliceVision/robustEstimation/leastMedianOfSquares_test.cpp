@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_OutlierFree) {
   //  in a robust framework (LMeds).
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
-  double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
+  double dBestMedian = leastMedianOfSquares(kernel, &model, &dThreshold);
   BOOST_CHECK_CLOSE(2.0, model[1], dExpectedPrecision);
   BOOST_CHECK_CLOSE(1.0, model[0], dExpectedPrecision);
   BOOST_CHECK_CLOSE(0.0, dBestMedian, dExpectedPrecision);
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_OneOutlier) {
 
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
-  double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
+  double dBestMedian = leastMedianOfSquares(kernel, &model, &dThreshold);
   BOOST_CHECK_CLOSE(2.0, model[1], dExpectedPrecision);
   BOOST_CHECK_CLOSE(1.0, model[0], dExpectedPrecision);
   BOOST_CHECK_CLOSE(0.0, dBestMedian, dExpectedPrecision);
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_TooFewPoints) {
 
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
-  double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
+  double dBestMedian = leastMedianOfSquares(kernel, &model, &dThreshold);
   //No inliers
   BOOST_CHECK_EQUAL( dBestMedian, std::numeric_limits<double>::max());
 }
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_RealisticCase) {
   //-- Add some noise (for the asked percentage amount)
   int nbPtToNoise = (int) NbPoints * outlierRatio;
   vector<size_t> vec_samples; // Fit with unique random index
-  UniformSample(nbPtToNoise, NbPoints, vec_samples);
+  uniformSample(nbPtToNoise, NbPoints, vec_samples);
   for(size_t i = 0; i <vec_samples.size(); ++i)
   {
     const size_t randomIndex = vec_samples[i];
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_RealisticCase) {
 
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
-  double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
+  double dBestMedian = leastMedianOfSquares(kernel, &model, &dThreshold);
   BOOST_CHECK_CLOSE(-2.0, model[0], dExpectedPrecision);
   BOOST_CHECK_CLOSE(6.3, model[1], dExpectedPrecision);
   //Compute which point are inliers (error below dThreshold)

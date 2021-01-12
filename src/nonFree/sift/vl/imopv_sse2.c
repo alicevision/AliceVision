@@ -20,6 +20,7 @@ the terms of the BSD license (see the COPYING file).
 #ifndef VL_IMOPV_SSE2_INSTANTIATING
 
 #include <emmintrin.h>
+
 #include "imopv.h"
 #include "imopv_sse2.h"
 

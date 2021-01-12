@@ -14,6 +14,9 @@
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 
+#include <random>
+#include <numeric>
+
 namespace aliceVision {
 namespace mvsUtils {
 
@@ -727,57 +730,16 @@ StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensio
     return voxels;
 }
 
-StaticVector<int>* createRandomArrayOfIntegers(int n)
+std::vector<int> createRandomArrayOfIntegers(const int size, const unsigned int seed)
 {
-    /* initialize random seed: */
-    srand(time(nullptr));
+    std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
 
-    StaticVector<int>* tracksPointsRandomIds = new StaticVector<int>();
-    tracksPointsRandomIds->reserve(n);
+    std::vector<int> v(size);
+    std::iota(v.begin(), v.end(), 0);
 
-    for(int j = 0; j < n; j++)
-    {
-        tracksPointsRandomIds->push_back(j);
-    }
+    std::shuffle(v.begin(), v.end(), generator);
 
-    for(int j = 0; j < n - 1; j++)
-    {
-        int rid = rand() % (n - j);
-
-        /*
-        if ((j+rid<0)||(j+rid>=tracksPoints->size())) {
-                printf("WANRING rid ot of limits %i, 0 to %i !!!! \n",j+rid,tracksPoints->size());
-        };
-        */
-
-        int v = (*tracksPointsRandomIds)[j + rid];
-        (*tracksPointsRandomIds)[j + rid] = (*tracksPointsRandomIds)[j];
-        (*tracksPointsRandomIds)[j] = v;
-    }
-
-    // test
-    /*
-    {
-            StaticVectorBool *tracksPointsRandomIdsB = new StaticVectorBool(n);
-            tracksPointsRandomIdsB->resize_with(n,false);
-            for (int k=0;k<n;k++) {
-                    int j = (*tracksPointsRandomIds)[k];
-                    (*tracksPointsRandomIdsB)[j] = true;
-            };
-
-
-            for (int j=0;j<n;j++) {
-                    if ((*tracksPointsRandomIdsB)[j]==false) {
-                            printf("WANRING  ((*tracksPointsRandomIdsB)[j]==false) !!!! \n");
-                    };
-            };
-
-
-            delete tracksPointsRandomIdsB;
-    };
-    */
-
-    return tracksPointsRandomIds;
+    return v;
 }
 
 int findNSubstrsInString(const std::string& str, const std::string& val)

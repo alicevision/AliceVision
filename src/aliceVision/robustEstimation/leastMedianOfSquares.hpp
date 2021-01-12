@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "aliceVision/robustEstimation/randSampling.hpp"
-#include "aliceVision/robustEstimation/ransacTools.hpp"
+#include <aliceVision/robustEstimation/randSampling.hpp>
+#include <aliceVision/robustEstimation/ransacTools.hpp>
 
 #include <algorithm>
 #include <limits>
@@ -17,24 +17,27 @@
 namespace aliceVision {
 namespace robustEstimation {
 
-/// \brief Variant of RANSAC using Least Median of Squares.
-/// \details Instead of using a fixed threshold to distinguish inlier/outlier,
-/// find the threshold at 1-\a outlierRatio quantile of residuals and keep the
-/// parameters minimizing this threshold. The final threshold
-/// returned in \a outlierThreshold is a multiple of this and can be used to
-/// filter out outliers.
-/// LMedS : Z. Zhang. Determining The Epipolar Geometry And Its Uncertainty. A Review
-/// IJCV 1998
-
+/**
+ * @brief Variant of RANSAC using Least Median of Squares.
+ *
+ * @details Instead of using a fixed threshold to distinguish inlier/outlier,
+ *          find the threshold at 1-\a outlierRatio quantile of residuals and keep the
+ *          parameters minimizing this threshold. The final threshold
+ *          returned in \a outlierThreshold is a multiple of this and can be used to
+ *          filter out outliers.
+ *
+ * @ref LMedS : Z. Zhang. Determining The Epipolar Geometry And Its Uncertainty.
+ *      A Review IJCV 1998
+ */
 template <typename Kernel>
-double LeastMedianOfSquares(const Kernel &kernel,
-                            typename Kernel::Model * model = nullptr,
+double leastMedianOfSquares(const Kernel& kernel,
+                            typename Kernel::ModelT* model = nullptr,
                             double* outlierThreshold = nullptr,
                             double outlierRatio = 0.5,
                             double minProba = 0.99)
 {
-  const std::size_t min_samples = Kernel::MINIMUM_SAMPLES;
-  const std::size_t total_samples = kernel.NumSamples();
+  const std::size_t min_samples = kernel.getMinimumNbRequiredSamples();
+  const std::size_t total_samples = kernel.nbSamples();
 
   std::vector<double> residuals(total_samples); // Array for storing residuals
 
@@ -49,10 +52,10 @@ double LeastMedianOfSquares(const Kernel &kernel,
 
     std::vector<std::size_t> vec_sample(min_samples);
     // Get Samples indexes
-    UniformSample(min_samples, total_samples, vec_sample);
+    uniformSample(min_samples, total_samples, vec_sample);
 
     // Estimate parameters: the solutions are stored in a vector
-    std::vector<typename Kernel::Model> models;
+    std::vector<typename Kernel::ModelT> models;
     kernel.Fit(vec_sample, &models);
 
     // Now test the solutions on the whole data

@@ -50,6 +50,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
+option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
@@ -118,7 +119,7 @@ if(WIN32)
   add_definitions(-DNOMINMAX)
   add_definitions(-D_USE_MATH_DEFINES)
   if(MSVC)
-    add_definitions(/bigobj)
+    add_compile_options(/bigobj)
     add_compile_options(/MP)
   endif()
 endif()
@@ -235,7 +236,7 @@ if(ALICEVISION_HAVE_OPENMP)
   if(NOT MSVC)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
       # for those using the clang with OpenMP support
-      list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES iomp)
+      list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES omp)
     else()
     list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
     endif()
@@ -266,6 +267,7 @@ if(BUILD_SHARED_LIBS)
   # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
   # https://lists.boost.org/boost-users/2009/11/54015.php
   add_definitions(-DBOOST_ALL_DYN_LINK)
+  add_definitions(-DBOOST_TEST_DYN_LINK)
 else()
   set(Boost_USE_STATIC_LIBS ON)
 endif()
@@ -280,17 +282,24 @@ endif()
 # ==============================================================================
 # OpenEXR
 # ==============================================================================
-find_package(OpenEXR REQUIRED)
-if(OPENEXR_FOUND)
-  message(STATUS "OpenEXR found. (Version ${OPENEXR_VERSION})")
+find_package(OpenEXR)
+if(TARGET OpenEXR::IlmImf)
+  message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
 else()
-  message(SEND_ERROR "Failed to find OpenEXR.")
+  # fallback for old openexr versions (<2.5)
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/openexr)
+  find_package(OpenEXR REQUIRED)
+  if(OPENEXR_FOUND)
+    message(STATUS "OpenEXR found (without config). (Version ${OPENEXR_VERSION})")
+  else()
+    message(SEND_ERROR "Failed to find OpenEXR.")
+  endif()
 endif()
 
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-find_package(OpenImageIO 1.8 REQUIRED)
+find_package(OpenImageIO 2.0.9 REQUIRED)
 if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
   message(STATUS "OpenImageIO found.")
   if(UNIX)
@@ -331,9 +340,9 @@ endif()
 # ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND OR EIGEN3_FOUND)
-  message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
+  # message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-  set(AV_EIGEN_DEFINITIONS EIGEN_DONT_ALIGN_STATICALLY EIGEN_DONT_VECTORIZE)
+  set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
 endif()
@@ -717,9 +726,15 @@ if(ALICEVISION_HAVE_CUDA)
 
   set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
   # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
-  if(NOT CUDA_VERSION_MAJOR LESS 9)
-    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62)
-  elseif(CUDA_VERSION_MAJOR GREATER 7)
+  if(CUDA_VERSION VERSION_GREATER_EQUAL 11.1)
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86)
+  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80)
+  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 10)
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70 72 75)
+  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 9)
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62 70)
+  elseif(CUDA_VERSION_MAJOR GREATER_EQUAL 8)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 60 61 62)
   else()
     set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 )
@@ -793,7 +808,7 @@ set(ALICEVISION_INCLUDE_DIRS
         ${generatedDir}
         ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
         ${LEMON_INCLUDE_DIRS}
-        ${EIGEN_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIRS}
         ${CERES_INCLUDE_DIRS}
         ${UNCERTAINTYTE_INCLUDE_DIRS}
         ${MAGMA_INCLUDE_DIRS}
@@ -887,6 +902,7 @@ endif()
 # ==============================================================================
 message("\n")
 message("** AliceVision version: " ${ALICEVISION_VERSION})
+message("** Target architecture: " ${TARGET_ARCHITECTURE})
 message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
@@ -973,8 +989,9 @@ if(ALICEVISION_BUILD_EXAMPLES AND ALICEVISION_BUILD_SFM)
 endif()
 
 # Complete software(s) build on aliceVision libraries
-add_subdirectory(software)
-
+if(ALICEVISION_BUILD_SOFTWARE)
+  add_subdirectory(software)
+endif()
 
 # ==============================================================================
 # Install rules

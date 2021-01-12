@@ -12,8 +12,7 @@ Contributing Workflow
 The contributing workflow relies on [Github Pull Requests](https://help.github.com/articles/using-pull-requests/).
 
 1. If it is an important change, we recommend you to discuss it on the mailing-list
-before starting implementation. This ensure that the development is aligned with other
-developpements already started and will be efficiently integrated.
+before starting implementation. This ensure that the development is aligned with other developments already started and will be efficiently integrated.
 
 2. Create the corresponding issues.
 

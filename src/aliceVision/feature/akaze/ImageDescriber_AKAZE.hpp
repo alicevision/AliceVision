@@ -41,7 +41,7 @@ struct AKAZEParams
 class ImageDescriber_AKAZE : public ImageDescriber
 {
 public:
-  ImageDescriber_AKAZE(const AKAZEParams& params = AKAZEParams(), bool isOriented = true)
+  explicit ImageDescriber_AKAZE(const AKAZEParams& params = AKAZEParams(), bool isOriented = true)
     : ImageDescriber()
     , _params(params)
     , _isOriented(isOriented)
@@ -69,7 +69,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  virtual EImageDescriberType getDescriberType() const override
+  EImageDescriberType getDescriberType() const override
   {
     switch(_params.akazeDescriptorType)
     {
@@ -114,23 +114,23 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(ConfigurationPreset preset) override
   {
-    switch(preset)
+    switch(preset.descPreset)
     {
       case EImageDescriberPreset::LOW:
-      {
-         _params.options.maxTotalKeypoints = 1000;
-         break;
-      }
-      case EImageDescriberPreset::MEDIUM:
       {
          _params.options.maxTotalKeypoints = 5000;
          break;
       }
-      case EImageDescriberPreset::NORMAL:
+      case EImageDescriberPreset::MEDIUM:
       {
          _params.options.maxTotalKeypoints = 10000;
+         break;
+      }
+      case EImageDescriberPreset::NORMAL:
+      {
+         _params.options.maxTotalKeypoints = 20000;
          _params.options.threshold = AKAZEOptions().threshold;
         break;
       }
@@ -148,6 +148,11 @@ public:
       }
       default:
         throw std::out_of_range("Invalid image describer preset enum");
+    }
+    if(!preset.gridFiltering)
+    {
+        // disable grid filtering
+        _params.options.maxTotalKeypoints = 0;
     }
   }
 
@@ -175,6 +180,8 @@ public:
       case AKAZE_MLDB:  regions.reset(new AKAZE_BinaryRegions); break;
     }
   }
+
+  ~ImageDescriber_AKAZE() override = default;
 
 private:
   AKAZEParams _params;

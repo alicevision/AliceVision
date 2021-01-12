@@ -11,8 +11,8 @@
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
+#include "aliceVision/multiview/AngularRadianErrorKernel.hpp"
 
 #include "sphericalCam.hpp"
 
@@ -36,7 +36,7 @@ using namespace svg;
 using namespace std;
 
 int main() {
-
+  std::mt19937 randomNumberGenerator;
   std::cout << "Compute the relative pose between two spherical image."
    << "\nUse an Acontrario robust estimation based on angular errors." << std::endl;
 
@@ -55,7 +55,9 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace aliceVision::feature;
-  std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(SiftParams(-1)));
+  SiftParams siftParams;
+  siftParams._firstOctave = -1;
+  std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(siftParams));
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->describe(imageL, regions_perImage[0]);
   image_describer->describe(imageR, regions_perImage[1]);
@@ -101,6 +103,7 @@ int main() {
   {
     // Find corresponding points
     matching::DistanceRatioMatch(
+      randomNumberGenerator,
       0.8, matching::ANN_L2,
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
@@ -153,19 +156,18 @@ int main() {
       typedef aliceVision::spherical_cam::EssentialKernel_spherical Kernel;
 
       // Define the AContrario angular error adaptor
-      typedef aliceVision::robustEstimation::ACKernelAdaptor_AngularRadianError<
+      typedef aliceVision::multiview::AngularRadianErrorKernel<
           aliceVision::spherical_cam::EightPointRelativePoseSolver,
           aliceVision::spherical_cam::AngularError,
-          Mat3>
+          robustEstimation::Mat3Model>
           KernelType;
 
       KernelType kernel(xL_spherical, xR_spherical);
 
       // Robust estimation of the Essential matrix and it's precision
-      Mat3 E;
+      robustEstimation::Mat3Model E;
       const double precision = std::numeric_limits<double>::infinity();
-      const std::pair<double,double> ACRansacOut =
-        ACRANSAC(kernel, vec_inliers, 1024, &E, precision);
+      const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, randomNumberGenerator, vec_inliers, 1024, &E, precision);
       const double & threshold = ACRansacOut.first;
       const double & NFA = ACRansacOut.second;
 
@@ -182,17 +184,18 @@ int main() {
         // Accumulator to find the best solution
         std::vector<size_t> f(4, 0);
 
-        std::vector<Mat3> Es;  // Essential,
-        std::vector<Mat3> Rs;  // Rotation matrix.
-        std::vector<Vec3> ts;  // Translation matrix.
+        std::vector<robustEstimation::Mat3Model> Es;  // Essential,
+        std::vector<Mat3> Rs;                  // Rotation matrix.
+        std::vector<Vec3> ts;                  // Translation matrix.
 
         Es.push_back(E);
+
         // Recover best rotation and translation from E.
-        MotionFromEssential(E, &Rs, &ts);
+        motionFromEssential(E.getMatrix(), &Rs, &ts);
 
         //-> Test the 4 solutions will all the point
         Mat34 P1;
-        P_From_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &P1);
+        P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &P1);
         std::vector< std::vector<size_t> > vec_newInliers(4);
         std::vector< std::vector<Vec3> > vec_3D(4);
 
@@ -200,7 +203,7 @@ int main() {
           const Mat3 &R2 = Rs[kk];
           const Vec3 &t2 = ts[kk];
           Mat34 P2;
-          P_From_KRt(Mat3::Identity(), R2, t2, &P2);
+          P_from_KRt(Mat3::Identity(), R2, t2, &P2);
 
           //-- For each inlier:
           //   - triangulate

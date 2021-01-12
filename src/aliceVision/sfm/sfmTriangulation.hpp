@@ -21,7 +21,7 @@ struct StructureComputation_basis
 
   StructureComputation_basis(bool verbose = false);
 
-  virtual void triangulate(sfmData::SfMData& sfmData) const = 0;
+  virtual void triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const = 0;
 };
 
 
@@ -33,7 +33,7 @@ struct StructureComputation_blind: public StructureComputation_basis
 {
   StructureComputation_blind(bool verbose = false);
 
-  virtual void triangulate(sfmData::SfMData& sfmData) const;
+  virtual void triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const;
 };
 
 /// Triangulation of track data contained in the structure of a SfMData scene.
@@ -44,17 +44,18 @@ struct StructureComputation_robust: public StructureComputation_basis
 {
   StructureComputation_robust(bool verbose = false);
 
-  virtual void triangulate(sfmData::SfMData& sfmData) const;
+  virtual void triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const;
 
   /// Robust triangulation of track data contained in the structure
   /// All observations must have View with valid Intrinsic and Pose data
   /// Invalid landmark are removed.
-  void robust_triangulation(sfmData::SfMData& sfmData) const;
+  void robust_triangulation(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const;
 
   /// Robustly try to estimate the best 3D point using a ransac Scheme
   /// Return true for a successful triangulation
   bool robust_triangulation(const sfmData::SfMData& sfmData,
                             const sfmData::Observations& observations,
+                            std::mt19937 & randomNumberGenerator,
                             Vec3& X,
                             const IndexT min_required_inliers = 3,
                             const IndexT min_sample_index = 3) const;

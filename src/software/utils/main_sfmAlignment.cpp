@@ -9,6 +9,7 @@
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
@@ -89,7 +90,7 @@ inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
 }
 
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -103,6 +104,7 @@ int main(int argc, char **argv)
   EAlignmentMethod alignmentMethod = EAlignmentMethod::FROM_CAMERAS_VIEWID;
   std::string fileMatchingPattern;
   std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
+  std::string outputViewsAndPosesFilepath;
 
   po::options_description allParams("AliceVision sfmAlignment");
 
@@ -134,6 +136,8 @@ int main(int argc, char **argv)
       "Apply rotation transformation.")
     ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
       "Apply translation transformation.")
+    ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
+      "Path of the output SfMData file.")
     ;
 
   po::options_description logParams("Log parameters");
@@ -174,9 +178,11 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  std::mt19937 randomNumberGenerator;
+
   // Load input scene
-  sfmData::SfMData sfmDataIn;
-  if(!sfmDataIO::Load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -201,27 +207,27 @@ int main(int argc, char **argv)
   {
     case EAlignmentMethod::FROM_CAMERAS_VIEWID:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_POSEID:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmDataIn, sfmDataInRef, fileMatchingPattern, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmData, sfmDataInRef, fileMatchingPattern, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_METADATA:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmDataIn, sfmDataInRef, metadataMatchingList, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmData, sfmDataInRef, metadataMatchingList, randomNumberGenerator, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_MARKERS:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
       break;
     }
   }
@@ -252,15 +258,21 @@ int main(int argc, char **argv)
   if (!applyTranslation)
       t = Vec3::Zero();
 
-  sfm::applyTransform(sfmDataIn, S, R, t);
+  sfm::applyTransform(sfmData, S, R, t);
 
   ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
   
   // Export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmDataIn, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
     return EXIT_FAILURE;
+  }
+
+  if(!outputViewsAndPosesFilepath.empty())
+  {
+      sfmDataIO::Save(sfmData, outputViewsAndPosesFilepath,
+                      sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
   }
 
   return EXIT_SUCCESS;

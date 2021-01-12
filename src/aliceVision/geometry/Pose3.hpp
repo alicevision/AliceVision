@@ -78,6 +78,9 @@ class Pose3
       pose._rotation = _rotation * R.transpose();
       return pose;
     }
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 /**
@@ -89,6 +92,17 @@ class Pose3
 inline Pose3 poseFromRT(const Mat3& R, const Vec3& t) 
 {
   return Pose3(R, -R.transpose()*t);
+}
+
+inline Pose3 randomPose()
+{
+    using namespace Eigen;
+    Vec3 rAngles = Vec3::Random();
+    Mat3 R;
+    R = AngleAxisd(rAngles(0), Vec3::UnitZ())
+        * AngleAxisd(rAngles(1), Vec3::UnitY())
+        * AngleAxisd(rAngles(2), Vec3::UnitZ());
+    return geometry::Pose3(R, Vec3::Random());
 }
 
 } // namespace geometry

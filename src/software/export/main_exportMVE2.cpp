@@ -8,6 +8,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -135,7 +136,7 @@ bool exportToMVE2Format(
 
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
       const IntrinsicBase * cam = iterIntrinsic->second.get();
-      if (cam->isValid() && cam->have_disto())
+      if (cam->isValid() && cam->hasDistortion())
       {
         // Undistort and save the image
         readImage(srcImage, image, image::EImageColorSpace::NO_CONVERSION);
@@ -166,9 +167,9 @@ bool exportToMVE2Format(
       // Pixel aspect: assuming square pixels
       const float pixelAspect = 1.f;
       // Focal length and principal point must be normalized (0..1)
-      const float flen = pinhole_cam->focal() / static_cast<double>(std::max(cam->w(), cam->h()));
-      const float ppX = std::abs(pinhole_cam->principal_point()(0)/cam->w());
-      const float ppY = std::abs(pinhole_cam->principal_point()(1)/cam->h());
+      const float flen = pinhole_cam->getFocalLengthPix() / static_cast<double>(std::max(cam->w(), cam->h()));
+      const float ppX = std::abs(pinhole_cam->getPrincipalPoint()(0)/cam->w());
+      const float ppY = std::abs(pinhole_cam->getPrincipalPoint()(1)/cam->h());
 
       // For each camera, write to bundle:  focal length, radial distortion[0-1], rotation matrix[0-8], translation vector[0-2]
       std::ostringstream fileOut;
@@ -240,7 +241,7 @@ bool exportToMVE2Format(
   return bOk;
 }
 
-int main(int argc, char *argv[])
+int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
 

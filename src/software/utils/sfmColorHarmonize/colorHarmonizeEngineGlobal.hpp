@@ -10,7 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 
 #include <memory>
 

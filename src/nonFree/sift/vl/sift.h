@@ -39,6 +39,7 @@ typedef struct _VlSiftKeypoint
   float y ;     /**< y coordinate. */
   float s ;     /**< s coordinate. */
   float sigma ; /**< scale. */
+  float peak_value;
 } VlSiftKeypoint ;
 
 /** ------------------------------------------------------------------

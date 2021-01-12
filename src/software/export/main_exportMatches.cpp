@@ -12,9 +12,10 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -71,7 +72,7 @@ void hslToRgb(float h, float s, float l,
   }
 }
 
-int main(int argc, char ** argv)
+int aliceVision_main(int argc, char ** argv)
 {
   // command-line parameters
 
@@ -193,13 +194,33 @@ int main(int argc, char ** argv)
     const std::string viewImagePathI= viewI->getImagePath();
     const std::string viewImagePathJ= viewJ->getImagePath();
 
+    std::string destFilename_I;
+    std::string destFilename_J;
+    {
+    boost::filesystem::path origImgPath(viewImagePathI);
+    std::string origFilename = origImgPath.stem().string();
+    image::Image<image::RGBfColor> originalImage;
+    image::readImage(viewImagePathI, originalImage, image::EImageColorSpace::LINEAR);
+    destFilename_I = (fs::path(outputFolder) / (origFilename + ".png")).string();
+    image::writeImage(destFilename_I, originalImage, image::EImageColorSpace::SRGB);
+    }
+
+    {
+    boost::filesystem::path origImgPath(viewImagePathJ);
+    std::string origFilename = origImgPath.stem().string();
+    image::Image<image::RGBfColor> originalImage;
+    image::readImage(viewImagePathJ, originalImage, image::EImageColorSpace::LINEAR);
+    destFilename_J = (fs::path(outputFolder) / (origFilename + ".png")).string();
+    image::writeImage(destFilename_J, originalImage, image::EImageColorSpace::SRGB);
+    }
+
     const std::pair<size_t, size_t> dimImageI = std::make_pair(viewI->getWidth(), viewI->getHeight());
     const std::pair<size_t, size_t> dimImageJ = std::make_pair(viewJ->getWidth(), viewJ->getHeight());
 
     svgDrawer svgStream(dimImageI.first + dimImageJ.first, std::max(dimImageI.second, dimImageJ.second));
 
-    svgStream.drawImage(viewImagePathI, dimImageI.first, dimImageI.second);
-    svgStream.drawImage(viewImagePathJ, dimImageJ.first, dimImageJ.second, dimImageI.first);
+    svgStream.drawImage(destFilename_I, dimImageI.first, dimImageI.second);
+    svgStream.drawImage(destFilename_J, dimImageJ.first, dimImageJ.second, dimImageI.first);
 
     const matching::MatchesPerDescType& filteredMatches = pairwiseMatches.at(*iter);
 

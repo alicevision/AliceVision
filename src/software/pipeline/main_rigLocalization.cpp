@@ -18,6 +18,7 @@
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -35,6 +36,7 @@
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <random>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
@@ -59,7 +61,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
 }
 
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // common parameters
   /// the AliceVision .json/abc data file
@@ -76,7 +78,7 @@ int main(int argc, char** argv)
   /// the describer types name to use for the matching
   std::string matchDescTypeNames = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
-  feature::EImageDescriberPreset featurePreset = feature::EImageDescriberPreset::NORMAL;
+  feature::ConfigurationPreset featDescPreset;
   /// the describer types to use for the matching
   std::vector<feature::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
@@ -117,6 +119,10 @@ int main(int argc, char** argv)
   std::string exportAlembicFile = "trackedcameras.abc";
 
   std::size_t numCameras = 0;
+
+  int randomSeed = std::mt19937::default_seed;
+
+
   po::options_description allParams("This program is used to localize a camera rig composed of internally calibrated cameras");
   
   po::options_description inputParams("Required input parameters");  
@@ -139,7 +145,7 @@ int main(int argc, char** argv)
           "Folder containing the .desc.")
       ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
           "The describer types to use for the matching")
-      ("preset", po::value<feature::EImageDescriberPreset>(&featurePreset)->default_value(featurePreset), 
+      ("preset", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
       ("resectionEstimator", po::value<robustEstimation::ERobustEstimator>(&resectionEstimator)->default_value(resectionEstimator),
@@ -159,8 +165,11 @@ int main(int argc, char** argv)
           "library has not been built with openGV.")
       ("angularThreshold", po::value<double>(&angularThreshold)->default_value(angularThreshold), 
           "The maximum angular threshold in degrees between feature bearing vector and 3D "
-          "point direction. Used only with the opengv method.");
-  
+          "point direction. Used only with the opengv method.")
+      ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
+          ;
+
   // parameters for voctree localizer
     po::options_description voctreeParams("Parameters specific for the vocabulary tree-based localizer");
     voctreeParams.add_options()
@@ -225,6 +234,8 @@ int main(int argc, char** argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+
+  std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
   const double defaultLoRansacMatchingError = 4.0;
   const double defaultLoRansacResectionError = 4.0;
@@ -303,7 +314,7 @@ int main(int argc, char** argv)
   assert(param);
   
   // set other common parameters
-  param->_featurePreset = featurePreset;
+  param->_featurePreset = featDescPreset;
   param->_refineIntrinsics = refineIntrinsics;
   param->_errorMax = resectionErrorMax;
   param->_resectionEstimator = resectionEstimator;
@@ -433,6 +444,7 @@ int main(int argc, char** argv)
     std::vector<localization::LocalizationResult> localizationResults;
     const bool isLocalized = localizer->localizeRig(vec_imageGrey,
                                                     param.get(),
+                                                    randomNumberGenerator,
                                                     vec_queryIntrinsics,
                                                     vec_subPoses,
                                                     rigPose,
@@ -486,4 +498,6 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
   ALICEVISION_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
   ALICEVISION_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+
+  return EXIT_SUCCESS;
 }

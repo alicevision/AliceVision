@@ -1,0 +1,94 @@
+ARG CUDA_VERSION
+ARG UBUNTU_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+
+# use CUDA_VERSION to select the image version to use
+# see https://hub.docker.com/r/nvidia/cuda/
+#
+# AV_VERSION=2.2.8.develop
+# CUDA_VERSION=11.0
+# UBUNTU_VERSION=20.04
+# docker build \
+#    --build-arg CUDA_VERSION=${CUDA_VERSION} \
+#    --build-arg UBUNTU_VERSION${UBUNTU_VERSION} \
+#    --tag alicevision/alicevision-deps:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_TAG} \
+#     -f Dockerfile_ubuntu_deps .
+
+# OS/Version (FILE): cat /etc/issue.net
+# Cuda version (ENV): $CUDA_VERSION
+
+# Install all compilation tools
+# The Kitware repo provides a recent cmake
+RUN . ./etc/os-release && \
+	apt-get update && \
+	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		wget \
+		software-properties-common && \
+	wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
+	apt-add-repository "deb https://apt.kitware.com/ubuntu/ $UBUNTU_CODENAME main" && \
+	apt-get clean && \
+	apt-get update && \
+	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		build-essential \
+		git \
+		unzip \
+		yasm \
+		pkg-config \
+		libtool \
+		libssl-dev \
+		nasm \
+		automake \
+		cmake \
+		gfortran
+
+ENV AV_DEV=/opt/AliceVision_git \
+    AV_BUILD=/tmp/AliceVision_build \
+    AV_INSTALL=/opt/AliceVision_install \
+    PATH="${PATH}:${AV_BUNDLE}"
+
+COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
+RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
+
+COPY CMakeLists.txt ${AV_DEV}/
+
+COPY dl/deps ${AV_BUILD}/external/download/
+
+WORKDIR "${AV_BUILD}"
+RUN cmake "${AV_DEV}" \
+     -DCMAKE_BUILD_TYPE=Release \
+     -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
+     -DAV_BUILD_ALICEVISION:BOOL=OFF \
+     -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
+
+# Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
+RUN mkdir -p "${AV_INSTALL}/lib" && \
+        ln -s lib "${AV_INSTALL}/lib64"
+
+WORKDIR "${AV_BUILD}"
+#RUN make -j"$(nproc)" zlib
+#RUN make -j"$(nproc)" geogram
+#RUN make -j"$(nproc)" tbb
+#RUN make -j"$(nproc)" eigen
+#RUN make -j"$(nproc)" opengv
+#RUN make -j"$(nproc)" lapack
+
+RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
+#RUN make -j"$(nproc)" suitesparse
+#RUN make -j"$(nproc)" ceres
+#RUN make -j"$(nproc)" openexr
+#RUN make -j"$(nproc)" tiff
+#RUN make -j"$(nproc)" png
+#RUN make -j"$(nproc)" turbojpeg
+#RUN make -j"$(nproc)" libraw
+#RUN make -j"$(nproc)" boost
+#RUN make -j"$(nproc)" openimageio
+#RUN make -j"$(nproc)" alembic
+#RUN make -j"$(nproc)" popsift
+#RUN make -j"$(nproc)" opencv
+#RUN make -j"$(nproc)" cctag
+
+RUN cmake --build . -j "$(nproc)" && \
+    mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
+    rm -rf "${AV_BUILD}"
+

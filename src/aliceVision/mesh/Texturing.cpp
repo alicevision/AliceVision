@@ -866,8 +866,9 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     // keep previous mesh/visibilities as reference
     Mesh* refMesh = mesh;
     // set pointers to null to avoid deallocation by 'loadFromObj'
-    mesh = nullptr;
     mesh->pointsVisibilities.resize(0);
+    mesh = nullptr;
+    
     // load input obj file
     loadOBJWithAtlas(otherMeshPath, flipNormals);
     // allocate pointsVisibilities for new internal mesh

@@ -7,7 +7,7 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
@@ -189,7 +189,7 @@ int main(int, char**)
           double thresholdH = 4.0;
           double NFAH;
           {
-            typedef ACKernelAdaptor<
+            typedef AC_RelativePoseKernel<
               aliceVision::homography::kernel::FourPointSolver,
               aliceVision::homography::kernel::AsymmetricError,
               UnnormalizerI,
@@ -211,7 +211,7 @@ int main(int, char**)
             typedef homography::kernel::Kernel KernelType;
             KernelType kernel(xA, xB);
             if (bDoRansac)
-              Hransac = MaxConsensus(kernel, ScoreEvaluator<KernelType>(Square(thresholdransac)), &vec_inliersRansac, 1024);
+              Hransac = maxConsensus(kernel, ScoreEvaluator<KernelType>(Square(thresholdransac)), &vec_inliersRansac, 1024);
             if (vec_inliersRansac.size()<12)
               thresholdransac = 900;
           }

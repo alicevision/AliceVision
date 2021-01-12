@@ -67,7 +67,7 @@ the terms of the BSD license (see the COPYING file).
 
 #if (FLT == VL_TYPE_FLOAT || FLT == VL_TYPE_DOUBLE)
 
-/** @fn  vl_imconvcol_vd(double*,int,double const*,int,int,int,double const*,int,int,int,unsigned int)
+/** @fn vl_imconvcol_vd(double*,vl_size,double const*,vl_size,vl_size,vl_size,double const*,vl_index,vl_index,int,unsigned int)
  ** @brief Convolve image along columns
  **
  ** @param dst destination image.
@@ -112,8 +112,8 @@ the terms of the BSD license (see the COPYING file).
  ** boundary (::VL_PAD_BY_CONTINUITY).
  **/
 
-/** @fn vl_imconvcol_vf(float*,int,float const*,int,int,int,float const*,int,int,int,unsigned int)
- ** @see ::vl_imconvcol_vf()
+/** @fn vl_imconvcol_vf(float*,vl_size,float const*,vl_size,vl_size,vl_size,float const*,vl_index,vl_index,int,unsigned int)
+ ** @see ::vl_imconvcol_vd
  **/
 
 VL_EXPORT void
@@ -832,12 +832,12 @@ VL_XCAT(vl_imgradient_, SFX)
 
 
 /** @fn vl_imgradient_polar_d(double*,double*,vl_size,vl_size,double const*,vl_size,vl_size,vl_size)
- ** @brief Compute gradient amplitudes and directions of an image.
+ ** @brief Compute gradient mangitudes and directions of an image.
  ** @param amplitudeGradient Pointer to amplitude gradient plane
  ** @param angleGradient Pointer to angle gradient plane
  ** @param gradWidthStride Width of the gradient plane including padding
  ** @param gradHeightStride Height of the gradient plane including padding
- ** @param src Pointer to the source image
+ ** @param image Pointer to the source image
  ** @param imageWidth Source image width
  ** @param imageHeight Source image height
  ** @param imageStride Width of the source image including padding.
@@ -846,26 +846,27 @@ VL_XCAT(vl_imgradient_, SFX)
  **
  ** Gradient is computed simple by gradient kernel \f$ (-1 ~ 1) \f$,
  ** \f$ (-1 ~ 1)^T \f$ for border pixels and with sobel filter kernel
- ** \f$ (-0.5 ~ 0 ~ 0.5) \f$, \f$ (-0.5 ~ 0 ~ 0.5)^T \f$ otherwise on the input
- ** image @a image yielding x-gradient \f$ dx \f$, stored in @a xGradient and
- ** y-gradient \f$ dy \f$, stored in @a yGradient, respectively.
+ ** \f$ (-0.5 ~ 0 ~ 0.5) \f$, \f$ (-0.5 ~ 0 ~ 0.5)^T \f$ otherwise on
+ ** the input image @a image yielding x-gradient \f$ dx \f$, stored in
+ ** @a xGradient and y-gradient \f$ dy \f$, stored in @a yGradient,
+ ** respectively.
  **
- ** The amplitude of the gradient, stored in plane @a amplitudeGradient,
- ** is then calculated as \f$ \sqrt(dx^2+dy^2) \f$  and the angle
- ** of the gradient, stored in @a angleGradient is \f$ atan(\frac{dy}{dx}) \f$
- ** normalised into interval 0 and @f$ 2\pi @f$.
+ ** The amplitude of the gradient, stored in plane @a
+ ** amplitudeGradient, is then calculated as \f$ \sqrt(dx^2+dy^2) \f$
+ ** and the angle of the gradient, stored in @a angleGradient is \f$
+ ** atan(\frac{dy}{dx}) \f$ normalised into interval 0 and @f$ 2\pi
+ ** @f$.
  **
  ** This function also allows to process only part of the input image
- ** defining the @a imageStride as original image width and @a width as
- ** width of the sub-image.
+ ** defining the @a imageStride as original image width and @a width
+ ** as width of the sub-image.
  **
  ** Also it allows to easily align the output data by definition
  ** of the @a gradWidthStride and @a gradHeightStride .
  **/
 
 /** @fn vl_imgradient_polar_f(float*,float*,vl_size,vl_size,float const*,vl_size,vl_size,vl_size)
- ** @brief Compute gradient amplitudes and directions of an image.
- ** @see ::vl_imgradient_polar_f
+ ** @see ::vl_imgradient_polar_d
  **/
 
 #if (FLT == VL_TYPE_FLOAT || FLT == VL_TYPE_DOUBLE)

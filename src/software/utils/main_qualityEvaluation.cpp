@@ -7,9 +7,9 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
 #include <software/utils/precisionEvaluationToGt.hpp>
@@ -33,7 +33,7 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -101,6 +101,7 @@ int main(int argc, char **argv)
     fs::create_directory(outputFolder);
 
   // load GT camera rotations & positions [R|C]:
+  std::mt19937 randomNumberGenerator;
   sfmData::SfMData sfmData_gt;
 
   if(!sfmDataIO::Load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
@@ -156,7 +157,7 @@ int main(int argc, char **argv)
 
   // evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
-  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
+  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, randomNumberGenerator, &_htmlDocStream);
 
   std::ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
   htmlFileStream << _htmlDocStream.getDoc();

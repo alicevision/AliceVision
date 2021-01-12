@@ -8,6 +8,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -27,7 +28,7 @@ using namespace aliceVision::sfmData;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -114,8 +115,8 @@ int main(int argc, char **argv)
     const Vec3& t = pose.translation();
     const Mat3& R = pose.rotation();
     // Intrinsic
-    const double f = pinhole_cam->focal();
-    const Vec2 pp = pinhole_cam->principal_point();
+    const double f = pinhole_cam->getFocalLengthPix();
+    const Vec2 pp = pinhole_cam->getPrincipalPoint();
 
     // Image size in px
     const int w = pinhole_cam->w();
@@ -133,7 +134,7 @@ int main(int argc, char **argv)
         << f / largerDim << " 0 0 1 " << pp(0) / w << " " << pp(1) / h;
     outfile.close();
     
-    if(cam->have_disto())
+    if(cam->hasDistortion())
       bOneHaveDisto = true;
   }
   

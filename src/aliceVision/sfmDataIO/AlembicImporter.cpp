@@ -318,10 +318,14 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   ICompoundProperty userProps = getAbcUserProperties(cs);
   std::string imagePath;
   std::vector<unsigned int> sensorSize_pix = {0, 0};
-  std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
+  std::vector<double> sensorSize_mm = {0, 0};
+  std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
   double initialFocalLengthPix = -1;
+  double fisheyeCenterX = 0.0;
+  double fisheyeCenterY = 0.0;
+  double fisheyeRadius = 1.0;
   std::vector<std::string> rawMetadata;
   IndexT viewId = sfmData.getViews().size();
   IndexT poseId = sfmData.getViews().size();
@@ -447,6 +451,14 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
         }
         assert(sensorSize_pix.size() == 2);
       }
+      if(userProps.getPropertyHeader("mvg_sensorSizeMm"))
+      {
+        getAbcArrayProp<Alembic::Abc::IDoubleArrayProperty>(userProps, "mvg_sensorSizeMm", sampleFrame, sensorSize_mm);
+        assert(sensorSize_mm.size() == 2);
+      }
+      else {
+        sensorSize_mm = {24.0, 36.0};
+      }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
       {
         mvg_intrinsicType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicType", sampleFrame);
@@ -458,6 +470,18 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
       {
         initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterX"))
+      {
+        fisheyeCenterX = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCircleCenterX", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterY"))
+      {
+        fisheyeCenterY = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCircleCenterY", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleRadius"))
+      {
+        fisheyeRadius = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCircleRadius", sampleFrame);
       }
       if(userProps.getPropertyHeader("mvg_intrinsicParams"))
       {
@@ -481,20 +505,33 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
     // imgHeight = vaperture_cm * 10.0 * mm2pix;
 
     // create intrinsic parameters object
-    std::shared_ptr<Pinhole> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = createIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
 
-    pinholeIntrinsic->setWidth(sensorSize_pix.at(0));
-    pinholeIntrinsic->setHeight(sensorSize_pix.at(1));
-    pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
-    pinholeIntrinsic->setInitialFocalLengthPix(initialFocalLengthPix);
-    pinholeIntrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+    intrinsic->setWidth(sensorSize_pix.at(0));
+    intrinsic->setHeight(sensorSize_pix.at(1));
+    intrinsic->setSensorWidth(sensorSize_mm.at(0));
+    intrinsic->setSensorHeight(sensorSize_mm.at(1));
+    intrinsic->updateFromParams(mvg_intrinsicParams);
+    intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    if (intrinsicScale) {
+      intrinsicScale->setInitialScale(initialFocalLengthPix);
+    }
+
+    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+    if (casted) {
+      casted->setCircleCenterX(fisheyeCenterX);
+      casted->setCircleCenterY(fisheyeCenterY);
+      casted->setCircleRadius(fisheyeRadius);
+    }
 
     if(intrinsicLocked)
-      pinholeIntrinsic->lock();
+      intrinsic->lock();
     else
-      pinholeIntrinsic->unlock();
+      intrinsic->unlock();
 
-    sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
+    sfmData.intrinsics[intrinsicId] = intrinsic;
   }
 
   // add imported data to the SfMData container TODO use UID

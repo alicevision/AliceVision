@@ -138,7 +138,7 @@ void generateLine(std::size_t numPoints,
       assert(timeToStop < 200);
       pt(0) = realDist(gen) * W;
       pt(1) = realDist(gen) * H;
-      distance = aliceVision::robustEstimation::pointToLineError::Error(GTModel, pt);
+      distance = aliceVision::robustEstimation::pointToLineError(GTModel, pt);
       ++timeToStop;
     }
 //    total += timeToStop;

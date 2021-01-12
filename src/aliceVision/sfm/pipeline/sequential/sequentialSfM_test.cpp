@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
   const NViewDataSet d = NRealisticCamerasRing(nbPoses, nbPoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfmData = getInputRigScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputRigScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;

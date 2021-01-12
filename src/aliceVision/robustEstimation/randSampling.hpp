@@ -11,7 +11,9 @@
 #include <unordered_set>
 #include <algorithm>
 #include <cstdlib>
+#include <numeric>
 #include <random>
+#include <numeric>
 #include <cassert>
 
 namespace aliceVision {
@@ -28,13 +30,15 @@ namespace robustEstimation{
  * by drawing random numbers until the numSamples elements are generated, using  
  * Robert Floyd's algorithm.
  * 
+ * @param[in] generator the random number generator to use
  * @param[in] lowerBound The lower bound of the range.
  * @param[in] upperBound The upper bound of the range (not included).
  * @param[in] numSamples Number of unique samples to draw.
  * @return samples The vector containing the samples.
  */
 template<typename IntT>
-inline std::vector<IntT> randSample(IntT lowerBound,
+inline std::vector<IntT> randSample(std::mt19937 & randomNumberGenerator, 
+                                    IntT lowerBound,
                                     IntT upperBound,
                                     IntT numSamples)
 {
@@ -44,10 +48,6 @@ inline std::vector<IntT> randSample(IntT lowerBound,
   assert(numSamples <= rangeSize);
   static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
 
-  
-  std::random_device rd;
-  std::mt19937 generator(rd());
-
   if(numSamples * 1.5 > rangeSize)
   {
     // if the number of required samples is a large fraction of the range size
@@ -56,7 +56,7 @@ inline std::vector<IntT> randSample(IntT lowerBound,
     // this should be more time efficient than drawing at each time.
     std::vector<IntT> result(rangeSize);
     std::iota(result.begin(), result.end(), lowerBound);
-    std::shuffle(result.begin(), result.end(), generator);
+    std::shuffle(result.begin(), result.end(), randomNumberGenerator);
     result.resize(numSamples);
     return result;
   }
@@ -68,7 +68,7 @@ inline std::vector<IntT> randSample(IntT lowerBound,
     std::unordered_set<IntT> samples;
     for(IntT d = upperBound - numSamples; d < upperBound; ++d)
     {
-      IntT t = std::uniform_int_distribution<>(0, d)(generator) + lowerBound;
+      IntT t = std::uniform_int_distribution<>(0, d)(randomNumberGenerator) + lowerBound;
       if(samples.find(t) == samples.end())
         samples.insert(t);
       else
@@ -84,19 +84,21 @@ inline std::vector<IntT> randSample(IntT lowerBound,
 /**
 * @brief Pick a random subset of the integers in the range [0, upperBound).
 *
+* @param[in] generator the random number generator to use
 * @param[in] numSamples The number of samples to produce.
 * @param[in] upperBound The upper bound of the range.
 * @param[out] samples The set containing the random numbers in the range [0, upperBound)
 */
 template<typename IntT>
-inline void UniformSample(std::size_t numSamples,
+inline void uniformSample(std::mt19937 & randomNumberGenerator, 
+                          std::size_t numSamples,
                           std::size_t upperBound,
                           std::set<IntT> &samples)
 {
   assert(numSamples <= upperBound);
   static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
   
-  const auto vecSamples = randSample<IntT>(0, upperBound, numSamples);
+  const auto vecSamples = randSample<IntT>(randomNumberGenerator, 0, upperBound, numSamples);
   for(const auto& s : vecSamples)
   {
     samples.insert(s);
@@ -107,48 +109,54 @@ inline void UniformSample(std::size_t numSamples,
 /**
  * @brief Generate a unique random samples in the range [lowerBound upperBound).
  * 
+ * @param[in] generator the random number generator to use
  * @param[in] lowerBound The lower bound of the range.
  * @param[in] upperBound The upper bound of the range (not included).
  * @param[in] numSamples Number of unique samples to draw.
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-inline void UniformSample(std::size_t lowerBound,
+inline void uniformSample(std::mt19937 & randomNumberGenerator, 
+                          std::size_t lowerBound,
                           std::size_t upperBound,
                           std::size_t numSamples,
                           std::vector<IntT> &samples)
 {
-  samples = randSample<IntT>(lowerBound, upperBound, numSamples);
+  samples = randSample<IntT>(randomNumberGenerator, lowerBound, upperBound, numSamples);
 }
 
 /**
  * @brief Generate a unique random samples in the range [0 upperBound).
  * 
+ * @param[in] generator the random number generator to use
  * @param[in] numSamples Number of unique samples to draw.
  * @param[in] upperBound The value at the end of the range (not included).
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-inline void UniformSample(std::size_t numSamples,
+inline void uniformSample(std::mt19937 & randomNumberGenerator, 
+                          std::size_t numSamples,
                           std::size_t upperBound,
                           std::vector<IntT> &samples)
 {
-  UniformSample(0, upperBound, numSamples, samples);
+  uniformSample(randomNumberGenerator, 0, upperBound, numSamples, samples);
 }
 
 /**
  * @brief Generate a random sequence containing a sampling without replacement of
  * of the elements of the input vector.
  * 
+ * @param[in] generator the random number generator to use
  * @param[in] sampleSize The size of the sample to generate.
  * @param[in] elements The possible data indices.
  * @param[out] sample The random sample of sizeSample indices.
  */
-inline void UniformSample(std::size_t sampleSize,
+inline void uniformSample(std::mt19937 & randomNumberGenerator, 
+                          std::size_t sampleSize,
                           const std::vector<std::size_t>& elements,
                           std::vector<std::size_t>& sample)
 {
-  sample = randSample<std::size_t>(0, elements.size(), sampleSize);
+  sample = randSample<std::size_t>(randomNumberGenerator, 0, elements.size(), sampleSize);
   assert(sample.size() == sampleSize);
   for(auto& s : sample)
   {

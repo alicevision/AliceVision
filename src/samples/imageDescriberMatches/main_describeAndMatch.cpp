@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   std::string jpgFilenameL;
   std::string jpgFilenameR;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string describerPreset = "NORMAL";
+  feature::ConfigurationPreset featDescPreset;
 
   po::options_description allParams("AliceVision Sample describeAndMatch");
   allParams.add_options()
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
       "Right image.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+    ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !");
 
@@ -76,6 +76,7 @@ int main(int argc, char **argv)
   }
 
   Image<RGBColor> image;
+  std::mt19937 randomNumberGenerator;
 
   Image<unsigned char> imageL, imageR;
   readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
@@ -96,10 +97,7 @@ int main(int argc, char **argv)
     std::cerr << "Invalid ImageDescriber type" << std::endl;
     return EXIT_FAILURE;
   }
-  if(!describerPreset.empty())
-  {
-    image_describer->setConfigurationPreset(describerPreset);
-  }
+  image_describer->setConfigurationPreset(featDescPreset);
 
   //--
   // Detect regions thanks to the image_describer
@@ -148,6 +146,7 @@ int main(int argc, char **argv)
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio
   matching::IndMatches vec_PutativeMatches;
   matching::DistanceRatioMatch(
+    randomNumberGenerator,
     0.8, matching::BRUTE_FORCE_L2,
     *regions_perImage[0].get(),
     *regions_perImage[1].get(),

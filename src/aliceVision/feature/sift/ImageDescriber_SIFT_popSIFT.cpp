@@ -14,12 +14,15 @@
 #include <popsift/sift_octave.h>
 #include <popsift/common/device_prop.h>
 
+#include <atomic>
+
 namespace aliceVision {
 namespace feature {
 
-std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift = nullptr;
+std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift{nullptr};
+std::atomic<int> ImageDescriber_SIFT_popSIFT::_instanceCounter{0};
 
-void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(EImageDescriberPreset preset)
+void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(ConfigurationPreset preset)
 {
     _params.setPreset(preset);
     _popSift.reset(nullptr); // reset by describe method
@@ -78,11 +81,10 @@ void ImageDescriber_SIFT_popSIFT::resetConfiguration()
   cudaDeviceReset();
 
   popsift::cuda::device_prop_t deviceInfo;
-  deviceInfo.set(0, true); // use only the first device & print informations
+  deviceInfo.set(0, true); // use only the first device & print information
 
   // reset configuration
   popsift::Config config;
-  config.setOctaves(_params._numOctaves);
   config.setLevels(_params._numScales);
   config.setDownsampling(_params._firstOctave);
   config.setThreshold(_params._peakThreshold);
@@ -93,6 +95,24 @@ void ImageDescriber_SIFT_popSIFT::resetConfiguration()
   config.setFilterSorting(popsift::Config::LargestScaleFirst);
 
   _popSift.reset(new PopSift(config, popsift::Config::ExtractingMode, PopSift::FloatImages));
+}
+
+ImageDescriber_SIFT_popSIFT::ImageDescriber_SIFT_popSIFT(const SiftParams& params, bool isOriented)
+    : ImageDescriber()
+    , _params(params)
+    , _isOriented(isOriented)
+{
+    _instanceCounter++;
+}
+
+ImageDescriber_SIFT_popSIFT::~ImageDescriber_SIFT_popSIFT()
+{
+    _instanceCounter--;
+
+    if(_instanceCounter.load() == 0)
+    {
+        _popSift.reset(nullptr);
+    }
 }
 
 } // namespace feature

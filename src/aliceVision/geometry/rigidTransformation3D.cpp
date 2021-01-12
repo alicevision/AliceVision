@@ -126,13 +126,14 @@ void Refine_RTS(const Mat &x1,
   }
 }
 
-bool ACRansac_FindRTS(const Mat &x1,
-                             const Mat &x2,
-                             double &S,
-                             Vec3 &t,
-                             Mat3 &R,
-                             std::vector<std::size_t> &vec_inliers,
-                             bool refine)
+bool ACRansac_FindRTS(const Mat& x1,
+                      const Mat& x2,
+                      std::mt19937 &randomNumberGenerator,
+                      double& S,
+                      Vec3& t,
+                      Mat3& R,
+                      std::vector<std::size_t>& vec_inliers,
+                      bool refine)
 {
   assert(3 == x1.rows());
   assert(3 <= x1.cols());
@@ -142,19 +143,17 @@ bool ACRansac_FindRTS(const Mat &x1,
   const std::size_t numIterations = 1024;
   const double dPrecision = std::numeric_limits<double>::infinity();
 
-  Mat4 RTS;
+  using SolverT = geometry::RTSSolver;
+  using KernelT = ACKernelAdaptor_PointsRegistrationSRT<SolverT, geometry::RTSSquaredResidualError>;
 
-  typedef geometry::RTSSolver SolverType;
-  typedef ACKernelAdaptor_PointsRegistrationSRT<
-          SolverType,
-          geometry::RTSSquaredResidualError> KernelType;
+  const KernelT kernel = KernelT(x1, x2);
 
-  KernelType kernel = KernelType(x1, x2);
-  // Robust estimation of the Projection matrix and its precision
-  const std::pair<double, double> ACRansacOut =
-          robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision);
+  robustEstimation::MatrixModel<Mat4> RTS;
 
-  const bool good = decomposeRTS(RTS, S, t, R);
+  // robust estimation of the Projection matrix and its precision
+  const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, randomNumberGenerator, vec_inliers, numIterations, &RTS, dPrecision);
+
+  const bool good = decomposeRTS(RTS.getMatrix(), S, t, R);
 
   // return if it is not good or refine is not required
   if(!good || !refine)

@@ -29,7 +29,7 @@ StructureComputation_blind::StructureComputation_blind(bool verbose)
   : StructureComputation_basis(verbose)
 {}
 
-void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
+void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
   std::unique_ptr<boost::progress_display> my_progress_bar;
@@ -51,17 +51,23 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
         ++(*my_progress_bar);
       }
       // Triangulate each landmark
-      Triangulation trianObj;
+      multiview::Triangulation trianObj;
       const sfmData::Observations & observations = iterTracks->second.observations;
       for(const auto& itObs : observations)
       {
         const sfmData::View * view = sfmData.views.at(itObs.first).get();
         if (sfmData.isPoseAndIntrinsicDefined(view))
         {
-          const IntrinsicBase * cam = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
+          std::shared_ptr<IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
+          std::shared_ptr<camera::Pinhole> pinHoleCam = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+          if (!pinHoleCam) {
+            ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate");
+            continue;
+          }
+
           const Pose3 pose = sfmData.getPose(*view).getTransform();
           trianObj.add(
-            cam->get_projective_equivalent(pose),
+            pinHoleCam->getProjectiveEquivalent(pose),
             cam->get_ud_pixel(itObs.second.x));
         }
       }
@@ -101,15 +107,15 @@ StructureComputation_robust::StructureComputation_robust(bool verbose)
   : StructureComputation_basis(verbose)
 {}
 
-void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData) const
+void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
-  robust_triangulation(sfmData);
+  robust_triangulation(sfmData, randomNumberGenerator);
 }
 
 /// Robust triangulation of track data contained in the structure
 /// All observations must have View with valid Intrinsic and Pose data
 /// Invalid landmark are removed.
-void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData) const
+void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
   std::unique_ptr<boost::progress_display> my_progress_bar;
@@ -131,7 +137,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
         ++(*my_progress_bar);
       }
       Vec3 X;
-      if (robust_triangulation(sfmData, iterTracks->second.observations, X)) {
+      if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X)) {
         iterTracks->second.X = X;
       }
       else {
@@ -155,6 +161,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
 /// Return true for a successful triangulation
 bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& sfmData,
                                                        const sfmData::Observations& observations,
+                                                       std::mt19937 & randomNumberGenerator,
                                                        Vec3& X,
                                                        const IndexT min_required_inliers,
                                                        const IndexT min_sample_index) const
@@ -177,7 +184,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
   for(IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robustEstimation::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+    robustEstimation::uniformSample(randomNumberGenerator, std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfmData, observations, samples);
@@ -242,17 +249,24 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
                                                              const sfmData::Observations& observations,
                                                              const std::set<IndexT>& samples) const
 {
-  Triangulation trianObj;
+  multiview::Triangulation trianObj;
   for (const IndexT idx : samples)
   {
     assert(idx < observations.size());
     sfmData::Observations::const_iterator itObs = observations.begin();
     std::advance(itObs, idx);
     const sfmData::View * view = sfmData.views.at(itObs->first).get();
-    const IntrinsicBase * cam = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
+
+    std::shared_ptr<camera::IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
+    std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+    if (!camPinHole) {
+      ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
+      return Vec3();
+    }
+
     const Pose3 pose = sfmData.getPose(*view).getTransform();
     trianObj.add(
-      cam->get_projective_equivalent(pose),
+      camPinHole->getProjectiveEquivalent(pose),
       cam->get_ud_pixel(itObs->second.x));
   }
   return trianObj.compute();

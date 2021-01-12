@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include "aliceVision/robustEstimation/randSampling.hpp"
-#include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ransacTools.hpp"
+#include <aliceVision/robustEstimation/randSampling.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/ransacTools.hpp>
+#include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <limits>
 #include <numeric>
 #include <iostream>
@@ -17,99 +18,6 @@
 
 namespace aliceVision {
 namespace robustEstimation{
-
-/**
- * @brief A generic kernel used for the LORANSAC framework.
- *
- * @tparam minSample The minimum number of samples that allows to solve the problem
- * @tparam minSampleLS The minimum number of samples that allows to solve the problem in a least squared manner.
- * @tparam Model The class representing the model to estimate.
- */
-template <int minSample,
-          int minSampleLS,
-          typename Model>
-class LORansacGenericKernel
-{
-  public:
-  
-  enum
-  {
-    MINIMUM_SAMPLES = minSample,
-    MINIMUM_LSSAMPLES = minSampleLS
-  };
-
-  /**
-   * @brief The constructor;
-   */
-  LORansacGenericKernel() = default;
-
-  /**
-   * @brief This function is called to estimate the model from the minimum number
-   * of sample \p minSample (i.e. minimal problem solver).
-   * @param[in] samples A vector containing the indices of the data to be used for
-   * the minimal estimation.
-   * @param[out] models The model(s) estimated by the minimal solver.
-   */
-  virtual void Fit(const std::vector<std::size_t> &samples, std::vector<Model> *models) const = 0;
-
-  /**
-   * @brief This function is called to estimate the model using a least squared
-   * algorithm from a minumum of \p minSampleLS.
-   * @param[in] inliers An array containing the indices of the data to use.
-   * @param[out] models The model(s) estimated using the least squared algorithm.
-   * @param[in] weights An optional array of weights, one for each sample
-   */
-  virtual void FitLS(const std::vector<std::size_t> &inliers, 
-                      std::vector<Model> *models, 
-                      const std::vector<double> *weights = nullptr) const = 0; 
-
-  /**
-   * @brief Function used to estimate the weights, typically used by the least square algorithm.
-   * @param[in] model The model against which the weights are computed.
-   * @param[in] inliers The array of the indices of the data to be used.
-   * @param[out] vec_weights The array of weight of the same size as \p inliers.
-   * @param[in] eps An optional threshold to max out the value of the threshold (typically
-   * to avoid division by zero or too small numbers).
-   */
-  virtual void computeWeights(const Model & model, 
-                              const std::vector<std::size_t> &inliers, 
-                              std::vector<double> & vec_weights, 
-                              const double eps = 0.001) const = 0; 
-
-  /**
-   * @brief Function that computes the estimation error for a given model and a given element.
-   * @param[in] sample The index of the element for which the error is computed.
-   * @param[in] model The model to consider.
-   * @return The estimation error for the given element and the given model.
-   */
-  virtual double Error(std::size_t sample, const Model &model) const = 0;
-
-  /**
-   * @brief Function that computes the estimation error for a given model and all the elements.
-   * @param[in] model The model to consider.
-   * @param[out] vec_errors The vector containing all the estimation errors for every element.
-   */
-  virtual void Errors(const Model & model, std::vector<double> & vec_errors) const = 0;
-
-  /**
-   * @brief Function used to unnormalize the model.
-   * @param[in,out] model The model to unnormalize.
-   */
-  virtual  void Unnormalize(Model * model) const = 0;
-
-  /**
-   * @brief The number of elements in the data.
-   * @return the number of elements in the data.
-   */
-  virtual std::size_t NumSamples() const = 0; 
-
-  /**
-   * @brief The destructor.
-   */
-  virtual ~LORansacGenericKernel( ) = default;
-
-};
-
 
 /**
  * @brief It performs an iterative reweighted least square (IRLS) estimation of the problem
@@ -122,7 +30,7 @@ class LORansacGenericKernel
  * 
  * @tparam Kernel The kernel used in the LORansac estimator which must provide a
  * minimum solver and a LS solver, the latter used here for the IRLS 
- * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
+ * @see aliceVision/robustEstimation/LORansacKernel.hpp
  * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
  * @param[in] kernel The kernel used in the LORansac estimator.
@@ -137,14 +45,14 @@ class LORansacGenericKernel
 template<typename Kernel, typename Scorer>
 double iterativeReweightedLeastSquares(const Kernel &kernel,
                                        const Scorer &scorer,
-                                       typename Kernel::Model &best_model,
+                                       typename Kernel::ModelT &best_model,
                                        std::vector<std::size_t> &inliers,
                                        double mtheta = std::sqrt(2),
                                        std::size_t numIter = 4,
                                        bool verbose = false)
 {
-  const std::size_t total_samples = kernel.NumSamples();
-  const std::size_t min_samples = Kernel::MINIMUM_LSSAMPLES;
+  const std::size_t total_samples = kernel.nbSamples();
+  const std::size_t min_samples = kernel.getMinimumNbRequiredSamplesLS();
   double theta = scorer.getThreshold();  
   // used in the iterations to update (reduce) the threshold value
   const double deltaTetha = (mtheta*theta - theta) / (numIter-1);
@@ -154,7 +62,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
   
   // find inliers from best model with threshold theta
   inliers.clear();
-  scorer.Score(kernel, best_model, all_samples, &inliers, theta);
+  scorer.score(kernel, best_model, all_samples, inliers, theta);
   
   if(inliers.size() < min_samples)
   {
@@ -167,8 +75,8 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
   }
   
   // LS model from the above inliers
-  std::vector<typename Kernel::Model> models;
-  kernel.FitLS(inliers, &models);
+  std::vector<typename Kernel::ModelT> models;
+  kernel.fitLS(inliers, models);
   assert(models.size()==1);   // LS fitting must always return 1 model
   
   // change threshold for refinement
@@ -180,7 +88,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
     // find inliers on the best-so-far model
     // @todo maybe inliers instead of all samples to save some computation
     inliers.clear();
-    scorer.Score(kernel, models[0], all_samples, &inliers, theta);
+    scorer.score(kernel, models[0], all_samples, inliers, theta);
 
     if(inliers.size() < min_samples)
     {
@@ -201,7 +109,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
     
     // LS with weights on inliers
     models.clear();
-    kernel.FitLS(inliers, &models, &weights);
+    kernel.fitLS(inliers, models, &weights);
     if(models.size() != 1)   // LS fitting must always return 1 model
     {
       if(verbose)
@@ -218,7 +126,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
   assert(models.size()==1);
   best_model = models[0];
   inliers.clear();
-  const double score = scorer.Score(kernel, best_model, all_samples, &inliers, theta);
+  const double score = scorer.score(kernel, best_model, all_samples, inliers, theta);
   if(verbose)
   {
     ALICEVISION_LOG_DEBUG("[IRLS] returning with num inliers: " << inliers.size() 
@@ -244,7 +152,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
  * 
  * @tparam Kernel The kernel used in the LORansac estimator which must provide a
  * minimum solver and a LS solver, the latter used here for the IRLS 
- * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
+ * @see aliceVision/robustEstimation/LORansacKernel.hpp
  * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
  * @param[in] kernel The kernel used in the LORansac estimator.
@@ -258,17 +166,18 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
  * @return the best score of the best model as computed by Scorer.
  */
 template<typename Kernel, typename Scorer>
-double localOptimization(const Kernel &kernel,
-                         const Scorer &scorer,
-                         typename Kernel::Model &bestModel,
-                         std::vector<std::size_t> &bestInliers,
+double localOptimization(const Kernel& kernel,
+                         const Scorer& scorer,
+                         std::mt19937 &randomNumberGenerator,
+                         typename Kernel::ModelT& bestModel,
+                         std::vector<std::size_t>& bestInliers,
                          double mtheta = std::sqrt(2),
                          std::size_t numRep = 10,
                          std::size_t minSampleSize = 10,
                          bool verbose = false)
 {
-  const std::size_t total_samples = kernel.NumSamples();
-  const std::size_t min_samples = Kernel::MINIMUM_LSSAMPLES;
+  const std::size_t total_samples = kernel.nbSamples();
+  const std::size_t min_samples = kernel.getMinimumNbRequiredSamplesLS();
   assert((total_samples > min_samples) && 
           "[localOptimization] not enough data to estimate the model!");
   
@@ -283,7 +192,7 @@ double localOptimization(const Kernel &kernel,
     debugInit = bestInliers.size(); 
     bestInliers.clear();
   }
-  double bestScore = scorer.Score(kernel, bestModel, all_samples, &bestInliers, theta);
+  double bestScore = scorer.score(kernel, bestModel, all_samples, bestInliers, theta);
   if(debugInit != 0) assert(debugInit == bestInliers.size());
   
   // so far this is the best model
@@ -291,30 +200,30 @@ double localOptimization(const Kernel &kernel,
   if(verbose)
   {
     ALICEVISION_LOG_DEBUG("[localOptim] so far best num inliers: " << bestNumInliers);
-    ALICEVISION_LOG_DEBUG("[localOptim] so far best model:\n" << bestModel);
+    ALICEVISION_LOG_DEBUG("[localOptim] so far best model:\n" << bestModel.getMatrix());
     ALICEVISION_LOG_DEBUG("[localOptim] so far best score: " << bestScore);
   }
      
   // find inliers from best model with larger threshold t*m over all the samples
   std::vector<std::size_t> inliersBase;
-  scorer.Score(kernel, bestModel, all_samples, &inliersBase, theta*mtheta);
+  scorer.score(kernel, bestModel, all_samples, inliersBase, theta*mtheta);
   assert((inliersBase.size() > min_samples) && 
           "[localOptimization] not enough data in inliersBase to estimate the model!");
   
   // LS model from the above inliers
-  std::vector<typename Kernel::Model> models;
+  std::vector<typename Kernel::ModelT> models;
 //  ALICEVISION_LOG_DEBUG("[localOptim] before: ");
-  kernel.FitLS(inliersBase, &models);
+  kernel.fitLS(inliersBase, models);
 //  ALICEVISION_LOG_DEBUG("[localOptim] after: ");
   assert(models.size()==1);   // LS fitting must always return 1 model
   
   // find inliers with t again over all the samples
   inliersBase.clear();
-  scorer.Score(kernel, models[0], all_samples, &inliersBase, theta);
+  scorer.score(kernel, models[0], all_samples, inliersBase, theta);
     
   // sample of size sampleSize from the last best inliers
   const std::size_t sampleSize = std::min(minSampleSize, inliersBase.size()/2);
-  if(sampleSize <= Kernel::MINIMUM_LSSAMPLES)
+  if(sampleSize <= kernel.getMinimumNbRequiredSamplesLS())
   {
     if(verbose)
     {
@@ -327,13 +236,13 @@ double localOptimization(const Kernel &kernel,
   for(std::size_t i = 0; i < numRep; ++i)
   {
     std::vector<std::size_t> sample;
-    UniformSample(sampleSize, inliersBase, sample);
-    assert(sampleSize > Kernel::MINIMUM_LSSAMPLES);
-    assert(sample.size() > Kernel::MINIMUM_LSSAMPLES);
+    uniformSample(randomNumberGenerator, sampleSize, inliersBase, sample);
+    assert(sampleSize > kernel.getMinimumNbRequiredSamplesLS());
+    assert(sample.size() > kernel.getMinimumNbRequiredSamplesLS());
   
     // LS estimation from the sample
     models.clear();
-    kernel.FitLS(sample, &models);
+    kernel.fitLS(sample, models);
     assert(models.size()==1);   // LS fitting must always return 1 model
   
     // IRLS 
@@ -368,7 +277,7 @@ double localOptimization(const Kernel &kernel,
  * 
  * @tparam Kernel The kernel used in the LORansac estimator which must provide a
  * minimum solver and a LS solver, the latter used here for the IRLS 
- * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
+ * @see aliceVision/robustEstimation/LORansacKernel.hpp
  * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
  * @param[in] kernel The kernel containing the problem to solve.
@@ -382,25 +291,26 @@ double localOptimization(const Kernel &kernel,
  * @return The best model found.
  */
 template<typename Kernel, typename Scorer>
-typename Kernel::Model LO_RANSAC(const Kernel &kernel,
-                                const Scorer &scorer,
-                                std::vector<std::size_t> *best_inliers = NULL,
-                                double *best_score = NULL,
-                                bool bVerbose = false,
-                                std::size_t max_iterations = 100,
-                                double outliers_probability = 1e-2)
+typename Kernel::ModelT LO_RANSAC(const Kernel& kernel,
+                                  const Scorer& scorer,
+                                  std::mt19937 & randomNumberGenerator,
+                                  std::vector<std::size_t>* best_inliers = NULL,
+                                  double* best_score = NULL,
+                                  bool bVerbose = false,
+                                  std::size_t max_iterations = 100,
+                                  double outliers_probability = 1e-2)
 {
   assert(outliers_probability < 1.0);
   assert(outliers_probability > 0.0);
   std::size_t iteration = 0;
-  const std::size_t min_samples = Kernel::MINIMUM_SAMPLES;
-  const std::size_t total_samples = kernel.NumSamples();
+  const std::size_t min_samples = kernel.getMinimumNbRequiredSamples();
+  const std::size_t total_samples = kernel.nbSamples();
 
   const std::size_t really_max_iterations = 4096;
 
   std::size_t bestNumInliers = 0;
   double bestInlierRatio = 0.0;
-  typename Kernel::Model bestModel;
+  typename Kernel::ModelT bestModel;
 
   // Test if we have sufficient points for the kernel.
   if (total_samples < min_samples) 
@@ -419,16 +329,16 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
   for(iteration = 0; iteration < max_iterations; ++iteration) 
   {
     std::vector<std::size_t> sample;
-    UniformSample(min_samples, total_samples, sample);
+    uniformSample(randomNumberGenerator, min_samples, total_samples, sample);
 
-    std::vector<typename Kernel::Model> models;
-    kernel.Fit(sample, &models);
+    std::vector<typename Kernel::ModelT> models;
+    kernel.fit(sample, models);
 
     // Compute the inlier list for each fit.
     for(std::size_t i = 0; i < models.size(); ++i) 
     {
       std::vector<std::size_t> inliers;
-      double score = scorer.Score(kernel, models[i], all_samples, &inliers);
+      double score = scorer.score(kernel, models.at(i), all_samples, inliers);
       if(bVerbose)
       {
         ALICEVISION_LOG_DEBUG("sample=" << sample);
@@ -443,22 +353,22 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         {
           ALICEVISION_LOG_DEBUG("Before Optim: num inliers: " << inliers.size() 
                   << " score: " << score
-                  << " Kernel::MINIMUM_LSSAMPLES: " << Kernel::MINIMUM_LSSAMPLES 
+                  << " kernel minimum nb required samples LS: " << kernel.getMinimumNbRequiredSamplesLS()
                  );
 
-          ALICEVISION_LOG_DEBUG("Model:\n" << bestModel);
+          ALICEVISION_LOG_DEBUG("Model:\n" << bestModel.getMatrix());
         }
         
-        if(inliers.size() > Kernel::MINIMUM_LSSAMPLES)
+        if(inliers.size() > kernel.getMinimumNbRequiredSamplesLS())
         {
-          score = localOptimization(kernel, scorer, bestModel, inliers);
+          score = localOptimization(kernel, scorer, randomNumberGenerator, bestModel, inliers);
         }
         
         if(bVerbose)
         {
           ALICEVISION_LOG_DEBUG("After Optim: num inliers: " << inliers.size()
                   << " score: " << score);
-          ALICEVISION_LOG_DEBUG("Model:\n" << bestModel);
+          ALICEVISION_LOG_DEBUG("Model:\n" << bestModel.getMatrix());
         }
         
         bestNumInliers = inliers.size();
@@ -479,7 +389,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         }
         if (bestInlierRatio) 
         {
-          max_iterations = IterationsRequired(min_samples,
+          max_iterations = iterationsRequired(min_samples,
                                               outliers_probability,
                                               bestInlierRatio);
           // safeguard to not get stuck in a big number of iterations
@@ -494,7 +404,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
     *best_score = bestNumInliers;
   
   if(bestNumInliers)
-    kernel.Unnormalize(&bestModel);
+    kernel.unnormalize(bestModel);
   
   return bestModel;  
 }

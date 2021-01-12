@@ -27,7 +27,7 @@ namespace feature {
 class ImageDescriber_SIFT : public ImageDescriber
 {
 public:
-  ImageDescriber_SIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
+  explicit ImageDescriber_SIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
     : _params(params)
     , _isOriented(isOriented)
   {
@@ -121,7 +121,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(ConfigurationPreset preset) override
   {
      _params.setPreset(preset);
      _imageDescriberImpl->setConfigurationPreset(preset);
@@ -165,6 +165,8 @@ public:
   {
     _imageDescriberImpl->allocate(regions);
   }
+
+  ~ImageDescriber_SIFT() override = default;
 
 private:
   SiftParams _params;
