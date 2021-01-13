@@ -24,6 +24,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <unordered_map>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -112,79 +113,67 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    std::cout << sfmData.getViews().size()  << std::endl;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
         return EXIT_FAILURE;
     }
 
-    // ----------------------------------------------------------
-    // ----------------------------------------------------------
-    // ----------------------------------------------------------
+    // Map used to store paths of the views that need to be processed
+    std::unordered_map<IndexT, std::string> ViewPaths;
 
-    std::ofstream f;
-    f.open(outputFolder + "/outputDebug.txt");
-
-    f << "Start" << std::endl;
-    assert(1 > 5 && "erreur");
-    // ----------------------------------------------------------
-    // Scroll down a bit (~40 lines) to find actual relevant code
-    // ----------------------------------------------------------
-
-    int nc = 1;
-    std::string path("C:/Users/ludch/Ludwig/samples/color checker/dataset1/rMPC_0086.jpg");
-    f << "Loading image" << std::endl;
-    cv::Mat image = cv::imread(path, 1);
-    if(image.cols == 0 || image.rows == 0)
+    // Store paths in map
+    for(const auto& viewIt : sfmData.getViews())
     {
-        f << "Loading image -- error: image is empty " << std::endl;
-        exit(-1);
-    }
-    f << "Loading image -- success: size: " << image.size() << std::endl;
-    if(atoi(argv[2]) != 0)
-    {
-        cv::resize(image, image, cv::Size(1000, 1000 * image.rows / image.cols));
-        f << "Image resized to: " << image.size() << std::endl;
+        const sfmData::View& view = *(viewIt.second);
+
+        ViewPaths.insert({view.getViewId(), view.getImagePath()});
     }
 
-    //--------------------------------------------------------------------------
-    //-------------------------Actual Relevant Code-----------------------------
-    //--------------------------------------------------------------------------
+    const int size = ViewPaths.size();
+    int i = 0;
+    int nc = 1; // Number of charts in an image
 
-    cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
-
-    f << "Processing image" << std::endl;
-    if(!detector->process(image, cv::mcc::TYPECHART(0), nc))
+    for(auto& viewIt : ViewPaths)
     {
-        f << "Processing image -- not detected" << std::endl;
-    }
-    else
-    {
-        f << "Processing image -- success" << std::endl;
-        // get checker
-        std::vector<cv::Ptr<cv::mcc::CChecker>> checkers = detector->getListColorChecker();
+        const IndexT viewId = viewIt.first;
+        const std::string viewPath = viewIt.second;
+        sfmData::View& view = sfmData.getView(viewId);
 
-        for(cv::Ptr<cv::mcc::CChecker> checker : checkers)
+        // Create an image with 3 channel BGR color 
+        cv::Mat image = cv::imread(viewPath, 1);
+
+        if(image.cols == 0 || image.rows == 0)
         {
-            // current checker
-            cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker);
-            cdraw->draw(image);
-            if(atoi(argv[3]) == 1)
+            ALICEVISION_LOG_ERROR("Image with id '" << viewId << "'.\n"
+                                  << "is empty.");
+            return EXIT_FAILURE;
+        }
+
+        cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
+
+        ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
+
+        if(!detector->process(image, cv::mcc::TYPECHART(0), nc))
+        {
+            ALICEVISION_LOG_INFO("Checker not detected in image with id '" << viewId << "'");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Checker successfully detected in image with id '" << viewId << "'");
+            // get checker
+            std::vector<cv::Ptr<cv::mcc::CChecker>> checkers = detector->getListColorChecker();
+
+            for(cv::Ptr<cv::mcc::CChecker> checker : checkers)
             {
-                f << "Writing output in: " << outputFolder + "/output.jpg"  << std::endl;
-                cv::imwrite(outputFolder + "/output.jpg", image);
+                // current checker
+                cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker);
+                cdraw->draw(image);
+
+                cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".jpg", image);
             }
         }
     }
-
-    f << "End" << std::endl;
-
-    f.close();
-
-    // ----------------------------------------------------------
-    // ----------------------------------------------------------
-    // ----------------------------------------------------------
 
     return EXIT_SUCCESS;
 }
