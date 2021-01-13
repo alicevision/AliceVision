@@ -4388,6 +4388,7 @@ Panasonic;Panasonic Lumix DC-GX800;17.3;dpreview,digicamdb,dxomark
 Panasonic;Panasonic Lumix DC-GX850;17.3;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DC-GX9;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DC-LX100 II;17.3;dpreview,digicamdb,imaging-resource
+Panasonic;Panasonic Lumix DC-S1H;35.6;usercontribution
 Panasonic;Panasonic Lumix DC-TS7;6.17;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DC-TZ200;13.2;dpreview,digicamdb
 Panasonic;Panasonic Lumix DC-TZ90;6.16;usercontribution
@@ -5565,7 +5566,8 @@ Samsung;Samsung SM-G950F;5.76;usercontribution
 Samsung;Samsung SM-G950U;2.68;usercontribution
 Samsung;Samsung SM-G955F;5.76;usercontribution
 Samsung;Samsung SM-G965F;5.64;usercontribution
-Samsung;Samsung SM-G975U;5.66;devicespecifications
+Samsung;Samsung SM-G975U;5.66;devicespecifications 
+Samsung;Samsung SM-N986x;9.6;devicespecifications,Note20Ultra5G
 Samsung;Samsung SM-M315F;7.42;devicespecifications
 Samsung;Samsung ST10;5.744;dpreview,digicamdb
 Samsung;Samsung ST100;6.17;dpreview,digicamdb
