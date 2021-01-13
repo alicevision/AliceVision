@@ -37,6 +37,50 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 
+struct CCCorners
+{
+    std::vector<float> xCoords;
+    std::vector<float> yCoords;
+
+    CCCorners() = default;
+
+    CCCorners(const std::vector<cv::Point2f> &ccheckerBox)
+    {
+        if (ccheckerBox.size() != 4)
+        {
+            ALICEVISION_LOG_ERROR("Invalid color checker box: size is not equal to 4");
+            exit(EXIT_FAILURE);
+        }
+        for (const auto &point : ccheckerBox)
+        {
+            xCoords.push_back(point.x);
+            yCoords.push_back(point.y);
+        }
+        // close polyline
+        xCoords.push_back(ccheckerBox[0].x);
+        yCoords.push_back(ccheckerBox[0].y);
+    }
+};
+
+#include <opencv2/mcc/checker_model.hpp>
+
+void drawCCheckerSVG(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputFolder)
+{
+    CCCorners corners(checker->getBox());
+
+    svg::svgDrawer svgSurface;
+    svgSurface.drawPolyline(
+        corners.xCoords.begin(), corners.xCoords.end(),
+        corners.yCoords.begin(), corners.yCoords.end(),
+        svg::svgStyle().stroke("green", 4));
+
+    std::string sFileName = outputFolder + "/" + "corners.svg";
+    std::ofstream svgFile(sFileName.c_str());
+    svgFile << svgSurface.closeSvgFile().str();
+    svgFile.close();
+}
+
+
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
@@ -166,9 +210,6 @@ int aliceVision_main(int argc, char** argv)
 
             for(cv::Ptr<cv::mcc::CChecker> checker : checkers)
             {
-                // current checker
-                cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker);
-                cdraw->draw(image);
 
                 cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".jpg", image);
             }
