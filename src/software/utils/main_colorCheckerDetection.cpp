@@ -63,8 +63,6 @@ struct CCCorners
     }
 };
 
-#include <opencv2/mcc/checker_model.hpp>
-
 void drawCCheckerSVG(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputFolder)
 {
     CCCorners corners(checker->getBox());
@@ -214,6 +212,8 @@ int aliceVision_main(int argc, char** argv)
                 // current checker
                 if(debug)
                 {
+                    drawCCheckerSVG(checker, outputFolder);
+
                     cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker, CV_RGB(250, 0, 0), 3);
                     cdraw->draw(image);
 
