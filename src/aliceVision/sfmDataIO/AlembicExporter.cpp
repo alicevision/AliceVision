@@ -93,7 +93,6 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   if(parent == nullptr)
     parent = &_mvgCameras;
 
-
   std::stringstream ssLabel;
   ssLabel << "camxform_" << std::setfill('0') << std::setw(5) << view.getResectionId() << "_" << view.getPoseId();
   ssLabel << "_" << name << "_" << view.getViewId();
@@ -283,31 +282,33 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
         rigsViewIds[view.getRigId()][view.getPoseId()].push_back(view.getViewId());
         continue;
       }
-      addSfMSingleCamera(sfmData, view);
+      addSfMSingleCamera(sfmData, view, flagsPart);
     }
 
     // save rigs views
     for(const auto& rigPair : rigsViewIds)
     {
       for(const auto& poseViewIds : rigPair.second)
-        addSfMCameraRig(sfmData, rigPair.first, poseViewIds.second); // add one camera rig per rig pose
+        addSfMCameraRig(sfmData, rigPair.first, poseViewIds.second, flagsPart); // add one camera rig per rig pose
     }
   }
 }
 
-void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const sfmData::View& view)
+void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const sfmData::View& view,
+                                         ESfMData flagsPart)
 {
   const std::string name = fs::path(view.getImagePath()).stem().string();
-  const sfmData::CameraPose* pose = (sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) :  nullptr;
-  const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()); 
+  const sfmData::CameraPose* pose = ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) : nullptr;
+  const std::shared_ptr<camera::IntrinsicBase> intrinsic = (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()) : nullptr;
 
-  if(sfmData.isPoseAndIntrinsicDefined(&view))
+  if(sfmData.isPoseAndIntrinsicDefined(&view) && (flagsPart & ESfMData::EXTRINSICS))
     _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
   else
     _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
 }
 
-void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds)
+void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds,
+                                      ESfMData flagsPart)
 {
   const sfmData::Rig& rig = sfmData.getRigs().at(rigId);
   const std::size_t nbSubPoses = rig.getNbSubPoses();
@@ -359,10 +360,10 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
     const sfmData::RigSubPose& rigSubPose = rig.getSubPose(view.getSubPoseId());
     const bool isReconstructed = (rigSubPose.status != sfmData::ERigSubPoseStatus::UNINITIALIZED);
     const std::string name = fs::path(view.getImagePath()).stem().string();
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+    const std::shared_ptr<camera::IntrinsicBase> intrinsic = (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicsharedPtr(view.getIntrinsicId()) : nullptr;
     std::unique_ptr<sfmData::CameraPose> subPosePtr;
 
-    if(isReconstructed)
+    if(isReconstructed && (flagsPart & ESfMData::EXTRINSICS))
     {
       subPosePtr = std::unique_ptr<sfmData::CameraPose>(new sfmData::CameraPose(rigSubPose.pose));
     }
