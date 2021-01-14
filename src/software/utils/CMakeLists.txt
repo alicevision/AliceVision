@@ -264,7 +264,22 @@ if(ALICEVISION_HAVE_OPENCV)
           Boost::filesystem
           ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
           opencv_mcc
-          opencv_highgui
+)
+endif()
+
+
+# Perform color correction
+if(ALICEVISION_HAVE_OPENCV)
+  alicevision_add_software(aliceVision_utils_colorCheckerCorrection
+    SOURCE main_colorCheckerCorrection.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+          opencv_mcc
 )
 endif()
 
