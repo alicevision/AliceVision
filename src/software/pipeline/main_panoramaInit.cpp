@@ -630,6 +630,7 @@ int main(int argc, char * argv[])
     std::string initializeCameras;
     std::string nbViewsPerLineString;
 
+    bool yawCW = true;
     bool useFisheye = false;
     bool estimateFisheyeCircle = true;
     Vec2 fisheyeCenterOffset(0, 0);
@@ -654,6 +655,7 @@ int main(int argc, char * argv[])
     motorizedHeadParams.add_options()
     ("config,c", po::value<std::string>(&externalInfoFilepath), "External info xml file from a motorized head system.")
     ("inputAngle,a", po::value<std::string>(&inputAngleString), "External info xml additional angle.")
+    ("yawCW", po::value<bool>(&yawCW), "Yaw rotation is ClockWise or ConterClockWise.")
     ("initializeCameras", po::value<std::string>(&initializeCameras), "Initialization type for the cameras poses.")
     ("nbViewsPerLine", po::value<std::string>(&nbViewsPerLineString), "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".")
     ;
@@ -817,7 +819,7 @@ int main(int argc, char * argv[])
                 if(nbHorizontalViews > 1)
                 {
                     // Vary horizontally between -180 and +180 deg
-                    yaw = x * 2.0 * boost::math::constants::pi<double>() / double(nbHorizontalViews);
+                    yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbHorizontalViews);
                 }
 
                 Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
@@ -915,7 +917,7 @@ int main(int argc, char * argv[])
                     if(nbViews > 1)
                     {
                         // Vary horizontally between -180 and +180 deg
-                        yaw = x * 2.0 * boost::math::constants::pi<double>() / double(nbViews);
+                        yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbViews);
                     }
                     const double roll = 0;
 
