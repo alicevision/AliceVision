@@ -11,6 +11,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
@@ -356,6 +357,48 @@ int aliceVision_main(int argc, char** argv)
     else
     {
         // load input as image file or image folder
+        const fs::path inputPath(inputExpression);
+        std::vector<std::string> filesStrPaths;
+
+        if(fs::is_regular_file(inputPath))
+        {
+            filesStrPaths.push_back(inputPath.string());
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
+
+            const std::regex regex = utils::filterToRegex(inputExpression);
+            // Get supported files in inputPath directory which matches our regex filter
+            filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(),
+               [&regex](const boost::filesystem::path& path) {
+                 return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
+               }
+            );
+        }
+
+        const int size = filesStrPaths.size();
+
+        if(!size)
+        {
+            ALICEVISION_LOG_ERROR("Any images was found.");
+            ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression << "' may be incorrect ?");
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO(size << " images found.");
+        }
+
+        int i = 0;
+        for(const std::string& imgSrcPath : filesStrPaths)
+        {
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
+
+            image::ImageReadOptions options;
+            options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+            detectColorChecker(imgSrcPath, options, outputColorData, debug);
+        }
 
     }
 
