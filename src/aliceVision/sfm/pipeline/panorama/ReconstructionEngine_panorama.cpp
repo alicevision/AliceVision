@@ -337,36 +337,11 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
                           "\t- relative rotations: " << relatives_R.size() << "\n" 
                           "\t- global rotations: " << set_pose_ids.size());
 
-  // If a view with a pose prior is not found in the relative rotation,
-  // make sure we add a fake link to adjust globally everything.
-  sfmData::Poses & poses = _sfmData.getPoses();
-  if (poses.size() > 0) {
-
-    IndexT firstViewId = *set_pose_ids.begin();
-    IndexT firstPoseId = _sfmData.getView(firstViewId).getPoseId();
-
-    Eigen::Matrix3d i1Ro = poses[firstPoseId].getTransform().rotation();
-
-    for (auto & currentPose : _sfmData.getPoses()) {
-      
-      IndexT poseId = currentPose.first;
-      if (set_pose_ids.find(poseId) == set_pose_ids.end()) {
-        
-        set_pose_ids.insert(poseId);
-
-        // Add a fake relative pose between this pose and the first found pose
-        Eigen::Matrix3d iRo = currentPose.second.getTransform().rotation();
-        Eigen::Matrix3d iR1 = iRo * i1Ro.transpose();
-        local_relatives_R.emplace_back(firstPoseId, currentPose.first, iR1, 1.0);
-      }
-    }
-  }
-
-  // Global Rotation solver:
+  // Global Rotation solver
   const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = TRIPLET_ROTATION_INFERENCE_NONE; // TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
 
   GlobalSfMRotationAveragingSolver rotationAveraging_solver;
-  //-- Rejection triplet that are 'not' identity rotation (error to identity > 50°)
+  //-- Rejection triplet that are 'not' identity rotation (error to identity > 50deg)
   const bool b_rotationAveraging = rotationAveraging_solver.Run(_params.eRotationAveragingMethod, eRelativeRotationInferenceMethod, local_relatives_R, _params.maxAngularError, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
@@ -503,7 +478,9 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
       sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone); 
       rotationpriors.push_back(prior);
-      vec_relatives_R.emplace_back(iter_v1.first, iter_v2.first, twoRone, 1.0);
+
+      // Add prior on relative rotations with a low weight
+      vec_relatives_R.emplace_back(iter_v1.first, iter_v2.first, twoRone, _params.rotationAveragingWeighting ? 1.0 : 0.01);
     }
   }
 
