@@ -671,7 +671,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       }
 
       // If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
-      double weight = relativePose_info.vec_inliers.size();
+      double weight = _params.rotationAveragingWeighting ? relativePose_info.vec_inliers.size() : 1.0;
       if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
       {
         CameraPose iTo = _sfmData.getAbsolutePose(view_I->getPoseId());

@@ -84,6 +84,8 @@ int aliceVision_main(int argc, char **argv)
       "* from essential matrix"
       "* from rotation matrix"
       "* from homography matrix")
+    ("rotationAveragingWeighting", po::value<bool>(&params.rotationAveragingWeighting)->default_value(params.rotationAveragingWeighting),
+      "Use weighting of image links during rotation averaging.")
     ("offsetLongitude", po::value<float>(&offsetLongitude)->default_value(offsetLongitude),
       "offset to camera longitude")
     ("offsetLatitude", po::value<float>(&offsetLatitude)->default_value(offsetLatitude),
