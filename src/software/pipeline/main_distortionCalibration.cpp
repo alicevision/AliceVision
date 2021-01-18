@@ -41,10 +41,65 @@ struct EdgeStatistics
 
 struct Line
 {
-    double angle;
+    double angleDegree;
     double distance;
     std::vector<EdgeInformation> edges;
 };
+
+struct Segment : Line
+{
+    Vec2 start;
+    Vec2 end;
+};
+
+image::Image<float> distort(const image::Image<float> & source) 
+{
+    camera::PinholeRadialK1 radial(source.Width(), source.Height(), 1000, source.Width() / 2, source.Height() / 2, 0.8);
+
+    double minx = source.Width();
+    double maxx = 0;
+    double miny = source.Height();
+    double maxy = 0;
+
+    for (int i = 0; i < source.Height(); i++) 
+    {
+        for (int j = 0; j < source.Width(); j++)
+        {
+            Vec2 pos = radial.get_d_pixel(Vec2(j, i));
+            minx = std::min(minx, pos.x());
+            maxx = std::max(maxx, pos.x());
+            miny = std::min(miny, pos.y());
+            maxy = std::max(maxy, pos.y());
+        }
+    }
+
+    int width = maxx - minx + 1;
+    int height = maxy - miny + 1;
+
+    const image::Sampler2d<image::SamplerLinear> sampler;
+    image::Image<float> result(width, height, true, 1.0f);
+
+    for (int i = 0; i < result.Height(); i++) 
+    {
+        double y = miny + double(i);
+
+        for (int j = 0; j < result.Width(); j++)
+        {
+            double x = minx + double(j);
+
+            Vec2 pos(x, y);
+            Vec2 undist = radial.get_ud_pixel(pos);
+
+            if (undist.x() < 0 || undist.x() >= source.Width()) continue;
+            if (undist.y() < 0 || undist.y() >= source.Height()) continue;
+            
+            
+            result(i, j) = sampler(source, undist(1), undist(0));
+        }
+    }
+
+    return result;
+}
 
 double unsignedAngleDistance(double angle1, double angle2) 
 {
@@ -63,8 +118,11 @@ bool preprocessImage(cv::Mat & preprocessed, const cv::Mat & input)
     cv::Mat converted(input.rows, input.cols, CV_8UC1);
     filtered.convertTo(converted, CV_8UC1, 255);
 
-    cv::Ptr<cv::CLAHE> app = cv::createCLAHE(2, cv::Size(16, 16));
-    app->apply(converted, preprocessed);
+    /*cv::Ptr<cv::CLAHE> app = cv::createCLAHE();
+    app->apply(converted, preprocessed);*/
+    preprocessed = converted;
+
+    cv::imwrite("distorted.png", preprocessed);
 
     return true;
 }
@@ -137,7 +195,7 @@ bool buildEdgesList(std::vector<EdgeInformation> & edgeInformations, const cv::M
             float norm = gradientNorm.at<float>(i, j);
 
             EdgeInformation ei;
-            ei.x = j;
+            ei.x = j; 
             ei.y = i;
             ei.cosAngle = (norm < 1e-6)?0.0:gradientX.at<float>(i, j) / norm;
             ei.sinAngle = (norm < 1e-6)?0.0:gradientY.at<float>(i, j) / norm;
@@ -359,21 +417,22 @@ bool filterEdgesList(std::vector<EdgeInformation> & edgeInformations, size_t wid
 bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformation> & edgeInformations, size_t width, size_t height)
 {
     const double stepDistance = 1.0;
-    const double stepAngle = 1.0;
-    const double maxAngleEdgeToLine = 2;
-    const double maxDistanceEdgeToLine = 10;
-    const int maxAngleBinsTolerancy = 3;
-    const int maxDistanceBinsTolerancy = 4;
+    const double stepAngle = 0.2;
+    const double maxAngleEdgeToLine = 2.0;
+    const double maxDistanceEdgeToLine = 3.0;
     const double minAngleBetweenLines = 2;
     const double minDistanceBetweenLines = 20;
+    const double minRawLineSize = 10;
+    const double minScore = minRawLineSize / (1.0 + maxDistanceEdgeToLine);
+    const int minEdgePerLine = 20;
 
     double hwidth = double(width) / 2.0;    
     double hheight = double(height) / 2.0;
     double minAngle = 0.0;
-    double maxAngle = 359.0;    
+    double maxAngle = 360.0;    
     
-    double mindistance = 0.0;
-    double maxdistance = sqrt(hwidth * hwidth + hheight * hheight);    
+    double mindistance = round(-sqrt(hwidth * hwidth + hheight * hheight));
+    double maxdistance = round(sqrt(hwidth * hwidth + hheight * hheight));    
 
     int countBinsAngle = int((maxAngle - minAngle) / stepAngle);
     int countBinsDistance = int((maxdistance - mindistance) / stepDistance);
@@ -391,8 +450,8 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
     {
         for (int idDistance = 0; idDistance < countBinsDistance; idDistance++) 
         {
-            bins[idAngle * countBinsDistance + idDistance].angle = double(idAngle) * stepAngle;
-            bins[idAngle * countBinsDistance + idDistance].distance = double(idDistance) * stepDistance;
+            bins[idAngle * countBinsDistance + idDistance].angle = minAngle + double(idAngle) * stepAngle;
+            bins[idAngle * countBinsDistance + idDistance].distance = mindistance + double(idDistance) * stepDistance;
             bins[idAngle * countBinsDistance + idDistance].score = 0;
         }
     }
@@ -401,11 +460,15 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
     for (const EdgeInformation & einfo : edgeInformations) 
     {
         double edgeAngle = radianToDegree(atan2(einfo.sinAngle, einfo.cosAngle));
+        double edgeAngleMinBound = edgeAngle - maxAngleEdgeToLine;
+        double edgeAngleMaxBound = edgeAngle + maxAngleEdgeToLine;
+        int binAngleEdgeMinBound = int(edgeAngleMinBound / stepAngle);
+        int binAngleEdgeMaxBound = int(edgeAngleMaxBound / stepAngle);
 
-        int binAngleEdge = int(edgeAngle / stepAngle);
+
 
         //Loop over possible angles
-        for (int binAngle = binAngleEdge - maxAngleBinsTolerancy; binAngle <= binAngleEdge + maxAngleBinsTolerancy; binAngle++) 
+        for (int binAngle = binAngleEdgeMinBound; binAngle <= binAngleEdgeMaxBound; binAngle++) 
         {
             int correctedBinAngle = binAngle;
             if (binAngle >= countBinsAngle)
@@ -422,17 +485,24 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
             double sinAngle = sin(curAngle);
             double cosAngle = cos(curAngle);
 
+            
 
             double x = einfo.x - hwidth;
             double y = einfo.y - hheight;
 
-            double md = std::abs(cosAngle * x + sinAngle * y);
-            int currentDistance = int(md / stepDistance);
+            double md = cosAngle * x + sinAngle * y;
+
+
+            int distanceMinBound = md - minDistanceBetweenLines;
+            int distanceMaxBound = md + minDistanceBetweenLines;
+
+            int binDistanceEdgeMinBound = int(round((distanceMinBound - mindistance) / stepDistance));
+            int binDistanceEdgeMaxBound = int(round((distanceMaxBound - mindistance) / stepDistance));
 
             // Loop over possible distances for this angle 
-            for (int binDistance = std::max(0, currentDistance - maxDistanceBinsTolerancy); binDistance < std::min(countBinsDistance, currentDistance + maxDistanceBinsTolerancy); binDistance++)
+            for (int binDistance = std::max(0, binAngleEdgeMinBound); binDistance <= std::min(countBinsDistance, binDistanceEdgeMaxBound); binDistance++)
             {
-                double distance = double(binDistance) * stepDistance;
+                double distance = mindistance + double(binDistance) * stepDistance;
                 double error = fabs(md - distance);
 
                 //Assign a score inversely proportionnal to this error
@@ -441,6 +511,8 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
         }
     }
 
+    
+
     // Sort bins by decreasing score
     std::sort(bins.begin(), bins.end(), [](const binInfo &a, const binInfo &b) { return a.score > b.score; } );
 
@@ -448,12 +520,25 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
     std::vector<Line> added;
     for (int id = 0; id < bins.size(); id++)
     {
+        if (bins[id].score < minScore)
+        {
+            break;
+        }
+
         bool found = false;
         for (const Line & prev : added) 
         {
-            double diff = unsignedAngleDistance(bins[id].angle, prev.angle);
+            double diff = unsignedAngleDistance(bins[id].angle, prev.angleDegree);
             double diffd = std::abs(bins[id].distance - prev.distance);
 
+            if (diff < minAngleBetweenLines && diffd < minDistanceBetweenLines)
+            {
+                found = true;
+            }
+
+            //Remove discrimation between opposed normals
+            diff = fabs(unsignedAngleDistance(bins[id].angle, prev.angleDegree) - 180.0);
+            diffd = std::abs(bins[id].distance + prev.distance);
             if (diff < minAngleBetweenLines && diffd < minDistanceBetweenLines)
             {
                 found = true;
@@ -467,7 +552,7 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
         }
 
         Line l;
-        l.angle = bins[id].angle;
+        l.angleDegree = bins[id].angle;
         l.distance = bins[id].distance;
 
         added.push_back(l);
@@ -478,30 +563,356 @@ bool computeHoughLines(std::vector<Line> & lines, const std::vector<EdgeInformat
     lines.clear();
     for (Line & l : added) 
     {
+        double lineAngleRadian = degreeToRadian(l.angleDegree);
+        double coslineAngleRadian = cos(lineAngleRadian);
+        double sinlineAngleRadian = sin(lineAngleRadian);
+
+        l.edges.clear();
+
         for (const EdgeInformation & einfo : edgeInformations) 
         {
             double edgeAngle = radianToDegree(atan2(einfo.sinAngle, einfo.cosAngle));
+            double lineAngle = radianToDegree(atan2(sinlineAngleRadian, coslineAngleRadian));
 
-            if (unsignedAngleDistance(l.angle, edgeAngle) > maxAngleEdgeToLine)
+            double cosa = coslineAngleRadian * einfo.cosAngle + sinlineAngleRadian * einfo.sinAngle;
+            double diffA = radianToDegree(std::acos(std::abs(cosa)));
+            if (diffA > maxAngleEdgeToLine) 
             {
                 continue;
             }
 
-            if (std::abs(std::abs(cos(l.angle) * (einfo.x - hwidth) + sin(l.angle) * (einfo.y - hheight)) - l.distance) > maxDistanceEdgeToLine)
+            EdgeInformation centeredEdge;
+            centeredEdge.x = einfo.x - hwidth;
+            centeredEdge.y = einfo.y - hheight;
+            centeredEdge.cosAngle = einfo.cosAngle;
+            centeredEdge.sinAngle = einfo.sinAngle;
+
+            if (std::abs(coslineAngleRadian * centeredEdge.x + sinlineAngleRadian * centeredEdge.y - l.distance) > maxDistanceEdgeToLine)
             {
                 continue;
             }
 
-            l.edges.push_back(einfo);
+            l.edges.push_back(centeredEdge);
         }
 
-        if (l.edges.size() < 50) 
+
+        if (l.edges.size() < minEdgePerLine) 
         {
             continue;
         }
 
         lines.push_back(l);
     }
+
+    return true;
+}
+
+bool createSegments(std::vector<Segment> & segments, const std::vector<Line> & lines) 
+{
+    const double maxHoleLength = 10;
+
+    segments.clear();
+
+    // Loop over found lines
+    for (auto line : lines) 
+    {
+        double langle = degreeToRadian(line.angleDegree);
+        double coslangle = cos(langle);
+        double sinlangle = sin(langle);
+
+        Vec2 lineDirection;
+        lineDirection.x() = -sinlangle;
+        lineDirection.y() = coslangle;
+
+        Vec2 base;
+        bool first = true;
+        double minscale = std::numeric_limits<double>::max();
+        double maxscale = -std::numeric_limits<double>::max();
+
+        std::vector<double> scales;
+        for (const EdgeInformation & e : line.edges) 
+        {
+            //Project point on line
+            double lambda = (coslangle * e.x + sinlangle * e.y) - line.distance;
+            double lineEdgeX = e.x - lambda * coslangle;
+            double lineEdgeY = e.y - lambda * sinlangle;
+
+            //Store the first point as the line base point
+            if (first) 
+            {
+                base.x() = lineEdgeX;
+                base.y() = lineEdgeY;
+                first = false;
+            }
+
+            //Compute the point position on the directed line
+            double scale = lineDirection.x() * (lineEdgeX - base.x()) + lineDirection.y() * (lineEdgeY - base.y()); 
+            scales.push_back(scale);
+        }
+
+        std::sort(scales.begin(), scales.end());
+
+        Segment s;
+        s.angleDegree = line.angleDegree;
+        s.distance = line.distance;
+
+        int lastvalid = 0;
+        for (int i = 1; i  < scales.size(); i++) 
+        {
+            double dscale = scales[i] - scales[i-1];
+            if (dscale > maxHoleLength)
+            {
+                double start = scales[lastvalid];
+                double end = scales[i - 1];
+
+                for (int pos = lastvalid; pos < i; pos++)
+                {
+                    s.edges.push_back(EdgeInformation());
+                }
+
+                s.start = base + start * lineDirection;
+                s.end = base + end * lineDirection;
+
+                segments.push_back(s);
+                lastvalid = i;
+            }
+        }
+
+        double start = scales[lastvalid];
+        double end = scales[scales.size() - 1];
+        
+        s.start = base + start * lineDirection;
+        s.end = base + end * lineDirection;
+        
+        segments.push_back(s);
+    }
+
+    return true;
+} 
+
+std::list<int> findLargestPath(const std::map<int, std::vector<int>> & connections, const std::vector<Segment> & segments)
+{
+    typedef struct 
+    {
+        int segmentId;
+        int childRank;
+        std::list<int> visited;
+    }
+    ElementInfo;
+
+    std::list<int> maxpath;
+    int maxcost = 0;
+
+    //Looking for paths
+    for (auto & referenceSegment : connections)
+    {
+        int idSegmentRef = referenceSegment.first;
+
+        if (connections.find(idSegmentRef) == connections.end()) 
+        {
+            continue;
+        }
+
+        if (connections.at(idSegmentRef).size() == 0) 
+        {
+            continue;
+        }
+
+        std::list<ElementInfo> stack;
+
+        //Add this segment first child on top of the stack
+        ElementInfo ei;
+        ei.segmentId = idSegmentRef;
+        ei.visited.push_back(idSegmentRef);
+        ei.childRank = 0;
+        stack.push_back(ei);
+
+        while (!stack.empty())
+        {
+            ElementInfo & topElement = stack.back();
+            const std::vector<int> & children = connections.at(topElement.segmentId);
+
+            if (topElement.childRank >= children.size())
+            {
+                stack.pop_back();
+                continue;
+            } 
+
+            int childId = children.at(topElement.childRank);
+            topElement.childRank++;
+
+            if (connections.find(childId) == connections.end()) 
+            {
+                continue;
+            }
+            
+
+            const std::vector<int> & grandchildren = connections.at(childId);
+            if (grandchildren.size() > 0) 
+            {
+                ei.segmentId = childId;
+                ei.childRank = 0;
+                ei.visited = topElement.visited;
+                ei.visited.push_back(childId);
+                stack.push_back(ei);
+            }
+            else 
+            {
+                std::list<int> path = topElement.visited;
+                path.push_back(childId);
+
+                int cost = 0;
+                for (int id : path)
+                {
+                    cost += segments[id].edges.size();
+                }
+
+                if (cost > maxcost) 
+                {
+                    maxcost = cost;
+                    maxpath = path;
+                }
+            }
+        }
+    }   
+
+    return maxpath;
+}
+
+bool mergeSegments(std::vector<Segment> & mergedSegments, std::vector<Segment> & segments, int  rows, int cols)
+{
+    const double maxDistanceBetweenConnectedSegments = 100;
+    const double maxOrthogonalDistanceToLine = 5;
+    const double maxAngleDifferenceDegree = 15;
+
+    mergedSegments.clear();
+
+    std::map<int, std::vector<int>> connections;
+    
+
+    for (int idSegmentRef = 0; idSegmentRef < segments.size(); idSegmentRef++)
+    {
+        Segment & segmentRef = segments[idSegmentRef];
+
+        double angleRef = degreeToRadian(segmentRef.angleDegree);
+        double car = cos(angleRef);
+        double sar = sin(angleRef);
+        double dr = segmentRef.distance;
+        Vec2 dirRef = (segmentRef.end - segmentRef.start).normalized();
+
+        std::vector<int> nextSegments;
+
+        for (int idSegmentOther = idSegmentRef + 1; idSegmentOther < segments.size(); idSegmentOther++)
+        {
+            Segment & segmentOther = segments[idSegmentOther];
+            double diff = unsignedAngleDistance(segmentOther.angleDegree, segmentRef.angleDegree);
+
+            //Do they share a similar normal ? 
+            if (diff < maxAngleDifferenceDegree) 
+            {
+                //Ignore points too far away
+                double dist = (segmentRef.end - segmentOther.start).norm();
+                if (dist > maxDistanceBetweenConnectedSegments) 
+                {
+                    continue;
+                }
+
+                //Make sure the connection is not too far away from the line
+                double orthoDist = car * segmentOther.start.x() + sar * segmentOther.start.y() - dr;
+                if (orthoDist > maxOrthogonalDistanceToLine)
+                {
+                    continue;
+                }
+
+                //Check that the next point is not behind
+                Vec2 dirNext = (segmentOther.start - segmentRef.end).normalized();
+                double cosDir = dirNext.x() * dirRef.x() + dirNext.y() * dirRef.y();
+                if (cosDir < 0.7)
+                {
+                    continue;
+                }
+
+                nextSegments.push_back(idSegmentOther);
+            }
+
+            //Do they share a similar normal but with opposite direction ?  
+            if (fabs(diff - 180) < maxAngleDifferenceDegree) 
+            {
+                //Ignore points too far away
+                double dist = (segmentRef.start - segmentOther.end).norm();
+                if (dist > maxDistanceBetweenConnectedSegments) 
+                {
+                    continue;
+                }
+
+                //Make sure the connection is not too far away from the line
+                double orthoDist = car * segmentOther.end.x() + sar * segmentOther.end.y() - dr;
+                if (orthoDist > maxOrthogonalDistanceToLine)
+                {
+                    continue;
+                }
+
+                //Check that the next point is not behind
+                Vec2 dirNext = (segmentOther.end - segmentRef.end).normalized();
+                double cosDir = dirNext.x() * dirRef.x() + dirNext.y() * dirRef.y();
+                if (cosDir < 0.7)
+                {
+                    continue;
+                }
+
+                nextSegments.push_back(idSegmentOther);
+            }
+        }
+
+        connections[idSegmentRef] = nextSegments;
+    }
+
+    int count = 0;
+    
+    while (1) 
+    {
+        std::list<int> maxpath = findLargestPath(connections, segments);
+        if (maxpath.size() <6) break;
+
+        {
+            cv::Mat res(rows, cols, CV_8UC3);
+            res = 0;
+
+            Vec2 half(cols/2, rows/2);
+
+            mergedSegments.clear();
+            for (auto id : maxpath)
+            {
+                mergedSegments.push_back(segments[id]);
+            }
+
+            for (int i = 0; i < mergedSegments.size(); i++)
+            {
+                Vec2 start = half + mergedSegments[i].start;
+                Vec2 end = half + mergedSegments[i].end;
+
+                cv::line(res, cv::Point(start.x(), start.y()), cv::Point(end.x(), end.y()), cv::Scalar(255,255,255));
+            }
+            
+            char filename[FILENAME_MAX];
+            sprintf(filename, "lines%d.png", count);
+            cv::imwrite(filename, res);
+            count++;
+        }
+
+
+        for (int id : maxpath) 
+        {
+            connections.erase(id);
+        }
+
+        for (auto id : maxpath)
+        {
+            mergedSegments.push_back(segments[id]);
+        }
+    }
+
+    
 
     return true;
 }
@@ -531,58 +942,38 @@ bool process(const cv::Mat & input)
         return false;
     }   
 
-    cv::Mat res(input.rows, input.cols, CV_8UC1);
+    std::vector<Segment> segments;
+    if (!createSegments(segments, lines))
+    {
+        return false;
+    }   
+
+    std::vector<Segment> mergedSegments;
+       
+
+    mergedSegments = segments;
+
+    cv::Mat res(input.rows, input.cols, CV_8UC3);
     res = 0;
 
-    double hwidth = input.cols / 2;
-    double hheight = input.rows / 2;
+    Vec2 half(input.cols/2, input.rows/2);
 
-    for (auto bin : lines) 
+    for (int i = 0; i < mergedSegments.size(); i++)
     {
-        //if (bin.edges.size() < 100) continue;
+        Vec2 start = half + mergedSegments[i].start;
+        Vec2 end = half + mergedSegments[i].end;
 
-        for (EdgeInformation & e : bin.edges) 
-        {
-            cv::line(res, cv::Point(e.x - 1, e.y), cv::Point(e.x + 1, e.y), cv::Scalar(255));
-            cv::line(res, cv::Point(e.x, e.y - 1), cv::Point(e.x, e.y + 1), cv::Scalar(255));
-        }
-
-        std::cout << bin.angle << " " << bin.distance << std::endl;
-
-
-        double ca = cos(bin.angle * M_PI / 180.0);
-        double sa = sin(bin.angle * M_PI / 180.0);
-        
-        //ca * x + sa * y - d = 0
-        if (std::abs(ca) < 0.1) 
-        {
-            //y = (d - ca * x) / sa
-            //x = (d - sa * y) / ca
-
-            cv::Point2i p1, p2;
-            p1.x = 0;
-            p1.y = hheight + (bin.distance - ca * (p1.x - hwidth)) / sa;
-            p2.x = input.cols - 1;
-            p2.y = hheight + (bin.distance - ca * (p2.x - hwidth)) / sa;
-
-            cv::line(res, p1, p2, cv::Scalar(255,255,255));
-            
-        }
-        else 
-        {
-            
-
-            cv::Point2i p1, p2;
-            p1.y = 0;
-            p1.x = hwidth + (bin.distance - sa * (p1.y - hheight)) / ca;
-            p2.y = input.rows - 1;
-            p2.x = hwidth + (bin.distance - sa * (p2.y - hheight)) / ca;
-
-            cv::line(res, p1, p2, cv::Scalar(255,255,255));
-        }
+        cv::line(res, cv::Point(start.x(), start.y()), cv::Point(end.x(), end.y()), cv::Scalar(255,255,255));
     }
-
+    
     cv::imwrite("lines.png", res);
+
+
+    if (!mergeSegments(mergedSegments, segments, input.rows, input.cols))
+    {
+        return false;
+    }
+    
     
     return true;
 }
@@ -660,8 +1051,9 @@ int aliceVision_main(int argc, char* argv[])
 
         image::Image<float> input;
         image::readImage(v.second->getImagePath(), input, image::EImageColorSpace::SRGB);
-        cv::Mat inputOpencvWrapper(input.Height(), input.Width(), CV_32FC1, input.data());
 
+        image::Image<float> distorted = distort(input);
+        cv::Mat inputOpencvWrapper(distorted.Height(), distorted.Width(), CV_32FC1, distorted.data());
 
         float pixelRatio = view->getDoubleMetadata({"PixelAspectRatio"});
         if (pixelRatio < 0.0) 
