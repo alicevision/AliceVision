@@ -173,7 +173,7 @@ public:
   /**
    * @brief Filter feature matches to keep only the largest biedge connected subgraph.
   */
-  bool filterMatches();
+  void filterMatches();
 
   virtual bool process();
 

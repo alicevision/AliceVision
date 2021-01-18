@@ -260,7 +260,7 @@ void ReconstructionEngine_panorama::SetMatchesProvider(matching::PairwiseMatches
   _pairwiseMatches = provider;
 }
 
-bool ReconstructionEngine_panorama::filterMatches()
+void ReconstructionEngine_panorama::filterMatches()
 {
     // keep only the largest biedge connected subgraph
     const PairSet pairs = matching::getImagePairs(*_pairwiseMatches);
@@ -268,8 +268,7 @@ bool ReconstructionEngine_panorama::filterMatches()
         graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
     if(set_remainingIds.empty())
     {
-        ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama");
-        return false;
+        ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama, no remaining match after filtering.");
     }
     KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
 }
