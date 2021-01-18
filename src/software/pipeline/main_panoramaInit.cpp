@@ -801,18 +801,18 @@ int main(int argc, char * argv[])
         }
         else if(boost::algorithm::contains(initializeCameras, "horizontal"))
         {
-            const double nadirPitch = -0.5 * boost::math::constants::pi<double>();
-            const Eigen::AngleAxis<double> nadirMpitch(nadirPitch, Eigen::Vector3d::UnitX());
-            const Eigen::AngleAxis<double> nadirMroll(additionalAngle, Eigen::Vector3d::UnitZ());
-            const Eigen::Matrix3d nadirRo = nadirMpitch.toRotationMatrix() * nadirMroll.toRotationMatrix();
+            const double zenithPitch = -0.5 * boost::math::constants::pi<double>();
+            const Eigen::AngleAxis<double> zenithMpitch(zenithPitch, Eigen::Vector3d::UnitX());
+            const Eigen::AngleAxis<double> zenithMroll(additionalAngle, Eigen::Vector3d::UnitZ());
+            const Eigen::Matrix3d zenithRo = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
 
-            const bool withNadir = boost::algorithm::contains(initializeCameras, "nadir");
-            if(initializeCameras == "nadir+horizontal")
+            const bool withZenith = boost::algorithm::contains(initializeCameras, "zenith");
+            if(initializeCameras == "zenith+horizontal")
             {
-                ALICEVISION_LOG_TRACE("Add nadir first");
-                rotations[rotations.size()] = nadirRo.transpose();
+                ALICEVISION_LOG_TRACE("Add zenith first");
+                rotations[rotations.size()] = zenithRo.transpose();
             }
-            const std::size_t nbHorizontalViews = sfmData.getViews().size() - int(withNadir);
+            const std::size_t nbHorizontalViews = sfmData.getViews().size() - int(withZenith);
             for(int x = 0; x < nbHorizontalViews; ++x)
             {
                 double yaw = 0;
@@ -831,10 +831,10 @@ int main(int argc, char * argv[])
                 ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw);
                 rotations[rotations.size()] = cRo.transpose();
             }
-            if(initializeCameras == "horizontal+nadir")
+            if(initializeCameras == "horizontal+zenith")
             {
-                ALICEVISION_LOG_TRACE("Add nadir");
-                rotations[rotations.size()] = nadirRo.transpose();
+                ALICEVISION_LOG_TRACE("Add zenith");
+                rotations[rotations.size()] = zenithRo.transpose();
             }
         }
         else if(initializeCameras == "spherical" || (initializeCameras.empty() && !nbViewsPerLineString.empty()))
