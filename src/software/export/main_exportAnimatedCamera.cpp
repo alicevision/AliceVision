@@ -32,6 +32,18 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+
+void writeImageNew(const std::string& path, image::Image<image::RGBfColor>& imageIn,
+                   image::EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+{
+
+    oiio::ImageSpec imageSpec(imageIn.Width(), imageIn.Height(), 3, oiio::TypeDesc::FLOAT);
+    imageSpec.extra_attribs = metadata; // add custom metadata
+    imageSpec.set_roi_full(roi);
+    const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, imageIn.data()); // original image buffer
+    imgBuf.write(path);
+}
+
 int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
@@ -40,11 +52,15 @@ int aliceVision_main(int argc, char** argv)
   std::string sfmDataFilename;
   std::string outFolder;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
-  bool undistortedImages = true;
+  std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
+  bool undistortedImages = false;
+  bool exportUVMaps = false;
+  std::map<std::string, oiio::ROI> roiForIntrinsic;
 
   // user optional parameters
 
   std::string viewFilter;
+  
 
   po::options_description allParams("AliceVision exportAnimatedCamera");
 
@@ -60,6 +76,8 @@ int aliceVision_main(int argc, char** argv)
     ("exportUndistortedImages", po::value<bool>(&undistortedImages)->default_value(undistortedImages),
       "Export undistorted images for the animated camera(s).\n"
       "If false, animated camera(s) exported with original frame paths.")
+    ("exportUVMaps", po::value<bool>(&exportUVMaps)->default_value(exportUVMaps),
+      "Export UV Maps for Nuke in exr format ")
     ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
       "Path to the output SfMData file (with only views and poses).")
     ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
@@ -71,6 +89,7 @@ int aliceVision_main(int argc, char** argv)
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
+  ALICEVISION_LOG_DEBUG("UVmap: " + std::to_string(exportUVMaps));
 
   po::variables_map vm;
   try
@@ -120,14 +139,76 @@ int aliceVision_main(int argc, char** argv)
 
   // set output file type
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+  image::EImageFileType outputMapFileType = image::EImageFileType_stringToEnum(outMapFileTypeName);
 
   const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
+  bool writeUndistordedResult = undistortedImages || exportUVMaps;
 
-  if(undistortedImages && !fs::exists(undistortedImagesFolderPath))
+  if(writeUndistordedResult && !fs::exists(undistortedImagesFolderPath))
     fs::create_directory(undistortedImagesFolderPath);
 
   std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;
   std::map<std::string, std::vector<std::pair<std::size_t, IndexT>> > dslrViewPerKey;
+
+  // export distortion map / one image per intrinsic
+  if(exportUVMaps)
+  {
+      for(const auto& intrinsicPair : sfmData.getIntrinsics())
+      {
+          const camera::IntrinsicBase& intrinsic = *(intrinsicPair.second);
+          image::Image<image::RGBfColor> image_dist;
+          image_dist.resize(int(intrinsic.w()), int(intrinsic.h()), true, image::FBLACK);
+
+          if(!intrinsic.hasDistortion()) // no distortion, perform a direct copy
+          {
+              // nothing to do image is black
+          }
+          else // There is distortion
+          {
+              const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
+              Vec2 ppCorrection(0.0, 0.0);
+
+              if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType())
+              {
+                  const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPair.second.get());
+                  ppCorrection = pinholePtr->getPrincipalPoint() - center;
+              }
+
+              // flip and normalize for Nuke
+#pragma omp parallel for
+              for(int j = 0; j < int(intrinsic.h()); ++j)
+                  for(int i = 0; i < int(intrinsic.w()); ++i)
+                  {
+                      const Vec2 undisto_pix(i, j);
+                      // compute coordinates with distortion
+                      const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
+
+                      if(disto_pix[0] >= 0 && disto_pix[0] < intrinsic.w() && disto_pix[1] >= 0 &&
+                         disto_pix[1] < intrinsic.h())
+                      {
+                          image_dist(j, i).r() = (disto_pix[0]) / intrinsic.w();
+                          image_dist(j, i).g() = (intrinsic.h() - disto_pix[1]) / intrinsic.h();
+                      }
+                      else
+                      {
+                          image_dist(j, i).r() = -1;
+                          image_dist(j, i).g() = -1;
+                      }
+                  }
+
+              if(exportUVMaps)
+              {
+                  const std::string dstImage =
+                      (undistortedImagesFolderPath / ("Distortion_UVMap_" + std::to_string(intrinsicPair.first) + "." +
+                                                      image::EImageFileType_enumToString(outputMapFileType))).string();
+                  image::writeImage(dstImage, image_dist, image::EImageColorSpace::NO_CONVERSION);
+              }
+          }
+      }
+  }
+  
+  
+      
 
   ALICEVISION_LOG_INFO("Build animated camera(s)...");
 
@@ -157,18 +238,71 @@ int aliceVision_main(int argc, char** argv)
       const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
-      image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
+      image::readImage(view.getImagePath(), image, image::EImageColorSpace::NO_CONVERSION);
+      oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
 
       if(cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
         camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point
-        image::writeImage(dstImage, image_ud, image::EImageColorSpace::LINEAR);
+        if(outputFileType == image::EImageFileType::EXR)
+        {
+            // build a ROI
+            std::string key = std::to_string(view.getIntrinsicId());
+            oiio::ROI roi;
+            if(roiForIntrinsic.find(key) == roiForIntrinsic.end())
+            {
+                const camera::IntrinsicBase& intrinsic = *(cam);
+                int xRoiMin = intrinsic.w() - 1;
+                int xRoiMax = 0;
+                int yRoiMin = intrinsic.h() - 1;
+                int yRoiMax = 0;
+#pragma omp parallel for
+                for(int j = 0; j < int(intrinsic.h()); ++j)
+                    for(int i = 0; i < int(intrinsic.w()); ++i)
+                    {
+                        // for ROD
+                        const Vec2 disto_pix_in(i, j);
+                        // compute coordinates
+                        const Vec2 undisto_pix = intrinsic.get_ud_pixel(disto_pix_in);
+                        if(undisto_pix[0] < xRoiMin)
+                            xRoiMin = int(undisto_pix[0]);
+                        else
+                        {
+                            if(undisto_pix[0] > xRoiMax)
+                                xRoiMax = int(undisto_pix[0]);
+                        }
+                        if(undisto_pix[1] < yRoiMin)
+                            yRoiMin = int(undisto_pix[1]);
+                        else
+                        {
+                            if(undisto_pix[1] > yRoiMax)
+                                yRoiMax = int(undisto_pix[1]);
+                        }
+                    }
+
+                oiio::ROI roi(xRoiMin, xRoiMax, yRoiMin, yRoiMax); // roi for current intrinsic,add it to map
+                ALICEVISION_LOG_DEBUG("roi:" + std::to_string(xRoiMin) + ";" + std::to_string(xRoiMax) + ";" +
+                                      std::to_string(yRoiMin) + ";" + std::to_string(yRoiMax));
+                roiForIntrinsic[key] = roi;
+            }
+            else
+            {
+                roi = roiForIntrinsic[key];
+            }
+            writeImageNew(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, metadata, roi);
+        }
+        else
+        {
+            //image::writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION);
+            image::writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, metadata); // To be checked: use of metadata
+        }   
       }
       else // (no distortion)
       {
         // copy the image since there is no distortion
-        image::writeImage(dstImage, image, image::EImageColorSpace::LINEAR);
+        //image::writeImage(dstImage, image, image::EImageColorSpace::NO_CONVERSION);
+        image::writeImage(dstImage, image, image::EImageColorSpace::NO_CONVERSION, metadata);
       }
     }
 
