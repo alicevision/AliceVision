@@ -260,20 +260,22 @@ void ReconstructionEngine_panorama::SetMatchesProvider(matching::PairwiseMatches
   _pairwiseMatches = provider;
 }
 
-bool ReconstructionEngine_panorama::process()
+bool ReconstructionEngine_panorama::filterMatches()
 {
-  // keep only the largest biedge connected subgraph
-  {
+    // keep only the largest biedge connected subgraph
     const PairSet pairs = matching::getImagePairs(*_pairwiseMatches);
-    const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
+    const std::set<IndexT> set_remainingIds =
+        graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
     if(set_remainingIds.empty())
     {
-      ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama");
-      return false;
+        ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama");
+        return false;
     }
     KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
-  }
+}
 
+bool ReconstructionEngine_panorama::process()
+{
   aliceVision::rotationAveraging::RelativeRotations relatives_R;
   Compute_Relative_Rotations(relatives_R);
 
@@ -502,6 +504,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
       sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone); 
       rotationpriors.push_back(prior);
+      vec_relatives_R.emplace_back(iter_v1.first, iter_v2.first, twoRone, 1.0);
     }
   }
 
@@ -519,7 +522,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
   std::map<IndexT, size_t> connection_size;
 
   ALICEVISION_LOG_INFO("Relative pose computation:");
-  // For each pair of views, compute the relative pose
+  // For each pair of matching views, compute the relative pose
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
     {
@@ -771,7 +774,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       {
         // Add the relative rotation to the relative 'rotation' pose graph
         using namespace aliceVision::rotationAveraging;
-        vec_relatives_R.emplace_back(relative_pose_pair.first, relative_pose_pair.second, relativePose_info.relativePose.rotation(), 1.0);
+        vec_relatives_R.emplace_back(relative_pose_pair.first, relative_pose_pair.second,
+                                     relativePose_info.relativePose.rotation(), weight);
       }
     }
   } // for all relative pose

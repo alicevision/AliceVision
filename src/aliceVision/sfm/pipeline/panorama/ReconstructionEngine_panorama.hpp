@@ -170,6 +170,11 @@ public:
   void SetFeaturesProvider(feature::FeaturesPerView* featuresPerView);
   void SetMatchesProvider(matching::PairwiseMatches* provider);
 
+  /**
+   * @brief Filter feature matches to keep only the largest biedge connected subgraph.
+  */
+  bool filterMatches();
+
   virtual bool process();
 
   bool buildLandmarks();
