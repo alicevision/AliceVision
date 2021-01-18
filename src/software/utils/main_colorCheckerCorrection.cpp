@@ -4,14 +4,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/utils/filesIO.hpp>
 
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
-
-#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -36,29 +38,59 @@ using namespace aliceVision;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
+cv::Mat processColorCorrection(cv::Mat& image, cv::Mat& refColors) {
+    cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
+    model.run();
+
+    // set color space
+    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
+
+    cv::Mat img;
+    cvtColor(image, img, cv::COLOR_BGR2RGB);
+    img.convertTo(img, CV_64F); // convert to 64 bits double matrix / image
+    const int inpSize = 255;
+    const int outSize = 255;
+    img /= inpSize;
+    cv::Mat calibratedImage = model.infer(img); // make correction using ccm matrix
+    cv::Mat out = calibratedImage * outSize;
+
+    out.convertTo(out, CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
+    cv::Mat imgOut = min(max(out, 0), outSize);
+    cv::Mat outImg;
+    cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
+
+    // try returning imgOut ?
+    return outImg;
+}
 
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string sfmDataFilename;
-    std::string outputFolder;
+    std::string inputExpression;
+    std::string colorData;
+    std::string outputPath;
 
     po::options_description allParams(
-        "This program is used to perform color checker correction\n"
+        "This program is used to perform color correction based on a color checker\n"
         "AliceVision colorCheckerCorrection");
 
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
-        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-         "SfMData file.")
-        ("output,o", po::value<std::string>(&outputFolder)->required(),
-         "Output path for the color checker detection files (*.ccdata).");
+        ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
+        "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
+        "single digit, '@' one or more digits, '?' one character and '*' zero or more).")(
+        "inputColorData", po::value<std::string>(&colorData)->default_value(colorData),
+        "Colorimetric data extracted from a detected color checker in the images")
+        ("output,o", po::value<std::string>(&outputPath)->required(),
+         "Output folder.")
+        ;
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
         ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-         "verbosity level (fatal, error, warning, info, debug, trace).");
+         "verbosity level (fatal, error, warning, info, debug, trace).")
+        ;
 
     allParams.add(inputParams).add(logParams);
 
@@ -93,33 +125,93 @@ int aliceVision_main(int argc, char** argv)
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // create output folder
-    if(!fs::exists(outputFolder))
+    // check user choose an input
+    if(inputExpression.empty())
     {
-        if(!fs::create_directory(outputFolder))
-        {
-            ALICEVISION_LOG_ERROR("Cannot create output folder");
-            return EXIT_FAILURE;
-        }
-    }
+        ALICEVISION_LOG_ERROR("Program need --input option." << std::endl << "No input images here.");
 
-    // load input scene
-    sfmData::SfMData sfmData;
-    //if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
-    //{
-    //    ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
-    //    return EXIT_FAILURE;
-    //}
+        return EXIT_FAILURE;
+    }
 
     // Map used to store paths of the views that need to be processed
     std::unordered_map<IndexT, std::string> ViewPaths;
 
-    // Store paths in map
-    for(const auto& viewIt : sfmData.getViews())
+    // Check if sfmInputDataFilename exist and is recognized as sfm data file
+    const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
+    ALICEVISION_COUT(inputExt);
+    static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
+    if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) !=
+                                       sfmSupportedExtensions.end())
     {
-        const sfmData::View& view = *(viewIt.second);
+        sfmData::SfMData sfmData;
+        if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::VIEWS))
+        {
+            ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
+            return EXIT_FAILURE;
+        }
 
-        ViewPaths.insert({view.getViewId(), view.getImagePath()});
+        // Map used to store paths of the views that need to be processed
+        std::unordered_map<IndexT, std::string> ViewPaths;
+
+        // Iterate over all views
+        for(const auto& viewIt : sfmData.getViews())
+        {
+            const sfmData::View& view = *(viewIt.second);
+
+            ViewPaths.insert({view.getViewId(), view.getImagePath()});
+        }
+
+        const int size = ViewPaths.size();
+        int i = 0;
+
+        for(auto& viewIt : ViewPaths)
+        {
+            const IndexT viewId = viewIt.first;
+            const std::string viewPath = viewIt.second;
+            sfmData::View& view = sfmData.getView(viewId);
+
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
+
+            // Create an image with 3 channel BGR color
+            cv::Mat image = cv::imread(viewPath, cv::IMREAD_COLOR);
+
+            // Check if the image is empty 
+            if(!image.data)
+            {
+                ALICEVISION_LOG_ERROR("Image with id '" << viewId << "'.\n" << "is empty.");
+            
+                return EXIT_FAILURE;
+            }
+
+            // Image color correction processing
+            // TODO : get refColors mat in input and cv::Mat calibratedImage = processColorCorrection(image, ...);
+            cv::Mat calibratedImage = image;
+
+            // Save the image
+            // TODO
+            // Example: saveImage(...)
+            cv::imwrite(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg", calibratedImage);
+
+            // Update view for this modification
+            // TODO: view.setImagePath(outputFilePath);
+            view.setWidth(calibratedImage.size().width);
+            view.setHeight(calibratedImage.size().height);
+        }
+
+        // Save sfmData with modified path to images
+        const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+        if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        {
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
+
+            return EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' does not exist or is not recognized as a sfm data file.");
+
+        return EXIT_FAILURE;
     }
 
     // const int size = ViewPaths.size();

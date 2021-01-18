@@ -242,7 +242,7 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
-        if(!sfmDataIO::Save(sfmData, outputImages, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
+        if(!sfmDataIO::Save(sfmData, outputImages, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
             ALICEVISION_LOG_ERROR("Unable to save SfMData.");
             return EXIT_FAILURE;
