@@ -390,6 +390,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
         }
         
+        ALICEVISION_LOG_TRACE("Effective processing");
         for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
         {
             const BoundingBox & bbox = currentBoundingBoxes[indexIntersection];
