@@ -8,9 +8,10 @@
 
 namespace aliceVision
 {
-bool drawBorders(CachedImage<image::RGBAfColor> & inout, const aliceVision::image::Image<unsigned char>& mask, size_t offsetX, size_t offsetY);
 
-bool drawSeams(CachedImage<image::RGBAfColor>& inout, CachedImage<IndexT>& labels);
+void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<unsigned char> & mask, int offset_x, int offset_y);
+
+void drawSeams(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<IndexT> & labels, int offset_x, int offset_y);
 
 bool getMaskFromLabels(aliceVision::image::Image<float> & mask, image::Image<IndexT> & labels, IndexT index, int offset_x, int offset_y);
 

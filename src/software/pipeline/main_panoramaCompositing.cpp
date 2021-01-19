@@ -114,7 +114,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
     return ret;
 }
 
-bool processImage(const PanoramaMap & panoramaMap, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, const IndexT & viewReference)
+bool processImage(const PanoramaMap & panoramaMap, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, const IndexT & viewReference, bool showBorders, bool showSeams)
 {
     // Get the input bounding box to define the ROI
     BoundingBox referenceBoundingBox;
@@ -187,6 +187,8 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         }
     }
 
+    ALICEVISION_LOG_INFO("Building the visibility map");
+
     // Building a map of visible pixels 
     image::Image<std::vector<IndexT>> visiblePixels(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true);
     for (IndexT viewCurrent : overlappingViews)
@@ -238,6 +240,8 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         }
     }
     
+
+    ALICEVISION_LOG_INFO("Building the seams map");
 
     // Compute initial seams
     image::Image<IndexT> referenceLabels;
@@ -327,7 +331,6 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
 
                 if (!found)
                 {
-                    std::cout << "oups"<< std::endl;
                     referenceLabels(i, j) = UndefinedIndexT;
                     continue;
                 }
@@ -463,6 +466,54 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         }
     }
 
+    if (showBorders)
+    {
+        ALICEVISION_LOG_INFO("Draw borders");
+        for (IndexT viewCurrent : overlappingViews)
+        {
+            // Compute list of intersection between this view and the reference view
+            std::vector<BoundingBox> intersections;
+            std::vector<BoundingBox> currentBoundingBoxes;
+            if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
+            {
+                continue;
+            }
+
+            // Load mask
+            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
+            image::Image<unsigned char> mask;
+            image::readImageDirect(maskPath, mask);
+            
+            
+            for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
+            {
+                const BoundingBox & bbox = currentBoundingBoxes[indexIntersection];
+                const BoundingBox & bboxIntersect = intersections[indexIntersection];
+
+                BoundingBox cutBoundingBox;
+                cutBoundingBox.left = bboxIntersect.left - bbox.left;
+                cutBoundingBox.top = bboxIntersect.top - bbox.top;
+                cutBoundingBox.width = bboxIntersect.width;
+                cutBoundingBox.height = bboxIntersect.height;
+                if (cutBoundingBox.isEmpty())
+                {
+                    continue;
+                }
+
+                image::Image<unsigned char> submask(cutBoundingBox.width, cutBoundingBox.height);  
+                submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);    
+
+                drawBorders(output, submask, bboxIntersect.left - referenceBoundingBox.left, bboxIntersect.top - referenceBoundingBox.top);
+            }
+        }
+    }
+
+    if (showSeams && needSeams)
+    {
+        drawSeams(output, referenceLabels, globalUnionBoundingBox.left - referenceBoundingBox.left, globalUnionBoundingBox.top- referenceBoundingBox.top);
+    }
+
     oiio::ParamValueList metadata;
     metadata.push_back(oiio::ParamValue("AliceVision:storageDataType", EStorageDataType_enumToString(storageDataType)));
     metadata.push_back(oiio::ParamValue("AliceVision:offsetX", int(referenceBoundingBox.left)));
@@ -482,9 +533,12 @@ int aliceVision_main(int argc, char** argv)
     std::string warpingFolder;
     std::string outputFolder;
     std::string compositerType = "multiband";
+    std::string overlayType = "none";
     int rangeIteration = -1;
 	int rangeSize = 1;
     int maxThreads = 1;
+    bool showBorders = false;
+    bool showSeams = false;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
@@ -507,6 +561,7 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
+        ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams, all].")
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Range chunk id.")
 		("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
@@ -551,6 +606,15 @@ int aliceVision_main(int argc, char** argv)
 
     // Set verbose level given command line
     system::Logger::get()->setLogLevel(verboseLevel);
+
+    if (overlayType == "borders" || overlayType == "all")
+    {
+        showBorders = true;
+    }
+
+    if (overlayType == "seams" || overlayType == "all") {
+        showSeams = true;
+    }
 
     // load input scene
     sfmData::SfMData sfmData;
@@ -629,7 +693,7 @@ int aliceVision_main(int argc, char** argv)
         IndexT viewReference = chunk[posReference];
         if (viewReference == 0) continue;
 
-        if (!processImage(*panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference)) 
+        if (!processImage(*panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, showBorders, showSeams)) 
         {
             succeeded = false;
             continue;

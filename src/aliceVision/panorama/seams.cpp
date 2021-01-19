@@ -87,87 +87,87 @@ bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<Inde
     return true;
 }
 
-bool drawBorders(CachedImage<image::RGBAfColor>& inout, const aliceVision::image::Image<unsigned char>& mask, size_t offsetX, size_t offsetY)
+void drawBorders(aliceVision::image::Image<image::RGBAfColor>& inout, aliceVision::image::Image<unsigned char>& mask, int offset_x, int offset_y)
 {
-    BoundingBox bb;
-    bb.left = offsetX;
-    bb.top = offsetY;
-    bb.width = mask.Width();
-    bb.height = mask.Height();
-
-    const int border = 2;
-    BoundingBox dilatedBb = bb.dilate(border);
-    dilatedBb.clampTop();
-    dilatedBb.clampBottom(inout.getHeight() - 1);
-    int leftBorder = bb.left - dilatedBb.left;
-    int topBorder = bb.top - dilatedBb.top;
-
-    if (dilatedBb.left < 0)
-    {
-        dilatedBb.left += inout.getWidth();
-    }
-
-    image::Image<image::RGBAfColor> extractedColor(dilatedBb.width, dilatedBb.height);
-    if (!loopyCachedImageExtract(extractedColor, inout, dilatedBb)) 
-    {
-        return false;
-    }
-
-    for(int i = 0; i < mask.Height(); i++)
+    for (int i = 0; i < mask.Height(); i++)
     {
         int j = 0;
-        int di = i + topBorder;
-        int dj = j + leftBorder;
+        int di = i + offset_y;
+        int dj = j + offset_x;
+
+        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        {
+            continue;
+        }
 
         if(mask(i, j))
         {
-            extractedColor(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
+            inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
         }
     }
 
     for(int i = 0; i < mask.Height(); i++)
     {
         int j = mask.Width() - 1;
-        int di = i + topBorder;
-        int dj = j + leftBorder;
+        int di = i + offset_y;
+        int dj = j + offset_x;
+
+        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        {
+            continue;
+        }
 
         if(mask(i, j))
         {
-            extractedColor(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
+            inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
         }
     }
 
     for(int j = 0; j < mask.Width(); j++)
     {
         int i = 0;
-        int di = i + topBorder;
-        int dj = j + leftBorder;
-        
+        int di = i + offset_y;
+        int dj = j + offset_x;
+        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        {
+            continue;
+        }
+
         if(mask(i, j))
         {
-            extractedColor(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
+            inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
         }
     }
 
     for(int j = 0; j < mask.Width(); j++)
     {
         int i = mask.Height() - 1;
-        int di = i + topBorder;
-        int dj = j + leftBorder;
+        int di = i + offset_y;
+        int dj = j + offset_x;
+        if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+        {
+            continue;
+        }
 
         if(mask(i, j))
         {
-            extractedColor(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
+            inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
         }
     }
 
     for(int i = 1; i < mask.Height() - 1; i++)
     {
-        int di = i + topBorder;
+
+        int di = i + offset_y;
 
         for(int j = 1; j < mask.Width() - 1; j++)
         {
-            int dj = j + leftBorder;
+
+            int dj = j + offset_x;
+            if (di < 0 || dj < 0 || di >= inout.Height() || dj >= inout.Width())
+            {
+                continue;
+            }
 
             if(!mask(i, j))
             {
@@ -181,93 +181,45 @@ bool drawBorders(CachedImage<image::RGBAfColor>& inout, const aliceVision::image
             others &= mask(i, j + 1);
             others &= mask(i + 1, j - 1);
             others &= mask(i + 1, j + 1);
-            if(others) {
+            if(others)
+            {
                 continue;
             }
 
-            extractedColor(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
+            inout(di, dj) = image::RGBAfColor(0.0f, 1.0f, 0.0f, 1.0f);
         }
     }
-
-    BoundingBox inputBb = dilatedBb;
-    inputBb.left = 0;
-    inputBb.top = 0;
-    if (!loopyCachedImageAssign(inout, extractedColor, dilatedBb, inputBb)) 
-    {
-        return false;
-    }
-
-    return true;
 }
 
-bool drawSeams(CachedImage<image::RGBAfColor>& inout, CachedImage<IndexT>& labels)
-{
-    const int processingSize = 512;
+void drawSeams(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<IndexT> & labels, int offset_x, int offset_y) {
 
-    //Process image rectangle by rectangle
-    for (int y = 0; y < inout.getHeight(); y += processingSize)
+    for (int i = 1; i < labels.Height() - 1; i++) 
     {
-        for (int x = 0; x < inout.getWidth(); x += processingSize)
+        int di = i + offset_y;
+        if (di < 0 || di >= inout.Height()) continue;
+
+        for (int j = 1; j < labels.Width() - 1; j++) 
         {
-            //Compute the initial bouding box for this rectangle
-            BoundingBox currentBbox;
-            currentBbox.left = x;
-            currentBbox.top = y;
-            currentBbox.width = processingSize;
-            currentBbox.height = processingSize;
-            currentBbox.clampLeft();
-            currentBbox.clampTop();
-            currentBbox.clampRight(inout.getWidth() - 1);
-            currentBbox.clampBottom(inout.getHeight() - 1);
+            int dj = j + offset_x;
+            if (dj < 0 || dj >= inout.Width()) continue;
 
-            image::Image<image::RGBAfColor> extractedColor(currentBbox.width, currentBbox.height);
-            if (!loopyCachedImageExtract(extractedColor, inout, currentBbox)) 
-            {
-                return false;
+            IndexT label = labels(i, j);
+            IndexT same = true;
+
+            same &= (labels(i - 1, j - 1) == label);
+            same &= (labels(i - 1, j + 1) == label);
+            same &= (labels(i, j - 1) == label);
+            same &= (labels(i, j + 1) == label);
+            same &= (labels(i + 1, j - 1) == label);
+            same &= (labels(i + 1, j + 1) == label);
+
+            if (same) {
+                continue;
             }
 
-            image::Image<IndexT> extractedLabels(currentBbox.width, currentBbox.height);
-            if (!loopyCachedImageExtract(extractedLabels, labels, currentBbox)) 
-            {
-                return false;
-            }
-
-            for(int i = 1; i < extractedLabels.Height() - 1; i++)
-            {
-
-                for(int j = 1; j < extractedLabels.Width() - 1; j++)
-                {
-
-                    IndexT label = extractedLabels(i, j);
-                    IndexT same = true;
-
-                    same &= (extractedLabels(i - 1, j - 1) == label);
-                    same &= (extractedLabels(i - 1, j + 1) == label);
-                    same &= (extractedLabels(i, j - 1) == label);
-                    same &= (extractedLabels(i, j + 1) == label);
-                    same &= (extractedLabels(i + 1, j - 1) == label);
-                    same &= (extractedLabels(i + 1, j + 1) == label);
-
-                    if(same)
-                    {
-                        continue;
-                    }
-
-                    extractedColor(i, j) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
-                }
-            }
-            
-            BoundingBox inputBbox = currentBbox;
-            inputBbox.left = 0;
-            inputBbox.top = 0;
-            if (!loopyCachedImageAssign(inout, extractedColor, currentBbox, inputBbox)) 
-            {
-                return false;
-            }
+            inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
         }
     }
-
-    return true;
 }
 
 bool WTASeams::append(const aliceVision::image::Image<unsigned char>& inputMask,
