@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2017 AliceVision contributors.
+// Copyright (c) 2021 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -59,23 +59,23 @@ namespace ccheckerSVG {
         std::vector<float> xCoords;
         std::vector<float> yCoords;
 
-        Corners() = default;
+        Quad() = default;
 
-        Corners(const std::vector<cv::Point2f>& ccheckerBox)
+        Quad(const std::vector<cv::Point2f>& points)
         {
-            if (ccheckerBox.size() != 4)
+            if (points.size() != 4)
             {
                 ALICEVISION_LOG_ERROR("Invalid color checker box: size is not equal to 4");
                 exit(EXIT_FAILURE);
             }
-            for (const auto &point : ccheckerBox)
+            for(const auto& p : points)
             {
-                xCoords.push_back(point.x);
-                yCoords.push_back(point.y);
+                xCoords.push_back(p.x);
+                yCoords.push_back(p.y);
             }
             // close polyline
-            xCoords.push_back(ccheckerBox[0].x);
-            yCoords.push_back(ccheckerBox[0].y);
+            xCoords.push_back(points[0].x);
+            yCoords.push_back(points[0].y);
         }
 
         void transform(cv::Matx33f transformMatrix)
@@ -90,9 +90,9 @@ namespace ccheckerSVG {
         }
     };
 
-    void drawCorners(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputFolder)
+    void draw(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputPath)
     {
-        ccheckerSVG::Corners corners(checker->getBox());
+        std::vector< Quad > quadsToDraw;
 
         // Push back the quad representing the color checker
         quadsToDraw.push_back( Quad(checker->getBox()) );
@@ -114,19 +114,22 @@ namespace ccheckerSVG {
         }
 
         svg::svgDrawer svgSurface;
-        svgSurface.drawPolyline(
-            corners.xCoords.begin(), corners.xCoords.end(),
-            corners.yCoords.begin(), corners.yCoords.end(),
-            svg::svgStyle().stroke("red", 4));
+        for (const auto& quad : quadsToDraw)
+        {
+            svgSurface.drawPolyline(
+                quad.xCoords.begin(), quad.xCoords.end(),
+                quad.yCoords.begin(), quad.yCoords.end(),
+                svg::svgStyle().stroke("red", 2));
+        }
 
-        std::string sFileName = outputFolder + "/" + "corners.svg";
-        std::ofstream svgFile(sFileName.c_str());
+        std::ofstream svgFile(outputPath.c_str());
         svgFile << svgSurface.closeSvgFile().str();
         svgFile.close();
     }
 } // namespace ccheckerSVG
 
-void serializeColorMatrixToTextFile(const std::string &outputColorData, cv::Mat &colorData)
+
+void serializeColorDataToTextFile(const std::string &outputColorData, cv::Mat &colorData)
 {
     std::ofstream f;
     f.open(outputColorData);
@@ -145,58 +148,6 @@ void serializeColorMatrixToTextFile(const std::string &outputColorData, cv::Mat 
     f.close();
 }
 
-
-// TODO refactor with imageProcessing
-cv::Mat imageRGBAToCvMatBGRi(const image::Image<image::RGBAfColor>& img)
-{
-    cv::Mat mat(img.Height(), img.Width(), CV_8UC3);
-    for(int row = 0; row < img.Height(); row++)
-    {
-        for(int col = 0; col < img.Width(); col++)
-        {
-            mat.at<cv::Vec3b>(row, col)[0] = (uint8_t) (img(row, col).b() * 256);
-            mat.at<cv::Vec3b>(row, col)[1] = (uint8_t) (img(row, col).g() * 256);
-            mat.at<cv::Vec3b>(row, col)[2] = (uint8_t) (img(row, col).r() * 256);
-        }
-    }
-    return mat;
-}
-
-
-
-// TODO refactor with imageProcessing
-cv::Mat imageRGBAToCvMatBGRf(const image::Image<image::RGBAfColor>& img)
-{
-    cv::Mat mat(img.Height(), img.Width(), CV_32FC3);
-    for(int row = 0; row < img.Height(); row++)
-    {
-        cv::Vec3f* rowPtr = mat.ptr<cv::Vec3f>(row);
-        for(int col = 0; col < img.Width(); col++)
-        {
-            cv::Vec3f& matPixel = rowPtr[col];
-            const image::RGBAfColor& imgPixel = img(row, col);
-            matPixel = cv::Vec3f(imgPixel.b(), imgPixel.g(), imgPixel.r());
-        }
-    }
-    return mat;
-}
-
-
-// TODO refactor with imageProcessing
-void cvMatBGRToImageRGBA(const cv::Mat& matIn, image::Image<image::RGBAfColor>& imageOut)
-{
-    for(int row = 0; row < imageOut.Height(); row++)
-    {
-        const cv::Vec3f* rowPtr = matIn.ptr<cv::Vec3f>(row);
-        for(int col = 0; col < imageOut.Width(); col++)
-        {
-            const cv::Vec3f& matPixel = rowPtr[col];
-            imageOut(row, col) = image::RGBAfColor(matPixel[2], matPixel[1], matPixel[0], imageOut(row, col).a());
-        }
-    }
-}
-
-
 void detectColorChecker(
     const fs::path &imgPath,
     const image::ImageReadOptions &imgReadOptions,
@@ -213,7 +164,7 @@ void detectColorChecker(
     // Load image
     image::Image<image::RGBAfColor> image;
     image::readImage(imgSrcPath, image, imgReadOptions);
-    cv::Mat imageBGR = imageRGBAToCvMatBGRi(image);
+    cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
 
     if(imageBGR.cols == 0 || imageBGR.rows == 0)
     {
@@ -251,7 +202,7 @@ void detectColorChecker(
         cv::Mat colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3);
         colorData /= 255.0; // conversion to float
 
-        serializeColorMatrixToTextFile(outputColorData, colorData);
+        serializeColorDataToTextFile(outputColorData, colorData);
     }
 }
 
@@ -267,7 +218,7 @@ int aliceVision_main(int argc, char** argv)
     bool debug = false;
 
     po::options_description allParams(
-        "This program is used to perform color checker detection\n"
+        "This program is used to perform Macbeth color checker chart detection.\n"
         "AliceVision colorCheckerDetection");
 
     po::options_description inputParams("Required parameters");
@@ -333,19 +284,14 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        // Map used to store paths of the views that need to be processed
-        std::unordered_map<IndexT, std::string> imagePaths;
+        int counter = 0;
 
-        // Store paths in map
+        // Detect color checker for each images
         for(const auto& viewIt : sfmData.getViews())
         {
             const sfmData::View& view = *(viewIt.second);
-            imagePaths.insert({view.getViewId(), view.getImagePath()});
-        }
 
-        const int size = imagePaths.size();
-        int i = 0;
-        int nc = 1; // Number of charts in an image
+            ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImagePath() << "'.");
 
             image::ImageReadOptions options;
             options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;

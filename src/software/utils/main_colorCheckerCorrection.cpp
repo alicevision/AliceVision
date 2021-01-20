@@ -1,5 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2017 AliceVision contributors.
+// Copyright (c) 2021 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -79,7 +79,7 @@ std::string type2str(int type)
     return r;
 }
 
-cv::Mat deserializeColorMatrixFromTextFile(const std::string &colorData) {
+cv::Mat deserializeColorDataFromTextFile(const std::string &colorData) {
     int rows = 24;
     int cols = 1;
     cv::Mat out = cv::Mat::zeros(rows, cols, CV_64FC3); // Matrix to store values
@@ -188,7 +188,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Get color data matrix from text file input 
-    cv::Mat colorDataMat = deserializeColorMatrixFromTextFile(colorData);
+    cv::Mat colorDataMat = deserializeColorDataFromTextFile(colorData);
 
     // Map used to store paths of the views that need to be processed
     std::unordered_map<IndexT, std::string> ViewPaths;

@@ -257,51 +257,6 @@ struct ProcessingParams
 
 };
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-// Conversion functions used for bilateral filter
-
-/**
- * @brief allows to convert an aliceVision image to an openCv image (cv::Mat) in BGR
- * Ignores the alpha channel of the source image
- * @param[in] matIn - Input RGBA aliceVision image
- * @return the resulting openCV image
- */
-cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img)
-{  
-    cv::Mat mat(img.Height(), img.Width(), CV_32FC3);
-    for(int row = 0; row < img.Height(); row++)
-    {
-        cv::Vec3f* rowPtr = mat.ptr<cv::Vec3f>(row);
-        for(int col = 0; col < img.Width(); col++)
-        {
-            cv::Vec3f& matPixel = rowPtr[col];
-            const image::RGBAfColor& imgPixel = img(row, col);
-            matPixel = cv::Vec3f(imgPixel.b(), imgPixel.g(), imgPixel.r());
-        }
-    }
-    return mat;
-}
-
-/**
- * @brief allows to convert an openCv image (cv::Mat) in BGR to an aliceVision image
- * Keeps the alpha channel of the output image unchanged
- * @param[in] matIn - Input openCV image (cv::Mat)
- * @param[out] matIn - output RGBA aliceVision image
- * @return the resulting regex
- */
-void cvMatBGRToImageRGBA(const cv::Mat& matIn, image::Image<image::RGBAfColor>& imageOut)
-{
-    for(int row = 0; row < imageOut.Height(); row++)
-    {
-        const cv::Vec3f* rowPtr = matIn.ptr<cv::Vec3f>(row);
-        for(int col = 0; col < imageOut.Width(); col++)
-        {
-            const cv::Vec3f& matPixel = rowPtr[col];
-            imageOut(row, col) = image::RGBAfColor(matPixel[2], matPixel[1], matPixel[0], imageOut(row, col).a());
-        }
-    }
-}
-#endif
 
 void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams)
 {
@@ -372,13 +327,13 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
             // Create temporary OpenCV Mat (keep only 3 Channels) to handled Eigen data of our image
-            cv::Mat openCVMatIn = imageRGBAToCvMatBGR(image);
+            cv::Mat openCVMatIn = image::imageRGBAToCvMatBGR(image, CV_32FC3);
             cv::Mat openCVMatOut(image.Width(), image.Height(), CV_32FC3);
 
             cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.bilateralFilter.distance, pParams.bilateralFilter.sigmaColor, pParams.bilateralFilter.sigmaSpace);
 
             // Copy filtered data from openCV Mat(3 channels) to our image(keep the alpha channel unfiltered)
-            cvMatBGRToImageRGBA(openCVMatOut, image);
+            image::cvMatBGRToImageRGBA(openCVMatOut, image);
             
 #else
             throw std::invalid_argument("Unsupported mode! If you intended to use a bilateral filter, please add OpenCV support.");
@@ -390,7 +345,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         // Convert alicevision::image to BGR openCV Mat
-        cv::Mat BGRMat = imageRGBAToCvMatBGR(image);
+        cv::Mat BGRMat = image::imageRGBAToCvMatBGR(image);
 
         // Convert BGR format to Lab format
         cv::Mat labImg;
@@ -425,7 +380,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         cv::cvtColor(labImg, BGRMat, cv::COLOR_Lab2LBGR);
 
         // Copy filtered data from openCV Mat to our alicevision image(keep the alpha channel unfiltered) 
-        cvMatBGRToImageRGBA(BGRMat, image);
+        image::cvMatBGRToImageRGBA(BGRMat, image);
 #else
         throw std::invalid_argument( "Unsupported mode! If you intended to use a Clahe filter, please add OpenCV support.");
 #endif
