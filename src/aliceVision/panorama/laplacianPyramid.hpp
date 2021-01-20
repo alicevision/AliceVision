@@ -26,9 +26,9 @@ public:
 
     bool initialize();
     
-    bool apply(const aliceVision::image::Image<image::RGBfColor>& source,
-               const aliceVision::image::Image<float>& mask, 
-               const aliceVision::image::Image<float>& weights,
+    bool apply(aliceVision::image::Image<image::RGBfColor>& source,
+               aliceVision::image::Image<float>& mask, 
+               aliceVision::image::Image<float>& weights,
                const BoundingBox &outputBoundingBox, const BoundingBox &contentBoudingBox);
 
     bool merge(const aliceVision::image::Image<image::RGBfColor>& oimg, 

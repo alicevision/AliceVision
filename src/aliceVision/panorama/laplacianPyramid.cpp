@@ -44,9 +44,9 @@ bool LaplacianPyramid::initialize()
     return true;
 }
 
-bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& source,
-                             const aliceVision::image::Image<float>& mask,
-                             const aliceVision::image::Image<float>& weights, 
+bool LaplacianPyramid::apply(aliceVision::image::Image<image::RGBfColor>& source,
+                             aliceVision::image::Image<float>& mask,
+                             aliceVision::image::Image<float>& weights, 
                              const BoundingBox &outputBoundingBox, const BoundingBox &contentBoudingBox)
 {
     //We assume the input source has been feathered 
@@ -71,6 +71,10 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         memcpy(&currentWeights(di, contentBoudingBox.left), &weights(i, 0), sizeof(float) * source.Width());
         memcpy(&currentMask(di, contentBoudingBox.left), &mask(i, 0), sizeof(float) * source.Width());
     }
+
+    source = aliceVision::image::Image<image::RGBfColor>();
+    mask = aliceVision::image::Image<float>();
+    weights = aliceVision::image::Image<float>();
 
     for(int l = 0; l < _levels.size() - 1; l++)
     {

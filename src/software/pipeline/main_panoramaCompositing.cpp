@@ -374,34 +374,33 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             continue;
         }
 
-        // Load image
-        const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
-        ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
-        image::Image<image::RGBfColor> source;
-        image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
-
-        // Load mask
-        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
-        ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
-        image::Image<unsigned char> mask;
-        image::readImageDirect(maskPath, mask);
-
-        // Load weights image if needed
-        image::Image<float> weights; 
-        if (needWeights)
-        {
-            const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
-            ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
-            image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
-        }
-        
         ALICEVISION_LOG_TRACE("Effective processing");
         for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
         {
             const BoundingBox & bbox = currentBoundingBoxes[indexIntersection];
             const BoundingBox & bboxIntersect = intersections[indexIntersection];
 
+            // Load image
+            const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
+            ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
+            image::Image<image::RGBfColor> source;
+            image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
+            // Load mask
+            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
+            image::Image<unsigned char> mask;
+            image::readImageDirect(maskPath, mask);
+
+            // Load weights image if needed
+            image::Image<float> weights; 
+            if (needWeights)
+            {
+                const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
+                ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
+                image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
+            }
+            
             if (needSeams)
             {
                 int left = bboxIntersect.left - globalUnionBoundingBox.left;
@@ -430,7 +429,10 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             image::Image<unsigned char> submask(cutBoundingBox.width, cutBoundingBox.height);  
 
             subsource = source.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);
-            submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);    
+            submask = mask.block(cutBoundingBox.top, cutBoundingBox.left, cutBoundingBox.height, cutBoundingBox.width);  
+
+            source = image::Image<image::RGBfColor>(); 
+            mask = image::Image<unsigned char>(); 
 
             if (!compositer->append(subsource, submask, weights, referenceBoundingBox.left - panoramaBoundingBox.left + bboxIntersect.left - referenceBoundingBox.left , referenceBoundingBox.top - panoramaBoundingBox.top + bboxIntersect.top  - referenceBoundingBox.top))
             {
