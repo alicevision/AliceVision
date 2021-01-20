@@ -19,6 +19,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/mcc.hpp>
 
 #include <string>
@@ -210,8 +211,46 @@ int aliceVision_main(int argc, char** argv)
 
             for(cv::Ptr<cv::mcc::CChecker> checker : checkers)
             {
+                // current checker
+                if(debug)
+                {
+                    cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker, CV_RGB(250, 0, 0), 3);
+                    cdraw->draw(image);
 
-                cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".jpg", image);
+                    // save the image with the color checker drawn
+                    cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".jpg", image);
+                }
+
+                // preparation for color calibration
+                cv::Mat chartsRGB = checker->getChartsRGB();
+                cv::Mat src = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3);
+                src /= 255.0;
+
+                // Macbeth color checker as parameter on the model to get the best effect of color correction in our case.
+                cv::ccm::ColorCorrectionModel model(src, cv::ccm::COLORCHECKER_Macbeth);
+                model.run();
+                cv::Mat ccm = model.getCCM();
+                double loss = model.getLoss();
+
+                // set color space
+                model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
+
+                cv::Mat img;
+                cvtColor(image, img, cv::COLOR_BGR2RGB);
+                img.convertTo(img, CV_64F);
+                const int inpSize = 255;
+                const int outSize = 255;
+                img /= inpSize;
+                cv::Mat calibratedImage = model.infer(img); // make correction using ccm matrix
+                cv::Mat out = calibratedImage * outSize;
+
+                out.convertTo(out, CV_8UC3);
+                cv::Mat imgOut = min(max(out, 0), outSize);
+                cv::Mat outImg;
+                cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
+
+                // save the calibrated image
+                cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".calibrated.jpg", outImg);
             }
         }
     }
