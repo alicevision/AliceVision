@@ -79,6 +79,82 @@ namespace ccheckerSVG {
     }
 } // namespace ccheckerSVG
 
+void serializeColorMatrixToTextFile(const std::string &outputColorData, cv::Mat &colorData)
+{
+    std::ofstream f;
+    f.open(outputColorData);
+    for(int row = 0; row < colorData.rows; row++)
+    {
+        cv::Vec3d* rowPtr = colorData.ptr<cv::Vec3d>(row); // pointer which points to the first place of each row
+        for(int col = 0; col < colorData.cols; col++)
+        {
+            const cv::Vec3d& matPixel = rowPtr[col];
+            for(unsigned int i = 0; i < 3; ++i)
+            {
+                f << std::setprecision(std::numeric_limits<double>::digits10 + 2) << matPixel[i] << std::endl;
+            }
+        }
+    }
+    f.close();
+}
+
+void detectColorChecker(
+    const fs::path &imgPath,
+    const std::string &outputFolder,
+    const std::string &outputColorData,
+    const bool debug)
+{
+    const int nc = 1; // Number of charts in an image
+    const std::string imgSrcPath = imgPath.string();
+    const std::string imgSrcStem = imgPath.stem().string();
+    const std::string imgDestStem = imgSrcStem;
+    const std::string imgDestPath = outputFolder + "/" + imgDestStem + ".jpg";
+
+    // Create an image with 3 channel BGR color
+    cv::Mat image = cv::imread(imgSrcPath, 1);
+
+    if(image.cols == 0 || image.rows == 0)
+    {
+        ALICEVISION_LOG_ERROR("Image at: '" << imgSrcPath << "'.\n" << "is empty.");
+        exit(EXIT_FAILURE);
+    }
+
+    cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
+
+    if(!detector->process(image, cv::mcc::TYPECHART::MCC24, nc))
+    {
+        ALICEVISION_LOG_INFO("Checker not detected in image at: '" << imgSrcPath << "'");
+        return;
+    }
+
+    ALICEVISION_LOG_INFO("Checker successfully detected in '" << imgSrcStem << "'");
+
+    std::cout << "Image size:" << image.cols * image.rows << std::endl;
+
+    for(cv::Ptr<cv::mcc::CChecker> checker : detector->getListColorChecker())
+    {
+        if(debug)
+        {
+            // Output debug data
+            ccheckerSVG::draw(checker, outputFolder + "/" + imgDestStem + ".svg");
+
+            cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker, CV_RGB(250, 0, 0), 3);
+            cdraw->draw(image);
+
+            cv::imwrite(imgDestPath, image);
+        }
+
+        // Get colors data
+        cv::Mat chartsRGB = checker->getChartsRGB();
+
+        // Extract average colors
+        cv::Mat colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3);
+        colorData /= 255.0; // conversion to float
+
+        serializeColorMatrixToTextFile(outputColorData, colorData);
+    }
+}
+
 
 int aliceVision_main(int argc, char** argv)
 {

@@ -38,12 +38,72 @@ using namespace aliceVision;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
+std::string type2str(int type)
+{
+    std::string r;
+
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+    switch(depth)
+    {
+        case CV_8U:
+            r = "8U";
+            break;
+        case CV_8S:
+            r = "8S";
+            break;
+        case CV_16U:
+            r = "16U";
+            break;
+        case CV_16S:
+            r = "16S";
+            break;
+        case CV_32S:
+            r = "32S";
+            break;
+        case CV_32F:
+            r = "32F";
+            break;
+        case CV_64F:
+            r = "64F";
+            break;
+        default:
+            r = "User";
+            break;
+    }
+
+    r += "C";
+    r += (chans + '0');
+
+    return r;
+}
+
+cv::Mat deserializeColorMatrixFromTextFile(const std::string &colorData) {
+    int rows = 24;
+    int cols = 1;
+    cv::Mat out = cv::Mat::zeros(rows, cols, CV_64FC3); // Matrix to store values
+
+    int i = 0;
+    std::ifstream colorDataInputFile(colorData);
+
+    for(std::string line; getline(colorDataInputFile, line);)
+    {
+        cv::Vec3d* rowPtr = out.ptr<cv::Vec3d>(i / 3);
+        cv::Vec3d& matPixel = rowPtr[0];
+        matPixel[i%3] = std::stod(line);
+        ++i;
+    }
+
+    return out;
+}
+
 cv::Mat processColorCorrection(cv::Mat& image, cv::Mat& refColors) {
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
 
     // set color space
-    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
+    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB); // linear color spaces are not supported
 
     cv::Mat img;
     cvtColor(image, img, cv::COLOR_BGR2RGB);
@@ -54,13 +114,7 @@ cv::Mat processColorCorrection(cv::Mat& image, cv::Mat& refColors) {
     cv::Mat calibratedImage = model.infer(img); // make correction using ccm matrix
     cv::Mat out = calibratedImage * outSize;
 
-    out.convertTo(out, CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
-    cv::Mat imgOut = min(max(out, 0), outSize);
-    cv::Mat outImg;
-    cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
-
-    // try returning imgOut ?
-    return outImg;
+    return out;
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -133,12 +187,14 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Get color data matrix from text file input 
+    cv::Mat colorDataMat = deserializeColorMatrixFromTextFile(colorData);
+
     // Map used to store paths of the views that need to be processed
     std::unordered_map<IndexT, std::string> ViewPaths;
 
     // Check if sfmInputDataFilename exist and is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
-    ALICEVISION_COUT(inputExt);
     static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
     if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) !=
                                        sfmSupportedExtensions.end())
@@ -184,19 +240,25 @@ int aliceVision_main(int argc, char** argv)
             }
 
             // Image color correction processing
-            // TODO : get refColors mat in input and cv::Mat calibratedImage = processColorCorrection(image, ...);
-            cv::Mat calibratedImage = image;
+            cv::Mat calibratedImage = processColorCorrection(image, colorDataMat);
 
             // Save the image
             // TODO
             // Example: saveImage(...)
-            cv::imwrite(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg", calibratedImage);
+            const int outSize = 255;
+            calibratedImage.convertTo(calibratedImage, CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
+            cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
+            cv::Mat outImg;
+            cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
+            cv::imwrite(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg", outImg);
 
             // Update view for this modification
             // TODO: view.setImagePath(outputFilePath);
             view.setWidth(calibratedImage.size().width);
             view.setHeight(calibratedImage.size().height);
         }
+
+        ALICEVISION_LOG_INFO("Color correction - End of process.");
 
         // Save sfmData with modified path to images
         const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
@@ -213,88 +275,6 @@ int aliceVision_main(int argc, char** argv)
 
         return EXIT_FAILURE;
     }
-
-    // const int size = ViewPaths.size();
-    // int i = 0;
-    // int nc = 1; // Number of charts in an image
-
-    // for(auto& viewIt : ViewPaths)
-    // {
-    //     const IndexT viewId = viewIt.first;
-    //     const std::string viewPath = viewIt.second;
-    //     sfmData::View& view = sfmData.getView(viewId);
-
-    //     // Create an image with 3 channel BGR color 
-    //     cv::Mat image = cv::imread(viewPath, 1);
-
-    //     if(image.cols == 0 || image.rows == 0)
-    //     {
-    //         ALICEVISION_LOG_ERROR("Image with id '" << viewId << "'.\n"
-    //                               << "is empty.");
-    //         return EXIT_FAILURE;
-    //     }
-
-    //     cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
-
-    //     ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
-
-    //     if(!detector->process(image, cv::mcc::TYPECHART(0), nc))
-    //     {
-    //         ALICEVISION_LOG_INFO("Checker not detected in image with id '" << viewId << "'");
-    //     }
-    //     else
-    //     {
-    //         ALICEVISION_LOG_INFO("Checker successfully detected in image with id '" << viewId << "'");
-    //         // get checker
-    //         std::vector<cv::Ptr<cv::mcc::CChecker>> checkers = detector->getListColorChecker();
-
-    //         for(cv::Ptr<cv::mcc::CChecker> checker : checkers)
-    //         {
-    //             // current checker
-    //             if(debug)
-    //             {
-    //                 drawCCheckerSVG(checker, outputFolder);
-
-    //                 cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker, CV_RGB(250, 0, 0), 3);
-    //                 cdraw->draw(image);
-
-    //                 // save the image with the color checker drawn
-    //                 cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".jpg", image);
-    //             }
-
-    //             // preparation for color calibration
-    //             cv::Mat chartsRGB = checker->getChartsRGB();
-    //             cv::Mat src = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3);
-    //             src /= 255.0;
-
-    //             // Macbeth color checker as parameter on the model to get the best effect of color correction in our case.
-    //             cv::ccm::ColorCorrectionModel model(src, cv::ccm::COLORCHECKER_Macbeth);
-    //             model.run();
-    //             cv::Mat ccm = model.getCCM();
-    //             double loss = model.getLoss();
-
-    //             // set color space
-    //             model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
-
-    //             cv::Mat img;
-    //             cvtColor(image, img, cv::COLOR_BGR2RGB);
-    //             img.convertTo(img, CV_64F);
-    //             const int inpSize = 255;
-    //             const int outSize = 255;
-    //             img /= inpSize;
-    //             cv::Mat calibratedImage = model.infer(img); // make correction using ccm matrix
-    //             cv::Mat out = calibratedImage * outSize;
-
-    //             out.convertTo(out, CV_8UC3);
-    //             cv::Mat imgOut = min(max(out, 0), outSize);
-    //             cv::Mat outImg;
-    //             cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
-
-    //             // save the calibrated image
-    //             cv::imwrite(outputFolder + "/" + std::to_string(viewId) + ".calibrated.jpg", outImg);
-    //         }
-    //     }
-    // }
 
     return EXIT_SUCCESS;
 }
