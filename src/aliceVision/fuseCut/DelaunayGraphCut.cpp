@@ -474,8 +474,9 @@ std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsBy
     case EGeometryType::Facet:
         return getNeighboringCellsByFacet(g.facet);
     case EGeometryType::None:
-        throw std::runtime_error("[error] getNeighboringCellsByGeometry: an undefined/None geometry has no neighboring cells.");
+        break;
     }
+    throw std::runtime_error("[error] getNeighboringCellsByGeometry: an undefined/None geometry has no neighboring cells.");
 }
 
 std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByFacet(const Facet& f) const
