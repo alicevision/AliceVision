@@ -129,24 +129,55 @@ namespace ccheckerSVG {
 } // namespace ccheckerSVG
 
 
-void serializeColorDataToTextFile(const std::string &outputColorData, cv::Mat &colorData)
-{
-    std::ofstream f;
-    f.open(outputColorData);
-    for(int row = 0; row < colorData.rows; row++)
+struct CCheckerData {
+    cv::Ptr<cv::mcc::CChecker> _cchecker;
+    cv::Mat _colorData;
+
+    CCheckerData() = default;
+
+    CCheckerData(cv::Ptr<cv::mcc::CChecker> cchecker)
+        : _cchecker(cchecker)
     {
-        cv::Vec3d* rowPtr = colorData.ptr<cv::Vec3d>(row); // pointer which points to the first place of each row
-        for(int col = 0; col < colorData.cols; col++)
-        {
-            const cv::Vec3d& matPixel = rowPtr[col];
-            for(unsigned int i = 0; i < 3; ++i)
-            {
-                f << std::setprecision(std::numeric_limits<double>::digits10 + 2) << matPixel[i] << std::endl;
-            }
-        }
+        // Get colors data
+        cv::Mat chartsRGB = cchecker->getChartsRGB();
+
+        // Extract average colors
+        _colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3) / 255.f;
     }
-    f.close();
-}
+
+    bool compare(const CCheckerData &c) const
+    {
+        return boundingBoxArea() > c.boundingBoxArea();
+    }
+
+    float boundingBoxArea() const
+    {
+        std::vector<cv::Point2f>& points = _cchecker->getBox();
+        cv::Point2f min = points[0];
+        cv::Point2f max = points[0];
+        for(const auto& p : points) {
+            if (p.x < min.x && p.y < min.y)
+                min = p;
+            if (p.x > max.x && p.y > max.y)
+                max = p;
+        }
+        cv::Point2f diag = max - min;
+        return diag.x * diag.y;
+    }
+
+    void serialize(const std::string &outputPath)
+    {
+        std::ofstream f;
+        f.open(outputPath);
+        for(int i = 0; i < _colorData.rows; ++i)
+            for(int j = 0; j < _colorData.cols; ++j)
+                for(int k = 0; k < 3; ++k)
+                    f << std::setprecision(std::numeric_limits<double>::digits10 + 2)
+                      << _colorData.at<cv::Vec3d>(i, j)[k] << std::endl;
+        f.close();
+    }
+};
+
 
 void detectColorChecker(
     const fs::path &imgPath,
@@ -154,12 +185,11 @@ void detectColorChecker(
     const std::string &outputColorData,
     const bool debug)
 {
-    const int nc = 1; // Number of charts in an image
+    const int nc = 2; // Max number of charts in an image
     const std::string outputFolder = fs::path(outputColorData).parent_path().string();
     const std::string imgSrcPath = imgPath.string();
     const std::string imgSrcStem = imgPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
-    const std::string imgDestPath = outputFolder + "/" + imgDestStem + ".jpg";
 
     // Load image
     image::Image<image::RGBAfColor> image;
@@ -180,30 +210,39 @@ void detectColorChecker(
         return;
     }
 
-    ALICEVISION_LOG_INFO("Checker successfully detected in '" << imgSrcStem << "'");
+    CCheckerData bestCCheckerData;
+    cv::Mat bestColorData;
+    bool isFirstCChecker = true;
+    int counter = 0;
 
-    for(const cv::Ptr<cv::mcc::CChecker> checker : detector->getListColorChecker())
+    for(const cv::Ptr<cv::mcc::CChecker> cchecker : detector->getListColorChecker())
     {
+        const std::string counterStr = "_" + std::to_string(++counter);
+
+        ALICEVISION_LOG_INFO("Checker #" << counter <<" successfully detected in '" << imgSrcStem << "'");
+
         if(debug)
         {
             // Output debug data
-            ccheckerSVG::draw(checker, outputFolder + "/" + imgDestStem + ".svg");
+            ccheckerSVG::draw(cchecker, outputFolder + "/" + imgDestStem + counterStr + ".svg");
 
-            cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(checker, CV_RGB(250, 0, 0), 3);
+            cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(cchecker, CV_RGB(250, 0, 0), 3);
             cdraw->draw(imageBGR);
 
-            cv::imwrite(imgDestPath, imageBGR);
+            // Write debug image
+            cv::imwrite(outputFolder + "/" + imgDestStem + counterStr + ".jpg", imageBGR);
         }
 
-        // Get colors data
-        cv::Mat chartsRGB = checker->getChartsRGB();
+        CCheckerData ccheckerData(cchecker);
+        ccheckerData.serialize(outputFolder + "/" + imgDestStem + "_colorData" + counterStr);
 
-        // Extract average colors
-        cv::Mat colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3);
-        colorData /= 255.0; // conversion to float
+        if(isFirstCChecker || ccheckerData.compare(bestCCheckerData))
+            bestCCheckerData = ccheckerData;
 
-        serializeColorDataToTextFile(outputColorData, colorData);
+        isFirstCChecker = false;
     }
+    // Output best colors data
+    bestCCheckerData.serialize(outputColorData);
 }
 
 
