@@ -114,16 +114,8 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
     return ret;
 }
 
-bool processImage(const PanoramaMap & panoramaMap, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, const IndexT & viewReference, bool showBorders, bool showSeams)
+bool processImage(const PanoramaMap & panoramaMap, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, IndexT viewReference, const BoundingBox & referenceBoundingBox, bool showBorders, bool showSeams)
 {
-    // Get the input bounding box to define the ROI
-    BoundingBox referenceBoundingBox;
-    if (!panoramaMap.getBoundingBox(referenceBoundingBox, viewReference)) 
-    {
-        ALICEVISION_LOG_ERROR("Problem getting reference bounding box");
-        return false;
-    }
-
     // The laplacian pyramid must also contains some pixels outside of the bounding box to make sure 
     // there is a continuity between all the "views" of the panorama.
     BoundingBox panoramaBoundingBox = referenceBoundingBox;
@@ -158,15 +150,11 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
 
     // Get the list of input which should be processed for this reference view bounding box
     std::vector<IndexT> overlappingViews;
-    if (!panoramaMap.getOverlaps(overlappingViews, viewReference)) 
+    if (!panoramaMap.getOverlaps(overlappingViews, referenceBoundingBox)) 
     {
         ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
         return false;
     }
-
-    // Add the reference input for simpler processing
-    overlappingViews.push_back(viewReference);
-
     
     // Compute the bounding box of the intersections with the reference bounding box 
     // (which may be larger than the reference Bounding box because of dilatation)
@@ -176,7 +164,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         //Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
         std::vector<BoundingBox> currentBoundingBoxes;
-        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
+        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
             continue;
         }
@@ -202,7 +190,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         // Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
         std::vector<BoundingBox> currentBoundingBoxes;
-        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
+        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
             continue;
         }
@@ -371,7 +359,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         // Compute list of intersection between this view and the reference view
         std::vector<BoundingBox> intersections;
         std::vector<BoundingBox> currentBoundingBoxes;
-        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
+        if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
             continue;
         }
@@ -501,7 +489,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             // Compute list of intersection between this view and the reference view
             std::vector<BoundingBox> intersections;
             std::vector<BoundingBox> currentBoundingBoxes;
-            if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, viewReference, viewCurrent))
+            if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
             {
                 continue;
             }
@@ -718,9 +706,15 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
 
         IndexT viewReference = chunk[posReference];
-        if (viewReference == 0) continue;
 
-        if (!processImage(*panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, showBorders, showSeams)) 
+        BoundingBox referenceBoundingBox;
+        if (!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
+        {
+            ALICEVISION_LOG_ERROR("Invalid view ID as reference");
+            return EXIT_FAILURE;
+        }
+
+        if (!processImage(*panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams)) 
         {
             succeeded = false;
             continue;

@@ -61,14 +61,14 @@ bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) 
 
     BoundingBox bbref = _map.at(reference);
 
+    return getOverlaps(overlaps, bbref);
+}
+
+bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, const BoundingBox & referenceBoundingBox) const
+{
     for (auto it : _map)
     {
-        if (it.first == reference)
-        {
-            continue;
-        }
-
-        if (intersect(bbref, it.second))
+        if (intersect(referenceBoundingBox, it.second))
         {
             overlaps.push_back(it.first);
         }
@@ -77,12 +77,18 @@ bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) 
     return true;
 }
 
+
 bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const IndexT & referenceIndex, const IndexT & otherIndex) const
 {
     BoundingBox referenceBoundingBox = _map.at(referenceIndex);
+    
+    return getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, otherIndex);
+}
+
+bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections, std::vector<BoundingBox> & currentBoundingBoxes, const BoundingBox & referenceBoundingBox, const IndexT & otherIndex) const
+{
     BoundingBox referenceBoundingBoxReduced = referenceBoundingBox.divide(_scale).dilate(_borderSize);
 
-    
     BoundingBox otherBoundingBox = _map.at(otherIndex);
 
     // Base compare
