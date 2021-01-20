@@ -369,6 +369,11 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             continue;
         }
 
+        if (intersections.size() == 0)
+        {
+            continue;
+        }
+
         // Load image
         const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
         ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
@@ -419,6 +424,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             {
                 continue;
             }
+
 
             image::Image<image::RGBfColor> subsource(cutBoundingBox.width, cutBoundingBox.height); 
             image::Image<unsigned char> submask(cutBoundingBox.width, cutBoundingBox.height);  

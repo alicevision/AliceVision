@@ -22,14 +22,14 @@ public:
 public:
     LaplacianPyramid(size_t base_width, size_t base_height, size_t max_levels);
 
-    bool initialize();
+    virtual ~LaplacianPyramid();
 
-    bool augment(size_t new_max_levels);
+    bool initialize();
     
     bool apply(const aliceVision::image::Image<image::RGBfColor>& source,
                const aliceVision::image::Image<float>& mask, 
                const aliceVision::image::Image<float>& weights,
-               size_t initialLevel, int offset_x, int offset_y);
+               const BoundingBox &outputBoundingBox, const BoundingBox &contentBoudingBox);
 
     bool merge(const aliceVision::image::Image<image::RGBfColor>& oimg, 
                const aliceVision::image::Image<float>& oweight,
@@ -41,6 +41,7 @@ private:
     int _baseWidth;
     int _baseHeight;
     int _maxLevels;
+    omp_lock_t _merge_lock;
 
     std::vector<image::Image<image::RGBfColor>> _levels;
     std::vector<image::Image<float>> _weights;

@@ -45,23 +45,9 @@ public:
                         const aliceVision::image::Image<float>& inputWeights, 
                         int offsetX, int offsetY) 
     {
-        // Make sure input is compatible with pyramid processing
-        // See comments inside function for details
-        int newOffsetX, newOffsetY;
-        aliceVision::image::Image<image::RGBfColor> colorPot;
-        aliceVision::image::Image<unsigned char> maskPot;
-        aliceVision::image::Image<float> weightsPot;
-
-        
-        
-        makeImagePyramidCompatible(colorPot, newOffsetX, newOffsetY, color, offsetX, offsetY, getBorderSize(), _bands);
-        makeImagePyramidCompatible(maskPot, newOffsetX, newOffsetY, inputMask, offsetX, offsetY, getBorderSize(), _bands);
-        makeImagePyramidCompatible(weightsPot, newOffsetX, newOffsetY, inputWeights, offsetX, offsetY, getBorderSize(), _bands);
-            
-
         // Fill Color images masked parts with fake but coherent info
         aliceVision::image::Image<image::RGBfColor> feathered;
-        if (!feathering(feathered, colorPot, maskPot)) 
+        if (!feathering(feathered, color, inputMask)) 
         {
             return false;
         }
@@ -78,12 +64,12 @@ public:
         }
 
         // Convert mask to alpha layer 
-        image::Image<float> maskFloat(maskPot.Width(), maskPot.Height());
-        for(int i = 0; i < maskPot.Height(); i++)
+        image::Image<float> maskFloat(inputMask.Width(), inputMask.Height());
+        for(int i = 0; i < inputMask.Height(); i++)
         {
-            for(int j = 0; j < maskPot.Width(); j++)
+            for(int j = 0; j < inputMask.Width(); j++)
             {
-                if(maskPot(i, j))
+                if(inputMask(i, j))
                 {
                     maskFloat(i, j) = 1.0f;
                 }
@@ -94,7 +80,21 @@ public:
             }
         }
 
-        if (!_pyramidPanorama.apply(feathered, maskFloat, weightsPot, 0, newOffsetX, newOffsetY)) 
+
+        BoundingBox bb;
+        bb.left = offsetX;
+        bb.top = offsetY;
+        bb.width = feathered.Width();
+        bb.height = feathered.Height();
+
+        int scale = _bands - 1;
+        BoundingBox potbb = bb.divide(scale).dilate(getBorderSize()).multiply(scale);
+
+        BoundingBox contentbb = bb;
+        contentbb.left = bb.left - potbb.left;
+        contentbb.top = bb.top - potbb.top;
+
+        if (!_pyramidPanorama.apply(feathered, maskFloat, inputWeights, potbb, contentbb)) 
         {
             return false;
         }

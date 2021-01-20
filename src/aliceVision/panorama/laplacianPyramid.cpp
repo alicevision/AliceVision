@@ -12,8 +12,13 @@ _baseWidth(base_width),
 _baseHeight(base_height),
 _maxLevels(max_levels)
 {
+    omp_init_lock(&_merge_lock);
 }
 
+LaplacianPyramid::~LaplacianPyramid()
+{
+    omp_destroy_lock(&_merge_lock);
+}
 
 bool LaplacianPyramid::initialize() 
 {
@@ -39,70 +44,35 @@ bool LaplacianPyramid::initialize()
     return true;
 }
 
-bool LaplacianPyramid::augment(size_t newMaxLevels)
-{
-    ALICEVISION_LOG_INFO("augment number of levels to " << newMaxLevels);
-    
-    if(newMaxLevels <= _levels.size())
-    {
-        return false;
-    }
-
-    int oldMaxLevels = _levels.size();
-    _maxLevels = newMaxLevels;
-
-
-    // Augment the number of levels in the pyramid
-    for (int level = oldMaxLevels; level < newMaxLevels; level++)
-    {
-        int width = _levels[_levels.size() - 1].Width();
-        int height = _levels[_levels.size() - 1].Height();
-        
-        int nextWidth = int(ceil(float(width) / 2.0f));
-        int nextHeight = int(ceil(float(height) / 2.0f));
-
-        image::Image<image::RGBfColor> pyramidImage(nextWidth, nextHeight, true, image::RGBfColor(0.0f));
-        image::Image<float> pyramidWeights(nextWidth, nextHeight, true, 0.0f);
-
-        _levels.push_back(pyramidImage);
-        _weights.push_back(pyramidWeights);
-    }
-
-    std::vector<InputInfo> localInfos = _inputInfos;
-    _inputInfos.clear();
-    
-    for (InputInfo & iinfo : localInfos)
-    {
-        if (!apply(iinfo.color, iinfo.mask, iinfo.weights, oldMaxLevels - 1, iinfo.offsetX, iinfo.offsetY))
-        {
-            return false;
-        }
-    }
-
-
-    return true;
-}
-
-
-
 bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& source,
                              const aliceVision::image::Image<float>& mask,
                              const aliceVision::image::Image<float>& weights, 
-                             size_t initialLevel, int offsetX, int offsetY)
+                             const BoundingBox &outputBoundingBox, const BoundingBox &contentBoudingBox)
 {
     //We assume the input source has been feathered 
-    //and resized to be a simili power of 2 for the needed scales.
-    int width = source.Width();
-    int height = source.Height();
+    //the outputBoundingBox has been scaled to accept the pyramid scales
+    int width = outputBoundingBox.width;
+    int height = outputBoundingBox.height;
+    int offsetX = outputBoundingBox.left;
+    int offsetY = outputBoundingBox.top;
 
-    image::Image<image::RGBfColor> currentColor = source;
+    image::Image<image::RGBfColor> currentColor(width, height, true, image::RGBfColor(0.0));
     image::Image<image::RGBfColor> nextColor;
-    image::Image<float> currentWeights = weights;
+    image::Image<float> currentWeights(width, height, true, 0.0f);
     image::Image<float> nextWeights;
-    image::Image<float> currentMask = mask;
+    image::Image<float> currentMask(width, height, true, 0.0f);
     image::Image<float> nextMask;
 
-    for(int l = initialLevel; l < _levels.size() - 1; l++)
+    for (int i = 0; i < source.Height(); i++)
+    {
+        int di = contentBoudingBox.top + i;
+
+        memcpy(&currentColor(di, contentBoudingBox.left), &source(i, 0), sizeof(image::RGBfColor) * source.Width());
+        memcpy(&currentWeights(di, contentBoudingBox.left), &weights(i, 0), sizeof(float) * source.Width());
+        memcpy(&currentMask(di, contentBoudingBox.left), &mask(i, 0), sizeof(float) * source.Width());
+    }
+
+    for(int l = 0; l < _levels.size() - 1; l++)
     {
         BoundingBox inputBbox;
         inputBbox.left = offsetX;
@@ -133,7 +103,6 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
                 }
             }
         }
-        
 
         if (!convolveGaussian5x5<image::RGBfColor>(buf, bufMasked)) 
         {
@@ -227,7 +196,11 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
         }
 
         //Merge this view with previous ones
-        if (!merge(currentColor, currentWeights, l, offsetX, offsetY)) 
+        omp_set_lock(&_merge_lock);
+        bool res = merge(currentColor, currentWeights, l, offsetX, offsetY);
+        omp_unset_lock(&_merge_lock);
+
+        if (!res)
         {
             return false;
         }
@@ -251,7 +224,10 @@ bool LaplacianPyramid::apply(const aliceVision::image::Image<image::RGBfColor>& 
     iinfo.color = currentColor;
     iinfo.mask = currentMask;
     iinfo.weights = currentWeights;
+
+    omp_set_lock(&_merge_lock);
     _inputInfos.push_back(iinfo);
+    omp_unset_lock(&_merge_lock);
     
 
     return true;
