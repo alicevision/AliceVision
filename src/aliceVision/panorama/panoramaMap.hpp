@@ -24,7 +24,7 @@ public:
 
     bool append(IndexT index, const BoundingBox & box);
 
-    bool getOverlaps(std::list<IndexT> & overlaps, IndexT reference) const;
+    bool getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) const;
 
     int getWidth() const
     {

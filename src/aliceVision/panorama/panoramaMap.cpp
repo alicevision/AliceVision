@@ -52,7 +52,7 @@ bool PanoramaMap::intersect(const BoundingBox & box1, const BoundingBox & box2) 
     return false;
 }
 
-bool PanoramaMap::getOverlaps(std::list<IndexT> & overlaps, IndexT reference) const
+bool PanoramaMap::getOverlaps(std::vector<IndexT> & overlaps, IndexT reference) const
 {
     if (_map.find(reference) == _map.end())
     {

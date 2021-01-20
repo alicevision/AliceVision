@@ -157,7 +157,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
 
 
     // Get the list of input which should be processed for this reference view bounding box
-    std::list<IndexT> overlappingViews;
+    std::vector<IndexT> overlappingViews;
     if (!panoramaMap.getOverlaps(overlappingViews, viewReference)) 
     {
         ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
@@ -355,10 +355,17 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         return false;
     }
 
-    int posCurrent = 0;
-    for (IndexT viewCurrent : overlappingViews)
+    bool hasFailed = false;
+
+    #pragma omp parallel for
+    for (int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
     {
-        posCurrent++;
+        IndexT viewCurrent = overlappingViews[posCurrent];
+        if (hasFailed)
+        {
+            continue;
+        }
+
         ALICEVISION_LOG_INFO("Processing input " << posCurrent << "/" << overlappingViews.size());
 
         // Compute list of intersection between this view and the reference view
@@ -377,6 +384,11 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         ALICEVISION_LOG_TRACE("Effective processing");
         for (int indexIntersection = 0; indexIntersection < intersections.size(); indexIntersection++)
         {
+            if (hasFailed)
+            {
+                continue;
+            }
+
             const BoundingBox & bbox = currentBoundingBoxes[indexIntersection];
             const BoundingBox & bboxIntersect = intersections[indexIntersection];
 
@@ -410,7 +422,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
                 if (!getMaskFromLabels(weights, referenceLabels, viewCurrent, left, top)) 
                 {
                     ALICEVISION_LOG_ERROR("Error estimating seams image");
-                    return false;
+                    hasFailed = true;
                 }
             }
 
@@ -437,9 +449,15 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             if (!compositer->append(subsource, submask, weights, referenceBoundingBox.left - panoramaBoundingBox.left + bboxIntersect.left - referenceBoundingBox.left , referenceBoundingBox.top - panoramaBoundingBox.top + bboxIntersect.top  - referenceBoundingBox.top))
             {
                 ALICEVISION_LOG_INFO("Error in compositer append");
-                return false;
+                hasFailed = true;
+                continue;
             }
         }
+    }
+
+    if (hasFailed) 
+    {
+        return false;
     }
 
 
