@@ -60,7 +60,7 @@ inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, i
                     setValueCvMatBGR<cv::Vec3f, float>(mat, i, j, img(i, j));
                     break;
                 case CV_8UC3:
-                    setValueCvMatBGR<cv::Vec3b, uint8_t>(mat, i, j, img(i, j), 256.f);
+                    setValueCvMatBGR<cv::Vec3b, uint8_t>(mat, i, j, img(i, j), 255.f);
                     break;
                 default:
                     std::runtime_error("Cannot handle OpenCV matrix type '" + std::to_string(cvtype) + "'.");
