@@ -38,47 +38,6 @@ using namespace aliceVision;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
-std::string type2str(int type)
-{
-    std::string r;
-
-    uchar depth = type & CV_MAT_DEPTH_MASK;
-    uchar chans = 1 + (type >> CV_CN_SHIFT);
-
-    switch(depth)
-    {
-        case CV_8U:
-            r = "8U";
-            break;
-        case CV_8S:
-            r = "8S";
-            break;
-        case CV_16U:
-            r = "16U";
-            break;
-        case CV_16S:
-            r = "16S";
-            break;
-        case CV_32S:
-            r = "32S";
-            break;
-        case CV_32F:
-            r = "32F";
-            break;
-        case CV_64F:
-            r = "64F";
-            break;
-        default:
-            r = "User";
-            break;
-    }
-
-    r += "C";
-    r += (chans + '0');
-
-    return r;
-}
-
 cv::Mat deserializeColorDataFromTextFile(const std::string &colorData) {
     int rows = 24;
     int cols = 1;
@@ -119,11 +78,11 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
 {
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
 
-    if(imageBGR.cols == 0 || imageBGR.rows == 0)
-    {
-        ALICEVISION_LOG_ERROR("Image is empty.");
-        exit(EXIT_FAILURE);
-    }
+    //if(imageBGR.cols == 0 || imageBGR.rows == 0)
+    //{
+    //    ALICEVISION_LOG_ERROR("Image is empty.");
+    //    exit(EXIT_FAILURE);
+    //}
 
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
@@ -146,6 +105,34 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
     cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
 
     tmp::cvMatBGRToImageRGBA(outImg, image);
+}
+
+void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath)
+{
+    // Read metadata path
+    std::string metadataFilePath;
+
+    const std::string filename = fs::path(inputPath).filename().string();
+    const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
+    // const bool isEXR = (outExtension == ".exr");
+    
+    // Metadata are extracted from the original images
+    metadataFilePath = inputPath;
+
+    // Read metadata based on a filepath
+    oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+
+    //if(isEXR)
+    //{
+    //    // Select storage data type
+    //    metadata.push_back(
+    //        oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
+    //}
+
+    // Save image
+    ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
+
+    image::writeImage(outputPath, image, image::EImageColorSpace::NO_CONVERSION, metadata);
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -174,8 +161,8 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("extension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
-         "Output image extension (like exr, or empty to keep the source file format.");
+        ("outputExtension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
+         "Output image extension (like exr, or empty to keep the original source file format.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -263,6 +250,11 @@ int aliceVision_main(int argc, char** argv)
             const std::string viewPath = viewIt.second;
             sfmData::View& view = sfmData.getView(viewId);
 
+            const fs::path fsPath = viewPath;
+            const std::string fileExt = fsPath.extension().string();
+            const std::string outputExt = outputExtension.empty() ? fileExt : (std::string(".") + outputExtension);
+            const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
 
             // Read image options and load image
@@ -277,14 +269,12 @@ int aliceVision_main(int argc, char** argv)
             processColorCorrection(image, colorData);
 
             // Save image
-            oiio::ParamValueList metadata = image::readImageMetadata(viewPath);
-            image::writeImage(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg", image,
-                              image::EImageColorSpace::NO_CONVERSION, metadata);
+            saveImage(image, viewPath, outputfilePath);
 
-            // Update view for this modification
+            // Update sfmdata view for this modification
+            view.setImagePath(outputfilePath);
             view.setWidth(image.Width());
             view.setHeight(image.Height());
-            view.setImagePath(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg");
         }
 
         // Save sfmData with modified path to images
@@ -335,33 +325,23 @@ int aliceVision_main(int argc, char** argv)
         int i = 0;
         for(const std::string& inputFilePath : filesStrPaths)
         {
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image at: '" << inputFilePath
-                                     << "' for color correction.");
+            const fs::path path = fs::path(inputFilePath);
+            const std::string filename = path.stem().string();
+            const std::string fileExt = path.extension().string();
+            const std::string outputExt = outputExtension.empty() ? fileExt : (std::string(".") + outputExtension);
+            const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
-            // Create an image with 3 channel BGR color
-            cv::Mat image = cv::imread(inputFilePath, cv::IMREAD_COLOR);
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "' for color correction.");
 
-            // Check if the image is empty
-            if(!image.data)
-            {
-                ALICEVISION_LOG_ERROR("Image at: '" << inputFilePath << "'" << "is empty.");
-
-                return EXIT_FAILURE;
-            }
+            // Read original image
+            image::Image<image::RGBAfColor> image;
+            image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
 
             // Image color correction processing
-            // cv::Mat calibratedImage = processColorCorrection(image, colorData);
+            processColorCorrection(image, colorData);
 
-            // Save the image
-            // TODO
-            // Example: saveImage(...)
-            //const int outSize = 255;
-            //calibratedImage.convertTo(calibratedImage,
-            //                          CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
-            //cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
-            //cv::Mat outImg;
-            //cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
-            //cv::imwrite(outputPath + "/" + std::to_string(rand() % 1000 + 1) + ".calibrated.jpg", outImg);
+            // Save image
+            saveImage(image, inputFilePath, outputFilePath);
         }
     }
 
