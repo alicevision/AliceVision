@@ -107,14 +107,15 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
     tmp::cvMatBGRToImageRGBA(outImg, image);
 }
 
-void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath)
+void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+               const image::EStorageDataType storageDataType)
 {
     // Read metadata path
     std::string metadataFilePath;
 
     const std::string filename = fs::path(inputPath).filename().string();
     const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
-    // const bool isEXR = (outExtension == ".exr");
+    const bool isEXR = (outExtension == ".exr");
     
     // Metadata are extracted from the original images
     metadataFilePath = inputPath;
@@ -122,12 +123,12 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Read metadata based on a filepath
     oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
 
-    //if(isEXR)
-    //{
-    //    // Select storage data type
-    //    metadata.push_back(
-    //        oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
-    //}
+    if(isEXR)
+    {
+        // Select storage data type
+        metadata.push_back(
+            oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
+    }
 
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
@@ -141,7 +142,8 @@ int aliceVision_main(int argc, char** argv)
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
     std::string inputColorData;
-    std::string outputExtension;
+    std::string extension;
+    image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string outputPath;
 
     po::options_description allParams(
@@ -160,8 +162,9 @@ int aliceVision_main(int argc, char** argv)
         ;
 
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()
-        ("outputExtension", po::value<std::string>(&outputExtension)->default_value(outputExtension),
+    optionalParams.add_options()("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+        ("Storage data type: " + image::EStorageDataType_informations()).c_str())(
+        "extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the original source file format.");
 
     po::options_description logParams("Log parameters");
@@ -252,7 +255,7 @@ int aliceVision_main(int argc, char** argv)
 
             const fs::path fsPath = viewPath;
             const std::string fileExt = fsPath.extension().string();
-            const std::string outputExt = outputExtension.empty() ? fileExt : (std::string(".") + outputExtension);
+            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
             const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
@@ -269,7 +272,7 @@ int aliceVision_main(int argc, char** argv)
             processColorCorrection(image, colorData);
 
             // Save image
-            saveImage(image, viewPath, outputfilePath);
+            saveImage(image, viewPath, outputfilePath, storageDataType);
 
             // Update sfmdata view for this modification
             view.setImagePath(outputfilePath);
@@ -328,7 +331,7 @@ int aliceVision_main(int argc, char** argv)
             const fs::path path = fs::path(inputFilePath);
             const std::string filename = path.stem().string();
             const std::string fileExt = path.extension().string();
-            const std::string outputExt = outputExtension.empty() ? fileExt : (std::string(".") + outputExtension);
+            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
             const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "' for color correction.");
@@ -341,7 +344,7 @@ int aliceVision_main(int argc, char** argv)
             processColorCorrection(image, colorData);
 
             // Save image
-            saveImage(image, inputFilePath, outputFilePath);
+            saveImage(image, inputFilePath, outputFilePath, storageDataType);
         }
     }
 
