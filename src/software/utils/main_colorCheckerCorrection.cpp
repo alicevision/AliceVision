@@ -78,17 +78,15 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
 {
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
 
-    //if(imageBGR.cols == 0 || imageBGR.rows == 0)
-    //{
-    //    ALICEVISION_LOG_ERROR("Image is empty.");
-    //    exit(EXIT_FAILURE);
-    //}
-
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
     
-    // set color space
-    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB); // linear color spaces are not supported
+    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB); // set color space
+    model.setCCM_TYPE(cv::ccm::CCM_3x3); // common CCM dimension
+    model.setDistance(cv::ccm::DISTANCE_CIE2000); // distance function
+    model.setLinear(cv::ccm::LINEARIZATION_GAMMA); // linear gamma correction
+    model.setLinearGamma(2.2); //  gamma correction value
+    model.setLinearDegree(3); // to prevent overfitting
     
     cv::Mat img;
     cvtColor(imageBGR, img, cv::COLOR_BGR2RGB);
@@ -214,137 +212,145 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Get color data matrix from text file input 
-    cv::Mat colorData = deserializeColorDataFromTextFile(inputColorData);
-
-    // Map used to store paths of the views that need to be processed
-    std::unordered_map<IndexT, std::string> ViewPaths;
-
-    // Check if sfmInputDataFilename exist and is recognized as sfm data file
-    const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
-    static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
-    if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) !=
-                                       sfmSupportedExtensions.end())
+    // Check if the file exists
+    if(fs::exists(inputColorData))
     {
-        sfmData::SfMData sfmData;
-        if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::VIEWS))
-        {
-            ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
-            return EXIT_FAILURE;
-        }
+        // Get color data matrix from text file input
+        cv::Mat colorData = deserializeColorDataFromTextFile(inputColorData);
 
         // Map used to store paths of the views that need to be processed
         std::unordered_map<IndexT, std::string> ViewPaths;
 
-        // Iterate over all views
-        for(const auto& viewIt : sfmData.getViews())
+        // Check if sfmInputDataFilename exist and is recognized as sfm data file
+        const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
+        static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
+        if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(),
+                                                 inputExt) != sfmSupportedExtensions.end())
         {
-            const sfmData::View& view = *(viewIt.second);
+            sfmData::SfMData sfmData;
+            if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::VIEWS))
+            {
+                ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
+                return EXIT_FAILURE;
+            }
 
-            ViewPaths.insert({view.getViewId(), view.getImagePath()});
-        }
+            // Map used to store paths of the views that need to be processed
+            std::unordered_map<IndexT, std::string> ViewPaths;
 
-        const int size = ViewPaths.size();
-        int i = 0;
+            // Iterate over all views
+            for(const auto& viewIt : sfmData.getViews())
+            {
+                const sfmData::View& view = *(viewIt.second);
 
-        for(auto& viewIt : ViewPaths)
-        {
-            const IndexT viewId = viewIt.first;
-            const std::string viewPath = viewIt.second;
-            sfmData::View& view = sfmData.getView(viewId);
+                ViewPaths.insert({view.getViewId(), view.getImagePath()});
+            }
 
-            const fs::path fsPath = viewPath;
-            const std::string fileExt = fsPath.extension().string();
-            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+            const int size = ViewPaths.size();
+            int i = 0;
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
+            for(auto& viewIt : ViewPaths)
+            {
+                const IndexT viewId = viewIt.first;
+                const std::string viewPath = viewIt.second;
+                sfmData::View& view = sfmData.getView(viewId);
 
-            // Read image options and load image
-            image::ImageReadOptions options;
-            options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
-            options.applyWhiteBalance = view.getApplyWhiteBalance();
+                const fs::path fsPath = viewPath;
+                const std::string fileExt = fsPath.extension().string();
+                const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+                const std::string outputfilePath =
+                    (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
 
-            image::Image<image::RGBAfColor> image;
-            image::readImage(viewPath, image, options);
+                ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
 
-            // Image color correction processing
-            processColorCorrection(image, colorData);
+                // Read image options and load image
+                image::ImageReadOptions options;
+                options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+                options.applyWhiteBalance = view.getApplyWhiteBalance();
 
-            // Save image
-            saveImage(image, viewPath, outputfilePath, storageDataType);
+                image::Image<image::RGBAfColor> image;
+                image::readImage(viewPath, image, options);
 
-            // Update sfmdata view for this modification
-            view.setImagePath(outputfilePath);
-            view.setWidth(image.Width());
-            view.setHeight(image.Height());
-        }
+                // Image color correction processing
+                processColorCorrection(image, colorData);
 
-        // Save sfmData with modified path to images
-        const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
-        if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
-        {
-            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
+                // Save image
+                saveImage(image, viewPath, outputfilePath, storageDataType);
 
-            return EXIT_FAILURE;
-        }
-    }
-    else
-    {
-        // load input as image file or image folder
-        const fs::path inputPath(inputExpression);
-        std::vector<std::string> filesStrPaths;
+                // Update sfmdata view for this modification
+                view.setImagePath(outputfilePath);
+                view.setWidth(image.Width());
+                view.setHeight(image.Height());
+            }
 
-        if(fs::is_regular_file(inputPath))
-        {
-            filesStrPaths.push_back(inputPath.string());
-        }
-        else
-        {
-            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
+            // Save sfmData with modified path to images
+            const std::string sfmfilePath =
+                (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+            if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            {
+                ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
 
-            const std::regex regex = utils::filterToRegex(inputExpression);
-            // Get supported files in inputPath directory which matches our regex filter
-            filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(),
-                                                           [&regex](const boost::filesystem::path& path) {
-                                                               return image::isSupported(path.extension().string()) &&
-                                                                      std::regex_match(path.generic_string(), regex);
-                                                           });
-        }
-
-        const int size = filesStrPaths.size();
-
-        if(!size)
-        {
-            ALICEVISION_LOG_ERROR("Any images was found.");
-            ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression << "' may be incorrect ?");
-            return EXIT_FAILURE;
+                return EXIT_FAILURE;
+            }
         }
         else
         {
-            ALICEVISION_LOG_INFO(size << " images found.");
-        }
+            // load input as image file or image folder
+            const fs::path inputPath(inputExpression);
+            std::vector<std::string> filesStrPaths;
 
-        int i = 0;
-        for(const std::string& inputFilePath : filesStrPaths)
-        {
-            const fs::path path = fs::path(inputFilePath);
-            const std::string filename = path.stem().string();
-            const std::string fileExt = path.extension().string();
-            const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+            if(fs::is_regular_file(inputPath))
+            {
+                filesStrPaths.push_back(inputPath.string());
+            }
+            else
+            {
+                ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "' for color correction.");
+                const std::regex regex = utils::filterToRegex(inputExpression);
+                // Get supported files in inputPath directory which matches our regex filter
+                filesStrPaths = utils::getFilesPathsFromFolder(
+                    inputPath.parent_path().generic_string(), [&regex](const boost::filesystem::path& path) {
+                        return image::isSupported(path.extension().string()) &&
+                               std::regex_match(path.generic_string(), regex);
+                    });
+            }
 
-            // Read original image
-            image::Image<image::RGBAfColor> image;
-            image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
+            const int size = filesStrPaths.size();
 
-            // Image color correction processing
-            processColorCorrection(image, colorData);
+            if(!size)
+            {
+                ALICEVISION_LOG_ERROR("Any images was found.");
+                ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression
+                                                                            << "' may be incorrect ?");
+                return EXIT_FAILURE;
+            }
+            else
+            {
+                ALICEVISION_LOG_INFO(size << " images found.");
+            }
 
-            // Save image
-            saveImage(image, inputFilePath, outputFilePath, storageDataType);
+            int i = 0;
+            for(const std::string& inputFilePath : filesStrPaths)
+            {
+                const fs::path path = fs::path(inputFilePath);
+                const std::string filename = path.stem().string();
+                const std::string fileExt = path.extension().string();
+                const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
+                const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+
+                ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt
+                                         << "' for color correction.");
+
+                // Read original image
+                image::Image<image::RGBAfColor> image;
+                image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
+
+                // Image color correction processing
+                processColorCorrection(image, colorData);
+
+                // Save image
+                saveImage(image, inputFilePath, outputFilePath, storageDataType);
+            }
         }
     }
 
