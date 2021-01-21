@@ -263,42 +263,42 @@ void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, con
 Point2d getLineTriangleIntersectBarycCoords(Point3d* P, const Point3d* A, const Point3d* B, const Point3d* C,
                                             const Point3d* linePoint, const Point3d* lineVect)
 {
-    float A_x = A->x;
-    float A_y = A->y;
-    float A_z = A->z;
-    float linePoint_x = linePoint->x;
-    float linePoint_y = linePoint->y;
-    float linePoint_z = linePoint->z;
-    float lineVect_x = lineVect->x;
-    float lineVect_y = lineVect->y;
-    float lineVect_z = lineVect->z;
-    float v0_x = C->x - A_x;
-    float v0_y = C->y - A_y;
-    float v0_z = C->z - A_z;
-    float v1_x = B->x - A_x;
-    float v1_y = B->y - A_y;
-    float v1_z = B->z - A_z;
-    float _n_x = v0_y * v1_z - v0_z * v1_y;
-    float _n_y = v0_z * v1_x - v0_x * v1_z;
-    float _n_z = v0_x * v1_y - v0_y * v1_x;
-    float k = ((A_x * _n_x + A_y * _n_y + A_z * _n_z) - (_n_x * linePoint_x + _n_y * linePoint_y + _n_z * linePoint_z)) / (_n_x * lineVect_x + _n_y * lineVect_y + _n_z * lineVect_z);
-    float P_x = linePoint_x + lineVect_x * k;
-    float P_y = linePoint_y + lineVect_y * k;
-    float P_z = linePoint_z + lineVect_z * k;
+    const double A_x = A->x;
+    const double A_y = A->y;
+    const double A_z = A->z;
+    const double linePoint_x = linePoint->x;
+    const double linePoint_y = linePoint->y;
+    const double linePoint_z = linePoint->z;
+    const double lineVect_x = lineVect->x;
+    const double lineVect_y = lineVect->y;
+    const double lineVect_z = lineVect->z;
+    const double v0_x = C->x - A_x;
+    const double v0_y = C->y - A_y;
+    const double v0_z = C->z - A_z;
+    const double v1_x = B->x - A_x;
+    const double v1_y = B->y - A_y;
+    const double v1_z = B->z - A_z;
+    const double _n_x = v0_y * v1_z - v0_z * v1_y;
+    const double _n_y = v0_z * v1_x - v0_x * v1_z;
+    const double _n_z = v0_x * v1_y - v0_y * v1_x;
+    const double k = ((A_x * _n_x + A_y * _n_y + A_z * _n_z) - (_n_x * linePoint_x + _n_y * linePoint_y + _n_z * linePoint_z)) / (_n_x * lineVect_x + _n_y * lineVect_y + _n_z * lineVect_z);
+    const double P_x = linePoint_x + lineVect_x * k;
+    const double P_y = linePoint_y + lineVect_y * k;
+    const double P_z = linePoint_z + lineVect_z * k;
     // Compute vectors
-    float v2_x = P_x - A_x;
-    float v2_y = P_y - A_y;
-    float v2_z = P_z - A_z;
+    const double v2_x = P_x - A_x;
+    const double v2_y = P_y - A_y;
+    const double v2_z = P_z - A_z;
     // Compute dot products
-    float dot00 = (v0_x * v0_x + v0_y * v0_y + v0_z * v0_z);
-    float dot01 = (v0_x * v1_x + v0_y * v1_y + v0_z * v1_z);
-    float dot02 = (v0_x * v2_x + v0_y * v2_y + v0_z * v2_z);
-    float dot11 = (v1_x * v1_x + v1_y * v1_y + v1_z * v1_z);
-    float dot12 = (v1_x * v2_x + v1_y * v2_y + v1_z * v2_z);
+    const double dot00 = (v0_x * v0_x + v0_y * v0_y + v0_z * v0_z);
+    const double dot01 = (v0_x * v1_x + v0_y * v1_y + v0_z * v1_z);
+    const double dot02 = (v0_x * v2_x + v0_y * v2_y + v0_z * v2_z);
+    const double dot11 = (v1_x * v1_x + v1_y * v1_y + v1_z * v1_z);
+    const double dot12 = (v1_x * v2_x + v1_y * v2_y + v1_z * v2_z);
     // Compute barycentric coordinates
-    float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    const double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    const double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
     P->x = P_x;
     P->y = P_y;
     P->z = P_z;
