@@ -98,15 +98,41 @@ cv::Mat deserializeColorDataFromTextFile(const std::string &colorData) {
     return out;
 }
 
-cv::Mat processColorCorrection(cv::Mat& image, cv::Mat& refColors) {
+namespace tmp
+{
+    void cvMatBGRToImageRGBA(cv::Mat& img, image::Image<image::RGBAfColor>& imageOut)
+    {
+       for(int row = 0; row < imageOut.Height(); row++)
+        {
+            cv::Vec3b* rowPtr = img.ptr<cv::Vec3b>(row);
+            for(int col = 0; col < imageOut.Width(); col++)
+            {
+                cv::Vec3b& matPixel = rowPtr[col];
+                imageOut(row, col) = image::RGBAfColor(matPixel[2] / 255.f, matPixel[1] / 255.f, matPixel[0] / 255.f,
+                                                       imageOut(row, col).a());
+            }
+       }
+    }
+} //tmp
+
+void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors)
+{
+    cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
+
+    if(imageBGR.cols == 0 || imageBGR.rows == 0)
+    {
+        ALICEVISION_LOG_ERROR("Image is empty.");
+        exit(EXIT_FAILURE);
+    }
+
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
-
+    
     // set color space
     model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB); // linear color spaces are not supported
-
+    
     cv::Mat img;
-    cvtColor(image, img, cv::COLOR_BGR2RGB);
+    cvtColor(imageBGR, img, cv::COLOR_BGR2RGB);
     img.convertTo(img, CV_64F); // convert to 64 bits double matrix / image
     const int inpSize = 255;
     const int outSize = 255;
@@ -114,7 +140,12 @@ cv::Mat processColorCorrection(cv::Mat& image, cv::Mat& refColors) {
     cv::Mat calibratedImage = model.infer(img); // make correction using ccm matrix
     cv::Mat out = calibratedImage * outSize;
 
-    return out;
+    calibratedImage.convertTo(calibratedImage, CV_8UC3, 255); // convert to 8 bits unsigned integer matrix / image with 3 channels
+    cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
+    cv::Mat outImg;
+    cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
+
+    tmp::cvMatBGRToImageRGBA(outImg, image);
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -234,37 +265,26 @@ int aliceVision_main(int argc, char** argv)
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
 
-            // Create an image with 3 channel BGR color
-            cv::Mat image = cv::imread(viewPath, cv::IMREAD_COLOR);
+            // Read image options and load image
+            image::ImageReadOptions options;
+            options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+            options.applyWhiteBalance = view.getApplyWhiteBalance();
 
-            std::cout << "Mat type:" << type2str(image.type()) << std::endl;
-
-            // Check if the image is empty 
-            if(!image.data)
-            {
-                ALICEVISION_LOG_ERROR("Image with id '" << viewId << "'" << "is empty.");
-            
-                return EXIT_FAILURE;
-            }
+            image::Image<image::RGBAfColor> image;
+            image::readImage(viewPath, image, options);
 
             // Image color correction processing
-            cv::Mat calibratedImage = processColorCorrection(image, colorData);
+            processColorCorrection(image, colorData);
 
-            // Save the image
-            // TODO
-            // Example: saveImage(...)
-            const int outSize = 255;
-            calibratedImage.convertTo(calibratedImage, CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
-            cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
-            cv::Mat outImg;
-            cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
-            cv::imwrite(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg", outImg);
+            // Save image
+            oiio::ParamValueList metadata = image::readImageMetadata(viewPath);
+            image::writeImage(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg", image,
+                              image::EImageColorSpace::NO_CONVERSION, metadata);
 
             // Update view for this modification
-            // TODO: set the new image path 
-            view.setWidth(calibratedImage.size().width);
-            view.setHeight(calibratedImage.size().height);
-            // view.setImagePath(outputFilePath);
+            view.setWidth(image.Width());
+            view.setHeight(image.Height());
+            view.setImagePath(outputPath + "/" + std::to_string(viewId) + ".calibrated.jpg");
         }
 
         // Save sfmData with modified path to images
@@ -330,18 +350,18 @@ int aliceVision_main(int argc, char** argv)
             }
 
             // Image color correction processing
-            cv::Mat calibratedImage = processColorCorrection(image, colorData);
+            // cv::Mat calibratedImage = processColorCorrection(image, colorData);
 
             // Save the image
             // TODO
             // Example: saveImage(...)
-            const int outSize = 255;
-            calibratedImage.convertTo(calibratedImage,
-                                      CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
-            cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
-            cv::Mat outImg;
-            cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
-            cv::imwrite(outputPath + "/" + std::to_string(rand() % 1000 + 1) + ".calibrated.jpg", outImg);
+            //const int outSize = 255;
+            //calibratedImage.convertTo(calibratedImage,
+            //                          CV_8UC3); // convert to 8 bits unsigned integer matrix / image with 3 channels
+            //cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
+            //cv::Mat outImg;
+            //cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
+            //cv::imwrite(outputPath + "/" + std::to_string(rand() % 1000 + 1) + ".calibrated.jpg", outImg);
         }
     }
 
