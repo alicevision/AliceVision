@@ -129,6 +129,14 @@ namespace ccheckerSVG {
 } // namespace ccheckerSVG
 
 
+struct CCheckerDetectionSettings {
+    image::ImageReadOptions imgReadOptions;
+    std::string outputColorData;
+    std::string outputPositionData;
+    bool debug;
+};
+
+
 struct CCheckerData {
     cv::Ptr<cv::mcc::CChecker> _cchecker;
     cv::Mat _colorData;
@@ -165,35 +173,40 @@ struct CCheckerData {
         return diag.x * diag.y;
     }
 
-    void serialize(const std::string &outputPath)
+    void serialize(
+        const std::string &outputColorDataPath,
+        const std::string& outputPositionDataPath)
     {
         std::ofstream f;
-        f.open(outputPath);
+        f.open(outputColorDataPath);
         for(int i = 0; i < _colorData.rows; ++i)
             for(int j = 0; j < _colorData.cols; ++j)
                 for(int k = 0; k < 3; ++k)
                     f << std::setprecision(std::numeric_limits<double>::digits10 + 2)
                       << _colorData.at<cv::Vec3d>(i, j)[k] << std::endl;
         f.close();
+        f.open(outputPositionDataPath);
+        for(const auto& p : _cchecker->getBox())
+            f << p.x << '\t' << p.y << std::endl;
     }
 };
 
 
 void detectColorChecker(
-    const fs::path &imgPath,
-    const image::ImageReadOptions &imgReadOptions,
-    const std::string &outputColorData,
-    const bool debug)
+    std::vector<CCheckerData> &detectedCCheckers,
+    const fs::path &imgFsPath,
+    CCheckerDetectionSettings &settings)
 {
     const int nc = 2; // Max number of charts in an image
-    const std::string outputFolder = fs::path(outputColorData).parent_path().string();
-    const std::string imgSrcPath = imgPath.string();
-    const std::string imgSrcStem = imgPath.stem().string();
+    const std::string outputColorFolder =    fs::path(settings.outputColorData   ).parent_path().string();
+    const std::string outputPositionFolder = fs::path(settings.outputPositionData).parent_path().string();
+    const std::string imgSrcPath = imgFsPath.string();
+    const std::string imgSrcStem = imgFsPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
 
     // Load image
     image::Image<image::RGBAfColor> image;
-    image::readImage(imgSrcPath, image, imgReadOptions);
+    image::readImage(imgSrcPath, image, settings.imgReadOptions);
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
 
     if(imageBGR.cols == 0 || imageBGR.rows == 0)
@@ -210,9 +223,6 @@ void detectColorChecker(
         return;
     }
 
-    CCheckerData bestCCheckerData;
-    cv::Mat bestColorData;
-    bool isFirstCChecker = true;
     int counter = 0;
 
     for(const cv::Ptr<cv::mcc::CChecker> cchecker : detector->getListColorChecker())
@@ -221,28 +231,25 @@ void detectColorChecker(
 
         ALICEVISION_LOG_INFO("Checker #" << counter <<" successfully detected in '" << imgSrcStem << "'");
 
-        if(debug)
+        if(settings.debug)
         {
             // Output debug data
-            ccheckerSVG::draw(cchecker, outputFolder + "/" + imgDestStem + counterStr + ".svg");
+            ccheckerSVG::draw(cchecker, outputColorFolder + "/" + imgDestStem + counterStr + ".svg");
 
             cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(cchecker, CV_RGB(250, 0, 0), 3);
             cdraw->draw(imageBGR);
 
             // Write debug image
-            cv::imwrite(outputFolder + "/" + imgDestStem + counterStr + ".jpg", imageBGR);
+            cv::imwrite(outputColorFolder + "/" + imgDestStem + counterStr + ".jpg", imageBGR);
         }
 
         CCheckerData ccheckerData(cchecker);
-        ccheckerData.serialize(outputFolder + "/" + imgDestStem + "_colorData" + counterStr);
+        ccheckerData.serialize(
+            outputColorFolder    + "/" + imgDestStem + "_colorData" + counterStr,
+            outputPositionFolder + "/" + imgDestStem + "_positionData" + counterStr);
 
-        if(isFirstCChecker || ccheckerData.compare(bestCCheckerData))
-            bestCCheckerData = ccheckerData;
-
-        isFirstCChecker = false;
+        detectedCCheckers.push_back(ccheckerData);
     }
-    // Output best colors data
-    bestCCheckerData.serialize(outputColorData);
 }
 
 
@@ -252,6 +259,7 @@ int aliceVision_main(int argc, char** argv)
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
     std::string outputColorData;
+    std::string outputPositionData;
 
     // user optional parameters
     bool debug = false;
@@ -265,7 +273,9 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&inputExpression)->required(),
          "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("outputColorData", po::value<std::string>(&outputColorData)->required(),
-         "Output path for the color data file.");
+         "Output path for the color data file.")
+        ("outputPositionData", po::value<std::string>(&outputPositionData)->required(),
+         "Output path for the color checker position data file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -310,6 +320,14 @@ int aliceVision_main(int argc, char** argv)
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    CCheckerDetectionSettings settings;
+    settings.imgReadOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+    settings.outputColorData = outputColorData;
+    settings.outputPositionData = outputPositionData;
+    settings.debug = debug;
+
+    std::vector< CCheckerData > detectedCCheckers;
+
     // Check if inputExpression is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
     static const std::array<std::string, 2> sfmSupportedExtensions = {".sfm", ".abc"};
@@ -332,10 +350,8 @@ int aliceVision_main(int argc, char** argv)
 
             ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImagePath() << "'.");
 
-            image::ImageReadOptions options;
-            options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
-            options.applyWhiteBalance = view.getApplyWhiteBalance();
-            detectColorChecker(view.getImagePath(), options, outputColorData, debug);
+            settings.imgReadOptions.applyWhiteBalance = view.getApplyWhiteBalance();
+            detectColorChecker(detectedCCheckers, view.getImagePath(), settings);
         }
 
     }
@@ -379,13 +395,26 @@ int aliceVision_main(int argc, char** argv)
         for(const std::string& imgSrcPath : filesStrPaths)
         {
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
-
-            image::ImageReadOptions options;
-            options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
-            detectColorChecker(imgSrcPath, options, outputColorData, debug);
+            detectColorChecker(detectedCCheckers, imgSrcPath, settings);
         }
 
     }
+
+    if (detectedCCheckers.size() == 0)
+    {
+        ALICEVISION_LOG_INFO("Could not find any macbeth color checker in the input images.");
+        return EXIT_SUCCESS;
+    }
+    ALICEVISION_LOG_INFO("Found color checkers count: " << detectedCCheckers.size());
+
+    // Find and output best color checker
+    CCheckerData best = detectedCCheckers[0];
+    for (int i = 1; i < detectedCCheckers.size(); ++i)
+    {
+        if(detectedCCheckers[i].compare(best))
+            best = detectedCCheckers[i];
+    }
+    best.serialize(settings.outputColorData, settings.outputPositionData);
 
     return EXIT_SUCCESS;
 }
