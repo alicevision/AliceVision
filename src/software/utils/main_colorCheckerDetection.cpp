@@ -18,6 +18,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -27,7 +29,6 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <unordered_map>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -37,6 +38,7 @@
 using namespace aliceVision;
 
 namespace fs = boost::filesystem;
+namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
 namespace ccheckerSVG {
@@ -129,10 +131,19 @@ namespace ccheckerSVG {
 } // namespace ccheckerSVG
 
 
+struct ImageOptions {
+    std::string imgName;
+    std::string viewId;
+    std::string lensSerialNumber;
+    std::string bodySerialNumber;
+    image::ImageReadOptions readOptions;
+};
+
+
 struct CCheckerDetectionSettings {
-    image::ImageReadOptions imgReadOptions;
-    std::string outputColorData;
-    std::string outputPositionData;
+    cv::mcc::TYPECHART typechart;
+    unsigned int maxCountByImage;
+    std::string outputData;
     bool debug;
 };
 
@@ -140,11 +151,12 @@ struct CCheckerDetectionSettings {
 struct CCheckerData {
     cv::Ptr<cv::mcc::CChecker> _cchecker;
     cv::Mat _colorData;
+    ImageOptions _imgOptions;
 
     CCheckerData() = default;
 
-    CCheckerData(cv::Ptr<cv::mcc::CChecker> cchecker)
-        : _cchecker(cchecker)
+    CCheckerData(cv::Ptr<cv::mcc::CChecker> cchecker, ImageOptions imgOptions)
+        : _cchecker(cchecker), _imgOptions(imgOptions)
     {
         // Get colors data
         cv::Mat chartsRGB = cchecker->getChartsRGB();
@@ -153,41 +165,39 @@ struct CCheckerData {
         _colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3) / 255.f;
     }
 
-    bool compare(const CCheckerData &c) const
+    bpt::ptree ptree() const
     {
-        return boundingBoxArea() > c.boundingBoxArea();
-    }
+        bpt::ptree pt, ptColors, ptPositions;
 
-    float boundingBoxArea() const
-    {
-        std::vector<cv::Point2f>& points = _cchecker->getBox();
-        cv::Point2f min = points[0];
-        cv::Point2f max = points[0];
-        for(const auto& p : points) {
-            if (p.x < min.x && p.y < min.y)
-                min = p;
-            if (p.x > max.x && p.y > max.y)
-                max = p;
+        pt.put("bodySerialNumber", _imgOptions.bodySerialNumber);
+        pt.put("lensSerialNumber", _imgOptions.lensSerialNumber);
+        pt.put("imageName", _imgOptions.imgName);
+        pt.put("viewId", _imgOptions.viewId);
+
+        // Serialize checker.positions
+        for (const auto& point : _cchecker->getBox())
+        {
+            bpt::ptree ptPoint;
+            ptPoint.put("x", point.x);
+            ptPoint.put("y", point.y);
+            ptPositions.push_back( std::make_pair("", ptPoint) );
         }
-        cv::Point2f diag = max - min;
-        return diag.x * diag.y;
-    }
+        pt.add_child("positions", ptPositions);
 
-    void serialize(
-        const std::string &outputColorDataPath,
-        const std::string& outputPositionDataPath)
-    {
-        std::ofstream f;
-        f.open(outputColorDataPath);
-        for(int i = 0; i < _colorData.rows; ++i)
+        // Serialize checker.colors
+        for (int i = 0; i < _colorData.rows; ++i)
+        {
             for(int j = 0; j < _colorData.cols; ++j)
-                for(int k = 0; k < 3; ++k)
-                    f << std::setprecision(std::numeric_limits<double>::digits10 + 2)
-                      << _colorData.at<cv::Vec3d>(i, j)[k] << std::endl;
-        f.close();
-        f.open(outputPositionDataPath);
-        for(const auto& p : _cchecker->getBox())
-            f << p.x << '\t' << p.y << std::endl;
+            {
+                bpt::ptree ptColor;
+                ptColor.put("r", _colorData.at<cv::Vec3d>(i,j)[0]);
+                ptColor.put("g", _colorData.at<cv::Vec3d>(i,j)[1]);
+                ptColor.put("b", _colorData.at<cv::Vec3d>(i,j)[2]);
+                ptColors.push_back( std::make_pair("", ptColor) );
+            }
+        }
+        pt.add_child("colors", ptColors);
+        return pt;
     }
 };
 
@@ -195,18 +205,18 @@ struct CCheckerData {
 void detectColorChecker(
     std::vector<CCheckerData> &detectedCCheckers,
     const fs::path &imgFsPath,
-    CCheckerDetectionSettings &settings)
+    CCheckerDetectionSettings &settings,
+    ImageOptions& imgOpt)
 {
     const int nc = 2; // Max number of charts in an image
-    const std::string outputColorFolder =    fs::path(settings.outputColorData   ).parent_path().string();
-    const std::string outputPositionFolder = fs::path(settings.outputPositionData).parent_path().string();
+    const std::string outputFolder = fs::path(settings.outputData).parent_path().string();
     const std::string imgSrcPath = imgFsPath.string();
     const std::string imgSrcStem = imgFsPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
 
     // Load image
     image::Image<image::RGBAfColor> image;
-    image::readImage(imgSrcPath, image, settings.imgReadOptions);
+    image::readImage(imgSrcPath, image, imgOpt.readOptions);
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
 
     if(imageBGR.cols == 0 || imageBGR.rows == 0)
@@ -217,7 +227,7 @@ void detectColorChecker(
 
     cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
 
-    if(!detector->process(imageBGR, cv::mcc::TYPECHART::MCC24, nc))
+    if(!detector->process(imageBGR, settings.typechart, settings.maxCountByImage))
     {
         ALICEVISION_LOG_INFO("Checker not detected in image at: '" << imgSrcPath << "'");
         return;
@@ -234,21 +244,13 @@ void detectColorChecker(
         if(settings.debug)
         {
             // Output debug data
-            ccheckerSVG::draw(cchecker, outputColorFolder + "/" + imgDestStem + counterStr + ".svg");
+            ccheckerSVG::draw(cchecker, outputFolder + "/" + imgDestStem + counterStr + ".svg");
 
             cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(cchecker, CV_RGB(250, 0, 0), 3);
             cdraw->draw(imageBGR);
-
-            // Write debug image
-            cv::imwrite(outputColorFolder + "/" + imgDestStem + counterStr + ".jpg", imageBGR);
+            cv::imwrite(outputFolder + "/" + imgDestStem + counterStr + ".jpg", imageBGR);
         }
-
-        CCheckerData ccheckerData(cchecker);
-        ccheckerData.serialize(
-            outputColorFolder    + "/" + imgDestStem + "_colorData" + counterStr,
-            outputPositionFolder + "/" + imgDestStem + "_positionData" + counterStr);
-
-        detectedCCheckers.push_back(ccheckerData);
+        detectedCCheckers.push_back( CCheckerData(cchecker, imgOpt) );
     }
 }
 
@@ -258,11 +260,11 @@ int aliceVision_main(int argc, char** argv)
     // command-line parameters
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
-    std::string outputColorData;
-    std::string outputPositionData;
+    std::string outputData;
 
     // user optional parameters
     bool debug = false;
+    unsigned int maxCountByImage = 1;
 
     po::options_description allParams(
         "This program is used to perform Macbeth color checker chart detection.\n"
@@ -272,15 +274,15 @@ int aliceVision_main(int argc, char** argv)
     inputParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->required(),
          "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
-        ("outputColorData", po::value<std::string>(&outputColorData)->required(),
-         "Output path for the color data file.")
-        ("outputPositionData", po::value<std::string>(&outputPositionData)->required(),
-         "Output path for the color checker position data file.");
+        ("outputData", po::value<std::string>(&outputData)->required(),
+         "Output path for the color checker data.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("debug", po::value<bool>(&debug),
-         "Output debug data.");
+         "Output debug data.")
+        ("maxCount", po::value<unsigned int>(&maxCountByImage),
+         "Maximum color chart count to detect in a single image.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -321,9 +323,9 @@ int aliceVision_main(int argc, char** argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     CCheckerDetectionSettings settings;
-    settings.imgReadOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
-    settings.outputColorData = outputColorData;
-    settings.outputPositionData = outputPositionData;
+    settings.typechart = cv::mcc::TYPECHART::MCC24;
+    settings.maxCountByImage = maxCountByImage;
+    settings.outputData = outputData;
     settings.debug = debug;
 
     std::vector< CCheckerData > detectedCCheckers;
@@ -349,9 +351,14 @@ int aliceVision_main(int argc, char** argv)
             const sfmData::View& view = *(viewIt.second);
 
             ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImagePath() << "'.");
-
-            settings.imgReadOptions.applyWhiteBalance = view.getApplyWhiteBalance();
-            detectColorChecker(detectedCCheckers, view.getImagePath(), settings);
+            ImageOptions imgOpt = {
+                view.getImagePath(),
+                std::to_string(view.getViewId()),
+                view.getMetadataBodySerialNumber(),
+                view.getMetadataLensSerialNumber() };
+            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+            imgOpt.readOptions.applyWhiteBalance = view.getApplyWhiteBalance();
+            detectColorChecker(detectedCCheckers, view.getImagePath(), settings, imgOpt);
         }
 
     }
@@ -395,7 +402,10 @@ int aliceVision_main(int argc, char** argv)
         for(const std::string& imgSrcPath : filesStrPaths)
         {
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
-            detectColorChecker(detectedCCheckers, imgSrcPath, settings);
+            ImageOptions imgOpt;
+            imgOpt.imgName = imgSrcPath;
+            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+            detectColorChecker(detectedCCheckers, imgSrcPath, settings, imgOpt);
         }
 
     }
@@ -407,14 +417,18 @@ int aliceVision_main(int argc, char** argv)
     }
     ALICEVISION_LOG_INFO("Found color checkers count: " << detectedCCheckers.size());
 
-    // Find and output best color checker
-    CCheckerData best = detectedCCheckers[0];
-    for (int i = 1; i < detectedCCheckers.size(); ++i)
+    // Output data
+    bpt::ptree data, ptCheckers;
+    for (const auto& cchecker : detectedCCheckers)
     {
-        if(detectedCCheckers[i].compare(best))
-            best = detectedCCheckers[i];
+        ptCheckers.push_back(std::make_pair("", cchecker.ptree()));
     }
-    best.serialize(settings.outputColorData, settings.outputPositionData);
+    data.add_child("checkers", ptCheckers);
+
+    std::ofstream f;
+    f.open(outputData);
+    bpt::write_json(f, data);
+    f.close();
 
     return EXIT_SUCCESS;
 }
