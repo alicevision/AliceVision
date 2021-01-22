@@ -17,6 +17,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -36,26 +38,41 @@
 using namespace aliceVision;
 
 namespace fs = boost::filesystem;
+namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
-cv::Mat deserializeColorDataFromTextFile(const std::string &colorData) {
-    int rows = 24;
-    int cols = 1;
-    cv::Mat out = cv::Mat::zeros(rows, cols, CV_64FC3); // Matrix to store values
+struct CChecker
+{
+    std::string _bodySerialNumber;
+    std::string _lensSerialNumber;
+    std::string _imageName;
+    std::string _viewId;
+    cv::Mat _colorData;
 
-    int i = 0;
-    std::ifstream colorDataInputFile(colorData);
+    CChecker() = default;
 
-    for(std::string line; getline(colorDataInputFile, line);)
+    void ptree(const bpt::ptree::value_type& ccheckerPTree)
     {
-        cv::Vec3d* rowPtr = out.ptr<cv::Vec3d>(i / 3);
-        cv::Vec3d& matPixel = rowPtr[0];
-        matPixel[i%3] = std::stod(line);
-        ++i;
-    }
+        _bodySerialNumber = ccheckerPTree.second.get_child("bodySerialNumber").get_value<std::string>();
+        _lensSerialNumber = ccheckerPTree.second.get_child("lensSerialNumber").get_value<std::string>();
+        _imageName = ccheckerPTree.second.get_child("imageName").get_value<std::string>();
+        _viewId = ccheckerPTree.second.get_child("viewId").get_value<std::string>();
+        _colorData = cv::Mat::zeros(24, 1, CV_64FC3);
 
-    return out;
-}
+        int i = 0;
+        for(const bpt::ptree::value_type& row : ccheckerPTree.second.get_child("colors"))
+        {
+            cv::Vec3d* rowPtr = _colorData.ptr<cv::Vec3d>(i);
+            cv::Vec3d& matPixel = rowPtr[0];
+
+            matPixel[0] = row.second.get_child("r").get_value<double>();
+            matPixel[1] = row.second.get_child("g").get_value<double>();
+            matPixel[2] = row.second.get_child("b").get_value<double>();
+
+            ++i;
+        }
+    }
+};
 
 namespace tmp
 {
@@ -81,23 +98,23 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
     
-    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB); // set color space
-    model.setCCM_TYPE(cv::ccm::CCM_3x3); // common CCM dimension
-    model.setDistance(cv::ccm::DISTANCE_CIE2000); // distance function
-    model.setLinear(cv::ccm::LINEARIZATION_GAMMA); // linear gamma correction
-    model.setLinearGamma(2.2); //  gamma correction value
+    model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
+    model.setCCM_TYPE(cv::ccm::CCM_3x3);
+    model.setDistance(cv::ccm::DISTANCE_CIE2000);
+    model.setLinear(cv::ccm::LINEARIZATION_GAMMA);
+    model.setLinearGamma(2.2);
     model.setLinearDegree(3); // to prevent overfitting
     
     cv::Mat img;
     cvtColor(imageBGR, img, cv::COLOR_BGR2RGB);
-    img.convertTo(img, CV_64F); // convert to 64 bits double matrix / image
+    img.convertTo(img, CV_64F);
     const int inpSize = 255;
     const int outSize = 255;
     img /= inpSize;
-    cv::Mat calibratedImage = model.infer(img); // make correction using ccm matrix
+    cv::Mat calibratedImage = model.infer(img); // make correction using cc matrix
     cv::Mat out = calibratedImage * outSize;
 
-    calibratedImage.convertTo(calibratedImage, CV_8UC3, 255); // convert to 8 bits unsigned integer matrix / image with 3 channels
+    calibratedImage.convertTo(calibratedImage, CV_8UC3, 255);
     cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
     cv::Mat outImg;
     cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
@@ -139,7 +156,7 @@ int aliceVision_main(int argc, char** argv)
     // command-line parameters
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
-    std::string inputColorData;
+    std::string inputData;
     std::string extension;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string outputPath;
@@ -153,8 +170,8 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&inputExpression)->default_value(inputExpression),
         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches a "
         "single digit, '@' one or more digits, '?' one character and '*' zero or more).")(
-        "inputColorData", po::value<std::string>(&inputColorData)->default_value(inputColorData),
-        "Colorimetric data extracted from a detected color checker in the images")
+        "inputData", po::value<std::string>(&inputData)->default_value(inputData),
+        "Position and colorimetric data extracted from detected color checkers in the images")
         ("output,o", po::value<std::string>(&outputPath)->required(),
          "Output folder.")
         ;
@@ -212,11 +229,24 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Check if the file exists
-    if(fs::exists(inputColorData))
+    if(fs::exists(inputData))
     {
-        // Get color data matrix from text file input
-        cv::Mat colorData = deserializeColorDataFromTextFile(inputColorData);
+        // checkers collection
+        std::vector<CChecker> ccheckers;
+
+        // property tree from data input
+        bpt::ptree data;
+        bpt::read_json(inputData, data);
+
+        for(const bpt::ptree::value_type& ccheckerPTree : data.get_child("checkers"))
+        {
+            CChecker cchecker;
+            cchecker.ptree(ccheckerPTree);
+            ccheckers.push_back(cchecker);
+        }
+
+        // for now the program behaves as if all the images to process are sharing the same properties
+        cv::Mat colorData = ccheckers[0]._colorData;
 
         // Map used to store paths of the views that need to be processed
         std::unordered_map<IndexT, std::string> ViewPaths;
