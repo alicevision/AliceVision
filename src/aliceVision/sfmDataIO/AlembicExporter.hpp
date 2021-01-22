@@ -45,7 +45,7 @@ public:
    * @param sfmData The corresponding view scene
    * @param view The corresponding view
    */
-  void addSfMSingleCamera(const sfmData::SfMData& sfmData, const sfmData::View& view);
+  void addSfMSingleCamera(const sfmData::SfMData& sfmData, const sfmData::View& view, ESfMData flagsPart);
 
   /**
    * @brief Add a SfM camera rig
@@ -54,8 +54,9 @@ public:
    * @param viewIds The sub-pose view ids in the scene
    */
   void addSfMCameraRig(const sfmData::SfMData& sfmData,
-                    IndexT rigId,
-                    const std::vector<IndexT>& viewIds);
+                       IndexT rigId,
+                       const std::vector<IndexT>& viewIds,
+                       ESfMData flagsPart);
 
   /**
    * @brief Add a set of 3d points
