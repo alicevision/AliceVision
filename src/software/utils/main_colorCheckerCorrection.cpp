@@ -74,52 +74,32 @@ struct CChecker
     }
 };
 
-namespace tmp
+void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors, std::string outputPath)
 {
-    void cvMatBGRToImageRGBA(cv::Mat& img, image::Image<image::RGBAfColor>& imageOut)
-    {
-       for(int row = 0; row < imageOut.Height(); row++)
-        {
-            cv::Vec3b* rowPtr = img.ptr<cv::Vec3b>(row);
-            for(int col = 0; col < imageOut.Width(); col++)
-            {
-                cv::Vec3b& matPixel = rowPtr[col];
-                imageOut(row, col) = image::RGBAfColor(matPixel[2] / 255.f, matPixel[1] / 255.f, matPixel[0] / 255.f,
-                                                       imageOut(row, col).a());
-            }
-       }
-    }
-} //tmp
-
-void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors)
-{
-    cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
+    cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_32FC3);
 
     cv::ccm::ColorCorrectionModel model(refColors, cv::ccm::COLORCHECKER_Macbeth);
     model.run();
     
     model.setColorSpace(cv::ccm::COLOR_SPACE_sRGB);
-    model.setCCM_TYPE(cv::ccm::CCM_3x3);
-    model.setDistance(cv::ccm::DISTANCE_CIE2000);
-    model.setLinear(cv::ccm::LINEARIZATION_GAMMA);
-    model.setLinearGamma(2.2);
-    model.setLinearDegree(3); // to prevent overfitting
+    //model.setCCM_TYPE(cv::ccm::CCM_3x3);
+    //model.setDistance(cv::ccm::DISTANCE_CIE2000);
+    //model.setLinear(cv::ccm::LINEARIZATION_GAMMA);
+    //model.setLinearGamma(2.2);
+    //model.setLinearDegree(3); // to prevent overfitting
     
     cv::Mat img;
     cvtColor(imageBGR, img, cv::COLOR_BGR2RGB);
     img.convertTo(img, CV_64F);
-    const int inpSize = 255;
-    const int outSize = 255;
-    img /= inpSize;
-    cv::Mat calibratedImage = model.infer(img); // make correction using cc matrix
-    cv::Mat out = calibratedImage * outSize;
 
-    calibratedImage.convertTo(calibratedImage, CV_8UC3, 255);
-    cv::Mat imgOut = min(max(calibratedImage, 0), outSize);
+    cv::Mat calibratedImage = model.infer(img, true); // make correction using cc matrix and assuming images are in linear color space (as RAW for example)
+
+    calibratedImage.convertTo(calibratedImage, CV_32FC3);
+
     cv::Mat outImg;
-    cvtColor(imgOut, outImg, cv::COLOR_RGB2BGR);
+    cvtColor(calibratedImage, outImg, cv::COLOR_RGB2BGR);
 
-    tmp::cvMatBGRToImageRGBA(outImg, image);
+    image::cvMatBGRToImageRGBA(outImg, image);
 }
 
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
@@ -148,7 +128,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
 
-    image::writeImage(outputPath, image, image::EImageColorSpace::NO_CONVERSION, metadata);
+    image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -301,7 +281,7 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(viewPath, image, options);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData);
+                processColorCorrection(image, colorData, outputPath);
 
                 // Save image
                 saveImage(image, viewPath, outputfilePath, storageDataType);
@@ -376,7 +356,7 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData);
+                processColorCorrection(image, colorData, outputPath);
 
                 // Save image
                 saveImage(image, inputFilePath, outputFilePath, storageDataType);
