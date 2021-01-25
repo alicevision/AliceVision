@@ -4,6 +4,7 @@ set(calibration_files_headers
   bestImages.hpp
   patternDetect.hpp
   exportData.hpp
+  distortionEstimation.hpp
 )
 
 # Sources
@@ -12,6 +13,7 @@ set(calibration_files_sources
   bestImages.cpp
   patternDetect.cpp
   exportData.cpp
+  distortionEstimation.cpp
 )
 
 alicevision_add_library(aliceVision_calibration
@@ -25,6 +27,7 @@ alicevision_add_library(aliceVision_calibration
     Boost::filesystem
     Boost::program_options
     Boost::boost
+    ${CERES_LIBRARIES}
 )
 
 if(ALICEVISION_HAVE_CCTAG)
