@@ -41,98 +41,109 @@ namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
-namespace ccheckerSVG {
 
-    const std::vector< cv::Point2f > MACBETH_CCHART_CORNERS_POS = {
-        {0.00, 0.00}, {16.75, 0.00}, {16.75, 11.25}, {0.00, 11.25},
-    };
+const std::vector< cv::Point2f > MACBETH_CCHART_CORNERS_POS = {
+    {0.f, 0.f}, {1675.f, 0.f}, {1675.f, 1125.f}, {0.f, 1125.f},
+};
 
-    const std::vector< cv::Point2f > MACBETH_CCHART_CELLS_POS_CENTER =  {
-        {1.50f, 1.50f}, {4.25f, 1.50f}, {7.00f, 1.50f}, {9.75f, 1.50f}, {12.50f, 1.50f}, {15.25f, 1.50f},
-        {1.50f, 4.25f}, {4.25f, 4.25f}, {7.00f, 4.25f}, {9.75f, 4.25f}, {12.50f, 4.25f}, {15.25f, 4.25f},
-        {1.50f, 7.00f}, {4.25f, 7.00f}, {7.00f, 7.00f}, {9.75f, 7.00f}, {12.50f, 7.00f}, {15.25f, 7.00f},
-        {1.50f, 9.75f}, {4.25f, 9.75f}, {7.00f, 9.75f}, {9.75f, 9.75f}, {12.50f, 9.75f}, {15.25f, 9.75f}
-    };
+const std::vector< cv::Point2f > MACBETH_CCHART_CELLS_POS_CENTER =  {
+    {150.f, 150.f}, {425.f, 150.f}, {700.f, 150.f}, {975.f, 150.f}, {1250.f, 150.f}, {1525.f, 150.f},
+    {150.f, 425.f}, {425.f, 425.f}, {700.f, 425.f}, {975.f, 425.f}, {1250.f, 425.f}, {1525.f, 425.f},
+    {150.f, 700.f}, {425.f, 700.f}, {700.f, 700.f}, {975.f, 700.f}, {1250.f, 700.f}, {1525.f, 700.f},
+    {150.f, 975.f}, {425.f, 975.f}, {700.f, 975.f}, {975.f, 975.f}, {1250.f, 975.f}, {1525.f, 975.f}
+};
 
-    const float MACBETH_CCHART_CELLS_SIZE = 2.50f * .5f;
+const float MACBETH_CCHART_CELLS_SIZE = 250.f * .5f;
 
-    struct Quad
+/*const std::vector< cv::Point2f > MACBETH_CCHART_CORNERS_POS = {
+    {0.00, 0.00}, {16.75, 0.00}, {16.75, 11.25}, {0.00, 11.25},
+};
+
+const std::vector< cv::Point2f > MACBETH_CCHART_CELLS_POS_CENTER =  {
+    {1.50f, 1.50f}, {4.25f, 1.50f}, {7.00f, 1.50f}, {9.75f, 1.50f}, {12.50f, 1.50f}, {15.25f, 1.50f},
+    {1.50f, 4.25f}, {4.25f, 4.25f}, {7.00f, 4.25f}, {9.75f, 4.25f}, {12.50f, 4.25f}, {15.25f, 4.25f},
+    {1.50f, 7.00f}, {4.25f, 7.00f}, {7.00f, 7.00f}, {9.75f, 7.00f}, {12.50f, 7.00f}, {15.25f, 7.00f},
+    {1.50f, 9.75f}, {4.25f, 9.75f}, {7.00f, 9.75f}, {9.75f, 9.75f}, {12.50f, 9.75f}, {15.25f, 9.75f}
+};
+
+const float MACBETH_CCHART_CELLS_SIZE = 2.50f * .5f;*/
+
+struct Quad
+{
+    std::vector<float> xCoords;
+    std::vector<float> yCoords;
+
+    Quad() = default;
+
+    Quad(const std::vector<cv::Point2f>& points)
     {
-        std::vector<float> xCoords;
-        std::vector<float> yCoords;
-
-        Quad() = default;
-
-        Quad(const std::vector<cv::Point2f>& points)
+        if (points.size() != 4)
         {
-            if (points.size() != 4)
-            {
-                ALICEVISION_LOG_ERROR("Invalid color checker box: size is not equal to 4");
-                exit(EXIT_FAILURE);
-            }
-            for(const auto& p : points)
-            {
-                xCoords.push_back(p.x);
-                yCoords.push_back(p.y);
-            }
-            // close polyline
-            xCoords.push_back(points[0].x);
-            yCoords.push_back(points[0].y);
+            ALICEVISION_LOG_ERROR("Invalid color checker box: size is not equal to 4");
+            exit(EXIT_FAILURE);
         }
-
-        void transform(cv::Matx33f transformMatrix)
+        for(const auto& p : points)
         {
-            for (int i = 0; i < 5; ++i)
-            {
-                cv::Point3f p(xCoords[i], yCoords[i], 1.);
-                p = transformMatrix * p;
-                xCoords[i] = p.x / p.z;
-                yCoords[i] = p.y / p.z;
-            }
+            xCoords.push_back(p.x);
+            yCoords.push_back(p.y);
         }
-    };
-
-    void draw(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputPath)
-    {
-        std::vector< Quad > quadsToDraw;
-
-        // Push back the quad representing the color checker
-        quadsToDraw.push_back( Quad(checker->getBox()) );
-
-        // Transform matrix from 'theoric' to 'measured'
-        cv::Matx33f tMatrix = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS,checker->getBox());
-
-        // Push back quads representing color checker cells
-        for (const auto& center : MACBETH_CCHART_CELLS_POS_CENTER)
-        {
-            Quad quad({
-                cv::Point2f( center.x - MACBETH_CCHART_CELLS_SIZE * .5, center.y - MACBETH_CCHART_CELLS_SIZE * .5 ),
-                cv::Point2f( center.x + MACBETH_CCHART_CELLS_SIZE * .5, center.y - MACBETH_CCHART_CELLS_SIZE * .5 ),
-                cv::Point2f( center.x + MACBETH_CCHART_CELLS_SIZE * .5, center.y + MACBETH_CCHART_CELLS_SIZE * .5 ),
-                cv::Point2f( center.x - MACBETH_CCHART_CELLS_SIZE * .5, center.y + MACBETH_CCHART_CELLS_SIZE * .5 ),
-            });
-            quad.transform(tMatrix);
-            quadsToDraw.push_back(quad);
-        }
-
-        svg::svgDrawer svgSurface;
-        for (const auto& quad : quadsToDraw)
-        {
-            svgSurface.drawPolyline(
-                quad.xCoords.begin(), quad.xCoords.end(),
-                quad.yCoords.begin(), quad.yCoords.end(),
-                svg::svgStyle().stroke("red", 2));
-        }
-
-        std::ofstream svgFile(outputPath.c_str());
-        svgFile << svgSurface.closeSvgFile().str();
-        svgFile.close();
+        // close polyline
+        xCoords.push_back(points[0].x);
+        yCoords.push_back(points[0].y);
     }
-} // namespace ccheckerSVG
+
+    void transform(cv::Matx33f transformMatrix)
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            cv::Point3f p(xCoords[i], yCoords[i], 1.);
+            p = transformMatrix * p;
+            xCoords[i] = p.x / p.z;
+            yCoords[i] = p.y / p.z;
+        }
+    }
+};
+
+void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputPath)
+{
+    std::vector< Quad > quadsToDraw;
+
+    // Push back the quad representing the color checker
+    quadsToDraw.push_back( Quad(checker->getBox()) );
+
+    // Transform matrix from 'theoric' to 'measured'
+    cv::Matx33f tMatrix = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS,checker->getBox());
+
+    // Push back quads representing color checker cells
+    for (const auto& center : MACBETH_CCHART_CELLS_POS_CENTER)
+    {
+        Quad quad({
+            cv::Point2f( center.x - MACBETH_CCHART_CELLS_SIZE * .5, center.y - MACBETH_CCHART_CELLS_SIZE * .5 ),
+            cv::Point2f( center.x + MACBETH_CCHART_CELLS_SIZE * .5, center.y - MACBETH_CCHART_CELLS_SIZE * .5 ),
+            cv::Point2f( center.x + MACBETH_CCHART_CELLS_SIZE * .5, center.y + MACBETH_CCHART_CELLS_SIZE * .5 ),
+            cv::Point2f( center.x - MACBETH_CCHART_CELLS_SIZE * .5, center.y + MACBETH_CCHART_CELLS_SIZE * .5 ),
+        });
+        quad.transform(tMatrix);
+        quadsToDraw.push_back(quad);
+    }
+
+    svg::svgDrawer svgSurface;
+    for (const auto& quad : quadsToDraw)
+    {
+        svgSurface.drawPolyline(
+            quad.xCoords.begin(), quad.xCoords.end(),
+            quad.yCoords.begin(), quad.yCoords.end(),
+            svg::svgStyle().stroke("red", 2));
+    }
+
+    std::ofstream svgFile(outputPath.c_str());
+    svgFile << svgSurface.closeSvgFile().str();
+    svgFile.close();
+}
 
 
 struct ImageOptions {
-    std::string imgName;
+    fs::path imgFsPath;
     std::string viewId;
     std::string lensSerialNumber;
     std::string bodySerialNumber;
@@ -151,6 +162,7 @@ struct CCheckerDetectionSettings {
 struct CCheckerData {
     cv::Ptr<cv::mcc::CChecker> _cchecker;
     cv::Mat _colorData;
+    cv::Mat _transformMat;
     ImageOptions _imgOptions;
 
     CCheckerData() = default;
@@ -159,19 +171,22 @@ struct CCheckerData {
         : _cchecker(cchecker), _imgOptions(imgOptions)
     {
         // Get colors data
-        cv::Mat chartsRGB = cchecker->getChartsRGB();
+        cv::Mat chartsRGB = _cchecker->getChartsRGB();
 
         // Extract average colors
         _colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3) / 255.f;
+
+        // Transform matrix from 'theoric' to 'measured'
+        _transformMat = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS, _cchecker->getBox());
     }
 
     bpt::ptree ptree() const
     {
-        bpt::ptree pt, ptColors, ptPositions;
+        bpt::ptree pt, ptColors, ptPositions, ptTransform;
 
         pt.put("bodySerialNumber", _imgOptions.bodySerialNumber);
         pt.put("lensSerialNumber", _imgOptions.lensSerialNumber);
-        pt.put("imageName", _imgOptions.imgName);
+        pt.put("imageName", _imgOptions.imgFsPath.string());
         pt.put("viewId", _imgOptions.viewId);
 
         // Serialize checker.positions
@@ -197,6 +212,21 @@ struct CCheckerData {
             }
         }
         pt.add_child("colors", ptColors);
+
+        // Serialize checker.transform
+        for (int i = 0; i < _transformMat.rows; ++i)
+        {
+            bpt::ptree row;
+            for(int j = 0; j < _transformMat.cols; ++j)
+            {
+                bpt::ptree cell;
+                cell.put_value(_transformMat.at<double>(i, j));
+                row.push_back(std::make_pair("", cell));
+            }
+            ptTransform.push_back( std::make_pair("", row) );
+        }
+        pt.add_child("transform", ptTransform);
+
         return pt;
     }
 };
@@ -204,14 +234,13 @@ struct CCheckerData {
 
 void detectColorChecker(
     std::vector<CCheckerData> &detectedCCheckers,
-    const fs::path &imgFsPath,
-    CCheckerDetectionSettings &settings,
-    ImageOptions& imgOpt)
+    ImageOptions& imgOpt,
+    CCheckerDetectionSettings &settings)
 {
     const int nc = 2; // Max number of charts in an image
     const std::string outputFolder = fs::path(settings.outputData).parent_path().string();
-    const std::string imgSrcPath = imgFsPath.string();
-    const std::string imgSrcStem = imgFsPath.stem().string();
+    const std::string imgSrcPath = imgOpt.imgFsPath.string();
+    const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
 
     // Load image
@@ -244,7 +273,7 @@ void detectColorChecker(
         if(settings.debug)
         {
             // Output debug data
-            ccheckerSVG::draw(cchecker, outputFolder + "/" + imgDestStem + counterStr + ".svg");
+            drawSVG(cchecker, outputFolder + "/" + imgDestStem + counterStr + ".svg");
 
             cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(cchecker, CV_RGB(250, 0, 0), 3);
             cdraw->draw(imageBGR);
@@ -282,7 +311,7 @@ int aliceVision_main(int argc, char** argv)
         ("debug", po::value<bool>(&debug),
          "Output debug data.")
         ("maxCount", po::value<unsigned int>(&maxCountByImage),
-         "Maximum color chart count to detect in a single image.");
+         "Maximum color charts count to detect in a single image.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -358,7 +387,7 @@ int aliceVision_main(int argc, char** argv)
                 view.getMetadataLensSerialNumber() };
             imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
             imgOpt.readOptions.applyWhiteBalance = view.getApplyWhiteBalance();
-            detectColorChecker(detectedCCheckers, view.getImagePath(), settings, imgOpt);
+            detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
 
     }
@@ -403,9 +432,9 @@ int aliceVision_main(int argc, char** argv)
         {
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
             ImageOptions imgOpt;
-            imgOpt.imgName = imgSrcPath;
+            imgOpt.imgFsPath = imgSrcPath;
             imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
-            detectColorChecker(detectedCCheckers, imgSrcPath, settings, imgOpt);
+            detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
 
     }
