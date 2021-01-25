@@ -8,6 +8,7 @@
 #include <aliceVision/image/drawing.hpp>
 
 #include <random>
+#include <algorithm>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -620,201 +621,358 @@ private:
 
 int main(int argc, char * argv[])
 {
-  using namespace aliceVision;
+    using namespace aliceVision;
 
-  std::string externalInfoFilepath;
-  std::string sfmInputDataFilepath;
-  std::string sfmOutputDataFilepath;
-  std::string inputAngleString;
+    std::string externalInfoFilepath;
+    std::string sfmInputDataFilepath;
+    std::string sfmOutputDataFilepath;
+    std::string inputAngleString;
+    std::string initializeCameras;
+    std::string nbViewsPerLineString;
 
-  bool useFisheye = false;
-  bool estimateFisheyeCircle = true;
-  Vec2 fisheyeCenterOffset(0, 0);
-  double fisheyeRadius = 96.0;
-  float additionalAngle = 0.0f;
-  bool debugFisheyeCircleEstimation = false;
+    bool yawCW = true;
+    bool useFisheye = false;
+    bool estimateFisheyeCircle = true;
+    Vec2 fisheyeCenterOffset(0, 0);
+    double fisheyeRadius = 96.0;
+    float additionalAngle = 0.0f;
+    bool debugFisheyeCircleEstimation = false;
 
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
-  // Command line parameters
-  po::options_description allParams(
-    "Parse external information about cameras used in a panorama.\n"
-    "AliceVision PanoramaInit");
+    // Command line parameters
+    po::options_description allParams(
+        "Parse external information about cameras used in a panorama.\n"
+        "AliceVision PanoramaInit");
 
-  po::options_description requiredParams("Required parameters");
-  requiredParams.add_options()
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
     ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
-  po::options_description motorizedHeadParams("Motorized Head parameters");
-  motorizedHeadParams.add_options()
-    ("config,c", po::value<std::string>(&externalInfoFilepath), "External info xml file.")
+    po::options_description motorizedHeadParams("Motorized Head parameters");
+    motorizedHeadParams.add_options()
+    ("config,c", po::value<std::string>(&externalInfoFilepath), "External info xml file from a motorized head system.")
     ("inputAngle,a", po::value<std::string>(&inputAngleString), "External info xml additional angle.")
+    ("yawCW", po::value<bool>(&yawCW), "Yaw rotation is ClockWise or ConterClockWise.")
+    ("initializeCameras", po::value<std::string>(&initializeCameras), "Initialization type for the cameras poses.")
+    ("nbViewsPerLine", po::value<std::string>(&nbViewsPerLineString), "Number of views per line splitted by comma. For instance, \"2,4,*,4,2\".")
     ;
 
-  po::options_description fisheyeParams("Fisheye parameters");
-  fisheyeParams.add_options()
+    po::options_description fisheyeParams("Fisheye parameters");
+    fisheyeParams.add_options()
     ("useFisheye", po::value<bool>(&useFisheye), "Declare all input images as fisheye with 'equidistant' model.")
     ("estimateFisheyeCircle", po::value<bool>(&estimateFisheyeCircle),
-      "Automatically estimate the Fisheye Circle center and radius instead of using user values.")
-    ("fisheyeCenterOffset_x", po::value<double>(&fisheyeCenterOffset(0)), "Fisheye circle's center offset X (pixels).")
-    ("fisheyeCenterOffset_y", po::value<double>(&fisheyeCenterOffset(1)), "Fisheye circle's center offset Y (pixels).")
-    ("fisheyeRadius,r", po::value<double>(&fisheyeRadius), "Fisheye circle's radius (% of image shortest side).")
-    ("debugFisheyeCircleEstimation", po::value<bool>(&debugFisheyeCircleEstimation),
-      "Debug fisheye circle detection.")
-    ;
+        "Automatically estimate the Fisheye Circle center and radius instead of using user values.")
+        ("fisheyeCenterOffset_x", po::value<double>(&fisheyeCenterOffset(0)), "Fisheye circle's center offset X (pixels).")
+        ("fisheyeCenterOffset_y", po::value<double>(&fisheyeCenterOffset(1)), "Fisheye circle's center offset Y (pixels).")
+        ("fisheyeRadius,r", po::value<double>(&fisheyeRadius), "Fisheye circle's radius (% of image shortest side).")
+        ("debugFisheyeCircleEstimation", po::value<bool>(&debugFisheyeCircleEstimation),
+            "Debug fisheye circle detection.")
+        ;
 
-  po::options_description optionalParams("Optional parameters");
+    po::options_description optionalParams("Optional parameters");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal, error, warning, info, debug, trace).");
+        "verbosity level (fatal, error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(motorizedHeadParams).add(fisheyeParams).add(logParams);
+    allParams.add(requiredParams).add(motorizedHeadParams).add(fisheyeParams).add(logParams);
 
-  // Parse command line
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
-
-  system::Logger::get()->setLogLevel(verboseLevel);
-
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
-    return EXIT_FAILURE;
-  }
-
-  if(!externalInfoFilepath.empty())
-  {
-    pt::ptree tree;
-
-    if (inputAngleString == "rotate90") {
-      additionalAngle = -M_PI_2;
-    }
-    else if (inputAngleString == "rotate180") {
-      additionalAngle = -M_PI;
-    }
-    else if (inputAngleString == "rotate270") {
-      additionalAngle = M_PI_2;
-    }
-
+    // Parse command line
+    po::variables_map vm;
     try
     {
-      pt::read_xml(externalInfoFilepath, tree);
+        po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+        if (vm.count("help") || (argc == 1))
+        {
+            ALICEVISION_COUT(allParams);
+            return EXIT_SUCCESS;
+        }
+        po::notify(vm);
     }
-    catch (...)
+    catch (boost::program_options::required_option& e)
     {
-      ALICEVISION_CERR("Error parsing input file");
-      return EXIT_FAILURE;
-    }
-
-    pt::ptree lens = tree.get_child("papywizard.header.lens");
-    pt::ptree shoot = tree.get_child("papywizard.shoot");
-
-    std::string lensType = lens.get<std::string>("<xmlattr>.type");
-    // double lensFocal = lens.get<double>("focal");
-
-    /*Make sure we control everything for debug purpose*/
-    if (lensType != "rectilinear")
-    {
-      ALICEVISION_CERR("Lens type not supported: " << lensType);
-      return EXIT_FAILURE;
-    }
-    
-    std::map<int, Eigen::Matrix3d> rotations;
-    
-    for (auto it : shoot)
-    {
-      int id = it.second.get<double>("<xmlattr>.id");
-      int bracket = it.second.get<double>("<xmlattr>.bracket");
-
-      if (rotations.find(id) != rotations.end())
-      {
-        ALICEVISION_CERR("Multiple xml attributes with a same id: " << id);
+        ALICEVISION_CERR("ERROR: " << e.what());
+        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
-      }
-
-      double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
-      double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
-      double roll_degree = it.second.get<double>("position.<xmlattr>.roll");
-
-      double yaw = degreeToRadian(yaw_degree);
-      double pitch = degreeToRadian(pitch_degree);
-      double roll = degreeToRadian(roll_degree);
-
-      Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
-      Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
-      Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
-      Eigen::AngleAxis<double> Mimage(additionalAngle-M_PI_2, Eigen::Vector3d::UnitZ());
-
-      Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *  Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
-
-      rotations[id] = cRo.transpose();
     }
-
-    if (sfmData.getViews().size() != rotations.size())
+    catch (boost::program_options::error& e)
     {
-      ALICEVISION_LOG_ERROR("The input SfMData has not the same number of views than the config file (sfmData views:" << sfmData.getViews().size() << ", config file rotations: " << rotations.size() << ").");
-      return EXIT_FAILURE; 
+        ALICEVISION_CERR("ERROR: " << e.what());
+        ALICEVISION_COUT("Usage:\n\n" << allParams);
+        return EXIT_FAILURE;
     }
 
-    /**
-     * HEURISTIC : 
-     * The xml file describe rotations for view ids which are not correlated with Alicevision view id
-     * Let assume that the order of xml views ids is the lexicographic order of the image names.
-    */
-    std::vector<std::pair<std::string, int>> names_with_id;
-    for (auto v : sfmData.getViews())
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    system::Logger::get()->setLogLevel(verboseLevel);
+
+    if (inputAngleString == "rotate90")
     {
-      boost::filesystem::path path_image(v.second->getImagePath());
-      names_with_id.push_back(std::make_pair(path_image.stem().string(), v.first));
+        additionalAngle = -M_PI_2;
     }
-    std::sort(names_with_id.begin(), names_with_id.end());
-
-    
-
-    size_t index = 0;
-    for (auto &item_rotation: rotations)
+    else if (inputAngleString == "rotate180")
     {
-      IndexT viewIdx = names_with_id[index].second;
-
-      if (item_rotation.second.trace() != 0)
-      {
-        sfmData::CameraPose pose(geometry::Pose3 (item_rotation.second, Eigen::Vector3d::Zero()));
-        sfmData.setAbsolutePose(viewIdx, pose);
-      }
-
-      ++index;
+        additionalAngle = -M_PI;
     }
-  }
+    else if (inputAngleString == "rotate270")
+    {
+        additionalAngle = M_PI_2;
+    }
+
+    sfmData::SfMData sfmData;
+    if (!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
+        return EXIT_FAILURE;
+    }
+
+    {
+        // Setup known poses from XML file or user expression
+        std::map<int, Eigen::Matrix3d> rotations;
+
+        boost::to_lower(initializeCameras);
+        if(initializeCameras == "no")
+        {
+        }
+        else if(initializeCameras == "file" || (initializeCameras.empty() && !externalInfoFilepath.empty()))
+        {
+            if(externalInfoFilepath.empty())
+            {
+                ALICEVISION_LOG_ERROR("Init cameras from file, but path is not set.");
+                return EXIT_FAILURE;
+            }
+
+            pt::ptree tree;
+
+            try
+            {
+                pt::read_xml(externalInfoFilepath, tree);
+            }
+            catch(...)
+            {
+                ALICEVISION_CERR("Error parsing input file");
+                return EXIT_FAILURE;
+            }
+
+            pt::ptree shoot = tree.get_child("papywizard.shoot");
+            for(auto it : shoot)
+            {
+                int id = it.second.get<double>("<xmlattr>.id");
+                int bracket = it.second.get<double>("<xmlattr>.bracket");
+
+                if(rotations.find(id) != rotations.end())
+                {
+                    ALICEVISION_CERR("Multiple xml attributes with a same id: " << id);
+                    return EXIT_FAILURE;
+                }
+
+                const double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
+                const double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
+                const double roll_degree = it.second.get<double>("position.<xmlattr>.roll");
+
+                const double yaw = degreeToRadian(yaw_degree);
+                const double pitch = degreeToRadian(pitch_degree);
+                const double roll = degreeToRadian(roll_degree);
+
+                const Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
+                const Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
+                const Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
+                const Eigen::AngleAxis<double> Mimage(additionalAngle - M_PI_2, Eigen::Vector3d::UnitZ());
+
+                const Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
+                                            Mroll.toRotationMatrix() * Mimage.toRotationMatrix();
+
+                rotations[id] = cRo.transpose();
+            }
+
+            if(sfmData.getViews().size() != rotations.size())
+            {
+                ALICEVISION_LOG_ERROR(
+                    "The input SfMData has not the same number of views than the config file (sfmData views:"
+                    << sfmData.getViews().size() << ", config file rotations: " << rotations.size() << ").");
+                return EXIT_FAILURE;
+            }
+        }
+        else if(boost::algorithm::contains(initializeCameras, "horizontal"))
+        {
+            const double zenithPitch = -0.5 * boost::math::constants::pi<double>();
+            const Eigen::AngleAxis<double> zenithMpitch(zenithPitch, Eigen::Vector3d::UnitX());
+            const Eigen::AngleAxis<double> zenithMroll(additionalAngle, Eigen::Vector3d::UnitZ());
+            const Eigen::Matrix3d zenithRo = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
+
+            const bool withZenith = boost::algorithm::contains(initializeCameras, "zenith");
+            if(initializeCameras == "zenith+horizontal")
+            {
+                ALICEVISION_LOG_TRACE("Add zenith first");
+                rotations[rotations.size()] = zenithRo.transpose();
+            }
+            const std::size_t nbHorizontalViews = sfmData.getViews().size() - int(withZenith);
+            for(int x = 0; x < nbHorizontalViews; ++x)
+            {
+                double yaw = 0;
+                if(nbHorizontalViews > 1)
+                {
+                    // Vary horizontally between -180 and +180 deg
+                    yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbHorizontalViews);
+                }
+
+                Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
+                Eigen::AngleAxis<double> Mroll(additionalAngle, Eigen::Vector3d::UnitZ());
+
+                Eigen::Matrix3d cRo =
+                    Myaw.toRotationMatrix() * Mroll.toRotationMatrix();
+
+                ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw);
+                rotations[rotations.size()] = cRo.transpose();
+            }
+            if(initializeCameras == "horizontal+zenith")
+            {
+                ALICEVISION_LOG_TRACE("Add zenith");
+                rotations[rotations.size()] = zenithRo.transpose();
+            }
+        }
+        else if(initializeCameras == "spherical" || (initializeCameras.empty() && !nbViewsPerLineString.empty()))
+        {
+            if(nbViewsPerLineString.empty())
+            {
+                ALICEVISION_LOG_ERROR("Init cameras from Sperical, but 'nbViewsPerLine' is not set.");
+                return EXIT_FAILURE;
+            }
+
+            std::vector<std::string> nbViewsStrPerLine;
+            boost::split(nbViewsStrPerLine, nbViewsPerLineString, boost::is_any_of(", "));
+            const int totalNbViews = sfmData.getViews().size();
+            std::vector<int> nbViewsPerLine;
+            int nbAutoSize = 0;
+            int sum = 0;
+            for(const std::string& nbViewsStr : nbViewsStrPerLine)
+            {
+                if(nbViewsStr == "*")
+                {
+                    nbViewsPerLine.push_back(-1);
+                    ++nbAutoSize;
+                }
+                else
+                {
+                    int v = boost::lexical_cast<int>(nbViewsStr);
+                    nbViewsPerLine.push_back(v);
+                    if(v == -1)
+                    {
+                        ++nbAutoSize;
+                    }
+                    else
+                    {
+                        sum += v;
+                    }
+                }
+            }
+            if(sum > totalNbViews)
+            {
+                ALICEVISION_LOG_ERROR("The input SfMData has less cameras declared than the number of cameras declared "
+                                      "in the expression (sfmData views:"
+                                      << sfmData.getViews().size() << ", expression sum: " << sum << ").");
+                return EXIT_FAILURE;
+            }
+            if(nbAutoSize > 0)
+            {
+                std::replace(nbViewsPerLine.begin(), nbViewsPerLine.end(), -1, (totalNbViews - sum) / nbAutoSize);
+            }
+            if(nbViewsPerLine.empty())
+            {
+                // If no expression assume that it is a pure rotation around one axis
+                nbViewsPerLine.push_back(totalNbViews);
+            }
+            const std::size_t newSum = std::accumulate(nbViewsPerLine.begin(), nbViewsPerLine.end(), 0);
+
+            if(newSum != totalNbViews)
+            {
+                ALICEVISION_LOG_ERROR(
+                    "The number of cameras in the input SfMData does not match with the number of cameras declared "
+                    "in the expression (sfmData views:"
+                    << sfmData.getViews().size() << ", expression sum: " << newSum << ").");
+                return EXIT_FAILURE;
+            }
+
+            int i = 0;
+            for(int y = 0; y < nbViewsPerLine.size(); ++y)
+            {
+                double pitch = 0;
+                if(nbViewsPerLine.size() > 1)
+                {
+                    // Vary vertically between -90 and +90 deg
+                    pitch = (-0.5 * boost::math::constants::pi<double>()) +
+                          y * boost::math::constants::pi<double>() / double(nbViewsPerLine.size());
+                }
+
+                const int nbViews = nbViewsPerLine[y];
+                for(int x = 0; x < nbViews; ++x)
+                {
+                    double yaw = 0;
+                    if(nbViews > 1)
+                    {
+                        // Vary horizontally between -180 and +180 deg
+                        yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbViews);
+                    }
+                    const double roll = 0;
+
+                    Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
+                    Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
+                    Eigen::AngleAxis<double> Mroll(roll + additionalAngle, Eigen::Vector3d::UnitZ());
+
+                    Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *
+                                          Mroll.toRotationMatrix();
+
+                    ALICEVISION_LOG_TRACE("Add rotation: yaw=" << yaw << ", pitch=" << pitch << ", roll=" << roll
+                                                               << ".");
+                    rotations[i++] = cRo.transpose();
+                }
+            }
+        }
+
+
+        if(!rotations.empty())
+        {
+            ALICEVISION_LOG_TRACE("Apply rotations from nbViewsPerLine expressions: " << nbViewsPerLineString << ".");
+
+            if(rotations.size() != sfmData.getViews().size())
+            {
+                ALICEVISION_LOG_ERROR("The number of cameras in the input SfMData does not match with the number of "
+                                      "rotations to apply (sfmData nb views:"
+                                      << sfmData.getViews().size() << ", nb rotations: " << rotations.size() << ").");
+                return EXIT_FAILURE;
+            }
+            /**
+             * HEURISTIC :
+             * The xml file describe rotations for view ids which are not correlated with Alicevision view id
+             * Let assume that the order of xml views ids is the lexicographic order of the image names.
+             */
+            std::vector<std::pair<std::string, int>> names_with_id;
+            for(auto v : sfmData.getViews())
+            {
+                boost::filesystem::path path_image(v.second->getImagePath());
+                names_with_id.push_back(std::make_pair(path_image.stem().string(), v.first));
+            }
+            std::sort(names_with_id.begin(), names_with_id.end());
+
+            size_t index = 0;
+            for(auto& item_rotation : rotations)
+            {
+                IndexT viewIdx = names_with_id[index].second;
+                if(item_rotation.second.trace() != 0)
+                {
+                    sfmData::CameraPose pose(geometry::Pose3(item_rotation.second, Eigen::Vector3d::Zero()));
+                    sfmData.setAbsolutePose(viewIdx, pose);
+                }
+                ++index;
+            }
+        }
+    }
 
   if(useFisheye)
   {

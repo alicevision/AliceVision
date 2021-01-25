@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
   using namespace std;
 
   //--
-  // Setup 3 camera that have a relative orientation of 120�
+  // Setup 3 camera that have a relative orientation of 120deg
   // Set Z axis as UP Vector for the rotation
   // They are in the same plane and looking in O={0,0,0}
   //--

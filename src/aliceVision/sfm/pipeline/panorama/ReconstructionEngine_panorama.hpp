@@ -155,6 +155,7 @@ public:
       ERotationAveragingMethod eRotationAveragingMethod = ROTATION_AVERAGING_L2;
       ERelativeRotationMethod eRelativeRotationMethod = RELATIVE_ROTATION_FROM_E;
       bool lockAllIntrinsics = false;
+      bool rotationAveragingWeighting = true;
       double maxAngleToPrior = 5.0;  //< max angle to input prior in degree
       double maxAngularError = 100.0;  //< max angular error in degree (in global rotation averaging)
       bool intermediateRefineWithFocal = false; //< intermediate refine with rotation+focal
@@ -169,6 +170,11 @@ public:
 
   void SetFeaturesProvider(feature::FeaturesPerView* featuresPerView);
   void SetMatchesProvider(matching::PairwiseMatches* provider);
+
+  /**
+   * @brief Filter feature matches to keep only the largest biedge connected subgraph.
+  */
+  void filterMatches();
 
   virtual bool process();
 

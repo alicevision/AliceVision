@@ -131,6 +131,8 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
 {
   std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
+  auto last = std::unique(featuresFolders.begin(), featuresFolders.end());
+  featuresFolders.erase(last, featuresFolders.end());
 
   boost::progress_display progressBar(sfmData.getViews().size() * imageDescriberTypes.size(), std::cout, "Loading regions\n");
 

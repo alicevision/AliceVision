@@ -557,7 +557,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
     sfmData.views[viewId] = view;
   }
 
-  if(flagsPart & ESfMData::EXTRINSICS &&
+  if((flagsPart & ESfMData::EXTRINSICS) &&
      isReconstructed)
   {
     // camera

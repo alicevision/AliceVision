@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "augmentedNormals.hpp"
-
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/lightingEstimation/augmentedNormals.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -28,10 +27,40 @@ using Eigen::MatrixXf;
 using LightingVector = Eigen::Matrix<float, 9, 3>;
 
 /**
- * @brief Lighting estimation from picture, albedo and geometry
- */ 
-void estimateLigthing(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
+ * @brief The LighthingEstimator class
+ * Allows to estimate LightingVector from a single image or multiple images
+ * @warning Image pixel type can be:
+ * - RGB (float) for light and color estimation
+ * - Greyscale (float) for luminance estimation
+ */
+class LighthingEstimator
+{
+public:
 
+  /**
+   * @brief Aggregate image data
+   * @param albedo[in] the corresponding albedo image
+   * @param picture[in] the corresponding picture
+   * @param normals[in] the corresponding normals image
+   */
+  void addImage(const image::Image<float>& albedo, const image::Image<float>& picture, const image::Image<image::RGBfColor>& normals);
+  void addImage(const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
 
-}
-}
+  /**
+   * @brief Estimate ligthing from the aggregate image(s) data
+   * @param[out] lighting Estimate ligthing @see LightingVector
+   */
+  void estimateLigthing(LightingVector& lighting) const;
+
+  /**
+   * @brief Clear all the aggregate image(s) data
+   */
+  void clear();
+
+private:
+  std::array<std::vector<MatrixXf>, 3> _all_rhoTimesN;
+  std::array<std::vector<MatrixXf>, 3> _all_pictureChannel;
+};
+
+} // namespace lightingEstimation
+} // namespace aliceVision

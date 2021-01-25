@@ -4,6 +4,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// To analyse history of intersected geometries during vote
+// #define ALICEVISION_DEBUG_VOTE
+
 #include "DelaunayGraphCut.hpp"
 // #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
@@ -24,10 +27,13 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
+
 #include <random>
+#include <stdexcept>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -392,6 +398,17 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
 }
 
 
+void DelaunayGraphCut::IntersectionHistory::append(const GeometryIntersection& geom, const Point3d& intersectPt)
+{
+    ++steps;
+    geometries.push_back(geom);
+    intersectPts.push_back(intersectPt);
+    const Point3d toCam = cam - intersectPt;
+    vecToCam.push_back(toCam);
+    distToCam.push_back(toCam.size());
+    angleToCam.push_back(angleBetwV1andV2(dirVect, intersectPt - originPt));
+}
+
 DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp)
 {
     mp = _mp;
@@ -445,6 +462,46 @@ void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& 
     mvsUtils::printfElapsedTime(t1);
 }
 
+
+std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByGeometry(const GeometryIntersection& g) const
+{
+    switch (g.type)
+    {
+    case EGeometryType::Edge:
+        return getNeighboringCellsByEdge(g.edge);
+    case EGeometryType::Vertex:
+        return getNeighboringCellsByVertexIndex(g.vertexIndex);
+    case EGeometryType::Facet:
+        return getNeighboringCellsByFacet(g.facet);
+    case EGeometryType::None:
+        break;
+    }
+    throw std::runtime_error("[error] getNeighboringCellsByGeometry: an undefined/None geometry has no neighboring cells.");
+}
+
+std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByFacet(const Facet& f) const
+{
+    std::vector<CellIndex> neighboringCells;
+    neighboringCells.push_back(f.cellIndex);
+
+    const Facet mFacet = mirrorFacet(f);
+    if(!isInvalidOrInfiniteCell(mFacet.cellIndex))
+        neighboringCells.push_back(mFacet.cellIndex);
+
+    return neighboringCells;
+}
+
+std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsByEdge(const Edge& e) const
+{
+    const std::vector<CellIndex>& v0ci = getNeighboringCellsByVertexIndex(e.v0);
+    const std::vector<CellIndex>& v1ci = getNeighboringCellsByVertexIndex(e.v1);
+
+    std::vector<CellIndex> neighboringCells;
+    std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
+    
+    return neighboringCells;
+}
+
 void DelaunayGraphCut::initVertices()
 {
     ALICEVISION_LOG_DEBUG("initVertices ...\n");
@@ -481,8 +538,6 @@ void DelaunayGraphCut::computeDelaunay()
 
 void DelaunayGraphCut::initCells()
 {
-    ALICEVISION_LOG_DEBUG("initCells ...\n");
-
     _cellsAttr.resize(_tetrahedralization->nb_cells()); // or nb_finite_cells() if keeps_infinite()
 
     ALICEVISION_LOG_INFO(_cellsAttr.size() << " cells created by tetrahedralization.");
@@ -501,7 +556,7 @@ void DelaunayGraphCut::initCells()
         }
     }
 
-    ALICEVISION_LOG_DEBUG("initCells done\n");
+    ALICEVISION_LOG_DEBUG("initCells [" << _tetrahedralization->nb_cells() << "] done");
 }
 
 void DelaunayGraphCut::displayStatistics()
@@ -1259,138 +1314,221 @@ void DelaunayGraphCut::removeSmallSegs(int minSegSize)
     initVertices();
 }
 
-bool DelaunayGraphCut::rayCellIntersection(const Point3d& camCenter, const Point3d& p, const Facet& inFacet, Facet& outFacet,
-                                           bool nearestFarest, Point3d& outIntersectPt) const
+DelaunayGraphCut::GeometryIntersection
+DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection& inGeometry,
+    const Point3d& originPt,
+    const Point3d& dirVect, Point3d& intersectPt,
+    const double epsilonFactor, const Point3d& lastIntersectPt) const
 {
-    outIntersectPt = p; // important
-    outFacet.cellIndex = GEO::NO_CELL;
-    outFacet.localVertexIndex = GEO::NO_VERTEX;
+    GeometryIntersection bestMatch;
+    Point3d bestMatchIntersectPt;
 
-    const CellIndex tetrahedronIndex = inFacet.cellIndex;
-    if(isInfiniteCell(tetrahedronIndex))
-        return false;
-
-    Point3d linePoint = p;
-    Point3d lineVect = (camCenter - p).normalize();
-    double currentDist = (camCenter - p).size();
-
-    // go thru all triangles
-    bool existsTriOnRay = false;
-    const Point3d* A = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 0)]);
-    const Point3d* B = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 1)]);
-    const Point3d* C = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 2)]);
-    const Point3d* D = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedronIndex, 3)]);
-
-    // All the facets of the tetrahedron
-    std::array<std::array<const Point3d*, 3>, 4> facetsPoints {{
-        {B, C, D}, // opposite vertex A, index 0
-        {A, C, D}, // opposite vertex B, index 1
-        {A, B, D}, // opposite vertex C, index 2
-        {A, B, C}  // opposite vertex D, index 3
-    }};
-    GEO::index_t oppositeVertexIndex = GEO::NO_VERTEX;
-    Point3d intersectPt;
-    double intersectDist;
-    // Test all facets of the tetrahedron
-    for(int i = 0; i < facetsPoints.size(); ++i)
+    switch (inGeometry.type)
     {
+    case EGeometryType::Facet:
+    {
+        const CellIndex tetrahedronIndex = inGeometry.facet.cellIndex;
 
-        const auto& facetPoints = facetsPoints[i];
-        if(isLineInTriangle(&intersectPt, facetPoints[0], facetPoints[1], facetPoints[2], &linePoint, &lineVect))
+        // Test all facets of the tetrahedron using i as localVertexIndex to define next intersectionFacet
+        for (int i = 0; i < 4; ++i)
         {
-            intersectDist = (camCenter - intersectPt).size();
-            // between the camera and the point if nearestFarest == true
-            // behind the point (from the camera) if nearestFarest == false
-            if(nearestFarest ? (intersectDist < currentDist) : (intersectDist > currentDist))
+            // Because we can't intersect with incoming facet (same localVertexIndex)
+            if (i == inGeometry.facet.localVertexIndex)
+                continue;
+
+            const Facet intersectionFacet(tetrahedronIndex, i);
+            bool ambiguous = false;
+
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, intersectionFacet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
+            if (result.type != EGeometryType::None)
             {
-                oppositeVertexIndex = i;
-                existsTriOnRay = true;
-                currentDist = intersectDist;
-                outIntersectPt = intersectPt;
+                if (!ambiguous)
+                    return result;
+
+                // Retrieve the best intersected point (farthest from origin point)
+                if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
+                {
+                    bestMatchIntersectPt = intersectPt;
+                    bestMatch = result;
+                }
             }
         }
     }
+    break;
 
-    if(!existsTriOnRay)
-        return false;
+    case EGeometryType::Vertex:
+    {
+        for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(inGeometry.vertexIndex))
+        {
+            if (isInfiniteCell(adjCellIndex))
+                continue;
 
-    outFacet.cellIndex = tetrahedronIndex;           // cell handle
-    outFacet.localVertexIndex = oppositeVertexIndex; // vertex index that is not in the intersected facet
-    return true;
+            // Get local vertex index
+            const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, inGeometry.vertexIndex);
+
+            // Define the facet to intersect
+            const Facet facet(adjCellIndex, localVertexIndex);
+            bool ambiguous = false;
+
+            const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
+            if (result.type != EGeometryType::None)
+            {
+                if (!ambiguous)
+                    return result;
+
+                // Retrieve the best intersected point (farthest from origin point)
+                if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
+                {
+                    bestMatchIntersectPt = intersectPt;
+                    bestMatch = result;
+                }
+            }
+        }
+    }
+    break;
+
+    case EGeometryType::Edge:
+    {
+        GeometryIntersection result;
+
+        for (CellIndex adjCellIndex : getNeighboringCellsByEdge(inGeometry.edge))
+        {
+            if (isInfiniteCell(adjCellIndex))
+                continue;
+            // Local vertices indices
+            const VertexIndex lvi0 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v0);
+            const VertexIndex lvi1 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v1);
+
+            // The two facets that do not touch this edge need to be tested
+            const std::array<Facet, 2> opositeFacets{ {{adjCellIndex, lvi0}, {adjCellIndex, lvi1}} };
+
+            for (const Facet& facet : opositeFacets)
+            {
+                bool ambiguous = false;
+                const GeometryIntersection result = rayIntersectTriangle(originPt, dirVect, facet, intersectPt, epsilonFactor, ambiguous, &lastIntersectPt);
+                if (result.type != EGeometryType::None)
+                {
+                    if (!ambiguous)
+                        return result;
+
+                    // Retrieve the best intersected point (farthest from origin point)
+                    if (bestMatch.type == EGeometryType::None || (originPt - intersectPt).size() > (originPt - bestMatchIntersectPt).size())
+                    {
+                        bestMatchIntersectPt = intersectPt;
+                        bestMatch = result;
+                    }
+                }
+            }
+        }
+    }
+    break;
+
+    case EGeometryType::None:
+        throw std::runtime_error("[intersectNextGeom] intersection with input none geometry should not happen.");
+        break;
+    }
+
+    intersectPt = bestMatchIntersectPt;
+    return bestMatch;
 }
 
-DelaunayGraphCut::Facet DelaunayGraphCut::getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const
+DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(const Point3d& originPt,
+    const Point3d& DirVec,
+    const DelaunayGraphCut::Facet& facet,
+    Point3d& intersectPt,
+    const double epsilonFactor, bool &ambiguous, const Point3d* lastIntersectPt) const
 {
-    if((cam < 0) || (cam >= mp->ncams))
+    ambiguous = false;
+
+    const VertexIndex AvertexIndex = getVertexIndex(facet, 0);
+    const VertexIndex BvertexIndex = getVertexIndex(facet, 1);
+    const VertexIndex CvertexIndex = getVertexIndex(facet, 2);
+
+    const Point3d* A = &_verticesCoords[AvertexIndex];
+    const Point3d* B = &_verticesCoords[BvertexIndex];
+    const Point3d* C = &_verticesCoords[CvertexIndex];
+
+    const double ABSize = (*A - *B).size();
+    const double BCSize = (*B - *C).size();
+    const double ACSize = (*A - *C).size();
+
+    const double marginEpsilon = std::min(std::min(ABSize, BCSize), ACSize) * epsilonFactor;
+    const double ambiguityEpsilon = (ABSize + BCSize + ACSize) / 3.0 * 1.0e-5;
+
+    Point3d tempIntersectPt;
+    const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
+
+    if (!isnormal(tempIntersectPt.x) || !isnormal(tempIntersectPt.y) || !isnormal(tempIntersectPt.z))
     {
-        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << globalVertexIndex);
+        // This is not suppose to happen in real life, we log a warning instead of raising an exeption if we face a border case
+        ALICEVISION_LOG_WARNING("Invalid/notNormal intersection point found during rayIntersectTriangle.");
+        return GeometryIntersection();
     }
-    const Point3d& p = _verticesCoords[globalVertexIndex];
 
-    double currentDist = (mp->CArr[cam] - p).size(); // initialize currentDist to the distance from 3d point p to camera center
+    const double u = triangleUv.x; // A to C
+    const double v = triangleUv.y; // A to B
 
-    for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(globalVertexIndex)) // GEOGRAM: set_stores_cicl(true) required
-    {
-        if(isInfiniteCell(adjCellIndex))
-            continue;
+    // If we find invalid uv coordinate
+    if (!std::isfinite(u) && !std::isfinite(v))
+        return GeometryIntersection();
 
-        // Get local vertex index
-        const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, globalVertexIndex);
+    // Ouside the triangle with marginEpsilon margin
+    if (u < -marginEpsilon || v < -marginEpsilon || (u + v) >(1 + marginEpsilon))
+        return GeometryIntersection();
 
-        // Define facet
-        const Facet facet(adjCellIndex, localVertexIndex);
+    // In case intersectPt is provided, check if intersectPt is in front of lastIntersectionPt 
+    // in the DirVec direction to ensure that we are moving forward in the right direction
+    if (lastIntersectPt != nullptr) {
+        const Point3d diff = tempIntersectPt - *lastIntersectPt;
+        const double dotValue = dot(DirVec, diff.normalize());
 
-        const std::array<const Point3d*, 3> facetPoints = getFacetsPoints(facet);
-
-        Point3d intersectPt;
-        const Point3d lineVect = (mp->CArr[cam] - p).normalize();
-        if(isLineInTriangle(&intersectPt, facetPoints[0], facetPoints[1], facetPoints[2], &p, &lineVect))
+        if (diff.size() < ambiguityEpsilon)
         {
-            const double intersectDist = (mp->CArr[cam] - intersectPt).size();
-            // if it's between the camera and the point if nearestFarest == true
-            // if it's behind the point (from the camera) if nearestFarest == false
-            if(nearestFarest ? (intersectDist < currentDist) : (intersectDist > currentDist))
+            ambiguous = true;
+        }
+        else
+        {
+            if (dotValue <= 0)
             {
-                return facet;
+               return GeometryIntersection();
             }
         }
     }
-    return Facet();
-}
 
-DelaunayGraphCut::Facet DelaunayGraphCut::getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const
-{
-    int cam_vi = _camsVertexes[cam];
-    Point3d camBehind = mp->CArr[cam] + (mp->CArr[cam] - p);
-    Point3d dir = (p - mp->CArr[cam]).normalize();
-    float maxdist = 0.0f;
-    Facet farestFacet;
+    // Change intersection point only if tempIntersectionPt is in the right direction (mean we intersect something)
+    intersectPt = tempIntersectPt;
 
-    for(CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(cam_vi)) // GEOGRAM: set_stores_cicl(true) required
+    if (v < marginEpsilon) // along A C edge
     {
-        if(isInfiniteCell(adjCellIndex))
-            continue;
-
-        // Get local vertex index
-        const VertexIndex localVertexIndex = _tetrahedralization->index(adjCellIndex, cam_vi);
-
-        // Define facet
-        const Facet facet(adjCellIndex, localVertexIndex);
-
-        const std::array<const Point3d*, 3> facetPoints = getFacetsPoints(facet);
-
-        const Point3d lineVect = (camBehind - mp->CArr[cam]).normalize();
-        if(isLineInTriangle(&intersectPt, facetPoints[0], facetPoints[1], facetPoints[2], &mp->CArr[cam], &lineVect))
+        if (u < marginEpsilon)
         {
-            const float dist = orientedPointPlaneDistance(intersectPt, camBehind, dir);
-            if(dist > maxdist)
-            {
-                maxdist = dist;
-                farestFacet = facet;
-            }
+            intersectPt = *A;
+            return GeometryIntersection(AvertexIndex); // vertex A
         }
+        if (u > 1.0 - marginEpsilon)
+        {
+            intersectPt = *C;
+            return GeometryIntersection(CvertexIndex); // vertex C
+        }
+
+        return GeometryIntersection(Edge(AvertexIndex, CvertexIndex)); // edge AC
     }
-    return farestFacet;
+
+    if (u < marginEpsilon) // along A B edge
+    {
+        if (v > 1.0 - marginEpsilon)
+        {
+            intersectPt = *B;
+            return GeometryIntersection(BvertexIndex); // vertex B
+        }
+
+        return GeometryIntersection(Edge(AvertexIndex, BvertexIndex)); // edge AB
+    }
+
+    if (u + v > 1.0 - marginEpsilon)
+        return GeometryIntersection(Edge(BvertexIndex, CvertexIndex)); // edge BC
+
+    return GeometryIntersection(facet);
 }
 
 float DelaunayGraphCut::distFcn(float maxDist, float dist, float distFcnHeight) const
@@ -1555,21 +1693,37 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
     const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
     const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
-    int64_t avStepsFront = 0;
-    int64_t aAvStepsFront = 0;
-    int64_t avStepsBehind = 0;
-    int64_t nAvStepsBehind = 0;
-    int avCams = 0;
-    int nAvCams = 0;
+    int64_t totalStepsFront = 0;
+    int64_t totalRayFront = 0;
+    int64_t totalStepsBehind = 0;
+    int64_t totalRayBehind = 0;
 
-#pragma omp parallel for reduction(+:avStepsFront,aAvStepsFront,avStepsBehind,nAvStepsBehind,avCams,nAvCams)
+    size_t totalCamHaveVisibilityOnVertex = 0;
+    size_t totalOfVertex = 0;
+
+    size_t totalIsRealNrc = 0;
+    
+    GeometriesCount totalGeometriesIntersectedFrontCount;
+    GeometriesCount totalGeometriesIntersectedBehindCount;
+
+    boost::progress_display progressBar(std::min(size_t(100), verticesRandIds.size()), std::cout, "fillGraphPartPtRc\n");
+    size_t progressStep = verticesRandIds.size() / 100;
+    progressStep = std::max(size_t(1), progressStep);
+#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex)
     for(int i = 0; i < verticesRandIds.size(); i++)
     {
-        int vertexIndex = verticesRandIds[i];
+        if(i % progressStep == 0)
+        {
+#pragma omp critical
+            ++progressBar;
+        }
+
+        const int vertexIndex = verticesRandIds[i];
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
 
         if(v.isReal() && (v.nrc > 0))
         {
+            ++totalIsRealNrc;
             // "weight" is called alpha(p) in the paper
             const float weight = weightFcn((float)v.nrc, labatutWeights, v.getNbCameras()); // number of cameras
 
@@ -1578,180 +1732,282 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
                 assert(v.cams[c] >= 0);
                 assert(v.cams[c] < mp->ncams);
 
-                int nstepsFront = 0;
-                int nstepsBehind = 0;
-                fillGraphPartPtRc(nstepsFront, nstepsBehind, vertexIndex, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
+                int stepsFront = 0;
+                int stepsBehind = 0;
+                GeometriesCount geometriesIntersectedFrontCount;
+                GeometriesCount geometriesIntersectedBehindCount;
+                fillGraphPartPtRc(stepsFront, stepsBehind, geometriesIntersectedFrontCount, geometriesIntersectedBehindCount, vertexIndex, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
                                   fillOut, distFcnHeight);
 
-                avStepsFront += nstepsFront;
-                aAvStepsFront += 1;
-                avStepsBehind += nstepsBehind;
-                nAvStepsBehind += 1;
+                totalStepsFront += stepsFront;
+                totalRayFront += 1;
+                totalStepsBehind += stepsBehind;
+                totalRayBehind += 1;
+
+                totalGeometriesIntersectedFrontCount += geometriesIntersectedFrontCount;
+                totalGeometriesIntersectedBehindCount += geometriesIntersectedBehindCount;
             } // for c
 
-            avCams += v.cams.size();
-            nAvCams += 1;
+            totalCamHaveVisibilityOnVertex += v.cams.size();
+            totalOfVertex += 1;
         }
     }
 
-    ALICEVISION_LOG_DEBUG("avStepsFront " << avStepsFront);
-    ALICEVISION_LOG_DEBUG("avStepsFront = " << mvsUtils::num2str(avStepsFront) << " // " << mvsUtils::num2str(aAvStepsFront));
-    ALICEVISION_LOG_DEBUG("avStepsBehind = " << mvsUtils::num2str(avStepsBehind) << " // " << mvsUtils::num2str(nAvStepsBehind));
-    ALICEVISION_LOG_DEBUG("avCams = " << mvsUtils::num2str(avCams) << " // " << mvsUtils::num2str(nAvCams));
+    ALICEVISION_LOG_DEBUG("_verticesAttr.size(): " << _verticesAttr.size() << "(" << verticesRandIds.size() << ")");
+    ALICEVISION_LOG_DEBUG("totalIsRealNrc: " << totalIsRealNrc);
+    ALICEVISION_LOG_DEBUG("totalStepsFront//totalRayFront = " << totalStepsFront << " // " << totalRayFront);
+    ALICEVISION_LOG_DEBUG("totalStepsBehind//totalRayBehind = " << totalStepsBehind << " // " << totalRayBehind);
+    ALICEVISION_LOG_DEBUG("totalCamHaveVisibilityOnVertex//totalOfVertex = " << totalCamHaveVisibilityOnVertex << " // " << totalOfVertex);
 
+    ALICEVISION_LOG_DEBUG(" - Geometries Intersected count - \n");
+    ALICEVISION_LOG_DEBUG("Front: edges " << totalGeometriesIntersectedFrontCount.edges << ", vertices: " << totalGeometriesIntersectedFrontCount.vertices << ", facets: " << totalGeometriesIntersectedFrontCount.facets);
+    ALICEVISION_LOG_DEBUG("Behind: edges " << totalGeometriesIntersectedBehindCount.edges << ", vertices: " << totalGeometriesIntersectedBehindCount.vertices << ", facets: " << totalGeometriesIntersectedBehindCount.facets);
     mvsUtils::printfElapsedTime(t1, "s-t graph weights computed : ");
 }
 
-void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam,
+void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalStepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam,
                                        float weight, bool fixesSigma, float nPixelSizeBehind,
                                        bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
-    out_nstepsFront = 0;
-    out_nstepsBehind = 0;
-
-    int maxint = 1000000; // std::numeric_limits<int>::std::max()
+    const int maxint = 1000000; // std::numeric_limits<int>::std::max()
+    const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
     const float pixSize = mp->getCamPixelSize(originPt, cam);
     float maxDist = nPixelSizeBehind * pixSize;
     if(fixesSigma)
-    {
         maxDist = nPixelSizeBehind;
-    }
 
     assert(cam >= 0);
     assert(cam < mp->ncams);
 
-    // printf("%f %f %f\n",originPt.x,originPt.y,originPt.z);
-
-    int nsteps = 0;
-
     if(fillOut)
     {
-        out_nstepsFront = 0;
-        // true here mean nearest
-        const bool nearestFarest = true;
-        // tetrahedron connected to the point define by the vertexIndex and which intersect the ray from camera
-        Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
+        // Initialisation
+        GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
+        Point3d intersectPt = originPt;
+        // toTheCam
+        const Point3d dirVect = (mp->CArr[cam] - originPt).normalize();
 
-        Point3d p = originPt;
-        bool ok = facet.cellIndex != GEO::NO_CELL;
-        while(ok)
+#ifdef ALICEVISION_DEBUG_VOTE
+        IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
+#endif
+        outTotalStepsFront = 0;
+        Facet lastIntersectedFacet;
+        // Break only when we reach our camera vertex (as long as we find a next geometry)
+        while (geometry.type != EGeometryType::Vertex || (mp->CArr[cam] - intersectPt).size() >= 1.0e-3)
         {
+            // Keep previous informations
+            const GeometryIntersection previousGeometry = geometry;
+            const Point3d lastIntersectPt = intersectPt;
+
+#ifdef ALICEVISION_DEBUG_VOTE
+            history.append(geometry, intersectPt);
+#endif
+            ++outTotalStepsFront;
+
+            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+
+            if (geometry.type == EGeometryType::None)
             {
-#pragma OMP_ATOMIC_UPDATE
-                _cellsAttr[facet.cellIndex].emptinessScore += weight;
+#ifdef ALICEVISION_DEBUG_VOTE
+                // exportBackPropagationMesh("fillGraph_ToCam_typeNone", history.geometries, originPt, mp->CArr[cam]);
+#endif
+                ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: geometry cannot be found.");
+                break;
             }
 
-            ++out_nstepsFront;
-            ++nsteps;
-
-            Facet outFacet;
-            Point3d intersectPt;
-
-            // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell nearest to the
-            // cam which is intersected with cam-p ray
-            // true here mean nearest
-            const bool nearestFarest = true;
-            if(!rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt))
+#ifdef ALICEVISION_DEBUG_VOTE
             {
-                ok = false;
-            }
-            else
-            {
+                const auto end = history.geometries.end();
+                auto it = std::find(history.geometries.begin(), end, geometry);
+                if (it != end)
                 {
-                    const float dist = distFcn(maxDist, (originPt - p).size(), distFcnHeight);
+                    // exportBackPropagationMesh("fillGraph_ToCam_alreadyIntersected", history.geometries, originPt, mp->CArr[cam]);
+                    ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: intersected geometry has already been intersected.");
+                    break;
+                }
+            }
+#endif
+
+            if (geometry.type == EGeometryType::Facet)
+            {
+                ++outFrontCount.facets;
+                {
 #pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[outFacet.cellIndex].gEdgeVisWeight[outFacet.localVertexIndex] += weight * dist;
+                    _cellsAttr[geometry.facet.cellIndex].emptinessScore += weight;
+                }
+
+                {
+                    const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
                 }
 
                 // Take the mirror facet to iterate over the next cell
-                facet = mirrorFacet(outFacet);
+                const Facet mFacet = mirrorFacet(geometry.facet);
+                geometry.facet = mFacet;
+                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                {
+#ifdef ALICEVISION_DEBUG_VOTE
+                    // exportBackPropagationMesh("fillGraph_ToCam_invalidMirorFacet", history.geometries, originPt, mp->CArr[cam]);
+#endif
+                    ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: invalidOrInfinite miror facet.");
+                    break;
+                }
+                lastIntersectedFacet = mFacet;
+            }
+            else
+            {
+                // We have just intersected a vertex or edge.
+                // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the current one.
+                if (previousGeometry.type == EGeometryType::Facet)
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[previousGeometry.facet.cellIndex].emptinessScore += weight;
+                }
 
-                if(facet.cellIndex == GEO::NO_CELL)
-                    ok = false;
-                p = intersectPt;
+                if (geometry.type == EGeometryType::Vertex)
+                {
+                    ++outFrontCount.vertices;
+                }
+                else if (geometry.type == EGeometryType::Edge)
+                {
+                    ++outFrontCount.edges;
+                }
             }
         }
 
-        // get the outer tetrahedron of camera c for the ray to p = the last tetrahedron
-        if(facet.cellIndex != GEO::NO_CELL)
+        // Vote for the last intersected facet (close to the cam)
+        if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
 #pragma OMP_ATOMIC_WRITE
-            _cellsAttr[facet.cellIndex].cellSWeight = (float)maxint;
+            _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
         }
     }
-
     {
-        out_nstepsBehind = 0;
-        // get the tetrahedron next to point p on the ray from c
-        // False here mean farest
-        const bool nearestFarest = false;
-        Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-        Facet outFacet;
+        // Initialisation
+        GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
+        Point3d intersectPt = originPt;
+        // behindThePoint
+        const Point3d dirVect = (originPt - mp->CArr[cam]).normalize();
 
-        if(facet.cellIndex != GEO::NO_CELL)
+#ifdef ALICEVISION_DEBUG_VOTE
+        IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
+#endif
+        outTotalStepsBehind = 0;
+
+        bool firstIteration = true;
+        Facet lastIntersectedFacet;
+        // While we are within the surface margin (as long as we find a next geometry)
+        while ((originPt - intersectPt).size() < maxDist)
         {
-#pragma OMP_ATOMIC_UPDATE
-            _cellsAttr[facet.cellIndex].on += weight;
-        }
+            // Keep previous informations
+            const GeometryIntersection previousGeometry = geometry;
+            const Point3d lastIntersectPt = intersectPt;
 
-        Point3d p = originPt; // HAS TO BE HERE !!!
+#ifdef ALICEVISION_DEBUG_VOTE
+            history.append(geometry, intersectPt);
+#endif
+            ++outTotalStepsBehind;
 
-        bool ok = (facet.cellIndex != GEO::NO_CELL);
-        while(ok)
-        {
-            GC_cellInfo& c = _cellsAttr[facet.cellIndex];
+            geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+
+            if (geometry.type == EGeometryType::None)
             {
-#pragma OMP_ATOMIC_UPDATE
-                c.fullnessScore += weight;
+                // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified after taking mirror facet)
+                if (previousGeometry.type == EGeometryType::Facet)
+                {
+#ifdef ALICEVISION_DEBUG_VOTE
+                    // exportBackPropagationMesh("fillGraph_behindThePoint_NoneButPreviousIsFacet", history.geometries, originPt, mp->CArr[cam]);
+#endif
+                    ALICEVISION_LOG_DEBUG("[Error]: fillGraph(behindThePoint) cause: None geometry but previous is Facet.");
+                }
+                // Break if we reach the end of the tetrahedralization volume
+                break;
             }
 
-            ++out_nstepsBehind;
-            ++nsteps;
-
-            Point3d intersectPt;
-
-            // Intersection with the next facet in the current tetrahedron (facet.cellIndex) in order to find the cell farest to the
-            // cam which is intersected with cam-p ray
-            // False here mean farest
-            const bool nearestFarest = false;
-            if(!rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt) ||
-               ((originPt - p).size() >= maxDist))
+            if (geometry.type == EGeometryType::Facet)
             {
-                ok = false;
+                ++outBehindCount.facets;
+
+                // Vote for the first cell found (only once)
+                if (firstIteration)
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[geometry.facet.cellIndex].on += weight;
+                    firstIteration = false;
+                }
+
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[geometry.facet.cellIndex].fullnessScore += weight;
+                }
+
+                // Take the mirror facet to iterate over the next cell
+                const Facet mFacet = mirrorFacet(geometry.facet);
+                lastIntersectedFacet = mFacet;
+                geometry.facet = mFacet;
+                if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                {
+                    // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
+                    break;
+                }
+
+                {
+                    const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+                }
             }
             else
             {
-                // float dist = 1.0f;
-                // float dist = distFcn(maxDist,(originPt-pold).size()); // not sure if it is OK ... TODO
-                // check ... with, without, and so on ....
-                // because labatutCFG09 with 32 gives much better result than nrc
-                // but when using just nrc and not using distFcn then the result is the same as labatutCGF09
-
-
-                // Take the mirror facet to iterate over the next cell
-                facet = mirrorFacet(outFacet);
-                if(facet.cellIndex == GEO::NO_CELL)
+                // Vote for the first cell found (only once)
+                // if we come from an edge or vertex to an other we have to vote for the first intersected cell.
+                if (firstIteration)
                 {
-                    ok = false;
-                }
-                else
-                {
-                    const float dist = distFcn(maxDist, (originPt - p).size(), distFcnHeight);
+                    if (previousGeometry.type != EGeometryType::Vertex)
+                        throw std::runtime_error("[error] The firstIteration vote could only happen during for the first cell when we come from the first vertex.");
+                    // the information of first intersected cell can only be found by taking intersection of neighbouring cells for both geometries
+                    const std::vector<CellIndex> previousNeighbouring = getNeighboringCellsByVertexIndex(previousGeometry.vertexIndex);
+                    const std::vector<CellIndex> currentNeigbouring = getNeighboringCellsByGeometry(geometry);
+
+                    std::vector<CellIndex> neighboringCells;
+                    std::set_intersection(previousNeighbouring.begin(), previousNeighbouring.end(), currentNeigbouring.begin(), currentNeigbouring.end(), std::back_inserter(neighboringCells));
+
+                    for (const CellIndex& ci : neighboringCells)
+                    {
 #pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[facet.cellIndex].gEdgeVisWeight[facet.localVertexIndex] += weight * dist;
+                        _cellsAttr[neighboringCells[0]].on += weight;
+                    }
+                    firstIteration = false;
                 }
-                p = intersectPt;
+
+                // We have just intersected a vertex or edge.
+                // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the current one.
+                if (previousGeometry.type == EGeometryType::Facet)
+                {
+#pragma OMP_ATOMIC_UPDATE
+                    _cellsAttr[previousGeometry.facet.cellIndex].fullnessScore += weight;
+                }
+
+                if (geometry.type == EGeometryType::Vertex)
+                {
+                    ++outBehindCount.vertices;
+                }
+                else if (geometry.type == EGeometryType::Edge)
+                {
+                    ++outBehindCount.edges;
+                }
             }
         }
 
-        // cv: is the tetrahedron in distance 2*sigma behind the point p in the direction of the camera c (called Lcp in the paper)
-
-        if(facet.cellIndex != GEO::NO_CELL)
+        // cv: is the tetrahedron in distance 2*sigma behind the point p in the direction of the camera c (called Lcp in the paper) Vote for the last found facet
+        // Vote for the last intersected facet (farthest from the camera)
+        if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
 #pragma OMP_ATOMIC_UPDATE
-            _cellsAttr[facet.cellIndex].cellTWeight += weight;
+            _cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight += weight;
         }
     }
 }
@@ -1776,9 +2032,9 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     float nsigmaFrontSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaFrontSilentPart: " << nsigmaFrontSilentPart);
 
+    // This parameter allows to enlage the surface margin behind the point
     float nsigmaBackSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaBackSilentPart: " << nsigmaBackSilentPart);
-
 
     for(GC_cellInfo& c: _cellsAttr)
     {
@@ -1787,39 +2043,39 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
         // c.out = c.gEdgeVisWeight[0] + c.gEdgeVisWeight[1] + c.gEdgeVisWeight[2] + c.gEdgeVisWeight[3];
     }
 
+    const double marginEpsilonFactor = 1.0e-4;
+
     // choose random order to prevent waiting
     const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
     const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
-    int64_t avStepsFront = 0;
-    int64_t aAvStepsFront = 0;
-    int64_t avStepsBehind = 0;
-    int64_t nAvStepsBehind = 0;
+    size_t totalStepsFront = 0;
+    size_t totalRayFront = 0;
+    size_t totalStepsBehind = 0;
+    size_t totalRayBehind = 0;
 
-#pragma omp parallel for reduction(+:avStepsFront,aAvStepsFront,avStepsBehind,nAvStepsBehind)
+    size_t totalCamHaveVisibilityOnVertex = 0;
+    size_t totalOfVertex = 0;
+
+    size_t totalVertexIsVirtual = 0;
+
+    GeometriesCount totalGeometriesIntersectedFrontCount;
+    GeometriesCount totalGeometriesIntersectedBehindCount;
+
+#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind)
     for(int i = 0; i < verticesRandIds.size(); ++i)
     {
         const int vertexIndex = verticesRandIds[i];
-        GC_vertexInfo& v = _verticesAttr[vertexIndex];
+        const GC_vertexInfo& v = _verticesAttr[vertexIndex];
         if(v.isVirtual())
             continue;
 
+        ++totalVertexIsVirtual;
         const Point3d& originPt = _verticesCoords[vertexIndex];
-        for(int c = 0; c < v.cams.size(); ++c)
+        // For each camera that has visibility over the vertex v (vertexIndex)
+        for(const int cam : v.cams)
         {
-            int nstepsFront = 0;
-            int nstepsBehind = 0;
-
-            int cam = v.cams[c];
-            float maxDist = 0.0f;
-            if(fixesSigma)
-            {
-                maxDist = nPixelSizeBehind;
-            }
-            else
-            {
-                maxDist = nPixelSizeBehind * mp->getCamPixelSize(originPt, cam);
-            }
+            const float maxDist = nPixelSizeBehind * (fixesSigma ? 1.0f : mp->getCamPixelSize(originPt, cam));
 
             float minJump = 10000000.0f;
             float minSilent = 10000000.0f;
@@ -1828,91 +2084,194 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             float midSilent = 10000000.0f;
 
             {
-                // True here mean nearest
-                const bool nearestFarest = true;
-                Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-                Point3d p = originPt; // HAS TO BE HERE !!!
-                bool ok = (facet.cellIndex != GEO::NO_CELL);
-                while(ok)
-                {
-                    ++nstepsFront;
+                // Initialisation
+                GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
+                Point3d intersectPt = originPt;
+                // toTheCam
+                const Point3d dirVect = (mp->CArr[cam] - originPt).normalize();
 
-                    const GC_cellInfo& c = _cellsAttr[facet.cellIndex];
-                    if((p - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
+#ifdef ALICEVISION_DEBUG_VOTE
+                IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
+#endif
+                // As long as we find a next geometry
+                Point3d lastIntersectPt = originPt;
+                // Iterate on geometries in the direction of camera's vertex within margin defined by maxDist (as long as we find a next geometry)
+                while ((geometry.type != EGeometryType::Vertex || (mp->CArr[cam] - intersectPt).size() < 1.0e-3) // We reach our camera vertex
+                && (lastIntersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) // We to far from the originPt
+                {
+                    // Keep previous informations
+                    const GeometryIntersection previousGeometry = geometry;
+                    lastIntersectPt = intersectPt;
+
+#ifdef ALICEVISION_DEBUG_VOTE
+                    history.append(geometry, intersectPt);
+#endif
+                    ++totalStepsFront;
+
+                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+
+                    if (geometry.type == EGeometryType::None)
                     {
-                        minJump = std::min(minJump, c.emptinessScore);
-                        maxJump = std::max(maxJump, c.emptinessScore);
+#ifdef ALICEVISION_DEBUG_VOTE
+                        // exportBackPropagationMesh("forceTedges_ToCam_typeNone", history.geometries, originPt, mp->CArr[cam]);
+#endif
+                        ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: geometry cannot be found.");
+                        break;
                     }
-                    else
+
+#ifdef ALICEVISION_DEBUG_VOTE
                     {
+                        const auto end = history.geometries.end();
+                        auto it = std::find(history.geometries.begin(), end, geometry);
+                        if (it != end)
+                        {
+                            // exportBackPropagationMesh("forceTedges_ToCam_alreadyIntersected", history.geometries, originPt, mp->CArr[cam]);
+                            ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: intersected geometry has already been intersected.");
+                            break;
+                        }
+                    }
+#endif
+
+                    if (geometry.type == EGeometryType::Facet)
+                    {
+                        ++totalGeometriesIntersectedFrontCount.facets;
+                        const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
+                        if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
+                        {
+                            minJump = std::min(minJump, c.emptinessScore);
+                            maxJump = std::max(maxJump, c.emptinessScore);
+                        }
+                        else
+                        {
+                            minSilent = std::min(minSilent, c.emptinessScore);
+                            maxSilent = std::max(maxSilent, c.emptinessScore);
+                        }
+
+                        // Take the mirror facet to iterate over the next cell
+                        const Facet mFacet = mirrorFacet(geometry.facet);
+                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        {
+#ifdef ALICEVISION_DEBUG_VOTE
+                            // exportBackPropagationMesh("forceTedges_ToCam_invalidMirorFacet", history.geometries, originPt, mp->CArr[cam]);
+#endif
+                            ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: invalidOrInfinite miror facet.");
+                            break;
+                        }
+                        geometry.facet = mFacet;
+                    }
+                    else if (geometry.type == EGeometryType::Vertex)
+                    {
+                        ++totalGeometriesIntersectedFrontCount.vertices;
+                    }
+                    else if (geometry.type == EGeometryType::Edge)
+                    {
+                        ++totalGeometriesIntersectedFrontCount.edges;
+                    }
+                }
+                ++totalRayFront;
+            }
+            {
+                // Initialisation
+                GeometryIntersection geometry(vertexIndex);
+                Point3d intersectPt = originPt;
+                // behindThePoint
+                const Point3d dirVect = (originPt - mp->CArr[cam]).normalize();
+
+#ifdef ALICEVISION_DEBUG_VOTE
+                IntersectionHistory history(mp->CArr[cam], originPt, dirVect);
+#endif
+
+                Facet lastIntersectedFacet;
+                bool firstIteration = true;
+		        Point3d lastIntersectPt = originPt;
+
+                // While we are within the surface margin defined by maxDist (as long as we find a next geometry)
+                while ((lastIntersectPt - originPt).size() <= nsigmaBackSilentPart * maxDist)
+                {
+                    // Keep previous informations
+                    const GeometryIntersection previousGeometry = geometry;
+                    lastIntersectPt = intersectPt;
+
+#ifdef ALICEVISION_DEBUG_VOTE
+                    history.append(geometry, intersectPt);
+#endif
+                    ++totalStepsBehind;
+
+                    geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
+
+                    if(geometry.type == EGeometryType::None)
+                    {
+                        // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified later) 
+                        if (previousGeometry.type == EGeometryType::Facet)
+                        {
+#ifdef ALICEVISION_DEBUG_VOTE
+                            // exportBackPropagationMesh("forceTedges_behindThePoint_NoneButPreviousIsFacet", history.geometries, originPt, mp->CArr[cam]);
+#endif
+                            ALICEVISION_LOG_DEBUG("[Error]: forceTedges(behindThePoint) cause: None geometry but previous is Facet.");
+                        }
+                        // Break if we reach the end of the tetrahedralization volume
+                        break;
+                    }
+
+                    if(geometry.type == EGeometryType::Facet)
+                    {
+                        ++totalGeometriesIntersectedFrontCount.facets;
+
+                        // Vote for the first cell found (only once)
+                        if (firstIteration)
+                        {
+                            midSilent = _cellsAttr[geometry.facet.cellIndex].emptinessScore;
+                            firstIteration = false;
+                        }
+
+                        const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
                         minSilent = std::min(minSilent, c.emptinessScore);
                         maxSilent = std::max(maxSilent, c.emptinessScore);
-                    }
 
-                    Facet outFacet;
-                    Point3d intersectPt;
-                    // Intersection with the next facet in the current tetrahedron (facet.cellIndex) in order to find the cell nearest
-                    // to the cam which is intersected with cam-p ray
-                    // True here mean nearest
-                    const bool nearestFarest = true;
-                    if(((p - originPt).size() > (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) || // (2 + 2) * sigma
-                       !rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt))
-                    {
-                        ok = false;
-                    }
-                    else
-                    {
                         // Take the mirror facet to iterate over the next cell
-                        facet = mirrorFacet(outFacet);
-                        if(facet.cellIndex == GEO::NO_CELL)
-                            ok = false;
-                        p = intersectPt;
+                        const Facet mFacet = mirrorFacet(geometry.facet);
+                        lastIntersectedFacet = mFacet;
+                        geometry.facet = mFacet;
+                        if (isInvalidOrInfiniteCell(mFacet.cellIndex))
+                        {
+                            // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
+                            break;
+                        }
                     }
-                }
-            }
+                    else {
 
-            {
-                // False here mean farest
-                const bool nearestFarest = false;
-                Facet facet = getFacetFromVertexOnTheRayToTheCam(vertexIndex, cam, nearestFarest);
-                Point3d p = originPt; // HAS TO BE HERE !!!
-                bool ok = (facet.cellIndex != GEO::NO_CELL);
-                if(ok)
-                {
-                    midSilent = _cellsAttr[facet.cellIndex].emptinessScore;
-                }
+                        // Vote for the first cell found (only once)
+                        // if we come from an edge or vertex to an other we have to vote for the first intersected cell.
+                        if (firstIteration)
+                        {
+                            if (previousGeometry.type != EGeometryType::Vertex)
+                                throw std::runtime_error("[error] The firstIteration vote could only happen during for the first cell when we come from the first vertex.");
+                            // the information of first intersected cell can only be found by taking intersection of neighbouring cells for both geometries
+                            const std::vector<CellIndex> previousNeighbouring = getNeighboringCellsByVertexIndex(previousGeometry.vertexIndex);
+                            const std::vector<CellIndex> currentNeigbouring = getNeighboringCellsByGeometry(geometry);
 
-                while(ok)
-                {
-                    nstepsBehind++;
-                    const GC_cellInfo& c = _cellsAttr[facet.cellIndex];
+                            std::vector<CellIndex> neighboringCells;
+                            std::set_intersection(previousNeighbouring.begin(), previousNeighbouring.end(), currentNeigbouring.begin(), currentNeigbouring.end(), std::back_inserter(neighboringCells));
 
-                    minSilent = std::min(minSilent, c.emptinessScore);
-                    maxSilent = std::max(maxSilent, c.emptinessScore);
+                            for (const CellIndex& ci : neighboringCells)
+                            {
+                                midSilent = _cellsAttr[geometry.facet.cellIndex].emptinessScore;
+                            }
+                            firstIteration = false;
+                        }
 
-                    Facet outFacet;
-                    Point3d intersectPt;
-
-                    // Intersection with the next facet in the current tetrahedron (ci) in order to find the cell farest
-                    // to the cam which is intersected with cam-p ray
-                    // False here mean farest
-                    const bool nearestFarest = false;
-                    if(((p - originPt).size() > nsigmaBackSilentPart * maxDist) || // (p-originPt).size() > 2 * sigma
-                       !rayCellIntersection(mp->CArr[cam], p, facet, outFacet, nearestFarest, intersectPt))
-                    {
-                        ok = false;
-                    }
-                    else
-                    {
-                        // Take the mirror facet to iterate over the next cell
-                        facet = mirrorFacet(outFacet);
-                        if(facet.cellIndex == GEO::NO_CELL)
-                            ok = false;
-                        p = intersectPt;
+                        if (geometry.type == EGeometryType::Vertex)
+                        {
+                            ++totalGeometriesIntersectedFrontCount.vertices;
+                        }
+                        else if (geometry.type == EGeometryType::Edge)
+                        {
+                            ++totalGeometriesIntersectedFrontCount.edges;
+                        }
                     }
                 }
 
-                if(facet.cellIndex != GEO::NO_CELL)
+                if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
                 {
                     // Equation 6 in paper
                     //   (g / B) < k_rel
@@ -1935,16 +2294,14 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         //(maxSilent-minSilent<maxSilentPartRange))
                     {
 #pragma OMP_ATOMIC_UPDATE
-                        _cellsAttr[facet.cellIndex].on += (maxJump - midSilent);
+                        _cellsAttr[lastIntersectedFacet.cellIndex].on += (maxJump - midSilent);
                     }
                 }
+                ++totalRayBehind;
             }
-
-            avStepsFront += nstepsFront;
-            aAvStepsFront += 1;
-            avStepsBehind += nstepsBehind;
-            nAvStepsBehind += 1;
         }
+        totalCamHaveVisibilityOnVertex += v.cams.size();
+        totalOfVertex += 1;
     }
 
     for(GC_cellInfo& c: _cellsAttr)
@@ -1956,10 +2313,12 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
         // c.cellTWeight = std::max(c.cellTWeight,fit->info().on);
     }
 
-    {
-        ALICEVISION_LOG_DEBUG("avStepsFront = " << avStepsFront << " // " << aAvStepsFront);
-        ALICEVISION_LOG_DEBUG("avStepsBehind = " << avStepsBehind << " // " << nAvStepsBehind);
-    }
+    ALICEVISION_LOG_DEBUG("_verticesAttr.size(): " << _verticesAttr.size() << "(" << verticesRandIds.size() << ")");
+    ALICEVISION_LOG_DEBUG("totalVertexIsVirtual: " << totalVertexIsVirtual);
+    ALICEVISION_LOG_DEBUG("totalStepsFront//totalRayFront = " << totalStepsFront << " // " << totalRayFront);
+    ALICEVISION_LOG_DEBUG("totalStepsBehind//totalRayBehind = " << totalStepsBehind << " // " << totalRayBehind);
+    ALICEVISION_LOG_DEBUG("totalCamHaveVisibilityOnVertex//totalOfVertex = " << totalCamHaveVisibilityOnVertex << " // " << totalOfVertex);
+
     mvsUtils::printfElapsedTime(t2, "t-edges forced: ");
 }
 
@@ -2184,12 +2543,6 @@ void DelaunayGraphCut::createDensePointCloud(Point3d hexah[8], const StaticVecto
 
   float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
 
-  // add points for cam centers
-  addPointsFromCameraCenters(cams, minDist);
-
-  // add 6 points to prevent singularities
-  addPointsToPreventSingularities(hexah, minDist);
-
   // add points from depth maps
   if(depthMapsFuseParams != nullptr)
     fuseFromDepthMaps(cams, hexah, *depthMapsFuseParams);
@@ -2197,6 +2550,12 @@ void DelaunayGraphCut::createDensePointCloud(Point3d hexah[8], const StaticVecto
   // add points from sfm
   if(sfmData != nullptr)
     addPointsFromSfM(hexah, cams, *sfmData);
+
+  // add points for cam centers
+  addPointsFromCameraCenters(cams, minDist);
+
+  // add 6 points to prevent singularities
+  addPointsToPreventSingularities(hexah, minDist);
 
   const int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
 
@@ -2580,11 +2939,11 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
     return me;
 }
 
-mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
+mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh(bool filter, const float& downscaleFactor, const std::function<float(const GC_cellInfo&)> getScore) const
 {
     ALICEVISION_LOG_INFO("Create mesh of the tetrahedralization.");
 
-    ALICEVISION_LOG_INFO("# vertixes: " << _verticesCoords.size());
+    ALICEVISION_LOG_INFO("# vertices: " << _verticesCoords.size());
     if(_cellsAttr.empty())
         return nullptr;
 
@@ -2617,7 +2976,7 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         displayAcc("acc_camSize", acc_camSize);
     }
 
-    float max_score = 1.0;
+    float maxScore = 1.0;
     {
         Accumulator acc_cellScore;
         Accumulator acc_cellSWeight;
@@ -2626,10 +2985,10 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         Accumulator acc_fullnessScore;
         Accumulator acc_emptinessScore;
         Accumulator acc_on;
+        Accumulator acc_selectedScore;
 
-        for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+        for(const GC_cellInfo& cellAttr : _cellsAttr)
         {
-            const GC_cellInfo& cellAttr = _cellsAttr[ci];
             acc_cellScore(cellAttr.cellSWeight - cellAttr.cellTWeight);
             acc_cellSWeight(cellAttr.cellSWeight);
             acc_cellTWeight(cellAttr.cellTWeight);
@@ -2642,6 +3001,8 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
             acc_fullnessScore(cellAttr.fullnessScore);
             acc_emptinessScore(cellAttr.emptinessScore);
             acc_on(cellAttr.on);
+
+            acc_selectedScore(getScore(cellAttr));
         }
         
         displayAcc("cellScore", acc_cellScore);
@@ -2651,9 +3012,17 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         displayAcc("fullnessScore", acc_fullnessScore);
         displayAcc("emptinessScore", acc_emptinessScore);
         displayAcc("on", acc_on);
-        max_score = 4.0f * extract::mean(acc_emptinessScore);
+
+        displayAcc("selected", acc_selectedScore);
+        maxScore = 4.0f * extract::mean(acc_selectedScore);
     }
-    ALICEVISION_LOG_DEBUG("createTetrahedralMesh: max_score: " << max_score);
+
+
+    ALICEVISION_LOG_DEBUG("createTetrahedralMesh: maxScore: " << maxScore);
+
+    // Prevent division by zero (getRGBFromJetColorMap)
+    if (maxScore == 0)
+        maxScore = 1;
 
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
@@ -2666,13 +3035,13 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
             {
                 const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
                 const GC_vertexInfo& vertexAttr = _verticesAttr[vi];
-                if(vertexAttr.cams.size() <= 3)
+                if(filter && vertexAttr.cams.size() <= 3)
                 {
                     ++weakVertex;
                 }
                 const Facet f1(ci, k);
                 const Facet f2 = mirrorFacet(f1);
-                if(isInvalidOrInfiniteCell(f2.cellIndex))
+                if(filter && isInvalidOrInfiniteCell(f2.cellIndex))
                 {
                     invalid = true;
                     continue;
@@ -2680,12 +3049,12 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
                 pointscellCenter = pointscellCenter + _verticesCoords[vi];
             }
             pointscellCenter = pointscellCenter / 4.0;
-            if(invalid)
+            if(filter && invalid)
             {
-                // If one of the facet is invalid, discard the tetrahedron.
+                // If one of the mirror facet is invalid, discard the tetrahedron.
                 continue;
             }
-            if (weakVertex >= 3)
+            if (filter && (weakVertex >= 3))
             {
                 // If the tetrahedron mainly composed of weak vertices, skip it.
                 // So keep tetrahedra that are linked to at least 3 good vertices.
@@ -2694,8 +3063,8 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
         }
 
         const GC_cellInfo& cellAttr = _cellsAttr[ci];
-        const float score = cellAttr.emptinessScore; // cellAttr.cellSWeight - cellAttr.cellTWeight;
-        if(score < (max_score / 1000.0f))
+        const float score = getScore(cellAttr); // cellAttr.cellSWeight - cellAttr.cellTWeight;
+        if(filter && (score < (maxScore / 1000.0f)))
         {
             // Skip too low score cells
             continue;
@@ -2715,44 +3084,43 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
             {
                 points[k] = _verticesCoords[vertices[k]];
                 // Downscale cell for visibility
-                points[k] = pointscellCenter + ((points[k] - pointscellCenter) * 0.95);
+                points[k] = pointscellCenter + ((points[k] - pointscellCenter) * downscaleFactor);
             }
 
             const Facet f2 = mirrorFacet(f1);
-            //// do not need to test again: already filtered before
-            // if(isInvalidOrInfiniteCell(f2.cellIndex))
-            //     continue;
-
-            const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
-            const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
-
-            const Point3d N =
-                cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
-
-            const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
-            const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
-
             bool clockwise = false;
-            if(dd1 == 0.0)
+            
+            //// do not need to test again: already filtered before
+            if (!isInvalidOrInfiniteCell(f2.cellIndex))
             {
-                if(dd2 == 0.0)
+                const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
+                const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
+
+                const Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
+
+                const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
+                const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
+                if (dd1 == 0.0)
                 {
-                    ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
+                    if (dd2 == 0.0)
+                    {
+                        ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
+                    }
+                    if (dd2 > 0.0)
+                    {
+                        clockwise = true;
+                    }
                 }
-                if(dd2 > 0.0)
+                else
                 {
-                    clockwise = true;
-                }
-            }
-            else
-            {
-                if(dd1 < 0.0)
-                {
-                    clockwise = true;
+                    if (dd1 < 0.0)
+                    {
+                        clockwise = true;
+                    }
                 }
             }
 
-            const rgb color = getRGBFromJetColorMap(score / max_score);
+            const rgb color = getRGBFromJetColorMap(score / maxScore);
             const std::size_t vertexBaseIndex = me->pts.size();
             for(const Point3d& p: points)
             {
@@ -2783,6 +3151,129 @@ mesh::Mesh* DelaunayGraphCut::createTetrahedralMesh() const
 
     ALICEVISION_LOG_INFO("Extract mesh from Graph Cut done.");
     return me;
+}
+
+void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt)
+{
+    std::unique_ptr<mesh::Mesh> mesh(createTetrahedralMesh(false, 0.999f));
+    std::unique_ptr<mesh::Mesh> meshf(createTetrahedralMesh(true, 0.999f));
+
+    // hack add direction vector from fromPt to toPt
+    {
+        const Point3d dirVec = fromPt - toPt;
+        const Point3d deltaVec = (dirVec * 0.1f);
+
+        mesh->pts.push_back(toPt - deltaVec);
+        mesh->colors().push_back(rgb(255, 0, 0));
+        mesh->pts.push_back(fromPt + deltaVec);
+        mesh->colors().push_back(rgb(0, 0, 255));
+        mesh->pts.push_back(fromPt + deltaVec * 0.001f);
+        mesh->colors().push_back(rgb(0, 0, 255));
+
+        meshf->pts.push_back(toPt - deltaVec);
+        meshf->colors().push_back(rgb(255, 0, 0));
+        meshf->pts.push_back(fromPt + deltaVec);
+        meshf->colors().push_back(rgb(0, 0, 255));
+        meshf->pts.push_back(fromPt + deltaVec * 0.001f);
+        meshf->colors().push_back(rgb(0, 0, 255));
+    }
+    {
+        mesh::Mesh::triangle t;
+        t.alive = true;
+        t.v[0] = meshf->pts.size() - 3;
+        t.v[1] = meshf->pts.size() - 2;
+        t.v[2] = meshf->pts.size() - 1;
+        meshf->tris.push_back(t);
+    }
+    {
+        mesh::Mesh::triangle t;
+        t.alive = true;
+        t.v[0] = mesh->pts.size() - 3;
+        t.v[1] = mesh->pts.size() - 2;
+        t.v[2] = mesh->pts.size() - 1;
+        mesh->tris.push_back(t);
+    }
+
+    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    mesh->saveToObj(tempDirPath + "/" + filename + ".obj");
+    meshf->saveToObj(tempDirPath + "/" + filename + "Filtered.obj");
+}
+
+void DelaunayGraphCut::exportFullScoreMeshs()
+{
+    std::unique_ptr<mesh::Mesh> meshEmptiness(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.emptinessScore; }));
+    std::unique_ptr<mesh::Mesh> meshFullness(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.fullnessScore; }));
+    std::unique_ptr<mesh::Mesh> meshSWeight(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.cellSWeight; }));
+    std::unique_ptr<mesh::Mesh> meshTWeight(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.cellTWeight; }));
+    std::unique_ptr<mesh::Mesh> meshOn(createTetrahedralMesh(false, 0.999f, [](const GC_cellInfo& c) { return c.on; }));
+
+    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+
+    meshEmptiness->saveToObj(tempDirPath + "/meshEmptiness.obj");
+    meshFullness->saveToObj(tempDirPath + "/meshFullness.obj");
+    meshSWeight->saveToObj(tempDirPath + "/meshSWeight.obj");
+    meshTWeight->saveToObj(tempDirPath + "/meshTWeight.obj");
+    meshOn->saveToObj(tempDirPath + "/meshOn.obj");
+}
+
+void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt)
+{
+    // Clean _cellsAttr emptinessScore
+    for (int i = 0; i < _cellsAttr.size(); ++i)
+        _cellsAttr[i].emptinessScore = 0.0f;
+
+    // Vote only for listed intersected geom facets
+    for (size_t i = 0; i < intersectedGeom.size(); i++)
+    {
+        const GeometryIntersection& geo = intersectedGeom[i];
+
+        if (geo.type == EGeometryType::Facet)
+            _cellsAttr[geo.facet.cellIndex].emptinessScore += i;
+    }
+
+    exportDebugMesh(filename + "_BackProp", fromPt, toPt);
+}
+
+void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit)
+{
+    assert(boost::filesystem::path(filePath).extension().string() == std::string(".csv"));
+
+    const unsigned int seed = (unsigned int)mp->userParams.get<unsigned int>("delaunaycut.seed", 0);
+    std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
+
+    std::vector<int> idx(_cellsAttr.size());
+    std::iota(idx.begin(), idx.end(), 0);
+    std::shuffle(idx.begin(), idx.end(), generator);
+
+    std::ofstream csv(filePath);
+    const char sep = ','; // separator
+    csv << "fullnessScore" << sep <<
+        "emptinessScore" << sep <<
+        "cellSWeight" << sep <<
+        "cellTWeight" << sep <<
+        "on" << sep <<
+        "gEdgeVisWeight0" << sep <<
+        "gEdgeVisWeight1" << sep <<
+        "gEdgeVisWeight2" << sep <<
+        "gEdgeVisWeight3" << '\n';
+    const size_t size = sizeLimit > 0 ? std::min(sizeLimit, _cellsAttr.size()) : _cellsAttr.size();
+    for (size_t i = 0; i < size; ++i)
+    {
+        const GC_cellInfo& cellAttr = _cellsAttr[idx.back()];
+        idx.pop_back();
+        csv << cellAttr.fullnessScore << sep <<
+            cellAttr.emptinessScore << sep <<
+            cellAttr.cellSWeight << sep <<
+            cellAttr.cellTWeight << sep <<
+            cellAttr.on << sep <<
+            cellAttr.gEdgeVisWeight[0] << sep <<
+            cellAttr.gEdgeVisWeight[1] << sep <<
+            cellAttr.gEdgeVisWeight[2] << sep <<
+            cellAttr.gEdgeVisWeight[3] << '\n';
+    }
+
+    csv.close();
+    ALICEVISION_LOG_INFO("Csv exported: " << filePath);
 }
 
 void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>** out_fullSegsColor, int& out_nsegments)
@@ -2977,6 +3468,26 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
     setIsOnSurface();
 
     ALICEVISION_LOG_DEBUG("Largest full segment only done.");
+}
+
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type)
+{
+    switch (type)
+    {
+    case DelaunayGraphCut::EGeometryType::Facet:
+        stream << "Facet";
+        break;
+    case DelaunayGraphCut::EGeometryType::Vertex:
+        stream << "Vertex";
+        break;
+    case DelaunayGraphCut::EGeometryType::Edge:
+        stream << "Edge";
+        break;
+    case DelaunayGraphCut::EGeometryType::None:
+        stream << "None";
+        break;
+    }
+    return stream;
 }
 
 } // namespace fuseCut
