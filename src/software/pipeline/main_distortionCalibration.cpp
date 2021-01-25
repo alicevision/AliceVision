@@ -1,4 +1,6 @@
 /*Command line parameters*/
+#include <Eigen/Dense>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <sstream>
@@ -15,6 +17,7 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <opencv2/opencv.hpp>
+#include <aliceVision/calibration/distortionEstimation.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -24,6 +27,8 @@
 namespace po = boost::program_options;
 
 using namespace aliceVision;
+
+
 
 struct EdgeInformation 
 {
@@ -51,6 +56,8 @@ struct Segment : Line
     Vec2 start;
     Vec2 end;
 };
+
+
 
 image::Image<float> distort(const image::Image<float> & source) 
 {
@@ -991,8 +998,8 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-    ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
+    //("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
+    //("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
     po::options_description logParams("Log parameters");
@@ -1033,16 +1040,72 @@ int aliceVision_main(int argc, char* argv[])
 
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    sfmData::SfMData sfmData;
+    /*sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
+    }*/
+
+    std::shared_ptr<camera::Pinhole> cam = std::make_shared<camera::PinholeRadialK3>(640, 480, 320.0, 320.0, 240.0, 0.5, 0.3, 0.2);
+
+    std::vector<calibration::LineWithPoints> lineWithPoints;
+    
+    // Create horizontal lines
+    for (int i = 0; i < 480; i += 10)
+    {
+        calibration::LineWithPoints line;
+        line.angle = M_PI_4;
+        line.dist = 1;
+
+        for (int j = 0; j < 640; j += 10)
+        {
+            Vec2 pt(j, i);
+            
+            Vec2 pos = cam->cam2ima(cam->removeDistortion(cam->ima2cam(pt)));
+            line.points.push_back(pos);
+        }
+
+        lineWithPoints.push_back(line);
     }
 
-    
+    // Create vertical lines
+    for (int j = 0; j < 640; j += 10)
+    {
+        calibration::LineWithPoints line;
+        line.angle = M_PI_4;
+        line.dist = 1;
 
-    int pos = 0;
+        for (int i = 0; i < 480; i += 010)
+        {
+            Vec2 pt(j, i);
+            
+            Vec2 pos = cam->cam2ima(cam->removeDistortion(cam->ima2cam(pt)));
+            line.points.push_back(pos);
+        }
+
+        lineWithPoints.push_back(line);
+    }
+    
+    std::shared_ptr<camera::Pinhole> toEstimate = std::make_shared<camera::PinholeRadialK1>(640, 480, 320.0, 300.0, 200.0, 0.0);
+
+    if (!calibration::estimate(toEstimate, lineWithPoints))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
+
+    std::shared_ptr<camera::Pinhole> toEstimate2 = std::make_shared<camera::PinholeRadialK3>(640, 480, 320.0, toEstimate->getOffset().x(), toEstimate->getOffset().y(), toEstimate->getDistortionParams()[0]);
+
+    if (!calibration::estimate(toEstimate2, lineWithPoints))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
+
+    std::cout << toEstimate2->getDistortionParams()[0] << std::endl;
+
+    /*int pos = 0;
     for (auto v : sfmData.getViews()) 
     {
         auto view = v.second;
@@ -1070,7 +1133,7 @@ int aliceVision_main(int argc, char* argv[])
 
         process(inputOpencvWrapper);
         pos++;
-    }
+    }*/
 
     return EXIT_SUCCESS;
 
