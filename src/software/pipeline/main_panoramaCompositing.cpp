@@ -698,7 +698,8 @@ int aliceVision_main(int argc, char** argv)
     
     bool succeeded = true;
 
-    omp_set_num_threads(std::min(omp_get_thread_limit(), std::max(0, maxThreads)));
+    if(maxThreads > 0)
+        omp_set_num_threads(std::min(omp_get_max_threads(), maxThreads));
 
     //#pragma omp parallel for
     for (std::size_t posReference = 0; posReference < chunk.size(); posReference++)
