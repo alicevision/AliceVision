@@ -7,14 +7,22 @@
 
 #pragma once
 
+#include "io.hpp"
+
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/system/Logger.hpp>
+
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/imagebuf.h>
+#include <OpenImageIO/imagebufalgo.h>
+
+namespace oiio = OIIO;
 
 namespace aliceVision {
 namespace image {
 
   /**
-   ** Half sample an image (ie reduce it's size by a factor 2) using bilinear interpolation
+   ** Half sample an image (ie reduce its size by a factor 2) using bilinear interpolation
    ** @param src input image
    ** @param out output image
    **/
@@ -90,8 +98,8 @@ namespace image {
 
           ImageType rescaled(nw, nh);
 
-          const oiio::ImageSpec imageSpecOrigin(w, h, nchannels, ColorTypeInfo<ImageType::Tpixel>::typeDesc);
-          const oiio::ImageSpec imageSpecResized(nw, nh, nchannels, ColorTypeInfo<ImageType::Tpixel>::typeDesc);
+          const oiio::ImageSpec imageSpecOrigin(w, h, nchannels, ColorTypeInfo<typename ImageType::Tpixel>::typeDesc);
+          const oiio::ImageSpec imageSpecResized(nw, nh, nchannels, ColorTypeInfo<typename ImageType::Tpixel>::typeDesc);
 
           const oiio::ImageBuf inBuf(imageSpecOrigin, inout.data());
           oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());
