@@ -210,5 +210,50 @@ void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageCo
 void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
+
+template <typename T>
+struct ColorTypeInfo
+{
+    // no size parameter, so no default value.
+    // An error will be raise at compile time if this type traits is not defined.
+};
+
+template <>
+struct ColorTypeInfo<unsigned char>
+{
+    static const int size = 1;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::UINT8;
+};
+template <>
+struct ColorTypeInfo<float>
+{
+    static const int size = 1;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
+};
+template <>
+struct ColorTypeInfo<RGBColor>
+{
+    static const int size = 3;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::UINT8;
+};
+template <>
+struct ColorTypeInfo<RGBfColor>
+{
+    static const int size = 3;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
+};
+template <>
+struct ColorTypeInfo<RGBAColor>
+{
+    static const int size = 4;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::UINT8;
+};
+template <>
+struct ColorTypeInfo<RGBAfColor>
+{
+    static const int size = 4;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
+};
+
 }  // namespace image
 }  // namespace aliceVision
