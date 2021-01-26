@@ -53,8 +53,12 @@ public:
         //Estimate measure
         Vec2 cpt = _camera->ima2cam(_pt);
         Vec2 distorted = _camera->addDistortion(cpt);
+        Vec2 ipt = _camera->cam2ima(distorted);
 
-        residuals[0] = cangle * distorted.x() + sangle * distorted.y() - distanceToLine;
+        double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
+        double w = w1 * w1;
+
+        residuals[0] = w * (cangle * ipt.x() + sangle * ipt.y() - distanceToLine);
 
         if(jacobians == nullptr)
         {
@@ -65,13 +69,13 @@ public:
         {
             Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
 
-            J(0, 0) = distorted.x() * -sangle + distorted.y() * cangle;
+            J(0, 0) = w * (ipt.x() * -sangle + ipt.y() * cangle);
         }
 
         if(jacobians[1] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[1]);
-            J(0, 0) = -1.0;
+            J(0, 0) = -w;
         }
 
         if(jacobians[2] != nullptr)
@@ -82,7 +86,7 @@ public:
             Jline(0, 0) = cangle;
             Jline(0, 1) = sangle;
 
-            J = Jline * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint();
+            J = w * Jline * _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint();
         }
 
         if(jacobians[3] != nullptr)
@@ -93,7 +97,7 @@ public:
             Jline(0, 0) = cangle;
             Jline(0, 1) = sangle;
 
-            J = Jline * _camera->getDerivativeAddDistoWrtDisto(cpt);
+            J = w * Jline * _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtDisto(cpt);
         }
 
         return true;
@@ -104,7 +108,7 @@ private:
     Vec2 _pt;
 };
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines, bool lockCenter, bool lockDistortion)
 {
     if (!cameraToEstimate)
     {
@@ -126,7 +130,17 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
 
     problem.AddParameterBlock(center, 2);
     problem.AddParameterBlock(distortionParameters, cameraToEstimate->getDistortionParams().size());
+    //problem.SetParameterLowerBound(distortionParameters, 0, 0.0);
 
+    if (lockCenter)
+    {
+        problem.SetParameterBlockConstant(center);
+    }
+
+    if (lockDistortion)
+    {
+        problem.SetParameterBlockConstant(distortionParameters);
+    }
     
     for (auto & l : lines)
     {
@@ -141,8 +155,8 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
     }
 
     ceres::Solver::Options options;
-    options.use_inner_iterations = false;
-    options.max_num_iterations = 100;
+    options.use_inner_iterations = true;
+    options.max_num_iterations = 1000;
 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);

@@ -21,7 +21,7 @@ struct LineWithPoints
     std::vector<Vec2> points;
 };
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines);
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines, bool lockCenter, bool lockDistortion);
 
 
 }//namespace calibration

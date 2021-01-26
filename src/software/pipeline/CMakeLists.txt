@@ -217,6 +217,9 @@ if(ALICEVISION_BUILD_SFM)
             Boost::filesystem
             Boost::boost
     )
+
+    target_include_directories(aliceVision_distortionCalibration PRIVATE "/home/servantf/prog/dependencies/libcbdetect/include")
+    target_link_libraries(aliceVision_distortionCalibration PRIVATE "/home/servantf/prog/dependencies/libcbdetect/lib/libcbdetect.so")
   endif()
 
   # Calibrate a rig

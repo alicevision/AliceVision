@@ -17,7 +17,17 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <opencv2/opencv.hpp>
+
 #include <aliceVision/calibration/distortionEstimation.hpp>
+
+#include "libcbdetect/boards_from_corners.h"
+#include "libcbdetect/config.h"
+#include "libcbdetect/find_corners.h"
+#include "libcbdetect/plot_boards.h"
+#include "libcbdetect/plot_corners.h"
+#include <chrono>
+#include <opencv2/opencv.hpp>
+#include <vector>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -61,7 +71,11 @@ struct Segment : Line
 
 image::Image<float> distort(const image::Image<float> & source) 
 {
-    camera::PinholeRadialK1 radial(source.Width(), source.Height(), 1000, source.Width() / 2, source.Height() / 2, 0.8);
+    double w = source.Width();
+    double h = source.Height();
+    double d = sqrt(w*w + h*h);
+
+    camera::PinholeRadialK1 radial(source.Width(), source.Height(), d, source.Width() / 2 + 10, source.Height() / 2 - 20, 0.8);
 
     double minx = source.Width();
     double maxx = 0;
@@ -82,6 +96,8 @@ image::Image<float> distort(const image::Image<float> & source)
 
     int width = maxx - minx + 1;
     int height = maxy - miny + 1;
+
+    std::cout << width << " " << height << std::endl;
 
     const image::Sampler2d<image::SamplerLinear> sampler;
     image::Image<float> result(width, height, true, 1.0f);
@@ -107,6 +123,60 @@ image::Image<float> distort(const image::Image<float> & source)
 
     return result;
 }
+
+cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const cv::Mat & source) 
+{
+    double minx = source.cols;
+    double maxx = 0;
+    double miny = source.rows;
+    double maxy = 0;
+
+    for (int i = 0; i < source.rows; i++) 
+    {
+        for (int j = 0; j < source.cols; j++)
+        {
+            Vec2 pos = camera->get_d_pixel(Vec2(j, i));
+            minx = std::min(minx, pos.x());
+            maxx = std::max(maxx, pos.x());
+            miny = std::min(miny, pos.y());
+            maxy = std::max(maxy, pos.y());
+        }
+    }
+
+    int width = maxx - minx + 1;
+    int height = maxy - miny + 1;
+
+    std::cout << minx << " " << miny << std::endl;
+    std::cout << "size:" << width << " " << height << std::endl;
+
+    cv::Mat result(height, width, CV_32FC1);
+
+    for (int i = 0; i < height; i++) 
+    {
+        double y = miny + double(i);
+
+        for (int j = 0; j < width; j++)
+        {
+            double x = minx + double(j);
+
+            Vec2 pos(x, y);
+            Vec2 dist = camera->get_ud_pixel(pos);
+
+            if (dist.x() < 0 || dist.x() >= source.cols)
+            {
+                continue;
+            } 
+            if (dist.y() < 0 || dist.y() >= source.rows) continue;
+            
+            cv::Mat patch;
+            cv::getRectSubPix(source, cv::Size(1,1), cv::Point2d(dist.x(), dist.y()), patch);
+            result.at<float>(i, j) = patch.at<float>(0, 0) * 255.0f;
+        }
+    }
+
+    return result;
+}
+
 
 double unsignedAngleDistance(double angle1, double angle2) 
 {
@@ -998,8 +1068,8 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    //("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-    //("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
+    ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
+    ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
     po::options_description logParams("Log parameters");
@@ -1040,29 +1110,29 @@ int aliceVision_main(int argc, char* argv[])
 
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    /*sfmData::SfMData sfmData;
+    sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
-    }*/
+    }
 
-    std::shared_ptr<camera::Pinhole> cam = std::make_shared<camera::PinholeRadialK3>(640, 480, 320.0, 320.0, 240.0, 0.5, 0.3, 0.2);
+    /*std::shared_ptr<camera::Pinhole> cam = std::make_shared<camera::PinholeRadialK3>(640, 480, 320.0, 320.0, 240.0, 0.8, -0.1, 0.105);
 
     std::vector<calibration::LineWithPoints> lineWithPoints;
     
     // Create horizontal lines
-    for (int i = 0; i < 480; i += 10)
+    for (int i = 0; i < 480; i += 20)
     {
         calibration::LineWithPoints line;
         line.angle = M_PI_4;
         line.dist = 1;
 
-        for (int j = 0; j < 640; j += 10)
+        for (int j = 0; j < 640; j += 20)
         {
             Vec2 pt(j, i);
             
-            Vec2 pos = cam->cam2ima(cam->removeDistortion(cam->ima2cam(pt)));
+            Vec2 pos = cam->cam2ima(cam->addDistortion(cam->ima2cam(pt)));
             line.points.push_back(pos);
         }
 
@@ -1070,42 +1140,50 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Create vertical lines
-    for (int j = 0; j < 640; j += 10)
+    for (int j = 0; j < 640; j += 20)
     {
         calibration::LineWithPoints line;
         line.angle = M_PI_4;
         line.dist = 1;
 
-        for (int i = 0; i < 480; i += 010)
+        for (int i = 0; i < 480; i += 20)
         {
             Vec2 pt(j, i);
             
-            Vec2 pos = cam->cam2ima(cam->removeDistortion(cam->ima2cam(pt)));
+            Vec2 pos = cam->cam2ima(cam->addDistortion(cam->ima2cam(pt)));
             line.points.push_back(pos);
         }
 
         lineWithPoints.push_back(line);
     }
     
-    std::shared_ptr<camera::Pinhole> toEstimate = std::make_shared<camera::PinholeRadialK1>(640, 480, 320.0, 300.0, 200.0, 0.0);
+    std::shared_ptr<camera::Pinhole> toEstimate = std::make_shared<camera::PinholeRadialK1>(640, 480, 320.0, 300.0, 260.0, 0.0);
 
-    if (!calibration::estimate(toEstimate, lineWithPoints))
+    if (!calibration::estimate(toEstimate, lineWithPoints, true, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return EXIT_FAILURE;
     }
 
-    std::shared_ptr<camera::Pinhole> toEstimate2 = std::make_shared<camera::PinholeRadialK3>(640, 480, 320.0, toEstimate->getOffset().x(), toEstimate->getOffset().y(), toEstimate->getDistortionParams()[0]);
+    std::cout << toEstimate->getDistortionParams()[0] << std::endl;
 
-    if (!calibration::estimate(toEstimate2, lineWithPoints))
+    std::shared_ptr<camera::Pinhole> toEstimate2 = std::make_shared<camera::PinholeRadialK3>(640, 480, 320.0, toEstimate->getOffset().x(), toEstimate->getOffset().y(), toEstimate->getDistortionParams()[0], 0.0, 0.0);
+
+    if (!calibration::estimate(toEstimate2, lineWithPoints, true, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return EXIT_FAILURE;
     }
 
-    std::cout << toEstimate2->getDistortionParams()[0] << std::endl;
+    if (!calibration::estimate(toEstimate2, lineWithPoints, false, false))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
 
-    /*int pos = 0;
+    std::cout << toEstimate2->getDistortionParams()[0] << std::endl;*/
+
+    int pos = 0;
     for (auto v : sfmData.getViews()) 
     {
         auto view = v.second;
@@ -1115,8 +1193,9 @@ int aliceVision_main(int argc, char* argv[])
         image::Image<float> input;
         image::readImage(v.second->getImagePath(), input, image::EImageColorSpace::SRGB);
 
-        image::Image<float> distorted = distort(input);
+        image::Image<float> distorted = input;//distort(input);
         cv::Mat inputOpencvWrapper(distorted.Height(), distorted.Width(), CV_32FC1, distorted.data());
+        
 
         float pixelRatio = view->getDoubleMetadata({"PixelAspectRatio"});
         if (pixelRatio < 0.0) 
@@ -1130,10 +1209,125 @@ int aliceVision_main(int argc, char* argv[])
             cv::resize(inputOpencvWrapper, resized, cv::Size(input.Width() * pixelRatio, input.Height()), 0.0, 0.0, cv::INTER_CUBIC);   
             cv::swap(inputOpencvWrapper, resized);
         }
+        
 
-        process(inputOpencvWrapper);
+        cv::Mat color;
+        cv::cvtColor(inputOpencvWrapper, color, cv::COLOR_GRAY2RGB);
+
+        color *= 255.0f;
+        cv::imwrite("/home/servantf/distorted.png", color);
+
+        //color = cv::imread(v.second->getImagePath(), cv::IMREAD_COLOR);
+
+        cbdetect::Params params;
+        params.show_debug_image = false;
+        params.corner_type = cbdetect::SaddlePoint;
+        params.norm = true;
+
+        cbdetect::Corner corners;
+        cbdetect::find_corners(color, corners, params);
+        cbdetect::plot_corners(color, corners);
+
+        std::vector<cbdetect::Board> boards;
+        cbdetect::boards_from_corners(color, corners, boards, params);
+
+        cbdetect::plot_boards(color, corners, boards, params);
+
+        std::vector<calibration::LineWithPoints> lineWithPoints;
+    
+        for (cbdetect::Board & b : boards)
+        {
+            int height = b.idx.size();
+            int width = b.idx[0].size();
+
+            std::cout << width << " " << height << std::endl;
+
+            // Create horizontal lines
+            for (int i = 0; i < height; i ++)
+            {
+                calibration::LineWithPoints line;
+                line.angle = M_PI_4;
+                line.dist = 1;
+
+                for (int j = 0; j < width; j++)
+                {
+                    int idx = b.idx[i][j];
+                    if (idx < 0) continue;
+
+                    cv::Point2d p = corners.p[idx];
+
+                    Vec2 pt;
+                    pt.x() = p.x;
+                    pt.y() = p.y;
+
+                    line.points.push_back(pt);
+                }
+
+                //std::cout << line.points.size() << std::endl;
+                if (line.points.size() < 10) continue;
+
+                lineWithPoints.push_back(line);
+            }
+
+            // Create horizontal lines
+            for (int j = 0; j < width; j++)
+            {
+                calibration::LineWithPoints line;
+                line.angle = M_PI_4;
+                line.dist = 1;
+
+                for (int i = 0; i < height; i++)
+                {
+                    int idx = b.idx[i][j];
+                    if (idx < 0) continue;
+
+                    cv::Point2d p = corners.p[idx];
+
+                    Vec2 pt;
+                    pt.x() = p.x;
+                    pt.y() = p.y;
+
+                    line.points.push_back(pt);
+                }
+
+                if (line.points.size() < 10) continue;
+
+                //std::cout << line.points.size() << std::endl;
+
+                lineWithPoints.push_back(line);
+            }
+        }
+
+        double w = input.Width();
+        double h = input.Height();
+        double d = sqrt(w*w + h*h);
+
+
+        std::shared_ptr<camera::Pinhole> camera = std::make_shared<camera::PinholeRadialK1>(input.Width(), input.Height(), d, input.Width() / 2, input.Height() / 2, 0.0);
+        if (!calibration::estimate(camera, lineWithPoints, true, false))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return EXIT_FAILURE;
+        }
+
+        if (!calibration::estimate(camera, lineWithPoints, false, false))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return EXIT_FAILURE;
+        }
+
+        std::shared_ptr<camera::Pinhole> camera2 = std::make_shared<camera::PinholeRadialK3>(input.Width(), input.Height(), d, camera->getOffset().x(), camera->getOffset().y(), camera->getDistortionParams()[0], 0, 0);
+        if (!calibration::estimate(camera2, lineWithPoints, false, false))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return EXIT_FAILURE;
+        }
+
+        cv::Mat undistorted = undistort(camera2, inputOpencvWrapper);
+        cv::imwrite("/home/servantf/undistorted.png", undistorted);
+
         pos++;
-    }*/
+    }
 
     return EXIT_SUCCESS;
 
