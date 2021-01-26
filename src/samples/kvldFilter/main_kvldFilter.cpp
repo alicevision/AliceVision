@@ -108,7 +108,9 @@ int main(int argc, char **argv)
   // Detect regions thanks to an image_describer
   //--
   using namespace aliceVision::feature;
-  std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(SiftParams(-1)));
+  SiftParams siftParams;
+  siftParams._firstOctave = -1;
+  std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(siftParams));
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->describe(imageL, regions_perImage[0]);
   image_describer->describe(imageR, regions_perImage[1]);

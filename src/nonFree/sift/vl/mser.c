@@ -4,30 +4,34 @@
  **/
 
 /*
-Copyright (C) 2007-12 Andrea Vedaldi and Brian Fulkerson.
+Copyright (C) 2007-13 Andrea Vedaldi and Brian Fulkerson.
 All rights reserved.
 
 This file is part of the VLFeat library and is made available under
 the terms of the BSD license (see the COPYING file).
 */
 
-/** @file mser.h
-
+/**
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
-@page mser Maximally Stable Extremal Regions
+@page mser Maximally Stable Extremal Regions (MSER)
 @author Andrea Vedaldi
+@tableofcontents
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 
-@file mser.h implements the <em>Maximally Stable Extremal
-Regions</em> (MSER) feature detetctor @cite{matas03robust}.
+@ref mser.h implements the *Maximally Stable Extremal Regions* (MSER)
+local feature detector of @cite{matas03robust}. This detector extracts
+as features the connected components of the level sets of the
+input intensity image. Among all such regions, the ones that are
+locally maximally stable are selected. MSERs are affine co-variant, as
+well as largely co-variant to generic diffeomorphic transformations.
 
-- @ref mser-overview
-- @ref mser-definition
-- @ref mser-vol
-- @ref mser-ell
+See @ref mser-starting for an introduction on how to use the detector
+from the C API. For further details refer to:
+
+- @subpage mser-fundamentals - MSER definition and parameters.
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
-@section mser-overview Maximally Stable Extremal Regions Overview
+@section mser-starting Getting started with the MSER detector
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 
 Running the MSER filter usually involves the following steps:
@@ -41,54 +45,62 @@ Running the MSER filter usually involves the following steps:
 - Delete the MSER filter by ::vl_mser_delete().
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
-@section mser-definition MSER definition
+@page mser-fundamentals MSER fundamentals
+@tableofcontents
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 
-An extremal region @f$R_l@f$ of an image is a connected component
-of the level set @f$S_l = \{ x : I(x) \leq l \}@f$.
+The *extermal regions* of an image are the connected components of the
+level sets $S_l = \{ x : I(x) \leq l \}, l \in \real$ of the image
+$I(x)$. Consider a discretization of the intensity levels $l$
+consisting of $M$ samples $\mathcal{L}=\{0,\dots,M-1\}$. The extremal
+regions $R_l \subset S_l$ of the level sets $S_l, l \in \mathcal{L}$
+can be arranged in a tree, where a region $R_l$ is a children of a
+region $R_{l+1}$ if $R_l \subset R_{l+1}$. The following figures shows
+a 1D example where the regions are denoted by dark thick lines:
 
-@image html mser-er.png
+@image html mser-tree.png "Connected components of the image level sets arranged in a tree."
 
-For each intensity @f$l@f$, one has multiple disjoint extremal
-regions in the level set @f$S_l@f$. Let @f$l@f$ span a finite
-number of values @f$\mathcal{L}=\{0,\dots,M-1\}@f$ (a sampling of
-the image range).  One obtains a family of regions @f$R_l@f$; by
-connecting two regions @f$R_l@f$and @f$R_{l+1}@f$ if, and only if,
-@f$R_l\subset R_{l+1}@f$, regions form a tree:
+Note that, depending on the image, regions at different levels can be
+identical as sets:
 
-@image html mser-tree.png
+@image html mser-er-step.png "Connected components when the image contains step changes."
 
-The <em>maximally stable extremal regions</em> are extremal
-regions which satisfy a stability criterion. Here we use a
-criterion which is similar but not identical to the original
-paper. This definition is somewhat simpler both to understand and
-code (it also runs faster).
+A *stable extremal region* is an extremal region that does not change
+much as the index $l$ is varied. Here we use a criterion which is
+similar but not identical to the original paper. This definition is
+somewhat simpler both to understand and code.
 
-Let @f$B(R_l)=(R_l,R_{l+1},\dots,R_{l+\Delta})@f$ be the branch of
-the tree rooted at @f$R_l@f$.  We associate to the branch the
-(in)stability score
+Let $B(R_l)=(R_l,R_{l+1},\dots,R_{l+\Delta})$ be the branch of the
+tree $R_l \subset R_{l+1} \subset \dots \subset R_{l + \Delta}$
+rooted at $R_l$. We associate to the branch the (in)stability score
 
 @f[
   v(R_l) = \frac{|R_{l+\Delta} - R_l|}{|R_l|}.
 @f]
 
+This score is a relative measure of how much $R_l$ changes as the
+index is increased from $l$ to $l+\Delta$, as illustrated in the
+following figure.
+
+@image html mser-er.png "Stability is measured by looking at how much a region changes with the intensity level."
+
 The score is low if the regions along the branch have similar area
 (and thus similar shape). We aim to select maximally stable
 branches; then a maximally stable region is just a representative
 region selected from a maximally stable branch (for simplicity we
-select @f$R_l@f$, but one could choose for example
-@f$R_{l+\Delta/2}@f$).
+select $R_l$, but one could choose for example
+$R_{l+\Delta/2}$).
 
 Roughly speaking, a branch is maximally stable if it is a local
 minimum of the (in)stability score. More accurately, we start by
 assuming that all branches are maximally stable. Then we consider
-each branch @f$B(R_{l})@f$ and its parent branch
-@f$B(R_{l+1}):R_{l+1}\supset R_l@f$ (notice that, due to the
+each branch $B(R_{l})$ and its parent branch
+$B(R_{l+1}):R_{l+1}\supset R_l$ (notice that, due to the
 discrete nature of the calculations, they might be geometrically
 identical) and we mark as unstable the less stable one, i.e.:
 
-  - if @f$v(R_l)<v(R_{l+1})@f$, mark @f$R_{l+1}@f$ as unstable;
-  - if @f$v(R_l)>v(R_{l+1})@f$, mark @f$R_{l}@f$ as unstable;
+  - if $v(R_l)<v(R_{l+1})$, mark $R_{l+1}$ as unstable;
+  - if $v(R_l)>v(R_{l+1})$, mark $R_{l}$ as unstable;
   - otherwise, do nothing.
 
 This criterion selects among nearby regions the ones that are more
@@ -96,14 +108,14 @@ stable. We optionally refine the selection by running (starting
 from the bigger and going to the smaller regions) the following
 tests:
 
-- @f$a_- \leq |R_{l}|/|R_{\infty}| \leq a_+@f$: exclude MSERs too
-  small or too big (@f$|R_{\infty}|@f$ is the area of the image).
+- $a_- \leq |R_{l}|/|R_{\infty}| \leq a_+$: exclude MSERs too
+  small or too big ($|R_{\infty}|$ is the area of the image).
 
-- @f$v(R_{l}) < v_+@f$: exclude MSERs too unstable.
+- $v(R_{l}) < v_+$: exclude MSERs too unstable.
 
-- For any MSER @f$R_l@f$, find the parent MSER @f$R_{l'}@f$ and check
+- For any MSER $R_l$, find the parent MSER $R_{l'}$ and check
   if
-  @f$|R_{l'} - R_l|/|R_l'| < d_+@f$: remove duplicated MSERs.
+  $|R_{l'} - R_l|/|R_l'| < d_+$: remove duplicated MSERs.
 
  <table>
  <tr>
@@ -113,31 +125,31 @@ tests:
   <td>set by</td>
  </tr>
  <tr>
-   <td>@f$\Delta@f$</td>
+   <td>$\Delta$</td>
    <td>@c delta</td>
    <td>5</td>
    <td>::vl_mser_set_delta()</td>
  </tr>
  <tr>
-   <td>@f$a_+@f$</td>
+   <td>$a_+$</td>
    <td>@c max_area</td>
    <td>0.75</td>
    <td>::vl_mser_set_max_area()</td>
  </tr>
  <tr>
-   <td>@f$a_-@f$</td>
+   <td>$a_-$</td>
    <td>@c min_area</td>
-   <td>3.0/@f$|R_\infty|@f$</td>
+   <td>3.0/$|R_\infty|$</td>
    <td>::vl_mser_set_min_area()</td>
  </tr>
  <tr>
-   <td>@f$v_+@f$</td>
+   <td>$v_+$</td>
    <td>@c max_var</td>
    <td>0.25</td>
    <td>::vl_mser_set_max_variation()</td>
  </tr>
  <tr>
-   <td>@f$d_+@f$</td>
+   <td>$d_+$</td>
    <td>@c min_diversity</td>
    <td>0.2</td>
    <td>::vl_mser_set_min_diversity()</td>
@@ -174,11 +186,11 @@ and the total number of fitted ellipsoids by
 returned by ::vl_mser_get_ell(). The column is the stacking of the
 mean and of the independent components of the variance, in the
 order <em>(1,1),(1,2),..,(1,n), (2,2),(2,3)...</em>. In the
-calculations, the pixel coordinate @f$x=(x_1,...,x_n)@f$ use the
+calculations, the pixel coordinate $x=(x_1,...,x_n)$ use the
 standard index order and ranges.
 
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
-@subsection mser-algo Algorithm
+@section mser-algo Algorithm
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  -->
 
 The algorithm is quite efficient. While some details may be
@@ -198,9 +210,9 @@ tricky, the overall idea is easy to grasp.
 of the actual extremal region tree. In particular, it does not
 contain redundant entries extremal regions that coincide as
 sets. So, for example, in the calculated extremal region tree, the
-parent @f$R_q@f$ of an extremal region @f$R_{l}@f$ may or may
-<em>not</em> correspond to @f$R_{l+1}@f$, depending whether
-@f$q\leq l+1@f$ or not. These subtleties are important when
+parent $R_q$ of an extremal region $R_{l}$ may or may
+<em>not</em> correspond to $R_{l+1}$, depending whether
+$q\leq l+1$ or not. These subtleties are important when
 calculating the stability tests.
 
 **/

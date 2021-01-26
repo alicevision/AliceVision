@@ -64,47 +64,46 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector
   if(sfmData.getViews().empty())
     throw std::runtime_error("Can't get list of descriptor files, no views found");
 
+  std::vector<feature::EImageDescriberType> descTypes = {feature::EImageDescriberType::SIFT,
+                                                         feature::EImageDescriberType::DSPSIFT,
+                                                         feature::EImageDescriberType::SIFT_FLOAT,
+                                                         feature::EImageDescriberType::SIFT_UPRIGHT};
+  std::vector<std::string> allFeaturesFolders(featuresFolders);
+  // add features folders from SfMData in search
+  for(const auto& folder: sfmData.getFeaturesFolders())
+  {
+    if(std::find(allFeaturesFolders.begin(), allFeaturesFolders.end(), folder) == allFeaturesFolders.end())
+      allFeaturesFolders.push_back(folder);
+  }
+
   // explore the sfm_data container to get the files path
   for(const auto& view : sfmData.getViews())
   {
     bool found = false;
 
-    for(const std::string& featureFolder : featuresFolders)
+    for(const std::string& featureFolder : allFeaturesFolders)
     {
-      // generate the equivalent .desc file path
-      const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT) + ".desc")).string();
-
-      if(bfs::exists(filepath))
+      for(const feature::EImageDescriberType descType: descTypes)
       {
-        descriptorsFiles[view.first] = filepath;
-        found = true;
-        break;
+        // generate the equivalent .desc file path
+        const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(descType) + ".desc")).string();
+
+        if(bfs::exists(filepath))
+        {
+          descriptorsFiles[view.first] = filepath;
+          found = true;
+          break;
+        }
       }
-    }
-
-    if(found)
-      continue;
-
-    for(const std::string& featureFolder : sfmData.getFeaturesFolders())
-    {
-      const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT) + ".desc")).string();
-
-      if(bfs::exists(filepath))
-      {
-        descriptorsFiles[view.first] = filepath;
-        found = true;
+      if(found)
         break;
-      }
     }
 
     if(!found)
     {
       std::stringstream ss;
 
-      for(const std::string& featureFolder : featuresFolders)
-        ss << "\t- " << featureFolder << std::endl;
-
-      for(const std::string& featureFolder : sfmData.getFeaturesFolders())
+      for(const std::string& featureFolder : allFeaturesFolders)
         ss << "\t- " << featureFolder << std::endl;
 
       throw std::runtime_error("Can't find descriptor of view " + std::to_string(view.first) + " in:\n" + ss.str());

@@ -10,6 +10,7 @@ set(features_files_headers
   sift/ImageDescriber_SIFT.hpp
   sift/ImageDescriber_SIFT_vlfeat.hpp
   sift/ImageDescriber_SIFT_vlfeatFloat.hpp
+  sift/ImageDescriber_DSPSIFT_vlfeat.hpp
   sift/SIFT.hpp
   Descriptor.hpp
   feature.hpp
@@ -17,6 +18,7 @@ set(features_files_headers
   Hamming.hpp
   ImageDescriber.hpp
   imageDescriberCommon.hpp
+  imageStats.hpp
   KeypointSet.hpp
   metric.hpp
   PointFeature.hpp
@@ -31,9 +33,11 @@ set(features_files_sources
   akaze/descriptorLIOP.cpp
   akaze/ImageDescriber_AKAZE.cpp
   sift/SIFT.cpp
+  sift/ImageDescriber_DSPSIFT_vlfeat.cpp
   FeaturesPerView.cpp
   ImageDescriber.cpp
   imageDescriberCommon.cpp
+  imageStats.cpp
 )
 
 # CCTAG ImageDescriber

@@ -43,8 +43,8 @@ int main(int argc, char **argv)
 {
   std::string filenameLeft;
   std::string filenameRight;
-  std::string describerPreset = feature::EImageDescriberPreset_enumToString(feature::EImageDescriberPreset::NORMAL);
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  feature::ConfigurationPreset featDescPreset;
   
   po::options_description allParams("AliceVision Sample robustFundamental");
   allParams.add_options()
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
       "Right image.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
          feature::EImageDescriberType_informations().c_str())
-    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+    ("describerPreset,p", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !");
 
@@ -96,10 +96,7 @@ int main(int argc, char **argv)
   //--
   using namespace aliceVision::feature;
   std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT);
-  if (!describerPreset.empty())
-  {
-    image_describer->setConfigurationPreset(describerPreset);
-  }
+  image_describer->setConfigurationPreset(featDescPreset);
  
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->describe(imageLeft, regions_perImage[0]);

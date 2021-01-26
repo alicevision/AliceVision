@@ -46,7 +46,7 @@ public:
     , _N2(3, 3)
     , _pointToLine(pointToLine)
   {
-    ALICEVISION_LOG_INFO("RelativePoseKernel: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
+    ALICEVISION_LOG_TRACE("RelativePoseKernel: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
     assert(2 == x1.rows());
     assert(x1.rows() == x2.rows());
     assert(x1.cols() == x2.cols());
@@ -195,7 +195,7 @@ public:
         : PFRansacKernel(x1, x2)  // provide a reference to the input matrices
         , _logalpha0(M_PI)
     {
-        ALICEVISION_LOG_INFO("RelativePoseSphericalKernel: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
+        ALICEVISION_LOG_TRACE("RelativePoseSphericalKernel: x1: " << x1.rows() << "x" << x1.cols() << ", x2: " << x2.rows() << "x" << x2.cols());
         assert(x1.rows() == 3);
         assert(x1.cols() > 0);
         assert(x1.rows() == x2.rows());

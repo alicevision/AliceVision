@@ -78,7 +78,7 @@ int aliceVision_main(int argc, char** argv)
   /// the describer types name to use for the matching
   std::string matchDescTypeNames = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
-  feature::EImageDescriberPreset featurePreset = feature::EImageDescriberPreset::NORMAL;
+  feature::ConfigurationPreset featDescPreset;
   /// the describer types to use for the matching
   std::vector<feature::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
@@ -145,7 +145,7 @@ int aliceVision_main(int argc, char** argv)
           "Folder containing the .desc.")
       ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
           "The describer types to use for the matching")
-      ("preset", po::value<feature::EImageDescriberPreset>(&featurePreset)->default_value(featurePreset), 
+      ("preset", po::value<feature::EImageDescriberPreset>(&featDescPreset.descPreset)->default_value(featDescPreset.descPreset),
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
       ("resectionEstimator", po::value<robustEstimation::ERobustEstimator>(&resectionEstimator)->default_value(resectionEstimator),
@@ -314,7 +314,7 @@ int aliceVision_main(int argc, char** argv)
   assert(param);
   
   // set other common parameters
-  param->_featurePreset = featurePreset;
+  param->_featurePreset = featDescPreset;
   param->_refineIntrinsics = refineIntrinsics;
   param->_errorMax = resectionErrorMax;
   param->_resectionEstimator = resectionEstimator;

@@ -291,7 +291,66 @@ private:
   bool _refineRotation;
   bool _refineTranslation;
 };
-
-}
 }
 
+
+namespace SO2 {
+
+using Matrix = Eigen::Matrix<double, 2, 2, Eigen::RowMajor>;
+
+/**
+Compute the exponential map of the given algebra on the group
+@param algebra the 1d vector
+@return a 2*2 S0(2) matrix
+*/
+inline Eigen::Matrix2d expm(double algebra){
+
+  Eigen::Matrix2d ret;
+  
+  ret(0, 0) = cos(algebra);
+  ret(0, 1) = -sin(algebra);
+  ret(1, 0) = sin(algebra);
+  ret(1, 1) = cos(algebra);
+
+  return ret;
+}
+
+
+class LocalParameterization : public ceres::LocalParameterization {
+public:
+  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
+
+    Eigen::Map<const Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> T(x);
+    Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> T_result(x_plus_delta);
+    double update = delta[0];
+
+    Eigen::Matrix2d T_update = expm(update);
+    T_result = T_update * T;
+
+    return true;
+  }
+
+  bool ComputeJacobian(const double * x, double* jacobian) const override {
+
+    Eigen::Map<Eigen::Matrix<double, 4, 1>> J(jacobian);
+
+    J.fill(0);
+
+    J(1, 0) = 1;
+    J(2, 0) = -1;
+    
+    return true;
+  }
+
+  int GlobalSize() const override {
+    return 4;
+  }
+
+  int LocalSize() const override {
+    return 1;
+  }
+};
+
+}
+
+}

@@ -311,7 +311,7 @@ endif()
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-find_package(OpenImageIO 1.8 REQUIRED)
+find_package(OpenImageIO 2.0.9 REQUIRED)
 if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
   message(STATUS "OpenImageIO found.")
   if(UNIX)
@@ -514,7 +514,7 @@ set(ALICEVISION_HAVE_OCVSIFT 0)
 
 if(ALICEVISION_BUILD_SFM)
   if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
-    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
+    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d)
 
     if(OpenCV_FOUND)
       # We do not set the minimal version directly in find_package
