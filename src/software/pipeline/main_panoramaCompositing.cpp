@@ -77,6 +77,9 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
 
     for (const auto& viewIt : sfmData.getViews())
     {
+        if(!sfmData.isPoseAndIntrinsicDefined(viewIt.first))
+            continue;
+
         // Load mask
         const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load metadata of mask with path " << maskPath);
@@ -694,6 +697,12 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     
+    if(rangeIteration >= chunks.size())
+    {
+        // nothing to compute for this chunk
+        return EXIT_SUCCESS;
+    }
+
     const std::vector<IndexT> & chunk = chunks[rangeIteration];
     
     bool succeeded = true;
@@ -707,6 +716,8 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
 
         IndexT viewReference = chunk[posReference];
+        if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
+            continue;
 
         BoundingBox referenceBoundingBox;
         if (!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
