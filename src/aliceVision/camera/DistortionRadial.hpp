@@ -588,5 +588,150 @@ public:
   ~DistortionRadialK3PT() override = default;
 };
 
+/**
+ * @class DistortionRadialAnamorphic
+ * @brief Anamorphic radial distortion
+ */
+class DistortionAnamorphic : public Distortion {
+public:
+  /**
+   * @brief Default constructor, no distortion.
+   */
+  DistortionAnamorphic()
+  {
+    _distortionParams = {0.0, 0.0, 0.0, 0.0};
+  }
+
+  /**
+   * @brief Constructor with the three coefficients
+   */
+  explicit DistortionAnamorphic(double cxx, double cxy, double cyx, double cyy)
+  {
+    _distortionParams = {cxx, cxy, cyx, cyy};
+  }
+
+  DistortionAnamorphic* clone() const override { return new DistortionAnamorphic(*this); }
+
+  /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
+  Vec2 addDistortion(const Vec2 & p) const override
+  {
+    const double cxx = _distortionParams[0];
+    const double cxy = _distortionParams[1];
+    const double cyx = _distortionParams[2];
+    const double cyy = _distortionParams[3];
+
+    Vec2 np;
+
+    double x = p.x();
+    double y = p.y();
+    double xx = x * x;
+    double yy = y * y;
+
+    np.x() = x * (1.0 + cxx * xx + cxy * yy);
+    np.y() = y * (1.0 + cyx * xx + cyy * yy);
+
+    return np;
+  }
+
+  Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const override
+  {
+    const double cxx = _distortionParams[0];
+    const double cxy = _distortionParams[1];
+    const double cyx = _distortionParams[2];
+    const double cyy = _distortionParams[3];
+
+    double x = p.x();
+    double y = p.y();
+    double xx = x * x;
+    double yy = y * y;
+
+    Eigen::Matrix2d ret;
+
+    //np.x() = x * (1.0 + cxx * xx + cxy * yy);
+    //np.y() = y * (1.0 + cyx * xx + cyy * yy);
+
+    //np.x() = x + cxx * xxx + cxy * xyy);
+    //np.x() = y + cxx * yxx + cxy * yyy);
+
+    ret(0, 0) = 1.0 + 3.0 * cxx * xx + cxy * yy;
+    ret(0, 1) = 2.0 * cxy * y;
+    ret(1, 0) = 2.0 * cyx * x;
+    ret(1, 1) = 1.0 + cxx * xx + 3.0 * cxy * yy;
+
+    return ret;
+  }
+
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override
+  {
+    const double cxx = _distortionParams[0];
+    const double cxy = _distortionParams[1];
+    const double cyx = _distortionParams[2];
+    const double cyy = _distortionParams[3];
+
+    Vec2 np;
+
+    double x = p.x();
+    double y = p.y();
+    double xx = x * x;
+    double yy = y * y;
+
+    np.x() = x * (1.0 + cxx * xx + cxy * yy);
+    np.y() = y * (1.0 + cyx * xx + cyy * yy);
+
+    Eigen::Matrix<double, 2, 4> ret;
+
+    ret(0, 0) = x * xx;
+    ret(0, 1) = x * yy;
+    ret(0, 2) = 0;
+    ret(0, 3) = 0;
+
+    ret(1, 0) = 0;
+    ret(1, 1) = 0;
+    ret(1, 2) = y * xx;
+    ret(1, 3) = y * yy;
+
+    return ret;
+  }
+
+
+  /// Remove distortion (return p' such that disto(p') = p)
+  Vec2 removeDistortion(const Vec2& p) const override
+  {
+    double epsilon = 1e-8;
+    Vec2 undistorted_value = p;
+
+    Vec2 diff = addDistortion(undistorted_value) - p;
+    
+    while (diff.norm() > epsilon)
+    {
+      undistorted_value = undistorted_value - getDerivativeAddDistoWrtPt(undistorted_value).inverse() * diff;
+      diff = addDistortion(undistorted_value) - p;
+    }
+
+    return undistorted_value;
+  }
+
+  Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override
+  {
+    std::cout << "invalid class for getDerivativeRemoveDistoWrtPt" << std::endl;
+    return Eigen::MatrixXd();
+  }
+
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override
+  {
+    
+    std::cout << "invalid class for getDerivativeRemoveDistoWrtDisto" << std::endl;
+    return Eigen::MatrixXd();
+  }
+
+  double getUndistortedRadius(double r) const override
+  {
+    std::cout << "invalid class for getUndistortedRadius" << std::endl;
+    return 0.0;
+  }
+
+  ~DistortionAnamorphic() override = default;
+};
+
 } // namespace camera
 } // namespace aliceVision

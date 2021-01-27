@@ -55,5 +55,23 @@ class PinholeRadialK3 : public Pinhole
   ~PinholeRadialK3() override = default;
 };
 
+/// Implement a Pinhole camera with a 4 anamorphic distortion coefficients.
+class PinholeAnamorphic : public Pinhole
+{
+  public:
+
+  explicit PinholeAnamorphic(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double cxx = 0.0, double cxy = 0.0, double cyx = 0.0, double cyy = 0.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionAnamorphic(cxx, cxy, cyx, cyy)))
+  {
+  }
+
+  PinholeAnamorphic* clone() const override { return new PinholeAnamorphic(*this); }
+  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeAnamorphic&>(other); }
+
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL3; }
+
+  ~PinholeAnamorphic() override = default;
+};
+
 } // namespace camera
 } // namespace aliceVision

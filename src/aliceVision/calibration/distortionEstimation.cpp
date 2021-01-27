@@ -20,6 +20,7 @@ public:
         mutable_parameter_block_sizes()->push_back(1);
         mutable_parameter_block_sizes()->push_back(1);
         mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(2);
         mutable_parameter_block_sizes()->push_back(camera->getDistortionParams().size());
     }
 
@@ -28,8 +29,9 @@ public:
 
         const double* parameter_angle_line = parameters[0];
         const double* parameter_dist_line = parameters[1];
-        const double* parameter_center = parameters[2];
-        const double* parameter_disto = parameters[3];
+        const double* parameter_scale = parameters[2];
+        const double* parameter_center = parameters[3];
+        const double* parameter_disto = parameters[4];
 
         double angle = parameter_angle_line[0];
         double distanceToLine = parameter_dist_line[0];
@@ -40,6 +42,7 @@ public:
         int distortionSize = _camera->getDistortionParams().size();
 
         //Read parameters and update camera
+        _camera->setScale(parameter_scale[0], parameter_scale[1]);
         _camera->setOffset(parameter_center[0], parameter_center[1]);
         std::vector<double> cameraDistortionParams = _camera->getDistortionParams();
 
@@ -81,17 +84,28 @@ public:
         if(jacobians[2] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 1, 2, Eigen::RowMajor>> J(jacobians[2]);
+            
+            Eigen::Matrix<double, 1, 2> Jline;
+            Jline(0, 0) = cangle;
+            Jline(0, 1) = sangle;
+
+            J = w * Jline * (_camera->getDerivativeIma2CamWrtScale(distorted) + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtScale(_pt));
+        }
+
+        if(jacobians[3] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 2, Eigen::RowMajor>> J(jacobians[3]);
 
             Eigen::Matrix<double, 1, 2> Jline;
             Jline(0, 0) = cangle;
             Jline(0, 1) = sangle;
 
-            J = w * Jline * _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint();
+            J = w * Jline * (_camera->getDerivativeCam2ImaWrtPrincipalPoint() + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint());
         }
 
-        if(jacobians[3] != nullptr)
+        if(jacobians[4] != nullptr)
         {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[3], 1, distortionSize);
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[4], 1, distortionSize);
 
             Eigen::Matrix<double, 1, 2> Jline;
             Jline(0, 0) = cangle;
@@ -108,7 +122,7 @@ private:
     Vec2 _pt;
 };
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines, bool lockCenter, bool lockDistortion)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
 {
     if (!cameraToEstimate)
     {
@@ -120,27 +134,73 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
         return false;
     }
 
+    size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
+    if (lockDistortions.size() != countDistortionParams) 
+    {
+        return false;
+    }
+
     ceres::Problem problem;
     ceres::LossFunction* lossFunction = nullptr;
 
     std::vector<double> params = cameraToEstimate->getParams();
+    double * scale = &params[0];
+    double * center = &params[2];
+    double * distortionParameters = &params[4];
+
+    problem.AddParameterBlock(scale, 2);
+    if (lockScale)
+    {
+        problem.SetParameterBlockConstant(scale);
+    }
+    else
+    {
+        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});   
+        problem.SetParameterization(scale, subsetParameterization);
+    }
     
-    double * center = &params[1];
-    double * distortionParameters = &params[3];
 
+    //Add off center parameter
     problem.AddParameterBlock(center, 2);
-    problem.AddParameterBlock(distortionParameters, cameraToEstimate->getDistortionParams().size());
-    //problem.SetParameterLowerBound(distortionParameters, 0, 0.0);
-
     if (lockCenter)
     {
         problem.SetParameterBlockConstant(center);
     }
 
-    if (lockDistortion)
+    //Add distortion parameter
+    problem.AddParameterBlock(distortionParameters, countDistortionParams);
+
+    //Check if all distortions are locked 
+    bool allLocked = true;
+    for (bool lock : lockDistortions) 
+    {
+        if (!lock)
+        {
+            allLocked = false;
+        }
+    }
+
+    if (allLocked)
     {
         problem.SetParameterBlockConstant(distortionParameters);
     }
+    else 
+    {
+        //At least one parameter is not locked
+
+        std::vector<int> constantDistortions;
+        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); idParamDistortion++)
+        {
+            if (lockDistortions[idParamDistortion])
+            {
+                constantDistortions.push_back(idParamDistortion);
+            }
+        }
+
+        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
+        problem.SetParameterization(distortionParameters, subsetParameterization);
+    }
+    
     
     for (auto & l : lines)
     {
@@ -150,13 +210,13 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
         for (Vec2 pt : l.points)
         {
             ceres::CostFunction * costFunction = new CostLine(cameraToEstimate, pt);   
-            problem.AddResidualBlock(costFunction, lossFunction, &l.angle, &l.dist, center, distortionParameters);
+            problem.AddResidualBlock(costFunction, lossFunction, &l.angle, &l.dist, scale, center, distortionParameters);
         }
     }
 
     ceres::Solver::Options options;
     options.use_inner_iterations = true;
-    options.max_num_iterations = 1000;
+    options.max_num_iterations = 10000; 
 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
@@ -170,6 +230,29 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
 
     
     cameraToEstimate->updateFromParams(params);
+
+    double sumRes = 0.0;
+    long int count = 0;
+
+    for (auto & l : lines)
+    {
+        double sangle = sin(l.angle);
+        double cangle = cos(l.angle);
+
+        for (Vec2 pt : l.points)
+        {
+            Vec2 cpt = cameraToEstimate->ima2cam(pt);
+            Vec2 distorted = cameraToEstimate->addDistortion(cpt);
+            Vec2 ipt = cameraToEstimate->cam2ima(distorted);
+
+            double res = (cangle * ipt.x() + sangle * ipt.y() - l.dist);
+
+            sumRes = sumRes + std::abs(res);
+            count++;
+        }
+    }
+
+    std::cout << sumRes / double(count) << std::endl;
 
     return true;
 }
