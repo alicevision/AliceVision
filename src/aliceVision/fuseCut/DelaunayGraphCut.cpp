@@ -394,6 +394,14 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
     for(auto& lock: locks)
         omp_destroy_lock(&lock);
 
+    // compute pixSize
+    #pragma omp parallel for
+    for(int vi = 0; vi < verticesAttrPrepare.size(); ++vi)
+    {
+        GC_vertexInfo& v = verticesAttrPrepare[vi];
+        v.pixSize = mp->getCamsMinPixelSize(verticesCoordsPrepare[vi], v.cams);
+    }
+
 //    verticesCoordsPrepare.swap(newVerticesCoordsPrepare);
 //    simScorePrepare.swap(newSimScorePrepare);
 //    pixSizePrepare.swap(newPixSizePrepare);
@@ -503,22 +511,6 @@ std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsBy
     std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
     
     return neighboringCells;
-}
-
-void DelaunayGraphCut::initVertices()
-{
-    ALICEVISION_LOG_DEBUG("initVertices ...\n");
-
-    // Re-assign ids to the vertices to go one after another
-    for(int vi = 0; vi < _verticesAttr.size(); ++vi)
-    {
-        GC_vertexInfo& v = _verticesAttr[vi];
-        // fit->info().point = convertPointToPoint3d(fit->point());
-        // v.id = nVertices;
-        v.pixSize = mp->getCamsMinPixelSize(_verticesCoords[vi], v.cams);
-    }
-
-    ALICEVISION_LOG_DEBUG("initVertices done\n");
 }
 
 void DelaunayGraphCut::computeDelaunay()
@@ -747,6 +739,8 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
 
       for(const auto& observationPair : landmark.observations)
         vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
+
+      vAttrIt->pixSize = mp->getCamsMinPixelSize(p, vAttrIt->cams);
 
       ++vCoordsIt;
       ++vAttrIt;
@@ -1315,7 +1309,6 @@ void DelaunayGraphCut::removeSmallSegs(const std::vector<GC_Seg>& segments, int 
         // T.remove(fit); // TODO GEOGRAM
     }
 
-    initVertices();
 }
 
 DelaunayGraphCut::GeometryIntersection
@@ -2865,6 +2858,10 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
     Point3d hexahExt[8];
     mvsUtils::inflateHexahedron(hexah, hexahExt, 1.1);
     addHelperPoints(nGridHelperVolumePointsDim, hexahExt, minDist);
+
+    // add point for shape from silhouette
+    if(mp->userParams.get<bool>("delaunaycut.addMaskHelperPoints", false))
+      addMaskHelperPoints(hexahExt, cams, *depthMapsFuseParams);
   }
 
   _verticesCoords.shrink_to_fit();
@@ -2875,8 +2872,6 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
 
 void DelaunayGraphCut::createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments)
 {
-  initVertices();
-
   // Create tetrahedralization
   computeDelaunay();
   displayStatistics();

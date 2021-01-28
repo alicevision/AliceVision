@@ -416,7 +416,6 @@ public:
      */
     std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const;
 
-    void initVertices();
     void computeDelaunay();
     void initCells();
     void displayStatistics();
