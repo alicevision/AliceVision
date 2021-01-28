@@ -877,6 +877,127 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, const Poi
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new helper points for a 3D grid of " << ns << "x" << ns << "x" << ns <<".");
 }
 
+void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticVector<int>& cams, const FuseParams& params)
+{
+    ALICEVISION_LOG_INFO("Add Mask Helper Points.");
+
+    std::size_t nbPixels = 0;
+    for(const auto& imgParams : mp->getImagesParams())
+    {
+        nbPixels += imgParams.size;
+    }
+    int step = std::floor(std::sqrt(double(nbPixels) / double(params.maxInputPoints)));
+    step = std::max(step, params.minStep);
+    std::size_t realMaxVertices = 0;
+    std::vector<int> startIndex(mp->getNbCameras(), 0);
+    for(int i = 0; i < mp->getNbCameras(); ++i)
+    {
+        const auto& imgParams = mp->getImageParams(i);
+        startIndex[i] = realMaxVertices;
+        realMaxVertices += std::ceil(imgParams.width / step) * std::ceil(imgParams.height / step);
+    }
+
+    int nbAddedPoints = 0;
+
+    ALICEVISION_LOG_INFO("Load depth maps and add points.");
+    {
+        for(int c = 0; c < cams.size(); c++)
+        {
+            std::vector<float> depthMap;
+            int width, height;
+            {
+                const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
+                imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                if(depthMap.empty())
+                {
+                    ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
+                    continue;
+                }
+            }
+
+            int syMax = std::ceil(height / step);
+            int sxMax = std::ceil(width / step);
+
+            for(int sy = 0; sy < syMax; ++sy)
+            {
+                for(int sx = 0; sx < sxMax; ++sx)
+                {
+                    int index = startIndex[c] + sy * sxMax + sx;
+                    float bestScore = 0;
+
+                    int bestX = 0;
+                    int bestY = 0;
+                    for(int y = sy * step, ymax = std::min((sy + 1) * step, height); y < ymax; ++y)
+                    {
+                        for(int x = sx * step, xmax = std::min((sx + 1) * step, width); x < xmax; ++x)
+                        {
+                            const std::size_t index = y * width + x;
+                            const float depth = depthMap[index];
+
+                            if(depth >= -1.0f)
+                                continue;
+
+                            int nbValidDepth = 0;
+                            const int kernelSize = 1;
+                            for(int ly = std::max(y - kernelSize, 0), lyMax = std::min(y + kernelSize, height - 1);
+                                ly < lyMax; ++ly)
+                            {
+                                for(int lx = std::max(x - kernelSize, 0), lxMax = std::min(x + kernelSize, width - 1);
+                                    lx < lxMax; ++lx)
+                                {
+                                    if(depthMap[ly * width + lx] > 0.0f)
+                                        ++nbValidDepth;
+                                }
+                            }
+
+                            const float score = nbValidDepth; // TODO: best score based on nbValidDepth and kernel size ?
+                            if(score > bestScore)
+                            {
+                                bestScore = score;
+                                bestX = x;
+                                bestY = y;
+                            }
+                        }
+                    }
+                    if(bestScore > 0.0f)
+                    {
+                        const Point3d& cam = mp->CArr[c];
+                        Point3d maxP = cam + (mp->iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * 10000000.0; 
+                        StaticVector<Point3d>* intersectionsPtr = mvsUtils::lineSegmentHexahedronIntersection(cam, maxP, voxel);
+
+                        if(intersectionsPtr->size() <= 0)
+                            continue;
+
+                        Point3d p;
+                        double maxDepth = std::numeric_limits<double>::min();
+                        for(Point3d& i : *intersectionsPtr)
+                        {
+                            const double depth = dist(cam, i);
+                            if(depth > maxDepth)
+                            {
+                                p = i;
+                                maxDepth = depth;
+                            }
+                        }
+                        if(voxel == nullptr || mvsUtils::isPointInHexahedron(p, voxel))
+                        {
+                            GC_vertexInfo newv;
+                            newv.nrc = 1;
+                            newv.pixSize = 0.0f;
+                            newv.cams.push_back_distinct(c);
+
+                            _verticesAttr.push_back(newv);
+                            _verticesCoords.emplace_back(p);
+                            ++nbAddedPoints;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ALICEVISION_LOG_INFO("Added Points: " << nbAddedPoints);
+    ALICEVISION_LOG_INFO("Add Mask Helper Points done.");
+}
 
 void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params)
 {

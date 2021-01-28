@@ -384,7 +384,7 @@ StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Po
     return out;
 }
 
-StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Point3d& linePoint2, Point3d hexah[8])
+StaticVector<Point3d>* lineSegmentHexahedronIntersection(const Point3d& linePoint1, const Point3d& linePoint2, const Point3d hexah[8])
 {
     Point3d tris[12][3];
     getHexahedronTriangles(tris, hexah);
