@@ -137,6 +137,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
     size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
     if (lockDistortions.size() != countDistortionParams) 
     {
+        std::cout << "invalid" << lockDistortions.size() << " " << countDistortionParams << std::endl;
         return false;
     }
 
@@ -221,7 +222,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
 
-    std::cout << summary.FullReport() << std::endl;
+    //std::cout << summary.FullReport() << std::endl;
 
     if (!summary.IsSolutionUsable())
     {
@@ -231,8 +232,8 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
     
     cameraToEstimate->updateFromParams(params);
 
-    double sumRes = 0.0;
-    long int count = 0;
+
+    std::vector<double> errors;
 
     for (auto & l : lines)
     {
@@ -247,12 +248,20 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
 
             double res = (cangle * ipt.x() + sangle * ipt.y() - l.dist);
 
-            sumRes = sumRes + std::abs(res);
-            count++;
+            errors.push_back(std::abs(res));
         }
     }
 
-    std::cout << sumRes / double(count) << std::endl;
+    
+    double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / double(errors.size());
+    double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
+    double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
+    std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
+    double median = errors[errors.size() / 2];
+
+    std::cout << "mean : " << mean;
+    std::cout << " (stddev : " << stddev << ")";
+    std::cout << ", median : " << median << std::endl;
 
     return true;
 }

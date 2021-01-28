@@ -35,14 +35,15 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 using namespace aliceVision;
 
 
 
-cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source, double pixelRatio) 
+cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
 {
-    double w = source.Width() * pixelRatio;
+    double w = source.Width();
     double h = source.Height();
 
     double minx = w;
@@ -66,6 +67,7 @@ cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::
     int height = maxy - miny + 1;
 
     cv::Mat result(height, width, CV_8UC3);
+    result = 0;
 
     const image::Sampler2d<image::SamplerLinear> sampler;
 
@@ -79,7 +81,7 @@ cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::
 
             Vec2 pos(x, y);
             Vec2 dist = camera->get_ud_pixel(pos);
-            dist.x() /= pixelRatio;
+
 
             if (dist.x() < 0 || dist.x() >= source.Width()) continue;
             if (dist.y() < 0 || dist.y() >= source.Height()) continue;
@@ -93,22 +95,29 @@ cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::
     return result;
 }
 
-bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, const image::Image<image::RGBColor> & input, double pixelRatio)
+bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, const image::Image<image::RGBColor> & input, const std::string & checkerImagePath)
 {
     cv::Mat inputOpencvWrapper(input.Height(), input.Width(), CV_8UC3, (void*)input.data());
 
     cbdetect::Params params;
     params.show_processing = false;
-    params.show_debug_image = true;
+    params.show_debug_image = false;
     params.corner_type = cbdetect::SaddlePoint;
     params.norm = true;
 
     cbdetect::Corner corners;
     cbdetect::find_corners(inputOpencvWrapper, corners, params);
+    if (corners.p.size() < 20) 
+    {
+        return false;
+    }
+
     std::vector<cbdetect::Board> boards;
     cbdetect::boards_from_corners(inputOpencvWrapper, corners, boards, params);
+    
+    
 
-    cv::Mat draw = inputOpencvWrapper;
+    cv::Mat draw = inputOpencvWrapper.clone();
     for (cbdetect::Board & b : boards)
     {
         int height = b.idx.size();
@@ -143,7 +152,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
         }
     }
 
-    cv::imwrite("/home/servantf/corners.png", draw);
+    cv::imwrite(checkerImagePath, draw);
     
     
     lineWithPoints.clear();
@@ -168,7 +177,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
                 cv::Point2d p = corners.p[idx];
 
                 Vec2 pt;
-                pt.x() = p.x * pixelRatio;
+                pt.x() = p.x;
                 pt.y() = p.y;
 
                 line.points.push_back(pt);
@@ -194,7 +203,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
                 cv::Point2d p = corners.p[idx];
 
                 Vec2 pt;
-                pt.x() = p.x * pixelRatio;
+                pt.x() = p.x;
                 pt.y() = p.y;
 
                 line.points.push_back(pt);
@@ -210,12 +219,12 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
     return true;
 }
 
-bool estimateDistortion(std::shared_ptr<camera::Pinhole> & camera, std::vector<calibration::LineWithPoints> & lineWithPoints)
+bool estimateDistortionK1(std::shared_ptr<camera::Pinhole> & camera, std::vector<calibration::LineWithPoints> & lineWithPoints)
 {
-    std::vector<bool> locksDistortions = {true, true, true};
+    std::vector<bool> locksDistortions = {true};
 
     //Everything locked except lines paramters
-    locksDistortions[0] = false;
+    locksDistortions[0] = true;
     if (!calibration::estimate(camera, lineWithPoints, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
@@ -223,7 +232,7 @@ bool estimateDistortion(std::shared_ptr<camera::Pinhole> & camera, std::vector<c
     }
 
     //Relax distortion 1st order
-    locksDistortions[0] = true;
+    locksDistortions[0] = false;
     if (!calibration::estimate(camera, lineWithPoints, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
@@ -231,14 +240,45 @@ bool estimateDistortion(std::shared_ptr<camera::Pinhole> & camera, std::vector<c
     }
 
     //Relax offcenter
+    locksDistortions[0] = false;
+    if (!calibration::estimate(camera, lineWithPoints, true, false, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
+
+    return true;
+}
+
+bool estimateDistortionK3(std::shared_ptr<camera::Pinhole> & camera, std::vector<calibration::LineWithPoints> & lineWithPoints)
+{
+    std::vector<bool> locksDistortions = {true, true, true};
+
+    //Everything locked except lines paramters
     locksDistortions[0] = true;
+    if (!calibration::estimate(camera, lineWithPoints, true, true, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
+
+    //Relax distortion 1st order
+    locksDistortions[0] = false;
+    if (!calibration::estimate(camera, lineWithPoints, true, true, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
+
+    //Relax offcenter
+    locksDistortions[0] = false;
     if (!calibration::estimate(camera, lineWithPoints, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return EXIT_FAILURE;
     }
 
-    //Relax distortion all orders
+    //Relax offcenter
     locksDistortions[0] = false;
     locksDistortions[1] = false;
     locksDistortions[2] = false;
@@ -248,11 +288,71 @@ bool estimateDistortion(std::shared_ptr<camera::Pinhole> & camera, std::vector<c
         return EXIT_FAILURE;
     }
 
+    return true;
+}
+
+bool estimateDistortionA4(std::shared_ptr<camera::Pinhole> & camera, std::vector<calibration::LineWithPoints> & lineWithPoints)
+{
+    
+    std::shared_ptr<camera::Pinhole> simpleCamera = std::make_shared<camera::PinholeRadialK1>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1], 0.0);
+    if (!estimateDistortionK1(simpleCamera, lineWithPoints))
+    {
+        return false;
+    }
+
+
+    std::vector<bool> locksDistortions = {true, true, true, true};
+
     //Relax distortion all orders
     locksDistortions[0] = false;
     locksDistortions[1] = false;
     locksDistortions[2] = false;
-    if (!calibration::estimate(camera, lineWithPoints, false, false, locksDistortions))
+    locksDistortions[3] = false;
+
+    double k1 = simpleCamera->getDistortionParams()[0];
+    camera->setDistortionParams({k1,k1,k1,k1});
+
+    if (!calibration::estimate(camera, lineWithPoints, true, false, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return EXIT_FAILURE;
+    }
+
+    return true;
+}
+
+bool estimateDistortionA10(std::shared_ptr<camera::Pinhole> & camera, std::vector<calibration::LineWithPoints> & lineWithPoints)
+{
+    
+    std::shared_ptr<camera::Pinhole> simplerCamera = std::make_shared<camera::PinholeAnamorphic4>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1]);
+    if (!estimateDistortionA4(simplerCamera, lineWithPoints))
+    {
+        return false;
+    }
+
+
+    std::vector<bool> locksDistortions = {true, true, true, true, true, true, true, true, true, true};
+
+    //Relax distortion all orders
+    locksDistortions[0] = false;
+    locksDistortions[1] = false;
+    locksDistortions[2] = false;
+    locksDistortions[3] = false;
+    locksDistortions[4] = false;
+    locksDistortions[5] = false;
+    locksDistortions[6] = false;
+    locksDistortions[7] = false;
+    locksDistortions[8] = false;
+    locksDistortions[9] = false;
+
+    double cxx = simplerCamera->getDistortionParams()[0];
+    double cxy = simplerCamera->getDistortionParams()[1];
+    double cyx = simplerCamera->getDistortionParams()[2];
+    double cyy = simplerCamera->getDistortionParams()[3];
+
+    camera->setDistortionParams({cxx, cxy, 0.0, 0.0, 0.0, cyx, cyy, 0.0, 0.0, 0.0});
+
+    if (!calibration::estimate(camera, lineWithPoints, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return EXIT_FAILURE;
@@ -323,11 +423,16 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // Analyze path
+    boost::filesystem::path path(sfmOutputDataFilepath);
+    std::string outputPath = path.parent_path().string();
 
     int pos = 0;
     for (auto v : sfmData.getViews()) 
     {
         auto view = v.second;
+        const std::string viewIdStr = std::to_string(v.first);
+
         ALICEVISION_LOG_INFO("Processing view " << v.first);
 
         //Check pixel ratio
@@ -342,7 +447,25 @@ int aliceVision_main(int argc, char* argv[])
         std::string pathImage = view->getImagePath();
         image::readImage(v.second->getImagePath(), input, image::EImageColorSpace::SRGB);       
 
+        if (pixelRatio != 1.0f)
+        {
+            double w = input.Width();
+            double h = input.Height();
+            double nw = w;
+            double nh = h / pixelRatio;
+            image::Image<image::RGBColor> resizedInput(nw, nh);
 
+            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
+            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::UCHAR);
+
+            const oiio::ImageBuf inBuf(imageSpecOrigin, input.data());
+            oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
+
+            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            input.swap(resizedInput);
+        }
+
+        
         std::shared_ptr<camera::IntrinsicBase> cameraBase = sfmData.getIntrinsicsharedPtr(v.second->getIntrinsicId());
         std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(cameraBase);
         if (!cameraPinhole)
@@ -351,42 +474,68 @@ int aliceVision_main(int argc, char* argv[])
             continue;
         }
 
-        if (cameraPinhole->getDistortionParams().size() != 3)
-        {
-            ALICEVISION_LOG_ERROR("Only work for radial3 cameras");
-            continue;
-        }
         
-        double w = input.Width() * pixelRatio;
+        double w = input.Width();
         double h = input.Height();
         double d = sqrt(w*w + h*h);
 
         //Force the 'focal' to normalize the image such that its semi diagonal is 1
+        cameraPinhole->setWidth(w);
+        cameraPinhole->setHeight(h);
         cameraPinhole->setScale(d, d);
-        cameraPinhole->setOffset(cameraPinhole->getOffset()[0] * 2.0f, cameraPinhole->getOffset()[1]);
+        cameraPinhole->setOffset(w / 2, h / 2);
+        
+        std::string undistortedImagePath = (fs::path(outputPath) / (viewIdStr + "_undistorted.png")).string();
+        std::string checkerImagePath = (fs::path(outputPath) / (viewIdStr + "_checker.png")).string();
 
         //Retrieve lines
         std::vector<calibration::LineWithPoints> lineWithPoints;
-        if (!retrieveLines(lineWithPoints, input, pixelRatio))
+        if (!retrieveLines(lineWithPoints, input, checkerImagePath))
         {
             ALICEVISION_LOG_ERROR("Impossible to extract the checkerboards lines");
             continue;
         }
 
         //Estimate distortion
-        if (!estimateDistortion(cameraPinhole, lineWithPoints))
+        if (std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraBase))
         {
-            ALICEVISION_LOG_ERROR("Error estimating distortion");
-            continue;
+            if (!estimateDistortionK1(cameraPinhole, lineWithPoints))
+            {
+                ALICEVISION_LOG_ERROR("Error estimating distortion");
+                continue;
+            }
+        }
+        else if (std::dynamic_pointer_cast<camera::PinholeRadialK3>(cameraBase))
+        {
+            if (!estimateDistortionK3(cameraPinhole, lineWithPoints))
+            {
+                ALICEVISION_LOG_ERROR("Error estimating distortion");
+                continue;
+            }
+        }
+        else if (std::dynamic_pointer_cast<camera::PinholeAnamorphic4>(cameraBase))
+        {
+            if (!estimateDistortionA4(cameraPinhole, lineWithPoints))
+            {
+                ALICEVISION_LOG_ERROR("Error estimating distortion");
+                continue;
+            }
+        }
+        else if (std::dynamic_pointer_cast<camera::PinholeAnamorphic10>(cameraBase))
+        {
+            if (!estimateDistortionA10(cameraPinhole, lineWithPoints))
+            {
+                ALICEVISION_LOG_ERROR("Error estimating distortion");
+                continue;
+            }
+        }
+        else 
+        {
+            ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
         }
 
-        cv::Mat ud = undistort(cameraPinhole, input, pixelRatio);
-        cv::imwrite("/home/servantf/undistorted.png", ud);
-
-        std::cout << cameraPinhole->getScale()[0] << std::endl;
-        std::cout << cameraPinhole->getScale()[1] << std::endl;
-        std::cout << cameraPinhole->getOffset()[0]  << std::endl;
-        std::cout << cameraPinhole->getOffset()[1] << std::endl;
+        cv::Mat ud = undistort(cameraPinhole, input);
+        cv::imwrite(undistortedImagePath, ud);
     }
 
     return EXIT_SUCCESS;
