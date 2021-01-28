@@ -84,7 +84,7 @@ void RefineRc::filterMaskedPixels(DepthSimMap& out_depthSimMap, int rc)
             {
                 DepthSim& depthSim = out_depthSimMap._dsm[y * w + x];
 
-                depthSim.depth = -1.0;
+                depthSim.depth = -2.0;
                 depthSim.sim = -1.0;
             }
         }

@@ -270,6 +270,10 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
 
     for(int i = 0; i < w * h; i++)
     {
+        // if the point is part of a mask (alpha) skip
+        if(depthMap.at(i) <= -2.0f)
+            continue;
+
         // if the reference point is consistent in three target cameras and is denoted as weakly supported point
         // make him strongly supported
         if((numOfModalsMap.at(i) >= minNumOfModalsWSP2SSP - 1) && (simMap.at(i) >= 1.0f))
