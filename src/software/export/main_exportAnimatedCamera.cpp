@@ -34,7 +34,7 @@ namespace fs = boost::filesystem;
 
 
 
-oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic)
+oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic, bool &correctPrincipalPoint)
                
 {
     std::vector<Vec2> pointToBeChecked;
@@ -44,7 +44,7 @@ oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic)
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, intrinsic->h() - 1));
     const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
     Vec2 ppCorrection(0, 0);
-    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType())
+    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType() && correctPrincipalPoint)
     {
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
         ppCorrection = pinholePtr->getPrincipalPoint() - center;
@@ -59,20 +59,21 @@ oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic)
     for(Vec2 n : pointToBeChecked)
     {
         maxDistortionVector.push_back(intrinsic->get_ud_pixel(n));
+        Vec2 test = intrinsic->get_ud_pixel(n);
+        //ALICEVISION_LOG_DEBUG("UD: " + std::to_string(test(0)) + " ; " + std::to_string(test(1)));
     }
 
     std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
               [](Vec2 a, Vec2 b) { return a[0] > b[0]; });
-    int xRoiMax = maxDistortionVector.front()[0];
-    int xRoiMin = maxDistortionVector.back()[0];
+    int xRoiMax = std::round(maxDistortionVector.front()[0]);
+    int xRoiMin = std::round(maxDistortionVector.back()[0]);
     std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
               [](Vec2 a, Vec2 b) { return a[1] > b[1]; });
-    int yRoiMax = maxDistortionVector.front()[1];
-    int yRoiMin = maxDistortionVector.back()[1];
-    oiio::ROI roi(xRoiMin, xRoiMax, yRoiMin, yRoiMax);
+    int yRoiMax = std::round(maxDistortionVector.front()[1]);
+    int yRoiMin = std::round(maxDistortionVector.back()[1]);
+    oiio::ROI roi(xRoiMin - ppCorrection(0), xRoiMax + 1 - ppCorrection(0), intrinsic->h() - yRoiMax - ppCorrection(1),
+                  intrinsic->h() - yRoiMin - ppCorrection(1));
     return roi;
-    
-   
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -86,13 +87,14 @@ int aliceVision_main(int argc, char** argv)
   std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
   bool undistortedImages = false;
   bool exportUVMaps = false;
+  bool exportFullROD = false;
+  bool correctPrincipalPoint = true;
   std::map<IndexT, oiio::ROI> roiForIntrinsic;
 
   // user optional parameters
 
   std::string viewFilter;
-  
-
+ 
   po::options_description allParams("AliceVision exportAnimatedCamera");
 
   po::options_description requiredParams("Required parameters");
@@ -107,8 +109,12 @@ int aliceVision_main(int argc, char** argv)
     ("exportUndistortedImages", po::value<bool>(&undistortedImages)->default_value(undistortedImages),
       "Export undistorted images for the animated camera(s).\n"
       "If false, animated camera(s) exported with original frame paths.")
+    ("exportFullROD", po::value<bool>(&exportFullROD)->default_value(exportFullROD),
+      "Export undistorted images with full RoD.")
     ("exportUVMaps", po::value<bool>(&exportUVMaps)->default_value(exportUVMaps),
       "Export UV Maps for Nuke in exr format ")
+    ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
+      "apply an offset to correct the position of the principal point")
     ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
       "Path to the output SfMData file (with only views and poses).")
     ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
@@ -199,7 +205,7 @@ int aliceVision_main(int argc, char** argv)
               const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
               Vec2 ppCorrection(0.0, 0.0);
 
-              if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType())
+              if((camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType()) && correctPrincipalPoint)// correct principal point
               {
                   const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPair.second.get());
                   ppCorrection = pinholePtr->getPrincipalPoint() - center;
@@ -267,8 +273,7 @@ int aliceVision_main(int argc, char** argv)
       if(cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
-        camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point
-        if(outputFileType == image::EImageFileType::EXR)
+        if(outputFileType == image::EImageFileType::EXR && exportFullROD)
         {
             // build a ROI
             IndexT key = view.getIntrinsicId();
@@ -276,20 +281,21 @@ int aliceVision_main(int argc, char** argv)
             const camera::IntrinsicBase &intrinsic = (*cam);
             if(roiForIntrinsic.find(key) == roiForIntrinsic.end())
             {
-                roi = computeRoi(cam);
+                roi = computeRoi(cam, correctPrincipalPoint);
                 ALICEVISION_LOG_DEBUG("roi:" + std::to_string(roi.xbegin) + ";" + std::to_string(roi.xend) + ";" +
                                       std::to_string(roi.ybegin) + ";" + std::to_string(roi.yend));
-
                 roiForIntrinsic[key] = roi;
             }
             else
             {
                 roi = roiForIntrinsic[key];
             }
+            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint); 
             writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, metadata,roi);
         }
         else
         {
+            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint); 
             image::writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, metadata); 
         }   
       }
