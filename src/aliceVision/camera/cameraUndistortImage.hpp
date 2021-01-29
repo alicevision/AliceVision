@@ -14,6 +14,7 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <memory>
 
@@ -49,20 +50,21 @@ void UndistortImage(
 
     image_ud.resize(imageIn.Width(), imageIn.Height(), true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
-
+    int width = imageIn.Width();
+    int height = imageIn.Height();
+    
     #pragma omp parallel for
-    for (int j = 0; j < imageIn.Height(); ++j)
-      for (int i = 0; i < imageIn.Width(); ++i)
-      {
-        const Vec2 undisto_pix(i,j);
-
-        // compute coordinates with distortion
-        const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
-
-        // pick pixel if it is in the image domain
-        if ( imageIn.Contains(disto_pix(1), disto_pix(0)) )
-          image_ud( j, i ) = sampler(imageIn, disto_pix(1), disto_pix(0));
-      }
+    for(int j = 0; j < height; ++j)
+        for(int i = 0; i < width; ++i)
+        {       
+            const Vec2 undisto_pix(i,j); 
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
+           
+            // pick pixel if it is in the image domain
+            if(imageIn.Contains(disto_pix(1), disto_pix(0)))
+                image_ud(j,i) = sampler(imageIn, disto_pix(1), disto_pix(0));
+        }
   }
 }
 
