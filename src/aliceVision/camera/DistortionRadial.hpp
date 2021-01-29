@@ -917,7 +917,7 @@ public:
       undistorted_value = undistorted_value - getDerivativeAddDistoWrtPt(undistorted_value).inverse() * diff;
       diff = addDistortion(undistorted_value) - p;
       iter++;
-      if (iter > 10) break;
+      if (iter > 1000) break;
     }
 
     return undistorted_value;

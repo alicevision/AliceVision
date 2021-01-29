@@ -21,7 +21,24 @@ struct LineWithPoints
     std::vector<Vec2> points;
 };
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
+struct PointPair
+{
+    Vec2 distortedPoint;
+    Vec2 undistortedPoint;
+};
+
+struct Statistics
+{
+    double mean;
+    double stddev;
+    double median;
+};
+
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
+
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
+
+
 
 
 }//namespace calibration

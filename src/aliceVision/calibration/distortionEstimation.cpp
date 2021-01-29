@@ -1,6 +1,7 @@
 #include "distortionEstimation.hpp"
 
 #include <ceres/ceres.h>
+#include <aliceVision/system/Logger.hpp>
 
 using namespace aliceVision;
 
@@ -122,7 +123,91 @@ private:
     Vec2 _pt;
 };
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
+class CostPoint : public ceres::CostFunction
+{
+public:
+    CostPoint(std::shared_ptr<camera::Pinhole> & camera, const Vec2& ptUndistorted, const Vec2 &ptDistorted)
+        : _ptUndistorted(ptUndistorted)
+        , _ptDistorted(ptDistorted)
+        , _camera(camera)
+    {
+
+        set_num_residuals(2);
+
+        mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(camera->getDistortionParams().size());
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_scale = parameters[0];
+        const double* parameter_center = parameters[1];
+        const double* parameter_disto = parameters[2];
+
+        int distortionSize = _camera->getDistortionParams().size();
+
+        //Read parameters and update camera
+        _camera->setScale(parameter_scale[0], parameter_scale[1]);
+        _camera->setOffset(parameter_center[0], parameter_center[1]);
+        std::vector<double> cameraDistortionParams = _camera->getDistortionParams();
+
+        for (int idParam = 0; idParam < distortionSize; idParam++)
+        {
+            cameraDistortionParams[idParam] = parameter_disto[idParam];
+        }
+        _camera->setDistortionParams(cameraDistortionParams);
+
+
+        //Estimate measure
+        Vec2 cpt = _camera->ima2cam(_ptUndistorted);
+        Vec2 distorted = _camera->addDistortion(cpt);
+        Vec2 ipt = _camera->cam2ima(distorted);
+
+        double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
+        double w = w1 * w1;
+
+        residuals[0] = w * (ipt.x() - _ptDistorted.x());
+        residuals[1] = w * (ipt.y() - _ptDistorted.y());
+
+        if(jacobians == nullptr)
+        {
+            return true;
+        }
+
+        if(jacobians[0] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[0]);
+            
+            J = w * (_camera->getDerivativeIma2CamWrtScale(distorted) + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtScale(_ptUndistorted));
+        }
+
+        if(jacobians[1] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[1]);
+
+
+            J = w * (_camera->getDerivativeCam2ImaWrtPrincipalPoint() + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint());
+        }
+
+        if(jacobians[2] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, distortionSize);
+
+            J = w * _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtDisto(cpt);
+        }
+
+        return true;
+    }
+
+private:
+    std::shared_ptr<camera::Pinhole> _camera;
+    Vec2 _ptUndistorted;
+    Vec2 _ptDistorted;
+};
+
+
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
 {
     if (!cameraToEstimate)
     {
@@ -218,6 +303,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
     ceres::Solver::Options options;
     options.use_inner_iterations = true;
     options.max_num_iterations = 10000; 
+    options.logging_type = ceres::SILENT;
 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
@@ -258,10 +344,141 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, std::vector<L
     double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
     std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
     double median = errors[errors.size() / 2];
+    
+    statistics.mean = mean;
+    statistics.stddev = stddev;
+    statistics.median = median;
 
-    std::cout << "mean : " << mean;
-    std::cout << " (stddev : " << stddev << ")";
-    std::cout << ", median : " << median << std::endl;
+    return true;
+}
+
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
+{
+    if (!cameraToEstimate)
+    {
+        return false; 
+    }
+
+    if (points.size() == 0)
+    {
+        return false;
+    }
+
+    size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
+    if (lockDistortions.size() != countDistortionParams) 
+    {
+        std::cout << "invalid" << lockDistortions.size() << " " << countDistortionParams << std::endl;
+        return false;
+    }
+
+    ceres::Problem problem;
+    ceres::LossFunction* lossFunction = nullptr;
+
+    std::vector<double> params = cameraToEstimate->getParams();
+    double * scale = &params[0];
+    double * center = &params[2];
+    double * distortionParameters = &params[4];
+
+    problem.AddParameterBlock(scale, 2);
+    if (lockScale)
+    {
+        problem.SetParameterBlockConstant(scale);
+    }
+    else
+    {
+        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});   
+        problem.SetParameterization(scale, subsetParameterization);
+    }
+    
+
+    //Add off center parameter
+    problem.AddParameterBlock(center, 2);
+    if (lockCenter)
+    {
+        problem.SetParameterBlockConstant(center);
+    }
+
+    //Add distortion parameter
+    problem.AddParameterBlock(distortionParameters, countDistortionParams);
+
+    //Check if all distortions are locked 
+    bool allLocked = true;
+    for (bool lock : lockDistortions) 
+    {
+        if (!lock)
+        {
+            allLocked = false;
+        }
+    }
+
+    if (allLocked)
+    {
+        problem.SetParameterBlockConstant(distortionParameters);
+    }
+    else 
+    {
+        //At least one parameter is not locked
+
+        std::vector<int> constantDistortions;
+        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); idParamDistortion++)
+        {
+            if (lockDistortions[idParamDistortion])
+            {
+                constantDistortions.push_back(idParamDistortion);
+            }
+        }
+
+        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
+        problem.SetParameterization(distortionParameters, subsetParameterization);
+    }
+    
+    for (const PointPair & pt : points)
+    {
+        ceres::CostFunction * costFunction = new CostPoint(cameraToEstimate, pt.undistortedPoint, pt.distortedPoint);   
+        problem.AddResidualBlock(costFunction, lossFunction, scale, center, distortionParameters);
+    }
+
+    ceres::Solver::Options options;
+    options.use_inner_iterations = true;
+    options.max_num_iterations = 10000; 
+    options.logging_type = ceres::SILENT;
+
+    ceres::Solver::Summary summary;  
+    ceres::Solve(options, &problem, &summary);
+
+    if (!summary.IsSolutionUsable())
+    {
+        return false;
+    }
+
+    
+    cameraToEstimate->updateFromParams(params);
+
+
+    std::vector<double> errors;
+
+    for (PointPair pp : points)
+    {
+        Vec2 cpt = cameraToEstimate->ima2cam(pp.undistortedPoint);
+        Vec2 distorted = cameraToEstimate->addDistortion(cpt);
+        Vec2 ipt = cameraToEstimate->cam2ima(distorted);
+
+        double res = (ipt - pp.distortedPoint).norm();
+
+        errors.push_back(res);
+    }
+    
+
+    
+    double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / double(errors.size());
+    double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
+    double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
+    std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
+    double median = errors[errors.size() / 2];
+
+    statistics.mean = mean;
+    statistics.stddev = stddev;
+    statistics.median = median;
 
     return true;
 }
