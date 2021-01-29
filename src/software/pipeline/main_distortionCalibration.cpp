@@ -503,6 +503,7 @@ int aliceVision_main(int argc, char* argv[])
             continue;
         }
 
+        Vec2 originalScale = cameraPinhole->getScale();
         
         double w = input.Width();
         double h = input.Height();
@@ -583,7 +584,7 @@ int aliceVision_main(int argc, char* argv[])
             continue;
         }
 
-        
+        cameraPinhole->setScale(originalScale.x(), originalScale.y());        
 
         //Estimate distortion
         if (std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraBase))
@@ -635,6 +636,13 @@ int aliceVision_main(int argc, char* argv[])
 
         cv::Mat ud = undistort(cameraPinhole, input);
         cv::imwrite(undistortedImagePath, ud);
+    }
+
+    
+    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    {
+        ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be read.");
+        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
