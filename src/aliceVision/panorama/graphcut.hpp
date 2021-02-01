@@ -533,7 +533,7 @@ public:
                 float d2 = float(distanceMap(i, j));
                 float d = sqrt(d2);
 
-                if (d2 > _maximal_distance_change + 1.0f)
+                if (d > _maximal_distance_change + 1.0f)
                 {
                     graphCutInput(i, j).clear();
                 }
@@ -553,7 +553,7 @@ public:
             BoundingBox inputBb = localBbox;
             inputBb.left = 0;
             inputBb.top = 0;
-
+            
             if (!loopyImageAssign(_labels, localLabels, localBbox, inputBb)) 
             {
                 return false;

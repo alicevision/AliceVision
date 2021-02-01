@@ -427,11 +427,13 @@ bool HierarchicalGraphcutSeams::process()
         
         if (level == _countLevels - 1)
         {
-            _graphcuts[level].setMaximalDistance(w + h);
+            _graphcuts[level].setMaximalDistance(sqrt(w*w + h*h));
         }
         else 
         {
-            _graphcuts[level].setMaximalDistance(200);
+            double sw = double(0.2 * w);
+            double sh = double(0.2 * h);
+            _graphcuts[level].setMaximalDistance(sqrt(sw*sw + sh*sh));
         }
 
 
