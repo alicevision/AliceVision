@@ -881,6 +881,9 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
 {
     ALICEVISION_LOG_INFO("Add Mask Helper Points.");
 
+    Point3d inflatedVoxel[8];
+    mvsUtils::inflateHexahedron(voxel, inflatedVoxel, 1.01f);
+
     std::size_t nbPixels = 0;
     for(const auto& imgParams : mp->getImagesParams())
     {
@@ -963,7 +966,7 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
                     {
                         const Point3d& cam = mp->CArr[c];
                         Point3d maxP = cam + (mp->iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * 10000000.0; 
-                        StaticVector<Point3d>* intersectionsPtr = mvsUtils::lineSegmentHexahedronIntersection(cam, maxP, voxel);
+                        StaticVector<Point3d>* intersectionsPtr = mvsUtils::lineSegmentHexahedronIntersection(cam, maxP, inflatedVoxel);
 
                         if(intersectionsPtr->size() <= 0)
                             continue;
@@ -979,17 +982,14 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
                                 maxDepth = depth;
                             }
                         }
-                        if(voxel == nullptr || mvsUtils::isPointInHexahedron(p, voxel))
-                        {
-                            GC_vertexInfo newv;
-                            newv.nrc = 1;
-                            newv.pixSize = 0.0f;
-                            newv.cams.push_back_distinct(c);
+                        GC_vertexInfo newv;
+                        newv.nrc = 1;
+                        newv.pixSize = 0.0f;
+                        newv.cams.push_back_distinct(c);
 
-                            _verticesAttr.push_back(newv);
-                            _verticesCoords.emplace_back(p);
-                            ++nbAddedPoints;
-                        }
+                        _verticesAttr.push_back(newv);
+                        _verticesCoords.emplace_back(p);
+                        ++nbAddedPoints;
                     }
                 }
             }
