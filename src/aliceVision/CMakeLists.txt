@@ -63,6 +63,7 @@ if(ALICEVISION_BUILD_SFM AND ALICEVISION_BUILD_MVS)
   add_subdirectory(sfmMvsUtils)
 endif()
 
+add_subdirectory(photometricStereo)
 
 # Install rules
 
