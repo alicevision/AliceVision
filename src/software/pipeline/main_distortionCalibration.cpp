@@ -41,7 +41,7 @@ using namespace aliceVision;
 
 
 
-cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
+cv::Mat undistort(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
 {
     double w = source.Width();
     double h = source.Height();
@@ -92,6 +92,9 @@ cv::Mat undistort(const std::shared_ptr<camera::Pinhole> & camera, const image::
         }
     }
 
+    offset.x() = minx;
+    offset.y() = miny;
+
     return result;
 }
 
@@ -112,12 +115,107 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
         return false;
     }
 
+    double hw = double(input.Width()) / 2.0;
+    double hh = double(input.Height()) / 2.0;
+
+    cbdetect::Corner filtered_corners;
+    for (int id = 0; id < corners.p.size(); id++)
+    {
+        double x = std::abs(corners.p[id].x - hw);
+        double y = std::abs(corners.p[id].y - hh);
+
+        if (x < 100 && y < 100) 
+        {
+            continue;
+        }
+
+        filtered_corners.p.push_back(corners.p[id]);
+        filtered_corners.v1.push_back(corners.v1[id]);
+        filtered_corners.v2.push_back(corners.v2[id]);
+        filtered_corners.r.push_back(corners.r[id]);
+        filtered_corners.score.push_back(corners.score[id]);
+    }
+
     std::vector<cbdetect::Board> boards;
-    cbdetect::boards_from_corners(inputOpencvWrapper, corners, boards, params);
+    int iteration = 0;
+    while (iteration < 10)
+    {
+        boards.clear();
+        cbdetect::boards_from_corners(inputOpencvWrapper, filtered_corners, boards, params);
+        
+        int hasWeirdAngle = 0;
+        for (cbdetect::Board & b : boards)
+        {
+            int height = b.idx.size();
+            int width = b.idx[0].size();
+
+            for (int i = 0; i < height - 1; i ++)
+            {
+                for (int j = 0; j < width - 1; j++)
+                {
+                    int idx = b.idx[i][j];
+                    if (idx < 0) continue;
+
+                    cv::Point2d p = filtered_corners.p[idx];
+
+                    int idxX = b.idx[i][j + 1];
+                    if (idxX < 0) 
+                    {
+                        continue;
+                    }
+
+                    int idxY = b.idx[i + 1][j];
+                    if (idxY < 0) 
+                    {
+                        continue;
+                    }
+
+                    cv::Point2d px = filtered_corners.p[idxX];
+                    cv::Point2d py = filtered_corners.p[idxY];
+
+                    px.x = px.x - p.x;
+                    px.y = px.y - p.y;
+                    py.x = py.x - p.x;
+                    py.y = py.y - p.y;
+
+                    double normx = sqrt(px.x * px.x + px.y * px.y);
+                    if (normx < 1e-6) 
+                    {
+                        hasWeirdAngle++;
+                        continue;
+                    }
+
+                    double normy = sqrt(py.x * py.x + py.y * py.y);
+                    if (normy < 1e-6) 
+                    {
+                        hasWeirdAngle++;
+                        continue;
+                    }
+
+                    double ca = (px / normx).dot(py / normy);
+                    double angle = std::abs(std::acos(ca) - M_PI_2);
+                    if (angle > M_PI_4)
+                    {
+                        hasWeirdAngle++;
+                    }
+                }   
+            }
+        }
+
+        std::cout << hasWeirdAngle << "!!!"<< std::endl;
+
+        if (hasWeirdAngle == 0)
+        {
+            break;
+        }
+
+        iteration++;
+    }
+
     
     
 
-    cv::Mat draw = inputOpencvWrapper.clone();
+    /*cv::Mat draw = inputOpencvWrapper.clone();
     for (cbdetect::Board & b : boards)
     {
         int height = b.idx.size();
@@ -131,28 +229,28 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
                 int idx = b.idx[i][j];
                 if (idx < 0) continue;
 
-                cv::Point2d p = corners.p[idx];
+                cv::Point2d p = filtered_corners.p[idx];
 
                 cv::circle(draw, p, 5, cv::Scalar(255,0,0));
 
                 idx = b.idx[i][j + 1];
                 if (idx >=0) 
                 {
-                    cv::Point2d p2 = corners.p[idx];
+                    cv::Point2d p2 = filtered_corners.p[idx];
                     cv::line(draw, p, p2, cv::Scalar(0,0,255));    
                 }
 
                 idx = b.idx[i + 1][j];
                 if (idx >=0) 
                 {
-                    cv::Point2d p2 = corners.p[idx];
+                    cv::Point2d p2 = filtered_corners.p[idx];
                     cv::line(draw, p, p2, cv::Scalar(0,0,255));    
                 }
             }
         }
     }
 
-    cv::imwrite(checkerImagePath, draw);
+    cv::imwrite(checkerImagePath, draw);*/
     
     
     lineWithPoints.clear();
@@ -174,7 +272,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
                 int idx = b.idx[i][j];
                 if (idx < 0) continue;
 
-                cv::Point2d p = corners.p[idx];
+                cv::Point2d p = filtered_corners.p[idx];
 
                 Vec2 pt;
                 pt.x() = p.x;
@@ -200,7 +298,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
                 int idx = b.idx[i][j];
                 if (idx < 0) continue;
 
-                cv::Point2d p = corners.p[idx];
+                cv::Point2d p = filtered_corners.p[idx];
 
                 Vec2 pt;
                 pt.x() = p.x;
@@ -567,12 +665,12 @@ int aliceVision_main(int argc, char* argv[])
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
         }
 
-        if (statistics.mean > 2.0)
+       /* if (statistics.mean > 2.0)
         {
             ALICEVISION_LOG_ERROR("Calibration #1 result is too bad ("<< statistics.mean << ")");
             continue;
         }
-
+*/
         ALICEVISION_LOG_INFO("Result quality of calibration : ");
         ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
         ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
@@ -624,7 +722,7 @@ int aliceVision_main(int argc, char* argv[])
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
         }
 
-        if (statistics.mean > 2.0)
+        /*if (statistics.mean > 2.0)
         {
             ALICEVISION_LOG_ERROR("Calibration #2 result is too bad ("<< statistics.mean << ")");
             continue;
@@ -632,10 +730,44 @@ int aliceVision_main(int argc, char* argv[])
 
         ALICEVISION_LOG_INFO("Result quality of inversion : ");
         ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
-        ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
+        ALICEVISION_LOG_INFO("Median of error : " << statistics.median);*/
 
-        cv::Mat ud = undistort(cameraPinhole, input);
-        cv::imwrite(undistortedImagePath, ud);
+        /*Vec2 offset;
+        cv::Mat ud = undistort(offset, cameraPinhole, input);
+        
+        for (const auto&  line : lineWithPoints)
+        {
+            double ca = cos(line.angle);
+            double sa = sin(line.angle);
+
+            if (std::abs(sa) > 0.1)
+            {
+                double x1 = 0;
+                double y1 = (line.dist - ca * x1) / sa;
+                double x2 = ud.cols - 1;
+                double y2 = (line.dist - ca * x2) / sa;
+
+                y1 -= offset.y();
+                y2 -= offset.y();
+
+                cv::line(ud, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 0, 0), 3);
+            }
+            else 
+            {
+                double y1 = 0;
+                double x1 = (line.dist - sa * y1) / ca;
+                double y2 = ud.rows - 1;
+                double x2 = (line.dist - sa * y2) / ca;
+
+                x1 -= offset.x();
+                x2 -= offset.x();
+
+                cv::line(ud, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 0, 0), 3);
+            }
+        }
+
+
+        cv::imwrite(undistortedImagePath, ud);*/
     }
 
     

@@ -438,6 +438,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         problem.AddResidualBlock(costFunction, lossFunction, scale, center, distortionParameters);
     }
 
+    google::SetCommandLineOption("GLOG_minloglevel", "3");
     ceres::Solver::Options options;
     options.use_inner_iterations = true;
     options.max_num_iterations = 10000; 
