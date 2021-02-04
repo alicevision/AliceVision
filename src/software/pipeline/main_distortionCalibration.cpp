@@ -41,7 +41,7 @@ using namespace aliceVision;
 
 
 
-cv::Mat undistort(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
+image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
 {
     double w = source.Width();
     double h = source.Height();
@@ -66,8 +66,7 @@ cv::Mat undistort(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera
     int width = maxx - minx + 1;
     int height = maxy - miny + 1;
 
-    cv::Mat result(height, width, CV_8UC3);
-    result = 0;
+    image::Image<image::RGBColor> result(width, height, true, image::RGBColor(0, 0, 0));
 
     const image::Sampler2d<image::SamplerLinear> sampler;
 
@@ -88,7 +87,7 @@ cv::Mat undistort(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera
             
             image::RGBColor c = sampler(source, dist.y(), dist.x());
             
-            result.at<cv::Vec3b>(i, j) = cv::Vec3b(c.r(), c.g(), c.b());
+            result(i, j) = c;
         }
     }
 
@@ -613,8 +612,14 @@ int aliceVision_main(int argc, char* argv[])
         cameraPinhole->setScale(d, d);
         cameraPinhole->setOffset(w / 2, h / 2);
         
-        std::string undistortedImagePath = (fs::path(outputPath) / (viewIdStr + "_undistorted.png")).string();
-        std::string checkerImagePath = (fs::path(outputPath) / (viewIdStr + "_checker.png")).string();
+
+        /*std::string undistortedImagePath = (fs::path(outputPath) / (viewIdStr + "_undistorted.png")).string();
+        std::string checkerImagePath = (fs::path(outputPath) / (viewIdStr + "_checker.png")).string();*/
+
+        fs::copy_file(view->getImagePath(), fs::path(outputPath) / fs::path(view->getImagePath()).filename(), fs::copy_option::overwrite_if_exists);
+
+        std::string undistortedImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
+        std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
 
         //Retrieve lines
         std::vector<calibration::LineWithPoints> lineWithPoints;
@@ -732,10 +737,10 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
         ALICEVISION_LOG_INFO("Median of error : " << statistics.median);*/
 
-        /*Vec2 offset;
-        cv::Mat ud = undistort(offset, cameraPinhole, input);
+        Vec2 offset;
+        image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
         
-        for (const auto&  line : lineWithPoints)
+        /*for (const auto&  line : lineWithPoints)
         {
             double ca = cos(line.angle);
             double sa = sin(line.angle);
@@ -764,10 +769,9 @@ int aliceVision_main(int argc, char* argv[])
 
                 cv::line(ud, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 0, 0), 3);
             }
-        }
+        }*/
 
-
-        cv::imwrite(undistortedImagePath, ud);*/
+        image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
     }
 
     
