@@ -5,6 +5,9 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
+// Photometric Stereo
+#include <aliceVision/photometricStereo/photometricDataIO.hpp>
+
 // Command line parameters
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -14,6 +17,9 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+// Eigen
+#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <iostream>
 #include <iomanip>
 #include <string>
