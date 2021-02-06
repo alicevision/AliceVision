@@ -97,5 +97,37 @@ int aliceVision_main(int argc, char **argv)
     getIndMask(mask, indexes);
     size_t maskSize = indexes.size();
 
+    const int pictRows = mask.rows();
+    const int pictCols = mask.cols();
+
+    Eigen::MatrixXf currentPicture(3,pictRows*pictCols);
+    Eigen::MatrixXf allPictures(3*usedPictures.size(), pictRows*pictCols);
+    Eigen::MatrixXf imMat(3*usedPictures.size(), maskSize);
+
+    std::string picturePath;
+    std::string pictureName;
+
+    // Read pictures
+    for (size_t i = 0; i < usedPictures.size(); ++i)
+    {
+        std::ostringstream ss;
+        ss << std::setw(3) << std::setfill('0') << usedPictures.at(i);
+        pictureName = ss.str();
+
+        picturePath = dataFolder + pictureName +".png";
+
+        aliceVision::image::Image<aliceVision::image::RGBfColor> imageFloat;
+        aliceVision::image::ImageReadOptions options;
+        options.outputColorSpace = aliceVision::image::EImageColorSpace::SRGB;
+
+        aliceVision::image::readImage(picturePath, imageFloat, options);
+        intensityScaling(intList.at(i), imageFloat);
+
+        // Vectorize image for matricial solving :
+        reshapeImage(imageFloat, currentPicture);
+
+        allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
+    }
+
     return 0;
 }
