@@ -2106,8 +2106,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                 // As long as we find a next geometry
                 Point3d lastIntersectPt = originPt;
                 // Iterate on geometries in the direction of camera's vertex within margin defined by maxDist (as long as we find a next geometry)
-                while ((geometry.type != EGeometryType::Vertex || (mp->CArr[cam] - intersectPt).size() < 1.0e-3) // We reach our camera vertex
-                && (lastIntersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) // We to far from the originPt
+                while ((geometry.type != EGeometryType::Vertex || (mp->CArr[cam] - intersectPt).size() > 1.0e-3) // We reach our camera vertex
+                    && (lastIntersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) // We are to far from the originPt
                 {
                     // Keep previous informations
                     const GeometryIntersection previousGeometry = geometry;
