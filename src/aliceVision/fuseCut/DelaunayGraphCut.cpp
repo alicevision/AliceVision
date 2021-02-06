@@ -2811,10 +2811,16 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
 
         ALICEVISION_LOG_INFO("Jancosek IJCV method ( forceTEdgeDelta*100 = " << static_cast<int>(forceTEdgeDelta * 100.0f) << " ): ");
 
+        displayCellsStats();
+
         // compute weights on edge between tetrahedra
         fillGraph(false, sigma, false, true, distFcnHeight);
 
+        displayCellsStats();
+
         addToInfiniteSw((float)maxint);
+
+        displayCellsStats();
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
@@ -2829,6 +2835,8 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
         {
             forceTedgesByGradientIJCV(false, sigma);
         }
+
+        displayCellsStats();
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
