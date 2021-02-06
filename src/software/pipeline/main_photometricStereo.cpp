@@ -93,5 +93,9 @@ int aliceVision_main(int argc, char **argv)
     aliceVision::image::Image<float> mask;
     loadMask(maskName, mask);
 
+    std::vector<int> indexes;
+    getIndMask(mask, indexes);
+    size_t maskSize = indexes.size();
+
     return 0;
 }

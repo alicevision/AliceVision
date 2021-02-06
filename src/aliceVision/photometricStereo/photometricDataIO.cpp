@@ -83,3 +83,21 @@ void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mas
     options.outputColorSpace = aliceVision::image::EImageColorSpace::SRGB;
     aliceVision::image::readImage(maskName, mask, options);
 }
+
+void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& indexes)
+{
+    const int nbRows = mask.rows();
+    const int nbCols = mask.cols();
+
+    for (int i = 0; i < nbRows; ++i)
+    {
+        for (int j = 0; j < nbCols; ++j)
+        {
+            if(mask(i,j) != 0)
+            {
+                int currentIndex = i*nbCols + j;
+                indexes.push_back(currentIndex);
+            }
+        }
+    }
+}
