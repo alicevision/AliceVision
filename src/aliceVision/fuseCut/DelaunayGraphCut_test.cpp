@@ -64,13 +64,15 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     for (size_t i = 0; i < delaunayGC._verticesCoords.size(); i++)
         ALICEVISION_LOG_TRACE("[" << i << "]: " << delaunayGC._verticesCoords[i].x << ", " << delaunayGC._verticesCoords[i].y << ", " << delaunayGC._verticesCoords[i].z);
 
-    // delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false);
+    delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false);
+    /*
     delaunayGC.initVertices();
     delaunayGC.computeDelaunay();
     delaunayGC.displayStatistics();
     delaunayGC.computeVerticesSegSize(true, 0.0f);
     delaunayGC.voteFullEmptyScore(cams, tempDirPath);
     delaunayGC.reconstructGC(&hexah[0]);
+    */
 
     ALICEVISION_LOG_TRACE("CreateGraphCut Done.");
 }

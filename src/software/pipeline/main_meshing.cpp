@@ -499,7 +499,8 @@ int aliceVision_main(int argc, char* argv[])
                     }
 
                     delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false);
-                    delaunayGC.graphCutPostProcessing();
+
+                    delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string()+"/");
                     mesh = delaunayGC.createMesh();
                     delaunayGC.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, &hexah[0]);

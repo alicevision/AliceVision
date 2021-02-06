@@ -55,14 +55,17 @@ struct GC_cellInfo
     }
 };
 
+struct GC_Seg
+{
+    int segSize = 0;
+    int segId = -1;
+};
+
 struct GC_vertexInfo
 {
     float pixSize = 0.0f;
     /// Number of cameras which have contributed to the refinement of the vertex position, so nrc >= cams.size().
     int nrc = 0;
-    int segSize = 0;
-    int segId = -1;
-    bool isOnSurface = false;
     /// All cameras having a visibility of this vertex. Some of them may not have contributed to the vertex position
     StaticVector<int> cams;
 
@@ -86,9 +89,6 @@ struct GC_vertexInfo
     {
         fwrite(&pixSize, sizeof(float), 1, f);
         fwrite(&nrc, sizeof(int), 1, f);
-        fwrite(&segSize, sizeof(int), 1, f);
-        fwrite(&segId, sizeof(int), 1, f);
-        fwrite(&isOnSurface, sizeof(bool), 1, f);
         int n = cams.size();
         fwrite(&n, sizeof(int), 1, f);
         if(n > 0)
@@ -101,9 +101,6 @@ struct GC_vertexInfo
     {
         fread(&pixSize, sizeof(float), 1, f);
         fread(&nrc, sizeof(int), 1, f);
-        fread(&segSize, sizeof(int), 1, f);
-        fread(&segId, sizeof(int), 1, f);
-        fread(&isOnSurface, sizeof(bool), 1, f);
         int n;
         fread(&n, sizeof(int), 1, f);
         if(n > 0)
