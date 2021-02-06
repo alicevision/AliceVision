@@ -7,4 +7,5 @@ void loadLightIntensities(const std::string& intFileName, const std::vector<int>
 
 void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, Eigen::MatrixXf& lightMat);
 
+void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask);
 #endif // DATAIO_HPP_INCLUDED

@@ -76,3 +76,10 @@ void loadLightDirections(const std::string& dirFileName, const std::vector<int>&
         dirFile.close();
     }
 }
+
+void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask)
+{
+    aliceVision::image::ImageReadOptions options;
+    options.outputColorSpace = aliceVision::image::EImageColorSpace::SRGB;
+    aliceVision::image::readImage(maskName, mask, options);
+}

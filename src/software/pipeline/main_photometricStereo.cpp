@@ -88,6 +88,10 @@ int aliceVision_main(int argc, char **argv)
     const std::string dirFileName = dataFolder + "light_directions.txt";
     loadLightDirections(dirFileName, usedPictures, lightMat);
 
+    // Read mask
+    const std::string maskName = dataFolder + "mask.png";
+    aliceVision::image::Image<float> mask;
+    loadMask(maskName, mask);
 
     return 0;
 }
