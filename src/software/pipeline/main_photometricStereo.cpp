@@ -78,5 +78,16 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_COUT(vm);
 
 
+    // Load light instensities
+    std::vector<std::array<float, 3>> intList;
+    const std::string intFileName = dataFolder + "light_intensities.txt";
+    loadLightIntensities(intFileName, usedPictures, intList);
+
+    // Load light directions
+    Eigen::MatrixXf lightMat(3*usedPictures.size(), 3);
+    const std::string dirFileName = dataFolder + "light_directions.txt";
+    loadLightDirections(dirFileName, usedPictures, lightMat);
+
+
     return 0;
 }
