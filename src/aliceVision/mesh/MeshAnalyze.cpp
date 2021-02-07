@@ -150,7 +150,7 @@ void MeshAnalyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1,
     K2 = Kh - temp;
 }
 
-bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToApplyLaplacianOp, Point3d& ln)
+bool MeshAnalyze::applyLaplacianOperator(int ptId, const StaticVector<Point3d>& ptsToApplyLaplacianOp, Point3d& ln)
 {
     StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
     if(ptNeighPtsOrdered.empty())
@@ -181,12 +181,6 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToA
         return false;
     }
 
-    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
-    {
-        ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
-        return false;
-    }
-
     return true;
 }
 
@@ -198,9 +192,10 @@ bool MeshAnalyze::getLaplacianSmoothingVector(int ptId, Point3d& ln)
 }
 
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes
-// page 5 - U1 - laplacian is obtained when apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
-// pts
-bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>& ptsLaplacian, Point3d& tp)
+// page 5:
+// U1 - laplacian is obtained when apply to original points,
+// U2 - bi-laplacian is obtained when apply to laplacian points
+bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, const StaticVector<Point3d>& ptsLaplacian, Point3d& tp)
 {
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
