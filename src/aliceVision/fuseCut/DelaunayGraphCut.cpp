@@ -1875,10 +1875,22 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 {
                     ++outFrontCount.vertices;
                     lastGeoIsVertex = true;
+                    if(previousGeometry.type == EGeometryType::Vertex && outFrontCount.vertices > 1000)
+                    {
+                        ALICEVISION_LOG_DEBUG("[Error]: loop on vertices. Current landmark index: " << vertexIndex);
+                        if(outFrontCount.vertices > 1010)
+                            break;
+                    }
                 }
                 else if (geometry.type == EGeometryType::Edge)
                 {
                     ++outFrontCount.edges;
+                    if(previousGeometry.type == EGeometryType::Edge && outFrontCount.edges > 1000)
+                    {
+                        ALICEVISION_LOG_DEBUG("[Error]: loop on edges. Current landmark index: " << vertexIndex);
+                        if(outFrontCount.edges > 1010)
+                            break;
+                    }
                 }
             }
         }
