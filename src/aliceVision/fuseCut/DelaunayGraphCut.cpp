@@ -311,7 +311,14 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             {
                 imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
-                    throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
+                    throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath +
+                                             ", " + depthMapFilepath);
+                {
+                    std::vector<float> simMapTmp(simMap.size());
+                    imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize,
+                                             simGaussianSize);
+                    simMap.swap(simMapTmp);
+                }
             }
             else
             {
@@ -319,11 +326,6 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 simMap.resize(width * height, -1);
             }
 
-            {
-                std::vector<float> simMapTmp(simMap.size());
-                imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
-                simMap.swap(simMapTmp);
-            }
         }
         // Add visibility
         #pragma omp parallel for
@@ -948,17 +950,16 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                     if(wTmp != width || hTmp != height)
                         throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
+                    {
+                        std::vector<float> simMapTmp(simMap.size());
+                        imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian",
+                    params.simGaussianSizeInit, params.simGaussianSizeInit); simMap.swap(simMapTmp);
+                    }
                 }
                 else
                 {
                     ALICEVISION_LOG_WARNING("simMap file can't be found.");
                     simMap.resize(width * height, -1);
-                }
-                
-                {
-                    std::vector<float> simMapTmp(simMap.size());
-                    imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit, params.simGaussianSizeInit);
-                    simMap.swap(simMapTmp);
                 }
 
                 const std::string nmodMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::nmodMap, 0);
