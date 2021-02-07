@@ -1363,7 +1363,7 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
     {
         for (CellIndex adjCellIndex : getNeighboringCellsByVertexIndex(inGeometry.vertexIndex))
         {
-            if (isInfiniteCell(adjCellIndex))
+            if(isInvalidOrInfiniteCell(adjCellIndex))
                 continue;
 
             // Get local vertex index
@@ -1396,7 +1396,7 @@ DelaunayGraphCut::intersectNextGeom(const DelaunayGraphCut::GeometryIntersection
 
         for (CellIndex adjCellIndex : getNeighboringCellsByEdge(inGeometry.edge))
         {
-            if (isInfiniteCell(adjCellIndex))
+            if(isInvalidOrInfiniteCell(adjCellIndex))
                 continue;
             // Local vertices indices
             const VertexIndex lvi0 = _tetrahedralization->index(adjCellIndex, inGeometry.edge.v0);
