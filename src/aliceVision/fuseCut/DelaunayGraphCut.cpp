@@ -1490,12 +1490,9 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
         {
             ambiguous = true;
         }
-        else
+        else if(dotValue < marginEpsilon)
         {
-            if (dotValue <= 0)
-            {
-               return GeometryIntersection();
-            }
+            return GeometryIntersection();
         }
     }
 
