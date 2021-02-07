@@ -3015,24 +3015,25 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
             const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
 
-            bool clockwise = false;
+            bool clockwise = false; // std::signbit(dd1)
             if(dd1 == 0.0f)
             {
                 if(dd2 == 0.0f)
                 {
                     ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
                 }
-                if(dd2 > 0.0f)
+                else if(dd2 > 0.0f)
                 {
                     clockwise = true;
                 }
             }
-            else
+            else if(dd1 < 0.0f)
             {
-                if(dd1 < 0.0f)
-                {
-                    clockwise = true;
-                }
+                clockwise = true;
+            }
+            if(std::signbit(dd1) != std::signbit(dd2))
+            {
+                ALICEVISION_LOG_WARNING("createMesh: bad triangle signbit.");
             }
 
             if(clockwise)
