@@ -1814,7 +1814,10 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #ifdef ALICEVISION_DEBUG_VOTE
                 // exportBackPropagationMesh("fillGraph_v" + std::to_string(vertexIndex) + "_ToCam_typeNone", history.geometries, originPt, mp->CArr[cam]);
 #endif
-                ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: geometry cannot be found.");
+                ALICEVISION_LOG_DEBUG(
+                    "[Error]: fillGraph(toTheCam) cause: geometry cannot be found."
+                    << "Current vertex index: " << vertexIndex
+                    << ", outFrontCount:" << outFrontCount);
                 break;
             }
 
@@ -1886,8 +1889,20 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
             if(lastGeoIsVertex)
             {
 #pragma OMP_ATOMIC_WRITE
-                _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
+            _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
             }
+            else
+            {
+                ALICEVISION_LOG_DEBUG(
+                    "fillGraph(toTheCam): last geometry is supposed to be the camera but it is not a vertex. "
+                    << "Current vertex index: " << vertexIndex
+                    << ", outFrontCount:" << outFrontCount);
+            }
+        }
+        else
+        {
+            ALICEVISION_LOG_DEBUG("fillGraph(toTheCam): no last intersected facet. "
+                                  << "Current vertex index: " << vertexIndex << ", outFrontCount:" << outFrontCount);
         }
     }
     {
@@ -2254,7 +2269,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         {
                             if (previousGeometry.type != EGeometryType::Vertex)
                             {
-                                ALICEVISION_LOG_ERROR("[error] The firstIteration vote could only happen during for the first cell when we come from the first vertex.");
+                                ALICEVISION_LOG_ERROR("The firstIteration vote could only happen during for "
+                                                      "the first cell when we come from the first vertex.");
                                 // throw std::runtime_error("[error] The firstIteration vote could only happen during for the first cell when we come from the first vertex.");
                             }
                             // the information of first intersected cell can only be found by taking intersection of neighbouring cells for both geometries
@@ -2971,13 +2987,13 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             //    printf("WARNINIG infinite vertex\n");
             // }
 
-            Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
-            Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
+            const Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)]; // in FULL part
+            const Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)]; // in EMPTY part
 
-            Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
+            const Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
 
-            float dd1 = orientedPointPlaneDistance(D1, points[0], N);
-            float dd2 = orientedPointPlaneDistance(D2, points[0], N);
+            const double dd1 = orientedPointPlaneDistance(D1, points[0], N);
+            const double dd2 = orientedPointPlaneDistance(D2, points[0], N);
 
             bool clockwise = false;
             if(dd1 == 0.0f)
