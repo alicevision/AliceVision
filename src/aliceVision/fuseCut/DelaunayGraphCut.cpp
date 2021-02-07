@@ -2945,15 +2945,23 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             Facet f1(ci, k);
             bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
+            {
+                // "f1" is in an EMPTY cell, skip it
                 continue;
+            }
 
             Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
             bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
-            if(uo == vo)
+            if(vo)
+            {
+                // "f2" is in a FULL cell, skip it
                 continue;
+            }
+
+            // "f1" is in a FULL cell and "f2" is in an EMPTY cell
 
             VertexIndex vertices[3];
             vertices[0] = getVertexIndex(f1, 0);
