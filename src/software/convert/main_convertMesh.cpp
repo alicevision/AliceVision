@@ -48,7 +48,8 @@ int aliceVision_main(int argc, char** argv)
     std::string inputMeshPath;
     std::string outputFilePath;
 
-    po::options_description allParams("AliceVision convertMesh");
+    po::options_description allParams("AliceVision convertMesh\n"
+                                      "The program allows to convert a mesh to another mesh format.");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
