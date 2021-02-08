@@ -136,7 +136,8 @@ int aliceVision_main(int argc, char** argv)
     bool preProcess = true;
     bool postProcess = true;
 
-    po::options_description allParams("AliceVision mergeMeshes");
+    po::options_description allParams("AliceVision mergeMeshes\n"
+                                      "The program takes two meshes and applies a boolean operation on them.");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
