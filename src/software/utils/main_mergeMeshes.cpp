@@ -14,8 +14,9 @@
 
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_io.h>
-#include <geogram/mesh/mesh_intersection.h>
 #include <geogram/mesh/mesh_repair.h>
+#include <geogram/mesh/mesh_fill_holes.h>
+#include <geogram/mesh/mesh_intersection.h>
 #include <geogram/mesh/mesh_geometry.h>
 
 #include <geogram/basic/command_line.h>
@@ -238,23 +239,21 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Geogram initialized.");
 
     GEO::Mesh inputFirstMesh, inputSecondMesh, outputMesh;
-
+    
+    // load first input mesh
+    if(!GEO::mesh_load(inputFirstMeshPath, inputFirstMesh))
     {
-      // load first input mesh
-      if(!GEO::mesh_load(inputFirstMeshPath, inputFirstMesh))
-      {
-          ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputFirstMeshPath << "\".");
-          return EXIT_FAILURE;
-      }
-
-      // load second input mesh
-      if(!GEO::mesh_load(inputSecondMeshPath, inputSecondMesh))
-      {
-          ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputSecondMeshPath << "\".");
-          return EXIT_FAILURE;
-      }
+        ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputFirstMeshPath << "\".");
+        return EXIT_FAILURE;
     }
 
+    // load second input mesh
+    if(!GEO::mesh_load(inputSecondMeshPath, inputSecondMesh))
+    {
+        ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputSecondMeshPath << "\".");
+        return EXIT_FAILURE;
+    }
+    
     // pre-process input meshes
     if(preProcess)
     {
