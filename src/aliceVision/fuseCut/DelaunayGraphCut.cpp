@@ -1791,6 +1791,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
         GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
         Point3d intersectPt = originPt;
         // toTheCam
+        const double pointCamDistance = (mp->CArr[cam] - originPt).size();
         const Point3d dirVect = (mp->CArr[cam] - originPt).normalize();
 
 #ifdef ALICEVISION_DEBUG_VOTE
@@ -1898,29 +1899,40 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     }
                 }
             }
+            
+            // Declare the last part of the empty path as connected to EMPTY (S node in the graph cut)
+            if (lastIntersectedFacet.cellIndex != GEO::NO_CELL &&
+                (mp->CArr[cam] - intersectPt).size() < 0.2 * pointCamDistance)
+            {
+    #pragma OMP_ATOMIC_WRITE
+                _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
+            }
         }
 
         // Vote for the last intersected facet (close to the cam)
         if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
-            if(lastGeoIsVertex)
+            // if(lastGeoIsVertex)
             {
+                // lastGeoIsVertex is supposed to be positive in almost all cases.
+                // If we do not reach the camera, we still vote on the last tetrehedra.
+                // Possible reaisons: the camera is not part of the vertices or we encounter a numerical error in intersectNextGeom
 #pragma OMP_ATOMIC_WRITE
-            _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
+                _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
             }
-            else
-            {
-                ALICEVISION_LOG_DEBUG(
-                    "fillGraph(toTheCam): last geometry is supposed to be the camera but it is not a vertex. "
-                    << "Current vertex index: " << vertexIndex
-                    << ", outFrontCount:" << outFrontCount);
-            }
+            // else
+            // {
+            //     ALICEVISION_LOG_DEBUG(
+            //         "fillGraph(toTheCam): last geometry is supposed to be the camera but it is not a vertex. "
+            //         << "Current vertex index: " << vertexIndex
+            //         << ", outFrontCount:" << outFrontCount);
+            // }
         }
-        else
-        {
-            ALICEVISION_LOG_DEBUG("fillGraph(toTheCam): no last intersected facet. "
-                                  << "Current vertex index: " << vertexIndex << ", outFrontCount:" << outFrontCount);
-        }
+        // else
+        // {
+        //     ALICEVISION_LOG_DEBUG("fillGraph(toTheCam): no last intersected facet. "
+        //                           << "Current vertex index: " << vertexIndex << ", outFrontCount:" << outFrontCount);
+        // }
     }
     {
         // Initialisation
