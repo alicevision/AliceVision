@@ -1823,6 +1823,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 ALICEVISION_LOG_DEBUG(
                     "[Error]: fillGraph(toTheCam) cause: geometry cannot be found."
                     << "Current vertex index: " << vertexIndex
+                    << ", Previous geometry type: " << previousGeometry.type
                     << ", outFrontCount:" << outFrontCount);
                 break;
             }
@@ -1862,7 +1863,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #ifdef ALICEVISION_DEBUG_VOTE
                     // exportBackPropagationMesh("fillGraph_ToCam_invalidMirorFacet", history.geometries, originPt, mp->CArr[cam]);
 #endif
-                    ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: invalidOrInfinite miror facet.");
+                    //ALICEVISION_LOG_DEBUG("[Error]: fillGraph(toTheCam) cause: invalidOrInfinite miror facet.");
                     break;
                 }
                 lastIntersectedFacet = mFacet;
@@ -1883,9 +1884,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     lastGeoIsVertex = true;
                     if(previousGeometry.type == EGeometryType::Vertex && outFrontCount.vertices > 1000)
                     {
-                        ALICEVISION_LOG_DEBUG("[Error]: loop on vertices. Current landmark index: " << vertexIndex);
-                        if(outFrontCount.vertices > 1010)
-                            break;
+                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc front: loop on vertices. Current landmark index: " << vertexIndex);
+                        break;
                     }
                 }
                 else if (geometry.type == EGeometryType::Edge)
@@ -1893,9 +1893,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     ++outFrontCount.edges;
                     if(previousGeometry.type == EGeometryType::Edge && outFrontCount.edges > 1000)
                     {
-                        ALICEVISION_LOG_DEBUG("[Error]: loop on edges. Current landmark index: " << vertexIndex);
-                        if(outFrontCount.edges > 1010)
-                            break;
+                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc front: loop on edges. Current landmark index: " << vertexIndex);
+                        break;
                     }
                 }
             }
@@ -2046,10 +2045,20 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 if (geometry.type == EGeometryType::Vertex)
                 {
                     ++outBehindCount.vertices;
+                    if(previousGeometry.type == EGeometryType::Vertex && outBehindCount.vertices > 1000)
+                    {
+                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc behind: loop on vertices. Current landmark index: " << vertexIndex);
+                        break;
+                    }
                 }
                 else if (geometry.type == EGeometryType::Edge)
                 {
                     ++outBehindCount.edges;
+                    if(previousGeometry.type == EGeometryType::Edge && outBehindCount.edges > 1000)
+                    {
+                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc behind: loop on edges. Current landmark index: " << vertexIndex);
+                        break;
+                    }
                 }
             }
         }
