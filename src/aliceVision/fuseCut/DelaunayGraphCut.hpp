@@ -186,7 +186,13 @@ public:
             edges += gc.edges;
             vertices += gc.vertices;
             facets += gc.facets;
-
+            return *this;
+        }
+        GeometriesCount& operator/=(const size_t v)
+        {
+            edges /= v;
+            vertices /= v;
+            facets /= v;
             return *this;
         }
     };

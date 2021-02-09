@@ -1482,7 +1482,8 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
 
     // In case intersectPt is provided, check if intersectPt is in front of lastIntersectionPt 
     // in the DirVec direction to ensure that we are moving forward in the right direction
-    if (lastIntersectPt != nullptr) {
+    if (lastIntersectPt != nullptr)
+    {
         const Point3d diff = tempIntersectPt - *lastIntersectPt;
         const double dotValue = dot(DirVec, diff.normalize());
 
@@ -1759,8 +1760,12 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
     ALICEVISION_LOG_DEBUG("totalCamHaveVisibilityOnVertex//totalOfVertex = " << totalCamHaveVisibilityOnVertex << " // " << totalOfVertex);
 
     ALICEVISION_LOG_DEBUG("\n - Geometries Intersected count -");
-    ALICEVISION_LOG_DEBUG("Front: edges " << totalGeometriesIntersectedFrontCount.edges << ", vertices: " << totalGeometriesIntersectedFrontCount.vertices << ", facets: " << totalGeometriesIntersectedFrontCount.facets);
-    ALICEVISION_LOG_DEBUG("Behind: edges " << totalGeometriesIntersectedBehindCount.edges << ", vertices: " << totalGeometriesIntersectedBehindCount.vertices << ", facets: " << totalGeometriesIntersectedBehindCount.facets);
+    ALICEVISION_LOG_DEBUG("Front: " << totalGeometriesIntersectedFrontCount);
+    ALICEVISION_LOG_DEBUG("Behind: " << totalGeometriesIntersectedBehindCount);
+    totalGeometriesIntersectedFrontCount /= totalCamHaveVisibilityOnVertex;
+    totalGeometriesIntersectedBehindCount /= totalCamHaveVisibilityOnVertex;
+    ALICEVISION_LOG_DEBUG("Front per vertex: " << totalGeometriesIntersectedFrontCount);
+    ALICEVISION_LOG_DEBUG("Behind per vertex: " << totalGeometriesIntersectedBehindCount);
     mvsUtils::printfElapsedTime(t1, "s-t graph weights computed : ");
 }
 
