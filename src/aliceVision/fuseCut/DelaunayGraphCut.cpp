@@ -2078,23 +2078,23 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     ALICEVISION_LOG_INFO("Forcing t-edges");
     long t2 = clock();
 
-    float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
+    const float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
     ALICEVISION_LOG_DEBUG("forceTEdgeDelta: " << forceTEdgeDelta);
 
-    float minJumpPartRange = (float)mp->userParams.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
+    const float minJumpPartRange = (float)mp->userParams.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
     ALICEVISION_LOG_DEBUG("minJumpPartRange: " << minJumpPartRange);
 
-    float maxSilentPartRange = (float)mp->userParams.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
+    const float maxSilentPartRange = (float)mp->userParams.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
     ALICEVISION_LOG_DEBUG("maxSilentPartRange: " << maxSilentPartRange);
 
     float nsigmaJumpPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaJumpPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaJumpPart: " << nsigmaJumpPart);
 
-    float nsigmaFrontSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
+    const float nsigmaFrontSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaFrontSilentPart: " << nsigmaFrontSilentPart);
 
     // This parameter allows to enlage the surface margin behind the point
-    float nsigmaBackSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
+    const float nsigmaBackSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaBackSilentPart: " << nsigmaBackSilentPart);
 
     for(GC_cellInfo& c: _cellsAttr)
@@ -2138,8 +2138,8 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
         {
             const float maxDist = nPixelSizeBehind * (fixesSigma ? 1.0f : mp->getCamPixelSize(originPt, cam));
 
-            float minJump = 10000000.0f;
-            float minSilent = 10000000.0f;
+            // float minJump = 10000000.0f;
+            // float minSilent = 10000000.0f;
             float maxJump = 0.0f;
             float maxSilent = 0.0f;
             float midSilent = 10000000.0f;
@@ -2176,7 +2176,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 #ifdef ALICEVISION_DEBUG_VOTE
                         // exportBackPropagationMesh("forceTedges_ToCam_typeNone", history.geometries, originPt, mp->CArr[cam]);
 #endif
-                        ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: geometry cannot be found.");
+                        // ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: geometry cannot be found.");
                         break;
                     }
 
@@ -2199,12 +2199,12 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
                         if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
                         {
-                            minJump = std::min(minJump, c.emptinessScore);
+                            // minJump = std::min(minJump, c.emptinessScore);
                             maxJump = std::max(maxJump, c.emptinessScore);
                         }
                         else
                         {
-                            minSilent = std::min(minSilent, c.emptinessScore);
+                            // minSilent = std::min(minSilent, c.emptinessScore);
                             maxSilent = std::max(maxSilent, c.emptinessScore);
                         }
 
@@ -2215,7 +2215,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 #ifdef ALICEVISION_DEBUG_VOTE
                             // exportBackPropagationMesh("forceTedges_ToCam_invalidMirorFacet", history.geometries, originPt, mp->CArr[cam]);
 #endif
-                            ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: invalidOrInfinite miror facet.");
+                            // ALICEVISION_LOG_DEBUG("[Error]: forceTedges(toTheCam) cause: invalidOrInfinite miror facet.");
                             break;
                         }
                         geometry.facet = mFacet;
@@ -2223,10 +2223,20 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     else if (geometry.type == EGeometryType::Vertex)
                     {
                         ++totalGeometriesIntersectedFrontCount.vertices;
+                        if(previousGeometry.type == EGeometryType::Vertex && totalGeometriesIntersectedFrontCount.vertices > 1000)
+                        {
+                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on edges. Current landmark index: " << vertexIndex);
+                            break;
+                        }
                     }
                     else if (geometry.type == EGeometryType::Edge)
                     {
                         ++totalGeometriesIntersectedFrontCount.edges;
+                        if(previousGeometry.type == EGeometryType::Edge && totalGeometriesIntersectedFrontCount.edges > 1000)
+                        {
+                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on edges. Current landmark index: " << vertexIndex);
+                            break;
+                        }
                     }
                 }
                 ++totalRayFront;
@@ -2262,14 +2272,14 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
                     if(geometry.type == EGeometryType::None)
                     {
-                        // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified later) 
-                        if (previousGeometry.type == EGeometryType::Facet)
-                        {
-#ifdef ALICEVISION_DEBUG_VOTE
-                            // exportBackPropagationMesh("forceTedges_behindThePoint_NoneButPreviousIsFacet", history.geometries, originPt, mp->CArr[cam]);
-#endif
-                            ALICEVISION_LOG_DEBUG("[Error]: forceTedges(behindThePoint) cause: None geometry but previous is Facet.");
-                        }
+//                         // If we come from a facet, the next intersection must exist (even if the mirror facet is invalid, which is verified later) 
+//                         if (previousGeometry.type == EGeometryType::Facet)
+//                         {
+// #ifdef ALICEVISION_DEBUG_VOTE
+//                             // exportBackPropagationMesh("forceTedges_behindThePoint_NoneButPreviousIsFacet", history.geometries, originPt, mp->CArr[cam]);
+// #endif
+//                             ALICEVISION_LOG_DEBUG("[Error]: forceTedges(behindThePoint) cause: None geometry but previous is Facet.");
+//                         }
                         // Break if we reach the end of the tetrahedralization volume
                         break;
                     }
@@ -2286,7 +2296,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         }
 
                         const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
-                        minSilent = std::min(minSilent, c.emptinessScore);
+                        // minSilent = std::min(minSilent, c.emptinessScore);
                         maxSilent = std::max(maxSilent, c.emptinessScore);
 
                         // Take the mirror facet to iterate over the next cell
@@ -2328,10 +2338,20 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         if (geometry.type == EGeometryType::Vertex)
                         {
                             ++totalGeometriesIntersectedFrontCount.vertices;
+                            if(previousGeometry.type == EGeometryType::Vertex && totalGeometriesIntersectedFrontCount.vertices > 1000)
+                            {
+                                ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on vertices. Current landmark index: " << vertexIndex);
+                                break;
+                            }
                         }
                         else if (geometry.type == EGeometryType::Edge)
                         {
                             ++totalGeometriesIntersectedFrontCount.edges;
+                            if(previousGeometry.type == EGeometryType::Edge && totalGeometriesIntersectedFrontCount.edges > 1000)
+                            {
+                                ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on edges. Current landmark index: " << vertexIndex);
+                                break;
+                            }
                         }
                     }
                 }
@@ -2352,8 +2372,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     // midSilent: score of the next tetrahedron directly after p (called T1 in the paper)
                     // maxSilent: max score of emptiness for the tetrahedron around the point p (+/- 2*sigma around p)
 
-                    if(
-                       (midSilent / maxJump < forceTEdgeDelta) && // (g / B) < k_rel    //// k_rel=0.1
+                    if((midSilent / maxJump < forceTEdgeDelta) && // (g / B) < k_rel    //// k_rel=0.1
                        (maxJump - midSilent > minJumpPartRange) && // (B - g) > k_abs   //// k_abs=10000 // 1000 in the paper
                        (maxSilent < maxSilentPartRange)) // g < k_outl                  //// k_outl=100  // 400 in the paper
                         //(maxSilent-minSilent<maxSilentPartRange))
@@ -2371,11 +2390,10 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
     for(GC_cellInfo& c: _cellsAttr)
     {
-        float w = std::max(1.0f, c.cellTWeight);
+        const float w = std::max(1.0f, c.cellTWeight) * c.on;
 
-        // cellTWeight = clamp(w * c.on, cellTWeight, 1000000.0f);
-        c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, w * c.on));
-        // c.cellTWeight = std::max(c.cellTWeight,fit->info().on);
+        // cellTWeight = clamp(w, cellTWeight, 1000000.0f);
+        c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, w));
     }
 
     ALICEVISION_LOG_DEBUG("_verticesAttr.size(): " << _verticesAttr.size() << "(" << verticesRandIds.size() << ")");
@@ -2755,9 +2773,9 @@ void DelaunayGraphCut::maxflow()
     int nbTCells = 0;
     for(CellIndex ci = 0; ci < nbCells; ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-        float ws = c.cellSWeight;
-        float wt = c.cellTWeight;
+        const GC_cellInfo& c = _cellsAttr[ci];
+        const float ws = c.cellSWeight;
+        const float wt = c.cellTWeight;
 
         assert(ws >= 0.0f);
         assert(wt >= 0.0f);
