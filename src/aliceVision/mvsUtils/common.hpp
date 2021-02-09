@@ -40,7 +40,7 @@ inline void printfElapsedTime(long t1, std::string prefix = "")
 int gaussKernelVoting(StaticVector<OrientedPoint*>* pts, float sigma);
 float angularDistnace(OrientedPoint* op1, OrientedPoint* op2);
 bool arecoincident(OrientedPoint* op1, OrientedPoint* op2, float pixSize);
-bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng);
+bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, double minAng, double maxAng);
 bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng);
 void getHexahedronTriangles(Point3d tris[12][3], const Point3d hexah[8]);
 void getCamHexahedron(const Point3d& position, const Matrix3x3& iCam, int width, int height, float minDepth, float maxDepth, Point3d hexah[8]);
