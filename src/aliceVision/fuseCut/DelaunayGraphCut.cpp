@@ -1473,7 +1473,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     const double v = triangleUv.y; // A to B
 
     // If we find invalid uv coordinate
-    if (!std::isfinite(u) && !std::isfinite(v))
+    if (!std::isfinite(u) || !std::isfinite(v))
         return GeometryIntersection();
 
     // Ouside the triangle with marginEpsilon margin
