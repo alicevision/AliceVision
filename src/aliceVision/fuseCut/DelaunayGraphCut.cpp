@@ -3134,9 +3134,11 @@ void DelaunayGraphCut::displayCellsStats() const
         Accumulator acc_fullnessScore;
         Accumulator acc_emptinessScore;
         Accumulator acc_on;
+        int64_t countPositiveSWeight = 0;
 
         for(const GC_cellInfo& cellAttr : _cellsAttr)
         {
+            countPositiveSWeight += (cellAttr.cellSWeight > 0);
             acc_cellScore(cellAttr.cellSWeight - cellAttr.cellTWeight);
             acc_cellSWeight(cellAttr.cellSWeight);
             acc_cellTWeight(cellAttr.cellTWeight);
@@ -3158,6 +3160,7 @@ void DelaunayGraphCut::displayCellsStats() const
         displayAcc("fullnessScore", acc_fullnessScore);
         displayAcc("emptinessScore", acc_emptinessScore);
         displayAcc("on", acc_on);
+        ALICEVISION_LOG_INFO("countPositiveSWeight: " << countPositiveSWeight);
     }
 }
 
