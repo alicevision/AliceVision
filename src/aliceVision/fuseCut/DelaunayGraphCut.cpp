@@ -3029,7 +3029,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             {
                 clockwise = true;
             }
-            if(std::signbit(dd1) != std::signbit(dd2))
+            if(std::signbit(dd1) == std::signbit(dd2))
             {
                 ALICEVISION_LOG_WARNING("createMesh: bad triangle signbit.");
             }
