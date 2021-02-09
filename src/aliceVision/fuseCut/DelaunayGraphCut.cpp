@@ -2833,9 +2833,7 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
 
     if(jancosekIJCV) // true by default
     {
-        float forceTEdgeDelta = (float)mp->userParams.get<double>("delaunaycut.forceTEdgeDelta", 0.1f);
-
-        ALICEVISION_LOG_INFO("Jancosek IJCV method ( forceTEdgeDelta*100 = " << static_cast<int>(forceTEdgeDelta * 100.0f) << " ): ");
+        bool forceTEdge = mp->userParams.get<bool>("delaunaycut.forceTEdge", true);
 
         displayCellsStats();
 
@@ -2857,7 +2855,7 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
             meshf->saveToObj(folderName + "tetrahedralMesh_beforeForceTEdge_emptiness.obj");
         }
 
-        if((forceTEdgeDelta > 0.0f) && (forceTEdgeDelta < 1.0f))
+        if(forceTEdge)
         {
             forceTedgesByGradientIJCV(false, sigma);
         }
