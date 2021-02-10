@@ -59,8 +59,6 @@ oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic, bool &correctPrinci
     for(Vec2 n : pointToBeChecked)
     {
         maxDistortionVector.push_back(intrinsic->get_ud_pixel(n));
-        Vec2 test = intrinsic->get_ud_pixel(n);
-        //ALICEVISION_LOG_DEBUG("UD: " + std::to_string(test(0)) + " ; " + std::to_string(test(1)));
     }
 
     std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
@@ -71,8 +69,9 @@ oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic, bool &correctPrinci
               [](Vec2 a, Vec2 b) { return a[1] > b[1]; });
     int yRoiMax = std::round(maxDistortionVector.front()[1]);
     int yRoiMin = std::round(maxDistortionVector.back()[1]);
-    oiio::ROI roi(xRoiMin - ppCorrection(0), xRoiMax + 1 - ppCorrection(0), intrinsic->h() - yRoiMax - ppCorrection(1),
-                  intrinsic->h() - yRoiMin - ppCorrection(1));
+    
+    oiio::ROI roi(xRoiMin - ppCorrection(0), xRoiMax + 1 - ppCorrection(0), yRoiMin - ppCorrection(1),
+                  yRoiMax+1 - ppCorrection(1));
     return roi;
 }
 
@@ -269,6 +268,7 @@ int aliceVision_main(int argc, char** argv)
 
       image::readImage(view.getImagePath(), image, image::EImageColorSpace::NO_CONVERSION);
       oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
+      oiio::ROI roiNuke;
 
       if(cam->isValid() && cam->hasDistortion())
       {
@@ -282,16 +282,24 @@ int aliceVision_main(int argc, char** argv)
             if(roiForIntrinsic.find(key) == roiForIntrinsic.end())
             {
                 roi = computeRoi(cam, correctPrincipalPoint);
-                ALICEVISION_LOG_DEBUG("roi:" + std::to_string(roi.xbegin) + ";" + std::to_string(roi.xend) + ";" +
-                                      std::to_string(roi.ybegin) + ";" + std::to_string(roi.yend));
                 roiForIntrinsic[key] = roi;
             }
             else
             {
                 roi = roiForIntrinsic[key];
             }
-            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint); 
-            writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, metadata,roi);
+
+            ALICEVISION_LOG_DEBUG("roi:" + std::to_string(roi.xbegin) + ";" + std::to_string(roi.xend) + ";" +
+                                  std::to_string(roi.ybegin) + ";" + std::to_string(roi.yend));
+            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint,roi); 
+
+            int xOffset = roi.xbegin;
+            int yOffset = cam->h() - roi.yend;
+            roiNuke =
+                oiio::ROI(-xOffset, cam->w() - xOffset, - yOffset, cam->h() - yOffset);
+            ALICEVISION_LOG_DEBUG("roiNuke:" + std::to_string(roiNuke.xbegin) + ";" + std::to_string(roiNuke.xend) +
+                                  ";" + std::to_string(roiNuke.ybegin) + ";" + std::to_string(roiNuke.yend));
+            writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, oiio::ParamValueList(),roiNuke);
         }
         else
         {
