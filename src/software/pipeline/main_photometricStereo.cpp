@@ -118,15 +118,45 @@ int aliceVision_main(int argc, char **argv)
 
         aliceVision::image::Image<aliceVision::image::RGBfColor> imageFloat;
         aliceVision::image::ImageReadOptions options;
-        options.outputColorSpace = aliceVision::image::EImageColorSpace::SRGB;
-
-        aliceVision::image::readImage(picturePath, imageFloat, options);
-        intensityScaling(intList.at(i), imageFloat);
-
+        options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
+        aliceVision::image::readImage(picturePath, imageFloat, options);      
+        intensityScaling(intList.at(i), imageFloat);        
         image2PsMatrix(imageFloat, currentPicture);
 
         allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
     }
+
+    applyMask(allPictures, indexes, imMat);
+
+    Eigen::MatrixXf lightMatTranspose = lightMat.transpose();
+    Eigen::Matrix3f product = lightMatTranspose*lightMat;
+    Eigen::MatrixXf pseudoInverse = product.inverse()*lightMatTranspose;
+
+    Eigen::MatrixXf M = pseudoInverse*imMat;
+        
+    for (int j = 0; j < M.cols(); ++j)
+    {
+        M.col(j).normalize();
+    }
+
+    Eigen::MatrixXf normals = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
+        
+    for (size_t j = 0; j < maskSize; ++j)
+    {
+        int currentIdx = indexes.at(j);
+        for (size_t i = 0; i < 3; ++i)
+        {
+            normals(i,currentIdx) = M(i,j);
+        }
+    }
+
+    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
+    normals2picture(normals, normalsIm);
+    
+    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
+    convertNormalMap2png(normalsIm, normalsImPNG);
+
+    aliceVision::image::writeImage(dataFolder + "test.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
     return 0;
 }
