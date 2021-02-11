@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cmath>
+#include <ostream>
 
 namespace aliceVision {
 
@@ -88,6 +89,12 @@ public:
 inline double dot(const Point2d& p1, const Point2d& p2)
 {
     return p1.x * p2.x + p1.y * p2.y;
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const Point2d& p)
+{
+    stream << p.x << "," << p.y;
+    return stream;
 }
 
 } // namespace aliceVision

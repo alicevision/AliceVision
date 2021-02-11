@@ -1709,7 +1709,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
     boost::progress_display progressBar(std::min(size_t(100), verticesRandIds.size()), std::cout, "fillGraphPartPtRc\n");
     size_t progressStep = verticesRandIds.size() / 100;
     progressStep = std::max(size_t(1), progressStep);
-#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex)
+#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex,totalIsRealNrc)
     for(int i = 0; i < verticesRandIds.size(); i++)
     {
         if(i % progressStep == 0)
@@ -1744,8 +1744,18 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
                 totalStepsBehind += stepsBehind;
                 totalRayBehind += 1;
 
-                totalGeometriesIntersectedFrontCount += geometriesIntersectedFrontCount;
-                totalGeometriesIntersectedBehindCount += geometriesIntersectedBehindCount;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedFrontCount.facets += geometriesIntersectedFrontCount.facets;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedFrontCount.vertices += geometriesIntersectedFrontCount.vertices;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedFrontCount.edges += geometriesIntersectedFrontCount.edges;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedBehindCount.facets += geometriesIntersectedBehindCount.facets;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedBehindCount.vertices += geometriesIntersectedBehindCount.vertices;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedBehindCount.edges += geometriesIntersectedBehindCount.edges;
             } // for c
 
             totalCamHaveVisibilityOnVertex += v.cams.size();
@@ -1820,11 +1830,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #ifdef ALICEVISION_DEBUG_VOTE
                 // exportBackPropagationMesh("fillGraph_v" + std::to_string(vertexIndex) + "_ToCam_typeNone", history.geometries, originPt, mp->CArr[cam]);
 #endif
-                ALICEVISION_LOG_DEBUG(
-                    "[Error]: fillGraph(toTheCam) cause: geometry cannot be found."
-                    << "Current vertex index: " << vertexIndex
-                    << ", Previous geometry type: " << previousGeometry.type
-                    << ", outFrontCount:" << outFrontCount);
+                // ALICEVISION_LOG_DEBUG(
+                //     "[Error]: fillGraph(toTheCam) cause: geometry cannot be found."
+                //     << "Current vertex index: " << vertexIndex
+                //     << ", Previous geometry type: " << previousGeometry.type
+                //     << ", outFrontCount:" << outFrontCount);
                 break;
             }
 
@@ -1867,6 +1877,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     break;
                 }
                 lastIntersectedFacet = mFacet;
+                if(previousGeometry.type == EGeometryType::Facet && outFrontCount.facets > 10000)
+                {
+                    ALICEVISION_LOG_WARNING("fillGraphPartPtRc front: loop on facets. Current landmark index: " << vertexIndex << ", camera: " << cam);
+                    break;
+                }
             }
             else
             {
@@ -1884,7 +1899,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     lastGeoIsVertex = true;
                     if(previousGeometry.type == EGeometryType::Vertex && outFrontCount.vertices > 1000)
                     {
-                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc front: loop on vertices. Current landmark index: " << vertexIndex);
+                        ALICEVISION_LOG_WARNING("fillGraphPartPtRc front: loop on vertices. Current landmark index: " << vertexIndex << ", camera: " << cam);
                         break;
                     }
                 }
@@ -1893,7 +1908,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     ++outFrontCount.edges;
                     if(previousGeometry.type == EGeometryType::Edge && outFrontCount.edges > 1000)
                     {
-                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc front: loop on edges. Current landmark index: " << vertexIndex);
+                        ALICEVISION_LOG_WARNING("fillGraphPartPtRc front: loop on edges. Current landmark index: " << vertexIndex << ", camera: " << cam);
                         break;
                     }
                 }
@@ -2007,6 +2022,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
 #pragma OMP_ATOMIC_UPDATE
                     _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
                 }
+                if(previousGeometry.type == EGeometryType::Facet && outBehindCount.facets > 1000)
+                {
+                    ALICEVISION_LOG_WARNING("fillGraphPartPtRc behind: loop on facets. Current landmark index: " << vertexIndex << ", camera: " << cam);
+                    break;
+                }
             }
             else
             {
@@ -2047,7 +2067,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     ++outBehindCount.vertices;
                     if(previousGeometry.type == EGeometryType::Vertex && outBehindCount.vertices > 1000)
                     {
-                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc behind: loop on vertices. Current landmark index: " << vertexIndex);
+                        ALICEVISION_LOG_WARNING("fillGraphPartPtRc behind: loop on vertices. Current landmark index: " << vertexIndex << ", camera: " << cam);
                         break;
                     }
                 }
@@ -2056,7 +2076,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                     ++outBehindCount.edges;
                     if(previousGeometry.type == EGeometryType::Edge && outBehindCount.edges > 1000)
                     {
-                        ALICEVISION_LOG_DEBUG("fillGraphPartPtRc behind: loop on edges. Current landmark index: " << vertexIndex);
+                        ALICEVISION_LOG_WARNING("fillGraphPartPtRc behind: loop on edges. Current landmark index: " << vertexIndex << ", camera: " << cam);
                         break;
                     }
                 }
@@ -2136,6 +2156,9 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
         // For each camera that has visibility over the vertex v (vertexIndex)
         for(const int cam : v.cams)
         {
+            GeometriesCount geometriesIntersectedFrontCount;
+            GeometriesCount geometriesIntersectedBehindCount;
+
             const float maxDist = nPixelSizeBehind * (fixesSigma ? 1.0f : mp->getCamPixelSize(originPt, cam));
 
             // float minJump = 10000000.0f;
@@ -2195,7 +2218,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
                     if (geometry.type == EGeometryType::Facet)
                     {
-                        ++totalGeometriesIntersectedFrontCount.facets;
+                        ++geometriesIntersectedFrontCount.facets;
                         const GC_cellInfo& c = _cellsAttr[geometry.facet.cellIndex];
                         if ((lastIntersectPt - originPt).size() > nsigmaFrontSilentPart * maxDist) // (p-originPt).size() > 2 * sigma
                         {
@@ -2219,27 +2242,38 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                             break;
                         }
                         geometry.facet = mFacet;
+                        if(previousGeometry.type == EGeometryType::Facet && geometriesIntersectedFrontCount.facets > 10000)
+                        {
+                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on facets. Current landmark index: " << vertexIndex << ", camera: " << cam << ", intersectPt: " << intersectPt << ", lastIntersectPt: " << lastIntersectPt);
+                            break;
+                        }
                     }
                     else if (geometry.type == EGeometryType::Vertex)
                     {
-                        ++totalGeometriesIntersectedFrontCount.vertices;
-                        if(previousGeometry.type == EGeometryType::Vertex && totalGeometriesIntersectedFrontCount.vertices > 1000)
+                        ++geometriesIntersectedFrontCount.vertices;
+                        if(previousGeometry.type == EGeometryType::Vertex && geometriesIntersectedFrontCount.vertices > 1000)
                         {
-                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on edges. Current landmark index: " << vertexIndex);
+                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on edges. Current landmark index: " << vertexIndex << ", camera: " << cam);
                             break;
                         }
                     }
                     else if (geometry.type == EGeometryType::Edge)
                     {
-                        ++totalGeometriesIntersectedFrontCount.edges;
-                        if(previousGeometry.type == EGeometryType::Edge && totalGeometriesIntersectedFrontCount.edges > 1000)
+                        ++geometriesIntersectedFrontCount.edges;
+                        if(previousGeometry.type == EGeometryType::Edge && geometriesIntersectedFrontCount.edges > 1000)
                         {
-                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on edges. Current landmark index: " << vertexIndex);
+                            ALICEVISION_LOG_WARNING("forceTedgesByGradient front: loop on edges. Current landmark index: " << vertexIndex << ", camera: " << cam);
                             break;
                         }
                     }
                 }
                 ++totalRayFront;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedFrontCount.facets += geometriesIntersectedFrontCount.facets;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedFrontCount.vertices += geometriesIntersectedFrontCount.vertices;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedFrontCount.edges += geometriesIntersectedFrontCount.edges;
             }
             {
                 // Initialisation
@@ -2286,7 +2320,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
                     if(geometry.type == EGeometryType::Facet)
                     {
-                        ++totalGeometriesIntersectedFrontCount.facets;
+                        ++geometriesIntersectedBehindCount.facets;
 
                         // Vote for the first cell found (only once)
                         if (firstIteration)
@@ -2306,6 +2340,11 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         if (isInvalidOrInfiniteCell(mFacet.cellIndex))
                         {
                             // Break if we reach the end of the tetrahedralization volume (mirror facet cannot be found)
+                            break;
+                        }
+                        if(previousGeometry.type == EGeometryType::Facet && geometriesIntersectedBehindCount.facets > 1000)
+                        {
+                            ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on facets. Current landmark index: " << vertexIndex << ", camera: " << cam);
                             break;
                         }
                     }
@@ -2337,19 +2376,19 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
                         if (geometry.type == EGeometryType::Vertex)
                         {
-                            ++totalGeometriesIntersectedFrontCount.vertices;
-                            if(previousGeometry.type == EGeometryType::Vertex && totalGeometriesIntersectedFrontCount.vertices > 1000)
+                            ++geometriesIntersectedBehindCount.vertices;
+                            if(previousGeometry.type == EGeometryType::Vertex && geometriesIntersectedBehindCount.vertices > 1000)
                             {
-                                ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on vertices. Current landmark index: " << vertexIndex);
+                                ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on vertices. Current landmark index: " << vertexIndex << ", camera: " << cam);
                                 break;
                             }
                         }
                         else if (geometry.type == EGeometryType::Edge)
                         {
-                            ++totalGeometriesIntersectedFrontCount.edges;
-                            if(previousGeometry.type == EGeometryType::Edge && totalGeometriesIntersectedFrontCount.edges > 1000)
+                            ++geometriesIntersectedBehindCount.edges;
+                            if(previousGeometry.type == EGeometryType::Edge && geometriesIntersectedBehindCount.edges > 1000)
                             {
-                                ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on edges. Current landmark index: " << vertexIndex);
+                                ALICEVISION_LOG_WARNING("forceTedgesByGradient behind: loop on edges. Current landmark index: " << vertexIndex << ", camera: " << cam);
                                 break;
                             }
                         }
@@ -2382,6 +2421,12 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                     }
                 }
                 ++totalRayBehind;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedBehindCount.facets += totalGeometriesIntersectedBehindCount.facets;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedBehindCount.vertices += totalGeometriesIntersectedBehindCount.vertices;
+#pragma OMP_ATOMIC_UPDATE
+                totalGeometriesIntersectedBehindCount.edges += totalGeometriesIntersectedBehindCount.edges;
             }
         }
         totalCamHaveVisibilityOnVertex += v.cams.size();
@@ -2401,6 +2446,14 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     ALICEVISION_LOG_DEBUG("totalStepsFront//totalRayFront = " << totalStepsFront << " // " << totalRayFront);
     ALICEVISION_LOG_DEBUG("totalStepsBehind//totalRayBehind = " << totalStepsBehind << " // " << totalRayBehind);
     ALICEVISION_LOG_DEBUG("totalCamHaveVisibilityOnVertex//totalOfVertex = " << totalCamHaveVisibilityOnVertex << " // " << totalOfVertex);
+
+    ALICEVISION_LOG_DEBUG("\n - Geometries Intersected count -");
+    ALICEVISION_LOG_DEBUG("Front: " << totalGeometriesIntersectedFrontCount);
+    ALICEVISION_LOG_DEBUG("Behind: " << totalGeometriesIntersectedBehindCount);
+    totalGeometriesIntersectedFrontCount /= totalRayFront;
+    totalGeometriesIntersectedBehindCount /= totalRayBehind;
+    ALICEVISION_LOG_DEBUG("Front per vertex: " << totalGeometriesIntersectedFrontCount);
+    ALICEVISION_LOG_DEBUG("Behind per vertex: " << totalGeometriesIntersectedBehindCount);
 
     mvsUtils::printfElapsedTime(t2, "t-edges forced: ");
 }
@@ -2719,12 +2772,18 @@ void DelaunayGraphCut::createGraphCut(const Point3d hexah[8], const StaticVector
 
   if(false)
   {
+      std::unique_ptr<mesh::Mesh> mesh(createTetrahedralMesh(true, 0.99f, [](const GC_cellInfo& c) { return c.cellSWeight; }));
+      mesh->saveToObj(folderName + "tetrahedralMesh_SWeight.obj");
+  }
+
+  if(false)
+  {
     {
-        std::unique_ptr<mesh::Mesh> meshf(createTetrahedralMesh(false, 0.9f, [](const fuseCut::GC_cellInfo& c) { return c.emptinessScore; }));
+        std::unique_ptr<mesh::Mesh> meshf(createTetrahedralMesh(false, 0.99f, [](const fuseCut::GC_cellInfo& c) { return c.emptinessScore; }));
         meshf->saveToObj(folderName + "tetrahedralMesh_emptiness.obj");
     }
     {
-        std::unique_ptr<mesh::Mesh> meshf(createTetrahedralMesh(false, 0.9f, [](const fuseCut::GC_cellInfo& c) { return c.fullnessScore; }));
+        std::unique_ptr<mesh::Mesh> meshf(createTetrahedralMesh(false, 0.99f, [](const fuseCut::GC_cellInfo& c) { return c.fullnessScore; }));
         meshf->saveToObj(folderName + "tetrahedralMesh_fullness.obj");
     }
     /*
