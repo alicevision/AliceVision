@@ -136,3 +136,50 @@ void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColo
         }
     }
 }
+
+void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskIndexes, Eigen::MatrixXf& maskedMatrix)
+{
+    for (int j = 0; j < maskedMatrix.cols(); ++j)
+    {
+        int indexInMask = maskIndexes.at(j);
+        for (int i = 0; i < maskedMatrix.rows(); ++i)
+        {
+            maskedMatrix(i,j) = inputMatrix(i, indexInMask);
+        }
+    }
+}
+
+void normals2picture(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm)
+{
+    int nbRows = normalsIm.rows();
+    int nbCols = normalsIm.cols();
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            int currentInd = j*nbRows + i;
+            for (int ch = 0; ch < 3; ++ch)
+            {
+                normalsIm(i,j)(ch) = normalsMatrix(ch,currentInd);
+            }
+        }
+    }
+}
+
+void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm, aliceVision::image::Image<aliceVision::image::RGBColor>& normalsImPNG)
+{
+    int nbRows = normalsIm.rows();
+    int nbCols = normalsIm.cols();
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            for (int ch = 0; ch < 3; ++ch)
+            {
+                normalsImPNG(i,j)(ch) = floor((normalsIm(i,j)(ch) + 1)*128);
+            }
+        }
+    }
+}
