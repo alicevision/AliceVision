@@ -102,7 +102,7 @@ void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& 
     }
 }
 
-void intensityScaling(std::array<float, 3> const& intensities, aliceVision::image::Image<aliceVision::image::RGBfColor> imageToScale)
+void intensityScaling(std::array<float, 3> const& intensities, aliceVision::image::Image<aliceVision::image::RGBfColor>& imageToScale)
 {
     int nbRows = imageToScale.rows();
     int nbCols = imageToScale.cols();

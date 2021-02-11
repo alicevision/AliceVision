@@ -11,7 +11,7 @@ void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mas
 
 void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& indexes);
 
-void intensityScaling(std::array<float, 3> const& intensities, aliceVision::image::Image<aliceVision::image::RGBfColor> imageToScale);
+void intensityScaling(std::array<float, 3> const& intensities, aliceVision::image::Image<aliceVision::image::RGBfColor>& imageToScale);
 
 void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, Eigen::MatrixXf& imageOut);
 
