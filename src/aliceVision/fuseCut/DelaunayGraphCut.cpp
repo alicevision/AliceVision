@@ -2915,7 +2915,7 @@ void DelaunayGraphCut::maxflow()
 void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName)
 {
     ALICEVISION_LOG_INFO("DelaunayGraphCut::voteFullEmptyScore");
-    int maxint = 1000000.0f;
+    const int maxint = 1000000.0f;
 
     long t1;
 
@@ -2924,19 +2924,15 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
     ALICEVISION_LOG_INFO("sigma: " << sigma);
 
     // 0 for distFcn equals 1 all the time
-    float distFcnHeight = (float)mp->userParams.get<double>("delaunaycut.distFcnHeight", 0.0f);
+    const float distFcnHeight = (float)mp->userParams.get<double>("delaunaycut.distFcnHeight", 0.0f);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    bool labatutCFG09 = mp->userParams.get<bool>("global.LabatutCFG09", false);
+    const bool labatutCFG09 = mp->userParams.get<bool>("global.LabatutCFG09", false);
     // jancosekIJCV: "Exploiting Visibility Information in Surface Reconstruction to Preserve Weakly Supported Surfaces", Michal Jancosek and Tomas Pajdla, 2014
-    bool jancosekIJCV = mp->userParams.get<bool>("global.JancosekIJCV", true);
+    const bool jancosekIJCV = mp->userParams.get<bool>("global.JancosekIJCV", true);
 
     if(jancosekIJCV) // true by default
     {
-        bool forceTEdge = mp->userParams.get<bool>("delaunaycut.forceTEdge", true);
+        const bool forceTEdge = mp->userParams.get<bool>("delaunaycut.voteFilteringForWeaklySupportedSurfaces", true);
 
         displayCellsStats();
 
