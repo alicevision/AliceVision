@@ -123,8 +123,7 @@ int aliceVision_main(int argc, char **argv)
         aliceVision::image::readImage(picturePath, imageFloat, options);
         intensityScaling(intList.at(i), imageFloat);
 
-        // Vectorize image for matricial solving :
-        reshapeImage(imageFloat, currentPicture);
+        image2PsMatrix(imageFloat, currentPicture);
 
         allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
     }

@@ -89,13 +89,13 @@ void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& 
     const int nbRows = mask.rows();
     const int nbCols = mask.cols();
 
-    for (int i = 0; i < nbRows; ++i)
+    for (int j = 0; j < nbCols; ++j)
     {
-        for (int j = 0; j < nbCols; ++j)
+        for (int i = 0; i < nbRows; ++i)
         {
             if(mask(i,j) != 0)
             {
-                int currentIndex = i*nbCols + j;
+                int currentIndex = j*nbRows + i;
                 indexes.push_back(currentIndex);
             }
         }
@@ -119,7 +119,7 @@ void intensityScaling(std::array<float, 3> const& intensities, aliceVision::imag
     }
 }
 
-void reshapeImage(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
@@ -128,7 +128,7 @@ void reshapeImage(const aliceVision::image::Image<aliceVision::image::RGBfColor>
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            int index = i*nbCols + j;
+            int index = j*nbRows + i;
             for(int ch = 0; ch < 3; ++ch)
             {
                 imageOut(ch, index) = imageIn(i,j)(ch);
