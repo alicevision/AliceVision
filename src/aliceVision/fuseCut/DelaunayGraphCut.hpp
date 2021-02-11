@@ -97,7 +97,11 @@ public:
         {
             return v0 == e.v0 && v1 == e.v1;
         }
-
+        bool isSameUndirectionalEdge(const Edge& e) const
+        {
+            return (v0 == e.v0 && v1 == e.v1) ||
+                   (v0 == e.v1 && v1 == e.v0);
+        }
     };
 
     enum class EGeometryType
