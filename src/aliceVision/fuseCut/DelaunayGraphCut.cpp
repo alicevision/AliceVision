@@ -1457,7 +1457,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     const double ACSize = (*A - *C).size();
 
     const double marginEpsilon = std::min(std::min(ABSize, BCSize), ACSize) * epsilonFactor;
-    const double ambiguityEpsilon = (ABSize + BCSize + ACSize) / 3.0 * 1.0e-5;
+    const double ambiguityEpsilon = (ABSize + BCSize + ACSize) / 3.0 * 1.0e-2;
 
     Point3d tempIntersectPt;
     const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
@@ -1486,14 +1486,14 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     {
         const Point3d diff = tempIntersectPt - *lastIntersectPt;
         const double dotValue = dot(DirVec, diff.normalize());
+        if(dotValue < marginEpsilon)
+        {
+            return GeometryIntersection();
+        }
 
         if (diff.size() < ambiguityEpsilon)
         {
             ambiguous = true;
-        }
-        else if(dotValue < marginEpsilon)
-        {
-            return GeometryIntersection();
         }
     }
 
