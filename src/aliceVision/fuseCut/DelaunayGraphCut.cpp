@@ -31,6 +31,7 @@
 #include <random>
 #include <stdexcept>
 
+#include <boost/math/constants/constants.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/progress.hpp>
@@ -2471,7 +2472,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
 
 int DelaunayGraphCut::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const
 {
-    vertexIsOnSurface.resize(_verticesAttr.size(), false);
+    vertexIsOnSurface.resize(_verticesCoords.size(), false);
 
     int nbSurfaceFacets = 0;
     // loop over all facets
@@ -2479,17 +2480,17 @@ int DelaunayGraphCut::computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) c
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
-            Facet f1(ci, k);
-            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
+            const Facet f1(ci, k);
+            const bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
                 continue;
 
-            Facet f2 = mirrorFacet(f1);
+            const Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
-            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
+            const bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
-            if(uo == vo)
+            if(vo)
                 continue;
 
             VertexIndex v1 = getVertexIndex(f1, 0);
@@ -2512,10 +2513,12 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
     long timer = std::clock();
     ALICEVISION_LOG_INFO("Graph cut post-processing.");
 
-    int minSegmentSize = (int)mp->userParams.get<int>("hallucinationsFiltering.minSegmentSize", 10);
-    bool doRemoveBubbles = (bool)mp->userParams.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
-    bool doRemoveDust = (bool)mp->userParams.get<bool>("hallucinationsFiltering.doRemoveDust", true);
-    bool doLeaveLargestFullSegmentOnly = (bool)mp->userParams.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
+    int minSegmentSize = mp->userParams.get<int>("hallucinationsFiltering.minSegmentSize", 10);
+    bool doRemoveBubbles = mp->userParams.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
+    bool doRemoveDust = mp->userParams.get<bool>("hallucinationsFiltering.doRemoveDust", true);
+    bool doLeaveLargestFullSegmentOnly = mp->userParams.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
+    double minSolidAngleRatio = mp->userParams.get<double>("hallucinationsFiltering.minSolidAngleRatio", 0.2);
+    int nbSolidAngleFilteringIterations = mp->userParams.get<double>("hallucinationsFiltering.nbSolidAngleFilteringIterations", 10);
 
     if(doRemoveBubbles)
     {
@@ -2646,7 +2649,8 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
                 << _cellIsFull.size() << " cells.");
         }
     }
-
+    
+    cellsStatusFilteringBySolidAngleRatio(nbSolidAngleFilteringIterations, minSolidAngleRatio);
 
     ALICEVISION_LOG_INFO("Graph cut post-processing done.");
 
@@ -2724,6 +2728,112 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
         << _cellIsFull.size() << " cells.");
 
     ALICEVISION_LOG_DEBUG("Number of labels: " << nbCellsPerColor.size() << ", Number of cells changed: " << movedToFull + movedToEmpty << ", full number of cells: " << nbCells);
+}
+
+void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIterations,
+                                                             double minSolidAngleRatio)
+{
+    if(nbSolidAngleFilteringIterations <= 0 || minSolidAngleRatio <= 0.0)
+        return;
+
+    constexpr double fullSphereSolidAngle = 4.0 * boost::math::constants::pi<double>();
+
+    // Change cells status on surface around vertices to improve smoothness
+    // using solid angle ratio between full/empty parts.
+    for(int i = 0; i < nbSolidAngleFilteringIterations; ++i)
+    {
+        std::vector<bool> cellsInvertStatus(_cellIsFull.size(), false);
+        int toInvertCount = 0;
+
+        std::vector<bool> vertexIsOnSurface;
+        const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
+
+#pragma omp parallel for reduction(+ : toInvertCount)
+        for(VertexIndex vi = 0; vi < _neighboringCellsPerVertex.size(); ++vi)
+        {
+            if(!vertexIsOnSurface[vi])
+                continue;
+            // ALICEVISION_LOG_INFO("vertex is on surface: " << vi);
+            const std::vector<CellIndex>& neighboringCells = _neighboringCellsPerVertex[vi];
+            bool borderCase = false;
+            double fullPartSolidAngle = 0.0;
+            for(CellIndex ci : neighboringCells)
+            {
+                if(!_cellIsFull[ci])
+                    continue;
+                // ALICEVISION_LOG_INFO("full cell: " << ci);
+                std::vector<VertexIndex> triangle;
+                triangle.reserve(3);
+                for(int k = 0; k < 4; ++k)
+                {
+                    const GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(ci, k);
+                    if(currentVertex == GEO::NO_VERTEX)
+                        break;
+                    if(currentVertex != vi)
+                        triangle.push_back(currentVertex);
+                }
+                if(triangle.size() != 3)
+                {
+                    borderCase = true;
+                    break;
+                }
+                const Point3d& O = _verticesCoords[vi];
+                const double s =
+                    tetrahedronSolidAngle(_verticesCoords[triangle[0]] - O, _verticesCoords[triangle[1]] - O,
+                                          _verticesCoords[triangle[2]] - O);
+                // ALICEVISION_LOG_INFO("tetrahedronSolidAngle: " << s);
+                fullPartSolidAngle += s;
+            }
+            if(borderCase)
+            {
+                // we cannot compute empty/full ratio if we have undefined cells
+                continue;
+            }
+            bool invert = false;
+            bool invertFull = false;
+            // ALICEVISION_LOG_INFO("fullPartSolidAngle: " << fullPartSolidAngle << ", ratio: "
+            //                                             << fullPartSolidAngle / fullSphereSolidAngle);
+            if(fullPartSolidAngle < minSolidAngleRatio * fullSphereSolidAngle)
+            {
+                invert = true;
+                invertFull = true; // we want to invert the FULL cells
+            }
+            else if(fullPartSolidAngle > (1.0 - minSolidAngleRatio) * fullSphereSolidAngle)
+            {
+                invert = true;
+                invertFull = false; // we want to invert the EMPTY cells
+            }
+            if(!invert)
+                continue;
+            // Invert some cells
+            for(CellIndex ci : neighboringCells)
+            {
+                if(_cellIsFull[ci] == invertFull)
+                {
+#pragma OMP_ATOMIC_WRITE
+                    cellsInvertStatus[ci] = true;
+                    ++toInvertCount;
+                }
+            }
+        }
+        if(toInvertCount == 0)
+            break;
+        int movedToEmpty = 0;
+        int movedToFull = 0;
+        for(CellIndex ci = 0; ci < cellsInvertStatus.size(); ++ci)
+        {
+            if(!cellsInvertStatus[ci])
+                continue;
+            _cellIsFull[ci] = !_cellIsFull[ci];
+            if(_cellIsFull[ci])
+                ++movedToFull;
+            else
+                ++movedToEmpty;
+        }
+        ALICEVISION_LOG_WARNING("[" << i << "] Check solid angle full/empty ratio on surface vertices: " << movedToFull
+                                    << " cells moved to full, " << movedToEmpty << " cells moved to empty within "
+                                    << _cellIsFull.size() << " cells.");
+    }
 }
 
 void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams)

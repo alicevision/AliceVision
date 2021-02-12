@@ -268,6 +268,8 @@ int aliceVision_main(int argc, char* argv[])
     bool saveRawDensePointCloud = false;
     bool colorizeOutput = false;
     bool voteFilteringForWeaklySupportedSurfaces = true;
+    double minSolidAngleRatio = 0.2;
+    int nbSolidAngleFilteringIterations = 2;
     unsigned int seed = 0;
     BoundingBox boundingBox;
 
@@ -344,6 +346,10 @@ int aliceVision_main(int argc, char* argv[])
             "Save dense point cloud before cut and filtering.")
         ("voteFilteringForWeaklySupportedSurfaces", po::value<bool>(&voteFilteringForWeaklySupportedSurfaces)->default_value(voteFilteringForWeaklySupportedSurfaces),
             "Improve support of weakly supported surfaces with a tetrahedra fullness score filtering.")
+        ("minSolidAngleRatio", po::value<double>(&minSolidAngleRatio)->default_value(minSolidAngleRatio),
+            "Filter cells status on surface around vertices to improve smoothness using solid angle ratio between full/empty parts.")
+        ("nbSolidAngleFilteringIterations", po::value<int>(&nbSolidAngleFilteringIterations)->default_value(nbSolidAngleFilteringIterations),
+         "Number of iterations to filter the status cells based on solid angle ratio.")
         ("seed", po::value<unsigned int>(&seed)->default_value(seed),
          "Seed used in random processes. (0 to use a random seed)."); 
 
@@ -419,6 +425,8 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
     mp.userParams.put("delaunaycut.seed", seed);
     mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", voteFilteringForWeaklySupportedSurfaces);
+    mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", minSolidAngleRatio);
+    mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", nbSolidAngleFilteringIterations);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
