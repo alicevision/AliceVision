@@ -374,7 +374,7 @@ ExternalProject_Add(${TIFF_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tiff
        BINARY_DIR ${BUILD_DIR}/tiff_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> 
+       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
        BUILD_COMMAND $(MAKE)
        DEPENDS ${ZLIB_TARGET}
        )
@@ -398,7 +398,7 @@ ExternalProject_Add(${PNG_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
        BINARY_DIR ${BUILD_DIR}/png_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       # CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> 
+       # CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${ZLIB_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
        BUILD_COMMAND $(MAKE)
        DEPENDS ${ZLIB_TARGET}
@@ -420,7 +420,7 @@ ExternalProject_Add(${JPEG_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       # CONFIGURE_COMMAND cd <BINARY_DIR> && autoreconf -fiv && ./configure --prefix=<INSTALL_DIR> 
+       # CONFIGURE_COMMAND cd <BINARY_DIR> && autoreconf -fiv && ./configure --prefix=<INSTALL_DIR>
        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${ZLIB_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
        BUILD_COMMAND $(MAKE)
        DEPENDS ${ZLIB_TARGET}
@@ -567,8 +567,8 @@ endif()
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/Release-2.2.6.1.tar.gz
-      URL_HASH MD5=abf85fe6e2d2fb6716a7737a3553329f
+      URL https://github.com/OpenImageIO/oiio/archive/Release-2.2.11.1.tar.gz
+      URL_HASH MD5=43eb3e6cc6ca1cbfd55bbb2f19688c95
       DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -591,6 +591,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
             -DUSE_TIFF=${AV_BUILD_TIFF}
             -DUSE_PNG=${AV_BUILD_PNG}
             -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
+            # TODO: build with libheif
       BUILD_COMMAND $(MAKE)
       DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET}
       )
@@ -787,4 +788,3 @@ add_custom_target(bundle
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
                   )
 set_target_properties(bundle PROPERTIES FOLDER Packaging)
-
