@@ -8,6 +8,7 @@
 
 #include <string>
 #include <cmath>
+#include <ostream>
 
 namespace aliceVision {
 
@@ -107,7 +108,7 @@ public:
 
     friend double dot(const Point3d& p1, const Point3d& p2);
     friend Point3d cross(const Point3d& a, const Point3d& b);
-    friend Point3d proj(Point3d& e, Point3d& a);
+    friend Point3d proj(const Point3d& e, const Point3d& a);
 };
 
 inline double dist(const Point3d& p1, const Point3d& p2)
@@ -130,9 +131,15 @@ inline Point3d cross(const Point3d& a, const Point3d& b)
     return vc;
 }
 
-inline Point3d proj(Point3d& e, Point3d& a)
+inline Point3d proj(const Point3d& e, const Point3d& a)
 {
     return e * (dot(e, a) / dot(e, e));
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const Point3d& p)
+{
+    stream << p.x << "," << p.y << "," << p.z;
+    return stream;
 }
 
 } // namespace aliceVision
