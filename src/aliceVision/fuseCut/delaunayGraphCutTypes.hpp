@@ -135,5 +135,20 @@ struct GC_camVertexInfo
     }
 };
 
+inline std::ostream& operator<<(std::ostream& stream, const GC_cellInfo& cellInfo)
+{
+    stream << "cellSWeight:" << cellInfo.cellSWeight
+           << ",cellTWeight:" << cellInfo.cellTWeight
+           << ",gEdgeVisWeight[0]:" << cellInfo.gEdgeVisWeight[0]
+           << ",gEdgeVisWeight[1]:" << cellInfo.gEdgeVisWeight[1]
+           << ",gEdgeVisWeight[2]:" << cellInfo.gEdgeVisWeight[2]
+           << ",gEdgeVisWeight[3]:" << cellInfo.gEdgeVisWeight[3]
+           << ",fullnessScore:" << cellInfo.fullnessScore
+           << ",emptinessScore:" << cellInfo.emptinessScore
+           << ",on:" << cellInfo.on
+        ;
+    return stream;
+}
+
 } // namespace fuseCut
 } // namespace aliceVision

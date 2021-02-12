@@ -524,7 +524,14 @@ public:
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
      */
     void invertFullStatusForSmallLabels();
+    /**
+     * @brief Check solid angle ratio between empty/full part around each vertex to reduce local artefacts / improve smoothness.
+     */
+    void cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIterations, double minSolidAngleRatio);
 
+    /**
+     * @brief Combine all post-processing steps results to reduce artefacts from the graph-cut (too large triangles, noisy tetrahedrons, isolated cells, etc).
+     */
     void graphCutPostProcessing(const Point3d hexah[8], const std::string& folderName);
 
     void segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor, int& nsegments);
