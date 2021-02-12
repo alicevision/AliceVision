@@ -174,34 +174,34 @@ public:
 
       // How many buffers can fit in 90% of the available RAM?
       // This is used to estimate how many jobs can be computed in parallel without SWAP.
-      const std::size_t memoryImageCapacity = std::size_t((0.9 * memoryInformation.freeRam) / jobMaxMemoryConsuption);
+      const std::size_t memoryImageCapacity = std::size_t((0.9 * memoryInformation.availableRam) / jobMaxMemoryConsuption);
       std::size_t nbThreads = std::max(std::size_t(1), memoryImageCapacity);
       ALICEVISION_LOG_INFO("Max number of threads regarding memory usage: " << nbThreads);
       const double oneGB = 1024.0 * 1024.0 * 1024.0;
-      if(jobMaxMemoryConsuption > memoryInformation.freeRam)
+      if(jobMaxMemoryConsuption > memoryInformation.availableRam)
       {
           ALICEVISION_LOG_WARNING("The amount of RAM available is critical to extract features.");
           if(jobMaxMemoryConsuption <= memoryInformation.totalRam)
           {
               ALICEVISION_LOG_WARNING("But the total amount of RAM is enough to extract features, so you should close other running applications.");
-              ALICEVISION_LOG_WARNING(" => " << std::size_t(std::round((double(memoryInformation.totalRam - memoryInformation.freeRam) / oneGB)))
+              ALICEVISION_LOG_WARNING(" => " << std::size_t(std::round((double(memoryInformation.totalRam - memoryInformation.availableRam) / oneGB)))
                                       << " GB are used by other applications for a total RAM capacity of "
                                       << std::size_t(std::round(double(memoryInformation.totalRam) / oneGB)) << " GB.");
           }
       }
       else
       {
-          if(memoryInformation.freeRam < 0.5 * memoryInformation.totalRam)
+          if(memoryInformation.availableRam < 0.5 * memoryInformation.totalRam)
           {
               ALICEVISION_LOG_WARNING("More than half of the RAM is used by other applications. It would be more efficient to close them.");
               ALICEVISION_LOG_WARNING(" => "
-                                      << std::size_t(std::round(double(memoryInformation.totalRam - memoryInformation.freeRam) / oneGB))
+                                      << std::size_t(std::round(double(memoryInformation.totalRam - memoryInformation.availableRam) / oneGB))
                                       << " GB are used by other applications for a total RAM capacity of "
                                       << std::size_t(std::round(double(memoryInformation.totalRam) / oneGB)) << " GB.");
           }
       }
 
-      if(memoryInformation.freeRam == 0)
+      if(memoryInformation.availableRam == 0)
       {
         ALICEVISION_LOG_WARNING("Cannot find available system memory, this can be due to OS limitation.\n"
                                 "Use only one thread for CPU feature extraction.");

@@ -7,13 +7,22 @@
 
 #pragma once
 
+#include "io.hpp"
+
 #include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/system/Logger.hpp>
+
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/imagebuf.h>
+#include <OpenImageIO/imagebufalgo.h>
+
+namespace oiio = OIIO;
 
 namespace aliceVision {
 namespace image {
 
   /**
-   ** Half sample an image (ie reduce it's size by a factor 2) using bilinear interpolation
+   ** Half sample an image (ie reduce its size by a factor 2) using bilinear interpolation
    ** @param src input image
    ** @param out output image
    **/
@@ -36,6 +45,72 @@ namespace image {
       }
     }
   }
+
+  template <typename SamplerType, typename Image>
+  void downscaleImage(const Image& src, Image& out, int downscale)
+  {
+      const int new_width = src.Width() / downscale;
+      const int new_height = src.Height() / downscale;
+
+      out.resize(new_width, new_height);
+
+      const Sampler2d<SamplerType> sampler;
+      const float downscalef = downscale;
+      for(int i = 0; i < new_height; ++i)
+      {
+          for(int j = 0; j < new_width; ++j)
+          {
+              // Use .5f offset to ensure mid pixel and correct sampling
+              out(i, j) = sampler(src, downscalef * (i + .5f), downscalef * (j + .5f));
+          }
+      }
+  }
+
+  template <typename ImageType>
+  void downscaleImageInplace(ImageType& inout, int downscale)
+  {
+      if(downscale <= 1)
+          return;
+      ALICEVISION_LOG_TRACE("downscaleImageInplace in: " << inout.Width() << "x" << inout.Height());
+      /*
+      {
+          // Gaussian filter + Nearest Neighbor: could be expensive for very large resolutions with large downscale factor.
+          Image otherImg;
+          const double sigma = downscale * 0.5;
+          ImageGaussianFilter(inout, sigma, otherImg); // TODO: error on RGBColor
+          downscaleImage<SamplerNearest>(otherImg, inout, downscale);
+          ALICEVISION_LOG_INFO("downscaleImageInplace otherImg: " << otherImg.Width() << "x" << otherImg.Height());
+      }
+      {
+          // Simple bilinear interpolation: only valid for <= 2x downscale
+          ImageType otherImg;
+          downscaleImage<SamplerLinear>(inout, otherImg, downscale);
+          std::swap(inout, otherImg);
+      }*/
+      {
+          // Rely on OpenImageIO to do the downscaling
+          const unsigned int w = inout.Width();
+          const unsigned int h = inout.Height();
+          const unsigned int nchannels = inout.Channels();
+
+          const unsigned int nw = (unsigned int)(floor(float(w) / downscale));
+          const unsigned int nh = (unsigned int)(floor(float(h) / downscale));
+
+          ImageType rescaled(nw, nh);
+
+          const oiio::ImageSpec imageSpecOrigin(w, h, nchannels, ColorTypeInfo<typename ImageType::Tpixel>::typeDesc);
+          const oiio::ImageSpec imageSpecResized(nw, nh, nchannels, ColorTypeInfo<typename ImageType::Tpixel>::typeDesc);
+
+          const oiio::ImageBuf inBuf(imageSpecOrigin, inout.data());
+          oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());
+
+          oiio::ImageBufAlgo::resize(outBuf, inBuf);
+
+          inout.swap(rescaled);
+      }
+      ALICEVISION_LOG_TRACE("downscaleImageInplace out: " << inout.Width() << "x" << inout.Height());
+  }
+
 
   /**
    ** @brief Ressample an image using given sampling positions
