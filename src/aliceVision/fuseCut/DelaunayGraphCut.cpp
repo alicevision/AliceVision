@@ -2865,7 +2865,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
         const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
 
 #pragma omp parallel for reduction(+ : toInvertCount)
-        for(VertexIndex vi = 0; vi < _neighboringCellsPerVertex.size(); ++vi)
+        for(int vi = 0; vi < _neighboringCellsPerVertex.size(); ++vi)
         {
             if(!vertexIsOnSurface[vi])
                 continue;
