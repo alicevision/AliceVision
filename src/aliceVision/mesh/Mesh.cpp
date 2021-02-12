@@ -2704,7 +2704,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
 
     ALICEVISION_LOG_INFO("Get surface " << (invert? "inner part" : "boundaries") << ".");
 
-    StaticVectorBool boundariesVertices(pts.size(), false);
+    StaticVectorBool boundariesEdges(tris.size() * 3, false);
 
     // Get all edges
     StaticVector<Edge> edges(tris.size() * 3);
@@ -2741,8 +2741,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
       {
          if(edgeCount < 2)
          {
-           boundariesVertices[lastEdgeFirst] = true;
-           boundariesVertices[lastEdgeSecond] = true;
+           boundariesEdges[i-1] = true;
            boundary = true;
          }
 
@@ -2768,8 +2767,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
     {
         Edge& edge = edges[i];
 
-        if((boundariesVertices[edge.first] == !invert) && 
-           (boundariesVertices[edge.second] == !invert))
+        if(boundariesEdges[i] == !invert)
         {
             #pragma OMP_ATOMIC_WRITE
             out_trisToConsider[edge.triId] = true;
