@@ -97,7 +97,6 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 
     delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false);
     /*
-    delaunayGC.initVertices();
     delaunayGC.computeDelaunay();
     delaunayGC.displayStatistics();
     delaunayGC.computeVerticesSegSize(true, 0.0f);

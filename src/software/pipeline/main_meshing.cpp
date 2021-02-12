@@ -265,6 +265,7 @@ int aliceVision_main(int argc, char* argv[])
     bool meshingFromDepthMaps = true;
     bool estimateSpaceFromSfM = true;
     bool addLandmarksToTheDensePointCloud = false;
+    bool addMaskHelperPoints = false;
     bool saveRawDensePointCloud = false;
     bool colorizeOutput = false;
     bool voteFilteringForWeaklySupportedSurfaces = true;
@@ -342,6 +343,8 @@ int aliceVision_main(int argc, char* argv[])
             "minAngleThreshold")
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
             "refineFuse")
+        ("addMaskHelperPoints", po::value<bool>(&addMaskHelperPoints)->default_value(addMaskHelperPoints),
+            "Add Helper points on the outline of the depth maps masks.")
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
             "Save dense point cloud before cut and filtering.")
         ("voteFilteringForWeaklySupportedSurfaces", po::value<bool>(&voteFilteringForWeaklySupportedSurfaces)->default_value(voteFilteringForWeaklySupportedSurfaces),
@@ -427,6 +430,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", voteFilteringForWeaklySupportedSurfaces);
     mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", minSolidAngleRatio);
     mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", nbSolidAngleFilteringIterations);
+    mp.userParams.put("delaunaycut.addMaskHelperPoints", addMaskHelperPoints);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");

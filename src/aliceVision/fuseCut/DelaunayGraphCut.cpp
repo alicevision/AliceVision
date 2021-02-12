@@ -394,6 +394,14 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
     for(auto& lock: locks)
         omp_destroy_lock(&lock);
 
+    // compute pixSize
+    #pragma omp parallel for
+    for(int vi = 0; vi < verticesAttrPrepare.size(); ++vi)
+    {
+        GC_vertexInfo& v = verticesAttrPrepare[vi];
+        v.pixSize = mp->getCamsMinPixelSize(verticesCoordsPrepare[vi], v.cams);
+    }
+
 //    verticesCoordsPrepare.swap(newVerticesCoordsPrepare);
 //    simScorePrepare.swap(newSimScorePrepare);
 //    pixSizePrepare.swap(newPixSizePrepare);
@@ -503,22 +511,6 @@ std::vector<DelaunayGraphCut::CellIndex> DelaunayGraphCut::getNeighboringCellsBy
     std::set_intersection(v0ci.begin(), v0ci.end(), v1ci.begin(), v1ci.end(), std::back_inserter(neighboringCells));
     
     return neighboringCells;
-}
-
-void DelaunayGraphCut::initVertices()
-{
-    ALICEVISION_LOG_DEBUG("initVertices ...\n");
-
-    // Re-assign ids to the vertices to go one after another
-    for(int vi = 0; vi < _verticesAttr.size(); ++vi)
-    {
-        GC_vertexInfo& v = _verticesAttr[vi];
-        // fit->info().point = convertPointToPoint3d(fit->point());
-        // v.id = nVertices;
-        v.pixSize = mp->getCamsMinPixelSize(_verticesCoords[vi], v.cams);
-    }
-
-    ALICEVISION_LOG_DEBUG("initVertices done\n");
 }
 
 void DelaunayGraphCut::computeDelaunay()
@@ -748,6 +740,8 @@ void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVect
       for(const auto& observationPair : landmark.observations)
         vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
 
+      vAttrIt->pixSize = mp->getCamsMinPixelSize(p, vAttrIt->cams);
+
       ++vCoordsIt;
       ++vAttrIt;
       ++addedPoints;
@@ -883,6 +877,127 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, const Poi
     ALICEVISION_LOG_WARNING("Add " << addedPoints << " new helper points for a 3D grid of " << ns << "x" << ns << "x" << ns <<".");
 }
 
+void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticVector<int>& cams, const FuseParams& params)
+{
+    ALICEVISION_LOG_INFO("Add Mask Helper Points.");
+
+    Point3d inflatedVoxel[8];
+    mvsUtils::inflateHexahedron(voxel, inflatedVoxel, 1.01f);
+
+    std::size_t nbPixels = 0;
+    for(const auto& imgParams : mp->getImagesParams())
+    {
+        nbPixels += imgParams.size;
+    }
+    int step = std::floor(std::sqrt(double(nbPixels) / double(params.maxInputPoints)));
+    step = std::max(step, params.minStep);
+    std::size_t realMaxVertices = 0;
+    std::vector<int> startIndex(mp->getNbCameras(), 0);
+    for(int i = 0; i < mp->getNbCameras(); ++i)
+    {
+        const auto& imgParams = mp->getImageParams(i);
+        startIndex[i] = realMaxVertices;
+        realMaxVertices += std::ceil(imgParams.width / step) * std::ceil(imgParams.height / step);
+    }
+
+    int nbAddedPoints = 0;
+
+    ALICEVISION_LOG_INFO("Load depth maps and add points.");
+    {
+        for(int c = 0; c < cams.size(); c++)
+        {
+            std::vector<float> depthMap;
+            int width, height;
+            {
+                const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
+                imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                if(depthMap.empty())
+                {
+                    ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
+                    continue;
+                }
+            }
+
+            int syMax = std::ceil(height / step);
+            int sxMax = std::ceil(width / step);
+
+            for(int sy = 0; sy < syMax; ++sy)
+            {
+                for(int sx = 0; sx < sxMax; ++sx)
+                {
+                    int index = startIndex[c] + sy * sxMax + sx;
+                    float bestScore = 0;
+
+                    int bestX = 0;
+                    int bestY = 0;
+                    for(int y = sy * step, ymax = std::min((sy + 1) * step, height); y < ymax; ++y)
+                    {
+                        for(int x = sx * step, xmax = std::min((sx + 1) * step, width); x < xmax; ++x)
+                        {
+                            const std::size_t index = y * width + x;
+                            const float depth = depthMap[index];
+
+                            if(depth >= -1.0f)
+                                continue;
+
+                            int nbValidDepth = 0;
+                            const int kernelSize = 1;
+                            for(int ly = std::max(y - kernelSize, 0), lyMax = std::min(y + kernelSize, height - 1);
+                                ly < lyMax; ++ly)
+                            {
+                                for(int lx = std::max(x - kernelSize, 0), lxMax = std::min(x + kernelSize, width - 1);
+                                    lx < lxMax; ++lx)
+                                {
+                                    if(depthMap[ly * width + lx] > 0.0f)
+                                        ++nbValidDepth;
+                                }
+                            }
+
+                            const float score = nbValidDepth; // TODO: best score based on nbValidDepth and kernel size ?
+                            if(score > bestScore)
+                            {
+                                bestScore = score;
+                                bestX = x;
+                                bestY = y;
+                            }
+                        }
+                    }
+                    if(bestScore > 0.0f)
+                    {
+                        const Point3d& cam = mp->CArr[c];
+                        Point3d maxP = cam + (mp->iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * 10000000.0; 
+                        StaticVector<Point3d>* intersectionsPtr = mvsUtils::lineSegmentHexahedronIntersection(cam, maxP, inflatedVoxel);
+
+                        if(intersectionsPtr->size() <= 0)
+                            continue;
+
+                        Point3d p;
+                        double maxDepth = std::numeric_limits<double>::min();
+                        for(Point3d& i : *intersectionsPtr)
+                        {
+                            const double depth = dist(cam, i);
+                            if(depth > maxDepth)
+                            {
+                                p = i;
+                                maxDepth = depth;
+                            }
+                        }
+                        GC_vertexInfo newv;
+                        newv.nrc = 1;
+                        newv.pixSize = 0.0f;
+                        newv.cams.push_back_distinct(c);
+
+                        _verticesAttr.push_back(newv);
+                        _verticesCoords.emplace_back(p);
+                        ++nbAddedPoints;
+                    }
+                }
+            }
+        }
+    }
+    ALICEVISION_LOG_INFO("Added Points: " << nbAddedPoints);
+    ALICEVISION_LOG_INFO("Add Mask Helper Points done.");
+}
 
 void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params)
 {
@@ -1315,7 +1430,6 @@ void DelaunayGraphCut::removeSmallSegs(const std::vector<GC_Seg>& segments, int 
         // T.remove(fit); // TODO GEOGRAM
     }
 
-    initVertices();
 }
 
 DelaunayGraphCut::GeometryIntersection
@@ -1682,7 +1796,7 @@ float DelaunayGraphCut::weightFcn(float nrc, bool labatutWeights, int  /*ncams*/
 }
 
 void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
-                               bool labatutWeights, bool fillOut, float distFcnHeight) // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
+                               bool labatutWeights, bool fillOut, float distFcnHeight) // fixesSigma=false nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
 {
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
     long t1 = clock();
@@ -1793,13 +1907,13 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
 
 void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalStepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam,
                                        float weight, bool fixesSigma, float nPixelSizeBehind,
-                                       bool fillOut, float distFcnHeight)  // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
+                                       bool fillOut, float distFcnHeight)  // fixesSigma=false nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
     const int maxint = 1000000; // std::numeric_limits<int>::std::max()
     const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
-    const float pixSize = mp->getCamPixelSize(originPt, cam);
+    const float pixSize = _verticesAttr[vertexIndex].pixSize; // use computed pixSize,  mp->getCamPixelSize(originPt, cam);
     float maxDist = nPixelSizeBehind * pixSize;
     if(fixesSigma)
         maxDist = nPixelSizeBehind;
@@ -1960,6 +2074,8 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
         //                           << "Current vertex index: " << vertexIndex << ", outFrontCount:" << outFrontCount);
         // }
     }
+
+    if(pixSize > 0.0f) // fillIn
     {
         // Initialisation
         GeometryIntersection geometry(vertexIndex); // Starting on global vertex index
@@ -2865,6 +2981,10 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
     Point3d hexahExt[8];
     mvsUtils::inflateHexahedron(hexah, hexahExt, 1.1);
     addHelperPoints(nGridHelperVolumePointsDim, hexahExt, minDist);
+
+    // add point for shape from silhouette
+    if(mp->userParams.get<bool>("delaunaycut.addMaskHelperPoints", false))
+      addMaskHelperPoints(hexahExt, cams, *depthMapsFuseParams);
   }
 
   _verticesCoords.shrink_to_fit();
@@ -2875,8 +2995,6 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
 
 void DelaunayGraphCut::createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments)
 {
-  initVertices();
-
   // Create tetrahedralization
   computeDelaunay();
   displayStatistics();
