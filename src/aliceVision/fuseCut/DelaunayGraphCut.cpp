@@ -1591,7 +1591,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     if (!isnormal(tempIntersectPt.x) || !isnormal(tempIntersectPt.y) || !isnormal(tempIntersectPt.z))
     {
         // This is not suppose to happen in real life, we log a warning instead of raising an exeption if we face a border case
-        ALICEVISION_LOG_WARNING("Invalid/notNormal intersection point found during rayIntersectTriangle.");
+        // ALICEVISION_LOG_WARNING("Invalid/notNormal intersection point found during rayIntersectTriangle.");
         return GeometryIntersection();
     }
 
@@ -1612,7 +1612,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     {
         const Point3d diff = tempIntersectPt - *lastIntersectPt;
         const double dotValue = dot(DirVec, diff.normalize());
-        if(dotValue < marginEpsilon)
+        if(dotValue < marginEpsilon || diff.size() < 100 * std::numeric_limits<double>::min())
         {
             return GeometryIntersection();
         }
@@ -1964,6 +1964,12 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 break;
             }
 
+            if((intersectPt - originPt).size() <= (lastIntersectPt - originPt).size())
+            {
+                // Inverse direction, stop
+                break;
+            }
+
 #ifdef ALICEVISION_DEBUG_VOTE
             {
                 const auto end = history.geometries.end();
@@ -2118,6 +2124,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
                 break;
             }
 
+            if((intersectPt - originPt).size() <= (lastIntersectPt - originPt).size())
+            {
+                // Inverse direction, stop
+                break;
+            }
             if (geometry.type == EGeometryType::Facet)
             {
                 ++outBehindCount.facets;
@@ -2331,6 +2342,11 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         break;
                     }
 
+                    if((intersectPt - originPt).size() <= (lastIntersectPt - originPt).size())
+                    {
+                        // Inverse direction, stop
+                        break;
+                    }
 #ifdef ALICEVISION_DEBUG_VOTE
                     {
                         const auto end = history.geometries.end();
@@ -2446,6 +2462,11 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
                         break;
                     }
 
+                    if((intersectPt - originPt).size() <= (lastIntersectPt - originPt).size())
+                    {
+                        // Inverse direction, stop
+                        break;
+                    }
                     if(geometry.type == EGeometryType::Facet)
                     {
                         ++geometriesIntersectedBehindCount.facets;
