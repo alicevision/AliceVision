@@ -269,8 +269,8 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(ColorRGBf)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
-    const int freeRam = int(memInfo.freeRam / std::pow(2,20));
-    const int availableMem = freeRam - 2 * imageMaxMemSize - imagePyramidMaxMemSize; // keep some memory for the 2 input images in cache and one laplacian pyramid
+    const int availableRam = int(memInfo.availableRam / std::pow(2,20));
+    const int availableMem = availableRam - 2 * imageMaxMemSize - imagePyramidMaxMemSize; // keep some memory for the 2 input images in cache and one laplacian pyramid
 
     const int nbAtlas = _atlases.size();
     int nbAtlasMax = std::floor(availableMem / atlasPyramidMaxMemSize); //maximum number of textures laplacian pyramid in RAM
@@ -279,8 +279,8 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
         nbAtlasMax -= 1;
     nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
 
-    ALICEVISION_LOG_INFO("Total amount of free RAM  : " << freeRam << " MB.");
-    ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of available RAM  : " << availableRam << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of memory remaining for the computation : " << availableMem << " MB.");
     ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " MB.");
     ALICEVISION_LOG_INFO("Total amount of an atlas pyramid in memory: " << atlasPyramidMaxMemSize << " MB.");
     ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);

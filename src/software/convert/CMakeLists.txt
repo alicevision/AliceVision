@@ -29,7 +29,7 @@ alicevision_add_software(aliceVision_convertFloatDescriptorToUchar
         Boost::boost
         Boost::timer
 )
-endif()
+endif() # ALICEVISION_BUILD_SFM
 
 # Convert image to EXR
 alicevision_add_software(aliceVision_convertRAW
@@ -41,3 +41,16 @@ alicevision_add_software(aliceVision_convertRAW
         Boost::filesystem
 )
 
+if(ALICEVISION_BUILD_MVS)
+
+# Merge two meshes
+alicevision_add_software(aliceVision_convertMesh
+  SOURCE main_convertMesh.cpp
+  FOLDER ${FOLDER_SOFTWARE_CONVERT}
+  LINKS aliceVision_system
+        aliceVision_numeric
+	Geogram::geogram
+        ${Boost_LIBRARIES}
+)
+
+endif() # ALICEVISION_BUILD_MVS

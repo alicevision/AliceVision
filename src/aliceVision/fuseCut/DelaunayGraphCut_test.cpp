@@ -10,6 +10,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include <boost/math/constants/constants.hpp>
+
 #include <string>
 
 #define BOOST_TEST_MODULE fuseCut
@@ -17,9 +19,38 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
+
 using namespace aliceVision;
 using namespace aliceVision::fuseCut;
 using namespace aliceVision::sfmData;
+
+BOOST_AUTO_TEST_CASE(fuseCut_solidAngle)
+{
+    using namespace boost::math;
+
+    const Point3d O = {0.0, 0.0, 0.0};
+    const Point3d A = {5.0, 0.0, 0.0};
+    const Point3d B = {0.0, 1.8, 0.0};
+    const Point3d C = {0.0, 0.0, 2.1};
+
+    {
+        const double s = tetrahedronSolidAngle(A - O, B - O, C - O);
+        ALICEVISION_LOG_TRACE("tetrahedronSolidAngle: " << s);
+        BOOST_CHECK_CLOSE(s, 0.5 * constants::pi<double>(), 0.0001);
+    }
+
+    {
+        const double s = tetrahedronSolidAngle(B - O, C - O, A - O);
+        ALICEVISION_LOG_TRACE("tetrahedronSolidAngle: " << s);
+        BOOST_CHECK_CLOSE(s, 0.5 * constants::pi<double>(), 0.0001);
+    }
+
+    {
+        const double s = tetrahedronSolidAngle(B - O, A - O, C - O);
+        ALICEVISION_LOG_TRACE("tetrahedronSolidAngle: " << s);
+        BOOST_CHECK_CLOSE(s, 0.5 * constants::pi<double>(), 0.0001);
+    }
+}
 
 SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size = 3, camera::EINTRINSIC eintrinsic = camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
 
@@ -64,13 +95,14 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     for (size_t i = 0; i < delaunayGC._verticesCoords.size(); i++)
         ALICEVISION_LOG_TRACE("[" << i << "]: " << delaunayGC._verticesCoords[i].x << ", " << delaunayGC._verticesCoords[i].y << ", " << delaunayGC._verticesCoords[i].z);
 
-    // delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false);
-    delaunayGC.initVertices();
+    delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false);
+    /*
     delaunayGC.computeDelaunay();
     delaunayGC.displayStatistics();
     delaunayGC.computeVerticesSegSize(true, 0.0f);
     delaunayGC.voteFullEmptyScore(cams, tempDirPath);
     delaunayGC.reconstructGC(&hexah[0]);
+    */
 
     ALICEVISION_LOG_TRACE("CreateGraphCut Done.");
 }

@@ -232,7 +232,17 @@ namespace aliceVision
       */
       template< typename T1>
       friend Image<T1> operator-( const Image<T1> & imgA , const Image<T1> & imgB ) ;
+      
+      template <class UnaryFunction>
+      bool perPixelOperation(UnaryFunction f)
+      {
+          for(auto row : this->rowwise())
+          {
+              std::transform(row.begin(), row.end(), row.begin(), f);
+          }
 
+          return true;
+      }
 
     protected :
       //-- Image data are stored by inheritance of a matrix

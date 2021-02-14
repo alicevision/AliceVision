@@ -260,20 +260,21 @@ void ReconstructionEngine_panorama::SetMatchesProvider(matching::PairwiseMatches
   _pairwiseMatches = provider;
 }
 
-bool ReconstructionEngine_panorama::process()
+void ReconstructionEngine_panorama::filterMatches()
 {
-  // keep only the largest biedge connected subgraph
-  {
+    // keep only the largest biedge connected subgraph
     const PairSet pairs = matching::getImagePairs(*_pairwiseMatches);
-    const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
+    const std::set<IndexT> set_remainingIds =
+        graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
     if(set_remainingIds.empty())
     {
-      ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama");
-      return false;
+        ALICEVISION_LOG_DEBUG("Invalid input image graph for panorama, no remaining match after filtering.");
     }
     KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
-  }
+}
 
+bool ReconstructionEngine_panorama::process()
+{
   aliceVision::rotationAveraging::RelativeRotations relatives_R;
   Compute_Relative_Rotations(relatives_R);
 
@@ -336,36 +337,11 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
                           "\t- relative rotations: " << relatives_R.size() << "\n" 
                           "\t- global rotations: " << set_pose_ids.size());
 
-  // If a view with a pose prior is not found in the relative rotation,
-  // make sure we add a fake link to adjust globally everything.
-  sfmData::Poses & poses = _sfmData.getPoses();
-  if (poses.size() > 0) {
-
-    IndexT firstViewId = *set_pose_ids.begin();
-    IndexT firstPoseId = _sfmData.getView(firstViewId).getPoseId();
-
-    Eigen::Matrix3d i1Ro = poses[firstPoseId].getTransform().rotation();
-
-    for (auto & currentPose : _sfmData.getPoses()) {
-      
-      IndexT poseId = currentPose.first;
-      if (set_pose_ids.find(poseId) == set_pose_ids.end()) {
-        
-        set_pose_ids.insert(poseId);
-
-        // Add a fake relative pose between this pose and the first found pose
-        Eigen::Matrix3d iRo = currentPose.second.getTransform().rotation();
-        Eigen::Matrix3d iR1 = iRo * i1Ro.transpose();
-        local_relatives_R.emplace_back(firstPoseId, currentPose.first, iR1, 1.0);
-      }
-    }
-  }
-
-  // Global Rotation solver:
+  // Global Rotation solver
   const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = TRIPLET_ROTATION_INFERENCE_NONE; // TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
 
   GlobalSfMRotationAveragingSolver rotationAveraging_solver;
-  //-- Rejection triplet that are 'not' identity rotation (error to identity > 50°)
+  //-- Rejection triplet that are 'not' identity rotation (error to identity > 50deg)
   const bool b_rotationAveraging = rotationAveraging_solver.Run(_params.eRotationAveragingMethod, eRelativeRotationInferenceMethod, local_relatives_R, _params.maxAngularError, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
@@ -502,6 +478,9 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
       sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone); 
       rotationpriors.push_back(prior);
+
+      // Add prior on relative rotations with a low weight
+      vec_relatives_R.emplace_back(iter_v1.first, iter_v2.first, twoRone, _params.rotationAveragingWeighting ? 1.0 : 0.01);
     }
   }
 
@@ -519,7 +498,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
   std::map<IndexT, size_t> connection_size;
 
   ALICEVISION_LOG_INFO("Relative pose computation:");
-  // For each pair of views, compute the relative pose
+  // For each pair of matching views, compute the relative pose
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
     {
@@ -692,7 +671,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       }
 
       // If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
-      double weight = relativePose_info.vec_inliers.size();
+      double weight = _params.rotationAveragingWeighting ? relativePose_info.vec_inliers.size() : 1.0;
       if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
       {
         CameraPose iTo = _sfmData.getAbsolutePose(view_I->getPoseId());
@@ -771,7 +750,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       {
         // Add the relative rotation to the relative 'rotation' pose graph
         using namespace aliceVision::rotationAveraging;
-        vec_relatives_R.emplace_back(relative_pose_pair.first, relative_pose_pair.second, relativePose_info.relativePose.rotation(), 1.0);
+        vec_relatives_R.emplace_back(relative_pose_pair.first, relative_pose_pair.second,
+                                     relativePose_info.relativePose.rotation(), weight);
       }
     }
   } // for all relative pose

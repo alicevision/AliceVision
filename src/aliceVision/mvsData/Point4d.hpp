@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <ostream>
+
 namespace aliceVision {
 
 class Point4d
@@ -98,5 +100,11 @@ public:
         return e * (dot(e, a) / dot(e, e));
     }
 };
+
+inline std::ostream& operator<<(std::ostream& stream, const Point4d& p)
+{
+    stream << p.x << "," << p.y << "," << p.z << "," << p.w;
+    return stream;
+}
 
 } // namespace aliceVision

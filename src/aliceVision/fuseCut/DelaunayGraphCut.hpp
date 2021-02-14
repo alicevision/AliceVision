@@ -97,7 +97,11 @@ public:
         {
             return v0 == e.v0 && v1 == e.v1;
         }
-
+        bool isSameUndirectionalEdge(const Edge& e) const
+        {
+            return (v0 == e.v0 && v1 == e.v1) ||
+                   (v0 == e.v1 && v1 == e.v0);
+        }
     };
 
     enum class EGeometryType
@@ -145,8 +149,9 @@ public:
             case EGeometryType::Facet:
                 return facet == g.facet;
             case EGeometryType::None:
-                return true;
+                break;
             }
+            return true;
         }
         bool operator!=(const GeometryIntersection& g) const
         {
@@ -185,7 +190,13 @@ public:
             edges += gc.edges;
             vertices += gc.vertices;
             facets += gc.facets;
-
+            return *this;
+        }
+        GeometriesCount& operator/=(const size_t v)
+        {
+            edges /= v;
+            vertices /= v;
+            facets /= v;
             return *this;
         }
     };
@@ -405,7 +416,6 @@ public:
      */
     std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const;
 
-    void initVertices();
     void computeDelaunay();
     void initCells();
     void displayStatistics();
@@ -429,10 +439,18 @@ public:
      */
     void addHelperPoints(int nGridHelperVolumePointsDim, const Point3d Voxel[8], float minDist);
 
+    void addMaskHelperPoints(const Point3d voxel[8], const StaticVector<int>& cams, const FuseParams& params);
+
     void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params);
 
-    void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
-    void removeSmallSegs(int minSegSize);
+    /**
+     * @brief Compute connected segments size
+     * @param[out] out_segments
+     * @param[in] useVertex: sub-set of vertices to compute
+     * @param[in] alpha
+     */
+    void computeVerticesSegSize(std::vector<GC_Seg>& out_segments, const std::vector<bool>& useVertex, float alpha = 0.0f);
+    void removeSmallSegs(const std::vector<GC_Seg>& segments, int minSegSize);
 
     /**
      * @brief Function that returns the next geometry intersected by the ray.
@@ -491,36 +509,41 @@ public:
      */
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
 
-    int setIsOnSurface();
+    int computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const;
 
     void addToInfiniteSw(float sW);
-
-    void freeUnwantedFullCells(const Point3d* hexah);
-
-    void reconstructGC(const Point3d* hexah);
 
     void maxflow();
 
     void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
 
-    void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
+    void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
 
-    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments);
+    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
      */
     void invertFullStatusForSmallLabels();
+    /**
+     * @brief Check solid angle ratio between empty/full part around each vertex to reduce local artefacts / improve smoothness.
+     */
+    void cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIterations, double minSolidAngleRatio);
 
-    void graphCutPostProcessing();
+    /**
+     * @brief Combine all post-processing steps results to reduce artefacts from the graph-cut (too large triangles, noisy tetrahedrons, isolated cells, etc).
+     */
+    void graphCutPostProcessing(const Point3d hexah[8], const std::string& folderName);
 
-    void segmentFullOrFree(bool full, StaticVector<int>** inColors, int& nsegments);
+    void segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor, int& nsegments);
     int removeBubbles();
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
 
     mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
     mesh::Mesh* createTetrahedralMesh(bool filter = true, const float& downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
+
+    void displayCellsStats() const;
     void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
     void exportFullScoreMeshs();
     void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
@@ -529,6 +552,10 @@ public:
 
 
 std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Facet& facet);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Edge& edge);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometryIntersection& intersection);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometriesCount& count);
 
 } // namespace fuseCut
 } // namespace aliceVision

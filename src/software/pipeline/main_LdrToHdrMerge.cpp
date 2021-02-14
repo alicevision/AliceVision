@@ -57,7 +57,7 @@ int aliceVision_main(int argc, char** argv)
     int offsetRefBracketIndex = 0;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
-    float highlightCorrectionFactor = 1.0f;
+    float highlightCorrectionFactor = 0.0f;
     float highlightTargetLux = 120000.0f;
 
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;

@@ -43,7 +43,7 @@ int aliceVision_main(int argc, char **argv)
 
   // user optional parameters
 
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string describerTypesName;
   std::vector<std::string> imageWhiteList;
   bool flagViews = true;
   bool flagIntrinsics = true;
@@ -118,12 +118,6 @@ int aliceVision_main(int argc, char **argv)
   if(sfmDataFilename.empty() || outputSfMDataFilename.empty())
   {
     ALICEVISION_LOG_ERROR("Invalid input or output filename");
-    return EXIT_FAILURE;
-  }
-
-  if(describerTypesName.empty())
-  {
-    ALICEVISION_LOG_ERROR("--describerTypes option is empty.");
     return EXIT_FAILURE;
   }
 
@@ -207,6 +201,11 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // landmarks describer types filter
+  if(describerTypesName.empty())
+  {
+      sfmData.getLandmarks().clear();
+  }
+  else
   {
     std::vector<feature::EImageDescriberType> imageDescriberTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 

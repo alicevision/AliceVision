@@ -420,11 +420,36 @@ namespace aliceVision
       // An error will be raise at compile time if this type traits is not defined.
     };
 
-    template<> struct NbChannels<unsigned char>{ int size = 1; };
-    template<> struct NbChannels<float>{ int size = 1; };
-    template<> struct NbChannels<RGBColor>{ int size = 3; };
-    template<> struct NbChannels<RGBfColor>{ int size = 3; };
-    template<> struct NbChannels<RGBAColor>{ int size = 4; };
+    template <>
+    struct NbChannels<unsigned char>
+    {
+        static const int size = 1;
+    };
+    template <>
+    struct NbChannels<float>
+    {
+        static const int size = 1;
+    };
+    template <>
+    struct NbChannels<RGBColor>
+    {
+        static const int size = 3;
+    };
+    template <>
+    struct NbChannels<RGBfColor>
+    {
+        static const int size = 3;
+    };
+    template <>
+    struct NbChannels<RGBAColor>
+    {
+        static const int size = 4;
+    };
+    template <>
+    struct NbChannels<RGBAfColor>
+    {
+        static const int size = 4;
+    };
 
     
   } // namespace image
