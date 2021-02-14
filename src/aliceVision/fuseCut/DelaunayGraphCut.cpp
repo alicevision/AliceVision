@@ -881,9 +881,6 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
 {
     ALICEVISION_LOG_INFO("Add Mask Helper Points.");
 
-    Point3d inflatedVoxel[8];
-    mvsUtils::inflateHexahedron(voxel, inflatedVoxel, 1.01f);
-
     std::size_t nbPixels = 0;
     for(const auto& imgParams : mp->getImagesParams())
     {
@@ -966,7 +963,7 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
                     {
                         const Point3d& cam = mp->CArr[c];
                         Point3d maxP = cam + (mp->iCamArr[c] * Point2d((float)bestX, (float)bestY)).normalize() * 10000000.0; 
-                        StaticVector<Point3d>* intersectionsPtr = mvsUtils::lineSegmentHexahedronIntersection(cam, maxP, inflatedVoxel);
+                        StaticVector<Point3d>* intersectionsPtr = mvsUtils::lineSegmentHexahedronIntersection(cam, maxP, voxel);
 
                         if(intersectionsPtr->size() <= 0)
                             continue;
@@ -2979,7 +2976,7 @@ void DelaunayGraphCut::createDensePointCloud(const Point3d hexah[8], const Stati
   // add volume points to prevent singularities
   {
     Point3d hexahExt[8];
-    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.1);
+    mvsUtils::inflateHexahedron(hexah, hexahExt, 1.01f);
     addHelperPoints(nGridHelperVolumePointsDim, hexahExt, minDist);
 
     // add point for shape from silhouette
