@@ -97,6 +97,63 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
     return result;
 }
 
+image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
+{
+    double w = source.Width();
+    double h = source.Height();
+
+    double minx = w;
+    double maxx = 0;
+    double miny = h;
+    double maxy = 0;
+
+    for (int i = 0; i < h; i++) 
+    {
+        for (int j = 0; j < w; j++)
+        {
+            Vec2 pos = camera->get_ud_pixel(Vec2(j, i));
+            minx = std::min(minx, pos.x());
+            maxx = std::max(maxx, pos.x());
+            miny = std::min(miny, pos.y());
+            maxy = std::max(maxy, pos.y());
+        }
+    }
+
+    int width = maxx - minx + 1;
+    int height = maxy - miny + 1;
+
+    image::Image<image::RGBfColor> result(width, height, true, image::FBLACK);
+
+    const image::Sampler2d<image::SamplerLinear> sampler;
+
+    for (int i = 0; i < height; i++) 
+    {
+        double y = miny + double(i);
+
+        for (int j = 0; j < width; j++)
+        {
+            double x = minx + double(j);
+
+            Vec2 pos(x, y);
+            Vec2 dist = camera->get_d_pixel(pos);
+
+
+            if (dist.x() < 0 || dist.x() >= source.Width()) continue;
+            if (dist.y() < 0 || dist.y() >= source.Height()) continue;
+            
+            
+            result(i, j).r() = dist.x() / (float(width) - 1);
+            result(i, j).g() = (float(height) - 1.0f - dist.y()) / (float(height) - 1.0f);
+            result(i, j).b() = 0.0f;
+        }
+    }
+
+    offset.x() = minx;
+    offset.y() = miny;
+
+    return result;
+}
+
 bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, const image::Image<image::RGBColor> & input, const std::string & checkerImagePath)
 {
     cv::Mat inputOpencvWrapper(input.Height(), input.Width(), CV_8UC3, (void*)input.data());
@@ -619,6 +676,7 @@ int aliceVision_main(int argc, char* argv[])
         fs::copy_file(view->getImagePath(), fs::path(outputPath) / fs::path(view->getImagePath()).filename(), fs::copy_option::overwrite_if_exists);
 
         std::string undistortedImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
+        std::string stMapImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_stmap.exr";
         std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
 
         //Retrieve lines
@@ -772,6 +830,9 @@ int aliceVision_main(int argc, char* argv[])
         }*/
 
         image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
+
+        image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);
+        image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
     }
 
     
