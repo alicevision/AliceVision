@@ -12,6 +12,7 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/min.hpp>
 #include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <boost/algorithm/string/split.hpp>
@@ -558,11 +559,7 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   out_t = - out_S * out_R * meanPoints;
 }
 
-void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
-                                           const std::string & camName,
-                                           double& out_S,
-                                           Mat3& out_R,
-                                           Vec3& out_t)
+IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::string & camName)
 {
   IndexT viewId = -1;
 
@@ -596,6 +593,45 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
     throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
 
+  return viewId;
+}
+
+IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
+{
+    using namespace boost::accumulators;
+    accumulator_set<double, stats<tag::mean>> accX, accY, accZ;
+
+    for(auto& pose: sfmData.getPoses())
+    {
+        const auto& c = pose.second.getTransform().center();
+        accX(c(0));
+        accY(c(1));
+        accZ(c(2));
+    }
+    const Vec3 camerasCenter(extract::mean(accX), extract::mean(accY), extract::mean(accZ));
+
+    double minDist = std::numeric_limits<double>::max();
+    IndexT centerViewId = UndefinedIndexT;
+    for(auto& viewIt: sfmData.getViews())
+    {
+        const sfmData::View& v = *viewIt.second;
+        if(!sfmData.isPoseAndIntrinsicDefined(&v))
+            continue;
+        const auto& pose = sfmData.getPose(v);
+        const double dist = (pose.getTransform().center() - camerasCenter).norm();
+
+        if(dist < minDist)
+        {
+            minDist = dist;
+            centerViewId = v.getViewId();
+        }
+    }
+    return centerViewId;
+}
+
+void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData, const IndexT viewId,
+                                                double& out_S, Mat3& out_R, Vec3& out_t)
+{
   sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
   ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
