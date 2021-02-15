@@ -35,9 +35,10 @@ enum class EAlignmentMethod: unsigned char
 {
   TRANSFORMATION = 0
   , MANUAL
-  , AUTO_FROM_CAMERAS
-  , AUTO_FROM_LANDMARKS
-  , FROM_SINGLE_CAMERA
+  , AUTO_FROM_CAMERAS,
+    AUTO_FROM_LANDMARKS,
+    FROM_SINGLE_CAMERA,
+    FROM_CENTER_CAMERA
   , FROM_MARKERS
 };
 
@@ -55,6 +56,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
     case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
+    case EAlignmentMethod::FROM_CENTER_CAMERA:  return "from_center_camera";
     case EAlignmentMethod::FROM_MARKERS:        return "from_markers";
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
@@ -75,6 +77,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
   if(method == "from_single_camera")  return EAlignmentMethod::FROM_SINGLE_CAMERA;
+  if(method == "from_center_camera")  return EAlignmentMethod::FROM_CENTER_CAMERA;
   if(method == "from_markers")        return EAlignmentMethod::FROM_MARKERS;
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
@@ -337,9 +340,17 @@ int aliceVision_main(int argc, char **argv)
         }
         else
         {
-            sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, transform, S, R, t);
+            const IndexT viewId = sfm::getViewIdFromExpression(sfmData, transform);
+            sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, viewId, S, R, t);
         }
     break;
+
+    case EAlignmentMethod::FROM_CENTER_CAMERA:
+    {
+        const IndexT centerViewId = sfm::getCenterCameraView(sfmData);
+        sfm::computeNewCoordinateSystemFromSingleCamera(sfmData, centerViewId, S, R, t);
+        break;
+    }
 
     case EAlignmentMethod::FROM_MARKERS:
     {
