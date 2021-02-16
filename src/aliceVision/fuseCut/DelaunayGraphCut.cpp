@@ -2895,11 +2895,10 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
             double fullPartSolidAngle = 0.0;
             for(CellIndex ci : neighboringCells)
             {
-                if(!_cellIsFull[ci])
-                    continue;
                 // ALICEVISION_LOG_INFO("full cell: " << ci);
                 std::vector<VertexIndex> triangle;
                 triangle.reserve(3);
+                GEO::signed_index_t localVertexIndex = 0;
                 for(int k = 0; k < 4; ++k)
                 {
                     const GEO::signed_index_t currentVertex = _tetrahedralization->cell_vertex(ci, k);
@@ -2907,18 +2906,35 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                         break;
                     if(currentVertex != vi)
                         triangle.push_back(currentVertex);
+                    else
+                        localVertexIndex = k;
                 }
                 if(triangle.size() != 3)
                 {
                     borderCase = true;
                     break;
                 }
-                const Point3d& O = _verticesCoords[vi];
-                const double s =
-                    tetrahedronSolidAngle(_verticesCoords[triangle[0]] - O, _verticesCoords[triangle[1]] - O,
-                                          _verticesCoords[triangle[2]] - O);
-                // ALICEVISION_LOG_INFO("tetrahedronSolidAngle: " << s);
-                fullPartSolidAngle += s;
+                {
+                    // Check status coherency with neighboors around the surface,
+                    // else we avoid to modify the status to ensure that we do not increase inconsitencies.
+                    const Facet f(ci, localVertexIndex);
+                    const Facet fv = mirrorFacet(f);
+                    if(isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[ci] != _cellIsFull[fv.cellIndex])
+                    {
+                        borderCase = true;
+                        break;
+                    }
+                }
+
+                if (_cellIsFull[ci])
+                {
+                    const Point3d& O = _verticesCoords[vi];
+                    const double s =
+                        tetrahedronSolidAngle(_verticesCoords[triangle[0]] - O, _verticesCoords[triangle[1]] - O,
+                                              _verticesCoords[triangle[2]] - O);
+                    // ALICEVISION_LOG_INFO("tetrahedronSolidAngle: " << s);
+                    fullPartSolidAngle += s;
+                }
             }
             if(borderCase)
             {
