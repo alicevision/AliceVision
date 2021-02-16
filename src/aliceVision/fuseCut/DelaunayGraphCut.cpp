@@ -1795,8 +1795,8 @@ float DelaunayGraphCut::weightFcn(float nrc, bool labatutWeights, int  /*ncams*/
     return weight;
 }
 
-void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
-                               bool labatutWeights, bool fillOut, float distFcnHeight) // fixesSigma=false nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
+void DelaunayGraphCut::fillGraph(double nPixelSizeBehind,
+                               bool labatutWeights, bool fillOut, float distFcnHeight) // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
 {
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
     long t1 = clock();
@@ -1862,7 +1862,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
                 int stepsBehind = 0;
                 GeometriesCount geometriesIntersectedFrontCount;
                 GeometriesCount geometriesIntersectedBehindCount;
-                fillGraphPartPtRc(stepsFront, stepsBehind, geometriesIntersectedFrontCount, geometriesIntersectedBehindCount, vertexIndex, v.cams[c], weight, fixesSigma, nPixelSizeBehind,
+                fillGraphPartPtRc(stepsFront, stepsBehind, geometriesIntersectedFrontCount, geometriesIntersectedBehindCount, vertexIndex, v.cams[c], weight, nPixelSizeBehind,
                                   fillOut, distFcnHeight);
 
                 totalStepsFront += stepsFront;
@@ -1906,17 +1906,15 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind,
 }
 
 void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalStepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam,
-                                       float weight, bool fixesSigma, float nPixelSizeBehind,
-                                       bool fillOut, float distFcnHeight)  // fixesSigma=false nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
+                                       float weight, double nPixelSizeBehind,
+                                       bool fillOut, float distFcnHeight)  // nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 fillOut=1 distFcnHeight=0
 {
     const int maxint = 1000000; // std::numeric_limits<int>::std::max()
     const double marginEpsilonFactor = 1.0e-4;
 
     const Point3d& originPt = _verticesCoords[vertexIndex];
-    const float pixSize = _verticesAttr[vertexIndex].pixSize; // use computed pixSize,  mp->getCamPixelSize(originPt, cam);
-    float maxDist = nPixelSizeBehind * pixSize;
-    if(fixesSigma)
-        maxDist = nPixelSizeBehind;
+    const double pixSize = _verticesAttr[vertexIndex].pixSize;
+    const double maxDist = nPixelSizeBehind * pixSize;
 
     assert(cam >= 0);
     assert(cam < mp->ncams);
@@ -2232,7 +2230,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalS
     }
 }
 
-void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind)
+void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 {
     ALICEVISION_LOG_INFO("Forcing t-edges");
     long t2 = clock();
@@ -2298,7 +2296,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
             GeometriesCount geometriesIntersectedFrontCount;
             GeometriesCount geometriesIntersectedBehindCount;
 
-            const float maxDist = nPixelSizeBehind * (fixesSigma ? 1.0f : mp->getCamPixelSize(originPt, cam));
+            const float maxDist = nPixelSizeBehind * mp->getCamPixelSize(originPt, cam);
 
             // float minJump = 10000000.0f;
             // float minSilent = 10000000.0f;
@@ -3179,9 +3177,10 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
 
     long t1;
 
-    const float sigma = (float)mp->userParams.get<double>("delaunaycut.sigma", 4.0f); // TODO FACA: 2 or 4?
+    // TODO FACA: nPixelSizeBehind 2 or 4 by default?
+    const double nPixelSizeBehind = mp->userParams.get<double>("delaunaycut.nPixelSizeBehind", 4.0f); // sigma value
 
-    ALICEVISION_LOG_INFO("sigma: " << sigma);
+    ALICEVISION_LOG_INFO("nPixelSizeBehind: " << nPixelSizeBehind);
 
     // 0 for distFcn equals 1 all the time
     const float distFcnHeight = (float)mp->userParams.get<double>("delaunaycut.distFcnHeight", 0.0f);
@@ -3197,7 +3196,7 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
         displayCellsStats();
 
         // compute weights on edge between tetrahedra
-        fillGraph(false, sigma, false, true, distFcnHeight);
+        fillGraph(nPixelSizeBehind, false, true, distFcnHeight);
 
         displayCellsStats();
 
@@ -3216,7 +3215,7 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
 
         if(forceTEdge)
         {
-            forceTedgesByGradientIJCV(false, sigma);
+            forceTedgesByGradientIJCV(nPixelSizeBehind);
         }
 
         displayCellsStats();
@@ -3228,7 +3227,7 @@ void DelaunayGraphCut::voteFullEmptyScore(const StaticVector<int>& cams, const s
     if(labatutCFG09)
     {
         ALICEVISION_LOG_INFO("Labatut CFG 2009 method:");
-        fillGraph(false, sigma, true, true, distFcnHeight);
+        fillGraph(nPixelSizeBehind, true, true, distFcnHeight);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");

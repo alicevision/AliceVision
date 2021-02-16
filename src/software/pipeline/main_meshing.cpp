@@ -275,6 +275,7 @@ int aliceVision_main(int argc, char* argv[])
     BoundingBox boundingBox;
 
     fuseCut::FuseParams fuseParams;
+    double nPixelSizeBehind = 4.0;
 
     po::options_description allParams("AliceVision meshing");
 
@@ -343,6 +344,8 @@ int aliceVision_main(int argc, char* argv[])
             "minAngleThreshold")
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
             "refineFuse")
+        ("nPixelSizeBehind", po::value<double>(&nPixelSizeBehind)->default_value(nPixelSizeBehind),
+            "Number of pixel size units to vote behind the vertex with FULL status.")
         ("addMaskHelperPoints", po::value<bool>(&addMaskHelperPoints)->default_value(addMaskHelperPoints),
             "Add Helper points on the outline of the depth maps masks.")
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
@@ -427,6 +430,7 @@ int aliceVision_main(int argc, char* argv[])
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
     mp.userParams.put("delaunaycut.seed", seed);
+    mp.userParams.put("delaunaycut.nPixelSizeBehind", nPixelSizeBehind);
     mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", voteFilteringForWeaklySupportedSurfaces);
     mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", minSolidAngleRatio);
     mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", nbSolidAngleFilteringIterations);

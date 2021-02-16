@@ -495,19 +495,17 @@ public:
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool labatutWeights,
+    virtual void fillGraph(double nPixelSizeBehind, bool labatutWeights,
                            bool fillOut, float distFcnHeight = 0.0f);
     void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam, float weight,
-                           bool fixesSigma, float nPixelSizeBehind, bool fillOut,
-                           float distFcnHeight);
+                           double nPixelSizeBehind, bool fillOut, float distFcnHeight);
 
     /**
      * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
-     * 
-     * @param fixesSigma Use constant sigma for all points or take into account the pixelSize 
+     *
      * @param nPixelSizeBehind Used to define the surface margin
      */
-    void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
+    void forceTedgesByGradientIJCV(float nPixelSizeBehind);
 
     int computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const;
 
