@@ -75,6 +75,25 @@ oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic, bool &correctPrinci
     return roi;
 }
 
+oiio::ROI computeRoiForNuke(const camera::IntrinsicBase* intrinsic, oiio::ROI& roi, bool &correctPrincipalPoint)
+{
+    const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
+    Vec2 ppCorrection(0, 0);
+    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType() && correctPrincipalPoint)
+    {
+        const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
+        ppCorrection = pinholePtr->getPrincipalPoint() - center;
+    }
+   
+    int xOffset = roi.xbegin;
+    int correctionPP = -2*int(ppCorrection[1]);
+    int yOffset = (intrinsic->h() - roi.yend) + correctionPP;
+    oiio::ROI roiNuke = oiio::ROI(-xOffset, intrinsic->w() - xOffset, -yOffset, intrinsic->h() - yOffset);
+    ALICEVISION_LOG_DEBUG("roiNuke:" + std::to_string(roiNuke.xbegin) + ";" + std::to_string(roiNuke.xend) + ";" +
+                          std::to_string(roiNuke.ybegin) + ";" + std::to_string(roiNuke.yend));
+    return roiNuke;
+}
+
 int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
@@ -292,13 +311,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_DEBUG("roi:" + std::to_string(roi.xbegin) + ";" + std::to_string(roi.xend) + ";" +
                                   std::to_string(roi.ybegin) + ";" + std::to_string(roi.yend));
             camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint,roi); 
-
-            int xOffset = roi.xbegin;
-            int yOffset = cam->h() - roi.yend;
-            roiNuke =
-                oiio::ROI(-xOffset, cam->w() - xOffset, - yOffset, cam->h() - yOffset);
-            ALICEVISION_LOG_DEBUG("roiNuke:" + std::to_string(roiNuke.xbegin) + ";" + std::to_string(roiNuke.xend) +
-                                  ";" + std::to_string(roiNuke.ybegin) + ";" + std::to_string(roiNuke.yend));
+            oiio::ROI roiNuke = computeRoiForNuke(cam, roi, correctPrincipalPoint);
             writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION, oiio::ParamValueList(),roiNuke);
         }
         else
