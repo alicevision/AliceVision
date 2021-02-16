@@ -269,6 +269,7 @@ int aliceVision_main(int argc, char* argv[])
     bool saveRawDensePointCloud = false;
     bool colorizeOutput = false;
     bool voteFilteringForWeaklySupportedSurfaces = true;
+    int invertTetrahedronBasedOnNeighborsNbIterations = 10;
     double minSolidAngleRatio = 0.2;
     int nbSolidAngleFilteringIterations = 2;
     unsigned int seed = 0;
@@ -352,6 +353,8 @@ int aliceVision_main(int argc, char* argv[])
             "Save dense point cloud before cut and filtering.")
         ("voteFilteringForWeaklySupportedSurfaces", po::value<bool>(&voteFilteringForWeaklySupportedSurfaces)->default_value(voteFilteringForWeaklySupportedSurfaces),
             "Improve support of weakly supported surfaces with a tetrahedra fullness score filtering.")
+        ("invertTetrahedronBasedOnNeighborsNbIterations", po::value<int>(&invertTetrahedronBasedOnNeighborsNbIterations)->default_value(invertTetrahedronBasedOnNeighborsNbIterations),
+            "Invert cells status around surface to improve smoothness.")
         ("minSolidAngleRatio", po::value<double>(&minSolidAngleRatio)->default_value(minSolidAngleRatio),
             "Filter cells status on surface around vertices to improve smoothness using solid angle ratio between full/empty parts.")
         ("nbSolidAngleFilteringIterations", po::value<int>(&nbSolidAngleFilteringIterations)->default_value(nbSolidAngleFilteringIterations),
@@ -432,6 +435,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("delaunaycut.seed", seed);
     mp.userParams.put("delaunaycut.nPixelSizeBehind", nPixelSizeBehind);
     mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", voteFilteringForWeaklySupportedSurfaces);
+    mp.userParams.put("hallucinationsFiltering.invertTetrahedronBasedOnNeighborsNbIterations", invertTetrahedronBasedOnNeighborsNbIterations);
     mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", minSolidAngleRatio);
     mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", nbSolidAngleFilteringIterations);
     mp.userParams.put("delaunaycut.addMaskHelperPoints", addMaskHelperPoints);

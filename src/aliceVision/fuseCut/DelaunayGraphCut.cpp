@@ -2652,6 +2652,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
     bool doRemoveBubbles = mp->userParams.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
     bool doRemoveDust = mp->userParams.get<bool>("hallucinationsFiltering.doRemoveDust", true);
     bool doLeaveLargestFullSegmentOnly = mp->userParams.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
+    int invertTetrahedronBasedOnNeighborsNbIterations = mp->userParams.get<bool>("hallucinationsFiltering.invertTetrahedronBasedOnNeighborsNbIterations", 10);
     double minSolidAngleRatio = mp->userParams.get<double>("hallucinationsFiltering.minSolidAngleRatio", 0.2);
     int nbSolidAngleFilteringIterations = mp->userParams.get<double>("hallucinationsFiltering.nbSolidAngleFilteringIterations", 10);
 
@@ -2747,7 +2748,7 @@ void DelaunayGraphCut::graphCutPostProcessing(const Point3d hexah[8], const std:
         // Changed status of cells to improve coherence with neighboring tetrahedrons
         // If 3 or 4 facets are connected to cells of the opporite status,
         // it is better to update the current status.
-        for(int i = 0; i < 10; ++i)
+        for(int i = 0; i < invertTetrahedronBasedOnNeighborsNbIterations; ++i)
         {
             StaticVector<CellIndex> toDoInverse;
             toDoInverse.reserve(_cellIsFull.size());
