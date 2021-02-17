@@ -59,7 +59,7 @@ public:
         Vec2 distorted = _camera->addDistortion(cpt);
         Vec2 ipt = _camera->cam2ima(distorted);
 
-        double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
+        double w1 = std::max(0.4, std::max(std::abs(distorted.x()), std::abs(distorted.y())));
         double w = w1 * w1;
 
         residuals[0] = w * (cangle * ipt.x() + sangle * ipt.y() - distanceToLine);

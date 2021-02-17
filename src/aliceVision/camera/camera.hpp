@@ -34,6 +34,8 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
       return std::make_shared<PinholeRadialK1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return std::make_shared<PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+    case EINTRINSIC::PINHOLE_CAMERA_RADIAL3DE:
+      return std::make_shared<PinholeRadial3DE>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return std::make_shared<PinholeBrownT2>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:

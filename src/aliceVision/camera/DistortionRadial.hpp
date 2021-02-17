@@ -589,6 +589,254 @@ public:
 };
 
 /**
+ * @class DistortionRadial3DE
+ * @brief 3DE radial distortion
+ */
+class DistortionRadial3DE : public Distortion {
+public:
+  /**
+   * @brief Default constructor, no distortion.
+   */
+  DistortionRadial3DE()
+  {
+    _distortionParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  }
+
+  /**
+   * @brief Constructor with the three coefficients
+   */
+  explicit DistortionRadial3DE(double c2, double c4, double u1, double v1, double u3, double v3)
+  {
+    _distortionParams = {c2, c4, u1, v1, u3, v3};
+  }
+
+  DistortionRadial3DE* clone() const override { return new DistortionRadial3DE(*this); }
+
+  /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
+  Vec2 addDistortion(const Vec2 & p) const override
+  {
+    const double c2 = _distortionParams[0];
+    const double c4 = _distortionParams[1];
+    const double u1 = _distortionParams[2];
+    const double v1 = _distortionParams[3];
+    const double u3 = _distortionParams[4];
+    const double v3 = _distortionParams[5];
+
+    Vec2 np;
+
+    double x = p.x();
+    double y = p.y();
+    double xx = x * x;
+    double yy = y * y;
+    double xy = x * y;
+    double r2 = xx + yy;
+    double r4 = r2 * r2;
+
+    double p1 = 1.0 + c2 * r2 + c4 * r4;
+    double p2 = r2 + 2.0 * xx;
+    double p3 = r2 + 2.0 * yy;
+
+    double p4 = u1 + u3 * r2;
+    double p5 = v1 + v3 * r2;
+    double p6 = 2.0 * xy;
+    
+
+    np.x() = x * p1 + p2 * p4 + p6 * p5;
+    np.y() = y * p1 + p3 * p5 + p6 * p4;
+
+    return np;
+  }
+
+  Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const override
+  {
+    const double c2 = _distortionParams[0];
+    const double c4 = _distortionParams[1];
+    const double u1 = _distortionParams[2];
+    const double v1 = _distortionParams[3];
+    const double u3 = _distortionParams[4];
+    const double v3 = _distortionParams[5];
+
+    Vec2 np;
+
+    double x = p.x();
+    double y = p.y();
+    double xx = x * x;
+    double yy = y * y;
+    double xy = x * y;
+    double r2 = xx + yy;
+    double r4 = r2 * r2;
+
+    const double eps = 1e-16;
+    if (r2 < eps) {
+      return Eigen::Matrix<double, 2, 2>::Zero();
+    }
+
+    double p1 = 1.0 + c2 * r2 + c4 * r4;
+    double p2 = r2 + 2.0 * xx;
+    double p3 = r2 + 2.0 * yy;
+
+    double p4 = u1 + u3 * r2;
+    double p5 = v1 + v3 * r2;
+    double p6 = 2.0 * xy;
+    
+
+    //np.x() = x * p1 + p2 * p4 + p6 * p5;
+    //np.y() = y * p1 + p3 * p5 + p6 * p4;
+
+    Eigen::Matrix<double, 1, 2> d_r2_d_p;
+    d_r2_d_p(0, 0) = 2.0 * x;
+    d_r2_d_p(0, 1) = 2.0 * y;
+
+    double d_p1_d_r2 = c2 + 2.0 * c4 * r2;
+    double d_p4_d_r2 = u3;
+    double d_p5_d_r2 = v3;
+
+    Eigen::Matrix<double, 1, 2> d_p1_d_p = d_p1_d_r2 * d_r2_d_p;
+    
+    Eigen::Matrix<double, 1, 2> d_p2_d_p;
+    d_p2_d_p(0, 0) = d_r2_d_p(0, 0) + 4.0 * x;
+    d_p2_d_p(0, 1) = d_r2_d_p(0, 1);
+
+    Eigen::Matrix<double, 1, 2> d_p3_d_p;
+    d_p3_d_p(0, 0) = d_r2_d_p(0, 0);
+    d_p3_d_p(0, 1) = d_r2_d_p(0, 1) + 4.0 * y;
+
+    Eigen::Matrix<double, 1, 2> d_p4_d_p = d_p4_d_r2 * d_r2_d_p;
+    Eigen::Matrix<double, 1, 2> d_p5_d_p = d_p5_d_r2 * d_r2_d_p;
+
+    Eigen::Matrix<double, 1, 2> d_p6_d_p;
+    d_p6_d_p(0, 0) = 2.0 * y;
+    d_p6_d_p(0, 1) = 2.0 * x;
+
+    Eigen::Matrix<double, 1, 2> d_x_d_p;
+    d_x_d_p(0, 0) = 1.0;
+    d_x_d_p(0, 1) = 0.0;
+
+    Eigen::Matrix<double, 1, 2> d_y_d_p;
+    d_y_d_p(0, 0) = 0.0;
+    d_y_d_p(0, 1) = 1.0;
+
+    Eigen::Matrix<double, 2, 2> ret;
+    ret.block<1, 2>(0, 0) = (x * d_p1_d_p + d_x_d_p * p1) + (p2 * d_p4_d_p + d_p2_d_p * p4) + (p6 * d_p5_d_p + d_p6_d_p * p5);
+    ret.block<1, 2>(1, 0) = (y * d_p1_d_p + d_y_d_p * p1) + (p3 * d_p5_d_p + d_p3_d_p * p5) + (p6 * d_p4_d_p + d_p6_d_p * p4);
+ //np.x() = x * p1 + p2 * p4 + p6 * p5;
+    //np.y() = y * p1 + p3 * p5 + p6 * p4;
+    return ret;
+  }
+
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override
+  {
+    const double c2 = _distortionParams[0];
+    const double c4 = _distortionParams[1];
+    const double u1 = _distortionParams[2];
+    const double v1 = _distortionParams[3];
+    const double u3 = _distortionParams[4];
+    const double v3 = _distortionParams[5];
+    
+    Vec2 np;
+
+    double x = p.x();
+    double y = p.y();
+    double xx = x * x;
+    double yy = y * y;
+    double xy = x * y;
+    double r2 = xx + yy;
+    double r4 = r2 * r2;
+
+    const double eps = 1e-8;
+    if (r2 < eps) {
+      return Eigen::Matrix<double, 2, 6>::Zero();
+    }
+
+
+    double p1 = 1.0 + c2 * r2 + c4 * r4;
+    double p2 = r2 + 2.0 * xx;
+    double p3 = r2 + 2.0 * yy;
+
+    double p4 = u1 + u3 * r2;
+    double p5 = v1 + v3 * r2;
+    double p6 = 2.0 * xy;
+    
+
+    //np.x() = x * p1 + p2 * p4 + p6 * p5;
+    //np.y() = y * p1 + p3 * p5 + p6 * p4;
+    Eigen::Matrix<double, 1, 6> d_p1_d_disto;
+    d_p1_d_disto(0, 0) = r2;
+    d_p1_d_disto(0, 1) = r4;
+    d_p1_d_disto(0, 2) = 0;
+    d_p1_d_disto(0, 3) = 0;
+    d_p1_d_disto(0, 4) = 0;
+    d_p1_d_disto(0, 5) = 0;
+
+    Eigen::Matrix<double, 1, 6> d_p4_d_disto;
+    d_p4_d_disto(0, 0) = 0;
+    d_p4_d_disto(0, 1) = 0;
+    d_p4_d_disto(0, 2) = 1.0;
+    d_p4_d_disto(0, 3) = 0;
+    d_p4_d_disto(0, 4) = r2;
+    d_p4_d_disto(0, 5) = 0;
+
+    Eigen::Matrix<double, 1, 6> d_p5_d_disto;
+    d_p5_d_disto(0, 0) = 0;
+    d_p5_d_disto(0, 1) = 0;
+    d_p5_d_disto(0, 2) = 0;
+    d_p5_d_disto(0, 3) = 1.0;
+    d_p5_d_disto(0, 4) = 0;
+    d_p5_d_disto(0, 5) = r2;
+
+    Eigen::Matrix<double, 2, 6> ret;
+
+    ret.block<1, 6>(0, 0) = x * d_p1_d_disto + p2 * d_p4_d_disto + p6 * d_p5_d_disto;
+    ret.block<1, 6>(1, 0) = y * d_p1_d_disto + p3 * d_p5_d_disto + p6 * d_p4_d_disto;
+
+
+    return ret;
+  }
+
+
+  /// Remove distortion (return p' such that disto(p') = p)
+  Vec2 removeDistortion(const Vec2& p) const override
+  {
+    double epsilon = 1e-8;
+    Vec2 undistorted_value = p;
+
+    Vec2 diff = addDistortion(undistorted_value) - p;
+
+    int iter = 0;
+    while (diff.norm() > epsilon)
+    {
+      undistorted_value = undistorted_value - getDerivativeAddDistoWrtPt(undistorted_value).inverse() * diff;
+      diff = addDistortion(undistorted_value) - p;
+      iter++;
+      if (iter > 100) break;
+    }
+
+    return undistorted_value;
+  }
+
+  Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override
+  {
+    std::cout << "invalid class for getDerivativeRemoveDistoWrtPt" << std::endl;
+    return Eigen::MatrixXd();
+  }
+
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override
+  {
+    
+    std::cout << "invalid class for getDerivativeRemoveDistoWrtDisto" << std::endl;
+    return Eigen::MatrixXd();
+  }
+
+  double getUndistortedRadius(double r) const override
+  {
+    std::cout << "invalid class for getUndistortedRadius" << std::endl;
+    return 0.0;
+  }
+
+  ~DistortionRadial3DE() override = default;
+};
+
+/**
  * @class DistortionRadialAnamorphic4
  * @brief Anamorphic radial distortion
  */

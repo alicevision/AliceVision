@@ -55,6 +55,24 @@ class PinholeRadialK3 : public Pinhole
   ~PinholeRadialK3() override = default;
 };
 
+/// Implement a Pinhole camera with 3DE radial4 model
+class PinholeRadial3DE : public Pinhole
+{
+  public:
+
+  explicit PinholeRadial3DE(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double c2 = 0.0, double c4 = 0.0, double u1 = 0.0, double v1 = 0.0, double u2 = 0.0, double v2 = 0.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionRadial3DE(c2, c4, u1, v1, u2, v2)))
+  {
+  }
+
+  PinholeRadial3DE* clone() const override { return new PinholeRadial3DE(*this); }
+  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadial3DE&>(other); }
+
+  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL3DE; }
+
+  ~PinholeRadial3DE() override = default;
+};
+
 /// Implement a Pinhole camera with a 4 anamorphic distortion coefficients.
 class PinholeAnamorphic4 : public Pinhole
 {
