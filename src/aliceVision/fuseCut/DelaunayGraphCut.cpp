@@ -2891,6 +2891,8 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 continue;
             // ALICEVISION_LOG_INFO("vertex is on surface: " << vi);
             const std::vector<CellIndex>& neighboringCells = _neighboringCellsPerVertex[vi];
+            std::vector<Facet> neighboringFacets;
+            neighboringFacets.reserve(neighboringCells.size());
             bool borderCase = false;
             double fullPartSolidAngle = 0.0;
             for(CellIndex ci : neighboringCells)
@@ -2915,15 +2917,8 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                     break;
                 }
                 {
-                    // Check status coherency with neighboors around the surface,
-                    // else we avoid to modify the status to ensure that we do not increase inconsitencies.
                     const Facet f(ci, localVertexIndex);
-                    const Facet fv = mirrorFacet(f);
-                    if(isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[ci] != _cellIsFull[fv.cellIndex])
-                    {
-                        borderCase = true;
-                        break;
-                    }
+                    neighboringFacets.push_back(f);
                 }
 
                 if (_cellIsFull[ci])
@@ -2957,6 +2952,24 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
             }
             if(!invert)
                 continue;
+
+            // Ensure that we do not increase inconsitencies (like holes).
+            // Check the status coherency with neighbor cells if we swap the cells status.
+            for(const Facet& f : neighboringFacets)
+            {
+                if(_cellIsFull[f.cellIndex] == invertFull)
+                {
+                    const Facet fv = mirrorFacet(f);
+                    if(isInvalidOrInfiniteCell(fv.cellIndex) || _cellIsFull[f.cellIndex] != _cellIsFull[fv.cellIndex])
+                    {
+                        borderCase = true;
+                        break;
+                    }
+                }
+            }
+            if(borderCase)
+                continue;
+
             // Invert some cells
             for(CellIndex ci : neighboringCells)
             {
