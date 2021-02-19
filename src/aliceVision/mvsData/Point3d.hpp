@@ -52,6 +52,30 @@ public:
         return *this;
     }
 
+    inline Point3d& operator+=(const Point3d& _p)
+    {
+        x += _p.x;
+        y += _p.y;
+        z += _p.z;
+        return *this;
+    }
+
+    inline Point3d& operator/=(const Point3d& _p)
+    {
+        x /= _p.x;
+        y /= _p.y;
+        z /= _p.z;
+        return *this;
+    }
+
+    inline Point3d& operator/=(double v)
+    {
+        x /= v;
+        y /= v;
+        z /= v;
+        return *this;
+    }
+
     inline bool operator==(const Point3d& param)
     {
         return (x == param.x) && (y == param.y) && (z == param.z);
