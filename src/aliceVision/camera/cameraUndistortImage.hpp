@@ -29,7 +29,7 @@ void UndistortImage(
   image::Image<T>& image_ud,
   T fillcolor,
   bool correctPrincipalPoint = false, 
-  oiio::ROI & roi = oiio::ROI())
+  const oiio::ROI & roi = oiio::ROI())
 {
   if (!intrinsicPtr->hasDistortion()) // no distortion, perform a direct copy
   {
