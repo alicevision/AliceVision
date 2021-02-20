@@ -9,6 +9,7 @@
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 
 #include "aliceVision/image/Image.hpp"
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <opencv2/core.hpp>
 
@@ -34,9 +35,9 @@ template <typename VecType, typename ValueType>
 inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor& color, float factor = 1.f,
                              float delta = 0.f)
 {
-    mat.at<VecType>(i, j)[0] = (ValueType) (color.b() * factor + delta);
-    mat.at<VecType>(i, j)[1] = (ValueType) (color.g() * factor + delta);
-    mat.at<VecType>(i, j)[2] = (ValueType) (color.r() * factor + delta);
+    mat.at<VecType>(i, j)[0] = (ValueType) clamp(color.b() * factor + delta, 0.f, 255.f);
+    mat.at<VecType>(i, j)[1] = (ValueType) clamp(color.g() * factor + delta, 0.f, 255.f);
+    mat.at<VecType>(i, j)[2] = (ValueType) clamp(color.r() * factor + delta, 0.f, 255.f);
 }
 
 

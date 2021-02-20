@@ -55,19 +55,6 @@ const std::vector< cv::Point2f > MACBETH_CCHART_CELLS_POS_CENTER =  {
 
 const float MACBETH_CCHART_CELLS_SIZE = 250.f * .5f;
 
-/*const std::vector< cv::Point2f > MACBETH_CCHART_CORNERS_POS = {
-    {0.00, 0.00}, {16.75, 0.00}, {16.75, 11.25}, {0.00, 11.25},
-};
-
-const std::vector< cv::Point2f > MACBETH_CCHART_CELLS_POS_CENTER =  {
-    {1.50f, 1.50f}, {4.25f, 1.50f}, {7.00f, 1.50f}, {9.75f, 1.50f}, {12.50f, 1.50f}, {15.25f, 1.50f},
-    {1.50f, 4.25f}, {4.25f, 4.25f}, {7.00f, 4.25f}, {9.75f, 4.25f}, {12.50f, 4.25f}, {15.25f, 4.25f},
-    {1.50f, 7.00f}, {4.25f, 7.00f}, {7.00f, 7.00f}, {9.75f, 7.00f}, {12.50f, 7.00f}, {15.25f, 7.00f},
-    {1.50f, 9.75f}, {4.25f, 9.75f}, {7.00f, 9.75f}, {9.75f, 9.75f}, {12.50f, 9.75f}, {15.25f, 9.75f}
-};
-
-const float MACBETH_CCHART_CELLS_SIZE = 2.50f * .5f;*/
-
 struct Quad
 {
     std::vector<float> xCoords;
@@ -385,7 +372,7 @@ int aliceVision_main(int argc, char** argv)
                 std::to_string(view.getViewId()),
                 view.getMetadataBodySerialNumber(),
                 view.getMetadataLensSerialNumber() };
-            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::SRGB;
             imgOpt.readOptions.applyWhiteBalance = view.getApplyWhiteBalance();
             detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
@@ -427,13 +414,13 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO(size << " images found.");
         }
 
-        int i = 0;
+        int counter = 0;
         for(const std::string& imgSrcPath : filesStrPaths)
         {
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
+            ALICEVISION_LOG_INFO(++counter << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
             ImageOptions imgOpt;
             imgOpt.imgFsPath = imgSrcPath;
-            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::SRGB;
             detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
 
