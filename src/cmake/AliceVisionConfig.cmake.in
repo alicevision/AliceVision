@@ -62,6 +62,13 @@ if(ALICEVISION_HAVE_POPSIFT)
   find_dependency(PopSift 1.0.0)
 endif()
 
+# whether it is built with OpenGV
+set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
+
+if(ALICEVISION_HAVE_OPENGV)
+  find_dependency(opengv 1.0)
+endif()
+
 # whether it is built with OpenCV
 set(ALICEVISION_HAVE_OPENCV @ALICEVISION_HAVE_OPENCV@)
 
