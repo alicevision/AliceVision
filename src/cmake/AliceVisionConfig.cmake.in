@@ -55,7 +55,7 @@ if(ALICEVISION_HAVE_CCTAG)
   find_dependency(CCTag 1.0.0)
 endif()
 
-# whether it is built with CCTags
+# whether it is built with Popsift
 set(ALICEVISION_HAVE_POPSIFT @ALICEVISION_HAVE_POPSIFT@)
 
 if(ALICEVISION_HAVE_POPSIFT)
