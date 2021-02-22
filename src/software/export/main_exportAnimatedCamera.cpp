@@ -220,51 +220,44 @@ int aliceVision_main(int argc, char** argv)
       {
           const camera::IntrinsicBase& intrinsic = *(intrinsicPair.second);
           image::Image<image::RGBfColor> image_dist;
-          // Init image as black (no distorsion)
+          // Init image as black (no distortion)
           image_dist.resize(int(intrinsic.w()), int(intrinsic.h()), true, image::FBLACK);
 
-          if(!intrinsic.hasDistortion()) // no distortion, perform a direct copy
+          // Compute UV vertors for distortion
+          const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
+          Vec2 ppCorrection(0.0, 0.0);
+
+          if((camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType()) && correctPrincipalPoint)// correct principal point
           {
-              // nothing to do image is black
+              const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPair.second.get());
+              ppCorrection = pinholePtr->getPrincipalPoint() - center;
           }
-          else // There is distortion
-          {
-              const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
-              Vec2 ppCorrection(0.0, 0.0);
+          ALICEVISION_LOG_DEBUG("ppCorrection:" + std::to_string(ppCorrection[0]) + ";" +std::to_string(ppCorrection[1]));
 
-              if((camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType()) && correctPrincipalPoint)// correct principal point
-              {
-                  const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPair.second.get());
-                  ppCorrection = pinholePtr->getPrincipalPoint() - center;
-              }
-              ALICEVISION_LOG_DEBUG("ppCorrection:" + std::to_string(ppCorrection[0]) + ";" +std::to_string(ppCorrection[1]));
-
-              // flip and normalize for Nuke
+          // flip and normalize for Nuke
 #pragma omp parallel for
-              for(int j = 0; j < int(intrinsic.h()); ++j)
-                  for(int i = 0; i < int(intrinsic.w()); ++i)
-                  {
-                      const Vec2 undisto_pix(i, j);
-                      // compute coordinates with distortion
-                      const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
-
-                      image_dist(j, i).r() = (disto_pix[0]) / (intrinsic.w() - 1);
-                      image_dist(j, i).g() = (intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1);
-                  }
-
-              if(exportUVMaps)
+          for(int y = 0; y < int(intrinsic.h()); ++y)
+          {
+              for(int x = 0; x < int(intrinsic.w()); ++x)
               {
-                  const std::string dstImage =
-                      (undistortedImagesFolderPath / ("Distortion_UVMap_" + std::to_string(intrinsicPair.first) + "." +
-                                                      image::EImageFileType_enumToString(outputMapFileType))).string();
-                  image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+                  const Vec2 undisto_pix(x, y);
+                  // compute coordinates with distortion
+                  const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
+
+                  image_dist(y, x).r() = (disto_pix[0]) / (intrinsic.w() - 1);
+                  image_dist(y, x).g() = (intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1);
               }
+          }
+
+          if(exportUVMaps)
+          {
+              const std::string dstImage =
+                  (undistortedImagesFolderPath / ("Distortion_UVMap_" + std::to_string(intrinsicPair.first) + "." +
+                                                  image::EImageFileType_enumToString(outputMapFileType))).string();
+              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
           }
       }
   }
-  
-  
-      
 
   ALICEVISION_LOG_INFO("Build animated camera(s)...");
 
