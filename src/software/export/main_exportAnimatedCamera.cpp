@@ -34,7 +34,7 @@ namespace fs = boost::filesystem;
 
 
 
-oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic, bool &correctPrincipalPoint)
+oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincipalPoint)
                
 {
     std::vector<Vec2> pointToBeChecked;
@@ -44,54 +44,56 @@ oiio::ROI computeRoi(const camera::IntrinsicBase* intrinsic, bool &correctPrinci
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, intrinsic->h() - 1));
     const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
     Vec2 ppCorrection(0, 0);
-    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType() && correctPrincipalPoint)
+    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType())
     {
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
         ppCorrection = pinholePtr->getPrincipalPoint() - center;
     }
-    Vec2 opticalCenter = center + ppCorrection;
+    const Vec2 opticalCenter = center + ppCorrection;
     pointToBeChecked.push_back(Vec2(opticalCenter[0], 0));
     pointToBeChecked.push_back(Vec2(opticalCenter[0], intrinsic->h() - 1));
     pointToBeChecked.push_back(Vec2(0, opticalCenter[1]));
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, opticalCenter[1]));
 
     std::vector<Vec2> maxDistortionVector;
-    for(Vec2 n : pointToBeChecked)
+    for(const Vec2& n: pointToBeChecked)
     {
-        maxDistortionVector.push_back(intrinsic->get_ud_pixel(n));
+      // Undistort pixel without principal point correction
+      const Vec2 n_undist = intrinsic->get_ud_pixel(n);
+      maxDistortionVector.push_back(n_undist);
     }
 
     std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
               [](Vec2 a, Vec2 b) { return a[0] > b[0]; });
-    int xRoiMax = std::round(maxDistortionVector.front()[0]);
-    int xRoiMin = std::round(maxDistortionVector.back()[0]);
+    const int xRoiMax = std::round(maxDistortionVector.front()[0]);
+    const int xRoiMin = std::round(maxDistortionVector.back()[0]);
     std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
               [](Vec2 a, Vec2 b) { return a[1] > b[1]; });
-    int yRoiMax = std::round(maxDistortionVector.front()[1]);
-    int yRoiMin = std::round(maxDistortionVector.back()[1]);
-    
-    oiio::ROI roi(xRoiMin - ppCorrection(0), xRoiMax + 1 - ppCorrection(0), yRoiMin - ppCorrection(1),
-                  yRoiMax+1 - ppCorrection(1));
-    return roi;
+    const int yRoiMax = std::round(maxDistortionVector.front()[1]);
+    const int yRoiMin = std::round(maxDistortionVector.back()[1]);
+
+    oiio::ROI rod(xRoiMin, xRoiMax + 1,
+                  yRoiMin, yRoiMax + 1);
+
+    if(correctPrincipalPoint)
+    {
+      rod.xbegin -= ppCorrection(0);
+      rod.xend -= ppCorrection(0);
+      rod.ybegin -= ppCorrection(1);
+      rod.yend -= ppCorrection(1);
+    }
+    return rod;
 }
 
-oiio::ROI computeRoiForNuke(const camera::IntrinsicBase* intrinsic, oiio::ROI& roi, bool &correctPrincipalPoint)
+oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::ROI& rod)
 {
-    const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
-    Vec2 ppCorrection(0, 0);
-    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType() && correctPrincipalPoint)
-    {
-        const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
-        ppCorrection = pinholePtr->getPrincipalPoint() - center;
-    }
-   
-    int xOffset = roi.xbegin;
-    int correctionPP = -2*int(ppCorrection[1]);
-    int yOffset = (intrinsic->h() - roi.yend) + correctionPP;
-    oiio::ROI roiNuke = oiio::ROI(-xOffset, intrinsic->w() - xOffset, -yOffset, intrinsic->h() - yOffset);
-    ALICEVISION_LOG_DEBUG("roiNuke:" + std::to_string(roiNuke.xbegin) + ";" + std::to_string(roiNuke.xend) + ";" +
-                          std::to_string(roiNuke.ybegin) + ";" + std::to_string(roiNuke.yend));
-    return roiNuke;
+    const int xOffset = rod.xbegin;
+    const int yOffset = rod.ybegin; // (intrinsic->h() - rod.yend);
+    const oiio::ROI roi(-xOffset, intrinsic->w() - xOffset,
+                        -yOffset, intrinsic->h() - yOffset);
+
+    ALICEVISION_LOG_DEBUG("roi:" << roi.xbegin << ";" << roi.xend << ";" << roi.ybegin << ";" << roi.yend);
+    return roi;
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -296,29 +298,29 @@ int aliceVision_main(int argc, char** argv)
         {
             // build a ROI
             IndexT key = view.getIntrinsicId();
-            oiio::ROI roi;
+            oiio::ROI rod;
             const camera::IntrinsicBase &intrinsic = (*cam);
             if(roiForIntrinsic.find(key) == roiForIntrinsic.end())
             {
-                roi = computeRoi(cam, correctPrincipalPoint);
-                roiForIntrinsic[key] = roi;
+                rod = computeRod(cam, correctPrincipalPoint);
+                roiForIntrinsic[key] = rod;
             }
             else
             {
-                roi = roiForIntrinsic[key];
+                rod = roiForIntrinsic[key];
             }
 
-            ALICEVISION_LOG_DEBUG("roi:" + std::to_string(roi.xbegin) + ";" + std::to_string(roi.xend) + ";" +
-                                  std::to_string(roi.ybegin) + ";" + std::to_string(roi.yend));
-            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint,roi); 
-            oiio::ROI roiNuke = computeRoiForNuke(cam, roi, correctPrincipalPoint);
-            writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(),roiNuke);
+            ALICEVISION_LOG_DEBUG("rod:" + std::to_string(rod.xbegin) + ";" + std::to_string(rod.xend) + ";" +
+                                  std::to_string(rod.ybegin) + ";" + std::to_string(rod.yend));
+            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint, rod);
+            oiio::ROI roi = convertRodToRoi(cam, rod);
+            writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
         }
         else
         {
-            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint); 
-            image::writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, metadata); 
-        }   
+            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint);
+            image::writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+        }
       }
       else // (no distortion)
       {
