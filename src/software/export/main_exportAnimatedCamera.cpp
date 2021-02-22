@@ -130,7 +130,7 @@ int aliceVision_main(int argc, char** argv)
       "Export undistorted images for the animated camera(s).\n"
       "If false, animated camera(s) exported with original frame paths.")
     ("exportFullROD", po::value<bool>(&exportFullROD)->default_value(exportFullROD),
-      "Export undistorted images with full RoD.")
+      "Export undistorted images with the full Region of Definition (RoD). Only supported by the EXR image file format.")
     ("exportUVMaps", po::value<bool>(&exportUVMaps)->default_value(exportUVMaps),
       "Export UV Maps for Nuke in exr format ")
     ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
@@ -176,8 +176,18 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
+  // set output file type
+  const image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+  const image::EImageFileType outputMapFileType = image::EImageFileType_stringToEnum(outMapFileTypeName);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
+
+  if(exportFullROD && outputFileType != image::EImageFileType::EXR)
+  {
+    ALICEVISION_LOG_ERROR("Export full RoD (Region Of Definition) is only possible in EXR file format and not in '" << outputFileType << "'.");
+    return EXIT_FAILURE;
+  }
 
   // load SfMData files
   sfmData::SfMData sfmData;
@@ -194,12 +204,8 @@ int aliceVision_main(int argc, char** argv)
   }
   system::Timer timer;
 
-  // set output file type
-  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
-  image::EImageFileType outputMapFileType = image::EImageFileType_stringToEnum(outMapFileTypeName);
-
   const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
-  bool writeUndistordedResult = undistortedImages || exportUVMaps;
+  const bool writeUndistordedResult = undistortedImages || exportUVMaps;
 
   if(writeUndistordedResult && !fs::exists(undistortedImagesFolderPath))
     fs::create_directory(undistortedImagesFolderPath);
@@ -214,6 +220,7 @@ int aliceVision_main(int argc, char** argv)
       {
           const camera::IntrinsicBase& intrinsic = *(intrinsicPair.second);
           image::Image<image::RGBfColor> image_dist;
+          // Init image as black (no distorsion)
           image_dist.resize(int(intrinsic.w()), int(intrinsic.h()), true, image::FBLACK);
 
           if(!intrinsic.hasDistortion()) // no distortion, perform a direct copy
@@ -294,10 +301,10 @@ int aliceVision_main(int argc, char** argv)
       if(cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
-        if(outputFileType == image::EImageFileType::EXR && exportFullROD)
+        if(exportFullROD)
         {
             // build a ROI
-            IndexT key = view.getIntrinsicId();
+            const IndexT key = view.getIntrinsicId();
             oiio::ROI rod;
             const camera::IntrinsicBase &intrinsic = (*cam);
             if(roiForIntrinsic.find(key) == roiForIntrinsic.end())
@@ -313,7 +320,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_DEBUG("rod:" + std::to_string(rod.xbegin) + ";" + std::to_string(rod.xend) + ";" +
                                   std::to_string(rod.ybegin) + ";" + std::to_string(rod.yend));
             camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint, rod);
-            oiio::ROI roi = convertRodToRoi(cam, rod);
+            const oiio::ROI roi = convertRodToRoi(cam, rod);
             writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
         }
         else
