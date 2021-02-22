@@ -249,13 +249,10 @@ int aliceVision_main(int argc, char** argv)
               }
           }
 
-          if(exportUVMaps)
-          {
-              const std::string dstImage =
-                  (undistortedImagesFolderPath / ("Distortion_UVMap_" + std::to_string(intrinsicPair.first) + "." +
-                                                  image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
-          }
+          const std::string dstImage =
+              (undistortedImagesFolderPath / ("Distortion_UVMap_" + std::to_string(intrinsicPair.first) + "." +
+                                              image::EImageFileType_enumToString(outputMapFileType))).string();
+          image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
       }
   }
 
