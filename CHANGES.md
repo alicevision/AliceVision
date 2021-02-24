@@ -1,5 +1,46 @@
 # AliceVision Changelog
 
+## Release 2.4.0 (2021/02/26)
+
+### Release Notes Summary
+
+ - [panorama] PanoramaCompositing: new algorithm with tiles to deal with large panoramas [PR](https://github.com/alicevision/AliceVision/pull/947)
+ - [feature] Improve robustness of sift features extraction on challenging images: update default values, add new filtering and add dsp-sift variation [PR](https://github.com/alicevision/AliceVision/pull/935)
+ - [fuseCut] Reduce mesh artefacts from numerical issues by improving the tetrahedral intersection [PR](https://github.com/alicevision/AliceVision/pull/848) [PR](https://github.com/alicevision/AliceVision/pull/972) [PR](https://github.com/alicevision/AliceVision/pull/984)
+ - [fuseCut] Improve mesh quality with a new graphcut post-processing: cells status filtering by solid angle ratio [PR](https://github.com/alicevision/AliceVision/pull/977)
+ - [software] Texturing: improve memory estimation [PR](https://github.com/alicevision/AliceVision/pull/982)
+ - [panorama] New options to init with known poses [PR](https://github.com/alicevision/AliceVision/pull/964)
+
+### Other Improvements and Bug Fixes
+
+ - [fuseCut] added a parameter to filter points based on number of observations [PR](https://github.com/alicevision/AliceVision/pull/885)
+ - [hdr] minor code cleanup in sampling [PR](https://github.com/alicevision/AliceVision/pull/976)
+ - [matching] implement cross check for feature matching [PR](https://github.com/alicevision/AliceVision/pull/980)
+ - [meshing] Digging using shape from silhouette principle [PR](https://github.com/alicevision/AliceVision/pull/971)
+ - [meshing] More control on graph cut post processing [PR](https://github.com/alicevision/AliceVision/pull/987)
+ - [software] Add mesh utilities softwares [PR](https://github.com/alicevision/AliceVision/pull/969)
+ - [software] MeshFiltering: smoothing and filtering options on subset of the geometry [PR](https://github.com/alicevision/AliceVision/pull/970)
+ - [software] sfmTransform: new from_center_camera [PR](https://github.com/alicevision/AliceVision/pull/986)
+ - [software] CameraInit: allow to assign the same pose to multiple images [PR](https://github.com/alicevision/AliceVision/pull/951)
+ - [software] ExportAnimatedCamera: Export distortion map in exr format [PR](https://github.com/alicevision/AliceVision/pull/963)
+ - [depthMap] bug fix on image export if image already computed [PR](https://github.com/alicevision/AliceVision/pull/944)
+ - [texturing] segfault fix [PR](https://github.com/alicevision/AliceVision/pull/923)
+ - [image] Remove reference to potentially destroyed object [PR](https://github.com/alicevision/AliceVision/pull/937)
+ - [sfmData] Support for unavailable folder in sfmData [PR](https://github.com/alicevision/AliceVision/pull/765)
+ - Move PRNG initialization out of library [PR](https://github.com/alicevision/AliceVision/pull/934)
+ - White balance [PR](https://github.com/alicevision/AliceVision/pull/932)
+ - Preliminary work for lighting estimation from normal maps and albedo [PR](https://github.com/alicevision/AliceVision/pull/797)
+
+### Build, CI, Documentation
+
+ - [cmake] Update deps [PR](https://github.com/alicevision/AliceVision/pull/985) [PR](https://github.com/alicevision/AliceVision/pull/978)
+ - [cmake] fix sm86 only for cuda >= 11.1 [PR](https://github.com/alicevision/AliceVision/pull/925)
+ - [cmake] Use modern cmake to manage OpenGV [PR](https://github.com/alicevision/AliceVision/pull/994)
+ - [cmake] update flags for Intel i9-10900K [PR](https://github.com/alicevision/AliceVision/pull/993)
+ - [ci] speedup functional tests [PR](https://github.com/alicevision/AliceVision/pull/958)
+ - [sensorDB] Many updates to cameraSensors.db
+
+
 ## Release 2.3.1 (2020.10.14)
 
  - [software] FeatureExtraction: minor update to SIFT memory estimation [PR](https://github.com/alicevision/AliceVision/pull/917)
