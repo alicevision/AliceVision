@@ -14,6 +14,7 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <memory>
 
@@ -27,7 +28,8 @@ void UndistortImage(
   const camera::IntrinsicBase* intrinsicPtr,
   image::Image<T>& image_ud,
   T fillcolor,
-  bool correctPrincipalPoint = false)
+  bool correctPrincipalPoint = false, 
+  const oiio::ROI & roi = oiio::ROI())
 {
   if (!intrinsicPtr->hasDistortion()) // no distortion, perform a direct copy
   {
@@ -46,23 +48,35 @@ void UndistortImage(
         ppCorrection = pinholePtr->getPrincipalPoint() - center;
       }
     }
+    
+    int widthRoi = imageIn.Width();
+    int heightRoi = imageIn.Height();
+    int xOffset = 0;
+    int yOffset = 0;
+    if(roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
 
-    image_ud.resize(imageIn.Width(), imageIn.Height(), true, fillcolor);
+    image_ud.resize(widthRoi, heightRoi, true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
-
+    
+    
     #pragma omp parallel for
-    for (int j = 0; j < imageIn.Height(); ++j)
-      for (int i = 0; i < imageIn.Width(); ++i)
-      {
-        const Vec2 undisto_pix(i,j);
-
-        // compute coordinates with distortion
-        const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
-
-        // pick pixel if it is in the image domain
-        if ( imageIn.Contains(disto_pix(1), disto_pix(0)) )
-          image_ud( j, i ) = sampler(imageIn, disto_pix(1), disto_pix(0));
-      }
+    for(int j = 0; j < heightRoi; ++j)
+        for(int i = 0; i < widthRoi; ++i)
+        {       
+            const Vec2 undisto_pix(i + xOffset, j + yOffset); 
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
+           
+            // pick pixel if it is in the image domain
+            if(imageIn.Contains(disto_pix(1), disto_pix(0)))
+                image_ud(j, i) = sampler(imageIn, disto_pix(1), disto_pix(0));
+        }
   }
 }
 
