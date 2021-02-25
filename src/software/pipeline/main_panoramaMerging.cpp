@@ -120,6 +120,8 @@ int aliceVision_main(int argc, char** argv)
     for (auto viewItem : sfmData.getViews())
     {
         IndexT viewId = viewItem.first;
+        if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+            continue;
 
         // Get composited image path
         const std::string imagePath = (fs::path(compositingFolder) / (std::to_string(viewId) + ".exr")).string();
