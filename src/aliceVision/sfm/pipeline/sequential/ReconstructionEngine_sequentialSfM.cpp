@@ -171,6 +171,7 @@ bool ReconstructionEngine_sequentialSfM::process()
   if(_sfmData.getPoses().empty())
   {
     std::vector<Pair> initialImagePairCandidates = getInitialImagePairsCandidates();
+
     createInitialReconstruction(initialImagePairCandidates);
   }
   else if(_sfmData.getLandmarks().empty())
@@ -450,6 +451,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
         continue;
 
       triangulate(prevReconstructedViews, newReconstructedViews);
+
       bundleAdjustment(newReconstructedViews);
 
       // scene logging for visual debug
@@ -869,7 +871,8 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
   const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
 
-#pragma omp parallel for
+//Not determinist ?!
+//#pragma omp parallel for schedule(static)
   for(int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<IndexT>::const_iterator iter = remainingViewIds.cbegin();
@@ -925,6 +928,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
       out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
     }
   }
+
 
   // Sort by the image score
   std::sort(out_connectedViews.begin(), out_connectedViews.end(),
@@ -1106,7 +1110,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   const std::pair<std::size_t, std::size_t> imageSizeI(camI->w(), camI->h());
   const std::pair<std::size_t, std::size_t> imageSizeJ(camJ->w(), camJ->h());
 
-  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, _randomNumberGenerator, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
+  std::mt19937 lrandom = _randomNumberGenerator;
+  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, lrandom, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
   {
     ALICEVISION_LOG_WARNING("Robust estimation failed to compute E for this pair");
     return false;
@@ -1127,12 +1132,14 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
     // triangulate
     const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
     const std::set<IndexT> newImageIndex = {static_cast<IndexT>(J)};
+
     triangulate_2Views(_sfmData, prevImageIndex, newImageIndex);
 
     // refine only structure & rotations & translations (keep intrinsic constant)
     {
       std::set<IndexT> newReconstructedViews = {static_cast<IndexT>(I), static_cast<IndexT>(J)};
       const bool isInitialPair = true;
+
       const bool success = bundleAdjustment(newReconstructedViews, isInitialPair);
 
       if(!success)
@@ -1240,7 +1247,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   boost::progress_display my_progress_bar( _pairwiseMatches->size(),
     std::cout,"Automatic selection of an initial pair:\n" );
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(static)
   for (int i = 0; i < _pairwiseMatches->size(); ++i)
   {
     matching::PairwiseMatches::const_iterator iter = _pairwiseMatches->begin();
@@ -1302,9 +1309,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     RelativePoseInfo relativePose_info;
     relativePose_info.initial_residual_tolerance = Square(4.0);
     
+    std::mt19937 lrandom = _randomNumberGenerator;
     const bool relativePoseSuccess = robustRelativePose(
           camI->K(), camJ->K(),
-          xI, xJ, _randomNumberGenerator, relativePose_info,
+          xI, xJ, lrandom, relativePose_info,
           std::make_pair(camI->w(), camI->h()), std::make_pair(camJ->w(), camJ->h()),
           1024);
     
@@ -1469,10 +1477,11 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   // C. Do the resectioning: compute the camera pose.
   ALICEVISION_LOG_INFO("[" << _sfmData.getValidViews().size()+1 << "/" << _sfmData.getViews().size() << "] Robust Resection of view: " << viewId);
 
+  std::mt19937 lrandom = _randomNumberGenerator;
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
       resectionData.optionalIntrinsic.get(),
-      _randomNumberGenerator,
+      lrandom,
       resectionData,
       resectionData.pose, 
       _params.localizerEstimator
@@ -1778,7 +1787,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      multiview::TriangulateNViewLORANSAC(features, Ps, _randomNumberGenerator, &X_homogeneous, &inliersIndex, 8.0);
+      std::mt19937 lrandom = _randomNumberGenerator;
+      multiview::TriangulateNViewLORANSAC(features, Ps, lrandom, &X_homogeneous, &inliersIndex, 8.0);
       
       homogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       
@@ -1843,7 +1853,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
   allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
   allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(static)
   for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
   {
     std::set<IndexT>::const_iterator iter = allReconstructedViews.begin();

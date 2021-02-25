@@ -293,7 +293,9 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   if(_ceresOptions.useParametersOrdering)
   {
     // copy ParameterBlockOrdering
-    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering(_linearSolverOrdering));
+
+    //Removed for deterministic behavior
+    //solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering(_linearSolverOrdering));
   }
 }
 
