@@ -267,11 +267,23 @@ int aliceVision_main(int argc, char* argv[])
     bool addLandmarksToTheDensePointCloud = false;
     bool saveRawDensePointCloud = false;
     bool colorizeOutput = false;
-    float forceTEdgeDelta = 0.1f;
+    bool voteFilteringForWeaklySupportedSurfaces = true;
+    int invertTetrahedronBasedOnNeighborsNbIterations = 10;
+    double minSolidAngleRatio = 0.2;
+    int nbSolidAngleFilteringIterations = 2;
     unsigned int seed = 0;
     BoundingBox boundingBox;
 
     fuseCut::FuseParams fuseParams;
+
+    int helperPointsGridSize = 10;
+    int densifyNbFront = 0;
+    int densifyNbBack = 0;
+    double densifyScale = 1.0;
+    double nPixelSizeBehind = 4.0;
+    double fullWeight = 1.0;
+    bool exportDebugTetrahedralization = false;
+    int maxNbConnectedHelperPoints = 50;
 
     po::options_description allParams("AliceVision meshing");
 
@@ -340,12 +352,38 @@ int aliceVision_main(int argc, char* argv[])
             "minAngleThreshold")
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
             "refineFuse")
+        ("helperPointsGridSize", po::value<int>(&helperPointsGridSize)->default_value(helperPointsGridSize),
+            "Helper points grid size.")
+        ("densifyNbFront", po::value<int>(&densifyNbFront)->default_value(densifyNbFront),
+            "Number of points in front of the vertices to densify the scene.")
+        ("densifyNbBack", po::value<int>(&densifyNbBack)->default_value(densifyNbBack),
+            "Number of points behind the vertices to densify the scene.")
+        ("densifyScale", po::value<double>(&densifyScale)->default_value(densifyScale),
+            "Scale between points used to densify the scene.")
+        ("maskHelperPointsWeight", po::value<float>(&fuseParams.maskHelperPointsWeight)->default_value(fuseParams.maskHelperPointsWeight),
+            "Mask helper points weight. Zero to disable it.")
+        ("maskBorderSize", po::value<int>(&fuseParams.maskBorderSize)->default_value(fuseParams.maskBorderSize),
+            "How many pixels on mask borders? 1 by default.")
+        ("nPixelSizeBehind", po::value<double>(&nPixelSizeBehind)->default_value(nPixelSizeBehind),
+            "Number of pixel size units to vote behind the vertex with FULL status.")
+        ("fullWeight", po::value<double>(&fullWeight)->default_value(fullWeight),
+            "Weighting of the FULL cells.")
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
             "Save dense point cloud before cut and filtering.")
-        ("forceTEdgeDelta", po::value<float>(&forceTEdgeDelta)->default_value(forceTEdgeDelta),
-            "0 to disable force T edge in graphcut. Threshold for emptiness/fullness variation.")
+        ("voteFilteringForWeaklySupportedSurfaces", po::value<bool>(&voteFilteringForWeaklySupportedSurfaces)->default_value(voteFilteringForWeaklySupportedSurfaces),
+            "Improve support of weakly supported surfaces with a tetrahedra fullness score filtering.")
+        ("invertTetrahedronBasedOnNeighborsNbIterations", po::value<int>(&invertTetrahedronBasedOnNeighborsNbIterations)->default_value(invertTetrahedronBasedOnNeighborsNbIterations),
+            "Invert cells status around surface to improve smoothness.")
+        ("minSolidAngleRatio", po::value<double>(&minSolidAngleRatio)->default_value(minSolidAngleRatio),
+            "Filter cells status on surface around vertices to improve smoothness using solid angle ratio between full/empty parts.")
+        ("nbSolidAngleFilteringIterations", po::value<int>(&nbSolidAngleFilteringIterations)->default_value(nbSolidAngleFilteringIterations),
+            "Number of iterations to filter the status cells based on solid angle ratio.")
+        ("maxNbConnectedHelperPoints", po::value<int>(&maxNbConnectedHelperPoints)->default_value(maxNbConnectedHelperPoints),
+            "Maximum number of connected helper points before we remove them.")
+        ("exportDebugTetrahedralization", po::value<bool>(&exportDebugTetrahedralization)->default_value(exportDebugTetrahedralization),
+            "Export debug cells score as tetrahedral mesh. WARNING: could create huge meshes, only use on very small datasets.")        
         ("seed", po::value<unsigned int>(&seed)->default_value(seed),
-         "Seed used in random processes. (0 to use a random seed)."); 
+            "Seed used in random processes. (0 to use a random seed).");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -417,8 +455,18 @@ int aliceVision_main(int argc, char* argv[])
     mvsUtils::MultiViewParams mp(sfmData, "", "", depthMapsFolder, meshingFromDepthMaps);
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
-    mp.userParams.put("delaunaycut.forceTEdgeDelta", forceTEdgeDelta);
+    mp.userParams.put("LargeScale.helperPointsGridSize", helperPointsGridSize);
+    mp.userParams.put("LargeScale.densifyNbFront", densifyNbFront);
+    mp.userParams.put("LargeScale.densifyNbBack", densifyNbBack);
+    mp.userParams.put("LargeScale.densifyScale", densifyScale);
+
     mp.userParams.put("delaunaycut.seed", seed);
+    mp.userParams.put("delaunaycut.nPixelSizeBehind", nPixelSizeBehind);
+    mp.userParams.put("delaunaycut.fullWeight", fullWeight);
+    mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", voteFilteringForWeaklySupportedSurfaces);
+    mp.userParams.put("hallucinationsFiltering.invertTetrahedronBasedOnNeighborsNbIterations", invertTetrahedronBasedOnNeighborsNbIterations);
+    mp.userParams.put("hallucinationsFiltering.minSolidAngleRatio", minSolidAngleRatio);
+    mp.userParams.put("hallucinationsFiltering.nbSolidAngleFilteringIterations", nbSolidAngleFilteringIterations);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
@@ -455,10 +503,18 @@ int aliceVision_main(int argc, char* argv[])
 
                     if (boundingBox.isInitialized())
                         boundingBox.toHexahedron(&hexah[0]);
-                    else if(meshingFromDepthMaps && !estimateSpaceFromSfM)
+                    else if(meshingFromDepthMaps && (!estimateSpaceFromSfM || sfmData.getLandmarks().empty()))
                       fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
                     else
                       fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
+
+                    {
+                        const double length = hexah[0].x - hexah[1].x;
+                        const double width = hexah[0].y - hexah[3].y;
+                        const double height = hexah[0].z - hexah[4].z;
+
+                        ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width << ", height: " << height);
+                    }
 
                     StaticVector<int> cams;
                     if(meshingFromDepthMaps)
@@ -490,9 +546,13 @@ int aliceVision_main(int argc, char* argv[])
                       sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
-                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false);
-                    delaunayGC.graphCutPostProcessing();
-                    mesh = delaunayGC.createMesh();
+                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string() + "/",
+                                              outDirectory.string() + "/SpaceCamsTracks/", false,
+                                              exportDebugTetrahedralization);
+
+                    delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string()+"/");
+
+                    mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
                     delaunayGC.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, &hexah[0]);
 

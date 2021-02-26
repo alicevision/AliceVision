@@ -47,7 +47,7 @@ void computeRotCS(Point3d* xax, Point3d* yax, const Point3d* n)
     *yax = cross(*n, *xax);
 }
 
-bool lineLineIntersect(float* k, float* l, Point3d* llis, Point3d* lli1, Point3d* lli2, const Point3d& p1,
+bool lineLineIntersect(double* k, double* l, Point3d* llis, Point3d* lli1, Point3d* lli2, const Point3d& p1,
                        const Point3d& p2, const Point3d& p3, const Point3d& p4)
 {
     /*
@@ -68,7 +68,7 @@ bool lineLineIntersect(float* k, float* l, Point3d* llis, Point3d* lli1, Point3d
     %   (csd@cmu.edu)
     */
 
-    float d1343, d4321, d1321, d4343, d2121, denom, numer, p13[3], p43[3], p21[3], pa[3], pb[3], muab[2];
+    double d1343, d4321, d1321, d4343, d2121, denom, numer, p13[3], p43[3], p21[3], pa[3], pb[3], muab[2];
 
     p13[0] = p1.x - p3.x;
     p13[1] = p1.y - p3.y;
@@ -139,7 +139,7 @@ bool lineLineIntersect(float* k, float* l, Point3d* llis, Point3d* lli1, Point3d
 
 bool lineLineIntersect(Point3d& out, const Point3d& p1, const Point3d& v1, const Point3d& p2, const Point3d& v2)
 {
-    float k, l;
+    double k, l;
     Point3d lli1, lli2;
     Point3d p1v1 = p1 + v1;
     Point3d p2v2 = p2 + v2;
@@ -149,44 +149,44 @@ bool lineLineIntersect(Point3d& out, const Point3d& p1, const Point3d& v1, const
 Point3d linePlaneIntersect(const Point3d& linePoint, const Point3d& lineVect, const Point3d& planePoint,
                            const Point3d& planeNormal)
 {
-    float planePoint_x = planePoint.x;
-    float planePoint_y = planePoint.y;
-    float planePoint_z = planePoint.z;
-    float planeNormal_x = planeNormal.x;
-    float planeNormal_y = planeNormal.y;
-    float planeNormal_z = planeNormal.z;
-    float linePoint_x = linePoint.x;
-    float linePoint_y = linePoint.y;
-    float linePoint_z = linePoint.z;
-    float lineVect_x = lineVect.x;
-    float lineVect_y = lineVect.y;
-    float lineVect_z = lineVect.z;
-    float k = ((planePoint_x * planeNormal_x + planePoint_y * planeNormal_y + planePoint_z * planeNormal_z) - (planeNormal_x * linePoint_x + planeNormal_y * linePoint_y + planeNormal_z * linePoint_z)) / (planeNormal_x * lineVect_x + planeNormal_y * lineVect_y + planeNormal_z * lineVect_z);
+    const double planePoint_x = planePoint.x;
+    const double planePoint_y = planePoint.y;
+    const double planePoint_z = planePoint.z;
+    const double planeNormal_x = planeNormal.x;
+    const double planeNormal_y = planeNormal.y;
+    const double planeNormal_z = planeNormal.z;
+    const double linePoint_x = linePoint.x;
+    const double linePoint_y = linePoint.y;
+    const double linePoint_z = linePoint.z;
+    const double lineVect_x = lineVect.x;
+    const double lineVect_y = lineVect.y;
+    const double lineVect_z = lineVect.z;
+    const double k = ((planePoint_x * planeNormal_x + planePoint_y * planeNormal_y + planePoint_z * planeNormal_z) - (planeNormal_x * linePoint_x + planeNormal_y * linePoint_y + planeNormal_z * linePoint_z)) / (planeNormal_x * lineVect_x + planeNormal_y * lineVect_y + planeNormal_z * lineVect_z);
     return linePoint + lineVect * k;
-    //---KP---float k = (dot(planePoint, planeNormal) - dot(planeNormal, linePoint)) / dot(planeNormal, lineVect);
+    //---KP---double k = (dot(planePoint, planeNormal) - dot(planeNormal, linePoint)) / dot(planeNormal, lineVect);
     //---KP---return linePoint + lineVect * k;
 }
 
 void linePlaneIntersect(Point3d* out, const Point3d* linePoint, const Point3d* lineVect, const Point3d* planePoint,
                         const Point3d* planeNormal)
 {
-    float planePoint_x = planePoint->x;
-    float planePoint_y = planePoint->y;
-    float planePoint_z = planePoint->z;
-    float planeNormal_x = planeNormal->x;
-    float planeNormal_y = planeNormal->y;
-    float planeNormal_z = planeNormal->z;
-    float linePoint_x = linePoint->x;
-    float linePoint_y = linePoint->y;
-    float linePoint_z = linePoint->z;
-    float lineVect_x = lineVect->x;
-    float lineVect_y = lineVect->y;
-    float lineVect_z = lineVect->z;
-    float k = ((planePoint_x * planeNormal_x + planePoint_y * planeNormal_y + planePoint_z * planeNormal_z) - (planeNormal_x * linePoint_x + planeNormal_y * linePoint_y + planeNormal_z * linePoint_z)) / (planeNormal_x * lineVect_x + planeNormal_y * lineVect_y + planeNormal_z * lineVect_z);
+    const double planePoint_x = planePoint->x;
+    const double planePoint_y = planePoint->y;
+    const double planePoint_z = planePoint->z;
+    const double planeNormal_x = planeNormal->x;
+    const double planeNormal_y = planeNormal->y;
+    const double planeNormal_z = planeNormal->z;
+    const double linePoint_x = linePoint->x;
+    const double linePoint_y = linePoint->y;
+    const double linePoint_z = linePoint->z;
+    const double lineVect_x = lineVect->x;
+    const double lineVect_y = lineVect->y;
+    const double lineVect_z = lineVect->z;
+    const double k = ((planePoint_x * planeNormal_x + planePoint_y * planeNormal_y + planePoint_z * planeNormal_z) - (planeNormal_x * linePoint_x + planeNormal_y * linePoint_y + planeNormal_z * linePoint_z)) / (planeNormal_x * lineVect_x + planeNormal_y * lineVect_y + planeNormal_z * lineVect_z);
     out->x = linePoint_x + (lineVect_x) * k;
     out->y = linePoint_y + (lineVect_y) * k;
     out->z = linePoint_z + (lineVect_z) * k;
-    //---KP---float k = (dot(*planePoint, *planeNormal) - dot(*planeNormal, *linePoint)) / dot(*planeNormal, *lineVect);
+    //---KP---double k = (dot(*planePoint, *planeNormal) - dot(*planeNormal, *linePoint)) / dot(*planeNormal, *lineVect);
     //---KP---*out = *linePoint + (*lineVect) * k;
 }
 
@@ -249,7 +249,7 @@ void rotPointAroundVect(double* out, const double* X, const double* vect, const 
     out[2] = z * sizeX;
 }
 
-void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, const float angle)
+void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, const double angle)
 {
     double o[3];
     double dX[3] = {(double)X->x, (double)X->y, (double)X->z};
@@ -263,66 +263,65 @@ void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, con
 Point2d getLineTriangleIntersectBarycCoords(Point3d* P, const Point3d* A, const Point3d* B, const Point3d* C,
                                             const Point3d* linePoint, const Point3d* lineVect)
 {
-    float A_x = A->x;
-    float A_y = A->y;
-    float A_z = A->z;
-    float linePoint_x = linePoint->x;
-    float linePoint_y = linePoint->y;
-    float linePoint_z = linePoint->z;
-    float lineVect_x = lineVect->x;
-    float lineVect_y = lineVect->y;
-    float lineVect_z = lineVect->z;
-    float v0_x = C->x - A_x;
-    float v0_y = C->y - A_y;
-    float v0_z = C->z - A_z;
-    float v1_x = B->x - A_x;
-    float v1_y = B->y - A_y;
-    float v1_z = B->z - A_z;
-    float _n_x = v0_y * v1_z - v0_z * v1_y;
-    float _n_y = v0_z * v1_x - v0_x * v1_z;
-    float _n_z = v0_x * v1_y - v0_y * v1_x;
-    float k = ((A_x * _n_x + A_y * _n_y + A_z * _n_z) - (_n_x * linePoint_x + _n_y * linePoint_y + _n_z * linePoint_z)) / (_n_x * lineVect_x + _n_y * lineVect_y + _n_z * lineVect_z);
-    float P_x = linePoint_x + lineVect_x * k;
-    float P_y = linePoint_y + lineVect_y * k;
-    float P_z = linePoint_z + lineVect_z * k;
+    // flat code instead of all functions calls to improve performances
+    const double A_x = A->x;
+    const double A_y = A->y;
+    const double A_z = A->z;
+    const double linePoint_x = linePoint->x;
+    const double linePoint_y = linePoint->y;
+    const double linePoint_z = linePoint->z;
+    const double lineVect_x = lineVect->x;
+    const double lineVect_y = lineVect->y;
+    const double lineVect_z = lineVect->z;
+    const double v0_x = C->x - A_x;
+    const double v0_y = C->y - A_y;
+    const double v0_z = C->z - A_z;
+    const double v1_x = B->x - A_x;
+    const double v1_y = B->y - A_y;
+    const double v1_z = B->z - A_z;
+    const double _n_x = v0_y * v1_z - v0_z * v1_y;
+    const double _n_y = v0_z * v1_x - v0_x * v1_z;
+    const double _n_z = v0_x * v1_y - v0_y * v1_x;
+    const double k = ((A_x * _n_x + A_y * _n_y + A_z * _n_z) - (_n_x * linePoint_x + _n_y * linePoint_y + _n_z * linePoint_z)) / (_n_x * lineVect_x + _n_y * lineVect_y + _n_z * lineVect_z);
+    const double P_x = linePoint_x + lineVect_x * k;
+    const double P_y = linePoint_y + lineVect_y * k;
+    const double P_z = linePoint_z + lineVect_z * k;
     // Compute vectors
-    float v2_x = P_x - A_x;
-    float v2_y = P_y - A_y;
-    float v2_z = P_z - A_z;
+    const double v2_x = P_x - A_x;
+    const double v2_y = P_y - A_y;
+    const double v2_z = P_z - A_z;
     // Compute dot products
-    float dot00 = (v0_x * v0_x + v0_y * v0_y + v0_z * v0_z);
-    float dot01 = (v0_x * v1_x + v0_y * v1_y + v0_z * v1_z);
-    float dot02 = (v0_x * v2_x + v0_y * v2_y + v0_z * v2_z);
-    float dot11 = (v1_x * v1_x + v1_y * v1_y + v1_z * v1_z);
-    float dot12 = (v1_x * v2_x + v1_y * v2_y + v1_z * v2_z);
+    const double dot00 = (v0_x * v0_x + v0_y * v0_y + v0_z * v0_z);
+    const double dot01 = (v0_x * v1_x + v0_y * v1_y + v0_z * v1_z);
+    const double dot02 = (v0_x * v2_x + v0_y * v2_y + v0_z * v2_z);
+    const double dot11 = (v1_x * v1_x + v1_y * v1_y + v1_z * v1_z);
+    const double dot12 = (v1_x * v2_x + v1_y * v2_y + v1_z * v2_z);
     // Compute barycentric coordinates
-    float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    const double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    const double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
     P->x = P_x;
     P->y = P_y;
     P->z = P_z;
 
-    //---KP---Point3d v0 = *C - *A;
-    //---KP---Point3d v1 = *B - *A;
-    //---KP---Point3d n = cross(v0.normalize(), v1.normalize()).normalize();
-    //---KP---linePlaneIntersect(P, linePoint, lineVect, A, &n);
-    //---KP---// Compute vectors
-    //---KP---Point3d v2 = *P - *A;
-    //---KP---// Compute dot products
-    //---KP---float dot00 = dot(v0, v0);
-    //---KP---float dot01 = dot(v0, v1);
-    //---KP---float dot02 = dot(v0, v2);
-    //---KP---float dot11 = dot(v1, v1);
-    //---KP---float dot12 = dot(v1, v2);
-    //---KP---// Compute barycentric coordinates
-    //---KP---float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    //---KP---float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    //---KP---float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-    // if ((u==0.0f)||(v==0.0f)||(u+v==1.0f)) {
-    //	printf("WARNNG : isLineInTriangle - is on border! \n");
-    //};
+/*
+    const Point3d v0 = *C - *A;
+    const Point3d v1 = *B - *A;
+    const Point3d n = cross(v0.normalize(), v1.normalize()).normalize();
+    linePlaneIntersect(P, linePoint, lineVect, A, &n);
+    // Compute vectors
+    const Point3d v2 = *P - *A;
+    // Compute dot products
+    const double dot00 = dot(v0, v0);
+    const double dot01 = dot(v0, v1);
+    const double dot02 = dot(v0, v2);
+    const double dot11 = dot(v1, v1);
+    const double dot12 = dot(v1, v2);
+    // Compute barycentric coordinates
+    const double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    const double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+*/
 
     // Check if point is in triangle
     return Point2d(u, v);
@@ -345,23 +344,23 @@ bool isLineSegmentInTriangle(Point3d& lpi, const Point3d& A, const Point3d& B, c
     Point3d lineVect = linePoint2 - linePoint1;
 
     // linePlaneIntersect(&P, linePoint, lineVect, A, &n);
-    float k = (dot(A, n) - dot(n, linePoint1)) / dot(n, lineVect);
+    const double k = (dot(A, n) - dot(n, linePoint1)) / dot(n, lineVect);
     lpi = linePoint1 + lineVect * k;
 
     // Compute vectors
-    Point3d v2 = lpi - A;
+    const Point3d v2 = lpi - A;
 
     // Compute dot products
-    float dot00 = dot(v0, v0);
-    float dot01 = dot(v0, v1);
-    float dot02 = dot(v0, v2);
-    float dot11 = dot(v1, v1);
-    float dot12 = dot(v1, v2);
+    const double dot00 = dot(v0, v0);
+    const double dot01 = dot(v0, v1);
+    const double dot02 = dot(v0, v2);
+    const double dot11 = dot(v1, v1);
+    const double dot12 = dot(v1, v2);
 
     // Compute barycentric coordinates
-    float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    const double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    const double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
     // Check if point is in triangle
     return (k >= 0.0) && (k <= 1.0) && (u > 0.0) && (v > 0.0) && (u + v < 1.0);
@@ -372,21 +371,21 @@ Point2d computeBarycentricCoordinates(const Point2d& A, const Point2d& B, const 
 {
     // http://www.blackpawn.com/texts/pointinpoly/default.html
 
-    Point2d v0 = C - A;
-    Point2d v1 = B - A;
-    Point2d v2 = P - A;
+    const Point2d v0 = C - A;
+    const Point2d v1 = B - A;
+    const Point2d v2 = P - A;
 
     // Compute dot products
-    float dot00 = dot(v0, v0);
-    float dot01 = dot(v0, v1);
-    float dot02 = dot(v0, v2);
-    float dot11 = dot(v1, v1);
-    float dot12 = dot(v1, v2);
+    const double dot00 = dot(v0, v0);
+    const double dot01 = dot(v0, v1);
+    const double dot02 = dot(v0, v2);
+    const double dot11 = dot(v1, v1);
+    const double dot12 = dot(v1, v2);
 
     // Compute barycentric coordinates
-    float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    const double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+    const double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
     return Point2d(u, v);
 }
@@ -405,18 +404,18 @@ bool isPointInTriangle(const Point2d& A, const Point2d& B, const Point2d& C, con
 
 bool lineSegmentsIntersect2DTest(const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D)
 {
-    float r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
+    const double r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
               ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
-    float s = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y)) /
+    const double s = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y)) /
               ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
     return ((r >= 0.0) && (r <= 1.0) && (s >= 0.0) && (s <= 1.0));
 }
 
 bool lineSegmentsIntersect2DTest(Point2d& S, const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D)
 {
-    float r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
+    const double r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
               ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
-    float s = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y)) /
+    const double s = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y)) /
               ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
     S = A + (B - A) * r;
     return ((r >= 0.0) && (r <= 1.0) && (s >= 0.0) && (s <= 1.0));

@@ -216,18 +216,30 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                              Vec3& out_t);
 
 /**
+ * @brief Retrieve the View Id from a string expression (integer with the view id or filename of the input image).
+ * @param[in] sfmData: sfm scene
+ * @param[in] camName: cameraName name of the reference picture (e.g. "cam_1.png")
+ */
+IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::string& camName);
+
+/**
+ * @brief Retrieve the id of the camera in the center of the reconstructed cameras.
+ */
+IndexT getCenterCameraView(const sfmData::SfMData& sfmData);
+
+/**
  * @brief Compute the new coordinate system in the given reconstruction so that the given camera is the
  * origin of the world coordinate system. If this camera (view) does not exist, the transformation
  * remains unchanged.
  *
  * @param[in] sfmData
- * @param[in] cameraName name of the reference picture (e.g. "cam_1.png")
+ * @param[in] viewId
  * @param[out] out_S scale
  * @param[out] out_R rotation
  * @param[out] out_t translation
  */
 void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
-                                                const std::string& cameraName,
+                                                const IndexT viewId,
                                                 double& out_S,
                                                 Mat3& out_R,
                                                 Vec3& out_t);

@@ -32,20 +32,20 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
 
     v = v.normalize();
 
-    float a = -v.y;
-    float b = v.x;
-    float c = -a * linePoint1.x - b * linePoint1.y;
+    double a = -v.y;
+    double b = v.x;
+    double c = -a * linePoint1.x - b * linePoint1.y;
 
     int intersections = 0;
-    float rw = (float)mp->getWidth(camId);
-    float rh = (float)mp->getHeight(camId);
+    double rw = (double)mp->getWidth(camId);
+    double rh = (double)mp->getHeight(camId);
 
     // ax + by + c = 0
 
     // right epip line intersection with the left side of the right image
     // a*0 + b*y + c = 0; y = -c / b;
-    float x = 0;
-    float y = -c / b;
+    double x = 0;
+    double y = -c / b;
     if((y >= 0) && (y < rh))
     {
         *pFrom = Point2d(x, y);
@@ -159,13 +159,13 @@ bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix
 {
     Point3d refvect = mp->iCamArr[refCam] * refpix;
     refvect = refvect.normalize();
-    Point3d refpoint = refvect + mp->CArr[refCam];
+    const Point3d refpoint = refvect + mp->CArr[refCam];
 
     Point3d tarvect = mp->iCamArr[tarCam] * tarpix;
     tarvect = tarvect.normalize();
-    Point3d tarpoint = tarvect + mp->CArr[tarCam];
+    const Point3d tarpoint = tarvect + mp->CArr[tarCam];
 
-    float k, l;
+    double k, l;
     Point3d lli1, lli2;
 
     return lineLineIntersect(&k, &l, &out, &lli1, &lli2, mp->CArr[refCam], refpoint, mp->CArr[tarCam], tarpoint);
@@ -223,25 +223,25 @@ std::string formatElapsedTime(long t1)
     return out;
 }
 
-bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
+bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, double minAng, double maxAng)
 {
-    float ps1 = mp->getCamPixelSize(p, rc);
-    float ps2 = mp->getCamPixelSize(p, tc);
-    float ang = angleBetwABandAC(p, mp->CArr[rc], mp->CArr[tc]);
+    const double ps1 = mp->getCamPixelSize(p, rc);
+    const double ps2 = mp->getCamPixelSize(p, tc);
+    const double ang = angleBetwABandAC(p, mp->CArr[rc], mp->CArr[tc]);
 
     return ((std::min(ps1, ps2) > std::max(ps1, ps2) * 0.8) && (ang >= minAng) && (ang <= maxAng));
 }
 
-bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
+bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, double minAng, double maxAng)
 {
     if(rc == tc)
     {
         return false;
     }
 
-    Point3d rn = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
-    Point3d tn = mp->iRArr[tc] * Point3d(0.0, 0.0, 1.0);
-    float a = angleBetwV1andV2(rn, tn);
+    const Point3d rn = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
+    const Point3d tn = mp->iRArr[tc] * Point3d(0.0, 0.0, 1.0);
+    const double a = angleBetwV1andV2(rn, tn);
 
     return ((a >= minAng) && (a <= maxAng));
 }
@@ -384,7 +384,7 @@ StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Po
     return out;
 }
 
-StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Point3d& linePoint2, Point3d hexah[8])
+StaticVector<Point3d>* lineSegmentHexahedronIntersection(const Point3d& linePoint1, const Point3d& linePoint2, const Point3d hexah[8])
 {
     Point3d tris[12][3];
     getHexahedronTriangles(tris, hexah);
@@ -410,7 +410,7 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Po
 void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc,
                                                      Point2d P[4], StaticVector<Point3d>& out)
 {
-    float maxd =
+    const double maxd =
         std::max(std::max((mp.CArr[rc] - A).size(), (mp.CArr[rc] - B).size()), (mp.CArr[rc] - C).size()) * 1000.0f;
 
     out.reserve(40);
@@ -470,8 +470,8 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     Point3d c = hexah[3];
     Point3d d = hexah[4];
     Point3d n = cross(a - b, b - c).normalize();
-    float d1 = orientedPointPlaneDistance(p, a, n);
-    float d2 = orientedPointPlaneDistance(d, a, n);
+    double d1 = orientedPointPlaneDistance(p, a, n);
+    double d2 = orientedPointPlaneDistance(d, a, n);
     if(d1 * d2 < 0.0)
         return false;
 

@@ -34,8 +34,9 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release \
       -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}" \
       -DALICEVISION_USE_ALEMBIC=ON -DMINIGLOG=ON -DALICEVISION_USE_CCTAG=ON -DALICEVISION_USE_APRILTAG=ON -DALICEVISION_USE_OPENCV=ON -DALICEVISION_USE_OPENGV=ON \
       -DALICEVISION_USE_POPSIFT=ON -DALICEVISION_USE_CUDA=ON -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF \
-      "${AV_DEV}" && \
-    make -j"$(nproc)" && \
+      "${AV_DEV}" || (cat "${AV_BUILD}/CMakeFiles/CMakeOutput.log" "${AV_BUILD}/CMakeFiles/CMakeError.log" && false)
+
+RUN make -j"$(nproc)" && \
     make install && \
     make bundle && \
     rm -rf "${AV_DEV}" "${AV_BUILD}" && \

@@ -1803,6 +1803,23 @@ void Mesh::letJustTringlesIdsInMesh(StaticVector<int>& trisIdsToStay)
     tris.swap(trisTmp);
 }
 
+void Mesh::letJustTringlesIdsInMesh(const StaticVectorBool& trisToStay)
+{
+    int nbTris = 0;
+    for(int i = 0; i < trisToStay.size(); ++i)
+        if(trisToStay[i])
+            ++nbTris;
+
+    StaticVector<Mesh::triangle> trisTmp;
+    trisTmp.reserve(nbTris);
+
+    for(int i = 0; i < trisToStay.size(); ++i)
+        if(trisToStay[i])
+            trisTmp.push_back(tris[i]);
+
+    tris.swap(trisTmp);
+}
+
 void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, const std::string tmpDir)
 {
     if(mp.verbose)
@@ -2037,23 +2054,46 @@ void Mesh::removeTrianglesOutsideHexahedron(Point3d* hexah)
     letJustTringlesIdsInMesh(trisIdsToStay);
 }
 
-void Mesh::filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor)
+void Mesh::filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor, const StaticVectorBool& trisToConsider, StaticVectorBool& trisToStay) const
 {
-    double averageEdgeLength = computeAverageEdgeLength();
-    double avelthr = averageEdgeLength * cutAverageEdgeLengthFactor;
+    ALICEVISION_LOG_INFO("Filtering large triangles.");
 
-    StaticVector<int> trisIdsToStay;
-    trisIdsToStay.reserve(tris.size());
+    const double averageEdgeLength = computeAverageEdgeLength();
+    const double avelthr = averageEdgeLength * cutAverageEdgeLengthFactor;
 
-    for(int i = 0; i < tris.size(); i++)
+    #pragma omp parallel for
+    for(int i = 0; i < tris.size(); ++i)
     {
-        double triMaxEdgelength = computeTriangleMaxEdgeLength(i);
-        if(triMaxEdgelength < avelthr)
+        if(trisToConsider.empty() || trisToConsider[i])
         {
-            trisIdsToStay.push_back(i);
+          const double triMaxEdgelength = computeTriangleMaxEdgeLength(i);
+
+          if(triMaxEdgelength >= avelthr)
+              trisToStay[i] = false;
         }
     }
-    letJustTringlesIdsInMesh(trisIdsToStay);
+
+    ALICEVISION_LOG_INFO("Filtering large triangles, done.");
+}
+
+void Mesh::filterTrianglesByRatio(double ratio, const StaticVectorBool& trisToConsider, StaticVectorBool& trisToStay) const
+{
+    ALICEVISION_LOG_INFO("Filtering triangles by ratio " << ratio << ".");
+
+    #pragma omp parallel for
+    for(int i = 0; i < tris.size(); ++i)
+    {
+        if(trisToConsider.empty() || trisToConsider[i])
+        {
+          const double minEdge = computeTriangleMinEdgeLength(i);
+          const double maxEdge = computeTriangleMaxEdgeLength(i);
+          
+          if((minEdge == 0) || ((maxEdge/minEdge) > ratio))
+              trisToStay[i] = false;
+        }
+    }
+
+    ALICEVISION_LOG_INFO("Filtering triangles by ratio, done.");
 }
 
 void Mesh::invertTriangleOrientations()
@@ -2509,6 +2549,232 @@ bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>
         return false;
     }
 
+    return true;
+}
+
+bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_ptsCanMove, bool invert) const
+{
+    using Edge = std::pair<int, int>;  // min vertex index, max vertex index
+ 
+    // qSort lambda for Edge structure
+    auto qSortCompareEdgeAsc = [] (const void* ia, const void* ib)
+    {
+        const Edge a = *(Edge*)ia;
+        const Edge b = *(Edge*)ib;
+
+        if(a.first < b.first)
+            return -1;
+        else if(a.first == b.first)
+            return (a.second < b.second) ? -1 : 1;
+        return 1;
+    };
+
+    ALICEVISION_LOG_INFO("Lock surface " << (invert? "inner part" : "boundaries") << ".");
+
+    StaticVectorBool boundariesVertices(pts.size(), false);
+
+    // Get all edges
+    StaticVector<Edge> edges(tris.size() * 3);
+
+    #pragma omp parallel for
+    for(int i = 0; i < tris.size(); ++i)
+    {
+      const int edgeStartIndex = i * 3;
+      const Mesh::triangle& t = tris[i];
+
+      edges[edgeStartIndex] = std::make_pair(std::min(t.v[0], t.v[1]), std::max(t.v[0], t.v[1]));
+      edges[edgeStartIndex + 1] = std::make_pair(std::min(t.v[1], t.v[2]), std::max(t.v[1], t.v[2]));
+      edges[edgeStartIndex + 2] = std::make_pair(std::min(t.v[2], t.v[0]), std::max(t.v[2], t.v[0]));
+    }
+
+    // Sort edges by vertex indexes
+    qsort(&edges[0], edges.size(), sizeof(Edge), qSortCompareEdgeAsc);
+
+    // Count edge, set is on boundary
+    int lastEdgeFirst = edges[0].first;
+    int lastEdgeSecond = edges[0].second;
+    int edgeCount = 0;
+    bool boundary = false;
+
+    for(int i = 0; i < edges.size(); ++i)
+    {
+      const Edge& edge = edges[i];
+
+      if((edge.first == lastEdgeFirst) && (edge.second == lastEdgeSecond))
+      {
+         ++edgeCount;
+      }
+      else
+      {
+         if(edgeCount < 2)
+         {
+           boundariesVertices[lastEdgeFirst] = true;
+           boundariesVertices[lastEdgeSecond] = true;
+           boundary = true;
+         }
+
+         lastEdgeFirst = edge.first;
+         lastEdgeSecond = edge.second;
+         edgeCount = 1;
+      }
+    }
+
+    // Return false if no boundary
+    if(!boundary)
+    {
+      ALICEVISION_LOG_INFO("No vertex on surface boundary, done.");
+      return false;
+    }
+
+    // Set is on boundary for neighbours
+    for(int n = 0; n < neighbourIterations; ++n)
+    {
+        StaticVectorBool boundariesVerticesCurrent = boundariesVertices;
+        
+        #pragma omp parallel for
+        for(int i = 0; i < edges.size(); ++i)
+        {
+            Edge& edge = edges[i];
+
+            if(boundariesVertices[edge.first] && 
+               boundariesVertices[edge.second]) // 2 vertices on boundary, skip
+                continue;
+
+            if(boundariesVertices[edge.first])
+            {
+                #pragma OMP_ATOMIC_WRITE
+                boundariesVerticesCurrent[edge.second] = true;
+            }
+
+            if(boundariesVertices[edge.second])
+            {
+                #pragma OMP_ATOMIC_WRITE
+                boundariesVerticesCurrent[edge.first] = true;
+            }
+        }
+        std::swap(boundariesVertices, boundariesVerticesCurrent);
+    }
+
+    // Create output vectors
+    if(out_ptsCanMove.empty())
+       out_ptsCanMove.resize(pts.size(), true);
+    
+    #pragma omp parallel for
+    for(int i = 0; i < boundariesVertices.size(); ++i)
+    {
+        if(boundariesVertices[i] == !invert)
+            out_ptsCanMove[i] = false;
+    }
+    
+    ALICEVISION_LOG_INFO("Lock surface " << (invert? "inner part" : "boundaries") << ", done.");
+    return true;
+}
+
+bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool invert) const
+{
+    // Edge struct
+    struct Edge
+    {
+      int first;  // min vertex index
+      int second; // max vertex index
+      int triId;  // triangle index
+
+      Edge() : first(0), second(0), triId(0)
+      {}
+
+      Edge(int vertexId1, int vertexId2, int triangleId) : triId(triangleId)
+      {
+        first  = std::min(vertexId1, vertexId2);
+        second = std::max(vertexId1, vertexId2);
+      }
+    };
+
+    // qSort lambda for Edge structure
+    auto qSortCompareEdgeAsc = [] (const void* ia, const void* ib)
+    {
+        const Edge a = *(Edge*)ia;
+        const Edge b = *(Edge*)ib;
+
+        if(a.first < b.first)
+            return -1;
+        else if(a.first == b.first)
+            return (a.second < b.second) ? -1 : 1;
+        return 1;
+    };
+
+    ALICEVISION_LOG_INFO("Get surface " << (invert? "inner part" : "boundaries") << ".");
+
+    StaticVectorBool boundariesEdges(tris.size() * 3, false);
+
+    // Get all edges
+    StaticVector<Edge> edges(tris.size() * 3);
+
+    #pragma omp parallel for
+    for(int i = 0; i < tris.size(); ++i)
+    {
+      const int edgeStartIndex = i * 3;
+      const Mesh::triangle& t = tris[i];
+
+      edges[edgeStartIndex] = Edge(t.v[0], t.v[1], i);
+      edges[edgeStartIndex + 1] = Edge(t.v[1], t.v[2], i);
+      edges[edgeStartIndex + 2] = Edge(t.v[2], t.v[0], i);
+    }
+
+    // Sort edges by vertex indexes
+    qsort(&edges[0], edges.size(), sizeof(Edge), qSortCompareEdgeAsc);
+
+    // Count edge, set is on boundary
+    int lastEdgeFirst = edges[0].first;
+    int lastEdgeSecond = edges[0].second;
+    int edgeCount = 0;
+    bool boundary = false;
+
+    for(int i = 0; i < edges.size(); ++i)
+    {
+      const Edge& edge = edges[i];
+
+      if((edge.first == lastEdgeFirst) && (edge.second == lastEdgeSecond))
+      {
+         ++edgeCount;
+      }
+      else
+      {
+         if(edgeCount < 2)
+         {
+           boundariesEdges[i-1] = true;
+           boundary = true;
+         }
+
+         lastEdgeFirst = edge.first;
+         lastEdgeSecond = edge.second;
+         edgeCount = 1;
+      }
+    }
+
+    // Return false if no boundary
+    if(!boundary)
+    {
+      ALICEVISION_LOG_INFO("No vertex on surface boundary, done.");
+      return false;
+    }
+
+    // Create output vectors
+    out_trisToConsider.resize(tris.size(), false);
+
+    // Surface triangles
+    #pragma omp parallel for
+    for(int i = 0; i < edges.size(); ++i)
+    {
+        Edge& edge = edges[i];
+
+        if(boundariesEdges[i] == !invert)
+        {
+            #pragma OMP_ATOMIC_WRITE
+            out_trisToConsider[edge.triId] = true;
+        }
+    }
+
+    ALICEVISION_LOG_INFO("Get surface " << (invert? "inner part" : "boundaries") << ", done.");
     return true;
 }
 

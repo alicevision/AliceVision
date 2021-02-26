@@ -8,6 +8,7 @@
 
 #include <string>
 #include <cmath>
+#include <ostream>
 
 namespace aliceVision {
 
@@ -48,6 +49,30 @@ public:
         x = param.x;
         y = param.y;
         z = param.z;
+        return *this;
+    }
+
+    inline Point3d& operator+=(const Point3d& _p)
+    {
+        x += _p.x;
+        y += _p.y;
+        z += _p.z;
+        return *this;
+    }
+
+    inline Point3d& operator/=(const Point3d& _p)
+    {
+        x /= _p.x;
+        y /= _p.y;
+        z /= _p.z;
+        return *this;
+    }
+
+    inline Point3d& operator/=(double v)
+    {
+        x /= v;
+        y /= v;
+        z /= v;
         return *this;
     }
 
@@ -107,7 +132,7 @@ public:
 
     friend double dot(const Point3d& p1, const Point3d& p2);
     friend Point3d cross(const Point3d& a, const Point3d& b);
-    friend Point3d proj(Point3d& e, Point3d& a);
+    friend Point3d proj(const Point3d& e, const Point3d& a);
 };
 
 inline double dist(const Point3d& p1, const Point3d& p2)
@@ -130,9 +155,35 @@ inline Point3d cross(const Point3d& a, const Point3d& b)
     return vc;
 }
 
-inline Point3d proj(Point3d& e, Point3d& a)
+inline Point3d proj(const Point3d& e, const Point3d& a)
 {
     return e * (dot(e, a) / dot(e, e));
+}
+
+inline double tripleProduct(const Point3d& a, const Point3d& b, const Point3d& c)
+{
+    return dot(a, cross(b, c));
+}
+
+/**
+ * @brief Solid angle of a tetrahedron. It takes 3 vectors OA, OB, AC to define the solid angle define by the triangle ABC arount the point O.
+ * @see The Solid Angle of a Plane Triangle, A. Van Oosterom, J. Strackee, 1983. DOI: 10.1109/TBME.1983.325207
+ */
+inline double tetrahedronSolidAngle(const Point3d& oa, const Point3d& ob, const Point3d& oc)
+{
+    const double a = oa.size();
+    const double b = ob.size();
+    const double c = oc.size();
+
+    const double nom = tripleProduct(oa, ob, oc);
+    const double den = (a * b * c + dot(oa, ob) * c + dot(oa, oc) * b + dot(ob, oc) * a);
+    return std::abs(std::atan2(nom, den) * 2.0);
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const Point3d& p)
+{
+    stream << p.x << "," << p.y << "," << p.z;
+    return stream;
 }
 
 } // namespace aliceVision

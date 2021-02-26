@@ -126,7 +126,7 @@ double pointPlaneDistance(const Point3d& point, const Point3d& planePoint, const
 
 double orientedPointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal);
 void computeRotCS(Point3d* xax, Point3d* yax, const Point3d* n);
-bool lineLineIntersect(float* k, float* l, Point3d* llis, Point3d* lli1, Point3d* lli2, const Point3d& p1,
+bool lineLineIntersect(double* k, double* l, Point3d* llis, Point3d* lli1, Point3d* lli2, const Point3d& p1,
                        const Point3d& p2, const Point3d& p3, const Point3d& p4);
 bool lineLineIntersectLeft(Point3d& out, const Point3d& p1, const Point3d& p2, const Point3d& p3, const Point3d& p4);
 bool lineLineIntersect(Point3d& out, const Point3d& p1, const Point3d& v1, const Point3d& p2, const Point3d& v2);
@@ -139,7 +139,7 @@ double angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2);
 double angleBetwABandAC(const Point3d& A, const Point3d& B, const Point3d& C);
 
 void rotPointAroundVect(double* out, const double* X, const double* vect, const double angle);
-void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, const float angle);
+void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, const double angle);
 Point2d getLineTriangleIntersectBarycCoords(Point3d* P, const Point3d* A, const Point3d* B, const Point3d* C,
                                             const Point3d* linePoint, const Point3d* lineVect);
 bool isLineInTriangle(Point3d* P, const Point3d* A, const Point3d* B, const Point3d* C, const Point3d* linePoint,

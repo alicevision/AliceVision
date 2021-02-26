@@ -4,6 +4,17 @@
 # Software PROPERTY FOLDER is 'Software/Utils'
 set(FOLDER_SOFTWARE_UTILS "Software/Utils")
 
+
+if(ALICEVISION_HAVE_CUDA)
+alicevision_add_software(aliceVision_utils_hardwareResources
+  SOURCE main_hardwareResources.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_gpu
+        Boost::program_options
+)
+endif()
+
 if(ALICEVISION_BUILD_SFM)
 # Uncertainty
 if(ALICEVISION_HAVE_UNCERTAINTYTE)
@@ -225,4 +236,32 @@ alicevision_add_software(aliceVision_utils_fisheyeProjection
         ${Boost_LIBRARIES}
 )
 
+# Lighting estimation from picture, albedo and geometry
+alicevision_add_software(aliceVision_utils_lightingEstimation
+  SOURCE main_lightingEstimation.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_numeric
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_mvsUtils
+        aliceVision_image
+        aliceVision_lightingEstimation
+        ${Boost_LIBRARIES}
+)
+
 endif() # ALICEVISION_BUILD_SFM
+
+if(ALICEVISION_BUILD_MVS)
+
+# Merge two meshes
+alicevision_add_software(aliceVision_utils_mergeMeshes
+  SOURCE main_mergeMeshes.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_numeric
+	Geogram::geogram
+        ${Boost_LIBRARIES}
+)
+
+endif() # ALICEVISION_BUILD_MVS

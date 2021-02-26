@@ -49,6 +49,7 @@ int aliceVision_main(int argc, char **argv)
 
   // user optional parameters
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  bool filterMatches = false;
   bool refine = true;
   float offsetLongitude = 0.0f;
   float offsetLatitude = 0.0f;
@@ -83,10 +84,14 @@ int aliceVision_main(int argc, char **argv)
       "* from essential matrix"
       "* from rotation matrix"
       "* from homography matrix")
+    ("rotationAveragingWeighting", po::value<bool>(&params.rotationAveragingWeighting)->default_value(params.rotationAveragingWeighting),
+      "Use weighting of image links during rotation averaging.")
     ("offsetLongitude", po::value<float>(&offsetLongitude)->default_value(offsetLongitude),
       "offset to camera longitude")
     ("offsetLatitude", po::value<float>(&offsetLatitude)->default_value(offsetLatitude),
       "offset to camera latitude")
+    ("filterMatches", po::value<bool>(&filterMatches)->default_value(filterMatches),
+      "Filter Matches before solving the Panorama.")
     ("refine", po::value<bool>(&refine)->default_value(refine),
       "Refine cameras with a Bundle Adjustment")
     ("lockAllIntrinsics", po::value<bool>(&params.lockAllIntrinsics)->default_value(params.lockAllIntrinsics),
@@ -227,6 +232,11 @@ int aliceVision_main(int argc, char **argv)
   // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
+
+  if(filterMatches)
+  {
+      sfmEngine.filterMatches();
+  }
 
   if(!sfmEngine.process())
   {

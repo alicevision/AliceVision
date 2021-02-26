@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 
 //---------------------------------
 //  Universal Image Processing Algorithm
@@ -23,7 +24,6 @@ namespace aliceVision
 {
   namespace image
   {
-
     template <typename T>
     class Image : public Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
     {
@@ -143,6 +143,16 @@ namespace aliceVision
         return sizeof( Tpixel );
       }
 
+
+      /**
+      * @brief Return the number of channels
+      * @return number of channels
+      */
+      inline int Channels() const
+      {
+        return NbChannels<Tpixel>::size;
+      }
+
       /**
       * @brief constant random pixel access
       * @param y Index of the row
@@ -222,7 +232,17 @@ namespace aliceVision
       */
       template< typename T1>
       friend Image<T1> operator-( const Image<T1> & imgA , const Image<T1> & imgB ) ;
+      
+      template <class UnaryFunction>
+      bool perPixelOperation(UnaryFunction f)
+      {
+          for(auto row : this->rowwise())
+          {
+              std::transform(row.begin(), row.end(), row.begin(), f);
+          }
 
+          return true;
+      }
 
     protected :
       //-- Image data are stored by inheritance of a matrix

@@ -394,6 +394,8 @@ namespace aliceVision
       }
     };
 
+    typedef Rgba<unsigned char> RGBAColor;
+
     /// Instantiation for unsigned char color component
     using RGBAColor = Rgba<unsigned char>;
     /// Instantiation for float color component
@@ -410,6 +412,45 @@ namespace aliceVision
 
     const RGBfColor FWHITE(1.0f, 1.0f, 1.0f);
     const RGBfColor FBLACK( .0f,  .0f,  .0f);
+
+    template<typename T>
+    struct NbChannels
+    {
+      // no size parameter, so no default value.
+      // An error will be raise at compile time if this type traits is not defined.
+    };
+
+    template <>
+    struct NbChannels<unsigned char>
+    {
+        static const int size = 1;
+    };
+    template <>
+    struct NbChannels<float>
+    {
+        static const int size = 1;
+    };
+    template <>
+    struct NbChannels<RGBColor>
+    {
+        static const int size = 3;
+    };
+    template <>
+    struct NbChannels<RGBfColor>
+    {
+        static const int size = 3;
+    };
+    template <>
+    struct NbChannels<RGBAColor>
+    {
+        static const int size = 4;
+    };
+    template <>
+    struct NbChannels<RGBAfColor>
+    {
+        static const int size = 4;
+    };
+
     
   } // namespace image
 } // namespace aliceVision

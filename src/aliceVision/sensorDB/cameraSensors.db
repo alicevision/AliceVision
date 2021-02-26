@@ -1503,6 +1503,7 @@ Fairphone;FP3;5.75;usercontribution
 Fairphone;FP2;4.61;devicespecifications
 Firefly;Firefly Aurii Envy;4.69;devicespecifications
 Firefly;Firefly Aurii Secret;4.71;devicespecifications
+FLIR;BFS-U3-200S6C-C;13.1
 Fly;Fly Power Plus 2;3.67;devicespecifications
 Fly;Fly Tornado One;4.69;devicespecifications
 Fujifilm;Fujifilm A150 ;6.2;imaging-resource
@@ -3251,7 +3252,8 @@ Mobiistar;Mobiistar Prime X Grand;3.67;devicespecifications
 Mobiistar;Mobiistar Prime X Max;5.99;devicespecifications
 Mobiwire;Mobiwire Tala;4.74;devicespecifications
 Motorola;Moto G (4);6.06;usercontribution
-motorola;moto x4;4.0;usercontribution
+Motorola;Moto G (7);5.12;devicespecifications
+Motorola;Moto x4;4.0;usercontribution
 Motorola;Moto Z (2);4.96;devicespecifications
 Motorola;Motorola 2nd Gen;4.69;devicespecifications
 Motorola;Motorola 3rd Gen;4.69;devicespecifications
@@ -3273,11 +3275,10 @@ Motorola;Motorola Moto Z Force;5.99;devicespecifications
 Motorola;Motorola Moto Z Play;6.06;devicespecifications
 Motorola;Motorola Moto Z2 Force Edition;4.96;devicespecifications
 Motorola;Motorola Moto Z2 Play;3.67;devicespecifications
-Motorola;Moto Z (2);4.98;usercontribution
 Motorola;Motorola Nexus 6;4.69;devicespecifications
 Motorola;Motorola P30;4.74;devicespecifications
 Motorola;XT1033;3.8;usercontribution
-motorola;XT1635-02;6.06;usercontribution
+Motorola;XT1635-02;6.06;usercontribution
 Multilaser;Multilaser MS60Z;4.69;devicespecifications
 Myphone;Myphone Hammer Axe Pro;4.69;devicespecifications
 Myphone;Myphone Hammer Energy 18x9;4.69;devicespecifications
@@ -4388,6 +4389,7 @@ Panasonic;Panasonic Lumix DC-GX800;17.3;dpreview,digicamdb,dxomark
 Panasonic;Panasonic Lumix DC-GX850;17.3;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DC-GX9;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DC-LX100 II;17.3;dpreview,digicamdb,imaging-resource
+Panasonic;Panasonic Lumix DC-S1H;35.6;usercontribution
 Panasonic;Panasonic Lumix DC-TS7;6.17;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DC-TZ200;13.2;dpreview,digicamdb
 Panasonic;Panasonic Lumix DC-TZ90;6.16;usercontribution
@@ -5567,6 +5569,9 @@ Samsung;Samsung SM-G955F;5.76;usercontribution
 Samsung;Samsung SM-G965F;5.64;usercontribution
 Samsung;Samsung SM-G975U;5.66;devicespecifications
 Samsung;Samsung SM-M315F;7.42;devicespecifications
+Samsung;Samsung SM-N985F;9.6;devicespecifications
+Samsung;Samsung SM-N986B;9.6;devicespecifications
+Samsung;Samsung SM-N986x;9.6;devicespecifications
 Samsung;Samsung ST10;5.744;dpreview,digicamdb
 Samsung;Samsung ST100;6.17;dpreview,digicamdb
 Samsung;Samsung ST1000;6.16;digicamdb
@@ -5647,6 +5652,7 @@ Samsung;SM-G970F;5.65;digicamdb
 Samsung;SM-J111M;3.6;usercontribution
 Samsung;SM-N9005;4.69;usercontribution
 Samsung;SM-N960F;5.65;usercontribution
+Samsung;SM-N975F;5.64;usercontribution
 Santin;Santin Max 4 Pro;4.74;devicespecifications
 Santin;Santin N1;4.71;devicespecifications
 Santin;Santin N1 Max;4.75;devicespecifications
@@ -5789,6 +5795,9 @@ Sony;A7SM2;35.6;usercontribution
 Sony;DSC-HX60V;7.76;usercontribution
 Sony;DSC-P200;7.11;usercontribution
 Sony;DSC-RX100M4;13.2;usercontribution
+Sony;DSC-RX100M5;13.2;usercontribution
+Sony;DSC-RX100M6;13.2;usercontribution
+Sony;DSC-RX100M7;13.2;usercontribution
 Sony;DSC-RX10M2;13.2;usercontribution
 Sony;DSC-RX10M3;25.4;usercontribution
 Sony;DSC-RX1RM2;35.9;usercontribution
@@ -5829,12 +5838,13 @@ Sony;Sony a6400;23.5;sony
 Sony;Sony a6500;23.5;dpreview
 Sony;Sony a7;35.8;dpreview
 Sony;Sony a7 II;35.8;dpreview
-Sony;Sony A7 III;35.6;dxomark
-Sony;Sony A77 II;23.5;usercontribution
+Sony;Sony a7 III;35.6;dxomark
+Sony;Sony a77 II;23.5;usercontribution
 Sony;Sony a7R;35.9;dpreview
-Sony;Sony a7R II;35.9;dpreview
+Sony;Sony a7R II;35.8;dpreview
 Sony;Sony a7R III;35.9;dpreview
-Sony;Sony A7S;35.6;dxomark
+Sony;Sony a7R IV;35.7;sony
+Sony;Sony a7S;35.6;dxomark
 Sony;Sony a7S II;35.6;dpreview
 Sony;Sony a9;35.6;dxomark
 Sony;Sony Alpha 100;24.0;dxomark
@@ -6872,6 +6882,7 @@ Xiaomi;Xiaomi Mi 5X;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 6;4.96;devicespecifications
 Xiaomi;Xiaomi Mi 8;5.64;usercontribution,kimovil
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
+Xiaomi;Xiaomi Mi A2;4.96;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
 Xiaomi;Xiaomi Mi Max 2;4.96;devicespecifications
 Xiaomi;Xiaomi Mi Max SD650;4.74;devicespecifications

@@ -269,19 +269,35 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
-    const int freeRam = int(memInfo.freeRam / std::pow(2,20));
-    const int availableMem = freeRam - 2 * imageMaxMemSize - imagePyramidMaxMemSize; // keep some memory for the 2 input images in cache and one laplacian pyramid
+    const int availableRam = int(memInfo.availableRam / std::pow(2,20));
+    const int availableMem = availableRam - 2 * (imagePyramidMaxMemSize + imageMaxMemSize); // keep some memory for the 2 input images in cache and one laplacian pyramid
 
     const int nbAtlas = _atlases.size();
-    int nbAtlasMax = std::floor(availableMem / atlasPyramidMaxMemSize); //maximum number of textures laplacian pyramid in RAM
+    // Memory needed to process each attlas = input + input pyramid + output atlas pyramid
+    const int memoryPerAtlas = (imageMaxMemSize + imagePyramidMaxMemSize) + atlasPyramidMaxMemSize;
+    int nbAtlasMax = std::floor(availableMem / double(memoryPerAtlas)); //maximum number of textures laplacian pyramid in RAM
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax); //if enough memory, do it with all atlases
+
+    ALICEVISION_LOG_INFO("nbAtlas: " << nbAtlas);
+    ALICEVISION_LOG_INFO("availableRam: " << availableRam);
+    ALICEVISION_LOG_INFO("availableMem: " << availableMem);
+    ALICEVISION_LOG_INFO("memoryPerAtlas: " << memoryPerAtlas);
+
+    ALICEVISION_LOG_DEBUG("nbAtlasMax: " << nbAtlasMax);
+
+    // Add rounding to have a uniform repartition between chunks (avoid a small chunk at the end)
+    const int nChunks = std::ceil(nbAtlas / double(nbAtlasMax));
+    nbAtlasMax = std::ceil(nbAtlas / double(nChunks));
+    ALICEVISION_LOG_DEBUG("nChunks: " << nChunks);
+    ALICEVISION_LOG_INFO("nbAtlasMax (after rounding): " << nbAtlasMax);
+
     if (availableMem - nbAtlasMax*atlasPyramidMaxMemSize < 1000) //keep 1 GB margin in memory
         nbAtlasMax -= 1;
     nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
 
-    ALICEVISION_LOG_INFO("Total amount of free RAM  : " << freeRam << " MB.");
-    ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " MB.");
-    ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of available RAM: " << availableRam << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of memory remaining for the computation: " << availableMem << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of an image in memory: " << imageMaxMemSize << " MB.");
     ALICEVISION_LOG_INFO("Total amount of an atlas pyramid in memory: " << atlasPyramidMaxMemSize << " MB.");
     ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);
 

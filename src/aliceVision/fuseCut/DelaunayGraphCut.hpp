@@ -55,6 +55,9 @@ struct FuseParams
     float simGaussianSize = 10.0f;
     double minAngleThreshold = 0.1;
     bool refineFuse = true;
+    // Weight for helper points from mask. Do not create helper points if zero.
+    float maskHelperPointsWeight = 0.0;
+    int maskBorderSize = 1;
 };
 
 
@@ -66,15 +69,139 @@ public:
 
     struct Facet
     {
+        CellIndex cellIndex = GEO::NO_CELL;
+        /// local opposite vertex index
+        VertexIndex localVertexIndex = GEO::NO_VERTEX;
+
         Facet(){}
         Facet(CellIndex ci, VertexIndex lvi)
             : cellIndex(ci)
             , localVertexIndex(lvi)
         {}
 
-        CellIndex cellIndex = GEO::NO_CELL;
-        /// local opposite vertex index
-        VertexIndex localVertexIndex = GEO::NO_VERTEX;
+        bool operator==(const Facet& f) const
+        {
+            return cellIndex == f.cellIndex && localVertexIndex == f.localVertexIndex;
+        }
+    };
+
+    struct Edge
+    {
+        VertexIndex v0 = GEO::NO_VERTEX;
+        VertexIndex v1 = GEO::NO_VERTEX;
+
+        Edge() = default;
+        Edge(VertexIndex v0_, VertexIndex v1_)
+            : v0{v0_}
+            , v1{v1_}
+        {}
+
+        bool operator==(const Edge& e) const
+        {
+            return v0 == e.v0 && v1 == e.v1;
+        }
+        bool isSameUndirectionalEdge(const Edge& e) const
+        {
+            return (v0 == e.v0 && v1 == e.v1) ||
+                   (v0 == e.v1 && v1 == e.v0);
+        }
+    };
+
+    enum class EGeometryType
+    {
+        Vertex,
+        Edge,
+        Facet,
+        None
+    };
+
+    struct GeometryIntersection
+    {
+        EGeometryType type = EGeometryType::None;
+        union
+        {
+            Facet facet;
+            VertexIndex vertexIndex;
+            Edge edge;
+        };
+        GeometryIntersection() {}
+        explicit GeometryIntersection(const Facet& f)
+            : facet{f}
+            , type{EGeometryType::Facet}
+        {}
+        explicit GeometryIntersection(const VertexIndex& v)
+            : vertexIndex{v}
+            , type{EGeometryType::Vertex}
+        {}
+        explicit GeometryIntersection(const Edge& e)
+            : edge{e}
+            , type{EGeometryType::Edge}
+        {}
+
+        bool operator==(const GeometryIntersection& g) const
+        {
+            if (type != g.type)
+                return false;
+
+            switch (type)
+            {
+            case EGeometryType::Vertex:
+                return vertexIndex == g.vertexIndex;
+            case EGeometryType::Edge:
+                return edge == g.edge;
+            case EGeometryType::Facet:
+                return facet == g.facet;
+            case EGeometryType::None:
+                break;
+            }
+            return true;
+        }
+        bool operator!=(const GeometryIntersection& g) const
+        {
+            return !(*this == g);
+        }
+    };
+
+    struct IntersectionHistory
+    {
+        size_t steps = 0;
+        Point3d cam;
+        Point3d originPt;
+        Point3d dirVect;
+
+        std::vector<GeometryIntersection> geometries;
+        std::vector<Point3d> intersectPts;
+        std::vector<Point3d> vecToCam;
+        std::vector<float> distToCam;
+        std::vector<float> angleToCam;
+        IntersectionHistory(const Point3d& c, const Point3d& oPt, const Point3d& diV) : cam{c}, originPt{oPt}, dirVect{diV} {}
+        
+        void append(const GeometryIntersection& geom, const Point3d& intersectPt);
+    };
+
+    /**
+     * @brief  Used for debug purposes to store count about geometries intersected during fillGraph and forceTedges.
+     */
+    struct GeometriesCount
+    {
+        size_t facets = 0;
+        size_t vertices = 0;
+        size_t edges = 0;
+
+        GeometriesCount& operator+=(const GeometriesCount& gc)
+        {
+            edges += gc.edges;
+            vertices += gc.vertices;
+            facets += gc.facets;
+            return *this;
+        }
+        GeometriesCount& operator/=(const size_t v)
+        {
+            edges /= v;
+            vertices /= v;
+            facets /= v;
+            return *this;
+        }
     };
 
     mvsUtils::MultiViewParams* mp;
@@ -214,11 +341,11 @@ public:
 
         std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
         int coutInvalidVertices = 0;
-        for(CellIndex ci = 0, nbCells = _tetrahedralization->nb_cells(); ci < nbCells; ++ci)
+        for (CellIndex ci = 0; ci < _tetrahedralization->nb_cells(); ++ci)
         {
             for(VertexIndex k = 0; k < 4; ++k)
             {
-                CellIndex vi = _tetrahedralization->cell_vertex(ci, k);
+                const VertexIndex vi = _tetrahedralization->cell_vertex(ci, k);
                 if(vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
                 {
                     ++coutInvalidVertices;
@@ -248,7 +375,7 @@ public:
      * @param lvi
      * @return global index of the lvi'th neighboring cell
      */
-    CellIndex vertexToCells(VertexIndex vi, int lvi) const
+    inline CellIndex vertexToCells(VertexIndex vi, int lvi) const
     {
         const std::vector<CellIndex>& localCells = _neighboringCellsPerVertex.at(vi);
         if(lvi >= localCells.size())
@@ -256,18 +383,42 @@ public:
         return localCells[lvi];
     }
 
+
+    /**
+     * @brief Retrieves the global indexes of neighboring cells around a geometry.
+     *
+     * @param g the concerned geometry
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByGeometry(const GeometryIntersection& g) const;
+
+    /**
+     * @brief Retrieves the two global indexes of neighboring cells using a facet.
+     *
+     * @param f the concerned facet
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByFacet(const Facet& f) const;
+
     /**
      * @brief Retrieves the global indexes of neighboring cells using the global index of a vertex.
      * 
      * @param vi the global vertexIndex
-     * @return a vector of neighboring cell indexes
+     * @return a vector of neighboring cell indices
      */
     inline const std::vector<CellIndex>& getNeighboringCellsByVertexIndex(VertexIndex vi) const
     {
         return _neighboringCellsPerVertex.at(vi);
     }
 
-    void initVertices();
+     /**
+     * @brief Retrieves the global indexes of neighboring cells around one edge.
+     *
+     * @param e the concerned edge
+     * @return a vector of neighboring cell indices
+     */
+    std::vector<CellIndex> getNeighboringCellsByEdge(const Edge& e) const;
+
     void computeDelaunay();
     void initCells();
     void displayStatistics();
@@ -286,21 +437,58 @@ public:
     void addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist);
     void addPointsToPreventSingularities(const Point3d Voxel[8], float minDist);
 
+    void densifyWithHelperPoints(int nbFront, int nbBack, double scale);
+
     /**
      * @brief Add volume points to prevent singularities
      */
-    void addHelperPoints(int nGridHelperVolumePointsDim, const Point3d Voxel[8], float minDist);
+    void addGridHelperPoints(int helperPointsGridSize, const Point3d Voxel[8], float minDist);
+
+    void addMaskHelperPoints(const Point3d voxel[8], const StaticVector<int>& cams, const FuseParams& params);
 
     void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params);
 
-    void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
-    void removeSmallSegs(int minSegSize);
+    /**
+     * @brief Compute connected segments size
+     * @param[out] out_segments
+     * @param[in] useVertex: sub-set of vertices to compute
+     * @param[in] alpha
+     */
+    void computeVerticesSegSize(std::vector<GC_Seg>& out_segments, const std::vector<bool>& useVertex, float alpha = 0.0f);
+    void removeSmallSegs(const std::vector<GC_Seg>& segments, int minSegSize);
 
-    bool rayCellIntersection(const Point3d& camCenter, const Point3d& p, const Facet& inFacet, Facet& outFacet,
-                             bool nearestFarest, Point3d& outIntersectPt) const;
+    /**
+     * @brief Function that returns the next geometry intersected by the ray.
+     * The function handles different cases, whether we come from an edge, a facet or a vertex.
+     * 
+     * @param inGeometry the geometry we come from
+     * @param originPt ray origin point
+     * @param dirVect ray direction
+     * @param intersectPt a reference that will store the computed intersection point for the intersected geometry
+     * @param epsilonFactor a multiplicative factor on the smaller side of the facet  used to define the boundary when we
+     * have to consider either a collision with an edge/vertex or a facet.
+     * @param lastIntersectPt constant reference to the last intersection point used to test the direction.
+     * @return 
+     */
+    GeometryIntersection intersectNextGeom(const GeometryIntersection& inGeometry, const Point3d& originPt,
+        const Point3d& dirVect, Point3d& intersectPt, const double epsilonFactor, const Point3d& lastIntersectPt) const;
 
-    Facet getFacetFromVertexOnTheRayToTheCam(VertexIndex globalVertexIndex, int cam, bool nearestFarest) const;
-    Facet getFirstFacetOnTheRayFromCamToThePoint(int cam, const Point3d& p, Point3d& intersectPt) const;
+    /**
+     * @brief Function that returns the next geometry intersected by the ray on a given facet or None if there are no intersected geometry.
+     * The function distinguishes the intersections cases using epsilon.
+     * 
+     * @param originPt ray origin point
+     * @param DirVec ray direction
+     * @param facet the given facet to intersect with
+     * @param intersectPt a reference that will store the computed intersection point for the next intersecting geometry
+     * @param epsilonFactor a multiplicative factor on the smaller side of the facet  used to define the boundary when we
+     * have to consider either a collision with an edge/vertex or a facet.
+     * @param ambiguous boolean used to know if our intersection is ambiguous or not
+     * @param lastIntersectPt pointer to the last intersection point used to test the direction (if not nulllptr)
+     * @return 
+     */
+    GeometryIntersection rayIntersectTriangle(const Point3d& originPt, const Point3d& DirVec, const Facet& facet,
+        Point3d& intersectPt, const double epsilonFactor, bool& ambiguous, const Point3d* lastIntersectPt = nullptr) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
 
@@ -312,45 +500,81 @@ public:
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool labatutWeights,
-                           bool fillOut, float distFcnHeight = 0.0f);
-    void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam, float weight,
-                           bool fixesSigma, float nPixelSizeBehind, bool fillOut,
-                           float distFcnHeight);
+    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight,
+                           float fullWeight);
+    void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam, float weight,
+                           float fullWeight, double nPixelSizeBehind, bool fillOut, float distFcnHeight);
 
-    void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
+    /**
+     * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
+     *
+     * @param nPixelSizeBehind Used to define the surface margin
+     */
+    void forceTedgesByGradientIJCV(float nPixelSizeBehind);
 
-    int setIsOnSurface();
+    int computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const;
 
     void addToInfiniteSw(float sW);
-
-    void freeUnwantedFullCells(const Point3d* hexah);
-
-    void reconstructGC(const Point3d* hexah);
 
     void maxflow();
 
     void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
 
-    void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
+    void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
 
-    void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments);
+    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName,
+                        const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, bool exportDebugTetrahedralization);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
      */
     void invertFullStatusForSmallLabels();
+    /**
+     * @brief Check solid angle ratio between empty/full part around each vertex to reduce local artefacts / improve smoothness.
+     */
+    void cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIterations, double minSolidAngleRatio);
 
-    void graphCutPostProcessing();
+    /**
+     * @brief Combine all post-processing steps results to reduce artefacts from the graph-cut (too large triangles, noisy tetrahedrons, isolated cells, etc).
+     */
+    void graphCutPostProcessing(const Point3d hexah[8], const std::string& folderName);
 
-    void segmentFullOrFree(bool full, StaticVector<int>** inColors, int& nsegments);
+    void segmentFullOrFree(bool full, StaticVector<int>& out_fullSegsColor, int& nsegments);
     int removeBubbles();
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
 
-    mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
-    mesh::Mesh* createTetrahedralMesh() const;
+    /**
+     * Some vertices have not been created by depth maps but
+     * have been created for the tetrahedralization like
+     * camera centers, helper points, etc.
+     * These points have no visibility information (nrc == 0).
+     * We want to remove these fake points, but we do not want to create holes.
+     * So if the vertex is alone in the middle of valid points, we want to keep it.
+     */
+    void filterLargeHelperPoints(std::vector<bool>& out_reliableVertices, const std::vector<bool>& vertexIsOnSurface, int maxSegSize);
+
+    /**
+     * @brief Create a mesh from the tetrahedral scores
+     * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 0 means that we remove all helper points. -1 means that we do not filter helper points at all.
+     */
+    mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
+    mesh::Mesh* createTetrahedralMesh(bool filter = true, const float& downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
+
+    void displayCellsStats() const;
+    void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
+    void exportFullScoreMeshs(const std::string& outputFolder, const std::string& name) const;
+
+    void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
+    void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };
+
+
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::EGeometryType type);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Facet& facet);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::Edge& edge);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometryIntersection& intersection);
+std::ostream& operator<<(std::ostream& stream, const DelaunayGraphCut::GeometriesCount& count);
 
 } // namespace fuseCut
 } // namespace aliceVision

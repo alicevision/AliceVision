@@ -329,9 +329,6 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         const oiio::ImageSpec imageSpecResized(nw, nh, nchannels, oiio::TypeDesc::FLOAT);
         const oiio::ImageSpec imageSpecOrigin(w, h, nchannels, oiio::TypeDesc::FLOAT);
-        oiio::ImageBuf bufferOrigin(imageSpecOrigin, image.data());
-        oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
-        oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
 
         const oiio::ImageBuf inBuf(imageSpecOrigin, image.data());
         oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());

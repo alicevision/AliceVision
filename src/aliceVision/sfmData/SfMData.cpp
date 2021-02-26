@@ -120,9 +120,21 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
   if(absolutePath.empty())
     return folders;
   // else, convert relative paths to absolute paths
-  std::vector<std::string> absolutePaths(folders.size());
-  for(int i = 0; i < absolutePaths.size(); ++i)
-    absolutePaths.at(i) = fs::canonical(folders.at(i), fs::path(absolutePath).parent_path()).string();
+  std::vector<std::string> absolutePaths;
+  absolutePaths.reserve(folders.size());
+  for(const auto& folder: folders)
+  {
+    const fs::path f = fs::absolute(folder, fs::path(absolutePath).parent_path());
+    if(fs::exists(f))
+    {
+      // fs::canonical can only be used if the path exists
+      absolutePaths.push_back(fs::canonical(f).string());
+    }
+    else
+    {
+      absolutePaths.push_back(f.string());
+    }
+  }
   return absolutePaths;
 }
 

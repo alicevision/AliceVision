@@ -8,6 +8,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/all.hpp>
 
+
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
@@ -355,6 +356,39 @@ void readImage(const std::string& path,
   }
 }
 
+template<typename T>
+void readImageNoFloat(const std::string& path,
+               oiio::TypeDesc format,
+               Image<T>& image)
+{
+  oiio::ImageSpec configSpec;
+
+  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+
+  inBuf.read(0, 0, true, format);
+
+  if(!inBuf.initialized())
+  {
+    throw std::runtime_error("Cannot find/open image file '" + path + "'.");
+  }
+
+  // check picture channels number
+  if(inBuf.spec().nchannels != 1)
+  {
+    throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+  }
+    
+  // copy pixels from oiio to eigen
+  image.resize(inBuf.spec().width, inBuf.spec().height, false);
+  {
+    oiio::ROI exportROI = inBuf.roi();
+    exportROI.chbegin = 0;
+    exportROI.chend = 1;
+
+    inBuf.get_pixels(exportROI, format, image.data());
+  }
+}
+
 bool containsHalfFloatOverflow(const oiio::ImageBuf& image)
 {
     oiio::ImageBufAlgo::PixelStats stats;
@@ -379,7 +413,8 @@ void writeImage(const std::string& path,
                 int nchannels,
                 const Image<T>& image,
                 EImageColorSpace imageColorSpace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList())
+                const oiio::ParamValueList& metadata = oiio::ParamValueList(),
+                const oiio::ROI& roi = oiio::ROI())
 {
   const fs::path bPath = fs::path(path);
   const std::string extension = boost::to_lower_copy(bPath.extension().string());
@@ -403,6 +438,10 @@ void writeImage(const std::string& path,
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
   imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
   imageSpec.attribute("compression", isEXR ? "piz" : "none"); // if possible, set compression (piz for EXR, none for the other)
+  if(roi.defined() && isEXR)
+  {
+      imageSpec.set_roi_full(roi);
+  }
 
   const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
@@ -455,6 +494,55 @@ void writeImage(const std::string& path,
   fs::rename(tmpPath, path);
 }
 
+template<typename T>
+void writeImageNoFloat(const std::string& path,
+                oiio::TypeDesc typeDesc,
+                const Image<T>& image,
+                EImageColorSpace imageColorSpace,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList())
+{
+  const fs::path bPath = fs::path(path);
+  const std::string extension = boost::to_lower_copy(bPath.extension().string());
+  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const bool isEXR = (extension == ".exr");
+  //const bool isTIF = (extension == ".tif");
+  const bool isJPG = (extension == ".jpg");
+  const bool isPNG = (extension == ".png");
+
+  if(imageColorSpace == EImageColorSpace::AUTO)
+  {
+    if(isJPG || isPNG)
+      imageColorSpace = EImageColorSpace::SRGB;
+    else
+      imageColorSpace = EImageColorSpace::LINEAR;
+  }
+
+  oiio::ImageSpec imageSpec(image.Width(), image.Height(), 1, typeDesc);
+  imageSpec.extra_attribs = metadata; // add custom metadata
+
+  imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
+  imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
+  imageSpec.attribute("compression", isEXR ? "none" : "none"); // if possible, set compression (piz for EXR, none for the other)
+
+  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
+  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+
+  oiio::ImageBuf formatBuf;  // buffer for image format modification
+  if(isEXR)
+  {
+    
+    formatBuf.copy(*outBuf, typeDesc); // override format, use half instead of float
+    outBuf = &formatBuf;
+  }
+
+  // write image
+  if(!outBuf->write(tmpPath))
+    throw std::runtime_error("Can't write output image file '" + path + "'.");
+
+  // rename temporay filename
+  fs::rename(tmpPath, path);
+}
+
 void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions)
 {
   readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
@@ -463,6 +551,16 @@ void readImage(const std::string& path, Image<float>& image, const ImageReadOpti
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions)
 {
   readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
+}
+
+void readImageDirect(const std::string& path, Image<unsigned char>& image)
+{
+  readImageNoFloat(path, oiio::TypeDesc::UINT8, image);
+}
+
+void readImageDirect(const std::string& path, Image<IndexT>& image)
+{
+  readImageNoFloat(path, oiio::TypeDesc::UINT32, image);
 }
 
 void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
@@ -485,32 +583,42 @@ void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadO
   readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
-void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace, metadata);
+  writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata);
+  writeImageNoFloat(path, oiio::TypeDesc::INT32, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+{
+  writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, imageColorSpace, metadata);
+}
+
+void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+{
+  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata,roi);
+}
+
+void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI &roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata);
+  writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata,roi);
 }
 
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata);
+  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata,roi);
 }
 
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace, metadata);
 }

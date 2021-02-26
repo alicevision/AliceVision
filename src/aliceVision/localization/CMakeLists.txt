@@ -45,7 +45,7 @@ if(ALICEVISION_HAVE_CCTAG)
 endif()
 
 if(ALICEVISION_HAVE_OPENGV)
-  target_link_libraries(aliceVision_localization PRIVATE ${OPENGV_LIBRARY})
+  target_link_libraries(aliceVision_localization PRIVATE opengv)
 endif()
 
 # Unit tests

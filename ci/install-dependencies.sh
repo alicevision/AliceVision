@@ -19,6 +19,6 @@ downloadFromAliceVisionDependencies ceres-1.14.0 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies opencv-3.4.2 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies opengv-2019.04.25 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies openexr-2.3.0 ${DEPS_INSTALL_PATH}
-downloadFromAliceVisionDependencies openimageio-1.8.9 ${DEPS_INSTALL_PATH}
+downloadFromAliceVisionDependencies openimageio-2.2.11.1 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies alembic-1.7.10 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies geogram-1.6.11 ${DEPS_INSTALL_PATH}

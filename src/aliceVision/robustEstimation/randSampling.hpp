@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <cstdlib>
+#include <numeric>
 #include <random>
 #include <numeric>
 #include <cassert>

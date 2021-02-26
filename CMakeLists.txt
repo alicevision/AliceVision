@@ -130,8 +130,8 @@ elseif(UNIX)
 endif()
 set(GEOGRAM_TARGET geogram)
 ExternalProject_Add(${GEOGRAM_TARGET}
-       URL https://github.com/alicevision/geogram/archive/v1.7.5.tar.gz
-       URL_HASH MD5=ad1197722f02dc33f24466d1269c1fbf
+       URL https://github.com/alicevision/geogram/archive/v1.7.6.tar.gz
+       URL_HASH MD5=d0f138f1cd50c633c30eacdb03619211
        DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -176,6 +176,7 @@ endif()
 # Add Tbb
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
+       # TODO: Update to 2021.1.1
        URL https://github.com/01org/tbb/archive/2019_U6.tar.gz
        URL_HASH MD5=fbb2d9572fe39b997575055b9f9c820b
        DOWNLOAD_DIR ${BUILD_DIR}/download/tbb
@@ -258,8 +259,8 @@ endif()
 if(AV_BUILD_SUITESPARSE)
 
 ExternalProject_add(gmp
-      URL https://gmplib.org/download/gmp/gmp-6.2.0.tar.xz
-      URL_HASH MD5=a325e3f09e6d91e62101e59f9bda3ec1
+      URL https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz
+      URL_HASH MD5=0b82665c4a92fd2ade7440c13fcaa42b
       DOWNLOAD_DIR ${BUILD_DIR}/download/gmp
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -311,6 +312,9 @@ endif()
 # Add ceres-solver: A Nonlinear Least Squares Minimizer
 set(CERES_TARGET ceres)
 ExternalProject_Add(${CERES_TARGET}
+    # TODO: update ceres to 2.0
+    #URL https://github.com/ceres-solver/ceres-solver/archive/2.0.0.tar.gz
+    #URL_HASH MD5=94246057ac520313e3b582c45a30db6e
        # URL https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz
        GIT_REPOSITORY https://github.com/alicevision/ceres-solver
        GIT_TAG compatibility_gcc_4  # specific commit from the WIP 2.0 version with a fix for gcc-4
@@ -330,11 +334,11 @@ set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} -DCeres_DIR=${CMAKE_INSTALL_PRE
 # Add OpenEXR
 set(OPENEXR_TARGET openexr)
 ExternalProject_Add(${OPENEXR_TARGET}
-      # vfxplatform CY2020: 2.4.x, but we use 2.5.3 to avoid cmake issues
+      # vfxplatform CY2020: 2.4.x, but we use 2.5.x to avoid cmake issues
       #URL https://github.com/openexr/openexr/archive/v2.4.1.tar.gz
       #URL_HASH MD5=f7f7f893cf38786f88c306dec127113f
-      URL https://github.com/AcademySoftwareFoundation/openexr/archive/v2.5.3.tar.gz
-      URL_HASH MD5=1f59d3cc22fded2afccf49ab74a9cbf3
+      URL https://github.com/AcademySoftwareFoundation/openexr/archive/v2.5.4.tar.gz
+      URL_HASH MD5=e84577f884f05f7432b235432dfec455
       DOWNLOAD_DIR ${BUILD_DIR}/download/openexr
       # URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
       # The release 2.2.1 has troubles with C++17, which breaks compilation with recent compilers.
@@ -366,8 +370,8 @@ set(OPENEXR_CMAKE_FLAGS ${ILMBASE_CMAKE_FLAGS} -DOPENEXR_ROOT=${CMAKE_INSTALL_PR
 if(AV_BUILD_TIFF)
 set(TIFF_TARGET tiff)
 ExternalProject_Add(${TIFF_TARGET}
-       URL http://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz
-       URL_HASH MD5=2165e7aba557463acc0664e71a3ed424
+       URL http://download.osgeo.org/libtiff/tiff-4.2.0.tar.gz
+       URL_HASH MD5=2bbf6db1ddc4a59c89d6986b368fc063
        DOWNLOAD_DIR ${BUILD_DIR}/download/tiff
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -376,7 +380,7 @@ ExternalProject_Add(${TIFF_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tiff
        BINARY_DIR ${BUILD_DIR}/tiff_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> 
+       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
        BUILD_COMMAND $(MAKE)
        DEPENDS ${ZLIB_TARGET}
        )
@@ -400,7 +404,7 @@ ExternalProject_Add(${PNG_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
        BINARY_DIR ${BUILD_DIR}/png_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       # CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> 
+       # CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${ZLIB_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
        BUILD_COMMAND $(MAKE)
        DEPENDS ${ZLIB_TARGET}
@@ -412,8 +416,8 @@ if(AV_BUILD_JPEG)
 set(JPEG_TARGET turbojpeg)
 # Add turbojpeg
 ExternalProject_Add(${JPEG_TARGET}
-       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.5.tar.gz
-       URL_HASH MD5=f5b264466739ad02f01ae649582cb1d4
+       URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.6.tar.gz
+       URL_HASH MD5=22aad1e0772cd797306a87428dd744c7
        DOWNLOAD_DIR ${BUILD_DIR}/download/libjpeg-turbo
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -422,7 +426,7 @@ ExternalProject_Add(${JPEG_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       # CONFIGURE_COMMAND cd <BINARY_DIR> && autoreconf -fiv && ./configure --prefix=<INSTALL_DIR> 
+       # CONFIGURE_COMMAND cd <BINARY_DIR> && autoreconf -fiv && ./configure --prefix=<INSTALL_DIR>
        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${ZLIB_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
        BUILD_COMMAND $(MAKE)
        DEPENDS ${ZLIB_TARGET}
@@ -524,7 +528,7 @@ if(AV_BUILD_FFMPEG)
 # )
 ExternalProject_add(libvpx
       GIT_REPOSITORY https://chromium.googlesource.com/webm/libvpx.git
-      GIT_TAG v1.8.0
+      GIT_TAG v1.9.0
       GIT_PROGRESS ON
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -538,8 +542,8 @@ ExternalProject_add(libvpx
 
 set(FFMPEG_TARGET ffmpeg)
 ExternalProject_add(${FFMPEG_TARGET}
-      URL http://ffmpeg.org/releases/ffmpeg-4.1.4.tar.bz2
-      URL_HASH MD5=611d171e4aee749b85e04d17e2aee71d
+      URL http://ffmpeg.org/releases/ffmpeg-4.3.1.tar.bz2
+      URL_HASH MD5=804707549590e90880e8ecd4e5244fd8
       DOWNLOAD_DIR ${BUILD_DIR}/download/ffmpeg
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -569,8 +573,8 @@ endif()
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/Release-2.2.6.1.tar.gz
-      URL_HASH MD5=abf85fe6e2d2fb6716a7737a3553329f
+      URL https://github.com/OpenImageIO/oiio/archive/Release-2.2.11.1.tar.gz
+      URL_HASH MD5=43eb3e6cc6ca1cbfd55bbb2f19688c95
       DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -586,6 +590,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
             -DOPENEXR_HOME=${CMAKE_INSTALL_PREFIX}
             ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+            -DSTOP_ON_WARNING=OFF
             -DUSE_FFMPEG=${AV_BUILD_FFMPEG}
             -DUSE_TURBOJPEG=${AV_BUILD_JPEG}
             -DUSE_LIBRAW=${AV_BUILD_LIBRAW}
@@ -593,6 +598,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
             -DUSE_TIFF=${AV_BUILD_TIFF}
             -DUSE_PNG=${AV_BUILD_PNG}
             -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
+            # TODO: build with libheif
       BUILD_COMMAND $(MAKE)
       DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET}
       )
@@ -604,8 +610,8 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
       # vfxplatform CY2020 1.7.x
-      URL https://github.com/alembic/alembic/archive/1.7.14.tar.gz
-      URL_HASH MD5=f76d18346249c1531e25fce503ba9059
+      URL https://github.com/alembic/alembic/archive/1.7.16.tar.gz
+      URL_HASH MD5=effcc86e42fe6605588e3de57bde6677
       DOWNLOAD_DIR ${BUILD_DIR}/download/alembic
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -623,10 +629,8 @@ set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Ale
 if(AV_BUILD_OPENCV)
 set(OPENCV_TARGET opencv)
 ExternalProject_Add(opencv_contrib
-  # URL https://github.com/opencv/opencv_contrib/archive/4.2.0.zip
-  # URL_MD5 4776354662667c85a91bcd19f6a13da7
-  URL https://github.com/opencv/opencv_contrib/archive/4.1.0.zip
-  URL_MD5 3cd00bbfdebb69ad24756ccfb801ebac
+  URL https://github.com/opencv/opencv_contrib/archive/4.5.1.zip
+  URL_MD5 ddb4f64d6cf31d589a8104655d39c99b
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
   BUILD_ALWAYS 0
@@ -637,10 +641,8 @@ ExternalProject_Add(opencv_contrib
 )
 ExternalProject_Add(${OPENCV_TARGET}
   DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${FFMPEG_TARGET}
-  # URL https://github.com/opencv/opencv/archive/4.2.0.zip
-  # URL_MD5 b02b54115f1f99cb9e885d1e5988ff70
-  URL https://github.com/opencv/opencv/archive/4.1.0.zip
-  URL_MD5 5c5a9ce3519415b263d512e7f6a1e2af
+  URL https://github.com/opencv/opencv/archive/4.5.1.zip
+  URL_MD5 cc13d83c3bf989b0487bb3798375ee08
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
   UPDATE_COMMAND ""
   BUILD_IN_SOURCE 0
@@ -683,7 +685,8 @@ if(AV_BUILD_CCTAG)
 set(CCTAG_TARGET cctag)
 ExternalProject_Add(${CCTAG_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/CCTag
-      GIT_TAG ebdfe26d86425ba5c60c05f9b164c5dd23cc87ed
+      # GIT_TAG boost-no-cxx11-constexpr
+      GIT_TAG ba0daba0ff1e2c4e2698220ab6ccfc06e5ede589
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -722,7 +725,7 @@ if(AV_BUILD_POPSIFT)
 set(POPSIFT_TARGET popsift)
 ExternalProject_Add(${POPSIFT_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/popsift
-      GIT_TAG v1.0.0-rc3
+      GIT_TAG 5bbd332f94a280535d54928ced9c3fb74f16a3fb  #v1.0.0-rc3
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -809,4 +812,3 @@ add_custom_target(bundle
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
                   )
 set_target_properties(bundle PROPERTIES FOLDER Packaging)
-

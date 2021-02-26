@@ -9,6 +9,7 @@
 
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/types.hpp>
 
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/imagebuf.h>
@@ -47,13 +48,17 @@ enum class EImageFileType
  */
 struct ImageReadOptions
 {  
-  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true) :
-  outputColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance)
+  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
+  outputColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance), subROI(roi)
   {
   }
 
   EImageColorSpace outputColorSpace;
   bool applyWhiteBalance;
+
+  //ROI for this image.
+  //If the image contains an roi, this is the roi INSIDE the roi.
+  oiio::ROI subROI;
 };
 
 
@@ -177,22 +182,78 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer);
  */
 void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions);
+void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions);
 void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions);
 
 /**
+ * @brief read an image with a given path and buffer without any processing such as color conversion
+ * @param[in] path The given path to the image
+ * @param[out] image The output image buffer
+ */
+void readImageDirect(const std::string& path, Image<IndexT>& image);
+void readImageDirect(const std::string& path, Image<unsigned char>& image);
+
+/**
  * @brief write an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
 void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
 void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
 void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+
+template <typename T>
+struct ColorTypeInfo
+{
+    // no size parameter, so no default value.
+    // An error will be raise at compile time if this type traits is not defined.
+};
+
+template <>
+struct ColorTypeInfo<unsigned char>
+{
+    static const int size = 1;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::UINT8;
+};
+template <>
+struct ColorTypeInfo<float>
+{
+    static const int size = 1;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
+};
+template <>
+struct ColorTypeInfo<RGBColor>
+{
+    static const int size = 3;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::UINT8;
+};
+template <>
+struct ColorTypeInfo<RGBfColor>
+{
+    static const int size = 3;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
+};
+template <>
+struct ColorTypeInfo<RGBAColor>
+{
+    static const int size = 4;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::UINT8;
+};
+template <>
+struct ColorTypeInfo<RGBAfColor>
+{
+    static const int size = 4;
+    static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
+};
 
 }  // namespace image
 }  // namespace aliceVision

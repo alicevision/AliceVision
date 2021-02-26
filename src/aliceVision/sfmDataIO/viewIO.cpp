@@ -102,8 +102,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
   }
   else if((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
   {
-    ALICEVISION_LOG_ERROR("Error: Bad poseId for image '" << fs::path(view.getImagePath()).filename().string() << "' (viewId should be equal to poseId)." << std::endl);
-    throw std::invalid_argument("Error: Bad poseId for image '" + fs::path(view.getImagePath()).filename().string() + "'.");
+    ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImagePath()).filename().string() << "'." << std::endl);
   }
 }
 
