@@ -29,6 +29,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <limits>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -55,14 +56,14 @@ const std::vector< cv::Point2f > MACBETH_CCHART_CELLS_POS_CENTER =  {
 
 const float MACBETH_CCHART_CELLS_SIZE = 250.f * .5f;
 
-struct Quad
+struct QuadSVG
 {
     std::vector<float> xCoords;
     std::vector<float> yCoords;
 
-    Quad() = default;
+    QuadSVG() = default;
 
-    Quad(const std::vector<cv::Point2f>& points)
+    QuadSVG(const std::vector<cv::Point2f>& points)
     {
         if (points.size() != 4)
         {
@@ -93,10 +94,10 @@ struct Quad
 
 void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputPath)
 {
-    std::vector< Quad > quadsToDraw;
+    std::vector< QuadSVG > quadsToDraw;
 
     // Push back the quad representing the color checker
-    quadsToDraw.push_back( Quad(checker->getBox()) );
+    quadsToDraw.push_back( QuadSVG(checker->getBox()) );
 
     // Transform matrix from 'theoric' to 'measured'
     cv::Matx33f tMatrix = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS,checker->getBox());
@@ -104,7 +105,7 @@ void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputPath)
     // Push back quads representing color checker cells
     for (const auto& center : MACBETH_CCHART_CELLS_POS_CENTER)
     {
-        Quad quad({
+        QuadSVG quad({
             cv::Point2f( center.x - MACBETH_CCHART_CELLS_SIZE * .5, center.y - MACBETH_CCHART_CELLS_SIZE * .5 ),
             cv::Point2f( center.x + MACBETH_CCHART_CELLS_SIZE * .5, center.y - MACBETH_CCHART_CELLS_SIZE * .5 ),
             cv::Point2f( center.x + MACBETH_CCHART_CELLS_SIZE * .5, center.y + MACBETH_CCHART_CELLS_SIZE * .5 ),
@@ -146,35 +147,154 @@ struct CCheckerDetectionSettings {
 };
 
 
-struct CCheckerData {
+struct Quad
+{
+    struct BoundingBox
+    {
+        cv::Point2f min;
+        cv::Point2f max;
+
+        BoundingBox()
+            : min(cv::Point2f(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()))
+            , max(cv::Point2f(0.f, 0.f))
+        {}
+
+        float sizeX() const { return max.x - min.x; }
+        float sizeY() const { return max.y - min.y; }
+        bool contains(float x, float y) const { return x > min.x && y > min.y && x < max.x && y < max.y; }
+        bool contains(cv::Point2f p) const { return contains(p.x, p.y); }
+    };
+
+    std::vector< cv::Point > _corners;
+    BoundingBox _bbox;
+
+    Quad() = default;
+
+    Quad(std::vector< cv::Point2f > corners)
+    {
+        if (corners.size() != 4) {
+            ALICEVISION_LOG_ERROR("Invalid points count, expected 4.");
+            exit(EXIT_FAILURE);
+        }
+
+        for (auto const &c : corners)
+            _corners.push_back(c);
+        updateBBox();
+    }
+
+    Quad(cv::Point2f center, float halfHeight, float halfWidth)
+        : _corners( std::vector< cv::Point >(4) )
+    {
+        _corners[0] = cv::Point2f( center.x - halfWidth, center.y - halfHeight );
+        _corners[1] = cv::Point2f( center.x + halfWidth, center.y - halfHeight );
+        _corners[2] = cv::Point2f( center.x + halfWidth, center.y + halfHeight );
+        _corners[3] = cv::Point2f( center.x - halfWidth, center.y + halfHeight );
+        updateBBox();
+    }
+
+    void updateBBox()
+    {
+        for(auto const &c : _corners)
+        {
+            if(c.x < _bbox.min.x)
+                _bbox.min.x = c.x;
+            if(c.y < _bbox.min.y)
+                _bbox.min.y = c.y;
+            if(c.x > _bbox.max.x)
+                _bbox.max.x = c.x;
+            if(c.y > _bbox.max.y)
+                _bbox.max.y = c.y;
+        }
+    }
+
+    void transform(cv::Matx33f transformMatrix)
+    {
+        for (auto &c : _corners)
+        {
+            cv::Point3f p(c.x, c.y, 1.);
+            p = transformMatrix * p;
+            c.x = p.x / p.z;
+            c.y = p.y / p.z;
+        }
+    }
+
+    void translate(float dx, float dy)
+    {
+        for (auto &c : _corners)
+        {
+            c.x += dx;
+            c.y += dy;
+        }
+    }
+};
+
+
+struct MacbethCCheckerQuad : Quad {
     cv::Ptr<cv::mcc::CChecker> _cchecker;
     cv::Mat _colorData;
     cv::Mat _transformMat;
-    ImageOptions _imgOptions;
+    std::vector< cv::Mat > _cellMasks;
+    ImageOptions _imgOpt;
 
-    CCheckerData() = default;
+    MacbethCCheckerQuad() = default;
 
-    CCheckerData(cv::Ptr<cv::mcc::CChecker> cchecker, ImageOptions imgOptions)
-        : _cchecker(cchecker), _imgOptions(imgOptions)
+    MacbethCCheckerQuad(
+        cv::Ptr<cv::mcc::CChecker> cchecker,
+        image::Image<image::RGBAfColor> &img,
+        ImageOptions imgOpt)
+        : Quad(cchecker->getBox())
+        , _cchecker(cchecker)
+        , _imgOpt(imgOpt)
+        , _cellMasks(std::vector< cv::Mat >(24))
     {
-        // Get colors data
-        cv::Mat chartsRGB = _cchecker->getChartsRGB();
-
-        // Extract average colors
-        _colorData = chartsRGB.col(1).clone().reshape(3, chartsRGB.rows / 3) / 255.f;
-
         // Transform matrix from 'theoric' to 'measured'
         _transformMat = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS, _cchecker->getBox());
+
+        // Create an image boolean mask for each cchecker cell
+        for(int i = 0; i < _cellMasks.size(); ++i)
+        {
+            _cellMasks[i] = cv::Mat::zeros(_bbox.sizeY(), _bbox.sizeX(), CV_8UC1);
+            Quad q(MACBETH_CCHART_CELLS_POS_CENTER[i],
+                   MACBETH_CCHART_CELLS_SIZE * .5,
+                   MACBETH_CCHART_CELLS_SIZE * .5);
+            q.transform(_transformMat);
+            q.translate(- _bbox.min.x, - _bbox.min.y);
+            cv::fillConvexPoly(_cellMasks[i], q._corners.data(), 4, cv::Scalar(255));
+        }
+
+        // Extract colors from float image knowing cchecker position
+        _colorData = cv::Mat::zeros(24, 1, CV_64FC3);
+        cv::Mat pixelsCount = cv::Mat::zeros(24, 1, CV_32S);
+
+        for(int y = 0; y < (int) _bbox.sizeY(); ++y)
+        {
+            for(int x = 0; x < (int) _bbox.sizeX(); ++x)
+            {
+                for(int i = 0; i < _cellMasks.size(); ++i)
+                {
+                    // Check current pixel for the current image mask
+                    if(_cellMasks[i].at<uchar>(y,x) == 255)
+                    {
+                        image::RGBAfColor& px = img(y + _bbox.min.y, x + _bbox.min.x);
+                        _colorData.at< cv::Vec3d >(i,0) += cv::Vec3d(px.r(), px.g(), px.b());
+                        ++pixelsCount.at<int>(i);
+                    }
+                }
+            }
+        }
+
+        for(int i = 0; i < _colorData.rows; ++i)
+            _colorData.at<cv::Vec3d>(i, 0) /= pixelsCount.at<int>(i); // average value
     }
 
     bpt::ptree ptree() const
     {
         bpt::ptree pt, ptColors, ptPositions, ptTransform;
 
-        pt.put("bodySerialNumber", _imgOptions.bodySerialNumber);
-        pt.put("lensSerialNumber", _imgOptions.lensSerialNumber);
-        pt.put("imageName", _imgOptions.imgFsPath.string());
-        pt.put("viewId", _imgOptions.viewId);
+        pt.put("bodySerialNumber", _imgOpt.bodySerialNumber);
+        pt.put("lensSerialNumber", _imgOpt.lensSerialNumber);
+        pt.put("imagePath", _imgOpt.imgFsPath.string());
+        pt.put("viewId", _imgOpt.viewId);
 
         // Serialize checker.positions
         for (const auto& point : _cchecker->getBox())
@@ -185,20 +305,6 @@ struct CCheckerData {
             ptPositions.push_back( std::make_pair("", ptPoint) );
         }
         pt.add_child("positions", ptPositions);
-
-        // Serialize checker.colors
-        for (int i = 0; i < _colorData.rows; ++i)
-        {
-            for(int j = 0; j < _colorData.cols; ++j)
-            {
-                bpt::ptree ptColor;
-                ptColor.put("r", _colorData.at<cv::Vec3d>(i,j)[0]);
-                ptColor.put("g", _colorData.at<cv::Vec3d>(i,j)[1]);
-                ptColor.put("b", _colorData.at<cv::Vec3d>(i,j)[2]);
-                ptColors.push_back( std::make_pair("", ptColor) );
-            }
-        }
-        pt.add_child("colors", ptColors);
 
         // Serialize checker.transform
         for (int i = 0; i < _transformMat.rows; ++i)
@@ -214,28 +320,39 @@ struct CCheckerData {
         }
         pt.add_child("transform", ptTransform);
 
+        // Serialize colors
+        for (int i = 0; i < _colorData.rows; ++i)
+        {
+            bpt::ptree ptColor;
+            ptColor.put("r", _colorData.at<cv::Vec3d>(i,0)[0]);
+            ptColor.put("g", _colorData.at<cv::Vec3d>(i,0)[1]);
+            ptColor.put("b", _colorData.at<cv::Vec3d>(i,0)[2]);
+            ptColors.push_back( std::make_pair("", ptColor) );
+        }
+        pt.add_child("colors", ptColors);
+
         return pt;
     }
 };
 
 
 void detectColorChecker(
-    std::vector<CCheckerData> &detectedCCheckers,
+    std::vector<MacbethCCheckerQuad> &detectedCCheckers,
     ImageOptions& imgOpt,
     CCheckerDetectionSettings &settings)
 {
     const int nc = 2; // Max number of charts in an image
-    const std::string outputFolder = fs::path(settings.outputData).parent_path().string();
+    const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
     const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
 
     // Load image
-    image::Image<image::RGBAfColor> image;
-    image::readImage(imgSrcPath, image, imgOpt.readOptions);
-    cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_8UC3);
+    image::Image<image::RGBAfColor> img;
+    image::readImage(imgSrcPath, img, imgOpt.readOptions);
+    cv::Mat imgBGR = image::imageRGBAToCvMatBGR(img, CV_8UC3);
 
-    if(imageBGR.cols == 0 || imageBGR.rows == 0)
+    if(imgBGR.cols == 0 || imgBGR.rows == 0)
     {
         ALICEVISION_LOG_ERROR("Image at: '" << imgSrcPath << "'.\n" << "is empty.");
         exit(EXIT_FAILURE);
@@ -243,7 +360,7 @@ void detectColorChecker(
 
     cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
 
-    if(!detector->process(imageBGR, settings.typechart, settings.maxCountByImage))
+    if(!detector->process(imgBGR, settings.typechart, settings.maxCountByImage))
     {
         ALICEVISION_LOG_INFO("Checker not detected in image at: '" << imgSrcPath << "'");
         return;
@@ -257,16 +374,24 @@ void detectColorChecker(
 
         ALICEVISION_LOG_INFO("Checker #" << counter <<" successfully detected in '" << imgSrcStem << "'");
 
+        MacbethCCheckerQuad ccq(cchecker, img, imgOpt);
+        detectedCCheckers.push_back(ccq);
+        
         if(settings.debug)
         {
             // Output debug data
-            drawSVG(cchecker, outputFolder + "/" + imgDestStem + counterStr + ".svg");
+            drawSVG(cchecker, outputFolder + imgDestStem + counterStr + ".svg");
 
             cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(cchecker, CV_RGB(250, 0, 0), 3);
-            cdraw->draw(imageBGR);
-            cv::imwrite(outputFolder + "/" + imgDestStem + counterStr + ".jpg", imageBGR);
+            cdraw->draw(imgBGR);
+            cv::imwrite(outputFolder + imgDestStem + counterStr + ".jpg", imgBGR);
+
+            const std::string masksFolder = outputFolder + "masks/";
+            fs::create_directory(masksFolder);
+
+            for (int i = 0; i < ccq._cellMasks.size(); ++i)
+                cv::imwrite(masksFolder + imgDestStem + counterStr + "_" + std::to_string(i) + ".jpg", ccq._cellMasks[i]);
         }
-        detectedCCheckers.push_back( CCheckerData(cchecker, imgOpt) );
     }
 }
 
@@ -344,7 +469,7 @@ int aliceVision_main(int argc, char** argv)
     settings.outputData = outputData;
     settings.debug = debug;
 
-    std::vector< CCheckerData > detectedCCheckers;
+    std::vector< MacbethCCheckerQuad > detectedCCheckers;
 
     // Check if inputExpression is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());

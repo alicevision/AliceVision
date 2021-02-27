@@ -45,17 +45,15 @@ struct CChecker
 {
     std::string _bodySerialNumber;
     std::string _lensSerialNumber;
-    std::string _imageName;
+    std::string _imagePath;
     std::string _viewId;
     cv::Mat _colorData;
 
-    CChecker() = default;
-
-    void ptree(const bpt::ptree::value_type& ccheckerPTree)
+    CChecker(const bpt::ptree::value_type& ccheckerPTree)
     {
         _bodySerialNumber = ccheckerPTree.second.get_child("bodySerialNumber").get_value<std::string>();
         _lensSerialNumber = ccheckerPTree.second.get_child("lensSerialNumber").get_value<std::string>();
-        _imageName = ccheckerPTree.second.get_child("imageName").get_value<std::string>();
+        _imagePath = ccheckerPTree.second.get_child("imagePath").get_value<std::string>();
         _viewId = ccheckerPTree.second.get_child("viewId").get_value<std::string>();
         _colorData = cv::Mat::zeros(24, 1, CV_64FC3);
 
@@ -102,6 +100,7 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
     image::cvMatBGRToImageRGBA(outImg, image);
 }
 
+
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
                const image::EStorageDataType storageDataType)
 {
@@ -130,6 +129,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
 
     image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
 }
+
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -219,11 +219,7 @@ int aliceVision_main(int argc, char** argv)
         bpt::read_json(inputData, data);
 
         for(const bpt::ptree::value_type& ccheckerPTree : data.get_child("checkers"))
-        {
-            CChecker cchecker;
-            cchecker.ptree(ccheckerPTree);
-            ccheckers.push_back(cchecker);
-        }
+            ccheckers.push_back(CChecker(ccheckerPTree));
 
         // for now the program behaves as if all the images to process are sharing the same properties
         cv::Mat colorData = ccheckers[0]._colorData;
