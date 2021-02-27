@@ -55,6 +55,9 @@ struct FuseParams
     float simGaussianSize = 10.0f;
     double minAngleThreshold = 0.1;
     bool refineFuse = true;
+    // Weight for helper points from mask. Do not create helper points if zero.
+    float maskHelperPointsWeight = 0.0;
+    int maskBorderSize = 1;
 };
 
 
@@ -434,10 +437,12 @@ public:
     void addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist);
     void addPointsToPreventSingularities(const Point3d Voxel[8], float minDist);
 
+    void densifyWithHelperPoints(int nbFront, int nbBack, double scale);
+
     /**
      * @brief Add volume points to prevent singularities
      */
-    void addHelperPoints(int nGridHelperVolumePointsDim, const Point3d Voxel[8], float minDist);
+    void addGridHelperPoints(int helperPointsGridSize, const Point3d Voxel[8], float minDist);
 
     void addMaskHelperPoints(const Point3d voxel[8], const StaticVector<int>& cams, const FuseParams& params);
 
@@ -495,19 +500,17 @@ public:
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
 
-    virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool labatutWeights,
-                           bool fillOut, float distFcnHeight = 0.0f);
+    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight,
+                           float fullWeight);
     void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam, float weight,
-                           bool fixesSigma, float nPixelSizeBehind, bool fillOut,
-                           float distFcnHeight);
+                           float fullWeight, double nPixelSizeBehind, bool fillOut, float distFcnHeight);
 
     /**
      * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
-     * 
-     * @param fixesSigma Use constant sigma for all points or take into account the pixelSize 
+     *
      * @param nPixelSizeBehind Used to define the surface margin
      */
-    void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
+    void forceTedgesByGradientIJCV(float nPixelSizeBehind);
 
     int computeIsOnSurface(std::vector<bool>& vertexIsOnSurface) const;
 
@@ -519,7 +522,8 @@ public:
 
     void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
 
-    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments);
+    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName,
+                        const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, bool exportDebugTetrahedralization);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -540,12 +544,27 @@ public:
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
 
-    mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
+    /**
+     * Some vertices have not been created by depth maps but
+     * have been created for the tetrahedralization like
+     * camera centers, helper points, etc.
+     * These points have no visibility information (nrc == 0).
+     * We want to remove these fake points, but we do not want to create holes.
+     * So if the vertex is alone in the middle of valid points, we want to keep it.
+     */
+    void filterLargeHelperPoints(std::vector<bool>& out_reliableVertices, const std::vector<bool>& vertexIsOnSurface, int maxSegSize);
+
+    /**
+     * @brief Create a mesh from the tetrahedral scores
+     * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 0 means that we remove all helper points. -1 means that we do not filter helper points at all.
+     */
+    mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
     mesh::Mesh* createTetrahedralMesh(bool filter = true, const float& downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
 
     void displayCellsStats() const;
     void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);
-    void exportFullScoreMeshs();
+    void exportFullScoreMeshs(const std::string& outputFolder, const std::string& name) const;
+
     void exportBackPropagationMesh(const std::string& filename, std::vector<GeometryIntersection>& intersectedGeom, const Point3d& fromPt, const Point3d& toPt);
     void writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit = 1000);
 };

@@ -625,6 +625,26 @@ if(ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
+# OpenGV
+# ==============================================================================
+# - optional, it allows to use the generic camera PnP algorithms for rig localization
+# ==============================================================================
+set(ALICEVISION_HAVE_OPENGV 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_OPENGV STREQUAL "OFF")
+    find_package(opengv 1.0 CONFIG)
+    if(opengv_FOUND)
+      set(ALICEVISION_HAVE_OPENGV 1)
+      message(STATUS "OpenGV ${opengv_VERSION} found.")
+    elseif(ALICEVISION_USE_OPENGV STREQUAL "ON")
+      message(SEND_ERROR "Failed to find OpenGV.")
+    endif()
+  endif()
+
+endif()
+
+# ==============================================================================
 # UncertaintyTE
 # ==============================================================================
 # - optional, only external and enabled only if ALICEVISION_USE_UNCERTAINTYTE is ON

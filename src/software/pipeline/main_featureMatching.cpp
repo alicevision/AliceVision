@@ -110,6 +110,7 @@ int aliceVision_main(int argc, char **argv)
   double knownPosesGeometricErrorMax = 4.0;
   bool savePutativeMatches = false;
   bool guidedMatching = false;
+  bool crossMatching = false;
   int maxIteration = 2048;
   bool matchFilePerImage = false;
   size_t numMatchesToKeep = 0;
@@ -170,6 +171,8 @@ int aliceVision_main(int argc, char **argv)
       "Save putative matches.")
     ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
       "Use the found model to improve the pairwise correspondences.")
+    ("crossMatching", po::value<bool>(&crossMatching)->default_value(crossMatching),
+      "Make sure that the matching process is symmetric (same matches for I->J than fo J->I).")
     ("matchFilePerImage", po::value<bool>(&matchFilePerImage)->default_value(matchFilePerImage),
       "Save matches in a separate file per image.")
     ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),
@@ -273,6 +276,8 @@ int aliceVision_main(int argc, char **argv)
   PairSet pairs;
   std::set<IndexT> filter;
 
+  
+  // We assume that there is only one pair for (I,J) and (J,I)
   if(predefinedPairList.empty())
   {
     pairs = exhaustivePairs(sfmData.getViews(), rangeStart, rangeSize);
@@ -307,7 +312,7 @@ int aliceVision_main(int argc, char **argv)
 
   // allocate the right Matcher according the Matching requested method
   EMatcherType collectionMatcherType = EMatcherType_stringToEnum(nearestMatchingMethod);
-  std::unique_ptr<IImageCollectionMatcher> imageCollectionMatcher = createImageCollectionMatcher(collectionMatcherType, distRatio);
+  std::unique_ptr<IImageCollectionMatcher> imageCollectionMatcher = createImageCollectionMatcher(collectionMatcherType, distRatio, crossMatching);
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
