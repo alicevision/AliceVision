@@ -871,8 +871,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
   const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
 
-//Not determinist ?!
-//#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<IndexT>::const_iterator iter = remainingViewIds.cbegin();
