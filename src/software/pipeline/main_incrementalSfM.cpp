@@ -248,6 +248,7 @@ int aliceVision_main(int argc, char **argv)
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // features reading
+  omp_set_num_threads(1);
   feature::FeaturesPerView featuresPerView;
   if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
   {
@@ -262,6 +263,7 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;
   }
+  omp_set_num_threads(24);
 
   if(extraInfoFolder.empty())
     extraInfoFolder = fs::path(outputSfM).parent_path().string();

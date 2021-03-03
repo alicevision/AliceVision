@@ -444,11 +444,13 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 
       // get reconstructed views before resection
       const std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
-
-      std::set<IndexT> newReconstructedViews = resection(resectionId, bestViewCandidates, prevReconstructedViews, remainingViewIds);
+      std::set<IndexT> failedViews;
+      std::set<IndexT> newReconstructedViews = resection(resectionId, bestViewCandidates, prevReconstructedViews, remainingViewIds, failedViews);
 
       if(newReconstructedViews.empty())
         continue;
+
+      remainingViewIds.insert(failedViews.begin(), failedViews.end());
 
       triangulate(prevReconstructedViews, newReconstructedViews);
 
@@ -506,7 +508,8 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
  std::set<IndexT> ReconstructionEngine_sequentialSfM::resection(IndexT resectionId,
                                                                 const std::vector<IndexT>& bestViewIds,
                                                                 const std::set<IndexT>& prevReconstructedViews,
-                                                                std::set<IndexT>& remainingViewIds)
+                                                                std::set<IndexT>& remainingViewIds,
+                                                                std::set<IndexT>& failedViewIds)
 {
   auto chrono_start = std::chrono::steady_clock::now();
 
@@ -570,6 +573,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       else
       {
         ALICEVISION_LOG_DEBUG("Resection of image " << i << " ( view id: " << viewId << " ) was not possible.");
+        failedViewIds.insert(viewId);
       }
       remainingViewIds.erase(viewId);
     }
@@ -871,7 +875,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
   const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(dynamic)
   for(int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<IndexT>::const_iterator iter = remainingViewIds.cbegin();
@@ -882,49 +886,50 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
     // Compute 2D - 3D possible content
     const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewId);
-    if (set_tracksIds.empty())
-      continue;
-
-    // Check if the view is part of a rig
+    if (!set_tracksIds.empty())
     {
-      const View& view = *_sfmData.views.at(viewId);
-
-      if(view.isPartOfRig())
+      // Check if the view is part of a rig
       {
-        // Some views can become indirectly localized when the sub-pose becomes defined
-        if(_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
-        {
-          continue;
-        }
+        const View& view = *_sfmData.views.at(viewId);
 
-        // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
-        const bool knownPose = _sfmData.existsPose(view);
-        const Rig& rig = _sfmData.getRig(view);
-        const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
-
-        if(rig.isInitialized() &&
-           !knownPose &&
-           (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
+        if(view.isPartOfRig())
         {
-          continue;
+          // Some views can become indirectly localized when the sub-pose becomes defined
+          if(_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
+          {
+            continue;
+          }
+
+          // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
+          const bool knownPose = _sfmData.existsPose(view);
+          const Rig& rig = _sfmData.getRig(view);
+          const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
+
+          if(rig.isInitialized() &&
+            !knownPose &&
+            (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
+          {
+            continue;
+          }
         }
       }
-    }
 
-    // Count the common possible putative point
-    //  with the already 3D reconstructed trackId
-    std::vector<std::size_t> vec_trackIdForResection;
-    vec_trackIdForResection.reserve(set_tracksIds.size());
-    std::set_intersection(set_tracksIds.begin(), set_tracksIds.end(),
-                          reconstructed_trackId.begin(),
-                          reconstructed_trackId.end(),
-                          std::back_inserter(vec_trackIdForResection));
-    // Compute an image score based on the number of matches to the 3D scene
-    // and the repartition of these features in the image.
-    std::size_t score = computeCandidateImageScore(viewId, vec_trackIdForResection);
-#pragma omp critical
-    {
-      out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
+      // Count the common possible putative point
+      //  with the already 3D reconstructed trackId
+      std::vector<std::size_t> vec_trackIdForResection;
+      vec_trackIdForResection.reserve(set_tracksIds.size());
+      std::set_intersection(set_tracksIds.begin(), set_tracksIds.end(),
+                            reconstructed_trackId.begin(),
+                            reconstructed_trackId.end(),
+                            std::back_inserter(vec_trackIdForResection));
+      // Compute an image score based on the number of matches to the 3D scene
+      // and the repartition of these features in the image.
+      #pragma omp critical
+      {
+        std::size_t score = computeCandidateImageScore(viewId, vec_trackIdForResection);
+  
+        out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
+      }
     }
   }
 
