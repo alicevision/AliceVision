@@ -70,11 +70,11 @@ struct IndMatch
 };
 
 inline std::ostream& operator<<(std::ostream & out, const IndMatch & obj) {
-  return out << obj._i << " " << obj._j;
+  return out << obj._i << " " << obj._j << " " << obj._distanceRatio;
 }
 
 inline std::istream& operator>>(std::istream & in, IndMatch & obj) {
-  return in >> obj._i >> obj._j;
+  return in >> obj._i >> obj._j >> obj._distanceRatio;
 }
 
 typedef std::vector<matching::IndMatch> IndMatches;
