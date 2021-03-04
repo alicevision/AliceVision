@@ -253,7 +253,8 @@ struct ResidualErrorFunctor_PinholeRadialK1
       const T* cam_t = &subpose_Rt[3];
 
       // Rotate the point according to the camera rotation
-      ceres::AngleAxisRotatePoint(cam_R, pos_proj, pos_proj);
+      T pos_proj_tmp[3] = { pos_proj[0], pos_proj[1], pos_proj[2] };
+      ceres::AngleAxisRotatePoint(cam_R, pos_proj_tmp, pos_proj);
 
       // Apply the camera translation
       pos_proj[0] += cam_t[0];
@@ -573,7 +574,8 @@ struct ResidualErrorFunctor_PinholeBrownT2
       const T * cam_t = &subpose_Rt[3];
 
       // Rotate the point according to the camera rotation
-      ceres::AngleAxisRotatePoint(cam_R, pos_proj, pos_proj);
+      T pos_proj_tmp[3] = { pos_proj[0], pos_proj[1], pos_proj[2] };
+      ceres::AngleAxisRotatePoint(cam_R, pos_proj_tmp, pos_proj);
 
       // Apply the camera translation
       pos_proj[0] += cam_t[0];
@@ -741,7 +743,8 @@ struct ResidualErrorFunctor_PinholeFisheye
       const T * cam_t = &subpose_Rt[3];
 
       // Rotate the point according to the camera rotation
-      ceres::AngleAxisRotatePoint(cam_R, pos_proj, pos_proj);
+      T pos_proj_tmp[3] = { pos_proj[0], pos_proj[1], pos_proj[2] };
+      ceres::AngleAxisRotatePoint(cam_R, pos_proj_tmp, pos_proj);
 
       // Apply the camera translation
       pos_proj[0] += cam_t[0];
@@ -895,7 +898,8 @@ struct ResidualErrorFunctor_PinholeFisheye1
       const T * cam_t = &subpose_Rt[3];
 
       // Rotate the point according to the camera rotation
-      ceres::AngleAxisRotatePoint(cam_R, pos_proj, pos_proj);
+      T pos_proj_tmp[3] = { pos_proj[0], pos_proj[1], pos_proj[2] };
+      ceres::AngleAxisRotatePoint(cam_R, pos_proj_tmp, pos_proj);
 
       // Apply the camera translation
       pos_proj[0] += cam_t[0];
