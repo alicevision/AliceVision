@@ -54,7 +54,7 @@ public:
    */
   void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const override
   {
-     throw std::logic_error("EPnPSolver does not support problem solving with weights.");
+     solve(x2d, x3d, models);
   }
 
   /**
