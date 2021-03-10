@@ -80,7 +80,7 @@ struct QuadSVG
         yCoords.push_back(points[0].y);
     }
 
-    void transform(cv::Matx33f transformMatrix)
+    void transform(const cv::Matx33f& transformMatrix)
     {
         for (int i = 0; i < 5; ++i)
         {
@@ -92,7 +92,7 @@ struct QuadSVG
     }
 };
 
-void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, std::string outputPath)
+void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outputPath)
 {
     std::vector< QuadSVG > quadsToDraw;
 
@@ -207,7 +207,7 @@ struct Quad
         }
     }
 
-    void transform(cv::Matx33f transformMatrix)
+    void transform(const cv::Matx33f& transformMatrix)
     {
         for (auto &c : _corners)
         {
@@ -240,8 +240,8 @@ struct MacbethCCheckerQuad : Quad {
 
     MacbethCCheckerQuad(
         cv::Ptr<cv::mcc::CChecker> cchecker,
-        image::Image<image::RGBAfColor> &img,
-        ImageOptions imgOpt)
+        const image::Image<image::RGBAfColor> &img,
+        const ImageOptions& imgOpt)
         : Quad(cchecker->getBox())
         , _cchecker(cchecker)
         , _imgOpt(imgOpt)
