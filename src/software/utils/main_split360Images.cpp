@@ -73,39 +73,6 @@ private:
 };
 
 /**
- * @brief Function to map 3D coordinates onto a 2D image according a spherical projection
- */
-class SphericalMappingLocal
-{
-public:
-
-  static Vec2 get2DPoint(const Vec3& X, int width, int height)
-  {
-    const Vec3 polarCoord = get3DPointPolar(X);
-
-    const double phi   = polarCoord(0);
-    const double theta = polarCoord(1);
-
-    const double x = ((phi * width) / M_PI + width) / 2.0;  // between 0 and width
-    const double y = theta * height / M_PI;                  // between 0 and height
-
-    return Vec2(x, y);
-  }
-
-  static Vec3 get3DPointPolar(const Vec3& pos3d)
-  {
-    const double x = pos3d(0);
-    const double y = pos3d(1);
-    const double z = pos3d(2);
-
-    const double theta = atan2(y, sqrt(Square(x) + Square(z)));
-    const double phi = atan2(x, z);
-
-    return Vec3 (phi, theta + M_PI/2.0, 1.0);
-  }
-};
-
-/**
  * @brief Compute a rectilinear camera focal from an angular FoV
  * @param h
  * @param thetaMax camera FoV
@@ -251,7 +218,9 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
-  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60.0));
+  
+  const double fov = degreeToRadian(110.0);
+  const double focal = (splitResolution / 2.0) / tan(fov / 2.0);
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
@@ -279,28 +248,30 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
     {
       Vec2 pt(0.,j);
       ray = camera.getRay(pt(0), pt(1));
-      Vec2 x = SphericalMappingLocal::get2DPoint( ray, inWidth, inHeight);
+      Vec2 x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
 
       pt[0] = splitResolution;
       ray = camera.getRay(pt(0), pt(1));
-      x = SphericalMappingLocal::get2DPoint( ray, inWidth, inHeight);
+      x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
     }
+
     // Horizontal rectilinear image border:
     for (double j = 0; j <= splitResolution; j += splitResolution/(double)step)
     {
       Vec2 pt(j,0.);
       ray = camera.getRay(pt(0), pt(1));
-      Vec2 x = SphericalMappingLocal::get2DPoint( ray, inWidth, inHeight);
+      Vec2 x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("lime").stroke("white", 4));
 
       pt[1] = splitResolution;
       ray = camera.getRay(pt(0), pt(1));
-      x = SphericalMappingLocal::get2DPoint( ray, inWidth, inHeight);
+      x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("lime").stroke("white", 4));
     }
   }
+
   boost::filesystem::path path(imagePath);
   std::ofstream svgFile(outputFolder + std::string("/") + path.stem().string() + std::string(".svg"));
   svgFile << svgStream.closeSvgFile().str();
