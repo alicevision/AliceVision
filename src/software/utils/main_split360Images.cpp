@@ -185,7 +185,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
   const double alpha = twoPi / static_cast<double>(nbSplits);
 
   const double fov = degreeToRadian(110.0);
-  const double focal = (inWidth / 2.0) / tan(fov / 2.0);
+  const double focal = (splitResolution / 2.0) / tan(fov / 2.0);
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
