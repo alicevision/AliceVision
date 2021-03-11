@@ -235,7 +235,12 @@ bool Load(PairwiseMatches& matches,
   // build up a set with normalized paths to remove duplicates
   std::set<std::string> foldersSet;
   for(const auto& folder : folders)
-    foldersSet.insert(fs::canonical(folder).string());
+  {
+    if(fs::exists(folder))
+    {
+      foldersSet.insert(fs::canonical(folder).string());
+    }
+  }
 
   for(const auto& folder : foldersSet)
   {
