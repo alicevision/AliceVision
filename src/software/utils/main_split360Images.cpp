@@ -291,6 +291,7 @@ int aliceVision_main(int argc, char** argv)
   std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
   bool equirectangularDemoMode;
   double fov = 110.0;                         // Field of View in degree
+  int nbThreads = 3;
 
   po::options_description allParams("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder\n"
                                     "AliceVision split360Images");
@@ -318,6 +319,8 @@ int aliceVision_main(int argc, char** argv)
       "Export a SVG file that simulate the split")
     ("fov", po::value<double>(&fov)->default_value(fov),
       "Field of View to extract (in degree).")
+    ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads),
+      "Number of threads.")
     ;
 
   po::options_description logParams("Log parameters");
@@ -420,8 +423,10 @@ int aliceVision_main(int argc, char** argv)
     }
   }
 
-  for(const std::string& imagePath : imagePaths)
+#pragma omp parallel for num_threads(nbThreads)
+  for(int i = 0; i < imagePaths.size(); ++i)
   {
+    const std::string& imagePath = imagePaths[i];
     bool hasCorrectPath = true;
 
     if(splitMode == "equirectangular")
@@ -441,7 +446,10 @@ int aliceVision_main(int argc, char** argv)
     }
 
     if(!hasCorrectPath)
+    {
+#pragma omp critical
       badPaths.push_back(imagePath);
+    }
   }
 
   if(!badPaths.empty())
