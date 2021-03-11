@@ -138,7 +138,7 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
   return true;
 }
 
-bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
+bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
   image::Image<image::RGBColor> imageSource;
   image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
@@ -151,13 +151,13 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
 
-  const double fov = degreeToRadian(110.0);
-  const double focal = (splitResolution / 2.0) / tan(fov / 2.0);
+  const double fov = degreeToRadian(fovDegree);
+  const double focal_px = (splitResolution / 2.0) / tan(fov / 2.0);
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
   {
-    cameras.emplace_back(focal, splitResolution, splitResolution, RotationAroundY(angle));
+    cameras.emplace_back(focal_px, splitResolution, splitResolution, RotationAroundY(angle));
     angle += alpha;
   }
 
@@ -193,7 +193,8 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
     // Ooerride make and model in order to force camera model in SfM
     outMetadataSpec.attribute("Make",  "Custom");
     outMetadataSpec.attribute("Model", "Pinhole");
-    outMetadataSpec.attribute("Exif:FocalLength", static_cast<float>(focal));
+    const float focal_mm = focal_px / splitResolution; // muliplied by sensorWidth (which is 1 for "Custom")
+    outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
     boost::filesystem::path path(imagePath);
     image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
@@ -206,7 +207,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 }
 
 
-bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
+bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
   image::Image<image::RGBColor> imageSource;
   image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
@@ -218,8 +219,8 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
-  
-  const double fov = degreeToRadian(110.0);
+
+  const double fov = degreeToRadian(fovDegree);
   const double focal = (splitResolution / 2.0) / tan(fov / 2.0);
 
   double angle = 0.0;
@@ -289,6 +290,7 @@ int aliceVision_main(int argc, char** argv)
   std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
   std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
   bool equirectangularDemoMode;
+  double fov = 110.0;                         // Field of View in degree
 
   po::options_description allParams("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder\n"
                                     "AliceVision split360Images");
@@ -313,7 +315,10 @@ int aliceVision_main(int argc, char** argv)
     ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
       "Equirectangular split resolution")
     ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(false),
-      "Export a SVG file that simulate the split");
+      "Export a SVG file that simulate the split")
+    ("fov", po::value<double>(&fov)->default_value(fov),
+      "Field of View to extract (in degree).")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -422,9 +427,9 @@ int aliceVision_main(int argc, char** argv)
     if(splitMode == "equirectangular")
     {
       if(equirectangularDemoMode)
-        hasCorrectPath = splitEquirectangularDemo(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution);
+        hasCorrectPath = splitEquirectangularDemo(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
       else
-        hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution);
+        hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
     }
     else if(splitMode == "dualfisheye")
     {
