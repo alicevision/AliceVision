@@ -5421,6 +5421,7 @@ Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S8;5.75;usercontribution
 Samsung;Samsung Galaxy S9;5.75;usercontribution
 Samsung;Samsung Galaxy S10 Plus;5.75;digicamdb
+Samsung;Samsung Galaxy S20 Ultra 5G Exynos;10.82;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 Wi-Fi;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 8.4 LTE;3.6;devicespecifications
@@ -5568,6 +5569,10 @@ Samsung;Samsung SM-G950U;2.68;usercontribution
 Samsung;Samsung SM-G955F;5.76;usercontribution
 Samsung;Samsung SM-G965F;5.64;usercontribution
 Samsung;Samsung SM-G975U;5.66;devicespecifications
+Samsung;Samsung SM-G988;10.82;devicespecifications
+Samsung;Samsung SM-G9880;10.82;devicespecifications
+Samsung;Samsung SM-G988B/DS;10.82;devicespecifications
+Samsung;Samsung SM-G988N;10.82;devicespecifications
 Samsung;Samsung SM-M315F;7.42;devicespecifications
 Samsung;Samsung SM-N985F;9.6;devicespecifications
 Samsung;Samsung SM-N986B;9.6;devicespecifications
