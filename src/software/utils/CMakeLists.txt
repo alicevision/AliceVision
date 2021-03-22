@@ -219,6 +219,7 @@ alicevision_add_software(aliceVision_utils_split360Images
   LINKS aliceVision_system
         aliceVision_numeric
         aliceVision_image
+        aliceVision_panorama
         ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
         Boost::filesystem
