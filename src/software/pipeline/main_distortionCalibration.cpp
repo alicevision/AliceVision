@@ -55,7 +55,7 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
     {
         for (int j = 0; j < w; j++)
         {
-            Vec2 pos = camera->get_ud_pixel(Vec2(j, i));
+            Vec2 pos = camera->get_d_pixel(Vec2(j, i));
             minx = std::min(minx, pos.x());
             maxx = std::max(maxx, pos.x());
             miny = std::min(miny, pos.y());
@@ -79,7 +79,7 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
             double x = minx + double(j);
 
             Vec2 pos(x, y);
-            Vec2 dist = camera->get_d_pixel(pos);
+            Vec2 dist = camera->get_ud_pixel(pos);
 
 
             if (dist.x() < 0 || dist.x() >= source.Width()) continue;
@@ -448,7 +448,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole> & camera, calibration
 }
 
 template <class T>
-bool estimateDistortion3DE(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
+bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
 {
     std::vector<bool> locksDistortions = {true, true, true, true, true, true};
 
@@ -493,7 +493,7 @@ bool estimateDistortion3DE(std::shared_ptr<camera::Pinhole> & camera, calibratio
 }
 
 template <class T>
-bool estimateDistortionA4(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
+bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
 {
     
     std::shared_ptr<camera::Pinhole> simpleCamera = std::make_shared<camera::PinholeRadialK1>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1], 0.0);
@@ -523,38 +523,54 @@ bool estimateDistortionA4(std::shared_ptr<camera::Pinhole> & camera, calibration
 }
 
 template <class T>
-bool estimateDistortionA10(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
+bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
 {
+    std::vector<bool> locksDistortions = {true, true, true, true, true};
     
-    std::shared_ptr<camera::Pinhole> simplerCamera = std::make_shared<camera::PinholeAnamorphic4>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1]);
-    if (!estimateDistortionA4(simplerCamera, statistics, items))
+
+    //Everything locked except lines paramters
+    locksDistortions[0] = true;
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
 
+    //Relax distortion 1st order
+    locksDistortions[0] = false;
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return false;
+    }
 
-    std::vector<bool> locksDistortions = {true, true, true, true, true, true, true, true, true, true};
+    //Relax offcenter
+    locksDistortions[0] = false;
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return false;
+    }
 
-    //Relax distortion all orders
+    //Relax offcenter
+    locksDistortions[0] = false;
+    locksDistortions[1] = true;
+    locksDistortions[2] = false;
+    locksDistortions[3] = false;
+    locksDistortions[4] = true;
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return false;
+    }
+
+    //Relax offcenter
     locksDistortions[0] = false;
     locksDistortions[1] = false;
     locksDistortions[2] = false;
     locksDistortions[3] = false;
-    locksDistortions[4] = false;
-    locksDistortions[5] = false;
-    locksDistortions[6] = false;
-    locksDistortions[7] = false;
-    locksDistortions[8] = false;
-    locksDistortions[9] = false;
-
-    double cxx = simplerCamera->getDistortionParams()[0];
-    double cxy = simplerCamera->getDistortionParams()[1];
-    double cyx = simplerCamera->getDistortionParams()[2];
-    double cyy = simplerCamera->getDistortionParams()[3];
-
-    camera->setDistortionParams({cxx, cxy, 0.0, 0.0, 0.0, cyx, cyy, 0.0, 0.0, 0.0});
-
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    locksDistortions[4] = true;
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -752,29 +768,37 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeRadial3DE>(cameraBase))
+        
+        else if (std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraBase))
         {
-            if (!estimateDistortion3DE(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortion3DER4(cameraPinhole, statistics, lineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeAnamorphic4>(cameraBase))
+        else if (std::dynamic_pointer_cast<camera::Pinhole3DEAnamorphic4>(cameraBase))
         {
-            if (!estimateDistortionA4(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortion3DEA4(cameraPinhole, statistics, lineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeAnamorphic10>(cameraBase))
+        else if (std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraBase))
         {
-            if (!estimateDistortionA10(cameraPinhole, statistics, lineWithPoints))
+            std::vector<double> params = cameraPinhole->getDistortionParams();
+            for (int i = 0; i < params.size(); i++) params[i] = 0.0;
+            params[1] = 1.0;
+            cameraPinhole->setDistortionParams(params);
+
+            if (!estimateDistortion3DELD(cameraPinhole, statistics, lineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
+
+            std::cout << cameraPinhole->getDistortionParams() << std::endl;
         }
         else 
         {
@@ -798,7 +822,20 @@ int aliceVision_main(int argc, char* argv[])
             continue;
         }
 
-        cameraPinhole->setWidth(w);
+        /*cameraPinhole->setWidth(w);
+        cameraPinhole->setHeight(h);
+        cameraPinhole->setScale(d, d);
+        cameraPinhole->setOffset(w / 2, h / 2);
+        
+        std::vector<double> params = cameraPinhole->getDistortionParams();
+        params[0] = 0.1409;
+        params[0] = 1.0;
+        params[0] = 0.0;
+        params[0] = -0.0;
+        params[4] = -0.103;
+        cameraPinhole->setDistortionParams(params);*/
+
+        /*cameraPinhole->setWidth(w);
         cameraPinhole->setHeight(h);
         cameraPinhole->setScale(originalScale.x(), originalScale.y());   
         cameraPinhole->setOffset(w / 2, h / 2);
@@ -824,25 +861,30 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeRadial3DE>(cameraBase))
+        else if (std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraBase))
         {
-            if (!estimateDistortion3DE(cameraPinhole, statistics, points))
+            if (!estimateDistortion3DER4(cameraPinhole, statistics, points))
             {
                 ALICEVISION_LOG_ERROR("Error estimating reverse distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeAnamorphic4>(cameraBase))
+        else if (std::dynamic_pointer_cast<camera::Pinhole3DEAnamorphic4>(cameraBase))
         {
-            if (!estimateDistortionA4(cameraPinhole, statistics, points))
+            if (!estimateDistortion3DEA4(cameraPinhole, statistics, points))
             {
                 ALICEVISION_LOG_ERROR("Error estimating reverse distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeAnamorphic10>(cameraBase))
+        else if (std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraBase))
         {
-            if (!estimateDistortionA10(cameraPinhole, statistics, points))
+            std::vector<double> params = cameraPinhole->getDistortionParams();
+            for (int i = 0; i < params.size(); i++) params[i] = 0.0;
+            params[1] = 1.0;
+            cameraPinhole->setDistortionParams(params);
+
+            if (!estimateDistortion3DELD(cameraPinhole, statistics, points))
             {
                 ALICEVISION_LOG_ERROR("Error estimating reverse distortion");
                 continue;
@@ -851,7 +893,7 @@ int aliceVision_main(int argc, char* argv[])
         else 
         {
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
-        }
+        }*/
 
         /*if (statistics.mean > 2.0)
         {
@@ -864,6 +906,13 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
 
         Vec2 offset;
+
+        /*cameraPinhole->setWidth(w);
+        cameraPinhole->setHeight(h);
+        cameraPinhole->setScale(d, d);
+        cameraPinhole->setOffset(w / 2, h / 2);
+        cameraPinhole->setDistortionParams({cxx, cxy, 0.0, 0.0, 0.0, cyx, cyy, 0.0, 0.0, 0.0});*/
+
         image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
         
         /*for (const auto&  line : lineWithPoints)

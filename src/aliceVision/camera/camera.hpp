@@ -11,6 +11,7 @@
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/Pinhole3DE.hpp>
 #include <aliceVision/camera/PinholeBrown.hpp>
 #include <aliceVision/camera/PinholeFisheye.hpp>
 #include <aliceVision/camera/PinholeFisheye1.hpp>
@@ -34,18 +35,18 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
       return std::make_shared<PinholeRadialK1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return std::make_shared<PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
-    case EINTRINSIC::PINHOLE_CAMERA_RADIAL3DE:
-      return std::make_shared<PinholeRadial3DE>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+    case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
+      return std::make_shared<Pinhole3DERadial4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return std::make_shared<PinholeBrownT2>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
       return std::make_shared<PinholeFisheye>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
       return std::make_shared<PinholeFisheye1>(w, h, focalLengthPixX, ppx, ppy);
-    case EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC4:
-      return std::make_shared<PinholeAnamorphic4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
-    case EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC10:
-      return std::make_shared<PinholeAnamorphic10>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+    case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
+      return std::make_shared<Pinhole3DEAnamorphic4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+    case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
+      return std::make_shared<Pinhole3DEClassicLD>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA:
       return std::make_shared<EquiDistant>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:

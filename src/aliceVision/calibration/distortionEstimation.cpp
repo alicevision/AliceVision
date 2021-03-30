@@ -308,7 +308,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
 
-    //std::cout << summary.FullReport() << std::endl;
+    std::cout << summary.FullReport() << std::endl;
 
     if (!summary.IsSolutionUsable())
     {

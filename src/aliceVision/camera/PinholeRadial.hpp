@@ -55,59 +55,5 @@ class PinholeRadialK3 : public Pinhole
   ~PinholeRadialK3() override = default;
 };
 
-/// Implement a Pinhole camera with 3DE radial4 model
-class PinholeRadial3DE : public Pinhole
-{
-  public:
-
-  explicit PinholeRadial3DE(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double c2 = 0.0, double c4 = 0.0, double u1 = 0.0, double v1 = 0.0, double u2 = 0.0, double v2 = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionRadial3DE(c2, c4, u1, v1, u2, v2)))
-  {
-  }
-
-  PinholeRadial3DE* clone() const override { return new PinholeRadial3DE(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadial3DE&>(other); }
-
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_RADIAL3DE; }
-
-  ~PinholeRadial3DE() override = default;
-};
-
-/// Implement a Pinhole camera with a 4 anamorphic distortion coefficients.
-class PinholeAnamorphic4 : public Pinhole
-{
-  public:
-
-  explicit PinholeAnamorphic4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double cxx = 0.0, double cxy = 0.0, double cyx = 0.0, double cyy = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionAnamorphic4(cxx, cxy, cyx, cyy)))
-  {
-  }
-
-  PinholeAnamorphic4 * clone() const override { return new PinholeAnamorphic4(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeAnamorphic4&>(other); }
-
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC4; }
-
-  ~PinholeAnamorphic4() override = default;
-};
-
-/// Implement a Pinhole camera with a 10 anamorphic distortion coefficients.
-class PinholeAnamorphic10 : public Pinhole
-{
-  public:
-
-  explicit PinholeAnamorphic10(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double cxx = 0.0, double cxy = 0.0, double cxxx = 0.0, double cxxy = 0.0, double cxyy = 0.0, double cyx = 0.0, double cyy = 0.0, double cyxx = 0.0, double cyxy = 0.0, double cyyy = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionAnamorphic10(cxx, cxy, cxxx, cxxy, cxyy, cyx, cyy, cyxx, cyxy, cyyy)))
-  {
-  }
-
-  PinholeAnamorphic10 * clone() const override { return new PinholeAnamorphic10(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeAnamorphic10&>(other); }
-
-  EINTRINSIC getType() const override { return EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC10; }
-
-  ~PinholeAnamorphic10() override = default;
-};
-
 } // namespace camera
 } // namespace aliceVision

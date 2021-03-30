@@ -28,13 +28,13 @@ enum EINTRINSIC
     PINHOLE_CAMERA_BROWN = (1u << 4),    // radial distortion K1,K2,K3, tangential distortion T1,T2
     PINHOLE_CAMERA_FISHEYE = (1u << 5),  // a simple Fish-eye distortion model with 4 distortion coefficients
     PINHOLE_CAMERA_FISHEYE1 = (1u << 6), // a simple Fish-eye distortion model with 1 distortion coefficient
-    PINHOLE_CAMERA_ANAMORPHIC4 = (1u << 7), // a simple anamorphic distortion model
-    PINHOLE_CAMERA_ANAMORPHIC10 = (1u << 8), // a simple anamorphic distortion model
-    PINHOLE_CAMERA_RADIAL3DE = (1u << 9), // a simple anamorphic distortion model
+    PINHOLE_CAMERA_3DEANAMORPHIC4 = (1u << 7), // a simple anamorphic distortion model
+    PINHOLE_CAMERA_3DECLASSICLD = (1u << 8), // a simple anamorphic distortion model
+    PINHOLE_CAMERA_3DERADIAL4 = (1u << 9), // a simple anamorphic distortion model
     EQUIDISTANT_CAMERA = (1u << 10),      // an equidistant model
     EQUIDISTANT_CAMERA_RADIAL3 = (1u << 11),  // an equidistant model with radial distortion
-    VALID_PINHOLE = PINHOLE_CAMERA | PINHOLE_CAMERA_RADIAL1 | PINHOLE_CAMERA_RADIAL3 | PINHOLE_CAMERA_RADIAL3DE | PINHOLE_CAMERA_BROWN |
-                    PINHOLE_CAMERA_ANAMORPHIC4 | PINHOLE_CAMERA_ANAMORPHIC10 | PINHOLE_CAMERA_FISHEYE | PINHOLE_CAMERA_FISHEYE1,
+    VALID_PINHOLE = PINHOLE_CAMERA | PINHOLE_CAMERA_RADIAL1 | PINHOLE_CAMERA_RADIAL3 | PINHOLE_CAMERA_3DERADIAL4 | PINHOLE_CAMERA_BROWN |
+                    PINHOLE_CAMERA_3DEANAMORPHIC4 | PINHOLE_CAMERA_3DECLASSICLD| PINHOLE_CAMERA_FISHEYE | PINHOLE_CAMERA_FISHEYE1,
     VALID_EQUIDISTANT = EQUIDISTANT_CAMERA | EQUIDISTANT_CAMERA_RADIAL3,
     VALID_CAMERA_MODEL = VALID_PINHOLE | VALID_EQUIDISTANT,
 };
@@ -48,12 +48,12 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
       case EINTRINSIC::PINHOLE_CAMERA: return "pinhole";
       case EINTRINSIC::PINHOLE_CAMERA_RADIAL1: return "radial1";
       case EINTRINSIC::PINHOLE_CAMERA_RADIAL3: return "radial3";
-      case EINTRINSIC::PINHOLE_CAMERA_RADIAL3DE: return "radial3de";
+      case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4: return "3deradial4";
       case EINTRINSIC::PINHOLE_CAMERA_BROWN: return "brown";
       case EINTRINSIC::PINHOLE_CAMERA_FISHEYE: return "fisheye4";
       case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1: return "fisheye1";
-      case EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC4: return "anamorphic4";
-      case EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC10: return "anamorphic10";
+      case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4: return "3deanamorphic4";
+      case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD: return "3declassicld";
       case EINTRINSIC::EQUIDISTANT_CAMERA: return "equidistant";
       case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3: return "equidistant_r3";
       case EINTRINSIC::UNKNOWN:
@@ -73,12 +73,12 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
   if(type == "pinhole") return EINTRINSIC::PINHOLE_CAMERA;
   if(type == "radial1") return EINTRINSIC::PINHOLE_CAMERA_RADIAL1;
   if(type == "radial3") return EINTRINSIC::PINHOLE_CAMERA_RADIAL3;
-  if(type == "radial3de") return EINTRINSIC::PINHOLE_CAMERA_RADIAL3DE;
+  if(type == "3deradial4") return EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4;
   if(type == "brown") return EINTRINSIC::PINHOLE_CAMERA_BROWN;
   if(type == "fisheye4") return EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
   if(type == "fisheye1") return EINTRINSIC::PINHOLE_CAMERA_FISHEYE1;
-  if(type == "anamorphic4") return EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC4;
-  if(type == "anamorphic10") return EINTRINSIC::PINHOLE_CAMERA_ANAMORPHIC10;
+  if(type == "3deanamorphic4") return EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4;
+  if(type == "3declassicld") return EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD;
   if(type == "equidistant") return EINTRINSIC::EQUIDISTANT_CAMERA;
   if(type == "equidistant_r3") return EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3;
 
