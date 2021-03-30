@@ -293,6 +293,8 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         problem.AddParameterBlock(&l.angle, 1);
         problem.AddParameterBlock(&l.dist, 1);
 
+        
+
         for (Vec2 pt : l.points)
         {
             ceres::CostFunction * costFunction = new CostLine(cameraToEstimate, pt);   
@@ -308,7 +310,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
 
-    std::cout << summary.FullReport() << std::endl;
+    //std::cout << summary.FullReport() << std::endl;
 
     if (!summary.IsSolutionUsable())
     {

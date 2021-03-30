@@ -55,7 +55,7 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
     {
         for (int j = 0; j < w; j++)
         {
-            Vec2 pos = camera->get_d_pixel(Vec2(j, i));
+            Vec2 pos = camera->get_ud_pixel(Vec2(j, i));
             minx = std::min(minx, pos.x());
             maxx = std::max(maxx, pos.x());
             miny = std::min(miny, pos.y());
@@ -79,7 +79,7 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
             double x = minx + double(j);
 
             Vec2 pos(x, y);
-            Vec2 dist = camera->get_ud_pixel(pos);
+            Vec2 dist = camera->get_d_pixel(pos);
 
 
             if (dist.x() < 0 || dist.x() >= source.Width()) continue;
@@ -322,6 +322,8 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
             calibration::LineWithPoints line;
             line.angle = M_PI_4;
             line.dist = 1;
+            line.horizontal = true;
+            line.index = i;
 
             for (int j = 0; j < width; j++)
             {
@@ -342,12 +344,14 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
             lineWithPoints.push_back(line);
         }
 
-        // Create horizontal lines
+        // Create vertical lines
         for (int j = 0; j < width; j++)
         {
             calibration::LineWithPoints line;
             line.angle = M_PI_4;
             line.dist = 1;
+            line.horizontal = false;
+            line.index = j;
 
             for (int i = 0; i < height; i++)
             {
@@ -496,6 +500,7 @@ template <class T>
 bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
 {
     
+    
     std::shared_ptr<camera::Pinhole> simpleCamera = std::make_shared<camera::PinholeRadialK1>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1], 0.0);
     if (!estimateDistortionK1(simpleCamera, statistics, items))
     {
@@ -525,6 +530,14 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole> & camera, calibrat
 template <class T>
 bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
 {
+    std::vector<double> params = camera->getDistortionParams();
+    params[0] = 0.0;
+    params[1] = M_PI_2;
+    params[2] = 0.0;
+    params[3] = 0.0;
+    params[4] = 0.0;
+    camera->setDistortionParams(params);
+
     std::vector<bool> locksDistortions = {true, true, true, true, true};
     
 
@@ -543,6 +556,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
+    std::cout << camera->getDistortionParams() << std::endl;
 
     //Relax offcenter
     locksDistortions[0] = false;
@@ -551,6 +565,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
+    std::cout << camera->getDistortionParams() << std::endl;
 
     //Relax offcenter
     locksDistortions[0] = false;
@@ -563,18 +578,21 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
+    std::cout << camera->getDistortionParams() << std::endl;
 
     //Relax offcenter
     locksDistortions[0] = false;
     locksDistortions[1] = false;
     locksDistortions[2] = false;
     locksDistortions[3] = false;
-    locksDistortions[4] = true;
+    locksDistortions[4] = false;
     if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
+
+    std::cout << camera->getDistortionParams() << std::endl;
 
     return true;
 }
@@ -722,18 +740,16 @@ int aliceVision_main(int argc, char* argv[])
         
         double w = input.Width();
         double h = input.Height();
-        double d = sqrt(w*w + h*h);
+        double hw = w / 2.0;
+        double hh = h / 2.0;
+        double d = sqrt(hw*hw + hh*hh);
 
         //Force the 'focal' to normalize the image such that its semi diagonal is 1
         cameraPinhole->setWidth(w);
         cameraPinhole->setHeight(h);
         cameraPinhole->setScale(d, d);
-        cameraPinhole->setOffset(w / 2, h / 2);
+        cameraPinhole->setOffset(hw, hh);
         
-
-        /*std::string undistortedImagePath = (fs::path(outputPath) / (viewIdStr + "_undistorted.png")).string();
-        std::string checkerImagePath = (fs::path(outputPath) / (viewIdStr + "_checker.png")).string();*/
-
         fs::copy_file(view->getImagePath(), fs::path(outputPath) / fs::path(view->getImagePath()).filename(), fs::copy_option::overwrite_if_exists);
 
         std::string undistortedImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
@@ -787,30 +803,17 @@ int aliceVision_main(int argc, char* argv[])
         }
         else if (std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraBase))
         {
-            std::vector<double> params = cameraPinhole->getDistortionParams();
-            for (int i = 0; i < params.size(); i++) params[i] = 0.0;
-            params[1] = 1.0;
-            cameraPinhole->setDistortionParams(params);
-
             if (!estimateDistortion3DELD(cameraPinhole, statistics, lineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
-
-            std::cout << cameraPinhole->getDistortionParams() << std::endl;
         }
         else 
         {
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
         }
 
-       /* if (statistics.mean > 2.0)
-        {
-            ALICEVISION_LOG_ERROR("Calibration #1 result is too bad ("<< statistics.mean << ")");
-            continue;
-        }
-*/
         ALICEVISION_LOG_INFO("Result quality of calibration : ");
         ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
         ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
@@ -822,26 +825,10 @@ int aliceVision_main(int argc, char* argv[])
             continue;
         }
 
-        /*cameraPinhole->setWidth(w);
+        cameraPinhole->setWidth(w);
         cameraPinhole->setHeight(h);
         cameraPinhole->setScale(d, d);
-        cameraPinhole->setOffset(w / 2, h / 2);
-        
-        std::vector<double> params = cameraPinhole->getDistortionParams();
-        params[0] = 0.1409;
-        params[0] = 1.0;
-        params[0] = 0.0;
-        params[0] = -0.0;
-        params[4] = -0.103;
-        cameraPinhole->setDistortionParams(params);*/
-
-        /*cameraPinhole->setWidth(w);
-        cameraPinhole->setHeight(h);
-        cameraPinhole->setScale(originalScale.x(), originalScale.y());   
-        cameraPinhole->setOffset(w / 2, h / 2);
-        std::vector<double> params = cameraPinhole->getDistortionParams();
-        for (int i = 0; i < params.size(); i++) params[i] = 0.0;
-        cameraPinhole->setDistortionParams(params);
+        cameraPinhole->setOffset(hw, hh);
              
 
         //Estimate distortion
@@ -879,11 +866,6 @@ int aliceVision_main(int argc, char* argv[])
         }
         else if (std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraBase))
         {
-            std::vector<double> params = cameraPinhole->getDistortionParams();
-            for (int i = 0; i < params.size(); i++) params[i] = 0.0;
-            params[1] = 1.0;
-            cameraPinhole->setDistortionParams(params);
-
             if (!estimateDistortion3DELD(cameraPinhole, statistics, points))
             {
                 ALICEVISION_LOG_ERROR("Error estimating reverse distortion");
@@ -893,59 +875,14 @@ int aliceVision_main(int argc, char* argv[])
         else 
         {
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
-        }*/
-
-        /*if (statistics.mean > 2.0)
-        {
-            ALICEVISION_LOG_ERROR("Calibration #2 result is too bad ("<< statistics.mean << ")");
-            continue;
-        }*/
+        }
 
         ALICEVISION_LOG_INFO("Result quality of inversion : ");
         ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
         ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
 
         Vec2 offset;
-
-        /*cameraPinhole->setWidth(w);
-        cameraPinhole->setHeight(h);
-        cameraPinhole->setScale(d, d);
-        cameraPinhole->setOffset(w / 2, h / 2);
-        cameraPinhole->setDistortionParams({cxx, cxy, 0.0, 0.0, 0.0, cyx, cyy, 0.0, 0.0, 0.0});*/
-
         image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
-        
-        /*for (const auto&  line : lineWithPoints)
-        {
-            double ca = cos(line.angle);
-            double sa = sin(line.angle);
-
-            if (std::abs(sa) > 0.1)
-            {
-                double x1 = 0;
-                double y1 = (line.dist - ca * x1) / sa;
-                double x2 = ud.cols - 1;
-                double y2 = (line.dist - ca * x2) / sa;
-
-                y1 -= offset.y();
-                y2 -= offset.y();
-
-                cv::line(ud, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 0, 0), 3);
-            }
-            else 
-            {
-                double y1 = 0;
-                double x1 = (line.dist - sa * y1) / ca;
-                double y2 = ud.rows - 1;
-                double x2 = (line.dist - sa * y2) / ca;
-
-                x1 -= offset.x();
-                x2 -= offset.x();
-
-                cv::line(ud, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 0, 0), 3);
-            }
-        }*/
-
         image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
 
         image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);

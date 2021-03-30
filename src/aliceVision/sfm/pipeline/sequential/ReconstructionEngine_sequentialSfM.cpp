@@ -10,6 +10,7 @@
 #include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/sfm/sfmStatistics.hpp>
@@ -610,7 +611,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
   ALICEVISION_LOG_INFO("Bundle adjustment start.");
   auto chronoStart = std::chrono::steady_clock::now();
 
-  BundleAdjustmentSymbolicCeres::CeresOptions options;
+  BundleAdjustmentCeres::CeresOptions options;
   BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
 
   if(!isInitialPair && !_params.lockAllIntrinsics)
@@ -664,7 +665,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     }
   }
 
-  BundleAdjustmentSymbolicCeres BA(options);
+  BundleAdjustmentCeres BA(options);
 
   // give the local strategy graph is local strategy is enable
   if(enableLocalStrategy)
@@ -688,7 +689,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
         _localStrategyGraph->saveIntrinsicsToHistory(_sfmData);
 
       // export and print information about the refinement
-      const BundleAdjustmentSymbolicCeres::Statistics& statistics = BA.getStatistics();
+      const BundleAdjustmentCeres::Statistics& statistics = BA.getStatistics();
       statistics.exportToFile(_outputFolder, "bundle_adjustment.csv");
       statistics.show();
     }

@@ -58,7 +58,7 @@ class Pinhole3DEClassicLD : public Pinhole
 {
   public:
 
-  explicit Pinhole3DEClassicLD(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double cxx = 0.0, double delta = 0.0, double epsilon = 1.0, double mux = 0.0, double muy = 0.0, double q = 0.0)
+  explicit Pinhole3DEClassicLD(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double delta = 0.0, double epsilon = 1.0, double mux = 0.0, double muy = 0.0, double q = 0.0)
   : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new Distortion3DEClassicLD(delta, epsilon, mux, muy, q)))
   {
   }

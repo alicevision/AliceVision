@@ -438,11 +438,13 @@ public:
     const double muy = _distortionParams[3];
     const double q = _distortionParams[4];
 
-    const double cxx = delta * invepsilon;
-    const double cxy = (delta + mux) * invepsilon;
-    const double cxxx = q * invepsilon;
-    const double cxxy = 2.0 * q * invepsilon;
-    const double cxyy = q * invepsilon;
+    const double eps = 1.0 + cos(invepsilon);
+
+    const double cxx = delta * eps;
+    const double cxy = (delta + mux) * eps;
+    const double cxxx = q * eps;
+    const double cxxy = 2.0 * q * eps;
+    const double cxyy = q * eps;
     const double cyx = delta + muy;
     const double cyy = delta;
     const double cyxx = q;
@@ -474,12 +476,14 @@ public:
     const double mux = _distortionParams[2];
     const double muy = _distortionParams[3];
     const double q = _distortionParams[4];
+    
+    const double eps = 1.0 + cos(invepsilon);
 
-    const double cxx = delta * invepsilon;
-    const double cxy = (delta + mux) * invepsilon;
-    const double cxxx = q * invepsilon;
-    const double cxxy = 2.0 * q * invepsilon;
-    const double cxyy = q * invepsilon;
+    const double cxx = delta * eps;
+    const double cxy = (delta + mux) * eps;
+    const double cxxx = q * eps;
+    const double cxxy = 2.0 * q * eps;
+    const double cxyy = q * eps;
     const double cyx = delta + muy;
     const double cyy = delta;
     const double cyxx = q;
@@ -528,17 +532,21 @@ public:
     const double mux = _distortionParams[2];
     const double muy = _distortionParams[3];
     const double q = _distortionParams[4];
+    
+    const double eps = 1.0 + cos(invepsilon);
 
-    const double cxx = delta * invepsilon;
-    const double cxy = (delta + mux) * invepsilon;
-    const double cxxx = q * invepsilon;
-    const double cxxy = 2.0 * q * invepsilon;
-    const double cxyy = q * invepsilon;
+    const double cxx = delta * eps;
+    const double cxy = (delta + mux) * eps;
+    const double cxxx = q * eps;
+    const double cxxy = 2.0 * q * eps;
+    const double cxyy = q * eps;
     const double cyx = delta + muy;
     const double cyy = delta;
     const double cyxx = q;
     const double cyxy = 2.0 * q;
     const double cyyy = q;
+
+    
 
     Vec2 np;
 
@@ -591,24 +599,26 @@ public:
 
     Eigen::Matrix<double, 10, 5> localParams = Eigen::Matrix<double, 10, 5>::Zero(); 
     
+    const double d_eps_d_invepsilon = -sin(invepsilon);
 
-    localParams(0, 0) = invepsilon;
-    localParams(0, 1) = delta;
-    localParams(1, 0) = invepsilon;
-    localParams(1, 1) = delta + mux;
-    localParams(1, 2) = invepsilon;
-    localParams(2, 1) = q;
-    localParams(2, 4) = invepsilon;
-    localParams(3, 1) = 2.0 * q;
-    localParams(3, 4) = 2.0 * invepsilon;
-    localParams(4, 1) = q;
-    localParams(4, 4) = invepsilon;
+    localParams(0, 0) = eps;
+    localParams(0, 1) = delta * d_eps_d_invepsilon;
+    localParams(1, 0) = eps;
+    localParams(1, 1) = (delta + mux) * d_eps_d_invepsilon;
+    localParams(1, 2) = eps;
+    localParams(2, 1) = q * d_eps_d_invepsilon;
+    localParams(2, 4) = eps;
+    localParams(3, 1) = 2.0 * q * d_eps_d_invepsilon;
+    localParams(3, 4) = 2.0 * eps;
+    localParams(4, 1) = q * d_eps_d_invepsilon;
+    localParams(4, 4) = eps;
     localParams(5, 0) = 1;
     localParams(5, 3) = 1;
     localParams(6, 0) = 1;
     localParams(7, 4) = 1;
     localParams(8, 4) = 2;
     localParams(9, 4) = 1;
+
 
     return ret * localParams;
   }

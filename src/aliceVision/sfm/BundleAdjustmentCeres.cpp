@@ -46,6 +46,10 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(new ResidualErrorFunctor_Pinhole3DERadial4(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(new ResidualErrorFunctor_Pinhole3DEClassicLD(observation));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
@@ -73,6 +77,10 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(new ResidualErrorFunctor_Pinhole3DERadial4(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(new ResidualErrorFunctor_Pinhole3DEClassicLD(observation));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
@@ -443,6 +451,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     intrinsicBlock = intrinsicPtr->getParams();
 
     double* intrinsicBlockPtr = intrinsicBlock.data();
+
     problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
 
     // add intrinsic parameter to the all parameters blocks pointers list
@@ -844,7 +853,7 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     ALICEVISION_LOG_WARNING("Bundle Adjustment failed, the solution is not usable.");
     return false;
   }
-
+  
   // update input sfmData with the solution
   updateFromSolution(sfmData, refineOptions);
 
