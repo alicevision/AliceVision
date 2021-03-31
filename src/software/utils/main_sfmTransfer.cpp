@@ -218,14 +218,15 @@ int aliceVision_main(int argc, char **argv)
     }
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-
     if (matchingMethod == EMatchingMethod::FROM_INTRINSICID) 
     {
-        for (auto intrinsic : sfmData.getIntrinsics()) 
+        for (auto intrinsic : sfmData.getIntrinsics())
         {
-            for (auto intrinsicRef : sfmDataRef.getIntrinsics())  {
-                if (intrinsic.first == intrinsicRef.first) {
-                    *intrinsic.second = *intrinsicRef.second;
+            for (const auto intrinsicRef : sfmDataRef.getIntrinsics())
+            {
+                if (intrinsic.first == intrinsicRef.first)
+                {
+                    intrinsic.second->updateFromParams(intrinsicRef.second->getParams());
                     break;
                 }
             }
