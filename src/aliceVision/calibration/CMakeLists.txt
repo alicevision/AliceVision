@@ -5,6 +5,7 @@ set(calibration_files_headers
   patternDetect.hpp
   exportData.hpp
   distortionEstimation.hpp
+  checkerDetector.hpp
 )
 
 # Sources
@@ -14,6 +15,7 @@ set(calibration_files_sources
   patternDetect.cpp
   exportData.cpp
   distortionEstimation.cpp
+  checkerDetector.cpp
 )
 
 alicevision_add_library(aliceVision_calibration

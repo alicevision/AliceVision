@@ -19,6 +19,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <aliceVision/calibration/distortionEstimation.hpp>
+#include <aliceVision/calibration/checkerDetector.hpp>
 
 #include "libcbdetect/boards_from_corners.h"
 #include "libcbdetect/config.h"
@@ -28,6 +29,8 @@
 #include <chrono>
 #include <opencv2/opencv.hpp>
 #include <vector>
+
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -755,6 +758,9 @@ int aliceVision_main(int argc, char* argv[])
         std::string undistortedImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
         std::string stMapImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_stmap.exr";
         std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
+
+        calibration::CheckerDetector detect;
+        detect.process(input);
 
         //Retrieve lines
         std::vector<calibration::LineWithPoints> lineWithPoints;
