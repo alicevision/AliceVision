@@ -43,6 +43,7 @@ private:
     bool computeHessianResponse(image::Image<float> & output, const image::Image<float> & input);
     bool extractCorners(std::vector<Vec2> & raw_corners, const image::Image<float> & hessianResponse);
     bool refineCorners(std::vector<Vec2> & refined_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input);
+    bool pruneCorners(std::vector<Vec2> & pruned_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input);
     bool fitCorners(std::vector<CheckerBoardCorner> & refined_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input);
     void getMinMax(float &min, float &max, const image::Image<float> & input);
     
@@ -55,7 +56,8 @@ private:
     bool growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners);
 
 private:
-    
+    std::vector<CheckerBoard> _boards;
+    std::vector<CheckerBoardCorner> _corners;
 };
 
 }//namespace calibration
