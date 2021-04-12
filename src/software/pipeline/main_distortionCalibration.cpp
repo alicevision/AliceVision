@@ -16,18 +16,11 @@
 #include <aliceVision/image/all.hpp>
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <opencv2/opencv.hpp>
 
 #include <aliceVision/calibration/distortionEstimation.hpp>
 #include <aliceVision/calibration/checkerDetector.hpp>
 
-#include "libcbdetect/boards_from_corners.h"
-#include "libcbdetect/config.h"
-#include "libcbdetect/find_corners.h"
-#include "libcbdetect/plot_boards.h"
-#include "libcbdetect/plot_corners.h"
 #include <chrono>
-#include <opencv2/opencv.hpp>
 #include <vector>
 
 
@@ -159,167 +152,23 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
 
 bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, const image::Image<image::RGBColor> & input, const std::string & checkerImagePath)
 {
-    cv::Mat inputOpencvWrapper(input.Height(), input.Width(), CV_8UC3, (void*)input.data());
-
-    cbdetect::Params params;
-    params.show_processing = false;
-    params.show_debug_image = false;
-    params.corner_type = cbdetect::SaddlePoint;
-    params.norm = true;
-
-    cbdetect::Corner corners;
-    cbdetect::find_corners(inputOpencvWrapper, corners, params);
-    if (corners.p.size() < 20) 
+    calibration::CheckerDetector detect;
+    if (!detect.process(input))
     {
         return false;
     }
-
-    double hw = double(input.Width()) / 2.0;
-    double hh = double(input.Height()) / 2.0;
-
-    cbdetect::Corner filtered_corners;
-    for (int id = 0; id < corners.p.size(); id++)
-    {
-        double x = std::abs(corners.p[id].x - hw);
-        double y = std::abs(corners.p[id].y - hh);
-
-        if (x < 100 && y < 100) 
-        {
-            continue;
-        }
-
-        filtered_corners.p.push_back(corners.p[id]);
-        filtered_corners.v1.push_back(corners.v1[id]);
-        filtered_corners.v2.push_back(corners.v2[id]);
-        filtered_corners.r.push_back(corners.r[id]);
-        filtered_corners.score.push_back(corners.score[id]);
-    }
-
-    std::vector<cbdetect::Board> boards;
-    int iteration = 0;
-    while (iteration < 10)
-    {
-        boards.clear();
-        cbdetect::boards_from_corners(inputOpencvWrapper, filtered_corners, boards, params);
-        
-        int hasWeirdAngle = 0;
-        for (cbdetect::Board & b : boards)
-        {
-            int height = b.idx.size();
-            int width = b.idx[0].size();
-
-            for (int i = 0; i < height - 1; i ++)
-            {
-                for (int j = 0; j < width - 1; j++)
-                {
-                    int idx = b.idx[i][j];
-                    if (idx < 0) continue;
-
-                    cv::Point2d p = filtered_corners.p[idx];
-
-                    int idxX = b.idx[i][j + 1];
-                    if (idxX < 0) 
-                    {
-                        continue;
-                    }
-
-                    int idxY = b.idx[i + 1][j];
-                    if (idxY < 0) 
-                    {
-                        continue;
-                    }
-
-                    cv::Point2d px = filtered_corners.p[idxX];
-                    cv::Point2d py = filtered_corners.p[idxY];
-
-                    px.x = px.x - p.x;
-                    px.y = px.y - p.y;
-                    py.x = py.x - p.x;
-                    py.y = py.y - p.y;
-
-                    double normx = sqrt(px.x * px.x + px.y * px.y);
-                    if (normx < 1e-6) 
-                    {
-                        hasWeirdAngle++;
-                        continue;
-                    }
-
-                    double normy = sqrt(py.x * py.x + py.y * py.y);
-                    if (normy < 1e-6) 
-                    {
-                        hasWeirdAngle++;
-                        continue;
-                    }
-
-                    double ca = (px / normx).dot(py / normy);
-                    double angle = std::abs(std::acos(ca) - M_PI_2);
-                    if (angle > M_PI_4)
-                    {
-                        hasWeirdAngle++;
-                    }
-                }   
-            }
-        }
-
-        std::cout << hasWeirdAngle << "!!!"<< std::endl;
-
-        if (hasWeirdAngle == 0)
-        {
-            break;
-        }
-
-        iteration++;
-    }
-
-    
-    
-
-    /*cv::Mat draw = inputOpencvWrapper.clone();
-    for (cbdetect::Board & b : boards)
-    {
-        int height = b.idx.size();
-        int width = b.idx[0].size();
-
-        // Create horizontal lines
-        for (int i = 0; i < height - 1; i ++)
-        {
-            for (int j = 0; j < width - 1; j++)
-            {
-                int idx = b.idx[i][j];
-                if (idx < 0) continue;
-
-                cv::Point2d p = filtered_corners.p[idx];
-
-                cv::circle(draw, p, 5, cv::Scalar(255,0,0));
-
-                idx = b.idx[i][j + 1];
-                if (idx >=0) 
-                {
-                    cv::Point2d p2 = filtered_corners.p[idx];
-                    cv::line(draw, p, p2, cv::Scalar(0,0,255));    
-                }
-
-                idx = b.idx[i + 1][j];
-                if (idx >=0) 
-                {
-                    cv::Point2d p2 = filtered_corners.p[idx];
-                    cv::line(draw, p, p2, cv::Scalar(0,0,255));    
-                }
-            }
-        }
-    }
-
-    cv::imwrite(checkerImagePath, draw);*/
-    
+       
+    image::Image<image::RGBColor> drawing = input;
+    detect.drawCheckerBoard(drawing);
+    image::writeImage(checkerImagePath, drawing, image::EImageColorSpace::NO_CONVERSION);
     
     lineWithPoints.clear();
-    for (cbdetect::Board & b : boards)
+    
+    std::vector<calibration::CheckerDetector::CheckerBoardCorner> corners = detect.getCorners();
+    for (auto & b : detect.getBoards())
     {
-        int height = b.idx.size();
-        int width = b.idx[0].size();
-
         // Create horizontal lines
-        for (int i = 0; i < height; i ++)
+        for (int i = 0; i < b.rows(); i ++)
         {
             //Random init
             calibration::LineWithPoints line;
@@ -328,18 +177,13 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
             line.horizontal = true;
             line.index = i;
 
-            for (int j = 0; j < width; j++)
+            for (int j = 0; j < b.cols(); j++)
             {
-                int idx = b.idx[i][j];
-                if (idx < 0) continue;
+                IndexT idx = b(i, j);
+                if (idx == UndefinedIndexT) continue;
 
-                cv::Point2d p = filtered_corners.p[idx];
-
-                Vec2 pt;
-                pt.x() = p.x;
-                pt.y() = p.y;
-
-                line.points.push_back(pt);
+                calibration::CheckerDetector::CheckerBoardCorner p = corners[idx];
+                line.points.push_back(p.center);
             }
 
             //Check we don't have a too small line which won't be easy to estimate
@@ -348,7 +192,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
         }
 
         // Create vertical lines
-        for (int j = 0; j < width; j++)
+        for (int j = 0; j < b.cols(); j++)
         {
             calibration::LineWithPoints line;
             line.angle = M_PI_4;
@@ -356,18 +200,13 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
             line.horizontal = false;
             line.index = j;
 
-            for (int i = 0; i < height; i++)
+            for (int i = 0; i < b.rows(); i++)
             {
-                int idx = b.idx[i][j];
-                if (idx < 0) continue;
+                IndexT idx = b(i, j);
+                if (idx == UndefinedIndexT) continue;
 
-                cv::Point2d p = filtered_corners.p[idx];
-
-                Vec2 pt;
-                pt.x() = p.x;
-                pt.y() = p.y;
-
-                line.points.push_back(pt);
+                calibration::CheckerDetector::CheckerBoardCorner p = corners[idx];
+                line.points.push_back(p.center);
             }
 
             //Check we don't have a too small line which won't be easy to estimate
@@ -375,6 +214,11 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
 
             lineWithPoints.push_back(line);
         }
+    }
+
+    if (lineWithPoints.size() < 2)
+    {
+        return false;
     }
 
     return true;
@@ -559,7 +403,6 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
-    std::cout << camera->getDistortionParams() << std::endl;
 
     //Relax offcenter
     locksDistortions[0] = false;
@@ -568,7 +411,6 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
-    std::cout << camera->getDistortionParams() << std::endl;
 
     //Relax offcenter
     locksDistortions[0] = false;
@@ -581,7 +423,6 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
-    std::cout << camera->getDistortionParams() << std::endl;
 
     //Relax offcenter
     locksDistortions[0] = false;
@@ -594,8 +435,6 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
-
-    std::cout << camera->getDistortionParams() << std::endl;
 
     return true;
 }
@@ -758,9 +597,6 @@ int aliceVision_main(int argc, char* argv[])
         std::string undistortedImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
         std::string stMapImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_stmap.exr";
         std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
-
-        calibration::CheckerDetector detect;
-        detect.process(input);
 
         //Retrieve lines
         std::vector<calibration::LineWithPoints> lineWithPoints;

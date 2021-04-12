@@ -2,6 +2,8 @@
 
 #include <aliceVision/sfm/liealgebra.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #include <OpenImageIO/imagebufalgo.h>
 
 namespace aliceVision{
@@ -81,7 +83,16 @@ bool CheckerDetector::process(const image::Image<image::RGBColor> & source)
     }
 
     // Andreas Geiger and Frank Moosmann and Oemer Car and Bernhard Schuster. Automatic Calibration of Range and Camera Sensors using a single Shot
-    buildCheckerboards(_boards, _corners, normalized);
+    if (!buildCheckerboards(_boards, _corners, normalized))
+    {
+        return false;
+    }
+
+    //Try to merge together checkerboards if connected
+    if (!mergeCheckerboards())
+    {
+        return false;
+    }
     
     return true;
 }
@@ -686,7 +697,8 @@ bool CheckerDetector::growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, con
     nboard.block(1, 0, board.rows(), board.cols()) = board;
     board = nboard;
 
-    std::set<IndexT> used;
+
+    std::unordered_set<IndexT> used;
     for (int i = 0; i < board.rows(); i++)
     {
         for (int j = 0; j < board.cols(); j++)
@@ -731,10 +743,33 @@ bool CheckerDetector::growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, con
             }
         }   
 
+        //Check if this neighboor is aimed by another candidate (keep the best in this case)
+        bool alreadyTook = false;
+        for (auto & candidateCheck : candidates)
+        {
+            IndexT idx = board(candidateCheck.row, candidateCheck.col);
+            if (idx != minIndex)
+            {
+                continue;
+            }
+                
+            if (candidateCheck.score < minE)
+            {
+                alreadyTook = true;
+                continue;
+            }
+
+            board(candidateCheck.row, candidateCheck.col) = UndefinedIndexT;
+            candidate.score = std::numeric_limits<double>::max();
+        }
+
+        if (alreadyTook)
+        {
+            continue;
+        }
 
         board(candidate.row, candidate.col) = minIndex;
         candidate.score = minE;
-        used.insert(minIndex);
     }
 
 
@@ -1000,8 +1035,9 @@ bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const
 bool CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refined_corners, const image::Image<float> & input)
 {
     double minE = std::numeric_limits<double>::max();
-    std::vector<bool> used(refined_corners.size(), false);
 
+
+    std::vector<bool> used(refined_corners.size(), false);
     for (IndexT cid = 0; cid < refined_corners.size(); cid++)
     {
         const CheckerBoardCorner & seed = refined_corners[cid];
@@ -1016,6 +1052,22 @@ bool CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
             continue;
         }
 
+        bool valid = true;
+        for (int i = 0; i < board.rows(); i++)
+        {
+            for (int j = 0; j < board.cols(); j++)
+            {
+                if (used[board(i, j)])
+                {
+                    valid = false;
+                }
+            }
+        }
+
+        if (!valid) 
+        {
+            continue;
+        }
 
         while (growIteration(board, refined_corners))
         {
@@ -1028,12 +1080,10 @@ bool CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
             for (int j = 0; j < board.cols(); j++)
             {
                 if (board(i, j) == UndefinedIndexT) continue;
-
-                IndexT id = board(i, j);
                 count++;
             }
         }
-
+        
         if (count < 10) continue;
 
         for (int i = 0; i < board.rows(); i++)
@@ -1055,6 +1105,220 @@ bool CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
         boards.push_back(board);
     }
 
+
+    return true;
+}
+
+void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img)
+{
+    for (auto c : _corners)
+    {
+        image::DrawLine(c.center.x() + 2.0, c.center.y(), c.center.x() - 2.0, c.center.y(), image::RGBColor(255,255,0), &img);
+        image::DrawLine(c.center.x(), c.center.y() + 2.0, c.center.x(), c.center.y()- 2.0, image::RGBColor(255,255,0), &img);
+    }
+
+    for (auto board : _boards)
+    {
+        for (int i = 0; i < board.rows(); i++)
+        {
+            for (int j = 0; j < board.cols() - 1; j++)
+            {
+                IndexT p1 = board(i, j);
+                IndexT p2 = board(i, j + 1);
+
+                if (p1 == UndefinedIndexT || p2 == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                const CheckerBoardCorner & c1 = _corners[p1];
+                const CheckerBoardCorner & c2 = _corners[p2];
+
+                image::DrawLine(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), image::RGBColor(255,0,0), &img);
+            }
+        }
+
+        for (int i = 0; i < board.rows() - 1; i++)
+        {
+            for (int j = 0; j < board.cols(); j++)
+            {
+                IndexT p1 = board(i, j);
+                IndexT p2 = board(i + 1, j);
+
+                if (p1 == UndefinedIndexT || p2 == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                const CheckerBoardCorner & c1 = _corners[p1];
+                const CheckerBoardCorner & c2 = _corners[p2];
+
+                image::DrawLine(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), image::RGBColor(255,0,0), &img);
+            }
+        }
+    }
+}
+
+bool CheckerDetector::mergeCheckerboards()
+{
+    using CheckerBoardWithScore = std::pair<CheckerBoard, double>;
+    std::vector<CheckerBoardWithScore> checkers;
+
+    if (_boards.size() <= 1) 
+    {
+        return true;
+    }
+
+    for (auto b : _boards)
+    {
+        CheckerBoardWithScore cbws;
+        cbws.first = b;
+        cbws.second = computeEnergy(b, _corners);
+        checkers.push_back(cbws);
+    }
+
+    bool hadMerged;
+    do 
+    {
+        hadMerged = false;
+        std::sort(checkers.begin(), checkers.end(), [](const CheckerBoardWithScore & cb1, const CheckerBoardWithScore & cb2) { return cb1.second < cb2.second; } );
+
+        for (int idRef = 0; idRef < checkers.size(); idRef++)
+        {
+            CheckerBoard baseBoard = checkers[idRef].first;
+
+            //Build dictionnary of corners for faster lookup
+            std::unordered_map<IndexT, Vec2i> baseCorners;
+            for (int i = 0; i < baseBoard.rows(); i++)
+            {
+                for (int j = 0; j < baseBoard.cols(); j++)
+                {
+                    if (baseBoard(i, j) != UndefinedIndexT)
+                    {
+                        baseCorners[baseBoard(i, j)] = Vec2i(j, i);
+                    }
+                }
+            }
+
+            for (int idCur = idRef + 1; idCur < checkers.size(); idCur++)
+            {
+                //Find a common corner
+                const CheckerBoard & currentBoard = checkers[idCur].first;
+
+                bool foundCommon = false;
+                Vec2i coordsRef;
+                Vec2i coordsCur;
+
+                for (int i = 0; i < currentBoard.rows(); i++)
+                {
+                    for (int j = 0; j < currentBoard.cols(); j++)
+                    {
+                        if (currentBoard(i, j) == UndefinedIndexT)
+                        {
+                            continue;
+                        }
+
+                        auto lookup = baseCorners.find(currentBoard(i, j));
+                        if (lookup == baseCorners.end())
+                        {
+                            continue;
+                        }
+
+                        foundCommon = true;
+                        coordsRef = lookup->second;
+                        coordsCur = Vec2i(j, i);
+                        break;
+                    }
+
+                    if (foundCommon) 
+                    {
+                        break;
+                    }
+                }
+                
+                if (!foundCommon) 
+                {
+                    continue;
+                }
+
+                Vec2i offset = coordsRef - coordsCur;
+                
+                int right = std::max(baseBoard.cols() - 1, currentBoard.cols() + offset.x() - 1);
+                int bottom = std::max(baseBoard.rows() - 1, currentBoard.rows() + offset.y() - 1);
+                int left = std::min(0, offset.x());
+                int top = std::min(0, offset.y());
+                int nwidth = right - left + 1;
+                int nheight = bottom - top + 1;
+
+                int shiftRefX = std::max(0, -offset.x());
+                int shiftRefY = std::max(0, -offset.y());
+
+                int shiftCurX = std::max(0, offset.x());
+                int shiftCurY = std::max(0, offset.y());
+
+                CheckerBoard newBoard(nheight, nwidth);
+                newBoard.fill(UndefinedIndexT);
+                newBoard.block(shiftRefY, shiftRefX, baseBoard.rows(), baseBoard.cols()) = baseBoard;
+                
+                bool hasConflict = false;
+                for (int i = 0; i < currentBoard.rows(); i++)
+                {
+                    for (int j = 0; j < currentBoard.cols(); j++)
+                    {   
+                        IndexT curval = currentBoard(i, j);
+                        if (curval == UndefinedIndexT)
+                        {
+                            continue;
+                        }
+
+                        int rx = j + shiftCurX;
+                        int ry = i + shiftCurY;
+
+                        IndexT compare = newBoard(ry, rx);
+                        if (compare != UndefinedIndexT && compare != curval)
+                        {
+                            hasConflict = true;
+                            break;
+                        }
+
+                        newBoard(ry, rx) = curval;
+                    }
+                }
+
+                if (hasConflict)
+                {
+                    continue;
+                }
+
+                double newEnergy = computeEnergy(newBoard, _corners);
+                if (newEnergy < checkers[idRef].second)
+                {
+                    hadMerged = true;
+                    
+                    checkers[idRef].first = newBoard;
+                    checkers[idRef].second = newEnergy;
+                    checkers.erase(checkers.begin() + idCur);
+
+                    break;
+                }
+            }
+
+            if (hadMerged) 
+            {
+                break;
+            }
+        }
+
+    }
+    while (hadMerged);
+
+    
+    //Copy result
+    _boards.clear();
+    for (auto b : checkers)
+    {
+        _boards.push_back(b.first);
+    }
 
     return true;
 }
