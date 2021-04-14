@@ -157,6 +157,9 @@ int aliceVision_main(int argc, char **argv)
     convertNormalMap2png(normalsIm, normalsImPNG);
 
     aliceVision::image::writeImage(dataFolder + "test.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+    aliceVision::image::Image<float> solution(pictCols, pictRows);
+    normalIntegration(normalsIm, solution);
+
 
     return 0;
 }
