@@ -26,8 +26,8 @@ void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& n
                 q(i,j) = 0;
             } else
             {
-                p(i,j) = normals(i,j)(1)/normals(i,j)(2);
-                q(i,j) = -normals(i,j)(0)/normals(i,j)(2);
+                p(i,j) = -normals(i,j)(0)/normals(i,j)(2);
+                q(i,j) = -normals(i,j)(1)/normals(i,j)(2);
             }
         }
     }
@@ -38,22 +38,22 @@ void getDivergenceField(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eige
     int nbRows = p.rows();
     int nbCols = p.cols();
 
-    Eigen::MatrixXf px_below(nbRows, nbCols);
-    px_below = p;
-    px_below.block(0,0,nbRows-1,nbCols) = p.block(1,0,nbRows-1,nbCols);
+    Eigen::MatrixXf qy_below(nbRows, nbCols);
+    qy_below = q;
+    qy_below.block(0,0,nbRows-1,nbCols) = q.block(1,0,nbRows-1,nbCols);
 
-    Eigen::MatrixXf px_above = p;
-    px_above.block(1,0,nbRows-1,nbCols) = p.block(0,0,nbRows-1,nbCols);
+    Eigen::MatrixXf qy_above = q;
+    qy_above.block(1,0,nbRows-1,nbCols) = q.block(0,0,nbRows-1,nbCols);
 
-    Eigen::MatrixXf px = 0.5*(px_below-px_above);
+    Eigen::MatrixXf qy = 0.5*(qy_above-qy_below);
 
-    Eigen::MatrixXf qy_right = q;
-    qy_right.block(0,0,nbRows,nbCols-1) = q.block(0,1,nbRows,nbCols-1);
+    Eigen::MatrixXf px_right = p;
+    px_right.block(0,0,nbRows,nbCols-1) = p.block(0,1,nbRows,nbCols-1);
 
-    Eigen::MatrixXf qy_left = q;
-    qy_left.block(0,1,nbRows,nbCols-1) = q.block(0,0,nbRows,nbCols-1);
+    Eigen::MatrixXf px_left = p;
+    px_left.block(0,1,nbRows,nbCols-1) = p.block(0,0,nbRows,nbCols-1);
 
-    Eigen::MatrixXf qy = 0.5*(qy_right-qy_left);
+    Eigen::MatrixXf px = 0.5*(px_right-px_left);
 
     // Div(p,q) 
     f = px+qy;
@@ -67,14 +67,14 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     // Right hand side of the boundary condition
     Eigen::MatrixXf b = Eigen::MatrixXf::Zero(nbRows, nbCols);
     
-    b.block(0,1,1,nbCols-2) = -p.block(0,1,1,nbCols-2);
-    b.block(nbRows-1, 1, 1, nbCols-2) = p.block(nbRows-1, 1, 1, nbCols-2);
-    b.block(1,0,nbRows-2, 1) = -q.block(1,0,nbRows-2, 1);
-    b.block(1, nbCols-1, nbRows-2, 1) = q.block(1, nbCols-1, nbRows-2, 1);
-    b(0,0) = (1/sqrt(2))*(-p(0,0)-q(0,0));
-    b(0,nbCols-1) = (1/sqrt(2))*(-p(0,nbCols-1)+q(0,nbCols-1));
-    b(nbRows-1, nbCols-1) = (1/sqrt(2))*(p(nbRows-1, nbCols-1)+q(nbRows-1, nbCols-1));
-    b(nbRows-1,0) = (1/sqrt(2))*(p(nbRows-1,0)-q(nbRows-1,0));
+    b.block(0,1,1,nbCols-2) = q.block(0,1,1,nbCols-2);
+    b.block(nbRows-1, 1, 1, nbCols-2) = -q.block(nbRows-1, 1, 1, nbCols-2);
+    b.block(1,0,nbRows-2, 1) = -p.block(1,0,nbRows-2, 1);
+    b.block(1, nbCols-1, nbRows-2, 1) = p.block(1, nbCols-1, nbRows-2, 1);
+    b(0,0) = (1/sqrt(2))*(q(0,0)-p(0,0));
+    b(0,nbCols-1) = (1/sqrt(2))*(q(0,nbCols-1)+p(0,nbCols-1));
+    b(nbRows-1, nbCols-1) = (1/sqrt(2))*(-q(nbRows-1, nbCols-1)+p(nbRows-1, nbCols-1));
+    b(nbRows-1,0) = (1/sqrt(2))*(-q(nbRows-1,0)-p(nbRows-1,0));
 
     //Modification near the boundaries to enforce the non-homogeneous Neumann BC
     f.block(0,1,1,nbCols-2) = f.block(0,1,1,nbCols-2) - b.block(0,1,1,nbCols-2);
