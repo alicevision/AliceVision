@@ -7,6 +7,7 @@
 
 // Photometric Stereo
 #include <aliceVision/photometricStereo/photometricDataIO.hpp>
+#include <aliceVision/photometricStereo/normalIntegration.hpp>
 
 // Command line parameters
 #include <aliceVision/system/main.hpp>
@@ -20,6 +21,12 @@
 // Eigen
 #include <Eigen/Dense>
 #include <Eigen/Core>
+
+//OpenCV
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include <iostream>
 #include <iomanip>
 #include <string>
