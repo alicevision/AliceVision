@@ -74,42 +74,60 @@ void BuildActionMatrix(Matrix& A, const Mat& pt2D, const Mat& XPoints)
     A.row(i).normalize();
 }
 
-void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, bool bcheck)
+void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, bool bcheck, const std::vector<double>& weights)
 {
   assert(2 == x2d.rows());
   assert(3 == x3d.rows());
   assert(6 <= x2d.cols());
   assert(x2d.cols() == x3d.cols());
+  assert(x2d.cols() == weights.size() || weights.empty());
 
   //-- Translate 3D points in order to have X0 = (0,0,0,1).
   Vec3 vecTranslation = - x3d.col(0);
   Mat4 translationMatrix = Mat4::Identity();
-  translationMatrix << 1, 0, 0, vecTranslation(0),
-                       0, 1, 0, vecTranslation(1),
-                       0, 0, 1, vecTranslation(2),
-                       0, 0, 0, 1;
+  translationMatrix << 1., .0, .0, vecTranslation(0),
+                       .0, 1., .0, vecTranslation(1),
+                       .0, .0, 1., vecTranslation(2),
+                       .0, .0, .0, 1;
   Mat3X XPoints;
   translate(x3d, vecTranslation, &XPoints);
 
-  const size_t n = x2d.cols();
+  const auto numPts = x2d.cols();
 
-  typedef Eigen::Matrix<double, 12, 1> Vec12;
+  using Vec12 = Eigen::Matrix<double, 12, 1>;
   Vec12 p;
   double ratio = -1.0;
 
-  if(n == 6)
+  if(numPts == 6)
   {
     // In the case of minimal configuration we use fixed sized matrix to let
     // Eigen and the compiler doing the maximum of optimization.
-    typedef Eigen::Matrix<double, 12, 12> Mat12;
+    using Mat12 = Eigen::Matrix<double, 12, 12> ;
     Mat12 A = Mat12::Zero(12, 12);
     BuildActionMatrix(A, x2d, XPoints);
+    if(!weights.empty())
+    {
+        for(Mat12::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
+        {
+            A.row(ptIdx *2) *= weights[ptIdx];
+            A.row(ptIdx *2 + 1) *= weights[ptIdx];
+        }
+    }
     ratio = NullspaceRatio(&A, &p);
   }
   else
   {
-    Mat A = Mat::Zero(n*2, 12);
+    Mat A = Mat::Zero(numPts *2, 12);
     BuildActionMatrix(A, x2d, XPoints);
+      if(!weights.empty())
+      {
+          std::cout << "here" << std::endl;
+          for(Mat::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
+          {
+              A.row(ptIdx *2) *= weights[ptIdx];
+              A.row(ptIdx *2 + 1) *= weights[ptIdx];
+          }
+      }
     ratio = NullspaceRatio(&A, &p);
   }
 
@@ -128,12 +146,12 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
       // assert point in front of the cam
       std::size_t cpt = 0;
 
-      for(std::size_t i = 0; i < n; ++i)
+      for(std::size_t i = 0; i < numPts; ++i)
       {
         cpt += (Depth(R, t, x3d.col(i))>0) ? 1 : 0;
       }
 
-      if(cpt == n)
+      if(cpt == numPts)
       {
         models.emplace_back(P);
       }
@@ -150,12 +168,13 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
 
 void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const
 {
-  solveProblem(x2d, x3d, models, true);
+    std::vector<double> weights;
+    solveProblem(x2d, x3d, models, true, weights);
 }
 
 void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const
 {
-  solveProblem(x2d, x3d, models, true); // TODO : no weights implementation
+    solveProblem(x2d, x3d, models, true, weights);
 }
 
 } // namespace resection
