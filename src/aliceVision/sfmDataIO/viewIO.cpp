@@ -219,7 +219,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
         camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
         camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
         camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
-        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
+        camera::EINTRINSIC::PINHOLE_CAMERA
     };
 
     for(const auto& e : intrinsicsPriorities)
