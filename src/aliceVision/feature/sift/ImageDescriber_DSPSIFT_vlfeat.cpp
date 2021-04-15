@@ -71,11 +71,14 @@ template <typename T>
 bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& regions, const DspSiftParams& params,
                     bool orientation, const image::Image<unsigned char>* mask)
 {
+    const int w = image.Width(), h = image.Height();
     // Setup covariant SIFT detector.
     std::unique_ptr<VlCovDet, void (*)(VlCovDet*)> covdet(vl_covdet_new(VL_COVDET_METHOD_DOG), &vl_covdet_delete);
-    
+
+    // if image resolution is low, increase resolution for extraction
+    const int firstOctave = params.getImageFirstOctave(w, h);
     // keep numOctaves=auto (-1)
-    vl_covdet_set_first_octave(covdet.get(), params._firstOctave);
+    vl_covdet_set_first_octave(covdet.get(), firstOctave);
     vl_covdet_set_octave_resolution(covdet.get(), params._numScales);
     vl_covdet_set_edge_threshold(covdet.get(), params._edgeThreshold);
     // vl_covdet_set_non_extrema_suppression_threshold(covdet.get(), 0.0f); // vl_covdet default is 0.5
