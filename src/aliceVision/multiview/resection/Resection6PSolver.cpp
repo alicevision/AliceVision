@@ -20,7 +20,7 @@ void translate(const Mat3X& X, const Vec3& vecTranslation, Mat3X* XPoints)
 }
 
 template <typename TMat, typename TVec>
-double NullspaceRatio(TMat* A, TVec* nullspace)
+double nullspaceRatio(TMat* A, TVec* nullspace)
 {
     if(A->rows() >= A->cols())
     {
@@ -43,7 +43,7 @@ double NullspaceRatio(TMat* A, TVec* nullspace)
  *        Use template in order to support fixed or dynamic sized matrix.
  */
 template <typename Matrix>
-void BuildActionMatrix(Matrix& A, const Mat& pt2D, const Mat& XPoints)
+void buildActionMatrix(Matrix& A, const Mat& pt2D, const Mat& XPoints)
 {
     const size_t n = pt2D.cols();
     for(size_t i = 0; i < n; ++i)
@@ -104,7 +104,7 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
         // Eigen and the compiler doing the maximum of optimization.
         using Mat12 = Eigen::Matrix<double, 12, 12>;
         Mat12 A = Mat12::Zero(12, 12);
-        BuildActionMatrix(A, x2d, XPoints);
+        buildActionMatrix(A, x2d, XPoints);
         if(!weights.empty())
         {
             for(Mat12::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
@@ -113,12 +113,12 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
                 A.row(ptIdx * 2 + 1) *= weights[ptIdx];
             }
         }
-        ratio = NullspaceRatio(&A, &p);
+        ratio = nullspaceRatio(&A, &p);
     }
     else
     {
         Mat A = Mat::Zero(numPts * 2, 12);
-        BuildActionMatrix(A, x2d, XPoints);
+        buildActionMatrix(A, x2d, XPoints);
         if(!weights.empty())
         {
             std::cout << "here" << std::endl;
@@ -128,7 +128,7 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
                 A.row(ptIdx * 2 + 1) *= weights[ptIdx];
             }
         }
-        ratio = NullspaceRatio(&A, &p);
+        ratio = nullspaceRatio(&A, &p);
     }
 
     if(bcheck)
