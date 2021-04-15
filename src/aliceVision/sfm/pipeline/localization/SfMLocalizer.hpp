@@ -47,7 +47,7 @@ struct ImageLocalizerMatchData
 class SfMLocalizer
 {
 public:
-  virtual ~SfMLocalizer() {}
+  virtual ~SfMLocalizer() = default;
 
   /**
   * @brief Build the retrieval database (3D points descriptors)
