@@ -121,7 +121,6 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::
         buildActionMatrix(A, x2d, XPoints);
         if(!weights.empty())
         {
-            std::cout << "here" << std::endl;
             for(Mat::Index ptIdx = 0; ptIdx < numPts; ++ptIdx)
             {
                 A.row(ptIdx * 2) *= weights[ptIdx];
