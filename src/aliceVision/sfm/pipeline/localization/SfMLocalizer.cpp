@@ -15,7 +15,7 @@
 #include <aliceVision/matching/supportEstimation.hpp>
 #include <aliceVision/multiview/resection/P3PSolver.hpp>
 #include <aliceVision/multiview/resection/ResectionKernel.hpp>
-#include <aliceVision/multiview/resection/EPnPSolver.hpp>
+#include <aliceVision/multiview/resection/Resection6PSolver.hpp>
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
 #include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/multiview/ResectionKernel.hpp>
@@ -114,7 +114,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
         // use the P3P solver for generating the model
         using SolverT = multiview::resection::P3PSolver;
-        using SolverLsT = multiview::resection::EPnPSolver;
+        using SolverLsT = multiview::resection::Resection6PSolver;
 
         // use the six point algorithm as Least square solution to refine the model
         using KernelT = multiview::ResectionKernel_K<SolverT, multiview::resection::ProjectionDistanceSquaredError, multiview::UnnormalizerResection, robustEstimation::Mat34Model, SolverLsT>;
