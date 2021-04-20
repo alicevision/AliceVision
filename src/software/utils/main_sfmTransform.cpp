@@ -31,16 +31,21 @@ namespace po = boost::program_options;
 /**
  * @brief Alignment method enum
  */
-enum class EAlignmentMethod: unsigned char
+enum class EAlignmentMethod : unsigned char
 {
-  TRANSFORMATION = 0
-  , MANUAL
-  , AUTO_FROM_CAMERAS,
+    TRANSFORMATION = 0,
+    MANUAL,
+    AUTO_FROM_CAMERAS,
+    AUTO_FROM_CAMERAS_X_AXIS,
     AUTO_FROM_LANDMARKS,
     FROM_SINGLE_CAMERA,
     FROM_CENTER_CAMERA,
+<<<<<<< HEAD
     FROM_MARKERS,
     FROM_GPS
+=======
+    FROM_MARKERS
+>>>>>>> [sfm] Alignment: new computeNewCoordinateSystemFromCamerasXAxis
 };
 
 /**
@@ -55,6 +60,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::TRANSFORMATION:      return "transformation";
     case EAlignmentMethod::MANUAL:              return "manual";
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
+    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:   return "auto_from_cameras_x_axis";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
     case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
     case EAlignmentMethod::FROM_CENTER_CAMERA:  return "from_center_camera";
@@ -77,6 +83,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if(method == "transformation")      return EAlignmentMethod::TRANSFORMATION;
   if(method == "manual")              return EAlignmentMethod::MANUAL;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
+  if(method == "auto_from_cameras_x_axis")   return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
   if(method == "from_single_camera")  return EAlignmentMethod::FROM_SINGLE_CAMERA;
   if(method == "from_center_camera")  return EAlignmentMethod::FROM_CENTER_CAMERA;
@@ -216,6 +223,7 @@ int aliceVision_main(int argc, char **argv)
         "\t- transformation: Apply a given transformation\n"
         "\t- manual: Apply the gizmo transformation\n"
         "\t- auto_from_cameras: Use cameras\n"
+        "\t- auto_from_cameras_x_axis: Use cameras X axis\n"
         "\t- auto_from_landmarks: Use landmarks\n"
         "\t- from_single_camera: Use camera specified by --tranformation\n"
         "\t- from_markers: Use markers specified by --markers\n"
@@ -332,6 +340,10 @@ int aliceVision_main(int argc, char **argv)
     case EAlignmentMethod::AUTO_FROM_CAMERAS:
       sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
     break;
+
+    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
+        sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
+        break;
 
     case EAlignmentMethod::AUTO_FROM_LANDMARKS:
       sfm::computeNewCoordinateSystemFromLandmarks(sfmData, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);

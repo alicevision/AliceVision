@@ -16,7 +16,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/sfm/liealgebra.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -36,51 +35,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-
-bool estimateAutomaticReferenceFrame(Eigen::Matrix3d & referenceFrameUpdate, const sfmData::SfMData & toUpdate)
-{
-  //Compute mean of the rotation X component
-  Eigen::Vector3d mean = Eigen::Vector3d::Zero();
-  for (auto& pose: toUpdate.getPoses())
-  {
-    geometry::Pose3 p = pose.second.getTransform();
-    Eigen::Vector3d rX = p.rotation().transpose() * Eigen::Vector3d::UnitX();
-    mean += rX;
-  }
-  mean /= toUpdate.getPoses().size();
-
-
-  //Compute covariance matrix of the rotation X component
-  Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
-  for (auto& pose: toUpdate.getPoses())
-  {
-    geometry::Pose3 p = pose.second.getTransform();
-    Eigen::Vector3d rX = p.rotation().transpose() * Eigen::Vector3d::UnitX();
-
-    C += (rX - mean) * (rX - mean).transpose();
-  }
-
-
-  Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
-  Eigen::Vector3d nullestSpace = solver.eigenvectors().col(2).real();
-  Eigen::Vector3d unity = Eigen::Vector3d::UnitY();
-
-  if (nullestSpace(1) < 0.0)
-  {
-    unity *= -1.0;
-  }
-
-  //Compute rotation which rotates nullestSpace onto unitY
-  Eigen::Vector3d axis = nullestSpace.cross(unity);
-  double sa = axis.norm();
-  double ca = nullestSpace.dot(unity);
-  Eigen::Matrix3d M = SO3::skew(axis);  
-  Eigen::Matrix3d R = Eigen::Matrix3d::Identity() + M + M * M * (1.0 - ca) / (sa * sa);
-
-  referenceFrameUpdate = R.transpose();
-
-  return true;
-}
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -318,13 +272,17 @@ int aliceVision_main(int argc, char **argv)
   {
     Eigen::Matrix3d ocur_R_oprior = Eigen::Matrix3d::Identity();
 
-    if (initial_poses.empty()) {
-
+    if (initial_poses.empty())
+    {
       if (useAutomaticReferenceFrame)
       {
-        estimateAutomaticReferenceFrame(ocur_R_oprior, outSfmData);
+          double S = 1.0;
+          Eigen::Matrix3d R;
+          Vec3 t;
+          sfm::computeNewCoordinateSystemFromCamerasXAxis(outSfmData, S, R, t);
+          ocur_R_oprior = R.transpose();
       }
-      else 
+      else
       {
         std::vector<std::pair<int64_t, IndexT>> sorted_views;
 
@@ -343,7 +301,7 @@ int aliceVision_main(int argc, char **argv)
         ocur_R_oprior = final_poses[poseId].getTransform().rotation().transpose();
       }
     }
-    else 
+    else
     {
       Eigen::Matrix3d c1_R_ocur = final_poses.begin()->second.getTransform().rotation();
       ocur_R_oprior = c1_R_ocur.transpose() * c1_R_oprior;
