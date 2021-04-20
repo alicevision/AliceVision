@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/utils/alignment.hpp>
+#include <aliceVision/sfm/liealgebra.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 #include <aliceVision/stl/regex.hpp>
 
@@ -488,36 +489,126 @@ bool computeSimilarityFromCommonMarkers(
     return true;
 }
 
+double orientationToRotationDegree(sfmData::EEXIFOrientation orientation)
+{
+    switch(orientation)
+    {
+        case sfmData::EEXIFOrientation::RIGHT:
+            return 270.0;
+        case sfmData::EEXIFOrientation::LEFT:
+            return 90.0;
+        case sfmData::EEXIFOrientation::UPSIDEDOWN:
+            return 180.0;
+        case sfmData::EEXIFOrientation::NONE:
+        default:
+            return 0.0;
+    }
+    return 0.0;
+}
+
+void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
+                                           double& out_S,
+                                           Mat3& out_R,
+                                           Vec3& out_t)
+{
+    // mean of the camera centers
+    Vec3 meanCameraCenter = Vec3::Zero(3, 1);
+    // Compute mean of the rotation X component
+    Eigen::Vector3d meanRx = Eigen::Vector3d::Zero();
+    for(auto& viewIt : sfmData.getViews())
+    {
+        const sfmData::View& view = *viewIt.second.get();
+
+        if(sfmData.isPoseAndIntrinsicDefined(&view))
+        {
+            const sfmData::EEXIFOrientation orientation = view.getMetadataOrientation();
+            const sfmData::CameraPose camPose = sfmData.getPose(view);
+            const geometry::Pose3& p = camPose.getTransform();
+
+            const Eigen::Vector3d rX =
+                (Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
+                 p.rotation()).transpose() *
+                Eigen::Vector3d::UnitX();
+            meanRx += rX;
+            meanCameraCenter += p.center();
+        }
+    }
+    meanRx /= sfmData.getPoses().size();
+    meanCameraCenter /= sfmData.getPoses().size();
+
+    double rms = 0.0;
+    // Compute covariance matrix of the rotation X component
+    Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
+    for(auto& viewIt : sfmData.getViews())
+    {
+        const sfmData::View& view = *viewIt.second.get();
+
+        if(sfmData.isPoseAndIntrinsicDefined(&view))
+        {
+            const sfmData::EEXIFOrientation orientation = view.getMetadataOrientation();
+            const sfmData::CameraPose camPose = sfmData.getPose(view);
+            const geometry::Pose3& p = camPose.getTransform();
+            const Eigen::Vector3d rX =
+                (Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
+                 p.rotation()).transpose() *
+                Eigen::Vector3d::UnitX();
+            C += (rX - meanRx) * (rX - meanRx).transpose();
+
+            const Vec3 camToCenter = p.center() - meanCameraCenter;
+            rms += camToCenter.transpose() * camToCenter; // squared dist to the mean of camera centers
+        }
+    }
+    rms /= sfmData.getPoses().size();
+    rms = std::sqrt(rms);
+
+    Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
+    Eigen::Vector3d nullestSpace = solver.eigenvectors().col(2).real();
+    Eigen::Vector3d unity = Eigen::Vector3d::UnitY();
+
+    if(nullestSpace(1) < 0.0)
+    {
+        unity *= -1.0;
+    }
+
+    // Compute rotation which rotates nullestSpace onto unitY
+    Eigen::Vector3d axis = nullestSpace.cross(unity);
+    const double sa = axis.norm();
+    const double ca = nullestSpace.dot(unity);
+    Eigen::Matrix3d M = SO3::skew(axis);
+    Eigen::Matrix3d R = Eigen::Matrix3d::Identity() + M + M * M * (1.0 - ca) / (sa * sa);
+
+    out_R = R;
+
+    out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
+
+    if(std::abs(rms) > 0.0001)
+        out_S = 1.0 / rms;
+    else
+        out_S = 1.0;
+    out_t = -out_S * out_R * meanCameraCenter;
+}
+
 void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
                                            double& out_S,
                                            Mat3& out_R,
                                            Vec3& out_t)
 {
-  Mat3X vX(3, sfmData.getLandmarks().size());
-
-  std::size_t i = 0;
-  for(const auto& landmark : sfmData.getLandmarks())
-  {
-    vX.col(i) = landmark.second.X;
-    ++i;
-  }
-
   const std::size_t nbCameras = sfmData.getPoses().size();
   Mat3X vCamCenter(3,nbCameras);
 
   // Compute the mean of the point cloud
-  Vec3 meanPoints = Vec3::Zero(3,1);
-  i=0;
+  Vec3 meanCameraCenter = Vec3::Zero(3, 1);
+  std::size_t i = 0;
 
   for(const auto & pose : sfmData.getPoses())
   {
     const Vec3 center = pose.second.getTransform().center();
     vCamCenter.col(i) = center;
-    meanPoints +=  center;
+    meanCameraCenter +=  center;
     ++i;
   }
 
-  meanPoints /= nbCameras;
+  meanCameraCenter /= nbCameras;
 
   std::vector<Mat3> vCamRotation; // Camera rotations
   vCamRotation.reserve(nbCameras);
@@ -525,14 +616,14 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   double rms = 0;
   for(const auto & pose : sfmData.getPoses())
   {
-    Vec3 camCenterMean = vCamCenter.col(i) - meanPoints;
+    Vec3 camCenterMean = vCamCenter.col(i) - meanCameraCenter;
     rms += camCenterMean.transpose() * camCenterMean; // squared dist to the mean of camera centers
 
     vCamRotation.push_back(pose.second.getTransform().rotation().transpose()); // Rotation in the world coordinate system
     ++i;
   }
   rms /= nbCameras;
-  rms = sqrt(rms);
+  rms = std::sqrt(rms);
 
   // Perform an svd over vX*vXT (var-covar)
   Mat3 dum = vCamCenter * vCamCenter.transpose();
@@ -555,9 +646,10 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   }
 
   out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(1,0,0)) * out_R;
+  out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
   out_S = 1.0 / rms;
 
-  out_t = - out_S * out_R * meanPoints;
+  out_t = - out_S * out_R * meanCameraCenter;
 }
 
 IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::string & camName)
@@ -637,34 +729,11 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
   ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
-  const sfmData::View& view = sfmData.getView(viewId);
-  switch(orientation)
-  {
-    case sfmData::EEXIFOrientation::RIGHT:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: RIGHT");
-          out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
-                  * sfmData.getPose(view).getTransform().rotation();
-          break;
-    case sfmData::EEXIFOrientation::LEFT:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: LEFT");
-          out_R = Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
-                  * sfmData.getPose(view).getTransform().rotation();
-          break;
-    case sfmData::EEXIFOrientation::UPSIDEDOWN:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: UPSIDEDOWN");
-          out_R = sfmData.getPose(view).getTransform().rotation();
-          break;
-    case sfmData::EEXIFOrientation::NONE:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
-          out_R = sfmData.getPose(view).getTransform().rotation();
-          break;
-    default:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
-          out_R = sfmData.getPose(view).getTransform().rotation();
-          break;
-  }
+  out_R = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
+          sfmData.getAbsolutePose(viewId).getTransform().rotation();
 
-  out_t = - out_R * sfmData.getPose(view).getTransform().center();
+  out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
+  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();
   out_S = 1.0;
 }
 
