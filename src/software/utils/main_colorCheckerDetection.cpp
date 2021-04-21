@@ -275,7 +275,7 @@ struct MacbethCCheckerQuad : Quad {
                     // Check current pixel for the current image mask
                     if(_cellMasks[i].at<uchar>(y,x) == 255)
                     {
-                        image::RGBAfColor& px = img(y + _bbox.min.y, x + _bbox.min.x);
+                        const image::RGBAfColor& px = img(y + _bbox.min.y, x + _bbox.min.x);
                         _colorData.at< cv::Vec3d >(i,0) += cv::Vec3d(px.r(), px.g(), px.b());
                         ++pixelsCount.at<int>(i);
                     }
