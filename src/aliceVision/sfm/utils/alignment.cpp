@@ -11,10 +11,7 @@
 #include <aliceVision/stl/regex.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/min.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <boost/algorithm/string/split.hpp>
@@ -743,47 +740,43 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                     Mat3& out_R,
                                     Vec3& out_t)
 {
-    const std::size_t nbLandmarks = sfmData.getLandmarks().size();
+    Mat3X vX(3, sfmData.getLandmarks().size());
 
-    Mat3X vX(3,nbLandmarks);
-
-    std::size_t i = 0;
+    std::size_t landmarksCount = 0;
 
     Vec3 meanPoints = Vec3::Zero(3,1);
     std::size_t nbMeanLandmarks = 0;
 
-    bacc::accumulator_set<double, bacc::stats<bacc::tag::min, bacc::tag::max> > accX, accY, accZ;
-
     for(const auto& landmark : sfmData.getLandmarks())
     {
-      const Vec3& position = landmark.second.X;
-
-      vX.col(i) = position;
-
-      // Compute the mean of the point cloud
-      if(imageDescriberTypes.empty() ||
-         std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmark.second.descType) != imageDescriberTypes.end())
-      {
+        if(!imageDescriberTypes.empty() &&
+            std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(),
+                      landmark.second.descType) == imageDescriberTypes.end())
+        {
+            continue;
+        }
+        const Vec3& position = landmark.second.X;
+        vX.col(landmarksCount++) = position;
         meanPoints += position;
-        ++nbMeanLandmarks;
-      }
-
-      accX(position(0));
-      accY(position(1));
-      accZ(position(2));
-      ++i;
     }
+    vX.conservativeResize(3, landmarksCount);
+    meanPoints /= landmarksCount;
 
-    meanPoints /= nbMeanLandmarks;
+    const std::size_t cacheSize = 10000;
+    const double percentile = 0.99;
+    using namespace boost::accumulators;
+    using AccumulatorMax = accumulator_set<double, stats<tag::tail_quantile<right>>>;
+    AccumulatorMax accDist(tag::tail<right>::cache_size = cacheSize);
 
     // Center the point cloud in [0;0;0]
-    for(int i=0 ; i < nbLandmarks ; ++i)
+    for(int i = 0; i < landmarksCount; ++i)
     {
       vX.col(i) -= meanPoints;
+      accDist(vX.col(i).norm());
     }
 
     // Perform an svd over vX*vXT (var-covar)
-    Mat3 dum = vX.leftCols(nbMeanLandmarks) * vX.leftCols(nbMeanLandmarks).transpose();
+    const Mat3 dum = vX.leftCols(nbMeanLandmarks) * vX.leftCols(nbMeanLandmarks).transpose();
     Eigen::JacobiSVD<Mat3> svd(dum,Eigen::ComputeFullV|Eigen::ComputeFullU);
     Mat3 U = svd.matrixU();
 
@@ -794,7 +787,9 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
       U.col(2) = -U.col(2);
     }
 
-    out_S = 1.0 / std::max({bacc::max(accX) - bacc::min(accX), bacc::max(accY) - bacc::min(accY), bacc::max(accZ) - bacc::min(accZ)});
+    const double distMax = quantile(accDist, quantile_probability = percentile);
+
+    out_S = (distMax > 0.00001 ? 1.0 / distMax : 1.0);
     out_R = U.transpose();
     out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(1,0,0)) * out_R;
     out_t = - out_S * out_R * meanPoints;
