@@ -40,12 +40,8 @@ enum class EAlignmentMethod : unsigned char
     AUTO_FROM_LANDMARKS,
     FROM_SINGLE_CAMERA,
     FROM_CENTER_CAMERA,
-<<<<<<< HEAD
     FROM_MARKERS,
     FROM_GPS
-=======
-    FROM_MARKERS
->>>>>>> [sfm] Alignment: new computeNewCoordinateSystemFromCamerasXAxis
 };
 
 /**
@@ -423,24 +419,32 @@ int aliceVision_main(int argc, char **argv)
       }
   }
 
-  // apply user scale
-  S *= userScale;
-  t *= userScale;
-
-  if (!applyScale)
+  if(!applyRotation)
   {
-      if (applyTranslation)
-          t = t / S;
-      S = 1;
-  }
-  if (!applyRotation)
-  {
-      if (applyTranslation)
-          t = R.inverse() * t;
+      // remove rotation from translation
+      t = R.transpose() * t;
+      // remove rotation
       R = Mat3::Identity();
+  }
+  if(applyScale)
+  {
+      // apply user scale
+      S *= userScale;
+      t *= userScale;
+  }
+  else
+  {
+      // remove scale from translation
+      if(std::abs(S) > 0.00001)
+      {
+          t /= S;
+      }
+      // reset scale to 1
+      S = 1.0;
   }
   if (!applyTranslation)
   {
+      // remove translation
       t = Vec3::Zero();
   }
 
