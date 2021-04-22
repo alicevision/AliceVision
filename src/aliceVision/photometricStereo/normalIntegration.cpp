@@ -16,18 +16,33 @@
 
 void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q){
 
+	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
+	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
+	aliceVision::image::Image<float> normalsZ(p.cols(), p.rows());
+
     for (size_t j = 0; j < p.cols(); ++j)
     {
         for (size_t i = 0; i < p.rows(); ++i)
         {
-            if (normals(i,j)(2) < 0.001)
+            normalsX(i,j) = normals(i,j)(0);
+            normalsY(i,j) = normals(i,j)(1);
+            normalsZ(i,j) = normals(i,j)(2);
+        }
+    }
+
             {
                 p(i,j) = 0;
                 q(i,j) = 0;
             } else
             {
-                p(i,j) = -normals(i,j)(0)/normals(i,j)(2);
-                q(i,j) = -normals(i,j)(1)/normals(i,j)(2);
+                if (normalsZ(i,j) == 0)
+                {
+                    p(i,j) = 0;
+                    q(i,j) = 0;
+                } else {
+                    p(i,j) = -normalsX(i,j)/normalsZ(i,j);
+                    q(i,j) = -normalsY(i,j)/normalsZ(i,j);
+                }
             }
         }
     }
@@ -42,10 +57,11 @@ void getDivergenceField(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eige
     qy_below = q;
     qy_below.block(0,0,nbRows-1,nbCols) = q.block(1,0,nbRows-1,nbCols);
 
-    Eigen::MatrixXf qy_above = q;
+    Eigen::MatrixXf qy_above(nbRows, nbCols);
+    qy_above = q;
     qy_above.block(1,0,nbRows-1,nbCols) = q.block(0,0,nbRows-1,nbCols);
 
-    Eigen::MatrixXf qy = 0.5*(qy_above-qy_below);
+    Eigen::MatrixXf qy = 0.5*(qy_below-qy_above);
 
     Eigen::MatrixXf px_right = p;
     px_right.block(0,0,nbRows,nbCols-1) = p.block(0,1,nbRows,nbCols-1);
@@ -66,15 +82,15 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
 
     // Right hand side of the boundary condition
     Eigen::MatrixXf b = Eigen::MatrixXf::Zero(nbRows, nbCols);
-    
-    b.block(0,1,1,nbCols-2) = q.block(0,1,1,nbCols-2);
-    b.block(nbRows-1, 1, 1, nbCols-2) = -q.block(nbRows-1, 1, 1, nbCols-2);
+
+    b.block(0,1,1,nbCols-2) = -q.block(0,1,1,nbCols-2);
+    b.block(nbRows-1, 1, 1, nbCols-2) = q.block(nbRows-1, 1, 1, nbCols-2);
     b.block(1,0,nbRows-2, 1) = -p.block(1,0,nbRows-2, 1);
     b.block(1, nbCols-1, nbRows-2, 1) = p.block(1, nbCols-1, nbRows-2, 1);
-    b(0,0) = (1/sqrt(2))*(q(0,0)-p(0,0));
-    b(0,nbCols-1) = (1/sqrt(2))*(q(0,nbCols-1)+p(0,nbCols-1));
-    b(nbRows-1, nbCols-1) = (1/sqrt(2))*(-q(nbRows-1, nbCols-1)+p(nbRows-1, nbCols-1));
-    b(nbRows-1,0) = (1/sqrt(2))*(-q(nbRows-1,0)-p(nbRows-1,0));
+    b(0,0) = (1/sqrt(2))*(-q(0,0)-p(0,0));
+    b(0,nbCols-1) = (1/sqrt(2))*(-q(0,nbCols-1)+p(0,nbCols-1));
+    b(nbRows-1, nbCols-1) = (1/sqrt(2))*(q(nbRows-1, nbCols-1)+p(nbRows-1, nbCols-1));
+    b(nbRows-1,0) = (1/sqrt(2))*(q(nbRows-1,0)-p(nbRows-1,0));
 
     //Modification near the boundaries to enforce the non-homogeneous Neumann BC
     f.block(0,1,1,nbCols-2) = f.block(0,1,1,nbCols-2) - b.block(0,1,1,nbCols-2);
@@ -121,13 +137,13 @@ void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>&
         for (int i = 0; i < nbRows; i++)
         {
             double denom = 4*(pow(sin(0.5*M_PI*j/nbCols),2) + pow(sin(0.5*M_PI*i/nbRows),2));
-            denom = std::max(denom,0.001);
-            z_bar_bar.at<float>(i,j) = -fcos.at<float>(i,j)/denom;
+            denom = std::max(denom,0.00001);
+            z_bar_bar.at<float>(i,j) = fcos.at<float>(i,j)/denom;
         }
-    }
+	}
 
     // Inverse cosine transform :
-    cv::Mat z;
+    cv::Mat z(nbRows, nbCols, CV_32FC1);
     cv::idct(z_bar_bar, z);
 
     for (int j = 0; j < nbCols; ++j)
