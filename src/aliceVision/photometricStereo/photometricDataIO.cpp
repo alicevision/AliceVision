@@ -38,7 +38,7 @@ void loadLightIntensities(const std::string& intFileName, const std::vector<int>
     }
 }
 
-void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, Eigen::MatrixXf& lightMat)
+void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
@@ -63,17 +63,17 @@ void loadLightDirections(const std::string& dirFileName, const std::vector<int>&
 				stream >> x >> y >> z;
                 for(int i = 0; i< 3; ++i)
                 {
-                    lightMat(lineNumber, 0) = x;
-                    lightMat(lineNumber, 1) = y;
-                    lightMat(lineNumber, 2) = z;
+                    lightMat(lineNumber, 0) = convertionMatrix(0,0)*x + convertionMatrix(0,1)*y + convertionMatrix(0,2)*z;
+                    lightMat(lineNumber, 1) = convertionMatrix(1,0)*x + convertionMatrix(1,1)*y + convertionMatrix(1,2)*z;
+                    lightMat(lineNumber, 2) = convertionMatrix(2,0)*x + convertionMatrix(2,1)*y + convertionMatrix(2,2)*z;
 				
                     ++lineNumber;
 
                 }
 			}
 			++cpt;
-        }
-        dirFile.close();
+      }
+      dirFile.close();
     }
 }
 
@@ -178,8 +178,32 @@ void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RG
         {
             for (int ch = 0; ch < 3; ++ch)
             {
-                normalsImPNG(i,j)(ch) = floor((normalsIm(i,j)(ch) + 1)*128);
+                normalsImPNG(i,j)(ch) = floor((normalsIm(i,j)(ch) + 1)*127.5);
             }
         }
     }
+}
+
+void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix)
+{
+    int nbRows = matrix.rows();
+    int nbCols = matrix.cols();
+
+    std::stringstream stream;
+    std::string line;
+
+    std::fstream matFile;
+    matFile.open(fileName, std::ios::in);
+
+    if (matFile.is_open())
+    {
+    for (int row = 0; row < nbRows; row++)
+        for (int col = 0; col < nbCols; col++)
+        {
+            float item = 0.0;
+            matFile >> item;
+            matrix(row, col) = item;
+        }
+    }
+    matFile.close();
 }

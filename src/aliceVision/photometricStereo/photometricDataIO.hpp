@@ -5,7 +5,7 @@
 
 void loadLightIntensities(const std::string& intFileName, const std::vector<int>& usedPictures, std::vector<std::array<float, 3>>& intList);
 
-void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, Eigen::MatrixXf& lightMat);
+void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat);
 
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask);
 
@@ -20,5 +20,7 @@ void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskI
 void normals2picture(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm);
 
 void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm, aliceVision::image::Image<aliceVision::image::RGBColor>& normalsImPNG);
+
+void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix);
 
 #endif // DATAIO_HPP_INCLUDED
