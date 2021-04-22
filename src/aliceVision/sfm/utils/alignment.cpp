@@ -512,6 +512,10 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     Vec3 meanCameraCenter = Vec3::Zero(3, 1);
     // Compute mean of the rotation X component
     Eigen::Vector3d meanRx = Eigen::Vector3d::Zero();
+    // 
+    Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();
+
+    bool first = true;
     for(auto& viewIt : sfmData.getViews())
     {
         const sfmData::View& view = *viewIt.second.get();
@@ -522,10 +526,18 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             const sfmData::CameraPose camPose = sfmData.getPose(view);
             const geometry::Pose3& p = camPose.getTransform();
 
-            const Eigen::Vector3d rX =
-                (Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
-                 p.rotation()).transpose() *
-                Eigen::Vector3d::UnitX();
+            //Rotation of image
+            Mat3 R_image = Eigen::AngleAxisd(-degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
+
+            if (first)
+            {
+                referenceAxis = R_image * Eigen::Vector3d::UnitY();
+                first = false;
+            }
+
+            const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
+
             meanRx += rX;
             meanCameraCenter += p.center();
         }
@@ -545,10 +557,11 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             const sfmData::EEXIFOrientation orientation = view.getMetadataOrientation();
             const sfmData::CameraPose camPose = sfmData.getPose(view);
             const geometry::Pose3& p = camPose.getTransform();
-            const Eigen::Vector3d rX =
-                (Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
-                 p.rotation()).transpose() *
-                Eigen::Vector3d::UnitX();
+
+            Mat3 R_image = Eigen::AngleAxisd(-degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
+
+            const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
             C += (rX - meanRx) * (rX - meanRx).transpose();
 
             const Vec3 camToCenter = p.center() - meanCameraCenter;
@@ -559,24 +572,37 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     rms = std::sqrt(rms);
 
     Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
-    Eigen::Vector3d nullestSpace = solver.eigenvectors().col(2).real();
-    Eigen::Vector3d unity = Eigen::Vector3d::UnitY();
-
-    if(nullestSpace(1) < 0.0)
+    
+    //Warning, eigenvalues are not sorted ...
+    Vec3 evalues = solver.eigenvalues().real();
+    Vec3 aevalues = evalues.cwiseAbs();
+    IndexT minCol = 0;
+    double minVal = aevalues[0];
+    if (aevalues[1] < minVal)
     {
-        unity *= -1.0;
+        minVal = aevalues[1];
+        minCol = 1;
+    }
+    if (aevalues[2] < minVal)
+    {
+        minVal = aevalues[2];
+        minCol = 2;
+    }
+
+
+    Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
+    if (evalues(minCol) < 0.0)
+    {
+        nullestSpace = -nullestSpace;
     }
 
     // Compute rotation which rotates nullestSpace onto unitY
-    Eigen::Vector3d axis = nullestSpace.cross(unity);
+    Eigen::Vector3d axis = nullestSpace.cross(referenceAxis);
     const double sa = axis.norm();
-    const double ca = nullestSpace.dot(unity);
+    const double ca = nullestSpace.dot(referenceAxis);
     Eigen::Matrix3d M = SO3::skew(axis);
-    Eigen::Matrix3d R = Eigen::Matrix3d::Identity() + M + M * M * (1.0 - ca) / (sa * sa);
+    out_R = Eigen::Matrix3d::Identity() + M + M * M * (1.0 - ca) / (sa * sa);
 
-    out_R = R;
-
-    out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
 
     if(std::abs(rms) > 0.0001)
         out_S = 1.0 / rms;
