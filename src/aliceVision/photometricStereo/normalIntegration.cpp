@@ -14,7 +14,7 @@
 
 #include "normalIntegration.hpp"
 
-void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q){
+void normal2PQ(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, Eigen::Matrix3f K){
 
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
@@ -30,10 +30,34 @@ void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& n
         }
     }
 
+    if(perspective)
+    {
+        float f = (K(0,0)+K(1,1))/2;
+
+        for (size_t j = 0; j < p.cols(); ++j)
+        {
+            float u = j - K(0,2);
+
+            for (size_t i = 0; i < p.rows(); ++i)
             {
-                p(i,j) = 0;
-                q(i,j) = 0;
-            } else
+                float v = i - K(1,2);
+
+                float denom = u*normalsX(i,j) + v*normalsY(i,j) + f*normalsZ(i,j);
+
+                if (denom == 0)
+                {
+                    p(i,j) = 0;
+                    q(i,j) = 0;
+                } else {
+                    p(i,j) = -normalsX(i,j)/denom;
+                    q(i,j) = -normalsY(i,j)/denom;
+                }
+           }
+        }
+    } else {
+        for (size_t j = 0; j < p.cols(); ++j)
+        {
+            for (size_t i = 0; i < p.rows(); ++i)
             {
                 if (normalsZ(i,j) == 0)
                 {
@@ -105,19 +129,18 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     f(nbRows-1,0) = f(nbRows-1,0)-sqrt(2)*b(nbRows-1,0);
 }
 
-void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& solution){
-
+void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& solution, bool perspective, Eigen::Matrix3f K)
+{
     int nbCols = normals.cols();
     int nbRows = normals.rows();
-	
+
     Eigen::MatrixXf p(nbRows, nbCols);
     Eigen::MatrixXf q(nbRows, nbCols);
 
     Eigen::MatrixXf f(nbRows, nbCols);
 
     // Prepare normal integration :
-    normal2PQ(normals, p, q);
-
+    normal2PQ(normals, p, q, perspective, K);
     getDivergenceField(p, q, f);
     setBoundaryConditions(p, q, f);
 
@@ -131,7 +154,7 @@ void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>&
 
     //Cosine transform of z :
     cv::Mat z_bar_bar(nbRows, nbCols, CV_32FC1);
-  
+
     for (int j = 0; j < nbCols; j++)
     {
         for (int i = 0; i < nbRows; i++)
@@ -150,7 +173,12 @@ void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>&
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            solution(i,j) = z.at<float>(i,j);
+            if(perspective)
+            {
+                solution(i,j) = exp(z.at<float>(i,j));
+            } else {
+                solution(i,j) = z.at<float>(i,j);
+            }
         }
     }
 }

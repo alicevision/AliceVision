@@ -47,14 +47,18 @@ int aliceVision_main(int argc, char **argv)
 
     std::string dataFolder;
     std::vector<int> usedPictures;
+    bool isPerspective;
+    std::string pathToK;
     std::string pathToDM;
 
     po::options_description allParams("AliceVision photometricStereo");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("dataFolder,d", po::value<std::string>(&dataFolder)->required(), "Data folder")
-    ("usedPictures,i", po::value<std::vector<int>>(&usedPictures)->required()->multitoken(), "usedPictures.")
-    ("pathToDM,o", po::value<std::string>(&pathToDM)->required()->multitoken(), "pathToDM.");
+    ("usedPictures,i", po::value<std::vector<int>>(&usedPictures)->required()->multitoken(), "usedPictures")
+    ("isPerspective,p", po::value<bool>(&isPerspective)->required(), "isPerspective")
+    ("pathToK,k", po::value<std::string>(&pathToK)->required(), "pathToK")
+    ("pathToDM,o", po::value<std::string>(&pathToDM)->required(), "pathToDM.");
 
     allParams.add(requiredParams);
 
@@ -162,9 +166,11 @@ int aliceVision_main(int argc, char **argv)
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
     normals2picture(normals, normalsIm);
 
-    aliceVision::image::Image<float> solution(pictCols, pictRows);
-    normalIntegration(normalsIm, solution);
 
+    Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
+    readMatrix(pathToK, K);
+    aliceVision::image::Image<float> solution(pictCols, pictRows);
+    normalIntegration(normalsIm, solution, isPerspective, K);
     aliceVision::image::writeImage(pathToDM, solution, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
     return 0;
