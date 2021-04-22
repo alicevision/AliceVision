@@ -39,7 +39,7 @@ cmake -P "opencv_contrib-prefix/src/opencv_contrib-stamp/download-opencv_contrib
 
 cmake -P "external/src/alembic-stamp/download-alembic.cmake"
 cmake -P "external/src/boost-stamp/download-boost.cmake"
-cmake -P "external/src/ceres-stamp/download-ceres.cmake"
+# cmake -P "external/src/ceres-stamp/download-ceres.cmake"
 cmake -P "external/src/eigen-stamp/download-eigen.cmake"
 cmake -P "external/src/ffmpeg-stamp/download-ffmpeg.cmake"
 cmake -P "external/src/geogram-stamp/download-geogram.cmake"
