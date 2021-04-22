@@ -64,7 +64,7 @@ struct QuadSVG
 
     QuadSVG() = default;
 
-    QuadSVG(const std::vector<cv::Point2f>& points)
+    explicit QuadSVG(const std::vector<cv::Point2f>& points)
     {
         if (points.size() != 4)
         {
@@ -171,14 +171,15 @@ struct Quad
 
     Quad() = default;
 
-    Quad(std::vector< cv::Point2f > corners)
+    Quad(const std::vector<cv::Point2f>& corners)
     {
-        if (corners.size() != 4) {
+        if(corners.size() != 4)
+        {
             ALICEVISION_LOG_ERROR("Invalid points count, expected 4.");
             exit(EXIT_FAILURE);
         }
 
-        for (auto const &c : corners)
+        for(const auto& c : corners)
             _corners.push_back(c);
         updateBBox();
     }
@@ -342,7 +343,6 @@ void detectColorChecker(
     ImageOptions& imgOpt,
     CCheckerDetectionSettings &settings)
 {
-    const int nc = 2; // Max number of charts in an image
     const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
     const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();

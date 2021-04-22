@@ -49,7 +49,7 @@ struct CChecker
     std::string _viewId;
     cv::Mat _colorData;
 
-    CChecker(const bpt::ptree::value_type& ccheckerPTree)
+    explicit CChecker(const bpt::ptree::value_type& ccheckerPTree)
     {
         _bodySerialNumber = ccheckerPTree.second.get_child("bodySerialNumber").get_value<std::string>();
         _lensSerialNumber = ccheckerPTree.second.get_child("lensSerialNumber").get_value<std::string>();
@@ -72,7 +72,7 @@ struct CChecker
     }
 };
 
-void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors, std::string outputPath)
+void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& refColors)
 {
     cv::Mat imageBGR = image::imageRGBAToCvMatBGR(image, CV_32FC3);
 
@@ -107,7 +107,6 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Read metadata path
     std::string metadataFilePath;
 
-    const std::string filename = fs::path(inputPath).filename().string();
     const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
     const bool isEXR = (outExtension == ".exr");
     
@@ -277,7 +276,7 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(viewPath, image, options);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData, outputPath);
+                processColorCorrection(image, colorData);
 
                 // Save image
                 saveImage(image, viewPath, outputfilePath, storageDataType);
@@ -352,7 +351,7 @@ int aliceVision_main(int argc, char** argv)
                 image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
 
                 // Image color correction processing
-                processColorCorrection(image, colorData, outputPath);
+                processColorCorrection(image, colorData);
 
                 // Save image
                 saveImage(image, inputFilePath, outputFilePath, storageDataType);
