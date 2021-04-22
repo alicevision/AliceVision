@@ -42,7 +42,8 @@ namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
-
+// Match values used in OpenCV MCC
+// See https://github.com/opencv/opencv_contrib/blob/342f8924cca88fe6ce979024b7776f6815c89978/modules/mcc/src/dictionary.hpp#L72
 const std::vector< cv::Point2f > MACBETH_CCHART_CORNERS_POS = {
     {0.f, 0.f}, {1675.f, 0.f}, {1675.f, 1125.f}, {0.f, 1125.f},
 };
