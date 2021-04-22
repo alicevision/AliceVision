@@ -49,6 +49,7 @@ int aliceVision_main(int argc, char **argv)
     std::vector<int> usedPictures;
     bool isPerspective;
     std::string pathToK;
+    std::string pathToCM;
     std::string pathToDM;
 
     po::options_description allParams("AliceVision photometricStereo");
@@ -58,6 +59,7 @@ int aliceVision_main(int argc, char **argv)
     ("usedPictures,i", po::value<std::vector<int>>(&usedPictures)->required()->multitoken(), "usedPictures")
     ("isPerspective,p", po::value<bool>(&isPerspective)->required(), "isPerspective")
     ("pathToK,k", po::value<std::string>(&pathToK)->required(), "pathToK")
+    ("pathToConvertionM,c", po::value<std::string>(&pathToCM)->required(), "pathToCM")
     ("pathToDM,o", po::value<std::string>(&pathToDM)->required(), "pathToDM.");
 
     allParams.add(requiredParams);
@@ -97,9 +99,11 @@ int aliceVision_main(int argc, char **argv)
     loadLightIntensities(intFileName, usedPictures, intList);
 
     // Load light directions
+    Eigen::MatrixXf convertionMatrix = Eigen::MatrixXf::Zero(3,3);
+    readMatrix(pathToCM, convertionMatrix);
     Eigen::MatrixXf lightMat(3*usedPictures.size(), 3);
     const std::string dirFileName = dataFolder + "light_directions.txt";
-    loadLightDirections(dirFileName, usedPictures, lightMat);
+    loadLightDirections(dirFileName, usedPictures, convertionMatrix, lightMat);
 
     // Read mask
     const std::string maskName = dataFolder + "mask.png";
