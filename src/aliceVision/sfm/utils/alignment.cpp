@@ -512,10 +512,8 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     Vec3 meanCameraCenter = Vec3::Zero(3, 1);
     // Compute mean of the rotation X component
     Eigen::Vector3d meanRx = Eigen::Vector3d::Zero();
-    // 
     Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();
 
-    bool first = true;
     for(auto& viewIt : sfmData.getViews())
     {
         const sfmData::View& view = *viewIt.second.get();
@@ -529,12 +527,6 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             //Rotation of image
             Mat3 R_image = Eigen::AngleAxisd(-degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
             Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
-
-            if (first)
-            {
-                referenceAxis = R_image * Eigen::Vector3d::UnitY();
-                first = false;
-            }
 
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
 
@@ -588,6 +580,9 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
         minVal = aevalues[2];
         minCol = 2;
     }
+
+    std::cout << solver.eigenvalues() << std::endl;
+    std::cout << solver.eigenvectors() << std::endl;
 
 
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();

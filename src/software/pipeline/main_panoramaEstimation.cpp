@@ -318,8 +318,8 @@ int aliceVision_main(int argc, char **argv)
     }
   }
 
-  // Handle image orientation
-  Eigen::Matrix3d R_metadata = Eigen::Matrix3d::Identity();
+  // Handle image orientation : done by previous method
+  /*Eigen::Matrix3d R_metadata = Eigen::Matrix3d::Identity();
   sfmData::EEXIFOrientation metadata_orientation = outSfmData.getViews().begin()->second->getMetadataOrientation();
   switch (metadata_orientation)
   {
@@ -354,7 +354,7 @@ int aliceVision_main(int argc, char **argv)
     Eigen::Matrix3d newR = p.rotation() * R_metadata;
     p.rotation() = newR;
     pose.second.setTransform(p);
-  }
+  }*/
 
   // Final report
   ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
