@@ -175,7 +175,11 @@ int aliceVision_main(int argc, char **argv)
     readMatrix(pathToK, K);
     aliceVision::image::Image<float> solution(pictCols, pictRows);
     normalIntegration(normalsIm, solution, isPerspective, K);
-    aliceVision::image::writeImage(pathToDM, solution, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+
+    oiio::ParamValueList metadata;
+    metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+
+    aliceVision::image::writeImage(pathToDM, solution, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
 
     return 0;
 }
