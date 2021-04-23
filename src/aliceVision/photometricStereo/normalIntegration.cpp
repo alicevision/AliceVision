@@ -175,7 +175,7 @@ void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>&
         {
             if(perspective)
             {
-                solution(i,j) = exp(z.at<float>(i,j));
+                solution(i,j) = std::exp(z.at<float>(i,j));
             } else {
                 solution(i,j) = z.at<float>(i,j);
             }
