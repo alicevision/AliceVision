@@ -627,8 +627,8 @@ set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Ale
 if(AV_BUILD_OPENCV)
 set(OPENCV_TARGET opencv)
 ExternalProject_Add(opencv_contrib
-  URL https://github.com/opencv/opencv_contrib/archive/4.5.1.zip
-  URL_MD5 ddb4f64d6cf31d589a8104655d39c99b
+  URL https://github.com/opencv/opencv_contrib/archive/4.5.2.zip
+  URL_MD5 1f5218d9c47994cb38bc018596534e4d
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
   BUILD_ALWAYS 0
@@ -639,8 +639,8 @@ ExternalProject_Add(opencv_contrib
 )
 ExternalProject_Add(${OPENCV_TARGET}
   DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${FFMPEG_TARGET}
-  URL https://github.com/opencv/opencv/archive/4.5.1.zip
-  URL_MD5 cc13d83c3bf989b0487bb3798375ee08
+  URL https://github.com/opencv/opencv/archive/4.5.2.zip
+  URL_MD5 f100177ab3e7b884f490cba4cff8e074
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
   UPDATE_COMMAND ""
   BUILD_IN_SOURCE 0
@@ -670,7 +670,7 @@ ExternalProject_Add(${OPENCV_TARGET}
     -DWITH_CUDA=OFF
     -DWITH_OPENCL=OFF
     -DBUILD_TESTS=OFF
-    -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version
+    -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version,mcc
     <SOURCE_DIR>
   BUILD_COMMAND $(MAKE)
 )

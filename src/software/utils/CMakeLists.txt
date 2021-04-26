@@ -251,6 +251,38 @@ alicevision_add_software(aliceVision_utils_lightingEstimation
         ${Boost_LIBRARIES}
 )
 
+
+# Perform color chart detection
+if(ALICEVISION_HAVE_OPENCV)
+  alicevision_add_software(aliceVision_utils_colorCheckerDetection
+    SOURCE main_colorCheckerDetection.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+          opencv_mcc
+)
+endif()
+
+
+# Perform color correction
+if(ALICEVISION_HAVE_OPENCV)
+  alicevision_add_software(aliceVision_utils_colorCheckerCorrection
+    SOURCE main_colorCheckerCorrection.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+          opencv_mcc
+)
+endif()
+
 endif() # ALICEVISION_BUILD_SFM
 
 if(ALICEVISION_BUILD_MVS)

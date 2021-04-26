@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: alicevision/alicevision-deps:ci-2020.09.09-centos7-cuda10.2
+      image: alicevision/alicevision-deps:ci-2021-04-22-centos7-cuda10.2
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
