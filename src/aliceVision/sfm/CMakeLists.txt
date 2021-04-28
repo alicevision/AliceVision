@@ -94,5 +94,13 @@ alicevision_add_test(bundleAdjustment_test.cpp
         aliceVision_system
 )
 
+alicevision_add_test(utils/alignment_test.cpp
+  NAME "sfm_alignment"
+  LINKS
+        aliceVision_sfm
+        aliceVision_multiview
+        aliceVision_multiview_test_data
+)
+
 add_subdirectory(pipeline)
 

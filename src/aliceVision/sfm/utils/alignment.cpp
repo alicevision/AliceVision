@@ -508,12 +508,17 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
                                            Mat3& out_R,
                                            Vec3& out_t)
 {
+    out_S = 1.0;
+    out_R = Mat3::Identity();
+    out_t = Vec3::Zero();
+
     // mean of the camera centers
     Vec3 meanCameraCenter = Vec3::Zero(3, 1);
     // Compute mean of the rotation X component
     Eigen::Vector3d meanRx = Eigen::Vector3d::Zero();
     Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();
 
+    std::size_t validPoses = 0;
     for(auto& viewIt : sfmData.getViews())
     {
         const sfmData::View& view = *viewIt.second.get();
@@ -532,10 +537,15 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 
             meanRx += rX;
             meanCameraCenter += p.center();
+            ++validPoses;
         }
     }
-    meanRx /= sfmData.getPoses().size();
-    meanCameraCenter /= sfmData.getPoses().size();
+    if(validPoses == 0)
+    {
+        return;
+    }
+    meanRx /= validPoses;
+    meanCameraCenter /= validPoses;
 
     double rms = 0.0;
     // Compute covariance matrix of the rotation X component
@@ -560,7 +570,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             rms += camToCenter.transpose() * camToCenter; // squared dist to the mean of camera centers
         }
     }
-    rms /= sfmData.getPoses().size();
+    rms /= validPoses;
     rms = std::sqrt(rms);
 
     Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
@@ -581,9 +591,8 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
         minCol = 2;
     }
 
-    std::cout << solver.eigenvalues() << std::endl;
-    std::cout << solver.eigenvectors() << std::endl;
-
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvalues: " << solver.eigenvalues());
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvectors: " << solver.eigenvectors());
 
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
     if (evalues(minCol) < 0.0)
@@ -594,10 +603,12 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     // Compute rotation which rotates nullestSpace onto unitY
     Eigen::Vector3d axis = nullestSpace.cross(referenceAxis);
     const double sa = axis.norm();
-    const double ca = nullestSpace.dot(referenceAxis);
-    Eigen::Matrix3d M = SO3::skew(axis);
-    out_R = Eigen::Matrix3d::Identity() + M + M * M * (1.0 - ca) / (sa * sa);
-
+    if(sa > 1e-3)
+    {
+        const double ca = nullestSpace.dot(referenceAxis);
+        Eigen::Matrix3d M = SO3::skew(axis);
+        out_R = Eigen::Matrix3d::Identity() + M + M * M * (1.0 - ca) / (sa * sa);
+    }
 
     if(std::abs(rms) > 0.0001)
         out_S = 1.0 / rms;
