@@ -69,30 +69,61 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_alreadyAligned)
 // - Check that the rotation matches the one applied
 BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
 {
-  const int nviews = 16;
-  const int npoints = 6;
-  const NViewDatasetConfigurator config;
-  const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+    const int nviews = 16;
+    const int npoints = 6;
+    const NViewDatasetConfigurator config;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
-  // Translate the input dataset to a SfMData scene
-  SfMData sfmDataOrig = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
-  SfMData sfmData = sfmDataOrig;
-  double aS = 1.0;
-  const Mat3 aR = Eigen::AngleAxisd(degreeToRadian(23.0), Vec3(1, 0, 0)).toRotationMatrix();
-  const Vec3 at = Vec3::Zero();
-  applyTransform(sfmData, aS, aR, at);
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmDataOrig = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA);
+    SfMData sfmData = sfmDataOrig;
+    double aS = 1.0;
+    const Mat3 aR = Eigen::AngleAxisd(degreeToRadian(23.0), Vec3(1, 0, 0)).toRotationMatrix();
+    const Vec3 at = Vec3::Zero();
+    applyTransform(sfmData, aS, aR, at);
 
-  double bS = 1.0;
-  Mat3 bR = Mat3::Identity();
-  Vec3 bt = Vec3::Zero();
-  computeNewCoordinateSystemFromCamerasXAxis(sfmData, bS, bR, bt);
+    // Compute Transformation a first time
+    double bS = 1.0;
+    Mat3 bR = Mat3::Identity();
+    Vec3 bt = Vec3::Zero();
+    {
+        computeNewCoordinateSystemFromCamerasXAxis(sfmData, bS, bR, bt);
 
-  ALICEVISION_LOG_INFO("aR: " << aR);
-  ALICEVISION_LOG_INFO("bR: " << bR);
+        ALICEVISION_LOG_INFO("aR: " << aR);
+        ALICEVISION_LOG_INFO("bR: " << bR);
 
-  Mat3 res = bR * aR;
-  ALICEVISION_LOG_INFO("res: " << res);
-  // EXPECT_MATRIX_NEAR(res, Mat3::Identity(), 1e-3);
+        Mat3 res = bR * aR;
+        ALICEVISION_LOG_INFO("res: " << res);
+        // EXPECT_MATRIX_NEAR(res, Mat3::Identity(), 1e-3);
+    }
+    {
+        // Check repeatability: if we estimate the transformation a 2nd time, we should find the same result
+        double cS = 1.0;
+        Mat3 cR = Mat3::Identity();
+        Vec3 ct = Vec3::Zero();
+        computeNewCoordinateSystemFromCamerasXAxis(sfmData, cS, cR, ct);
+
+        ALICEVISION_LOG_INFO("cR: " << cR);
+
+        EXPECT_MATRIX_NEAR(bR, cR, 1e-5);
+    }
+
+    // apply the estimated transformation
+    applyTransform(sfmData, bS, bR, bt);
+
+    // Check repeatability:
+    // We have estimated and apply the transformation.
+    // If we estimate the transformation again, the result should be identity.
+    {
+        double cS = 1.0;
+        Mat3 cR = Mat3::Identity();
+        Vec3 ct = Vec3::Zero();
+        computeNewCoordinateSystemFromCamerasXAxis(sfmData, cS, cR, ct);
+
+        ALICEVISION_LOG_INFO("cR: " << cR);
+
+        EXPECT_MATRIX_NEAR(cR, Mat3::Identity(), 1e-5);
+    }
 }
 
 // Translation a synthetic scene into a valid SfMData scene.
