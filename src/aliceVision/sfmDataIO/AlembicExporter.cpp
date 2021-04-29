@@ -109,25 +109,27 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   {
     OBoolProperty(userProps, "mvg_poseLocked").set(pose->isLocked());
 
-    const Mat3& R = pose->getTransform().rotation();
-    const Vec3& center = pose->getTransform().center();
+    Eigen::Matrix4d M = Eigen::Matrix4d::Identity();
+    M(1, 1) = -1;
+    M(2, 2) = -1;
+
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = pose->getTransform().rotation();
+    T.block<3, 1>(0, 3) = pose->getTransform().translation();
+
+    Eigen::Matrix4d T2 = (T * M).inverse();
+    
 
     // compensate translation with rotation
     // build transform matrix
     Abc::M44d xformMatrix;
-    xformMatrix[0][0] = R(0, 0);
-    xformMatrix[0][1] = R(0, 1);
-    xformMatrix[0][2] = R(0, 2);
-    xformMatrix[1][0] = R(1, 0);
-    xformMatrix[1][1] = R(1, 1);
-    xformMatrix[1][2] = R(1, 2);
-    xformMatrix[2][0] = R(2, 0);
-    xformMatrix[2][1] = R(2, 1);
-    xformMatrix[2][2] = R(2, 2);
-    xformMatrix[3][0] = center(0);
-    xformMatrix[3][1] = center(1);
-    xformMatrix[3][2] = center(2);
-    xformMatrix[3][3] = 1.0;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        xformMatrix[j][i] = T2(i, j);
+      }
+    }
 
     // correct camera orientation for alembic
     M44d scale; // by default this is an identity matrix
@@ -135,7 +137,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     scale[1][1] = -1;
     scale[2][2] = -1;
 
-    xformMatrix = scale * xformMatrix;
+    xformMatrix = xformMatrix;
     xformsample.setMatrix(xformMatrix);
   }
 
@@ -412,7 +414,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
   {
     const Vec3& pt = landmark.second.X;
     const image::RGBColor& color = landmark.second.rgb;
-    positions.emplace_back(pt[0], pt[1], pt[2]);
+    positions.emplace_back(pt[0], -pt[1], -pt[2]);
     colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
     descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
   }
