@@ -595,7 +595,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvectors: " << solver.eigenvectors());
 
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
-    if (evalues(minCol) < 0.0)
+    if (nullestSpace.dot(referenceAxis) < 0.0)
     {
         nullestSpace = -nullestSpace;
     }
