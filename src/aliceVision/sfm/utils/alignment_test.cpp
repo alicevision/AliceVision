@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
 
         Mat3 res = bR * aR;
         ALICEVISION_LOG_INFO("res: " << res);
-        // EXPECT_MATRIX_NEAR(res, Mat3::Identity(), 1e-3);
+        EXPECT_MATRIX_NEAR(res, Mat3::Identity(), 1e-3);
     }
     {
         // Check repeatability: if we estimate the transformation a 2nd time, we should find the same result
