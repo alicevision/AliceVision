@@ -194,7 +194,9 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       ++point3d_i)
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
-    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
+
+
+    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = sfmData::Landmark(Vec3(pos_i.x, -pos_i.y, -pos_i.z), feature::EImageDescriberType::UNKNOWN);
 
     if(sampleColors)
     {
@@ -594,28 +596,23 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   if((flagsPart & ESfMData::EXTRINSICS) &&
      isReconstructed)
   {
-    // camera
-    Mat3 camR;
-    camR(0,0) = mat[0][0];
-    camR(0,1) = mat[0][1];
-    camR(0,2) = mat[0][2];
-    camR(1,0) = mat[1][0];
-    camR(1,1) = mat[1][1];
-    camR(1,2) = mat[1][2];
-    camR(2,0) = mat[2][0];
-    camR(2,1) = mat[2][1];
-    camR(2,2) = mat[2][2];
+    Mat4 T = Mat4::Identity();
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        T(i, j) = mat[j][i];
+      }
+    }
+    
 
-    Vec3 camT;
-    camT(0) = mat[3][0];
-    camT(1) = mat[3][1];
-    camT(2) = mat[3][2];
+    Mat4 M = Mat4::Identity();
+    M(1, 1) = -1.0;
+    M(2, 2) = -1.0;
 
-    // correct camera orientation from alembic
-    const Mat3 scale = Vec3(1,-1,-1).asDiagonal();
-    camR = scale * camR;
+    Mat4 T2 = (M * T * M).inverse();
 
-    Pose3 pose(camR, camT);
+    Pose3 pose(T2.block<3, 4>(0, 0));
 
     if(view->isPartOfRig() && !view->isPoseIndependant())
     {
@@ -740,6 +737,8 @@ bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::Sf
     matT(2) = mat[3][2];
 
     Pose3 pose(matR, matT);
+
+    std::cout << "ok" << std::endl;
 
     if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
       sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
