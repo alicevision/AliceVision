@@ -117,7 +117,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     T.block<3, 3>(0, 0) = pose->getTransform().rotation();
     T.block<3, 1>(0, 3) = pose->getTransform().translation();
 
-    Eigen::Matrix4d T2 = (T * M).inverse();
+    Eigen::Matrix4d T2 = (M * T * M).inverse();
     
 
     // compensate translation with rotation
