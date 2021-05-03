@@ -141,8 +141,8 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   BOOST_CHECK_LT(residual, 0.5);
   BOOST_CHECK_EQUAL(nviews, finalSfMData.getPoses().size());
   BOOST_CHECK_EQUAL(npoints, finalSfMData.getLandmarks().size());
-  BOOST_CHECK_NE(reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(0).get())->getFocalLengthPix(),
-                 reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(1).get())->getFocalLengthPix());
+  BOOST_CHECK_NE(reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(0).get())->getFocalLengthPixX(),
+                 reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(1).get())->getFocalLengthPixX());
 }
 
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)

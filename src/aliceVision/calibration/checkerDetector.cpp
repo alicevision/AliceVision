@@ -6,6 +6,16 @@
 
 #include <OpenImageIO/imagebufalgo.h>
 
+
+// TODO: to remove when moving to eigen 3.4
+namespace Eigen
+{
+template <typename Type, int Size>
+using Vector = Matrix<Type, Size, 1>;
+template <typename Type, int Size>
+using RowVector = Matrix<Type, 1, Size>;
+} // namespace Eigen
+
 namespace aliceVision{
 namespace calibration{
 

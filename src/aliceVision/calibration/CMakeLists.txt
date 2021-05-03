@@ -15,7 +15,7 @@ set(calibration_files_sources
 )
 
 if(ALICEVISION_HAVE_OPENCV)
-  list(calibration_files_sources APPEND 
+  list(APPEND calibration_files_sources 
     bestImages.cpp
     calibration.cpp
     patternDetect.cpp
