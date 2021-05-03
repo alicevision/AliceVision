@@ -486,15 +486,18 @@ bool computeSimilarityFromCommonMarkers(
     return true;
 }
 
+/**
+ * Image orientation CCW
+ */
 double orientationToRotationDegree(sfmData::EEXIFOrientation orientation)
 {
     switch(orientation)
     {
-        case sfmData::EEXIFOrientation::RIGHT:
-            return 270.0;
-        case sfmData::EEXIFOrientation::LEFT:
-            return 90.0;
-        case sfmData::EEXIFOrientation::UPSIDEDOWN:
+        case sfmData::EEXIFOrientation::RIGHT: // 8
+            return 90.0; // CCW
+        case sfmData::EEXIFOrientation::LEFT: // 6
+            return 270.0; // CCW
+        case sfmData::EEXIFOrientation::UPSIDEDOWN: // 3
             return 180.0;
         case sfmData::EEXIFOrientation::NONE:
         default:
