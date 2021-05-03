@@ -19,6 +19,7 @@ namespace sfmData {
 
 /**
  * @brief EXIF Orientation to names
+ * https://jdhao.github.io/2019/07/31/image_rotation_exif_info/
  */
 enum class EEXIFOrientation
 {
