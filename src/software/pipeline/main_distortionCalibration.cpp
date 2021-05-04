@@ -666,12 +666,14 @@ int aliceVision_main(int argc, char* argv[])
             ALICEVISION_LOG_ERROR("Error generating points");
             continue;
         }
-
+ 
         cameraPinhole->setWidth(w);
         cameraPinhole->setHeight(h);
-        cameraPinhole->setScale(d, d);
-        cameraPinhole->setOffset(hw, hh);
-             
+        cameraPinhole->setScale(originalScale.x(), originalScale.y());
+        cameraPinhole->setOffset(hw, hh); 
+        std::vector<double> params = cameraPinhole->getDistortionParams();
+        for (int i = 0; i < params.size(); i++) params[i] = 0.0;
+        cameraPinhole->setDistortionParams(params);
 
         //Estimate distortion
         if (std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraBase))

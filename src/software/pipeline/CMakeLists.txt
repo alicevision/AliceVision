@@ -204,20 +204,20 @@ if(ALICEVISION_BUILD_SFM)
             Boost::filesystem
             Boost::boost
     )
-
-    alicevision_add_software(aliceVision_distortionCalibration
-      SOURCE main_distortionCalibration.cpp
-      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-      LINKS aliceVision_dataio
-            aliceVision_image
-            aliceVision_calibration
-            aliceVision_system
-            aliceVision_sfmDataIO
-            Boost::program_options
-            Boost::filesystem
-            Boost::boost
-    )
   endif()
+
+  alicevision_add_software(aliceVision_distortionCalibration
+    SOURCE main_distortionCalibration.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_dataio
+          aliceVision_image
+          aliceVision_calibration
+          aliceVision_system
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+  )
 
   # Calibrate a rig
   alicevision_add_software(aliceVision_rigCalibration
