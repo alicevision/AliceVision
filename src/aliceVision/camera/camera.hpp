@@ -38,11 +38,11 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
     case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
       return std::make_shared<Pinhole3DERadial4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return std::make_shared<PinholeBrownT2>(w, h, focalLengthPixX, ppx, ppy);
+      return std::make_shared<PinholeBrownT2>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return std::make_shared<PinholeFisheye>(w, h, focalLengthPixX, ppx, ppy);
+      return std::make_shared<PinholeFisheye>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return std::make_shared<PinholeFisheye1>(w, h, focalLengthPixX, ppx, ppy);
+      return std::make_shared<PinholeFisheye1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
       return std::make_shared<Pinhole3DEAnamorphic4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
