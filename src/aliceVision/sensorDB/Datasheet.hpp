@@ -27,12 +27,10 @@ struct Datasheet
    */
   Datasheet(const std::string& brand,
             const std::string& model,
-            const double& sensorWidth,
-            const double& sensorHeight)
+            const double& sensorWidth)
     : _brand(brand)
     , _model(model)
     , _sensorWidth(sensorWidth)
-    , _sensorHeight(sensorHeight)
   {}
 
   bool operator==(const Datasheet& other) const;
@@ -40,7 +38,6 @@ struct Datasheet
   std::string _brand;
   std::string _model;
   double _sensorWidth;
-  double _sensorHeight;
 };
 
 } // namespace sensorDB

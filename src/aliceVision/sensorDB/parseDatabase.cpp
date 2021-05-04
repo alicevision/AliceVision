@@ -45,9 +45,7 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
           const std::string brand = values[0];
           const std::string model = values[1];
           const double sensorWidth = std::stod(values[2]);
-          const double sensorHeight = std::stod(values[3]);
-
-          databaseStructure.emplace_back(brand, model, sensorWidth, sensorHeight);
+          databaseStructure.emplace_back(brand, model, sensorWidth);
         }
       }
     }
@@ -57,7 +55,7 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
 
 bool getInfo(const std::string& brand, const std::string& model, const std::vector<Datasheet>& databaseStructure, Datasheet& datasheetContent)
 {
-  Datasheet refDatasheet(brand, model, -1., -1.);
+  Datasheet refDatasheet(brand, model, -1.);
   auto datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
 
   if(datasheet == databaseStructure.end())

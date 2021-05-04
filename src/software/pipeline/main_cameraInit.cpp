@@ -523,7 +523,6 @@ int aliceVision_main(int argc, char **argv)
         }
 
         sensorWidth = datasheet._sensorWidth;
-        sensorHeight = datasheet._sensorHeight;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0) {
@@ -788,8 +787,7 @@ int aliceVision_main(int argc, char **argv)
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
                         << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
                         << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth << std::endl
-                        << "\t- database camera sensor height: " << unsureSensor.second.second._sensorHeight << " mm");
+                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
     ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
   }
 
