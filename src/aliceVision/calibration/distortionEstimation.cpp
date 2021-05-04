@@ -222,7 +222,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
     if (lockDistortions.size() != countDistortionParams) 
     {
-        std::cout << "invalid" << lockDistortions.size() << " " << countDistortionParams << std::endl;
+        ALICEVISION_LOG_ERROR("Invalid number of distortion parameters (lockDistortions=" << lockDistortions.size() << ", countDistortionParams=" << countDistortionParams << ").");
         return false;
     }
 
@@ -293,8 +293,6 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         problem.AddParameterBlock(&l.angle, 1);
         problem.AddParameterBlock(&l.dist, 1);
 
-        
-
         for (Vec2 pt : l.points)
         {
             ceres::CostFunction * costFunction = new CostLine(cameraToEstimate, pt);   
@@ -310,16 +308,15 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
 
-    //std::cout << summary.FullReport() << std::endl;
+    ALICEVISION_LOG_TRACE(summary.FullReport());
 
     if (!summary.IsSolutionUsable())
     {
+        ALICEVISION_LOG_ERROR("Lens calibration estimation failed.");
         return false;
     }
 
-    
     cameraToEstimate->updateFromParams(params);
-
 
     std::vector<double> errors;
 
@@ -340,12 +337,11 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         }
     }
 
-    
-    double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / double(errors.size());
-    double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
-    double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
+    const double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / double(errors.size());
+    const double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
+    const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
     std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
-    double median = errors[errors.size() / 2];
+    const double median = errors[errors.size() / 2];
     
     statistics.mean = mean;
     statistics.stddev = stddev;
@@ -369,7 +365,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
     if (lockDistortions.size() != countDistortionParams) 
     {
-        std::cout << "invalid" << lockDistortions.size() << " " << countDistortionParams << std::endl;
+        ALICEVISION_LOG_ERROR("Invalid number of distortion parameters (lockDistortions=" << lockDistortions.size() << ", countDistortionParams=" << countDistortionParams << ").");
         return false;
     }
 
@@ -449,35 +445,34 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     ceres::Solver::Summary summary;  
     ceres::Solve(options, &problem, &summary);
 
+    ALICEVISION_LOG_TRACE(summary.FullReport());
+
     if (!summary.IsSolutionUsable())
     {
+        ALICEVISION_LOG_ERROR("Lens calibration estimation failed.");
         return false;
     }
 
-    
     cameraToEstimate->updateFromParams(params);
-
 
     std::vector<double> errors;
 
     for (PointPair pp : points)
     {
-        Vec2 cpt = cameraToEstimate->ima2cam(pp.undistortedPoint);
-        Vec2 distorted = cameraToEstimate->addDistortion(cpt);
-        Vec2 ipt = cameraToEstimate->cam2ima(distorted);
+        const Vec2 cpt = cameraToEstimate->ima2cam(pp.undistortedPoint);
+        const Vec2 distorted = cameraToEstimate->addDistortion(cpt);
+        const Vec2 ipt = cameraToEstimate->cam2ima(distorted);
 
-        double res = (ipt - pp.distortedPoint).norm();
+        const double res = (ipt - pp.distortedPoint).norm();
 
         errors.push_back(res);
     }
-    
 
-    
-    double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / double(errors.size());
-    double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
-    double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
+    const double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / double(errors.size());
+    const double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
+    const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
     std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
-    double median = errors[errors.size() / 2];
+    const double median = errors[errors.size() / 2];
 
     statistics.mean = mean;
     statistics.stddev = stddev;

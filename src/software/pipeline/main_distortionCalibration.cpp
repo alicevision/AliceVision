@@ -157,13 +157,16 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
     {
         return false;
     }
-       
-    image::Image<image::RGBColor> drawing = input;
-    detect.drawCheckerBoard(drawing);
-    image::writeImage(checkerImagePath, drawing, image::EImageColorSpace::NO_CONVERSION);
-    
+
+    if(!checkerImagePath.empty())
+    {
+        image::Image<image::RGBColor> drawing = input;
+        detect.drawCheckerBoard(drawing);
+        image::writeImage(checkerImagePath, drawing, image::EImageColorSpace::NO_CONVERSION);
+    }
+
     lineWithPoints.clear();
-    
+
     std::vector<calibration::CheckerDetector::CheckerBoardCorner> corners = detect.getCorners();
     for (auto & b : detect.getBoards())
     {
@@ -229,7 +232,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole> & camera, calibration
 {
     std::vector<bool> locksDistortions = {true};
 
-    //Everything locked except lines paramters
+    //Everything locked except lines parameters
     locksDistortions[0] = true;
     if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
@@ -261,7 +264,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole> & camera, calibration
 {
     std::vector<bool> locksDistortions = {true, true, true};
 
-    //Everything locked except lines paramters
+    //Everything locked except lines parameters
     locksDistortions[0] = true;
     if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
@@ -303,7 +306,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole> & camera, calibrat
 {
     std::vector<bool> locksDistortions = {true, true, true, true, true, true};
 
-    //Everything locked except lines paramters
+    //Everything locked except lines parameters
     locksDistortions[0] = true;
     if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
@@ -346,8 +349,6 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole> & camera, calibrat
 template <class T>
 bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole> & camera, calibration::Statistics & statistics, std::vector<T> & items)
 {
-    
-    
     std::shared_ptr<camera::Pinhole> simpleCamera = std::make_shared<camera::PinholeRadialK1>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1], 0.0);
     if (!estimateDistortionK1(simpleCamera, statistics, items))
     {
@@ -386,9 +387,8 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
     camera->setDistortionParams(params);
 
     std::vector<bool> locksDistortions = {true, true, true, true, true};
-    
 
-    //Everything locked except lines paramters
+    //Everything locked except lines parameters
     locksDistortions[0] = true;
     if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
@@ -441,7 +441,6 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole> & camera, calibrat
 
 bool generatePoints(std::vector<calibration::PointPair> & points, const std::shared_ptr<camera::Pinhole> & camera, const std::vector<calibration::LineWithPoints> & lineWithPoints)
 {
-
     for (auto & l : lineWithPoints)
     {
         for (auto & pt : l.points)
@@ -594,9 +593,7 @@ int aliceVision_main(int argc, char* argv[])
         
         fs::copy_file(view->getImagePath(), fs::path(outputPath) / fs::path(view->getImagePath()).filename(), fs::copy_option::overwrite_if_exists);
 
-        std::string undistortedImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
-        std::string stMapImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_stmap.exr";
-        std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
+        const std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
 
         //Retrieve lines
         std::vector<calibration::LineWithPoints> lineWithPoints;
@@ -604,11 +601,10 @@ int aliceVision_main(int argc, char* argv[])
         {
             ALICEVISION_LOG_ERROR("Impossible to extract the checkerboards lines");
             continue;
-            
         }
 
         calibration::Statistics statistics;
- 
+
         //Estimate distortion
         if (std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraBase))
         {
@@ -626,7 +622,6 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        
         else if (std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraBase))
         {
             if (!estimateDistortion3DER4(cameraPinhole, statistics, lineWithPoints))
@@ -656,9 +651,9 @@ int aliceVision_main(int argc, char* argv[])
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
         }
 
-        ALICEVISION_LOG_INFO("Result quality of calibration : ");
-        ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
-        ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
+        ALICEVISION_LOG_INFO("Result quality of calibration: ");
+        ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev <<")");
+        ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
 
         std::vector<calibration::PointPair> points;
         if (!generatePoints(points, cameraPinhole, lineWithPoints))
@@ -721,9 +716,14 @@ int aliceVision_main(int argc, char* argv[])
             ALICEVISION_LOG_ERROR("Incompatible camera distortion model");
         }
 
-        ALICEVISION_LOG_INFO("Result quality of inversion : ");
-        ALICEVISION_LOG_INFO("Mean of error (stddev) : " << statistics.mean << "(" << statistics.stddev <<")");
-        ALICEVISION_LOG_INFO("Median of error : " << statistics.median);
+        ALICEVISION_LOG_INFO("Result quality of inversion: ");
+        ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
+        ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
+
+        const std::string undistortedImagePath =
+            (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
+        const std::string stMapImagePath =
+            (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_stmap.exr";
 
         Vec2 offset;
         image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);

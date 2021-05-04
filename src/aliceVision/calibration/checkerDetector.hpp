@@ -47,7 +47,7 @@ public:
         return _corners;
     }
 
-    void drawCheckerBoard(image::Image<image::RGBColor> & img);
+    void drawCheckerBoard(image::Image<image::RGBColor> & img) const;
     
 private:
     bool processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale);

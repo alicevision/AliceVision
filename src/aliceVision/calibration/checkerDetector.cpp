@@ -1119,7 +1119,7 @@ bool CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
     return true;
 }
 
-void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img)
+void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img) const
 {
     for (auto c : _corners)
     {
