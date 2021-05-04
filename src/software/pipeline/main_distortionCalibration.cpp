@@ -467,6 +467,7 @@ bool generatePoints(std::vector<calibration::PointPair> & points, const std::sha
 int aliceVision_main(int argc, char* argv[])
 {
     std::string sfmInputDataFilepath;
+    std::vector<std::string> lensGridFilepaths;
     std::string sfmOutputDataFilepath;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
@@ -478,6 +479,7 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
+    ("lensGrid", po::value<std::vector<std::string>>(&lensGridFilepaths)->multitoken(), "Lens Grid images.")
     ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
@@ -526,121 +528,152 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
+
+    if(intrinsics.empty())
+    {
+        ALICEVISION_LOG_ERROR("No valid intrinsics in input: '" << sfmInputDataFilepath << "'.");
+        return EXIT_FAILURE;
+    }
+
+    if(intrinsics.size() > 1)
+    {
+        ALICEVISION_LOG_ERROR("This Lens Distortion Calibration software does not support the calibration of multiple intrinsics for now.");
+        return EXIT_FAILURE;
+    }
+
     // Analyze path
     boost::filesystem::path path(sfmOutputDataFilepath);
     std::string outputPath = path.parent_path().string();
 
-    int pos = 0;
-    for (auto v : sfmData.getViews()) 
+    if(lensGridFilepaths.empty())
     {
-        auto view = v.second;
-        const std::string viewIdStr = std::to_string(v.first);
-
-        ALICEVISION_LOG_INFO("Processing view " << v.first);
-
-        //Check pixel ratio
-        float pixelRatio = view->getDoubleMetadata({"PixelAspectRatio"});
-        if (pixelRatio < 0.0) 
+        ALICEVISION_LOG_WARNING("No lens grid image to perform the lens calibration.");
+        if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
-            pixelRatio = 1.0f;
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be read.");
+            return EXIT_FAILURE;
         }
+        return EXIT_SUCCESS;
+    }
 
-        //Read image
-        image::Image<image::RGBColor> input;
-        std::string pathImage = view->getImagePath();
-        image::readImage(v.second->getImagePath(), input, image::EImageColorSpace::SRGB);       
-
-        if (pixelRatio != 1.0f)
-        {
-            double w = input.Width();
-            double h = input.Height();
-            double nw = w;
-            double nh = h / pixelRatio;
-            image::Image<image::RGBColor> resizedInput(nw, nh);
-
-            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
-            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::UCHAR);
-
-            const oiio::ImageBuf inBuf(imageSpecOrigin, input.data());
-            oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
-
-            oiio::ImageBufAlgo::resize(outBuf, inBuf);
-            input.swap(resizedInput);
-        }
-
-        
-        std::shared_ptr<camera::IntrinsicBase> cameraBase = sfmData.getIntrinsicsharedPtr(v.second->getIntrinsicId());
-        std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(cameraBase);
-        if (!cameraPinhole)
+    for(auto intrinsicIt: intrinsics)
+    {
+        std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = intrinsicIt.second;
+        const std::string intrinsicIdStr = std::to_string(intrinsicIt.first);
+        std::shared_ptr<camera::Pinhole> cameraPinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);
+        if(!cameraPinhole)
         {
             ALICEVISION_LOG_ERROR("Only work for pinhole cameras");
-            continue;
+            return EXIT_FAILURE;
         }
+        ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicIt.first);
 
-        Vec2 originalScale = cameraPinhole->getScale();
-        
-        double w = input.Width();
-        double h = input.Height();
-        double hw = w / 2.0;
-        double hh = h / 2.0;
-        double d = sqrt(hw*hw + hh*hh);
+        std::vector<double> params = cameraPinhole->getDistortionParams();
+        for(int i = 0; i < params.size(); i++)
+            params[i] = 0.0;
+        cameraPinhole->setDistortionParams(params);
 
-        //Force the 'focal' to normalize the image such that its semi diagonal is 1
-        cameraPinhole->setWidth(w);
-        cameraPinhole->setHeight(h);
-        cameraPinhole->setScale(d, d);
-        cameraPinhole->setOffset(hw, hh);
-        
-        fs::copy_file(view->getImagePath(), fs::path(outputPath) / fs::path(view->getImagePath()).filename(), fs::copy_option::overwrite_if_exists);
+        std::vector<calibration::LineWithPoints> allLineWithPoints;
+        std::vector<std::vector<calibration::LineWithPoints>> lineWithPointsPerImage;
 
-        const std::string checkerImagePath = (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_checkerboard.exr";
-
-        //Retrieve lines
-        std::vector<calibration::LineWithPoints> lineWithPoints;
-        if (!retrieveLines(lineWithPoints, input, checkerImagePath))
+        for(const std::string lensGridFilepath : lensGridFilepaths)
         {
-            ALICEVISION_LOG_ERROR("Impossible to extract the checkerboards lines");
-            continue;
+            //Check pixel ratio
+            float pixelRatio = 1.0f; // view->getDoubleMetadata({"PixelAspectRatio"}); // TODO
+            if (pixelRatio < 0.0) 
+            {
+                pixelRatio = 1.0f;
+            }
+
+            //Read image
+            image::Image<image::RGBColor> input;
+            image::readImage(lensGridFilepath, input, image::EImageColorSpace::SRGB);
+
+            if (pixelRatio != 1.0f)
+            {
+                // if pixel are not squared, convert the image for lines extraction
+                double w = input.Width();
+                double h = input.Height();
+                double nw = w;
+                double nh = h / pixelRatio;
+                image::Image<image::RGBColor> resizedInput(nw, nh);
+
+                const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
+                const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::UCHAR);
+
+                const oiio::ImageBuf inBuf(imageSpecOrigin, input.data());
+                oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
+
+                oiio::ImageBufAlgo::resize(outBuf, inBuf);
+                input.swap(resizedInput);
+            }
+
+            const Vec2 originalScale = cameraPinhole->getScale();
+        
+            const double w = input.Width();
+            const double h = input.Height();
+            if(w != cameraPinhole->w() || h != cameraPinhole->h())
+            {
+                ALICEVISION_THROW_ERROR("Inconsistant size between the image and the camera intrinsics (image: "
+                                        << w << "x" << h << ", camera: " << cameraPinhole->w() << "x" << cameraPinhole->h());
+            }
+
+            fs::copy_file(lensGridFilepath, fs::path(outputPath) / fs::path(lensGridFilepath).filename(),
+                          fs::copy_option::overwrite_if_exists);
+
+            const std::string checkerImagePath =
+                (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_checkerboard.exr";
+
+            // Retrieve lines
+            std::vector<calibration::LineWithPoints> lineWithPoints;
+            if (!retrieveLines(lineWithPoints, input, checkerImagePath))
+            {
+                ALICEVISION_LOG_ERROR("Impossible to extract the checkerboards lines");
+                continue;
+            }
+            lineWithPointsPerImage.push_back(lineWithPoints);
+            allLineWithPoints.insert(allLineWithPoints.end(), lineWithPoints.begin(), lineWithPoints.end());
         }
 
         calibration::Statistics statistics;
 
-        //Estimate distortion
-        if (std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraBase))
+        // Estimate distortion
+        if(std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraPinhole))
         {
-            if (!estimateDistortionK1(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortionK1(cameraPinhole, statistics, allLineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeRadialK3>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::PinholeRadialK3>(cameraPinhole))
         {
-            if (!estimateDistortionK3(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortionK3(cameraPinhole, statistics, allLineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraPinhole))
         {
-            if (!estimateDistortion3DER4(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortion3DER4(cameraPinhole, statistics, allLineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::Pinhole3DEAnamorphic4>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::Pinhole3DEAnamorphic4>(cameraPinhole))
         {
-            if (!estimateDistortion3DEA4(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortion3DEA4(cameraPinhole, statistics, allLineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraPinhole))
         {
-            if (!estimateDistortion3DELD(cameraPinhole, statistics, lineWithPoints))
+            if (!estimateDistortion3DELD(cameraPinhole, statistics, allLineWithPoints))
             {
                 ALICEVISION_LOG_ERROR("Error estimating distortion");
                 continue;
@@ -656,22 +689,14 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
 
         std::vector<calibration::PointPair> points;
-        if (!generatePoints(points, cameraPinhole, lineWithPoints))
+        if (!generatePoints(points, cameraPinhole, allLineWithPoints))
         {
             ALICEVISION_LOG_ERROR("Error generating points");
             continue;
         }
  
-        cameraPinhole->setWidth(w);
-        cameraPinhole->setHeight(h);
-        cameraPinhole->setScale(originalScale.x(), originalScale.y());
-        cameraPinhole->setOffset(hw, hh); 
-        std::vector<double> params = cameraPinhole->getDistortionParams();
-        for (int i = 0; i < params.size(); i++) params[i] = 0.0;
-        cameraPinhole->setDistortionParams(params);
-
-        //Estimate distortion
-        if (std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraBase))
+        // Estimate distortion
+        if(std::dynamic_pointer_cast<camera::PinholeRadialK1>(cameraPinhole))
         {
             if (!estimateDistortionK1(cameraPinhole, statistics, points))
             {
@@ -679,7 +704,7 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::PinholeRadialK3>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::PinholeRadialK3>(cameraPinhole))
         {
             if (!estimateDistortionK3(cameraPinhole, statistics, points))
             {
@@ -687,7 +712,7 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::Pinhole3DERadial4>(cameraPinhole))
         {
             if (!estimateDistortion3DER4(cameraPinhole, statistics, points))
             {
@@ -695,7 +720,7 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::Pinhole3DEAnamorphic4>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::Pinhole3DEAnamorphic4>(cameraPinhole))
         {
             if (!estimateDistortion3DEA4(cameraPinhole, statistics, points))
             {
@@ -703,7 +728,7 @@ int aliceVision_main(int argc, char* argv[])
                 continue;
             }
         }
-        else if (std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraBase))
+        else if(std::dynamic_pointer_cast<camera::Pinhole3DEClassicLD>(cameraPinhole))
         {
             if (!estimateDistortion3DELD(cameraPinhole, statistics, points))
             {
@@ -719,21 +744,29 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Result quality of inversion: ");
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
+        
+        // Export debug images using the estimated distortion
+        for(std::size_t i = 0; i < lensGridFilepaths.size(); ++i)
+        {
+            const std::string lensGridFilepath = lensGridFilepaths[i];
 
-        const std::string undistortedImagePath =
-            (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_undistorted.exr";
-        const std::string stMapImagePath =
-            (fs::path(outputPath) / fs::path(view->getImagePath()).stem()).string() + "_stmap.exr";
+            image::Image<image::RGBColor> input;
+            image::readImage(lensGridFilepath, input, image::EImageColorSpace::SRGB);
 
-        Vec2 offset;
-        image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
-        image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
+            const std::string undistortedImagePath =
+                (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_undistorted.exr";
+            const std::string stMapImagePath =
+                (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_stmap.exr";
 
-        image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);
-        image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
+            Vec2 offset;
+            image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
+            image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
+
+            image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);
+            image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
+        }
     }
 
-    
     if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be read.");
