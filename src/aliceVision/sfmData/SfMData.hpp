@@ -572,5 +572,10 @@ public:
   }
 };
 
+using LandmarkIdSet = std::vector<std::size_t>;
+using LandmarksPerView = stl::flat_map<std::size_t, LandmarkIdSet>;
+
+LandmarksPerView getLandmarksPerViews(const SfMData& sfmData);
+
 } // namespace sfmData
 } // namespace aliceVision

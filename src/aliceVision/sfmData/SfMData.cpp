@@ -304,5 +304,30 @@ void SfMData::clear()
     _rigs.clear();
 }
 
+LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
+{
+  LandmarksPerView landmarksPerView;
+  for (const auto& landIt : sfmData.getLandmarks())
+  {
+    for (const auto& obsIt : landIt.second.observations)
+    {
+      IndexT viewId = obsIt.first;
+      LandmarkIdSet& landmarksSet = landmarksPerView[viewId];
+      landmarksSet.push_back(landIt.first);
+    }
+  }
+
+  // sort landmarks Ids in each view
+  #pragma omp parallel for
+  for(int i = 0; i < landmarksPerView.size(); ++i)
+  {
+    LandmarksPerView::iterator it = landmarksPerView.begin();
+    std::advance(it, i);
+    std::sort(it->second.begin(), it->second.end());
+  }
+
+  return landmarksPerView;
+}
+
 } // namespace sfmData
 } // namespace aliceVision
