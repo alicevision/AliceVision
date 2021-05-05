@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing)
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 /// Compute the Root Mean Square Error of the residuals
