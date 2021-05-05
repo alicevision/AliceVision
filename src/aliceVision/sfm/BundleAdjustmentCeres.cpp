@@ -41,10 +41,8 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     _lockDistortion(lockDistortion)
   {
     _distortionSize = _globalSize - 4;
-
-    std::cout << "????????" << _focalRatio << std::endl;
-
     _localSize = 0;
+
     if (!_lockFocal)
     {
       if (_lockFocalRatio)
@@ -84,7 +82,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
       }
       else
       {
-        x_plus_delta[1] = x[1] + delta[posDelta];
+        x_plus_delta[0] = x[0] + delta[posDelta];
         posDelta++;
         x_plus_delta[1] = x[1] + delta[posDelta];
         posDelta++;
