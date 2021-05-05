@@ -71,6 +71,11 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
 
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
   {
+    for (int i = 0; i < _globalSize; i++)
+    {
+      x_plus_delta[i] = x[i];
+    }
+    
     size_t posDelta = 0;
     if (!_lockFocal)
     {
