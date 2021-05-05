@@ -3,22 +3,24 @@ set(camera_files_headers
 	camera.hpp
 	cameraCommon.hpp
 	cameraUndistortImage.hpp
-	IntrinsicBase.hpp
-	IntrinsicInitMode.hpp
 	Distortion.hpp
-	DistortionRadial.hpp
+	Distortion3DE.hpp
 	DistortionBrown.hpp
 	DistortionFisheye.hpp
 	DistortionFisheye1.hpp
+	DistortionRadial.hpp
+	Equidistant.hpp
+	EquidistantRadial.hpp
+	IntrinsicBase.hpp
+	IntrinsicInitMode.hpp
 	IntrinsicsScaleOffset.hpp
 	IntrinsicsScaleOffsetDisto.hpp
 	Pinhole.hpp
+	Pinhole3DE.hpp
 	PinholeBrown.hpp
 	PinholeFisheye.hpp
 	PinholeFisheye1.hpp
 	PinholeRadial.hpp
-	Equidistant.hpp
-	EquidistantRadial.hpp
 )
 
 alicevision_add_interface(aliceVision_camera
