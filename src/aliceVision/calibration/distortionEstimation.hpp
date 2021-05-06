@@ -36,8 +36,14 @@ struct Statistics
     double median;
 };
 
+/**
+ * Estimate the parameters of a camera (mostly distortion, from a set of line aligned points)
+ */
 bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
 
+/**
+ * Estimate the parameters of a camera (mostly distortion, from a set of pairs of <distorted points, undistorted points>)
+ */
 bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
 
 
