@@ -338,8 +338,24 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   bool poseLocked = false;
   bool poseIndependant = true;
 
+  std::vector<::uint32_t> abcVersion = {0, 0};
+  
+
   if(userProps)
   {
+    if (const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_ABC_version"))
+    {
+      try 
+      {
+        getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ABC_version", sampleFrame, abcVersion);
+      }
+      catch (...)
+      {
+        abcVersion[0] = 0;
+        abcVersion[1] = 0;
+      }
+    }
+
     if(flagsPart & ESfMData::VIEWS || flagsPart & ESfMData::INTRINSICS)
     {
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
@@ -489,6 +505,21 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
         Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
         prop.get(sample, ISampleSelector(sampleFrame));
         mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
+
+        if (!(abcVersion[0] < 1 || (abcVersion[0] == 1 && abcVersion[1] < 2)))
+        {
+          std::vector<double> params = mvg_intrinsicParams;
+          mvg_intrinsicParams.clear();
+
+          //Fx == Fy
+          mvg_intrinsicParams.push_back(params[0]);
+          mvg_intrinsicParams.push_back(params[0]);
+
+          for (int i = 1; i < params.size(); i++)
+          {
+            mvg_intrinsicParams.push_back(params[i]);
+          }
+        }
       }
     }
   }

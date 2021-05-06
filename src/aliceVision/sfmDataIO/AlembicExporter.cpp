@@ -38,7 +38,7 @@ struct AlembicExporter::DataImpl
     _mvgPointCloud = Alembic::AbcGeom::OXform(_mvgCloud, "mvgPointCloud");
 
     // add version as custom property
-    const std::vector<::uint32_t> abcVersion = {1, 1};
+    const std::vector<::uint32_t> abcVersion = {1, 2};
     const std::vector<::uint32_t> aliceVisionVersion = {ALICEVISION_VERSION_MAJOR, ALICEVISION_VERSION_MINOR, ALICEVISION_VERSION_REVISION};
 
     auto userProps = _mvgRoot.getProperties();

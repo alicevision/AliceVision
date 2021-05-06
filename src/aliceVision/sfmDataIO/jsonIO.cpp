@@ -156,8 +156,15 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
 
   // principal point
   Vec2 pxFocalLength;
-  loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
-
+  pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
+  if (pxFocalLength(0) < 0.0) 
+  {
+    loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
+  }
+  else 
+  {
+    pxFocalLength(1) = pxFocalLength(0);
+  }
 
   // pinhole parameters
   intrinsic = camera::createIntrinsic(intrinsicType, width, height, pxFocalLength(0), pxFocalLength(1), principalPoint(0), principalPoint(1));  
