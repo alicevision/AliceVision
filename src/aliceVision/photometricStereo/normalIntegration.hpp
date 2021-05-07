@@ -9,6 +9,6 @@ void getDivergenceField(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eige
 
 void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eigen::MatrixXf& f);
 
-void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, Eigen::Matrix3f K);
+void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K);
 
 #endif // NORMALINTEGRATION_HPP_INCLUDED
