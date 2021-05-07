@@ -1,5 +1,10 @@
-#ifndef DATAIO_HPP_INCLUDED
-#define DATAIO_HPP_INCLUDED
+// This file is part of the AliceVision project.
+// Copyright (c) 2021 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -22,5 +27,3 @@ void normals2picture(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::I
 void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm, aliceVision::image::Image<aliceVision::image::RGBColor>& normalsImPNG);
 
 void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix);
-
-#endif // DATAIO_HPP_INCLUDED
