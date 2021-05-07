@@ -129,7 +129,7 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     f(nbRows-1,0) = f(nbRows-1,0)-sqrt(2)*b(nbRows-1,0);
 }
 
-void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, Eigen::Matrix3f K)
+void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K)
 {
     int nbCols = normals.cols();
     int nbRows = normals.rows();
