@@ -140,7 +140,8 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   parentTree.push_back(std::make_pair(name, intrinsicTree));
 }
 
-void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic, bpt::ptree& intrinsicTree)
+void loadIntrinsic(const Vec3& version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
+                   bpt::ptree& intrinsicTree)
 {
   intrinsicId = intrinsicTree.get<IndexT>("intrinsicId");
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
@@ -156,14 +157,15 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
 
   // principal point
   Vec2 pxFocalLength;
-  pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
-  if (pxFocalLength(0) < 0.0) 
+  if(version(0) < 1 || (version(0) == 1 && version(1) < 2)) // version < 1.2
+  {
+      pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
+      // Only one focal value for X and Y in previous versions
+      pxFocalLength(1) = pxFocalLength(0);
+  }
+  else // version >= 1.2
   {
     loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
-  }
-  else 
-  {
-    pxFocalLength(1) = pxFocalLength(0);
   }
 
   // pinhole parameters
@@ -324,7 +326,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 
 bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const Vec3 version = {1, 0, 0};
+  const Vec3 version = {1, 2, 0};
 
   // save flags
   const bool saveViews = (partFlag & VIEWS) == VIEWS;
@@ -334,7 +336,6 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   const bool saveControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool saveFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool saveObservations = saveFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
-
 
   // main tree
   bpt::ptree fileTree;
@@ -496,7 +497,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       IndexT intrinsicId;
       std::shared_ptr<camera::IntrinsicBase> intrinsic;
 
-      loadIntrinsic(intrinsicId, intrinsic, intrinsicNode.second);
+      loadIntrinsic(version, intrinsicId, intrinsic, intrinsicNode.second);
 
       intrinsics.emplace(intrinsicId, intrinsic);
     }
