@@ -31,6 +31,8 @@ double RMSE(const sfmData::SfMData& sfmData)
       vec.push_back(residual(1));
     }
   }
+  if(vec.empty())
+    return -1.0;
   const Eigen::Map<Eigen::RowVectorXd> residuals(&vec[0], vec.size());
   const double RMSE = std::sqrt(residuals.squaredNorm() / vec.size());
   return RMSE;
@@ -38,3 +40,4 @@ double RMSE(const sfmData::SfMData& sfmData)
 
 } // namespace sfm
 } // namespace aliceVision
+
