@@ -349,32 +349,34 @@ int aliceVision_main(int argc, char** argv)
     std::smatch matches;
     if(std::regex_search(imagePathStem, matches, regexFrame))
     {
-       const std::string prefix = matches[1];
-       const std::string suffix = matches[3];
-       frameN = std::stoi(matches[2]);
+        const std::string prefix = matches[1];
+        const std::string suffix = matches[3];
+        frameN = std::stoi(matches[2]);
 
-       if(prefix.empty() && suffix.empty())
-         cameraName = std::string("Undefined") + "_" + cameraName;
-       else
-         cameraName = prefix + "frame" + suffix + "_" + cameraName;
+        if(prefix.empty() && suffix.empty())
+            cameraName = std::string("Undefined") + "_" + cameraName;
+        else
+            cameraName = prefix + "frame" + suffix + "_" + cameraName;
 
-       isSequence = true;
+        isSequence = true;
     }
 
-    if(view.hasMetadataDateTimeOriginal()) // picture
-    {
-        const std::size_t key = view.getMetadataDateTimestamp();
+    ALICEVISION_LOG_TRACE("imagePathStem: " << imagePathStem << ", frameN: " << frameN << ", isSequence: " << isSequence << ", cameraName: " << cameraName);
 
-      dslrViewPerKey[cameraName].push_back({key, view.getViewId()});
-    }
-    else if(isSequence) // video
+    if(isSequence) // video
     {
         const std::size_t frame = frameN;
         videoViewPerFrame[cameraName][frame] = view.getViewId();
     }
+    else if(view.hasMetadataDateTimeOriginal()) // picture
+    {
+        const std::size_t key = view.getMetadataDateTimestamp();
+
+        dslrViewPerKey[cameraName].push_back({key, view.getViewId()});
+    }
     else // no time or sequence information
     {
-      dslrViewPerKey[cameraName].push_back({0, view.getViewId()});
+        dslrViewPerKey[cameraName].push_back({0, view.getViewId()});
     }
   }
 
