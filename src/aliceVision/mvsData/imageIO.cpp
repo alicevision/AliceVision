@@ -216,6 +216,7 @@ void readImage(const std::string& path,
 
     // libRAW configuration
     configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
+    configSpec.attribute("raw:user_flip", 0);         // disable libraw reorientation of the image buffer
     configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
     configSpec.attribute("raw:use_camera_matrix", 3); // want to use embeded color profile
 #if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8

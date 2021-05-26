@@ -257,6 +257,7 @@ void readImage(const std::string& path,
   // libRAW configuration
   // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
   configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+  configSpec.attribute("raw:user_flip", 0); // disable libraw reorientation of the image buffer
   configSpec.attribute("raw:use_camera_wb", (imageReadOptions.applyWhiteBalance?1:0)); // white balance correction
   // use_camera_matrix: Whether to use the embedded color profile, if it is present: 0=never, 1 (default)=only for DNG files, 3=always
   configSpec.attribute("raw:use_camera_matrix", 3); // use embeded color profile
