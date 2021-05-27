@@ -132,7 +132,7 @@ int aliceVision_main(int argc, char** argv)
     ("exportFullROD", po::value<bool>(&exportFullROD)->default_value(exportFullROD),
       "Export undistorted images with the full Region of Definition (RoD). Only supported by the EXR image file format.")
     ("exportUVMaps", po::value<bool>(&exportUVMaps)->default_value(exportUVMaps),
-      "Export UV Maps for Nuke in exr format ")
+      "Export UV Maps in exr format to apply distort/undistort transformations in a compositing software.")
     ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
       "apply an offset to correct the position of the principal point")
     ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
@@ -312,7 +312,6 @@ int aliceVision_main(int argc, char** argv)
 
       image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
       oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
-      oiio::ROI roiNuke;
 
       if(cam->isValid() && cam->hasDistortion())
       {
@@ -443,20 +442,21 @@ int aliceVision_main(int argc, char** argv)
         const IndexT viewId = findFrameIt->second;
 
         const auto findViewIt = sfmData.getViews().find(viewId);
-        if(findViewIt != sfmData.getViews().end())
-        {
-            ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][video] Keyframe added");
-            const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
-            const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
-            const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
-            const std::string& imagePath = findViewIt->second->getImagePath();
-            const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+        assert(findViewIt != sfmData.getViews().end());
 
-            exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
-            continue;
-        }
+        ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][video] Keyframe added");
+        const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
+        const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
+        const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
+        const std::string& imagePath = findViewIt->second->getImagePath();
+        const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+
+        exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
       }
-      exporter.jumpKeyframe(std::to_string(frame));
+      else
+      {
+        exporter.jumpKeyframe(std::to_string(frame));
+      }
     }
   }
 
