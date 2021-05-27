@@ -234,25 +234,51 @@ int aliceVision_main(int argc, char** argv)
           }
           ALICEVISION_LOG_DEBUG("ppCorrection:" + std::to_string(ppCorrection[0]) + ";" +std::to_string(ppCorrection[1]));
 
-          // flip and normalize for Nuke
-#pragma omp parallel for
-          for(int y = 0; y < int(intrinsic.h()); ++y)
+          // UV Map: Undistort
           {
-              for(int x = 0; x < int(intrinsic.w()); ++x)
+              // flip and normalize as UVMap
+    #pragma omp parallel for
+              for(int y = 0; y < int(intrinsic.h()); ++y)
               {
-                  const Vec2 undisto_pix(x, y);
-                  // compute coordinates with distortion
-                  const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
+                  for(int x = 0; x < int(intrinsic.w()); ++x)
+                  {
+                      const Vec2 undisto_pix(x, y);
+                      // compute coordinates with distortion
+                      const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
 
-                  image_dist(y, x).r() = (disto_pix[0]) / (intrinsic.w() - 1);
-                  image_dist(y, x).g() = (intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1);
+                      image_dist(y, x).r() = float((disto_pix[0]) / (intrinsic.w() - 1));
+                      image_dist(y, x).g() = float((intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1));
+                  }
               }
+
+              const std::string dstImage =
+                  (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
+                                                  image::EImageFileType_enumToString(outputMapFileType))).string();
+              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
           }
 
-          const std::string dstImage =
-              (undistortedImagesFolderPath / ("Distortion_UVMap_" + std::to_string(intrinsicPair.first) + "." +
-                                              image::EImageFileType_enumToString(outputMapFileType))).string();
-          image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+          // UV Map: Distort
+          {
+              // flip and normalize as UVMap
+    #pragma omp parallel for
+              for(int y = 0; y < int(intrinsic.h()); ++y)
+              {
+                  for(int x = 0; x < int(intrinsic.w()); ++x)
+                  {
+                      const Vec2 disto_pix(x, y);
+                      // compute coordinates without distortion
+                      const Vec2 undisto_pix = intrinsic.get_ud_pixel(disto_pix) - ppCorrection;
+
+                      image_dist(y, x).r() = float((undisto_pix[0]) / (intrinsic.w() - 1));
+                      image_dist(y, x).g() = float((intrinsic.h() - 1 - undisto_pix[1]) / (intrinsic.h() - 1));
+                  }
+              }
+
+              const std::string dstImage =
+                  (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
+                                                  image::EImageFileType_enumToString(outputMapFileType))).string();
+              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+          }
       }
   }
 
