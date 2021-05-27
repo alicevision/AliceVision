@@ -103,18 +103,18 @@ int aliceVision_main(int argc, char** argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
-  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
-  std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
+
+  // user optional parameters
   bool undistortedImages = false;
   bool exportUVMaps = false;
   bool exportFullROD = false;
   bool correctPrincipalPoint = true;
   std::map<IndexT, oiio::ROI> roiForIntrinsic;
-
-  // user optional parameters
-
   std::string viewFilter;
- 
+  std::string sfmDataFilterFilepath;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
+  std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
+
   po::options_description allParams("AliceVision exportAnimatedCamera");
 
   po::options_description requiredParams("Required parameters");
@@ -136,7 +136,9 @@ int aliceVision_main(int argc, char** argv)
     ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
       "apply an offset to correct the position of the principal point")
     ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
-      "Path to the output SfMData file (with only views and poses).")
+      "Select the cameras to export using an expression based on the image filepath. Export all cameras if empty.")
+    ("sfmDataFilter", po::value<std::string>(&sfmDataFilterFilepath)->default_value(sfmDataFilterFilepath),
+      "Filter out cameras from the export if they are part of this SfMData. Export all cameras if empty.")
     ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
       image::EImageFileType_informations().c_str());
 
@@ -202,7 +204,50 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' is empty.");
     return EXIT_FAILURE;
   }
+
+  sfmData::SfMData sfmDataFilter;
+  if(!sfmDataFilterFilepath.empty())
+  {
+      if(!sfmDataIO::Load(sfmDataFilter, sfmDataFilterFilepath, sfmDataIO::ESfMData::VIEWS))
+      {
+        ALICEVISION_LOG_ERROR("The input filter SfMData file '" << sfmDataFilterFilepath << "' cannot be read.");
+        return EXIT_FAILURE;
+      }
+  }
   system::Timer timer;
+
+  // Decide the views and instrinsics to export
+  sfmData::SfMData sfmDataExport;
+  for(auto& viewPair : sfmData.getViews())
+  {
+    sfmData::View& view = *(viewPair.second);
+
+    // regex filter
+    if(!viewFilter.empty())
+    {
+        // Skip the view if it does not match the expression filter
+        const std::regex regexFilter = utils::filterToRegex(viewFilter);
+        if(!std::regex_match(view.getImagePath(), regexFilter))
+            continue;
+    }
+
+    // sfmData filter
+    if(!sfmDataFilterFilepath.empty())
+    {
+        // Skip the view if it exist in the sfmDataFilter
+        if(sfmDataFilter.getViews().find(view.getViewId()) != sfmDataFilter.getViews().end())
+            continue;
+    }
+
+    sfmDataExport.getViews().emplace(view.getViewId(), viewPair.second);
+
+    // Export intrinsics with at least one view with a valid pose
+    if(sfmData.isPoseAndIntrinsicDefined(&view))
+    {
+        // std::map::emplace does nothing if the key already exist
+        sfmDataExport.getIntrinsics().emplace(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
+    }
+  }
 
   const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
   const bool writeUndistordedResult = undistortedImages || exportUVMaps;
@@ -216,7 +261,7 @@ int aliceVision_main(int argc, char** argv)
   // export distortion map / one image per intrinsic
   if(exportUVMaps)
   {
-      for(const auto& intrinsicPair : sfmData.getIntrinsics())
+      for(const auto& intrinsicPair : sfmDataExport.getIntrinsics())
       {
           const camera::IntrinsicBase& intrinsic = *(intrinsicPair.second);
           image::Image<image::RGBfColor> image_dist;
@@ -285,28 +330,20 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_LOG_INFO("Build animated camera(s)...");
 
   image::Image<image::RGBfColor> image, image_ud;
-  boost::progress_display progressBar(sfmData.getViews().size());
+  boost::progress_display progressBar(sfmDataExport.getViews().size());
 
-  for(const auto& viewPair : sfmData.getViews())
+  for(const auto& viewPair : sfmDataExport.getViews())
   {
     const sfmData::View& view = *(viewPair.second);
 
     ++progressBar;
-
-    // regex filter
-    if(!viewFilter.empty())
-    {
-        const std::regex regexFilter = utils::filterToRegex(viewFilter);
-        if(!std::regex_match(view.getImagePath(), regexFilter))
-            continue;
-    }
 
     const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
 
     // undistort camera images
     if(undistortedImages)
     {
-      sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+      sfmData::Intrinsics::const_iterator iterIntrinsic = sfmDataExport.getIntrinsics().find(view.getIntrinsicId());
       const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
@@ -352,6 +389,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // pose and intrinsic defined
+    // Note: we use "sfmData" and not "sfmDataExport" to have access to poses
     if(!sfmData.isPoseAndIntrinsicDefined(&view))
       continue;
 
@@ -419,6 +457,18 @@ int aliceVision_main(int argc, char** argv)
     for(const auto& camera : dslrViewPerKey)
       ss << "\t    - " << camera.first << " | " << camera.second.size() << " image(s)" << std::endl;
 
+    ss << "\t- # Used camera intrinsics: " << sfmDataExport.getIntrinsics().size() << std::endl;
+
+    for(const auto& intrinsicIt : sfmDataExport.getIntrinsics())
+    {
+      const auto intrinsic = intrinsicIt.second;
+      ss << "\t    - "
+         << intrinsicIt.first << " | "
+         << intrinsic->w() << "x" << intrinsic->h()
+         << " " << intrinsic->serialNumber()
+         << std::endl;
+    }
+
     ALICEVISION_LOG_INFO(ss.str());
   }
 
@@ -440,6 +490,8 @@ int aliceVision_main(int argc, char** argv)
       if(findFrameIt != frameToView.end())
       {
         const IndexT viewId = findFrameIt->second;
+
+        // Note: we use "sfmData" and not "sfmDataExport" to have access to poses
 
         const auto findViewIt = sfmData.getViews().find(viewId);
         assert(findViewIt != sfmData.getViews().end());
