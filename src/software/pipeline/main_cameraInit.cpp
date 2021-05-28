@@ -454,6 +454,18 @@ int aliceVision_main(int argc, char **argv)
         ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
       }
     }
+
+    // try to detect image sequence
+    {
+        IndexT frameId;
+        std::string prefix;
+        std::string suffix;
+        if(sfmDataIO::detectImageSequenceFromImagePath(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
+        {
+          view.setFrameId(frameId);
+        }
+          
+    }
     
     if(boost::algorithm::starts_with(parentPath.stem().string(), "ps_") ||
        boost::algorithm::starts_with(parentPath.stem().string(), "hdr_"))
