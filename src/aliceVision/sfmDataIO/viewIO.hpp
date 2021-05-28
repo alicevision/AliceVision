@@ -91,5 +91,16 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 */
 std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders);
 
+
+/*
+* @brief Allows to detect if an image is part of an image sequence from the analysis of its filename
+* @param[in] imagePathStem The image path
+* @param[out] frameId the detected frameId (or UndefinedIndexT)
+* @param[out] prefix the detected sequence prefix (or empty)
+* @param[out] suffix the detected sequence suffix (or empty)
+* @return true if the image is part of an image sequence
+*/
+bool detectImageSequenceFromImagePath(const std::string& imagePathStem, IndexT& frameId, std::string& prefix, std::string& suffix);
+
 } // namespace sfmDataIO
 } // namespace aliceVision

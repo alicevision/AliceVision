@@ -279,5 +279,30 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
     });
 }
 
+bool detectImageSequenceFromImagePath(const std::string& imagePathStem, IndexT& frameId, std::string& prefix, std::string& suffix)
+{
+    bool isSequence = false;
+
+    // check if the image is in a sequence
+    // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
+    std::regex regexFrame("^(.*\\D)?"       // the optional prefix which end with a non digit character
+                          "([0-9]+)"        // the sequence frame number
+                          "([\\-_\\.]"      // the suffix start with a separator
+                          ".*[[:alpha:]].*" // at least one letter in the suffix
+                          ")?$"             // suffix is optional
+    );
+
+    std::smatch matches;
+    if(std::regex_search(imagePathStem, matches, regexFrame))
+    {
+        prefix = matches[1];
+        suffix = matches[3];
+        frameId = static_cast<IndexT>(std::stoi(matches[2]));
+        isSequence = true;
+    }
+
+    return isSequence;
+}
+
 } // namespace sfmDataIO
 } // namespace aliceVision
