@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <numeric>
+#include <limits>
 
 #include <aliceVision/system/Logger.hpp>
 
