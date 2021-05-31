@@ -613,7 +613,7 @@ int aliceVision_main(int argc, char* argv[])
         
             const double w = input.Width();
             const double h = input.Height();
-            if(w != cameraPinhole->w() || h != cameraPinhole->h())
+            if(w != cameraPinhole->w())
             {
                 ALICEVISION_THROW_ERROR("Inconsistant size between the image and the camera intrinsics (image: "
                                         << w << "x" << h << ", camera: " << cameraPinhole->w() << "x" << cameraPinhole->h());
