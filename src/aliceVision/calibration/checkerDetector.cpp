@@ -790,16 +790,18 @@ bool CheckerDetector::growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, con
 
 
     std::sort(candidates.begin(), candidates.end(), [](const NewPoint & p1, const NewPoint p2) { return p1.score < p2.score; });
-    while (candidates.size() > 0)
-    {
-        //Get the worst candidate and remove it
-        IndexT j = candidates.back().col;
-        IndexT i = candidates.back().row;
+    while (!candidates.empty())
+    {   
+        NewPoint c = candidates.back();
         candidates.pop_back();
+
+        //Get the worst candidate and remove it
+        IndexT j = c.col;
+        IndexT i = c.row;
         board(i, j) = UndefinedIndexT;
 
         //If the next candidate is very bad, continue
-        if (candidates.back().score > 1e6)
+        if (c.score > 1e6)
         {
             continue;
         }
