@@ -3,10 +3,9 @@
 #include <ceres/ceres.h>
 #include <aliceVision/system/Logger.hpp>
 
-using namespace aliceVision;
 
-namespace aliceVision{
-namespace calibration{
+namespace aliceVision {
+namespace calibration {
 
 class CostLine : public ceres::CostFunction
 {
@@ -15,7 +14,6 @@ public:
         : _pt(pt)
         , _camera(camera)
     {
-
         set_num_residuals(1);
 
         mutable_parameter_block_sizes()->push_back(1);
@@ -27,20 +25,19 @@ public:
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
-
         const double* parameter_angle_line = parameters[0];
         const double* parameter_dist_line = parameters[1];
         const double* parameter_scale = parameters[2];
         const double* parameter_center = parameters[3];
         const double* parameter_disto = parameters[4];
 
-        double angle = parameter_angle_line[0];
-        double distanceToLine = parameter_dist_line[0];
+        const double angle = parameter_angle_line[0];
+        const double distanceToLine = parameter_dist_line[0];
 
-        double cangle = cos(angle);
-        double sangle = sin(angle);
+        const double cangle = cos(angle);
+        const double sangle = sin(angle);
 
-        int distortionSize = _camera->getDistortionParams().size();
+        const int distortionSize = _camera->getDistortionParams().size();
 
         //Read parameters and update camera
         _camera->setScale(parameter_scale[0], parameter_scale[1]);
@@ -55,12 +52,12 @@ public:
 
 
         //Estimate measure
-        Vec2 cpt = _camera->ima2cam(_pt);
-        Vec2 distorted = _camera->addDistortion(cpt);
-        Vec2 ipt = _camera->cam2ima(distorted);
+        const Vec2 cpt = _camera->ima2cam(_pt);
+        const Vec2 distorted = _camera->addDistortion(cpt);
+        const Vec2 ipt = _camera->cam2ima(distorted);
 
-        double w1 = std::max(0.4, std::max(std::abs(distorted.x()), std::abs(distorted.y())));
-        double w = w1 * w1;
+        const double w1 = std::max(0.4, std::max(std::abs(distorted.x()), std::abs(distorted.y())));
+        const double w = w1 * w1;
 
         residuals[0] = w * (cangle * ipt.x() + sangle * ipt.y() - distanceToLine);
 
@@ -123,6 +120,7 @@ private:
     Vec2 _pt;
 };
 
+
 class CostPoint : public ceres::CostFunction
 {
 public:
@@ -131,7 +129,6 @@ public:
         , _ptDistorted(ptDistorted)
         , _camera(camera)
     {
-
         set_num_residuals(2);
 
         mutable_parameter_block_sizes()->push_back(2);
@@ -145,7 +142,7 @@ public:
         const double* parameter_center = parameters[1];
         const double* parameter_disto = parameters[2];
 
-        int distortionSize = _camera->getDistortionParams().size();
+        const int distortionSize = _camera->getDistortionParams().size();
 
         //Read parameters and update camera
         _camera->setScale(parameter_scale[0], parameter_scale[1]);
@@ -158,14 +155,13 @@ public:
         }
         _camera->setDistortionParams(cameraDistortionParams);
 
-
         //Estimate measure
-        Vec2 cpt = _camera->ima2cam(_ptUndistorted);
-        Vec2 distorted = _camera->addDistortion(cpt);
-        Vec2 ipt = _camera->cam2ima(distorted);
+        const Vec2 cpt = _camera->ima2cam(_ptUndistorted);
+        const Vec2 distorted = _camera->addDistortion(cpt);
+        const Vec2 ipt = _camera->cam2ima(distorted);
 
-        double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
-        double w = w1 * w1;
+        const double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
+        const double w = w1 * w1;
 
         residuals[0] = w * (ipt.x() - _ptDistorted.x());
         residuals[1] = w * (ipt.y() - _ptDistorted.y());
@@ -214,12 +210,12 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         return false; 
     }
 
-    if (lines.size() == 0)
+    if (lines.empty())
     {
         return false;
     }
 
-    size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
+    const size_t countDistortionParams = cameraToEstimate->getDistortionParams().size();
     if (lockDistortions.size() != countDistortionParams) 
     {
         ALICEVISION_LOG_ERROR("Invalid number of distortion parameters (lockDistortions=" << lockDistortions.size() << ", countDistortionParams=" << countDistortionParams << ").");
@@ -244,7 +240,6 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});   
         problem.SetParameterization(scale, subsetParameterization);
     }
-    
 
     //Add off center parameter
     problem.AddParameterBlock(center, 2);
@@ -325,16 +320,16 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
 
     for (auto & l : lines)
     {
-        double sangle = sin(l.angle);
-        double cangle = cos(l.angle);
+        const double sangle = sin(l.angle);
+        const double cangle = cos(l.angle);
 
-        for (Vec2 pt : l.points)
+        for(const Vec2& pt : l.points)
         {
-            Vec2 cpt = cameraToEstimate->ima2cam(pt);
-            Vec2 distorted = cameraToEstimate->addDistortion(cpt);
-            Vec2 ipt = cameraToEstimate->cam2ima(distorted);
+            const Vec2 cpt = cameraToEstimate->ima2cam(pt);
+            const Vec2 distorted = cameraToEstimate->addDistortion(cpt);
+            const Vec2 ipt = cameraToEstimate->cam2ima(distorted);
 
-            double res = (cangle * ipt.x() + sangle * ipt.y() - l.dist);
+            const double res = (cangle * ipt.x() + sangle * ipt.y() - l.dist);
 
             errors.push_back(std::abs(res));
         }
@@ -345,7 +340,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);
     std::nth_element(errors.begin(), errors.begin() + errors.size()/2, errors.end());
     const double median = errors[errors.size() / 2];
-    
+
     statistics.mean = mean;
     statistics.stddev = stddev;
     statistics.median = median;
@@ -360,7 +355,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         return false; 
     }
 
-    if (points.size() == 0)
+    if (points.empty())
     {
         return false;
     }

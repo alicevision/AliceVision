@@ -36,11 +36,10 @@ namespace fs = boost::filesystem;
 using namespace aliceVision;
 
 
-
 image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
 {
-    double w = source.Width();
-    double h = source.Height();
+    const double w = source.Width();
+    const double h = source.Height();
 
     double minx = w;
     double maxx = 0;
@@ -59,8 +58,8 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
         }
     }
 
-    int width = maxx - minx + 1;
-    int height = maxy - miny + 1;
+    const int width = maxx - minx + 1;
+    const int height = maxy - miny + 1;
 
     image::Image<image::RGBColor> result(width, height, true, image::RGBColor(0, 0, 0));
 
@@ -68,20 +67,19 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
 
     for (int i = 0; i < height; i++) 
     {
-        double y = miny + double(i);
+        const double y = miny + double(i);
 
         for (int j = 0; j < width; j++)
         {
-            double x = minx + double(j);
+            const double x = minx + double(j);
 
-            Vec2 pos(x, y);
-            Vec2 dist = camera->get_d_pixel(pos);
-
+            const Vec2 pos(x, y);
+            const Vec2 dist = camera->get_d_pixel(pos);
 
             if (dist.x() < 0 || dist.x() >= source.Width()) continue;
             if (dist.y() < 0 || dist.y() >= source.Height()) continue;
             
-            image::RGBColor c = sampler(source, dist.y(), dist.x());
+            const image::RGBColor c = sampler(source, dist.y(), dist.x());
             
             result(i, j) = c;
         }
@@ -95,8 +93,8 @@ image::Image<image::RGBColor> undistort(Vec2 & offset, const std::shared_ptr<cam
 
 image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_ptr<camera::Pinhole> & camera, const image::Image<image::RGBColor> & source) 
 {
-    double w = source.Width();
-    double h = source.Height();
+    const double w = source.Width();
+    const double h = source.Height();
 
     double minx = w;
     double maxx = 0;
@@ -107,7 +105,7 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
     {
         for (int j = 0; j < w; j++)
         {
-            Vec2 pos = camera->get_ud_pixel(Vec2(j, i));
+            const Vec2 pos = camera->get_ud_pixel(Vec2(j, i));
             minx = std::min(minx, pos.x());
             maxx = std::max(maxx, pos.x());
             miny = std::min(miny, pos.y());
@@ -115,8 +113,8 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
         }
     }
 
-    int width = maxx - minx + 1;
-    int height = maxy - miny + 1;
+    const int width = maxx - minx + 1;
+    const int height = maxy - miny + 1;
 
     image::Image<image::RGBfColor> result(width, height, true, image::FBLACK);
 
@@ -124,20 +122,18 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
 
     for (int i = 0; i < height; i++) 
     {
-        double y = miny + double(i);
+        const double y = miny + double(i);
 
         for (int j = 0; j < width; j++)
         {
-            double x = minx + double(j);
+            const double x = minx + double(j);
 
-            Vec2 pos(x, y);
-            Vec2 dist = camera->get_d_pixel(pos);
-
+            const Vec2 pos(x, y);
+            const Vec2 dist = camera->get_d_pixel(pos);
 
             if (dist.x() < 0 || dist.x() >= source.Width()) continue;
             if (dist.y() < 0 || dist.y() >= source.Height()) continue;
-            
-            
+
             result(i, j).r() = dist.x() / (float(width) - 1);
             result(i, j).g() = (float(height) - 1.0f - dist.y()) / (float(height) - 1.0f);
             result(i, j).b() = 0.0f;
@@ -182,10 +178,10 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
 
             for (int j = 0; j < b.cols(); j++)
             {
-                IndexT idx = b(i, j);
+                const IndexT idx = b(i, j);
                 if (idx == UndefinedIndexT) continue;
 
-                calibration::CheckerDetector::CheckerBoardCorner p = corners[idx];
+                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
                 line.points.push_back(p.center);
             }
 
@@ -205,10 +201,10 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
 
             for (int i = 0; i < b.rows(); i++)
             {
-                IndexT idx = b(i, j);
+                const IndexT idx = b(i, j);
                 if (idx == UndefinedIndexT) continue;
 
-                calibration::CheckerDetector::CheckerBoardCorner p = corners[idx];
+                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
                 line.points.push_back(p.center);
             }
 
@@ -363,7 +359,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole> & camera, calibrat
     locksDistortions[2] = false;
     locksDistortions[3] = false;
 
-    double k1 = simpleCamera->getDistortionParams()[0];
+    const double k1 = simpleCamera->getDistortionParams()[0];
     camera->setDistortionParams({k1,k1,k1,k1});
 
     if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
@@ -451,7 +447,7 @@ bool generatePoints(std::vector<calibration::PointPair> & points, const std::sha
             pp.undistortedPoint = camera->get_d_pixel(pt);
             pp.distortedPoint = pt;
 
-            double err =  (camera->get_ud_pixel(pp.undistortedPoint) - pp.distortedPoint).norm();
+            const double err = (camera->get_ud_pixel(pp.undistortedPoint) - pp.distortedPoint).norm();
             if (err > 1e-3)
             {
                 continue;
@@ -570,7 +566,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicIt.first);
 
         std::vector<double> params = cameraPinhole->getDistortionParams();
-        for(int i = 0; i < params.size(); i++)
+        for(std::size_t i = 0; i < params.size(); i++)
             params[i] = 0.0;
         cameraPinhole->setDistortionParams(params);
 
@@ -580,23 +576,23 @@ int aliceVision_main(int argc, char* argv[])
         for(const std::string lensGridFilepath : lensGridFilepaths)
         {
             //Check pixel ratio
-            float pixelRatio = 1.0f; // view->getDoubleMetadata({"PixelAspectRatio"}); // TODO
-            if (pixelRatio < 0.0) 
+            double pixelRatio = 1.0; // view->getDoubleMetadata({"PixelAspectRatio"}); // TODO
+            if (pixelRatio < 0.0)
             {
-                pixelRatio = 1.0f;
+                pixelRatio = 1.0;
             }
 
             //Read image
             image::Image<image::RGBColor> input;
             image::readImage(lensGridFilepath, input, image::EImageColorSpace::SRGB);
 
-            if (pixelRatio != 1.0f)
+            if (pixelRatio != 1.0)
             {
                 // if pixel are not squared, convert the image for lines extraction
-                double w = input.Width();
-                double h = input.Height();
-                double nw = w;
-                double nh = h / pixelRatio;
+                const double w = input.Width();
+                const double h = input.Height();
+                const double nw = w;
+                const double nh = h / pixelRatio;
                 image::Image<image::RGBColor> resizedInput(nw, nh);
 
                 const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
