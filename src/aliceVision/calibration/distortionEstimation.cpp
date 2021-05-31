@@ -283,8 +283,11 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
             }
         }
 
-        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
-        problem.SetParameterization(distortionParameters, subsetParameterization);
+        if (!constantDistortions.empty())
+        {
+            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
+            problem.SetParameterization(distortionParameters, subsetParameterization);
+        }
     }
     
     
@@ -425,9 +428,12 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
                 constantDistortions.push_back(idParamDistortion);
             }
         }
-
-        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
-        problem.SetParameterization(distortionParameters, subsetParameterization);
+        
+        if (!constantDistortions.empty())
+        {
+            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
+            problem.SetParameterization(distortionParameters, subsetParameterization);
+        }
     }
     
     for (const PointPair & pt : points)
