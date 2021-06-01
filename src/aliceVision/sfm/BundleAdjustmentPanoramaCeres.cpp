@@ -67,7 +67,7 @@ private:
   Eigen::Matrix3d _two_R_one;
 };
 
-class CostEquiDistant : public ceres::SizedCostFunction<2, 9, 9, 6> {
+class CostEquiDistant : public ceres::SizedCostFunction<2, 9, 9, 7> {
 public:
   CostEquiDistant(Vec2 fi, Vec2 fj, std::shared_ptr<camera::EquiDistant> & intrinsic) : _fi(fi), _fj(fj), _intrinsic(intrinsic) {
 
@@ -85,9 +85,9 @@ public:
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
-    _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[0]);
-    _intrinsic->setOffset(parameter_intrinsics[1], parameter_intrinsics[2]);
-    _intrinsic->setDistortionParams({parameter_intrinsics[3], parameter_intrinsics[4], parameter_intrinsics[5]});
+    _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[1]);
+    _intrinsic->setOffset(parameter_intrinsics[2], parameter_intrinsics[3]);
+    _intrinsic->setDistortionParams({parameter_intrinsics[4], parameter_intrinsics[5], parameter_intrinsics[6]});
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
@@ -118,15 +118,15 @@ public:
     }
 
     if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> J(jacobians[2]);
+      Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>> J(jacobians[2]);
 
-      Eigen::Matrix<double, 2, 1> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtScale(pt_i_undist);
+      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtScale(pt_i_undist);
       Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
       Eigen::Matrix<double, 2, 3> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
 
-      J.block<2, 1>(0, 0) = Jscale;
-      J.block<2, 2>(0, 1) = Jpp;
-      J.block<2, 3>(0, 3) = Jdisto;
+      J.block<2, 2>(0, 0) = Jscale;
+      J.block<2, 2>(0, 2) = Jpp;
+      J.block<2, 3>(0, 4) = Jdisto;
     }
 
     return true;
@@ -161,8 +161,8 @@ public:
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
-    _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[0]);
-    _intrinsic->setOffset(parameter_intrinsics[1], parameter_intrinsics[2]);
+    _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[1]);
+    _intrinsic->setOffset(parameter_intrinsics[2], parameter_intrinsics[3]);
 
     std::vector<double> distortion_params;
     size_t params_size = _intrinsic->getParams().size();
@@ -203,13 +203,13 @@ public:
 
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double,  Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
-      Eigen::Matrix<double, 2, 1> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtScale(pt_i);
+      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtScale(pt_i);
       Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
       Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
 
-      J.block<2, 1>(0, 0) = Jscale;
-      J.block<2, 2>(0, 1) = Jpp;
-      J.block(0, 3, 2, disto_size) = Jdisto;
+      J.block<2, 2>(0, 0) = Jscale;
+      J.block<2, 2>(0, 2) = Jpp;
+      J.block(0, 4, 2, disto_size) = Jdisto;
     }
 
     return true;
@@ -509,11 +509,13 @@ void BundleAdjustmentPanoramaCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       // we don't have an initial guess, but we assume that we use
       // a converging lens, so the focal length should be positive.
       problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
     }
     else
     {
       // set focal length as constant
       constantIntrinisc.push_back(0);
+      constantIntrinisc.push_back(1);
     }
 
     // optical center
@@ -521,27 +523,27 @@ void BundleAdjustmentPanoramaCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     if((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || optional_center)
     {
       // refine optical center within 10% of the image size.
-      assert(intrinsicBlock.size() >= 3);
+      assert(intrinsicBlock.size() >= 4);
 
       const double opticalCenterMinPercent = 0.45;
       const double opticalCenterMaxPercent = 0.55;
 
       // add bounds to the principal point
-      problem.SetParameterLowerBound(intrinsicBlockPtr, 1, opticalCenterMinPercent * intrinsicPtr->w());
-      problem.SetParameterUpperBound(intrinsicBlockPtr, 1, opticalCenterMaxPercent * intrinsicPtr->w());
-      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->h());
-      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->h());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->w());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->w());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 3, opticalCenterMinPercent * intrinsicPtr->h());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 3, opticalCenterMaxPercent * intrinsicPtr->h());
     }
     else
     {
       // don't refine the optical center
-      constantIntrinisc.push_back(1);
       constantIntrinisc.push_back(2);
+      constantIntrinisc.push_back(3);
     }
 
     // lens distortion
     if(!refineIntrinsicsDistortion) {
-      for(std::size_t i = 3; i < intrinsicBlock.size(); ++i) {
+      for(std::size_t i = 4; i < intrinsicBlock.size(); ++i) {
         constantIntrinisc.push_back(i);
       }
     }

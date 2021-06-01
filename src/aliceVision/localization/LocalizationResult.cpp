@@ -204,7 +204,7 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
       {
         IndexT intrinsicId;
         std::shared_ptr<camera::IntrinsicBase> intrinsicPtr;
-        sfmDataIO::loadIntrinsic(intrinsicId, intrinsicPtr, lrTree.get_child("intrinsic"));
+        sfmDataIO::loadIntrinsic(version, intrinsicId, intrinsicPtr, lrTree.get_child("intrinsic"));
         lr._intrinsics = *(dynamic_cast<camera::PinholeRadialK3*>(intrinsicPtr.get()));
       }
 

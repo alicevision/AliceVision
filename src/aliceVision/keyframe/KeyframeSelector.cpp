@@ -464,7 +464,7 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
 
   if(sensorDB::getInfo(cameraInfo.brand, cameraInfo.model, vecDatabase, find))
   {
-    cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorSize) / imageWidth;
+    cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorWidth) / imageWidth;
     cameraInfo.focalIsMM = true;
     ALICEVISION_LOG_INFO("Focal length converted in mm : " << cameraInfo.focalLength);
   }

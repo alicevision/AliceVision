@@ -31,10 +31,7 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(sfmDataIO)
   add_subdirectory(track)
   add_subdirectory(voctree)
-
-  if(ALICEVISION_HAVE_OPENCV)
-    add_subdirectory(calibration)
-  endif()
+  add_subdirectory(calibration)
 endif()
 
 if(ALICEVISION_BUILD_HDR)

@@ -80,15 +80,15 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
     {
         case camera::EINTRINSIC::PINHOLE_CAMERA:
         sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>
-          (w, h, config._fx, config._cx, config._cy);
+          (w, h, config._fx, config._fx, config._cx, config._cy);
       break;
         case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>
-          (w, h, config._fx, config._cx, config._cy, 0.0);
+          (w, h, config._fx, config._fx, config._cx, config._cy, 0.0);
       break;
         case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
         sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>
-          (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
+          (w, h, config._fx, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
         ALICEVISION_LOG_DEBUG("Not yet supported");
@@ -165,13 +165,13 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     switch (eintrinsic)
     {
       case camera::EINTRINSIC::PINHOLE_CAMERA:
-        sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>(w, h, config._fx, config._cx, config._cy);
+        sfmData.intrinsics[0] = std::make_shared<camera::Pinhole>(w, h, config._fx, config._fx, config._cx, config._cy);
       break;
       case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>(w, h, config._fx, config._cx, config._cy, 0.0);
+        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK1>(w, h, config._fx, config._fx, config._cx, config._cy, 0.0);
       break;
       case camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>(w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
+        sfmData.intrinsics[0] = std::make_shared<camera::PinholeRadialK3>(w, h, config._fx, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
       throw std::runtime_error("Intrinsic type is not implemented.");

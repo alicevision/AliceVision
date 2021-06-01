@@ -46,7 +46,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 
 * OpenMP (enable multi-threading)
 * Mosek 5 (linear programming)
-* OpenCV >= 3.2 (feature extraction, calibration module, video IO)
+* OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
 * PopSift (feature extraction on GPU)

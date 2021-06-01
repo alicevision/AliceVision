@@ -27,7 +27,7 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinholeBrown_disto_undisto_T2)
 {
-  const PinholeBrownT2 cam(1000, 1000, 1000, 500, 500,
+  const PinholeBrownT2 cam(1000, 1000, 1000, 1000, 500, 500,
   // K1, K2, K3, T1, T2
   -0.054, 0.014, 0.006, 0.001, -0.001);
 

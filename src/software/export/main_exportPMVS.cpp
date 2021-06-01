@@ -268,17 +268,26 @@ bool exportToBundlerFormat(
       if(isPinhole(iterIntrinsic->second.get()->getType()))
       {
         const Pinhole * cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
-        const double focal = cam->getFocalLengthPix();
-        const Mat3 R = D * pose.rotation();
-        const Vec3 t = D * pose.translation();
 
-        os << focal << " " << k1 << " " << k2 << os.widen('\n') //f k1 k2
-          << R(0,0) << " " << R(0, 1) << " " << R(0, 2) << os.widen('\n')  //R.row(0)
-          << R(1,0) << " " << R(1, 1) << " " << R(1, 2) << os.widen('\n')  //R.row(1)
-          << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
-          << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
+        if (cam->getFocalLengthPixX() == cam->getFocalLengthPixY()) 
+        {
+          const double focal = cam->getFocalLengthPixX();
+          const Mat3 R = D * pose.rotation();
+          const Vec3 t = D * pose.translation();
 
-        osList << fs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
+          os << focal << " " << k1 << " " << k2 << os.widen('\n') //f k1 k2
+            << R(0,0) << " " << R(0, 1) << " " << R(0, 2) << os.widen('\n')  //R.row(0)
+            << R(1,0) << " " << R(1, 1) << " " << R(1, 2) << os.widen('\n')  //R.row(1)
+            << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
+            << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
+
+          osList << fs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
+        }
+        else 
+        {
+          std::cerr << "Unsupported anamorphic camera for Bundler export." << std::endl;
+          return false;
+        }
       }
       else
       {

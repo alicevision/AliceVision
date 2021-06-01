@@ -69,7 +69,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       ALICEVISION_LOG_DEBUG("Optical distortion won't be considered");
       // just add a simple pinhole camera with the same K as the input camera
       Vec2 pp = currIntrinsics->getPrincipalPoint();
-      tinyScene.intrinsics[intrinsicID] = std::make_shared<camera::Pinhole>(currIntrinsics->w(), currIntrinsics->h(), currIntrinsics->getFocalLengthPix(), pp(0), pp(1));
+      tinyScene.intrinsics[intrinsicID] = std::make_shared<camera::Pinhole>(currIntrinsics->w(), currIntrinsics->h(), currIntrinsics->getFocalLengthPixX(), currIntrinsics->getFocalLengthPixY(), pp(0), pp(1));
     }
     else
     {
@@ -300,7 +300,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // get its optimized parameters
     std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
     ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
-    if(params.size() == 3)
+    if(params.size() == 4)
     {
       // this means that the b_no_distortion has been passed
       // set distortion to 0
@@ -309,8 +309,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       params.push_back(0);
     }
     assert(params.size() == 6);
-    ALICEVISION_LOG_DEBUG("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
-    ALICEVISION_LOG_DEBUG("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
+    ALICEVISION_LOG_DEBUG("K after bundle: " << params[0] << " " << params[1] << " "<< params[2] << " "<< params[3]);
+    ALICEVISION_LOG_DEBUG("Distortion after bundle " << params[4] << " " << params[5] << " "<< params[6]);
 
     // update the intrinsics of the each localization result
     for(size_t viewID = 0; viewID < numViews; ++viewID)

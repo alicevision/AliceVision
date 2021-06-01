@@ -30,6 +30,157 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
+class IntrinsicsParameterization : public ceres::LocalParameterization {
+ public:
+  explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+  : _globalSize(parametersSize),
+    _focalRatio(focalRatio),
+    _lockFocal(lockFocal),
+    _lockFocalRatio(lockFocalRatio),
+    _lockCenter(lockCenter),
+    _lockDistortion(lockDistortion)
+  {
+    _distortionSize = _globalSize - 4;
+    _localSize = 0;
+
+    if (!_lockFocal)
+    {
+      if (_lockFocalRatio)
+      {
+        _localSize += 1;
+      }
+      else
+      {
+        _localSize += 2;
+      }
+    }
+
+    if (!_lockCenter)
+    {
+      _localSize += 2;
+    }
+
+    if (!_lockDistortion)
+    {
+      _localSize += _distortionSize;
+    }
+  }
+
+  virtual ~IntrinsicsParameterization() = default;
+
+
+  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
+  {
+    for (int i = 0; i < _globalSize; i++)
+    {
+      x_plus_delta[i] = x[i];
+    }
+    
+    size_t posDelta = 0;
+    if (!_lockFocal)
+    {
+      if (_lockFocalRatio)
+      {
+        x_plus_delta[0] = x[0] + delta[posDelta]; 
+        x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
+        posDelta++;
+      }
+      else
+      {
+        x_plus_delta[0] = x[0] + delta[posDelta];
+        posDelta++;
+        x_plus_delta[1] = x[1] + delta[posDelta];
+        posDelta++;
+      }
+    }
+
+    if (!_lockCenter)
+    {
+      x_plus_delta[2] = x[2] + delta[posDelta]; 
+      posDelta++;
+
+      x_plus_delta[3] = x[3] + delta[posDelta];
+      posDelta++;
+    }
+
+    if (!_lockDistortion)
+    {
+      for (int i = 0; i < _distortionSize; i++)
+      {
+        x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
+        posDelta++;
+      }
+    }
+
+    return true;
+  }
+
+  bool ComputeJacobian(const double* x, double* jacobian) const override
+  {    
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
+
+    J.fill(0);
+
+    size_t posDelta = 0;
+    if (!_lockFocal)
+    {
+      if (_lockFocalRatio)
+      {
+        J(0, posDelta) = 1.0;
+        J(1, posDelta) = _focalRatio;
+        posDelta++;
+      }
+      else
+      {
+        J(0, posDelta) = 1.0;
+        posDelta++;
+        J(1, posDelta) = 1.0;
+        posDelta++;
+      }
+    }
+
+    if (!_lockCenter)
+    {
+      J(2, posDelta) = 1.0;
+      posDelta++;
+
+      J(3, posDelta) = 1.0;
+      posDelta++;
+    }
+
+    if (!_lockDistortion)
+    {
+      for (int i = 0; i < _distortionSize; i++)
+      {
+        J(4 + i, posDelta) = 1.0;
+        posDelta++;
+      }
+    }
+
+    return true;
+  }
+
+  int GlobalSize() const override 
+  {
+    return _globalSize;
+  }
+
+  int LocalSize() const override 
+  { 
+    return _localSize; 
+  }
+
+ private:
+  size_t _distortionSize;
+  size_t _globalSize;
+  size_t _localSize;
+  double _focalRatio;
+  bool _lockFocal;
+  bool _lockFocalRatio;
+  bool _lockCenter;
+  bool _lockDistortion;
+};
+
 /**
  * @brief Create the appropriate cost functor according the provided input camera intrinsic model
  * @param[in] intrinsicPtr The intrinsic pointer
@@ -41,17 +192,21 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
   switch(intrinsicPtr->getType())
   {
     case EINTRINSIC::PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 3>(new ResidualErrorFunctor_Pinhole3DERadial4(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 3>(new ResidualErrorFunctor_Pinhole3DEClassicLD(observation));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }
@@ -68,17 +223,21 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
   switch(intrinsicPtr->getType())
   {
     case EINTRINSIC::PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 5, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DERadial4, 2, 10, 6, 6, 3>(new ResidualErrorFunctor_Pinhole3DERadial4(observation));
+    case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole3DEClassicLD, 2, 9, 6, 6, 3>(new ResidualErrorFunctor_Pinhole3DEClassicLD(observation));
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 9, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 5, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
     default:
       throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
   }
@@ -405,6 +564,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
   const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
   const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
   const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
+  const bool fixFocalRatio = true;
 
   std::map<IndexT, std::size_t> intrinsicsUsage;
 
@@ -443,6 +603,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     intrinsicBlock = intrinsicPtr->getParams();
 
     double* intrinsicBlockPtr = intrinsicBlock.data();
+
     problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
 
     // add intrinsic parameter to the all parameters blocks pointers list
@@ -458,7 +619,11 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     }
 
     // constant parameters
-    std::vector<int> constantIntrinisc;
+    bool lockCenter = false;
+    bool lockFocal = false;
+    bool lockRatio = true;
+    bool lockDistortion = false;
+    double focalRatio = 1.0;
 
     // refine the focal length
     if(refineIntrinsicsFocalLength)
@@ -471,18 +636,23 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
         const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h()); // TODO : check if rounding is needed
         problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() - maxFocalError));
         problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() + maxFocalError));
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->initialScale() - maxFocalError));
+        problem.SetParameterUpperBound(intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->initialScale() + maxFocalError));
       }
       else // no initial guess
       {
         // we don't have an initial guess, but we assume that we use
         // a converging lens, so the focal length should be positive.
         problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
       }
+
+      focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
     }
     else
     {
       // set focal length as constant
-      constantIntrinisc.push_back(0);
+      lockFocal = true;
     }
 
     const std::size_t minImagesForOpticalCenter = 3;
@@ -497,28 +667,26 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       const double opticalCenterMaxPercent = 0.55;
 
       // add bounds to the principal point
-      problem.SetParameterLowerBound(intrinsicBlockPtr, 1, opticalCenterMinPercent * intrinsicPtr->w());
-      problem.SetParameterUpperBound(intrinsicBlockPtr, 1, opticalCenterMaxPercent * intrinsicPtr->w());
-      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->h());
-      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->h());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->w());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->w());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 3, opticalCenterMinPercent * intrinsicPtr->h());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 3, opticalCenterMaxPercent * intrinsicPtr->h());
     }
     else
     {
       // don't refine the optical center
-      constantIntrinisc.push_back(1);
-      constantIntrinisc.push_back(2);
+      lockCenter = true;
     }
 
     // lens distortion
     if(!refineIntrinsicsDistortion)
-      for(std::size_t i = 3; i < intrinsicBlock.size(); ++i)
-        constantIntrinisc.push_back(i);
-
-    if(!constantIntrinisc.empty())
     {
-      ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(intrinsicBlock.size(), constantIntrinisc);
-      problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
+      lockDistortion = true;
     }
+
+    
+    IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
+    problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }
@@ -841,7 +1009,7 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     ALICEVISION_LOG_WARNING("Bundle Adjustment failed, the solution is not usable.");
     return false;
   }
-
+  
   // update input sfmData with the solution
   updateFromSolution(sfmData, refineOptions);
 

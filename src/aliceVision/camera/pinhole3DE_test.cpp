@@ -1,6 +1,5 @@
 // This file is part of the AliceVision project.
-// Copyright (c) 2016 AliceVision contributors.
-// Copyright (c) 2012 openMVG contributors.
+// Copyright (c) 2021 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -19,17 +18,21 @@ using namespace aliceVision::camera;
 //-----------------
 // Test summary:
 //-----------------
-// - Create a PinholeRadialK1 camera
+// - Create a Pinhole3DERadial4 camera
 // - Generate random point inside the image domain
 // - Add and remove distortion and assert we found back the generated point
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1)
+BOOST_AUTO_TEST_CASE(cameraPinhole3DE_disto_undisto_Radial4)
 {
-  const PinholeRadialK1 cam(1000, 1000, 1000, 1000, 500, 500,
-    // K1
-    0.1);
+  const Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 500, 500,
+    -0.4839495643487452,
+    1.0301284234642258,
+    0.014928332802185664,
+    -0.0007797104872758904,
+    -0.038994206396183909,
+    8.0474385001183646e-05);
 
   const double epsilon = 1e-4;
   for(int i = 0; i < 10; ++i)
@@ -59,19 +62,20 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1)
 //-----------------
 // Test summary:
 //-----------------
-// - Create a PinholeRadialK3 camera
+// - Create a Pinhole3DEClassicLD camera
 // - Generate random point inside the image domain
 // - Add and remove distortion and assert we found back the generated point
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3)
+BOOST_AUTO_TEST_CASE(cameraPinhole3DE_disto_undisto_ClassicLD)
 {
-  const PinholeRadialK3 cam(1000, 1000, 1000, 500, 500,
-    // K1, K2, K3
-    -0.245539, 0.255195, 0.163773);
-
-  // Check that adding and removing distortion give the same coordinates
+  const Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 500, 500,
+    -0.34768564335290314,
+    1.5809150001711287,
+    -0.17204522667665839,
+    -0.15541950225726325,
+    1.1240093674337683);
 
   const double epsilon = 1e-4;
   for(int i = 0; i < 10; ++i)
@@ -85,7 +89,7 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3)
     EXPECT_MATRIX_NEAR( ptImage_gt, cam.cam2ima(cam.removeDistortion(cam.addDistortion(ptCamera))), epsilon);
 
     // Assert that distortion field is not null and it has moved the initial provided point
-    BOOST_CHECK(! (cam.addDistortion(ptCamera) == cam.removeDistortion(cam.addDistortion(ptCamera))));
+    BOOST_CHECK(! (cam.addDistortion(ptCamera) == cam.removeDistortion(cam.addDistortion(ptCamera))) ) ;
 
     // Check projection / back-projection
     const double depth_gt = std::abs(Vec2::Random()(0)) * 100.0;
@@ -95,6 +99,6 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3)
     const Vec2 pt2d_proj = cam.project(pose, pt3d, true);
 
     EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
-
   }
 }
+
