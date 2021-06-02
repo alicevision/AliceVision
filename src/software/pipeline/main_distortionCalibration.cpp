@@ -557,7 +557,16 @@ int aliceVision_main(int argc, char* argv[])
         }
         return EXIT_SUCCESS;
     }
-
+    std::map<IndexT, double> pixelRatioPerIntrinsic;
+    for(const auto& viewIt: sfmData.getViews())
+    {
+        double pixelRatio = viewIt.second->getDoubleMetadata({"PixelAspectRatio"});
+        if(pixelRatio <= 0.0)
+        {
+            pixelRatio = 1.0;
+        }
+        pixelRatioPerIntrinsic[viewIt.second->getIntrinsicId()] = pixelRatio;
+    }
     for(auto intrinsicIt: intrinsics)
     {
         std::shared_ptr<camera::IntrinsicBase>& intrinsicPtr = intrinsicIt.second;
@@ -578,13 +587,14 @@ int aliceVision_main(int argc, char* argv[])
         std::vector<calibration::LineWithPoints> allLineWithPoints;
         std::vector<std::vector<calibration::LineWithPoints>> lineWithPointsPerImage;
 
-        for(const std::string lensGridFilepath : lensGridFilepaths)
+        for(const std::string& lensGridFilepath : lensGridFilepaths)
         {
             //Check pixel ratio
-            double pixelRatio = 1.0; // view->getDoubleMetadata({"PixelAspectRatio"}); // TODO
-            if (pixelRatio < 0.0)
+            const double pixelRatio = pixelRatioPerIntrinsic[intrinsicIt.first];
+            if(pixelRatio != 1.0)
             {
-                pixelRatio = 1.0;
+                ALICEVISION_LOG_WARNING("Use non-squared pixels: intrinsicId=" << intrinsicIt.first
+                                                                                << ", pixelRatio=" << pixelRatio);
             }
 
             //Read image
@@ -611,7 +621,7 @@ int aliceVision_main(int argc, char* argv[])
             }
 
             const Vec2 originalScale = cameraPinhole->getScale();
-        
+
             const double w = input.Width();
             const double h = input.Height();
             if(w != cameraPinhole->w())
@@ -745,7 +755,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Result quality of inversion: ");
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
-        
+
         // Export debug images using the estimated distortion
         for(std::size_t i = 0; i < lensGridFilepaths.size(); ++i)
         {
