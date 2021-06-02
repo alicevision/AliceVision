@@ -344,6 +344,11 @@ int aliceVision_main(int argc, char** argv)
     if(undistortedImages)
     {
       sfmData::Intrinsics::const_iterator iterIntrinsic = sfmDataExport.getIntrinsics().find(view.getIntrinsicId());
+      if(iterIntrinsic == sfmDataExport.getIntrinsics().end())
+      {
+        ALICEVISION_LOG_INFO("Skip view with unsolved intrinsic.");
+        continue;
+      }
       const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
