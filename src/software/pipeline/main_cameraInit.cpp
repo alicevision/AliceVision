@@ -696,7 +696,7 @@ int aliceVision_main(int argc, char **argv)
     #pragma omp critical
     {
       view.setIntrinsicId(intrinsicId);
-      sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);
+      sfmData.getIntrinsics()[intrinsicId] = intrinsicBase;
     }
   }
 
