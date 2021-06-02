@@ -470,6 +470,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmInputDataFilepath;
     std::vector<std::string> lensGridFilepaths;
     std::string sfmOutputDataFilepath;
+    bool applyPixelRatio = false;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
     // Command line parameters
@@ -484,12 +485,17 @@ int aliceVision_main(int argc, char* argv[])
     ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+    ("applyPixelRatio", po::value<bool>(&applyPixelRatio),
+     "Apply pixel ratio to estimate the lens distortion.");
+
     po::options_description logParams("Log parameters");
     logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
         "verbosity level (fatal, error, warning, info, debug, trace).");
 
-    allParams.add(requiredParams).add(logParams);
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     // Parse command line
     po::variables_map vm;
@@ -560,12 +566,20 @@ int aliceVision_main(int argc, char* argv[])
     std::map<IndexT, double> pixelRatioPerIntrinsic;
     for(const auto& viewIt: sfmData.getViews())
     {
-        double pixelRatio = viewIt.second->getDoubleMetadata({"PixelAspectRatio"});
+        double pixelRatio = 1.0;
+        // Consider or ignore the pixel aspect ratio
+        if(applyPixelRatio)
+            pixelRatio = viewIt.second->getDoubleMetadata({"PixelAspectRatio"});
         if(pixelRatio <= 0.0)
         {
             pixelRatio = 1.0;
         }
         pixelRatioPerIntrinsic[viewIt.second->getIntrinsicId()] = pixelRatio;
+    }
+    std::map<IndexT, double> originalHeight;
+    for(auto intrinsicIt : intrinsics)
+    {
+        originalHeight[intrinsicIt.first] = intrinsicIt.second->h();
     }
     for(auto intrinsicIt: intrinsics)
     {
@@ -589,13 +603,9 @@ int aliceVision_main(int argc, char* argv[])
 
         for(const std::string& lensGridFilepath : lensGridFilepaths)
         {
+            ALICEVISION_LOG_INFO("Extract lines from image: " << lensGridFilepath);
             //Check pixel ratio
             const double pixelRatio = pixelRatioPerIntrinsic[intrinsicIt.first];
-            if(pixelRatio != 1.0)
-            {
-                ALICEVISION_LOG_WARNING("Use non-squared pixels: intrinsicId=" << intrinsicIt.first
-                                                                                << ", pixelRatio=" << pixelRatio);
-            }
 
             //Read image
             image::Image<image::RGBColor> input;
@@ -603,6 +613,9 @@ int aliceVision_main(int argc, char* argv[])
 
             if (pixelRatio != 1.0)
             {
+                ALICEVISION_LOG_WARNING("Use non-squared pixels: intrinsicId=" << intrinsicIt.first
+                                                                               << ", pixelRatio=" << pixelRatio);
+
                 // if pixel are not squared, convert the image for lines extraction
                 const double w = input.Width();
                 const double h = input.Height();
@@ -629,6 +642,10 @@ int aliceVision_main(int argc, char* argv[])
                 ALICEVISION_THROW_ERROR("Inconsistant size between the image and the camera intrinsics (image: "
                                         << w << "x" << h << ", camera: " << cameraPinhole->w() << "x" << cameraPinhole->h());
             }
+            if(h != cameraPinhole->h())
+            {
+                cameraPinhole->setHeight(h);
+            }
 
             fs::copy_file(lensGridFilepath, fs::path(outputPath) / fs::path(lensGridFilepath).filename(),
                           fs::copy_option::overwrite_if_exists);
@@ -647,6 +664,7 @@ int aliceVision_main(int argc, char* argv[])
             allLineWithPoints.insert(allLineWithPoints.end(), lineWithPoints.begin(), lineWithPoints.end());
         }
 
+        ALICEVISION_LOG_INFO("Estimate Lens Distortion");
         calibration::Statistics statistics;
 
         // Estimate distortion
@@ -756,6 +774,8 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
 
+        ALICEVISION_LOG_INFO("Export Debug Images");
+
         // Export debug images using the estimated distortion
         for(std::size_t i = 0; i < lensGridFilepaths.size(); ++i)
         {
@@ -777,6 +797,38 @@ int aliceVision_main(int argc, char* argv[])
             image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
         }
     }
+
+    for(auto intrinsicIt : intrinsics)
+    {
+        // Apply pixel ratio on principal point y position
+        std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicPtr =
+            std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicIt.second);
+        if(!intrinsicPtr)
+        {
+            continue;
+        }
+        // A pixel ratio might be applied on the checkboard images
+        const double pixelRatio = pixelRatioPerIntrinsic[intrinsicIt.first];
+        // The checkerboard images could be shot with the full size of the sensor,
+        // so the image ratio may be different from the actual footage.
+        // imageShift = 0.5 * (checkerImgHeight - footageHeight);
+        const double imageShift = 0.5 * ((intrinsicIt.second->h() * pixelRatio) - originalHeight[intrinsicIt.first]);
+        ALICEVISION_LOG_TRACE("pixelRatio=" << pixelRatio << ", imageShift=" << imageShift);
+        if(pixelRatio != 1.0 || imageShift != 0.0)
+        {
+            const Vec2 offset = intrinsicPtr->getOffset();
+            intrinsicPtr->setOffset(offset(0), offset(1) * pixelRatio - imageShift);
+        }
+        if(originalHeight[intrinsicIt.first] != intrinsicIt.second->h())
+        {
+            ALICEVISION_LOG_TRACE("originalHeight: " << originalHeight[intrinsicIt.first]
+                                                     << ", intrinsicHeight=" << intrinsicIt.second->h());
+            // Reset original height of the camera intrinsic
+            intrinsicIt.second->setHeight(originalHeight[intrinsicIt.first]);
+        }
+    }
+
+    ALICEVISION_LOG_INFO("Export SfmData: " << sfmOutputDataFilepath);
 
     if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
