@@ -140,8 +140,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 
   camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
 
-  double ppx = view.getWidth() / 2.0;
-  double ppy = view.getHeight() / 2.0;
+  double ppx = defaultPPx;
+  double ppy = defaultPPy;
 
   bool isResized = false;
 
@@ -164,11 +164,6 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
                           << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
       isResized = true;
     }
-  }
-  else if(defaultPPx > 0.0 && defaultPPy > 0.0) // use default principal point
-  {
-    ppx = defaultPPx;
-    ppy = defaultPPy;
   }
 
 

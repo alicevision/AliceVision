@@ -26,7 +26,7 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinhole3DE_disto_undisto_Radial4)
 {
-  const Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 500, 500,
+  const Pinhole3DERadial4 cam(1000, 1000, 1000, 1000, 0, 0,
     -0.4839495643487452,
     1.0301284234642258,
     0.014928332802185664,
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(cameraPinhole3DE_disto_undisto_Radial4)
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinhole3DE_disto_undisto_ClassicLD)
 {
-  const Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 500, 500,
+  const Pinhole3DEClassicLD cam(1000, 1000, 1000, 1000, 0, 0,
     -0.34768564335290314,
     1.5809150001711287,
     -0.17204522667665839,

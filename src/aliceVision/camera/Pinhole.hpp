@@ -59,11 +59,6 @@ public:
     return _scale(1); 
   }
 
-  Vec2 getPrincipalPoint() const 
-  { 
-    return _offset; 
-  }
-
   bool isValid() const override
   {
     return getFocalLengthPixX() > 0 && getFocalLengthPixY() > 0 && IntrinsicBase::isValid(); 
@@ -77,8 +72,11 @@ public:
   Mat3 K() const
   {
     Mat3 K;
-    K  << _scale(0), 0.0, _offset(0),
-          0.0, _scale(1), _offset(1),
+
+    Vec2 pp = getPrincipalPoint();
+    
+    K  << _scale(0), 0.0, pp(0),
+          0.0, _scale(1), pp(1),
           0.0, 0.0, 1.0;
     return K;
   }
@@ -87,16 +85,16 @@ public:
   {
     _scale(0) = focalLengthPix;
     _scale(1) = focalLengthPix;
-    _offset(0) = ppx;
-    _offset(1) = ppy;
+    _offset(0) = ppx - double(_w) * 0.5;
+    _offset(1) = ppy - double(_h) * 0.5;
   }
   
   void setK(const Mat3 & K)
   {
     _scale(0) = K(0, 0);
     _scale(1) = K(1, 1);
-    _offset(0) = K(0, 2);
-    _offset(1) = K(1, 2);
+    _offset(0) = K(0, 2) - double(_w) * 0.5;
+    _offset(1) = K(1, 2) - double(_h) * 0.5;
   }
 
   Vec2 project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion = true) const override
@@ -248,13 +246,8 @@ public:
   Mat34 getProjectiveEquivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
-    Mat3 K = Eigen::Matrix3d::Identity();
-    K(0, 0) = _scale(0);
-    K(1, 1) = _scale(1);
-    K(0, 2) = _offset(0);
-    K(1, 2) = _offset(1);
 
-    P_from_KRt(K, pose.rotation(), pose.translation(), &P);
+    P_from_KRt(K(), pose.rotation(), pose.translation(), &P);
     return P;
   }
 

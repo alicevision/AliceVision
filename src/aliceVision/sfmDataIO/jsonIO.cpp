@@ -140,7 +140,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   parentTree.push_back(std::make_pair(name, intrinsicTree));
 }
 
-void loadIntrinsic(const Vec3& version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
+void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
                    bpt::ptree& intrinsicTree)
 {
   intrinsicId = intrinsicTree.get<IndexT>("intrinsicId");
@@ -155,9 +155,15 @@ void loadIntrinsic(const Vec3& version, IndexT& intrinsicId, std::shared_ptr<cam
   Vec2 principalPoint;
   loadMatrix("principalPoint", principalPoint, intrinsicTree);
 
-  // principal point
+  if (version < Version(1,2,1))
+  {
+    principalPoint[0] -= (double(width) / 2.0);
+    principalPoint[1] -= (double(height) / 2.0);
+  }
+
+  // Focal length
   Vec2 pxFocalLength;
-  if(version(0) < 1 || (version(0) == 1 && version(1) < 2)) // version < 1.2
+  if (version < Version(1,2,0)) // version < 1.2
   {
       pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
       // Only one focal value for X and Y in previous versions

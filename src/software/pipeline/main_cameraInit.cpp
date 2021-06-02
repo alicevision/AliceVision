@@ -350,8 +350,8 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // read K matrix if valid
-  double defaultPPx = -1.0;
-  double defaultPPy = -1.0;
+  double defaultPPx = 0.0;
+  double defaultPPy = 0.0;
 
   if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, defaultPPx, defaultPPy))
   {

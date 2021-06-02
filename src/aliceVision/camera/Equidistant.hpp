@@ -394,7 +394,7 @@ public:
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return _circleRadius * p  + _offset;
+    return _circleRadius * p  + getPrincipalPoint();
   }
 
   Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const override
@@ -405,7 +405,7 @@ public:
   // Transform a point from the image plane to the camera plane
   Vec2 ima2cam(const Vec2& p) const override
   {
-    return (p - _offset) / _circleRadius;
+    return (p - getPrincipalPoint()) / _circleRadius;
   }
 
   Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const override
