@@ -706,7 +706,7 @@ if(AV_BUILD_APRILTAG)
 set(APRILTAG_TARGET apriltag)
 ExternalProject_Add(${APRILTAG_TARGET}
       GIT_REPOSITORY https://github.com/AprilRobotics/apriltag
-      GIT_TAG 92aea5c10b7e5e329c17dbe55977a0917774a8f1
+      GIT_TAG a0b37ad165d1908fc0c400898f28fb4bb16deb1b
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
