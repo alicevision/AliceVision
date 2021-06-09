@@ -10,7 +10,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
-#include <aliceVision/sfmDataIO/ViewIO.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
