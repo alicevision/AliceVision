@@ -281,8 +281,6 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
 
 bool detectImageSequenceFromImagePath(const std::string& imagePathStem, IndexT& frameId, std::string& prefix, std::string& suffix)
 {
-    bool isSequence = false;
-
     // check if the image is in a sequence
     // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
     std::regex regexFrame("^(.*\\D)?"       // the optional prefix which end with a non digit character
@@ -293,12 +291,13 @@ bool detectImageSequenceFromImagePath(const std::string& imagePathStem, IndexT& 
     );
 
     std::smatch matches;
-    if(std::regex_search(imagePathStem, matches, regexFrame))
+    const bool isSequence = std::regex_search(imagePathStem, matches, regexFrame);
+
+    if(isSequence)
     {
         prefix = matches[1];
         suffix = matches[3];
         frameId = static_cast<IndexT>(std::stoi(matches[2]));
-        isSequence = true;
     }
 
     return isSequence;
