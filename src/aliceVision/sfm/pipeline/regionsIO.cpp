@@ -134,17 +134,17 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
 {
   if(folders.empty())
   {
-    ALICEVISION_LOG_ERROR("Can't load features, no folders provided");
+    ALICEVISION_LOG_ERROR("Cannot load features, no folders provided");
     return false;
   }
   if(viewIds.empty())
   {
-    ALICEVISION_LOG_ERROR("Can't load features, no view ids provided");
+    ALICEVISION_LOG_ERROR("Cannot load features, no view ids provided");
     return false;
   }
   if(imageDescriberTypes.empty())
   {
-    ALICEVISION_LOG_ERROR("Can't load features, no image desciber types provided");
+    ALICEVISION_LOG_ERROR("Cannot load features, no image desciber types provided");
     return false;
   }
 
