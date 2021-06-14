@@ -378,6 +378,19 @@ if(ALICEVISION_BUILD_MVS)
           Boost::filesystem
   )
 
+  # Mesh Masking
+  alicevision_add_software(aliceVision_meshMasking
+    SOURCE main_meshMasking.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsUtils
+          aliceVision_mesh
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+  )
+
   # Mesh Resampling
   alicevision_add_software(aliceVision_meshResampling
     SOURCE main_meshResampling.cpp
