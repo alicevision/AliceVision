@@ -440,11 +440,9 @@ int aliceVision_main(int argc, char **argv)
     {
       try
       {
-        const int frameId = std::stoi(fs::path(view.getImagePath()).stem().string());
         const int subPoseId = std::stoi(parentPath.stem().string());
         std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
-        view.setFrameId(static_cast<IndexT>(frameId));
 
         #pragma omp critical
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;
