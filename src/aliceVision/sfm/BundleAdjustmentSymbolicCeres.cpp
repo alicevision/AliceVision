@@ -64,7 +64,9 @@ public:
     SE3::Matrix T = cTr * rTo;
     geometry::Pose3 T_pose3(T.block<3,4>(0, 0));
 
-    Vec2 pt_est = _intrinsics->project(T_pose3, pt, true);
+    Vec4 pth = pt.homogeneous();
+
+    Vec2 pt_est = _intrinsics->project(T_pose3, pth, true);
     double scale = _measured.scale;
     if (scale < 1e-12) scale = 1.0;
     residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
@@ -78,26 +80,27 @@ public:
 
     if (jacobians[0] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
-  
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pt) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
     }
 
     if (jacobians[1] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[1]);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pt) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
     }
 
     if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>> J(jacobians[2]);
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pt);
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pth);
     }
 
     if (jacobians[3] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pt);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
     }
 
     return true;
@@ -108,6 +111,42 @@ private:
   const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
   bool _withRig;
 };
+
+void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation)
+{
+  const Mat3& R = cameraPose.getTransform().rotation();
+  const Vec3& t = cameraPose.getTransform().translation();
+
+  poseBlock = SE3::Matrix::Identity();
+  poseBlock.block<3,3>(0, 0) = R;
+  poseBlock.block<3,1>(0, 3) = t;
+  double * poseBlockPtr = poseBlock.data();
+  problem.AddParameterBlock(poseBlockPtr, 16);
+
+
+  // add pose parameter to the all parameters blocks pointers list
+  _allParametersBlocks.push_back(poseBlockPtr);
+
+  // keep the camera extrinsics constants
+  if(cameraPose.isLocked() || isConstant || (!refineTranslation && !refineRotation))
+  {
+    // set the whole parameter block as constant.
+    _statistics.addState(EParameter::POSE, EParameterState::CONSTANT);
+
+    problem.SetParameterBlockConstant(poseBlockPtr);
+    return;
+  }
+  
+  if (refineRotation && refineTranslation)
+  {
+    problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization(refineRotation, refineTranslation));
+  }
+  else {
+    ALICEVISION_LOG_ERROR("constant extrinsics not supported at this time");
+  }
+
+  _statistics.addState(EParameter::POSE, EParameterState::REFINED);
+}
 
 void BundleAdjustmentSymbolicCeres::CeresOptions::setDenseBA()
 {
@@ -294,35 +333,6 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
   const bool refineTranslation = refineOptions & BundleAdjustment::REFINE_TRANSLATION;
   const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
 
-  const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock)
-  {
-    const Mat3& R = cameraPose.getTransform().rotation();
-    const Vec3& t = cameraPose.getTransform().translation();
-
-    poseBlock = SE3::Matrix::Identity();
-    poseBlock.block<3,3>(0, 0) = R;
-    poseBlock.block<3,1>(0, 3) = t;
-    double * poseBlockPtr = poseBlock.data();
-    problem.AddParameterBlock(poseBlockPtr, 16);
-
-
-    // add pose parameter to the all parameters blocks pointers list
-    _allParametersBlocks.push_back(poseBlockPtr);
-
-    // keep the camera extrinsics constants
-    if(cameraPose.isLocked() || isConstant || (!refineTranslation && !refineRotation))
-    {
-      // set the whole parameter block as constant.
-      _statistics.addState(EParameter::POSE, EParameterState::CONSTANT);
-      problem.SetParameterBlockConstant(poseBlockPtr);
-      return;
-    }
-
-    problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization(refineRotation, refineTranslation));
-
-    _statistics.addState(EParameter::POSE, EParameterState::REFINED);
-  };
-
   // setup poses data
   for(const auto& posePair : sfmData.getPoses())
   {
@@ -338,7 +348,7 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
     const bool isConstant = (getPoseState(poseId) == EParameterState::CONSTANT);
 
-    addPose(pose, isConstant, _posesBlocks[poseId]);
+    addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation);
   }
 
   // setup sub-poses data
@@ -357,13 +367,13 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
       const bool isConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
 
-      addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId]);
+      addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId], problem, refineTranslation, refineRotation);
     }
   }
 
 
   //Add default rig pose
-  addPose(sfmData::CameraPose(), true, _rigNull);
+  addPose(sfmData::CameraPose(), true, _rigNull, problem, refineTranslation, refineRotation);
 }
 
 void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)

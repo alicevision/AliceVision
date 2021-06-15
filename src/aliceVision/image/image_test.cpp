@@ -26,12 +26,12 @@ BOOST_AUTO_TEST_CASE(Image_Basis)
   imaGray(2,2) = 2;
   imaGray(5,0) = 2;
 
-  cout << imaGray << endl << endl;
+  //cout << imaGray << endl << endl;
   //-- Get raw ptr to image data :
   const unsigned char * ptr = imaGray.data();
   ((unsigned char*)ptr)[0] = 2;
   fill(((unsigned char*)ptr+9*10),((unsigned char*)ptr+10*10),2);
-  cout << "After" << endl << imaGray;
+  //cout << "After" << endl << imaGray;
 
   // Construction by re-copy
   Image<unsigned char> imageGray2(imaGray);

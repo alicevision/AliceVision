@@ -79,6 +79,16 @@ class Pose3
       return pose;
     }
 
+    Mat4 getHomogeneous() const 
+    {
+      Mat4 ret = Mat4::Identity();
+
+      ret.block<3, 3>(0, 0) = _rotation;
+      ret.block<3, 1>(0, 3) = translation();
+
+      return ret;
+    }
+
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

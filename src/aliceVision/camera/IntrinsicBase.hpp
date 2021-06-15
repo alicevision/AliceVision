@@ -121,7 +121,7 @@ public:
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The 2d projection in the camera plane
    */
-  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const = 0;
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec4& pt3D, bool applyDistortion = true) const = 0;
 
   /**
    * @brief Back-projection of a 2D point at a specific depth into a 3D point
@@ -141,6 +141,32 @@ public:
       return output;
   }
 
+  Vec4 getCartesianfromSphericalCoordinates(const Vec3 & pt)
+  {
+    double u = pt(0);
+    double v = pt(1);
+    
+    Vec4 rpt;
+    rpt.x() = pt(0);
+    rpt.y() = pt(1);
+    rpt.z() = 1.0;
+    rpt.w() = pt(2);
+
+    return rpt;
+  }
+
+  Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3 & pt)
+  {
+  
+    Eigen::Matrix<double, 4, 3> ret = Eigen::Matrix<double, 4, 3>::Zero();
+
+    ret(0, 0) = 1.0;
+    ret(1, 1) = 1.0;
+    ret(3, 2) = 1.0;
+
+    return ret;
+  }
+
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
    * @param[in] pose The pose
@@ -148,7 +174,7 @@ public:
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian  wrt pose
    */
-  virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+  virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
 
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
@@ -157,7 +183,7 @@ public:
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian  wrt point
    */
-  virtual Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+  virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
 
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
@@ -166,7 +192,7 @@ public:
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian wrt params
    */
-  virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const = 0;
+  virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
 
   /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
@@ -176,6 +202,19 @@ public:
    * @return residual
    */
   inline Vec2 residual(const geometry::Pose3& pose, const Vec3& X, const Vec2& x) const
+  {
+    const Vec2 proj = this->project(pose, X.homogeneous());
+    return x - proj;
+  }
+
+   /**
+   * @brief Compute the residual between the 3D projected point X and an image observation x
+   * @param[in] pose The pose
+   * @param[in] X The 3D projected point
+   * @param[in] x The image observation
+   * @return residual
+   */
+  inline Vec2 residual(const geometry::Pose3& pose, const Vec4& X, const Vec2& x) const
   {
     const Vec2 proj = this->project(pose, X);
     return x - proj;
@@ -195,7 +234,7 @@ public:
     Mat2X residuals = Mat2X::Zero(2, numPts);
     for(std::size_t i = 0; i < numPts; ++i)
     {
-      residuals.col(i) = residual(pose, X.col(i), x.col(i));
+      residuals.col(i) = residual(pose, (const Vec3&)X.col(i), x.col(i));
     }
     return residuals;
   }
