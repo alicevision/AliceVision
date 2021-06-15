@@ -36,14 +36,13 @@ struct Rotation3PSolver : public robustEstimation::ISolver<robustEstimation::Mat
   inline std::size_t getMaximumNbModels() const override { return 1; }
 
   /**
-   * @brief Computes the homography that transforms x to y with the Direct Linear
+   * @brief Computes the rotation that transforms x to y with the Direct Linear
    * Transform (DLT).
    *
-   * @param[in] x  A 2xN matrix of column vectors.
-   * @param[in] y  A 2xN matrix of column vectors.
-   * @param[out] Hs A vector into which the computed homography is stored.
+   * @param[in] x  A 3xN matrix of column vectors.
+   * @param[in] y  A 3xN matrix of column vectors.
    *
-   * The estimated homography should approximately hold the condition y = H x.
+   * The estimated rotation should approximately hold the condition y ~  R x.
    */
   void solve(const Mat& x, const Mat& y, std::vector<robustEstimation::Mat3Model>& models) const override;
 
@@ -55,6 +54,45 @@ struct Rotation3PSolver : public robustEstimation::ISolver<robustEstimation::Mat
    * @param[in]  weights.
    */
   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models,
+             const std::vector<double>& weights) const override
+  {
+      throw std::logic_error("Rotation3PSolver does not support problem solving with weights.");
+  }
+};
+
+struct Rotation3PSolver34 : public robustEstimation::ISolver<robustEstimation::Mat34Model>
+{
+  /**
+   * @brief Return the minimum number of required samples
+   * @return minimum number of required samples
+   */
+  inline std::size_t getMinimumNbRequiredSamples() const override { return 3; }
+
+  /**
+   * @brief Return the maximum number of models
+   * @return maximum number of models
+   */
+  inline std::size_t getMaximumNbModels() const override { return 1; }
+
+  /**
+   * @brief Computes the rotation that transforms x to y with the Direct Linear
+   * Transform (DLT).
+   *
+   * @param[in] x  A 3xN matrix of column vectors.
+   * @param[in] y  A 3xN matrix of column vectors.
+   *
+   * The estimated rotation should approximately hold the condition y ~  R x.
+   */
+  void solve(const Mat& p2d, const Mat& p3d, std::vector<robustEstimation::Mat34Model>& models) const override;
+
+  /**
+   * @brief Solve the problem.
+   * @param[in]  x1  A 2xN matrix of column vectors.
+   * @param[in]  x2  A 2xN (relative pose) or 3xN (resection) matrix of column vectors.
+   * @param[out] models A vector into which the computed models are stored.
+   * @param[in]  weights.
+   */
+  void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat34Model>& models,
              const std::vector<double>& weights) const override
   {
       throw std::logic_error("Rotation3PSolver does not support problem solving with weights.");

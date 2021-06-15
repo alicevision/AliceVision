@@ -54,6 +54,56 @@ void Rotation3PSolver::solve(const Mat& p1, const Mat& p2, std::vector<robustEst
     Rs.emplace_back(ret);
 }
 
+void Rotation3PSolver34::solve(const Mat& p2d, const Mat& p3d, std::vector<robustEstimation::Mat34Model>& Rs) const
+{
+    assert(2 == p2d.rows());
+    assert(4 == p3d.rows());
+    assert(p2d.cols() == p3d.cols());
+
+    Mat::Index n = p2d.cols();
+    Mat p2dn(3, n);
+
+    for (int i = 0; i < n; i++)
+    {
+        Vec3 pn;
+        pn(0) = p2d(0, i);
+        pn(1) = p2d(1, i);
+        pn(2) = 1.0;
+
+        pn.normalize();
+
+        p2dn.col(i) = pn;
+    }
+
+    Eigen::Matrix3d M = Eigen::Matrix3d::Zero();
+
+    for(int i = 0; i < n; ++i)
+    {
+        for(int k = 0; k < 3; ++k)
+        {
+            for(int l = 0; l < 3; ++l)
+            {
+                M(k, l) += p2dn(k, i) * p3d(l, i);
+            }
+        }
+    }
+
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+
+    Eigen::Matrix3d G = U * V.transpose();
+    Eigen::Matrix3d D = Eigen::Matrix3d::Identity();
+    D(2, 2) = 1.0 / G.determinant();
+
+    Mat34 R = Mat34::Zero();
+    R.block<3, 3>(0, 0) = U * D * V.transpose();
+
+    robustEstimation::Mat34Model ret(R);
+
+    Rs.emplace_back(ret);
+}
+
 }  // namespace kernel
 }  // namespace rotation
 }  // namespace aliceVision
