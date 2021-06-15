@@ -199,6 +199,77 @@ namespace SE3 {
 using Matrix = Eigen::Matrix<double, 4, 4, Eigen::RowMajor>;
 
 /**
+ * Compute the inverse of source matrix
+ */
+inline Eigen::Matrix4d inverse(const Matrix & source)
+{
+  Eigen::Matrix4d ret = Eigen::Matrix4d::Identity();
+  
+  const Eigen::Matrix3d & R = source.block<3, 3>(0, 0);
+  const Eigen::Vector3d & t = source.block<3, 1>(0, 3);
+
+  ret.block<3, 3>(0, 0) = R.transpose();
+  ret.block<3, 1>(0, 3) = - R.transpose() * t;
+
+  return ret;
+}
+
+constexpr int rowFromCoordinates(int row, int col)
+{
+  return col * 4 + row;
+}
+
+/**
+ * Compute the inverse of source matrix
+ */
+inline Eigen::Matrix<double, 16, 16> d_inverse(const Matrix & source)
+{
+  Eigen::Matrix<double, 16, 16> ret = Eigen::Matrix<double, 16, 16>::Zero();
+  
+  const Eigen::Matrix3d & R = source.block<3, 3>(0, 0);
+  const Eigen::Vector3d & t = source.block<3, 1>(0, 3);
+
+  // R' = R^T
+  ret(rowFromCoordinates(0, 0), rowFromCoordinates(0, 0)) = 1;
+  ret(rowFromCoordinates(0, 1), rowFromCoordinates(1, 0)) = 1;
+  ret(rowFromCoordinates(0, 2), rowFromCoordinates(2, 0)) = 1;
+  ret(rowFromCoordinates(1, 0), rowFromCoordinates(0, 1)) = 1;
+  ret(rowFromCoordinates(1, 1), rowFromCoordinates(1, 1)) = 1;
+  ret(rowFromCoordinates(1, 2), rowFromCoordinates(2, 1)) = 1;
+  ret(rowFromCoordinates(2, 0), rowFromCoordinates(0, 2)) = 1;
+  ret(rowFromCoordinates(2, 1), rowFromCoordinates(1, 2)) = 1;
+  ret(rowFromCoordinates(2, 2), rowFromCoordinates(2, 2)) = 1;
+
+  // t' = -R^T * t
+  // tx' = - R00 * tx - R10 * ty - R20 * tz
+  // ty' = - R01 * tx - R12 * ty - R21 * tz
+  // tz' = - R02 * tx - R12 * ty - R22 * tz
+
+  ret(rowFromCoordinates(0, 3), rowFromCoordinates(0, 0)) = - t(0);
+  ret(rowFromCoordinates(0, 3), rowFromCoordinates(1, 0)) = - t(1);
+  ret(rowFromCoordinates(0, 3), rowFromCoordinates(2, 0)) = - t(2);
+  ret(rowFromCoordinates(1, 3), rowFromCoordinates(0, 1)) = - t(0);
+  ret(rowFromCoordinates(1, 3), rowFromCoordinates(1, 1)) = - t(1);
+  ret(rowFromCoordinates(1, 3), rowFromCoordinates(2, 1)) = - t(2);
+  ret(rowFromCoordinates(2, 3), rowFromCoordinates(0, 2)) = - t(0);
+  ret(rowFromCoordinates(2, 3), rowFromCoordinates(1, 2)) = - t(1);
+  ret(rowFromCoordinates(2, 3), rowFromCoordinates(2, 2)) = - t(2);
+  
+  ret(rowFromCoordinates(0, 3), rowFromCoordinates(0, 3)) = - R(0, 0);
+  ret(rowFromCoordinates(0, 3), rowFromCoordinates(1, 3)) = - R(1, 0);
+  ret(rowFromCoordinates(0, 3), rowFromCoordinates(2, 3)) = - R(2, 0);
+  ret(rowFromCoordinates(1, 3), rowFromCoordinates(0, 3)) = - R(0, 1);
+  ret(rowFromCoordinates(1, 3), rowFromCoordinates(1, 3)) = - R(1, 1);
+  ret(rowFromCoordinates(1, 3), rowFromCoordinates(2, 3)) = - R(2, 1);
+  ret(rowFromCoordinates(2, 3), rowFromCoordinates(0, 3)) = - R(0, 2);
+  ret(rowFromCoordinates(2, 3), rowFromCoordinates(1, 3)) = - R(1, 2);
+  ret(rowFromCoordinates(2, 3), rowFromCoordinates(2, 3)) = - R(2, 2);
+
+  return ret;
+}
+
+
+/**
 Compute the exponential map of the given algebra on the group
 @param algebra the 6d vector
 @return a 4*4 SE(3) matrix
