@@ -93,20 +93,21 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
 
 
 /*
-* @brief Allows to detect if an image is part of an image sequence from the analysis of its filename.
-*        Expected pattern: (optional prefix which end with a non digit character)(the sequence frame number)(optional suffix with at least one letter which start with a separator ('.', '-', '_'))
-          Examples:
-          IMG01234
-          IMG_01234.cam
-          C4M0123-A
-          01234
-* @param[in] imagePathStem The image path
-* @param[out] frameId the detected frameId (or UndefinedIndexT)
-* @param[out] prefix the detected sequence prefix (or empty)
-* @param[out] suffix the detected sequence suffix (or empty)
-* @return true if the image is part of an image sequence
+* @brief Allows to detect if an image filename (stripped of its extension) contains a number.
+*        This function can be used to detect if an image is part of an image sequence from the analysis of its filename.
+*        Expected pattern: (optional prefix which ends with a non digit character)(a number)(optional suffix with at least one letter which starts with a separator ('.', '-', '_'))
+*          Examples:
+*          IMG01234
+*          IMG_01234.cam
+*          C4M0123-A
+*          01234
+* @param[in] imagePathStem the image filename stripped of its extension
+* @param[out] number the detected number (or UndefinedIndexT)
+* @param[out] prefix the detected prefix (or empty)
+* @param[out] suffix the detected suffix (or empty)
+* @return true if the image filename (stripped of its extension) contains a number
 */
-bool detectImageSequenceFromImagePath(const std::string& imagePathStem, IndexT& frameId, std::string& prefix, std::string& suffix);
+bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number, std::string& prefix, std::string& suffix);
 
 } // namespace sfmDataIO
 } // namespace aliceVision

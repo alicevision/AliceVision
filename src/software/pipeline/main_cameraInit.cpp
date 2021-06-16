@@ -458,11 +458,10 @@ int aliceVision_main(int argc, char **argv)
         IndexT frameId;
         std::string prefix;
         std::string suffix;
-        if(sfmDataIO::detectImageSequenceFromImagePath(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
+        if(sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
         {
           view.setFrameId(frameId);
         }
-          
     }
     
     if(boost::algorithm::starts_with(parentPath.stem().string(), "ps_") ||

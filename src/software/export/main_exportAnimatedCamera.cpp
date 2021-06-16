@@ -405,7 +405,7 @@ int aliceVision_main(int argc, char** argv)
       std::string prefix;
       std::string suffix;
 
-      if(sfmDataIO::detectImageSequenceFromImagePath(imagePathStem, frameN, prefix, suffix))
+      if(sfmDataIO::extractNumberFromFileStem(imagePathStem, frameN, prefix, suffix))
       {
         if(prefix.empty() && suffix.empty())
             cameraName = std::string("Undefined") + "_" + cameraName;

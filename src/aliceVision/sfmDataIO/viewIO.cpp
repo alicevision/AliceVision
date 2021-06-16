@@ -279,28 +279,28 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
     });
 }
 
-bool detectImageSequenceFromImagePath(const std::string& imagePathStem, IndexT& frameId, std::string& prefix, std::string& suffix)
+bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number, std::string& prefix, std::string& suffix)
 {
-    // check if the image is in a sequence
+    // check if the image stem contains a number
     // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
-    std::regex regexFrame("^(.*\\D)?"       // the optional prefix which end with a non digit character
-                          "([0-9]+)"        // the sequence frame number
-                          "([\\-_\\.]"      // the suffix start with a separator
+    std::regex regexFrame("^(.*\\D)?"       // the optional prefix which ends with a non digit character
+                          "([0-9]+)"        // the number
+                          "([\\-_\\.]"      // the suffix starts with a separator
                           ".*[[:alpha:]].*" // at least one letter in the suffix
                           ")?$"             // suffix is optional
     );
 
     std::smatch matches;
-    const bool isSequence = std::regex_search(imagePathStem, matches, regexFrame);
+    const bool containsNumber = std::regex_search(imagePathStem, matches, regexFrame);
 
-    if(isSequence)
+    if(containsNumber)
     {
         prefix = matches[1];
         suffix = matches[3];
-        frameId = static_cast<IndexT>(std::stoi(matches[2]));
+        number = static_cast<IndexT>(std::stoi(matches[2]));
     }
 
-    return isSequence;
+    return containsNumber;
 }
 
 } // namespace sfmDataIO
