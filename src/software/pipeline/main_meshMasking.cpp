@@ -13,6 +13,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/visibility.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -67,15 +68,13 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
 }
 
 void meshMasking(
-    sfmData::SfMData sfmData,
+    const mvsUtils::MultiViewParams & mp,
     const mesh::Mesh & inputMesh,
     const std::vector<std::string> & masksFolders,
     const std::string & outputMeshPath,
     int threshold,
     bool invert)
 {
-    mvsUtils::MultiViewParams mp(sfmData);
-    
     // compute visibility for every vertex
     StaticVector<int> vertexVisibilityCounters;
     vertexVisibilityCounters.resize_with(inputMesh.pts.size(), 0);
@@ -98,17 +97,29 @@ void meshMasking(
         {
             const auto& vertex = inputMesh.pts[vertexId];
 
+            // check if the vertex is visible by the camera
+            auto& pointVisibilities = inputMesh.pointsVisibilities[vertexId];
+            const int pointVisibilityIndex = pointVisibilities.indexOf(camId);
+            if (pointVisibilityIndex == -1)
+            {
+                continue;
+            }
+
+            // project vertex on mask
             Pixel projectedPixel;
             mp.getPixelFor3DPoint(&projectedPixel, vertex, camId);
-            const int margin = 0;
-            if (mp.isPixelInImage(projectedPixel, camId, margin) && mp.isPixelInSourceImage(projectedPixel, camId, margin))
+            if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
+             || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
             {
-                const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
-                const bool masked = invert ? !maskValue : maskValue;
-                if (!masked)
-                {
-                    ++vertexVisibilityCounters[vertexId];
-                }
+                continue;
+            }
+
+            // get the mask value
+            const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
+            const bool masked = invert ? !maskValue : maskValue;
+            if (!masked)
+            {
+                ++vertexVisibilityCounters[vertexId];
             }
         }
     }
@@ -223,6 +234,7 @@ int main(int argc, char **argv)
     }
 
     // check input mesh
+    ALICEVISION_LOG_INFO("Load input mesh.");
     mesh::Mesh inputMesh;
     if (!inputMesh.loadFromObjAscii(inputMeshPath))
     {
@@ -238,7 +250,7 @@ int main(int argc, char **argv)
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;
@@ -264,7 +276,16 @@ int main(int argc, char **argv)
 
     // execute
     system::Timer timer;
-    meshMasking(sfmData, inputMesh, masksFolders, outputMeshPath, threshold, invert);
+
+    mvsUtils::MultiViewParams mp(sfmData);
+
+    // load reference dense point cloud with visibilities
+    ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
+    mesh::Mesh refMesh;
+    mvsUtils::createRefMeshFromDenseSfMData(refMesh, sfmData, mp);
+    inputMesh.remapVisibilities(mesh::EVisibilityRemappingMethod::PullPush, refMesh);
+
+    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }
