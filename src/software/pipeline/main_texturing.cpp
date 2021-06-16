@@ -14,6 +14,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/visibility.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
@@ -176,37 +177,18 @@ int aliceVision_main(int argc, char* argv[])
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
-    mesh::Mesh refMesh;
 
     fs::create_directory(outputFolder);
 
-    // load and remap mesh
-    {
-        mesh.clear();
+    // load input mesh (to texture) obj file
+    ALICEVISION_LOG_INFO("Load input mesh.");
+    mesh.clear();
+    mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
 
-        // load input mesh (to texture) obj file
-        ALICEVISION_LOG_INFO("Load input mesh.");
-        mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
-
-        // load reference dense point cloud with visibilities
-        ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
-        mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
-        const std::size_t nbPoints = sfmData.getLandmarks().size();
-        refMesh.pts.reserve(nbPoints);
-        refVisibilities.reserve(nbPoints);
-        for(const auto& landmarkPair : sfmData.getLandmarks())
-        {
-            const sfmData::Landmark& landmark = landmarkPair.second;
-            mesh::PointVisibility pointVisibility;
-
-            pointVisibility.reserve(landmark.observations.size());
-            for(const auto& observationPair : landmark.observations)
-                pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
-
-            refVisibilities.push_back(pointVisibility);
-            refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
-        }
-    }
+    // load reference dense point cloud with visibilities
+    ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
+    mesh::Mesh refMesh;
+    mvsUtils::createRefMeshFromDenseSfMData(refMesh, sfmData, mp);
 
     // generate UVs if necessary
     if(!mesh.hasUVs())
