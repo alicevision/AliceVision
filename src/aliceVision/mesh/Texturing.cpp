@@ -863,20 +863,6 @@ void Texturing::loadOBJWithAtlas(const std::string& filename, bool flipNormals)
     }
 }
 
-void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh)
-{
-  if (refMesh.pointsVisibilities.empty())
-    throw std::runtime_error("Texturing: Cannot remap visibilities as there is no reference points.");
-
-  // remap visibilities from the reference onto the mesh
-  if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Pull)
-    remapMeshVisibilities_pullVerticesVisibility(refMesh, *mesh);
-  if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Push)
-    remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, *mesh);
-  if(mesh->pointsVisibilities.empty())
-    throw std::runtime_error("No visibility after visibility remapping.");
-}
-
 void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
 {
     // keep previous mesh/visibilities as reference

@@ -212,7 +212,7 @@ int aliceVision_main(int argc, char* argv[])
     if(!mesh.hasUVs())
     {
         // Need visibilities to compute unwrap
-        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+        mesh.mesh->remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
         ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
         mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
         ALICEVISION_LOG_INFO("Unwrapping done.");
@@ -231,7 +231,7 @@ int aliceVision_main(int argc, char* argv[])
 
         // remap visibilities
         mesh.mesh->pointsVisibilities.clear();
-        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+        mesh.mesh->remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
 
         // DEBUG: export subdivided mesh
         // mesh.saveAsOBJ(outputFolder, "subdividedMesh", outputTextureFileType);
