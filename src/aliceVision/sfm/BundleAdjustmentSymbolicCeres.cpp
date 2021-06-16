@@ -260,6 +260,226 @@ private:
   bool _withRig;
 };
 
+class CostProjectionRelative : public ceres::CostFunction {
+public:
+  CostProjectionRelative(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig) {
+
+    set_num_residuals(2);
+
+    
+    mutable_parameter_block_sizes()->push_back(16);
+    mutable_parameter_block_sizes()->push_back(16);
+    mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
+
+    mutable_parameter_block_sizes()->push_back(3);    
+  }
+
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
+
+    const double * parameter_pose = parameters[0];
+    const double * parameter_referencePose = parameters[1];
+    const double * parameter_intrinsics = parameters[2];
+    const double * parameter_landmark = parameters[3];
+
+    const Eigen::Map<const SE3::Matrix> cTo(parameter_pose);
+    const Eigen::Map<const SE3::Matrix> rTo(parameter_referencePose);
+    const Eigen::Map<const Vec3> pt(parameter_landmark);
+
+    
+    /*Update intrinsics object with estimated parameters*/
+    size_t params_size = _intrinsics->getParams().size();
+    std::vector<double> params;
+    for (size_t param_id = 0; param_id < params_size; param_id++) {
+      params.push_back(parameter_intrinsics[param_id]);
+    }
+    _intrinsics->updateFromParams(params);
+
+    SE3::Matrix oTr = SE3::inverse(rTo);
+    SE3::Matrix T = cTo * oTr;
+    geometry::Pose3 T_pose3(T.block<3,4>(0, 0));
+
+    Vec4 cartesianpt = _intrinsics->getCartesianfromSphericalCoordinates(pt);
+
+    Vec2 pt_est = _intrinsics->project(T_pose3, cartesianpt, true);
+    double scale = _measured.scale;
+    if (scale < 1e-12) scale = 1.0;
+    residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
+    residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
+
+    if (jacobians == nullptr) {
+      return true;
+    }
+
+    Eigen::Matrix2d d_res_d_pt_est = Eigen::Matrix2d::Identity() / scale;
+
+
+    if (jacobians[0] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, cartesianpt) * getJacobian_AB_wrt_A<4, 4, 4>(cTo, oTr) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTo);
+    }
+
+    if (jacobians[1] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[1]);
+      
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, cartesianpt) * getJacobian_AB_wrt_B<4, 4, 4>(cTo, oTr) * SE3::d_inverse(rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+    }
+
+    if (jacobians[2] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
+      
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, cartesianpt);
+    }
+
+    if (jacobians[3] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, cartesianpt) * _intrinsics->getDerivativeCartesianfromSphericalCoordinates(pt);
+    }
+
+    return true;
+  }
+
+private:
+  const sfmData::Observation & _measured;
+  const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
+  bool _withRig;
+};
+
+class CostProjectionRelativeSimplified : public ceres::CostFunction {
+public:
+  CostProjectionRelativeSimplified(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig) {
+
+    set_num_residuals(2);
+
+
+    mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
+    mutable_parameter_block_sizes()->push_back(3);    
+  }
+
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
+
+    const double * parameter_intrinsics = parameters[0];
+    const double * parameter_landmark = parameters[1];
+
+    const Eigen::Map<const Vec3> pt(parameter_landmark);
+    
+    /*Update intrinsics object with estimated parameters*/
+    size_t params_size = _intrinsics->getParams().size();
+    std::vector<double> params;
+    for (size_t param_id = 0; param_id < params_size; param_id++) {
+      params.push_back(parameter_intrinsics[param_id]);
+    }
+    _intrinsics->updateFromParams(params);
+
+    SE3::Matrix T = SE3::Matrix::Identity();
+    geometry::Pose3 T_pose3(T.block<3,4>(0, 0));
+
+    Vec4 cartesianpt = _intrinsics->getCartesianfromSphericalCoordinates(pt);
+
+    Vec2 pt_est = _intrinsics->project(T_pose3, cartesianpt, true);
+    double scale = _measured.scale;
+    if (scale < 1e-12) scale = 1.0;
+    residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
+    residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
+
+    if (jacobians == nullptr) {
+      return true;
+    }
+    
+    Eigen::Matrix2d d_res_d_pt_est = Eigen::Matrix2d::Identity() / scale;
+
+    if (jacobians[0] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 2, params_size);
+      
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, cartesianpt);
+    }
+
+    if (jacobians[1] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[1]);
+
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, cartesianpt) * _intrinsics->getDerivativeCartesianfromSphericalCoordinates(pt);
+    }
+
+
+    return true;
+  }
+
+private:
+  const sfmData::Observation & _measured;
+  const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
+  bool _withRig;
+};
+
+class CostMotionConstantSpeed : public ceres::CostFunction {
+public:
+  CostMotionConstantSpeed() {
+
+    set_num_residuals(3);
+    
+    mutable_parameter_block_sizes()->push_back(16);
+    mutable_parameter_block_sizes()->push_back(16);
+    mutable_parameter_block_sizes()->push_back(16);
+  }
+
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
+
+    const double * parameter_pose1 = parameters[0];
+    const double * parameter_pose2 = parameters[1];
+    const double * parameter_pose3 = parameters[2];
+
+    const Eigen::Map<const SE3::Matrix> cTo_1(parameter_pose1);
+    const Eigen::Map<const SE3::Matrix> cTo_2(parameter_pose2);
+    const Eigen::Map<const SE3::Matrix> cTo_3(parameter_pose3);
+
+    Eigen::Matrix3d cRo_1 = cTo_1.block<3, 3>(0, 0);
+    Eigen::Matrix3d cRo_2 = cTo_2.block<3, 3>(0, 0);
+    Eigen::Matrix3d cRo_3 = cTo_3.block<3, 3>(0, 0);
+
+    Eigen::Vector3d cto_1 = cTo_1.block<3, 1>(0, 3);
+    Eigen::Vector3d cto_2 = cTo_2.block<3, 1>(0, 3);
+    Eigen::Vector3d cto_3 = cTo_3.block<3, 1>(0, 3);
+
+    Eigen::Vector3d speed_diff = (cto_2 - cto_1) - (cto_3 - cto_2);
+
+    residuals[0] = speed_diff[0];
+    residuals[1] = speed_diff[1];
+    residuals[2] = speed_diff[2];
+
+    if (jacobians == nullptr) {
+      return true;
+    }
+
+    if (jacobians[0] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 3, 16, Eigen::RowMajor>> J(jacobians[0]);
+
+      J.fill(0);
+
+      J.block<3, 3>(0, 12) = - Eigen::Matrix3d::Identity();
+    }
+
+    if (jacobians[1] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 3, 16, Eigen::RowMajor>> J(jacobians[1]);
+
+      J.fill(0);
+
+      J.block<3, 3>(0, 12) = 2.0 * Eigen::Matrix3d::Identity();
+    }
+
+    if (jacobians[2] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 3, 16, Eigen::RowMajor>> J(jacobians[2]);
+
+      J.fill(0);
+
+      J.block<3, 3>(0, 12) = - Eigen::Matrix3d::Identity();
+    }
+
+    return true;
+  }
+
+private:
+};
+
 void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation)
 {
   const Mat3& R = cameraPose.getTransform().rotation();
@@ -724,9 +944,6 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
         _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
         _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
       }
-
-      ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, withRig);
-      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, rigBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
 
       if(!refineStructure || getLandmarkState(landmarkId) == EParameterState::CONSTANT)
       {
