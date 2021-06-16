@@ -46,20 +46,6 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
  */
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
-/**
- * @brief Method to remap visibilities from the reconstruction onto an other mesh.
- */
-enum EVisibilityRemappingMethod {
-    Pull = 1,    //< For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.
-    Push = 2,    //< For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.
-    PullPush = Pull | Push  //< Combine results from Pull and Push results.
-};
-
-ALICEVISION_BITMASK(EVisibilityRemappingMethod);
-
-EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
-std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
-
 
 
 struct TexturingParams
@@ -108,15 +94,6 @@ public:
 
     /// Load a mesh from a .obj file and initialize internal structures
     void loadOBJWithAtlas(const std::string& filename, bool flipNormals=false);
-
-    /**
-     * @brief Remap visibilities
-     *
-     * @param[in] remappingMethod the remapping method
-     * @param[in] refMesh the reference mesh
-     * @param[in] refPointsVisibilities the reference visibilities
-     */
-    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh);
 
     /**
      * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'
