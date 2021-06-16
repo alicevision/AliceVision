@@ -4,6 +4,7 @@ set(mvsUtils_files_headers
   fileIO.hpp
   ImagesCache.hpp
   MultiViewParams.hpp
+  visibility.hpp
 )
 
 # Sources
@@ -12,6 +13,7 @@ set(mvsUtils_files_sources
   fileIO.cpp
   ImagesCache.cpp
   MultiViewParams.cpp
+  visibility.cpp
 )
 
 alicevision_add_library(aliceVision_mvsUtils
