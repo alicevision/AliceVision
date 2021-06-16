@@ -26,6 +26,158 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
+class IntrinsicsParameterization : public ceres::LocalParameterization {
+ public:
+  explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+  : _globalSize(parametersSize),
+    _focalRatio(focalRatio),
+    _lockFocal(lockFocal),
+    _lockFocalRatio(lockFocalRatio),
+    _lockCenter(lockCenter),
+    _lockDistortion(lockDistortion)
+  {
+    _distortionSize = _globalSize - 4;
+    _localSize = 0;
+
+    if (!_lockFocal)
+    {
+      if (_lockFocalRatio)
+      {
+        _localSize += 1;
+      }
+      else
+      {
+        _localSize += 2;
+      }
+    }
+
+    if (!_lockCenter)
+    {
+      _localSize += 2;
+    }
+
+    if (!_lockDistortion)
+    {
+      _localSize += _distortionSize;
+    }
+  }
+
+  virtual ~IntrinsicsParameterization() = default;
+
+
+  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
+  {
+    for (int i = 0; i < _globalSize; i++)
+    {
+      x_plus_delta[i] = x[i];
+    }
+    
+    size_t posDelta = 0;
+    if (!_lockFocal)
+    {
+      if (_lockFocalRatio)
+      {
+        x_plus_delta[0] = x[0] + delta[posDelta]; 
+        x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
+        posDelta++;
+      }
+      else
+      {
+        x_plus_delta[0] = x[0] + delta[posDelta];
+        posDelta++;
+        x_plus_delta[1] = x[1] + delta[posDelta];
+        posDelta++;
+      }
+    }
+
+    if (!_lockCenter)
+    {
+      x_plus_delta[2] = x[2] + delta[posDelta]; 
+      posDelta++;
+
+      x_plus_delta[3] = x[3] + delta[posDelta];
+      posDelta++;
+    }
+
+    if (!_lockDistortion)
+    {
+      for (int i = 0; i < _distortionSize; i++)
+      {
+        x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
+        posDelta++;
+      }
+    }
+
+    return true;
+  }
+
+  bool ComputeJacobian(const double* x, double* jacobian) const override
+  {    
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
+
+    J.fill(0);
+
+    size_t posDelta = 0;
+    if (!_lockFocal)
+    {
+      if (_lockFocalRatio)
+      {
+        J(0, posDelta) = 1.0;
+        J(1, posDelta) = _focalRatio;
+        posDelta++;
+      }
+      else
+      {
+        J(0, posDelta) = 1.0;
+        posDelta++;
+        J(1, posDelta) = 1.0;
+        posDelta++;
+      }
+    }
+
+    if (!_lockCenter)
+    {
+      J(2, posDelta) = 1.0;
+      posDelta++;
+
+      J(3, posDelta) = 1.0;
+      posDelta++;
+    }
+
+    if (!_lockDistortion)
+    {
+      for (int i = 0; i < _distortionSize; i++)
+      {
+        J(4 + i, posDelta) = 1.0;
+        posDelta++;
+      }
+    }
+
+    return true;
+  }
+
+  int GlobalSize() const override 
+  {
+    return _globalSize;
+  }
+
+  int LocalSize() const override 
+  { 
+    return _localSize; 
+  }
+
+ private:
+  size_t _distortionSize;
+  size_t _globalSize;
+  size_t _localSize;
+  double _focalRatio;
+  bool _lockFocal;
+  bool _lockFocalRatio;
+  bool _lockCenter;
+  bool _lockDistortion;
+};
+
+
 class CostProjection : public ceres::CostFunction {
 public:
   CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig) {
@@ -382,6 +534,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
   const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
   const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
   const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
+  const bool fixFocalRatio = true;
 
   std::map<IndexT, std::size_t> intrinsicsUsage;
 
@@ -435,7 +588,11 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     }
 
     // constant parameters
-    std::vector<int> constantIntrinisc;
+    bool lockCenter = false;
+    bool lockFocal = false;
+    bool lockRatio = true;
+    bool lockDistortion = false;
+    double focalRatio = 1.0;
 
     // refine the focal length
     if(refineIntrinsicsFocalLength)
@@ -458,11 +615,13 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
         problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
       }
+
+      focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
     }
     else
     {
       // set focal length as constant
-      constantIntrinisc.push_back(0);
+      lockFocal = true;
     }
 
     const std::size_t minImagesForOpticalCenter = 3;
@@ -484,20 +643,17 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     else
     {
       // don't refine the optical center
-      constantIntrinisc.push_back(2);
-      constantIntrinisc.push_back(3);
+      lockCenter = true;
     }
 
     // lens distortion
     if(!refineIntrinsicsDistortion)
-      for(std::size_t i = 4; i < intrinsicBlock.size(); ++i)
-        constantIntrinisc.push_back(i);
-
-    if(!constantIntrinisc.empty())
     {
-      ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(intrinsicBlock.size(), constantIntrinisc);
-      problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
+      lockDistortion = true;
     }
+
+    IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
+    problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }
