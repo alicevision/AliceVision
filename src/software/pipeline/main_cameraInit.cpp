@@ -440,7 +440,14 @@ int aliceVision_main(int argc, char **argv)
     {
       try
       {
-        const int subPoseId = std::stoi(parentPath.stem().string());
+        IndexT subPoseId;
+        std::string prefix;
+        std::string suffix;
+        if(!sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), subPoseId, prefix, suffix))
+        {
+          throw std::exception("Cannot find sub-pose id from image path.");
+        }
+
         std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
 
@@ -449,7 +456,7 @@ int aliceVision_main(int argc, char **argv)
       }
       catch(std::exception& e)
       {
-        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
+        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << e.what() << std::endl << "Used as single image.");
       }
     }
 
