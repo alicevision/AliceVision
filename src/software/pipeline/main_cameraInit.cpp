@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <stdexcept>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -445,7 +446,7 @@ int aliceVision_main(int argc, char **argv)
         std::string suffix;
         if(!sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), subPoseId, prefix, suffix))
         {
-          throw std::exception("Cannot find sub-pose id from image path.");
+          throw std::runtime_error("Cannot find sub-pose id from image path.");
         }
 
         std::hash<std::string> hash; // TODO use boost::hash_combine
