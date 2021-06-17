@@ -91,5 +91,23 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 */
 std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders);
 
+
+/*
+* @brief Allows to detect if an image filename (stripped of its extension) contains a number.
+*        This function can be used to detect if an image is part of an image sequence from the analysis of its filename.
+*        Expected pattern: (optional prefix which ends with a non digit character)(a number)(optional suffix with at least one letter which starts with a separator ('.', '-', '_'))
+*          Examples:
+*          IMG01234
+*          IMG_01234.cam
+*          C4M0123-A
+*          01234
+* @param[in] imagePathStem the image filename stripped of its extension
+* @param[out] number the detected number (or UndefinedIndexT)
+* @param[out] prefix the detected prefix (or empty)
+* @param[out] suffix the detected suffix (or empty)
+* @return true if the image filename (stripped of its extension) contains a number
+*/
+bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number, std::string& prefix, std::string& suffix);
+
 } // namespace sfmDataIO
 } // namespace aliceVision

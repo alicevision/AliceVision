@@ -10,6 +10,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
+#include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
@@ -35,7 +36,7 @@ namespace fs = boost::filesystem;
 
 
 oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincipalPoint)
-               
+
 {
     std::vector<Vec2> pointToBeChecked;
     pointToBeChecked.push_back(Vec2(0, 0));
@@ -394,34 +395,25 @@ int aliceVision_main(int argc, char** argv)
       continue;
 
     std::string cameraName =  view.getMetadataMake() + "_" + view.getMetadataModel();
-    std::size_t frameN = 0;
+    IndexT frameN = 0;
     bool isSequence = false;
 
     if(view.isPartOfRig())
       cameraName += std::string("_") + std::to_string(view.getSubPoseId());
 
-    // check if the image is in a sequence
-    // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
-    std::regex regexFrame("^(.*\\D)?"    // the optional prefix which end with a non digit character
-                      "([0-9]+)"         // the sequence frame number
-                      "([\\-_\\.]"       // the suffix start with a separator
-                      ".*[[:alpha:]].*"  // at least one letter in the suffix
-                      ")?$"              // suffix is optional
-                      );
-
-    std::smatch matches;
-    if(std::regex_search(imagePathStem, matches, regexFrame))
     {
-        const std::string prefix = matches[1];
-        const std::string suffix = matches[3];
-        frameN = std::stoi(matches[2]);
+      std::string prefix;
+      std::string suffix;
 
+      if(sfmDataIO::extractNumberFromFileStem(imagePathStem, frameN, prefix, suffix))
+      {
         if(prefix.empty() && suffix.empty())
             cameraName = std::string("Undefined") + "_" + cameraName;
         else
             cameraName = prefix + "frame" + suffix + "_" + cameraName;
 
         isSequence = true;
+      }
     }
 
     ALICEVISION_LOG_TRACE("imagePathStem: " << imagePathStem << ", frameN: " << frameN << ", isSequence: " << isSequence << ", cameraName: " << cameraName);

@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <stdexcept>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -440,19 +441,35 @@ int aliceVision_main(int argc, char **argv)
     {
       try
       {
-        const int frameId = std::stoi(fs::path(view.getImagePath()).stem().string());
-        const int subPoseId = std::stoi(parentPath.stem().string());
+        IndexT subPoseId;
+        std::string prefix;
+        std::string suffix;
+        if(!sfmDataIO::extractNumberFromFileStem(parentPath.stem().string(), subPoseId, prefix, suffix))
+        {
+          ALICEVISION_THROW_ERROR("Cannot find sub-pose id from image path: " << parentPath);
+        }
+
         std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
-        view.setFrameId(static_cast<IndexT>(frameId));
 
         #pragma omp critical
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;
       }
       catch(std::exception& e)
       {
-        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
+        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << e.what() << std::endl << "Used as single image.");
       }
+    }
+
+    // try to detect image sequence
+    {
+        IndexT frameId;
+        std::string prefix;
+        std::string suffix;
+        if(sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
+        {
+          view.setFrameId(frameId);
+        }
     }
     
     if(boost::algorithm::starts_with(parentPath.stem().string(), "ps_") ||
