@@ -2,12 +2,14 @@
 set(photometric_stereo_headers
     photometricDataIO.hpp
     normalIntegration.hpp
+    photometricStereo.hpp
 )
 
 # Sources
 set(photometric_stereo_sources
     photometricDataIO.cpp
     normalIntegration.cpp
+    photometricStereo.cpp
 )
 
 alicevision_add_library(aliceVision_photometricStereo
@@ -16,5 +18,7 @@ alicevision_add_library(aliceVision_photometricStereo
     aliceVision_system
     aliceVision_image
     aliceVision_sfmData
+    aliceVision_sfmDataIO
+    aliceVision_mvsData
     Boost::filesystem
 )

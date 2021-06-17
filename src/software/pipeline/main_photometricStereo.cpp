@@ -8,6 +8,8 @@
 // Photometric Stereo
 #include <aliceVision/photometricStereo/photometricDataIO.hpp>
 #include <aliceVision/photometricStereo/normalIntegration.hpp>
+#include <aliceVision/photometricStereo/photometricStereo.hpp>
+
 
 // Command line parameters
 #include <aliceVision/system/main.hpp>
@@ -45,22 +47,18 @@ int aliceVision_main(int argc, char **argv)
     namespace po = boost::program_options;
     namespace fs = boost::filesystem;
 
-    std::string dataFolder;
-    std::vector<int> usedPictures;
+    std::string inputPath;
     bool isPerspective;
-    std::string pathToK;
-    std::string pathToCM;
     std::string pathToDM;
+    std::string pathToK;
 
     po::options_description allParams("AliceVision photometricStereo");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("dataFolder,d", po::value<std::string>(&dataFolder)->required(), "Data folder")
-    ("usedPictures,i", po::value<std::vector<int>>(&usedPictures)->required()->multitoken(), "usedPictures")
-    ("isPerspective,p", po::value<bool>(&isPerspective)->required(), "isPerspective")
-    ("pathToK,k", po::value<std::string>(&pathToK)->required(), "pathToK")
-    ("pathToConvertionM,c", po::value<std::string>(&pathToCM)->required(), "pathToCM")
-    ("pathToDM,o", po::value<std::string>(&pathToDM)->required(), "pathToDM.");
+    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
+    ("pathToK,k", po::value<std::string>(&pathToK)->default_value(""), "pathToK.")
+    ("isPerspective,c", po::value<bool>(&isPerspective)->default_value(false), "isPerspective")
+    ("pathToDM,o", po::value<std::string>(&pathToDM)->default_value(""), "pathToDM.");
 
     allParams.add(requiredParams);
 
@@ -92,84 +90,12 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
 
+    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm;
+    
+    photometricStero(inputPath, isPerspective, normalsIm);
 
-    // Load light instensities
-    std::vector<std::array<float, 3>> intList;
-    const std::string intFileName = dataFolder + "light_intensities.txt";
-    loadLightIntensities(intFileName, usedPictures, intList);
-
-    // Load light directions
-    Eigen::MatrixXf convertionMatrix = Eigen::MatrixXf::Zero(3,3);
-    readMatrix(pathToCM, convertionMatrix);
-    Eigen::MatrixXf lightMat(3*usedPictures.size(), 3);
-    const std::string dirFileName = dataFolder + "light_directions.txt";
-    loadLightDirections(dirFileName, usedPictures, convertionMatrix, lightMat);
-
-    // Read mask
-    const std::string maskName = dataFolder + "mask.png";
-    aliceVision::image::Image<float> mask;
-    loadMask(maskName, mask);
-
-    std::vector<int> indexes;
-    getIndMask(mask, indexes);
-    size_t maskSize = indexes.size();
-
-    const int pictRows = mask.rows();
-    const int pictCols = mask.cols();
-
-    Eigen::MatrixXf currentPicture(3,pictRows*pictCols);
-    Eigen::MatrixXf allPictures(3*usedPictures.size(), pictRows*pictCols);
-    Eigen::MatrixXf imMat(3*usedPictures.size(), maskSize);
-
-    std::string picturePath;
-    std::string pictureName;
-
-    // Read pictures
-    for (size_t i = 0; i < usedPictures.size(); ++i)
-    {
-        std::ostringstream ss;
-        ss << std::setw(3) << std::setfill('0') << usedPictures.at(i);
-        pictureName = ss.str();
-
-        picturePath = dataFolder + pictureName +".png";
-
-        aliceVision::image::Image<aliceVision::image::RGBfColor> imageFloat;
-        aliceVision::image::ImageReadOptions options;
-        options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
-        aliceVision::image::readImage(picturePath, imageFloat, options);      
-        intensityScaling(intList.at(i), imageFloat);        
-        image2PsMatrix(imageFloat, currentPicture);
-
-        allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
-    }
-
-    applyMask(allPictures, indexes, imMat);
-
-    Eigen::MatrixXf lightMatTranspose = lightMat.transpose();
-    Eigen::Matrix3f product = lightMatTranspose*lightMat;
-    Eigen::MatrixXf pseudoInverse = product.inverse()*lightMatTranspose;
-
-    Eigen::MatrixXf M = pseudoInverse*imMat;
-        
-    for (int j = 0; j < M.cols(); ++j)
-    {
-        M.col(j).normalize();
-    }
-
-    Eigen::MatrixXf normals = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
-        
-    for (size_t j = 0; j < maskSize; ++j)
-    {
-        int currentIdx = indexes.at(j);
-        for (size_t i = 0; i < 3; ++i)
-        {
-            normals(i,currentIdx) = M(i,j);
-        }
-    }
-
-    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
-    normals2picture(normals, normalsIm);
-
+    int pictCols = normalsIm.Width();
+    int pictRows = normalsIm.Height();
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     readMatrix(pathToK, K);

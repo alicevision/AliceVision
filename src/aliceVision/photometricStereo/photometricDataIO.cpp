@@ -6,74 +6,66 @@
 
 #include "photometricDataIO.hpp"
 
-void loadLightIntensities(const std::string& intFileName, const std::vector<int>& usedPictures, std::vector<std::array<float, 3>>& intList)
+void loadLightIntensities(const std::string& intFileName, std::vector<std::array<float, 3>>& intList)
 {
     std::stringstream stream;
     std::string line;
     float x,y,z;
-    
+
     std::fstream intFile;
     intFile.open(intFileName, std::ios::in);
-    
+
     if (intFile.is_open())
     {
-		int cpt = 1;
-		
+
         while(!intFile.eof())
         {
-			std::getline(intFile,line);
-			stream.clear();
-			stream.str(line);
-				
-			if(std::find(usedPictures.begin(), usedPictures.end(), cpt) != usedPictures.end())
-			{
-				stream >> x >> y >> z;
-				std::array<float, 3> v = {x, y, z};
-				intList.push_back(v);
-			}
-			
-			++cpt;
+            std::getline(intFile,line);
+            stream.clear();
+            stream.str(line);
+
+            stream >> x >> y >> z;
+            std::array<float, 3> v = {x, y, z};
+            intList.push_back(v);
         }
+        intList.pop_back();
         intFile.close();
     }
 }
 
-void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat)
+
+void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat)
 {
     std::stringstream stream;
     std::string line;
     float x,y,z;
-    
+
     std::fstream dirFile;
     dirFile.open(dirFileName, std::ios::in);
-    
+
     if (dirFile.is_open())
     {
-        int cpt = 1;
-		int lineNumber = 0;
-		
-        while(! dirFile.eof())
+        int lineNumber = 0;
+
+        while(!dirFile.eof())
         {
             getline(dirFile,line);
             stream.clear();
             stream.str(line);
-		
-			if(std::find(usedPictures.begin(), usedPictures.end(), cpt) != usedPictures.end())
-			{
-				stream >> x >> y >> z;
-                for(int i = 0; i< 3; ++i)
-                {
-                    lightMat(lineNumber, 0) = convertionMatrix(0,0)*x + convertionMatrix(0,1)*y + convertionMatrix(0,2)*z;
-                    lightMat(lineNumber, 1) = convertionMatrix(1,0)*x + convertionMatrix(1,1)*y + convertionMatrix(1,2)*z;
-                    lightMat(lineNumber, 2) = convertionMatrix(2,0)*x + convertionMatrix(2,1)*y + convertionMatrix(2,2)*z;
-				
-                    ++lineNumber;
 
+            stream >> x >> y >> z;
+            for(int i = 0; i< 3; ++i)
+            {
+                if(lineNumber < lightMat.rows())
+                {
+                  lightMat(lineNumber, 0) = convertionMatrix(0,0)*x + convertionMatrix(0,1)*y + convertionMatrix(0,2)*z;
+                  lightMat(lineNumber, 1) = convertionMatrix(1,0)*x + convertionMatrix(1,1)*y + convertionMatrix(1,2)*z;
+                  lightMat(lineNumber, 2) = convertionMatrix(2,0)*x + convertionMatrix(2,1)*y + convertionMatrix(2,2)*z;
+                  ++lineNumber;
                 }
-			}
-			++cpt;
-      }
-      dirFile.close();
+            }
+        }
+        dirFile.close();
     }
 }
 

@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-void loadLightIntensities(const std::string& intFileName, const std::vector<int>& usedPictures, std::vector<std::array<float, 3>>& intList);
+void loadLightIntensities(const std::string& intFileName, std::vector<std::array<float, 3>>& intList);
 
-void loadLightDirections(const std::string& dirFileName, const std::vector<int>& usedPictures, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat);
+void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat);
 
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask);
 
