@@ -446,7 +446,7 @@ int aliceVision_main(int argc, char **argv)
         std::string suffix;
         if(!sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), subPoseId, prefix, suffix))
         {
-          throw std::runtime_error("Cannot find sub-pose id from image path.");
+          ALICEVISION_THROW_ERROR("Cannot find sub-pose id from image path: " << parentPath);
         }
 
         std::hash<std::string> hash; // TODO use boost::hash_combine
