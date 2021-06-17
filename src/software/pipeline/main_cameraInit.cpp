@@ -444,7 +444,7 @@ int aliceVision_main(int argc, char **argv)
         IndexT subPoseId;
         std::string prefix;
         std::string suffix;
-        if(!sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), subPoseId, prefix, suffix))
+        if(!sfmDataIO::extractNumberFromFileStem(parentPath.stem().string(), subPoseId, prefix, suffix))
         {
           ALICEVISION_THROW_ERROR("Cannot find sub-pose id from image path: " << parentPath);
         }
