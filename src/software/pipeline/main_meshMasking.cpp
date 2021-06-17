@@ -67,15 +67,111 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
     return false;
 }
 
+StaticVector<int> computeDiffVisibilities(const StaticVector<int>& A, const StaticVector<int>& B)
+{
+    assert(std::is_sorted(A.begin(), A.end()));
+    assert(std::is_sorted(B.begin(), B.end()));
+    StaticVector<int> diff;
+    std::set_symmetric_difference(A.begin(), A.end(), B.begin(), B.end(), std::back_inserter(diff.getDataWritable()));
+    return diff;
+}
+
+Point3d findBoundaryVertex(
+    const mesh::Mesh& mesh,
+    int visibleVertexId,
+    int hiddenVertexId,
+    const mvsUtils::MultiViewParams& mp,
+    const std::vector<std::string>& masksFolders,
+    int threshold,
+    bool invert
+    )
+{
+    // find the cameras that make a difference, we only need to sample those
+    const auto& visibleVertexVisibilities = mesh.pointsVisibilities[visibleVertexId];
+    const auto& hiddenVertexVisibilities = mesh.pointsVisibilities[hiddenVertexId];
+    assert(visibleVertexVisibilities.size() > hiddenVertexVisibilities.size());
+    assert(hiddenVertexVisibilities.size() < threshold);
+
+    const auto diffVisibilities = computeDiffVisibilities(visibleVertexVisibilities, hiddenVertexVisibilities);
+    assert(diffVisibilities.size() > 0);
+    assert(std::is_sorted(diffVisibilities.begin(), diffVisibilities.end()));
+
+    // compute the visibility is already acquired and that does not change along the edge.
+    // <=> is in hiddenVertexVisibilities but not in diffVisibilities
+    const int baseVisibility = std::count_if(hiddenVertexVisibilities.begin(), hiddenVertexVisibilities.end(),
+        [&diffVisibilities] (int camId) { return diffVisibilities.indexOfSorted(camId) == -1; });
+
+    // preload masks
+    std::map<int, image::Image<unsigned char>> masks;
+    for (const int camId : diffVisibilities)
+    {
+        const bool loaded = tryLoadMask(&masks[camId], masksFolders, mp.getViewId(camId), mp.getImagePath(camId));
+        assert(loaded);  // invalid masks are already ignored.
+    }
+
+    // compute minimal distance according to the mask resolution
+    const Point3d leftPoint = mesh.pts[visibleVertexId];
+    const Point3d rightPoint = mesh.pts[hiddenVertexId];
+    const float minDistance = [&]
+    {
+        const int camId = diffVisibilities[0];  // use a single mask, supposing they are all equivalent
+        Pixel leftPixel, rightPixel;
+        mp.getPixelFor3DPoint(&leftPixel, leftPoint, camId);
+        mp.getPixelFor3DPoint(&rightPixel, rightPoint, camId);
+        const int manhattanDistance = std::abs(rightPixel.x - leftPixel.x) + std::abs(rightPixel.y - leftPixel.y);
+        return 1.f / float(manhattanDistance);
+    }();
+
+    // binary search in continuous space along the edge
+    float left = 0.f;  // is the visible area
+    float right = 1.f;  // is the hidden area
+    while (true)
+    {
+        const float mid = (left + right) * 0.5f;
+        const Point3d midPoint = leftPoint + (rightPoint - leftPoint) * mid;
+
+        if (mid - left < minDistance)
+        {
+            return midPoint;
+        }
+
+        int diffVisibility = 0;
+        for (const int camId : diffVisibilities)
+        {
+            const auto& mask = masks[camId];
+
+            Pixel projectedPixel;
+            mp.getPixelFor3DPoint(&projectedPixel, midPoint, camId);
+            if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
+             || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
+            {
+                continue;
+            }
+
+            const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
+            const bool masked = invert ? !maskValue : maskValue;
+            if (!masked)
+            {
+                ++diffVisibility;
+            }
+        }
+
+        const bool isVisible = (baseVisibility + diffVisibility) >= threshold;
+        float& newBoundary = isVisible ? left : right;
+        newBoundary = mid;
+    }
+}
+
 void meshMasking(
     const mvsUtils::MultiViewParams & mp,
-    const mesh::Mesh & inputMesh,
+    mesh::Mesh & inputMesh,
     const std::vector<std::string> & masksFolders,
     const std::string & outputMeshPath,
     int threshold,
     bool invert)
 {
     // compute visibility for every vertex
+    // also update inputMesh.pointsVisibilities according to the masks
     StaticVector<int> vertexVisibilityCounters;
     vertexVisibilityCounters.resize_with(inputMesh.pts.size(), 0);
     for (int camId = 0; camId < mp.getNbCameras(); ++camId)
@@ -111,13 +207,18 @@ void meshMasking(
             if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
              || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
             {
+                pointVisibilities.remove(pointVisibilityIndex);  // not visible
                 continue;
             }
 
             // get the mask value
             const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
             const bool masked = invert ? !maskValue : maskValue;
-            if (!masked)
+            if (masked)
+            {
+                pointVisibilities.remove(pointVisibilityIndex);  // not visible
+            }
+            else
             {
                 ++vertexVisibilityCounters[vertexId];
             }
@@ -125,26 +226,91 @@ void meshMasking(
     }
 
     // filter masked vertex (remove adjacent triangles)
-    StaticVector<int> visibleTriangles;
-    visibleTriangles.reserve(inputMesh.tris.size() / 2);  // arbitrary size initial buffer
-    for (int triangleId = 0; triangleId < inputMesh.tris.size(); ++triangleId)
+    mesh::Mesh filteredMesh;
+    StaticVector<int> inputPtIdToFilteredPtId;
+
     {
-        const auto& triangle = inputMesh.tris[triangleId];
-        const bool visible = std::all_of(std::begin(triangle.v), std::end(triangle.v), [&vertexVisibilityCounters, threshold](const int vertexId)
-            {
-                return vertexVisibilityCounters[vertexId] >= threshold;
-            });
-        if (visible)
+        const auto isVertexVisible = [&vertexVisibilityCounters, threshold] (const int vertexId)
         {
-            visibleTriangles.push_back(triangleId);
+            return vertexVisibilityCounters[vertexId] >= threshold;
+        };
+
+        StaticVector<int> visibleTriangles;
+        visibleTriangles.reserve(inputMesh.tris.size() / 2);  // arbitrary size initial buffer
+        for (int triangleId = 0; triangleId < inputMesh.tris.size(); ++triangleId)
+        {
+            const auto& triangle = inputMesh.tris[triangleId];
+            const bool visible = std::any_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
+            if (visible)
+            {
+                visibleTriangles.push_back(triangleId);
+            }
+        }
+
+        inputMesh.generateMeshFromTrianglesSubset(visibleTriangles, filteredMesh, inputPtIdToFilteredPtId);
+    }
+
+    // smooth border triangles using masks
+    {
+        // build visibility counters + cameraId/point visibilities for the filtered mesh
+        StaticVector<int> filteredVertexVisibilityCounters;
+        filteredVertexVisibilityCounters.resize_with(filteredMesh.pts.size(), 0);
+        filteredMesh.pointsVisibilities.resize(filteredMesh.pts.size());
+        for (int inputPtId = 0; inputPtId < inputMesh.pts.size(); ++inputPtId)
+        {
+            const int filteredPtId = inputPtIdToFilteredPtId[inputPtId];
+            if (filteredPtId >= 0)
+            {
+                filteredVertexVisibilityCounters[filteredPtId] = vertexVisibilityCounters[inputPtId];
+
+                // fill visibilities and ensure they are sorted (we rely on it in findBoundaryVertex)
+                auto& pointVisibilities = filteredMesh.pointsVisibilities[filteredPtId];
+                pointVisibilities = inputMesh.pointsVisibilities[inputPtId];
+                if (!std::is_sorted(pointVisibilities.begin(), pointVisibilities.end()))
+                {
+                    std::sort(pointVisibilities.begin(), pointVisibilities.end());
+                }
+            }
+        }
+
+        const auto isVertexVisible = [&filteredVertexVisibilityCounters, threshold](const int vertexId)
+        {
+            return filteredVertexVisibilityCounters[vertexId] >= threshold;
+        };
+
+        for (int triangleId = 0; triangleId < filteredMesh.tris.size(); ++triangleId)
+        {
+            const auto& triangle = filteredMesh.tris[triangleId];
+            const auto visibleCount = std::count_if(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
+            if (visibleCount == 3)
+            {
+                // do nothing
+            }
+            else if (visibleCount == 2)
+            {
+                // TODO
+            }
+            else if (visibleCount == 1)
+            {
+                const auto visibleIdx = std::find_if(std::begin(triangle.v), std::end(triangle.v), isVertexVisible) - std::begin(triangle.v);
+                const auto visibleVertexId = triangle.v[visibleIdx];
+                for (int i : {1, 2})
+                {
+                    const auto hiddenIdx = (visibleIdx + i) % 3;
+                    const auto hiddenVertexId = triangle.v[hiddenIdx];
+                    const auto boundaryPoint = findBoundaryVertex(filteredMesh, visibleVertexId, hiddenVertexId, mp, masksFolders, threshold, invert);
+                    filteredMesh.pts[hiddenVertexId] = boundaryPoint;
+                }
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("A triangle was visible but is not visible anymore.");
+            }
         }
     }
-    mesh::Mesh outMesh;
-    mesh::PointVisibility outPointVisibility;
-    inputMesh.generateMeshFromTrianglesSubset(visibleTriangles, outMesh, outPointVisibility);
 
     // Save output mesh
-    outMesh.saveToObj(outputMeshPath);
+    filteredMesh.saveToObj(outputMeshPath);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 }
