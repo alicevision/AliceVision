@@ -766,6 +766,8 @@ int aliceVision_main(int argc, char* argv[])
             image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);
             image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
         }
+
+        sfmData.getDistortionPatterns().push_back(points);
     }
 
     if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
