@@ -52,7 +52,8 @@ using Constraints2D = std::vector<Constraint2D>;
 using RotationPriors = std::vector<RotationPrior>;
 
 ///Define a collection of distortion patterns
-using DistortionPatterns = std::vector<calibration::PointPair>;
+using DistortionPattern = std::vector<calibration::PointPair>;
+using DistortionPatterns = std::vector<DistortionPattern>;
 
 /**
  * @brief SfMData container

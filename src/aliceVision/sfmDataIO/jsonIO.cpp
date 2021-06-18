@@ -323,6 +323,40 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
   }
 }
 
+bool saveDistortionPattern(const sfmData::DistortionPattern & distortionPattern, bpt::ptree& parentTree)
+{
+  bpt::ptree dpatternTree;
+
+  for(const auto& ppair : distortionPattern)
+  {
+    bpt::ptree ppairTree;
+    saveMatrix("distorted", ppair.distortedPoint, ppairTree);
+    saveMatrix("undistorted", ppair.undistortedPoint, ppairTree);
+
+    dpatternTree.push_back(std::make_pair("", ppairTree));
+  }
+
+  parentTree.push_back(std::make_pair("distortionPattern", dpatternTree));
+
+  return true;
+}
+
+bool loadDistortionPattern(sfmData::DistortionPattern& distortionPattern, bpt::ptree& dPatternTree)
+{
+
+  for(bpt::ptree::value_type & ppairsNode : dPatternTree.get_child(""))
+  {
+    bpt::ptree& ppairsTree = ppairsNode.second;
+
+    calibration::PointPair pp;
+    loadMatrix("distorted", pp.distortedPoint, ppairsTree);
+    loadMatrix("undistorted", pp.undistortedPoint, ppairsTree);
+
+    distortionPattern.push_back(pp);
+  }
+
+  return true;
+}
 
 bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
@@ -336,6 +370,7 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   const bool saveControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool saveFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool saveObservations = saveFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
+  const bool saveDPatterns = ((partFlag & DISTORTIONPATTERNS) == DISTORTIONPATTERNS);
 
   // main tree
   bpt::ptree fileTree;
@@ -448,8 +483,20 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
     fileTree.add_child("controlPoints", controlPointTree);
   }
 
-  // write the json file with the tree
+  // control points
+  if(saveDPatterns && !sfmData.getDistortionPatterns().empty())
+  {
+    bpt::ptree distortionPatternsTree;
 
+    for(const auto& dPattern : sfmData.getDistortionPatterns())
+    {
+      saveDistortionPattern(dPattern, distortionPatternsTree);
+    }
+
+    fileTree.add_child("distortionPatterns", distortionPatternsTree);
+  }
+
+  // write the json file with the tree
   bpt::write_json(filename, fileTree);
 
   return true;
@@ -468,6 +515,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
   const bool loadControlPoints = (partFlag & CONTROL_POINTS) == CONTROL_POINTS;
   const bool loadFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
   const bool loadObservations = loadFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
+  const bool loadDPatterns = ((partFlag & DISTORTIONPATTERNS) == DISTORTIONPATTERNS);
 
   // main tree
   bpt::ptree fileTree;
@@ -611,6 +659,20 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       loadLandmark(landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
 
       structure.emplace(landmarkId, landmark);
+    }
+  }
+
+  // structure
+  if(loadDPatterns && fileTree.count("distortionPatterns"))
+  {
+    sfmData::DistortionPatterns& dPatterns = sfmData.getDistortionPatterns();
+
+    for(bpt::ptree::value_type &dPatternNode : fileTree.get_child("distortionPatterns"))
+    {
+      sfmData::DistortionPattern dPattern;
+      loadDistortionPattern(dPattern, dPatternNode.second);
+
+      dPatterns.push_back(dPattern);
     }
   }
 
