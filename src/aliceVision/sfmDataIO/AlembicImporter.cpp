@@ -844,6 +844,52 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
     sfmdata.addMatchesFolder(matchesFolder);
   }
 
+  if (const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("distortionPatterns_count"))
+  {
+    int count = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "distortionPatterns_count", sampleFrame);
+
+    sfmData::DistortionPatterns & patterns = sfmdata.getDistortionPatterns();
+    for (int id = 0; id < count; id++)
+    {
+      sfmData::DistortionPattern pattern;
+      
+      std::stringstream name;
+      name << "dpattern" << std::setfill('0') << std::setw(5) << id;
+
+      Abc::ICompoundProperty prop(userProps, name.str());
+      
+      Abc::IDoubleArrayProperty undistProp(prop, "undistorted");
+      Abc::IDoubleArrayProperty distProp(prop, "distorted");
+      Abc::IDoubleArrayProperty::sample_ptr_type undistorted;
+      Abc::IDoubleArrayProperty::sample_ptr_type distorted;
+      
+      undistProp.get(undistorted, ISampleSelector(sampleFrame));
+      distProp.get(distorted, ISampleSelector(sampleFrame));
+
+      if (undistorted->size() != distorted->size())
+      {
+        ALICEVISION_LOG_ERROR("Distortion Patterns have incoherent values");
+      }
+
+      const double * ptrUndist = undistorted->get();
+      const double * ptrDist = distorted->get();
+
+      for (int i = 0; i < distorted->size(); i += 2)
+      {
+        calibration::PointPair pp;
+
+        pp.undistortedPoint.x() = ptrUndist[i];
+        pp.undistortedPoint.y() = ptrUndist[i + 1];
+        pp.distortedPoint.x() = ptrDist[i];
+        pp.distortedPoint.y() = ptrDist[i + 1];
+
+        pattern.push_back(pp);
+      }
+
+      patterns.push_back(pattern);
+    }
+  }
+
   // TODO : handle the case where the archive wasn't correctly opened
   M44d xformMat;
   visitObject(abcVersion, _dataImpl->_rootEntity, xformMat, sfmdata, flagsPart);

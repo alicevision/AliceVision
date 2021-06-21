@@ -68,6 +68,12 @@ public:
                     bool withFeatures = true);
 
   /**
+   * @brief Add a set of distortion patterns
+   * @param[in] distortionPatterns 3D patterns to add
+   */
+  void addDistortionPatterns(const sfmData::DistortionPatterns & distortionPatterns);
+
+  /**
    * @brief Add a camera
    * @param[in] name The camera identifier
    * @param[in] view The corresponding view

@@ -34,6 +34,7 @@ struct AlembicExporter::DataImpl
     _mvgRoot = Alembic::AbcGeom::OXform(_topObj, "mvgRoot");
     _mvgCameras = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCameras");
     _mvgCamerasUndefined = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCamerasUndefined");
+    _mvgDistortionPatterns = Alembic::AbcGeom::OXform(_mvgRoot, "mvgDistortionPatterns");
     _mvgCloud = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCloud");
     _mvgPointCloud = Alembic::AbcGeom::OXform(_mvgCloud, "mvgPointCloud");
 
@@ -72,6 +73,7 @@ struct AlembicExporter::DataImpl
   Alembic::AbcGeom::OXform _mvgCamerasUndefined;
   Alembic::AbcGeom::OXform _mvgCloud;
   Alembic::AbcGeom::OXform _mvgPointCloud;
+  Alembic::AbcGeom::OXform _mvgDistortionPatterns;
   Alembic::AbcGeom::OXform _xform;
   Alembic::AbcGeom::OCamera _camObj;
   Alembic::AbcGeom::OUInt32ArrayProperty _propSensorSize_pix;
@@ -294,6 +296,39 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
       for(const auto& poseViewIds : rigPair.second)
         addSfMCameraRig(sfmData, rigPair.first, poseViewIds.second, flagsPart); // add one camera rig per rig pose
     }
+  }
+
+  if (flagsPart & ESfMData::DISTORTIONPATTERNS)
+  {
+    addDistortionPatterns(sfmData.getDistortionPatterns());
+  }
+}
+
+void AlembicExporter::addDistortionPatterns(const sfmData::DistortionPatterns & distortionPatterns)
+{
+  OCompoundProperty userProps = _dataImpl->_mvgRoot.getProperties();
+
+  size_t count = distortionPatterns.size(); 
+  OUInt32Property(userProps, "distortionPatterns_count").set(count);
+
+  for (int id = 0; id < count; id++)
+  {
+    std::stringstream name;
+    name << "dpattern" << std::setfill('0') << std::setw(5) << id;
+
+    OCompoundProperty pattern(userProps, name.str());
+
+    std::vector<double> distorted, undistorted;
+    for (auto item : distortionPatterns[id])
+    {
+      distorted.push_back(item.distortedPoint.x()); 
+      distorted.push_back(item.distortedPoint.y()); 
+      undistorted.push_back(item.undistortedPoint.x()); 
+      undistorted.push_back(item.undistortedPoint.y()); 
+    }
+
+    ODoubleArrayProperty(pattern, "distorted").set(distorted);
+    ODoubleArrayProperty(pattern, "undistorted").set(undistorted);
   }
 }
 
