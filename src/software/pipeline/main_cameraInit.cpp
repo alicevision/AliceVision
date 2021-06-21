@@ -49,7 +49,7 @@ namespace fs = boost::filesystem;
 
 /**
  * @brief Recursively list all files from a folder with a specific extension
- * @param[in] folderOrFile A file or foder path
+ * @param[in] folderOrFile A file or folder path
  * @param[in] extensions An extensions filter
  * @param[out] outFiles A list of output image paths
  * @return true if folderOrFile have been load successfully
