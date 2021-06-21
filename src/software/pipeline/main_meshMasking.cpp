@@ -67,6 +67,105 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
     return false;
 }
 
+/**
+ * @brief Basic cache system to manage masks.
+ * 
+ * It keeps the latest "maxSize" (defaut = 16) masks in memory.
+ */
+struct MaskCache
+{
+    MaskCache(const mvsUtils::MultiViewParams& mp, const std::vector<std::string>& masksFolders, int maxSize = 16)
+        : _mp(mp)
+        , _masksFolders(masksFolders)
+        , _maxSize(maxSize)
+    {
+    }
+
+    image::Image<unsigned char>* lock(int camId)
+    {
+        Item * item = findItem(camId);
+        if (item)
+        {
+            assert(item->locks > 0);
+            ++item->locks;
+            item = pushToLowPriority(camId);
+            assert(item->camId == camId);
+            return item->mask.get();
+        }
+        else
+        {
+            if (_cache.size() >= _maxSize)
+            {
+                tryFreeUnlockedItem();
+            }
+
+            _cache.push_back({ camId, std::make_unique<image::Image<unsigned char>>(), 0 });
+            item = &_cache.back();
+            const bool loaded = tryLoadMask(item->mask.get(), _masksFolders, _mp.getViewId(camId), _mp.getImagePath(camId));
+            if (loaded)
+            {
+                item->locks = 1;
+                return item->mask.get();
+            }
+            else
+            {
+                _cache.pop_back();
+                return nullptr;
+            }
+        }
+    }
+
+    void unlock(int camId)
+    {
+        Item* item = findItem(camId);
+        assert(item);
+        assert(item->locks > 0);
+        --item->locks;
+    }
+
+private:
+    struct Item
+    {
+        int camId;
+        std::unique_ptr<image::Image<unsigned char>> mask;
+        int locks;
+    };
+
+    std::vector<Item>::iterator findItemIt(int camId)
+    {
+        return std::find_if(_cache.begin(), _cache.end(), [camId](const Item& item) { return item.camId == camId; });
+    }
+
+    Item* findItem(int camId)
+    {
+        const auto it = findItemIt(camId);
+        return (it == _cache.end()) ? nullptr : &*it;
+    }
+
+    void tryFreeUnlockedItem()
+    {
+        const auto it = std::find_if(_cache.begin(), _cache.end(), [](const Item& item) { return item.locks <= 0; });
+        if (it != _cache.end())
+        {
+            _cache.erase(it);
+        }
+    }
+
+    Item* pushToLowPriority(int camId)
+    {
+        const auto it = findItemIt(camId);
+        assert(it != _cache.end());
+        std::rotate(it, it+1, _cache.end());
+        return &_cache.back();
+    }
+
+private:
+    mvsUtils::MultiViewParams _mp;
+    std::vector<std::string> _masksFolders;
+    int _maxSize;
+    std::vector<Item> _cache;
+};
+
 StaticVector<int> computeDiffVisibilities(const StaticVector<int>& A, const StaticVector<int>& B)
 {
     assert(std::is_sorted(A.begin(), A.end()));
@@ -81,7 +180,7 @@ Point3d findBoundaryVertex(
     int visibleVertexId,
     int hiddenVertexId,
     const mvsUtils::MultiViewParams& mp,
-    const std::vector<std::string>& masksFolders,
+    MaskCache & maskCache,
     int threshold,
     bool invert
     )
@@ -96,20 +195,20 @@ Point3d findBoundaryVertex(
     assert(diffVisibilities.size() > 0);
     assert(std::is_sorted(diffVisibilities.begin(), diffVisibilities.end()));
 
-    // compute the visibility is already acquired and that does not change along the edge.
+    // compute the visibility that is already acquired and that does not change along the edge.
     // <=> is in hiddenVertexVisibilities but not in diffVisibilities
     const int baseVisibility = std::count_if(hiddenVertexVisibilities.begin(), hiddenVertexVisibilities.end(),
         [&diffVisibilities] (int camId) { return diffVisibilities.indexOfSorted(camId) == -1; });
 
     // preload masks
-    std::map<int, image::Image<unsigned char>> masks;
+    std::map<int, image::Image<unsigned char>*> masks;
     for (const int camId : diffVisibilities)
     {
-        const bool loaded = tryLoadMask(&masks[camId], masksFolders, mp.getViewId(camId), mp.getImagePath(camId));
-        assert(loaded);  // invalid masks are already ignored.
+        masks[camId] = maskCache.lock(camId);
+        assert(masks[camId]);  // invalid masks are already ignored.
     }
 
-    // compute minimal distance according to the mask resolution
+    // compute the minimal distance according to the mask resolution (it is our search stop condition)
     const Point3d leftPoint = mesh.pts[visibleVertexId];
     const Point3d rightPoint = mesh.pts[hiddenVertexId];
     const float minDistance = [&]
@@ -123,6 +222,7 @@ Point3d findBoundaryVertex(
     }();
 
     // binary search in continuous space along the edge
+    Point3d result;
     float left = 0.f;  // is the visible area
     float right = 1.f;  // is the hidden area
     while (true)
@@ -132,33 +232,116 @@ Point3d findBoundaryVertex(
 
         if (mid - left < minDistance)
         {
-            return midPoint;
+            result = midPoint;
+            break;  // stop the search
         }
 
         int diffVisibility = 0;
         for (const int camId : diffVisibilities)
         {
-            const auto& mask = masks[camId];
+            const auto& mask = *masks[camId];
 
             Pixel projectedPixel;
             mp.getPixelFor3DPoint(&projectedPixel, midPoint, camId);
-            if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
-             || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
+            if (projectedPixel.x >= 0 && projectedPixel.x < mask.Width()
+             || projectedPixel.y >= 0 || projectedPixel.y < mask.Height())
             {
-                continue;
-            }
-
-            const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
-            const bool masked = invert ? !maskValue : maskValue;
-            if (!masked)
-            {
-                ++diffVisibility;
+                const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
+                const bool masked = invert ? !maskValue : maskValue;
+                if (!masked)
+                {
+                    ++diffVisibility;
+                }
             }
         }
 
         const bool isVisible = (baseVisibility + diffVisibility) >= threshold;
         float& newBoundary = isVisible ? left : right;
         newBoundary = mid;
+    }
+
+    for (const int camId : diffVisibilities)
+    {
+        maskCache.unlock(camId);
+    }
+
+    return result;
+}
+
+void smoothenBoundary(
+    mesh::Mesh & filteredMesh,
+    const StaticVector<int> & filteredVertexVisibilityCounters,
+    const mvsUtils::MultiViewParams& mp,
+    MaskCache& maskCache,
+    int threshold,
+    bool invert
+    )
+{
+    const auto isVertexVisible = [&filteredVertexVisibilityCounters, threshold](const int vertexId)
+    {
+        return filteredVertexVisibilityCounters[vertexId] >= threshold;
+    };
+
+    std::unordered_set<int> boundaryVertexIds;  // vertex that are already moved
+    for (int triangleId = 0; triangleId < filteredMesh.tris.size(); ++triangleId)
+    {
+        const auto& triangle = filteredMesh.tris[triangleId];
+        const auto visibleCount = std::count_if(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
+        if (visibleCount == 3)
+        {
+            // do nothing
+        }
+        else if (visibleCount == 2)
+        {
+            // 2 out of 3 are visible: we need to move the 3rd vertex o the border.
+            // we move it toward the farthest visible vertex so the triangle has little chance to be degenerate.
+            const auto hiddenIdx = std::find_if_not(std::begin(triangle.v), std::end(triangle.v), isVertexVisible) - std::begin(triangle.v);
+            const auto hiddenVertexId = triangle.v[hiddenIdx];
+            if (boundaryVertexIds.find(hiddenVertexId) != boundaryVertexIds.end())
+            {
+                // already moved, ignore
+                continue;
+            }
+
+            // move along the longest edge to avoid degenerate triangles
+            const auto visibleVertexId = [&]
+            {
+                const auto visibleVertexId1 = triangle.v[(hiddenIdx + 1) % 3];
+                const double length1 = (filteredMesh.pts[visibleVertexId1] - filteredMesh.pts[hiddenVertexId]).size();
+
+                const auto visibleVertexId2 = triangle.v[(hiddenIdx + 2) % 3];
+                const double length2 = (filteredMesh.pts[visibleVertexId2] - filteredMesh.pts[hiddenVertexId]).size();
+
+                return length1 > length2 ? visibleVertexId1 : visibleVertexId2;
+            }();
+
+            const auto boundaryPoint = findBoundaryVertex(filteredMesh, visibleVertexId, hiddenVertexId, mp, maskCache, threshold, invert);
+            filteredMesh.pts[hiddenVertexId] = boundaryPoint;
+            boundaryVertexIds.insert(hiddenVertexId);
+        }
+        else if (visibleCount == 1)
+        {
+            // only 1 vertex is visible: we move the other 2 in its direction.
+            const auto visibleIdx = std::find_if(std::begin(triangle.v), std::end(triangle.v), isVertexVisible) - std::begin(triangle.v);
+            const auto visibleVertexId = triangle.v[visibleIdx];
+            for (int i : {1, 2})
+            {
+                const auto hiddenIdx = (visibleIdx + i) % 3;
+                const auto hiddenVertexId = triangle.v[hiddenIdx];
+                if (boundaryVertexIds.find(hiddenVertexId) != boundaryVertexIds.end())
+                {
+                    // already moved, ignore
+                    continue;
+                }
+                const auto boundaryPoint = findBoundaryVertex(filteredMesh, visibleVertexId, hiddenVertexId, mp, maskCache, threshold, invert);
+                filteredMesh.pts[hiddenVertexId] = boundaryPoint;
+                boundaryVertexIds.insert(hiddenVertexId);
+            }
+        }
+        else
+        {
+            ALICEVISION_LOG_WARNING("A triangle was visible but is not visible anymore.");
+        }
     }
 }
 
@@ -168,23 +351,30 @@ void meshMasking(
     const std::vector<std::string> & masksFolders,
     const std::string & outputMeshPath,
     int threshold,
-    bool invert)
+    bool invert,
+    bool smoothBoundary
+    )
 {
+    MaskCache maskCache(mp, masksFolders);
+
     // compute visibility for every vertex
     // also update inputMesh.pointsVisibilities according to the masks
+    ALICEVISION_LOG_INFO("Compute vertex visibilities");
     StaticVector<int> vertexVisibilityCounters;
     vertexVisibilityCounters.resize_with(inputMesh.pts.size(), 0);
     for (int camId = 0; camId < mp.getNbCameras(); ++camId)
     {
-        image::Image<unsigned char> mask;
-        if (!tryLoadMask(&mask, masksFolders, mp.getViewId(camId), mp.getImagePath(camId)))
+        auto* maskPtr = maskCache.lock(camId);
+        if (!maskPtr)
         {
             continue;
         }
 
+        const auto& mask = *maskPtr;
         if (mp.getWidth(camId) != mask.Width() || mp.getHeight(camId) != mask.Height())
         {
             ALICEVISION_LOG_WARNING("Invalid mask size: mask is ignored.");
+            maskCache.unlock(camId);
             continue;
         }
 
@@ -223,9 +413,12 @@ void meshMasking(
                 ++vertexVisibilityCounters[vertexId];
             }
         }
+
+        maskCache.unlock(camId);
     }
 
     // filter masked vertex (remove adjacent triangles)
+    ALICEVISION_LOG_INFO("Filter triangles");
     mesh::Mesh filteredMesh;
     StaticVector<int> inputPtIdToFilteredPtId;
 
@@ -240,7 +433,9 @@ void meshMasking(
         for (int triangleId = 0; triangleId < inputMesh.tris.size(); ++triangleId)
         {
             const auto& triangle = inputMesh.tris[triangleId];
-            const bool visible = std::any_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
+            const bool visible = smoothBoundary ?
+                std::any_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible) :
+                std::all_of(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
             if (visible)
             {
                 visibleTriangles.push_back(triangleId);
@@ -250,8 +445,9 @@ void meshMasking(
         inputMesh.generateMeshFromTrianglesSubset(visibleTriangles, filteredMesh, inputPtIdToFilteredPtId);
     }
 
-    // smooth border triangles using masks
+    if (smoothBoundary)
     {
+        ALICEVISION_LOG_INFO("Smoothen boundary triangles");
         // build visibility counters + cameraId/point visibilities for the filtered mesh
         StaticVector<int> filteredVertexVisibilityCounters;
         filteredVertexVisibilityCounters.resize_with(filteredMesh.pts.size(), 0);
@@ -273,40 +469,7 @@ void meshMasking(
             }
         }
 
-        const auto isVertexVisible = [&filteredVertexVisibilityCounters, threshold](const int vertexId)
-        {
-            return filteredVertexVisibilityCounters[vertexId] >= threshold;
-        };
-
-        for (int triangleId = 0; triangleId < filteredMesh.tris.size(); ++triangleId)
-        {
-            const auto& triangle = filteredMesh.tris[triangleId];
-            const auto visibleCount = std::count_if(std::begin(triangle.v), std::end(triangle.v), isVertexVisible);
-            if (visibleCount == 3)
-            {
-                // do nothing
-            }
-            else if (visibleCount == 2)
-            {
-                // TODO
-            }
-            else if (visibleCount == 1)
-            {
-                const auto visibleIdx = std::find_if(std::begin(triangle.v), std::end(triangle.v), isVertexVisible) - std::begin(triangle.v);
-                const auto visibleVertexId = triangle.v[visibleIdx];
-                for (int i : {1, 2})
-                {
-                    const auto hiddenIdx = (visibleIdx + i) % 3;
-                    const auto hiddenVertexId = triangle.v[hiddenIdx];
-                    const auto boundaryPoint = findBoundaryVertex(filteredMesh, visibleVertexId, hiddenVertexId, mp, masksFolders, threshold, invert);
-                    filteredMesh.pts[hiddenVertexId] = boundaryPoint;
-                }
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("A triangle was visible but is not visible anymore.");
-            }
-        }
+        smoothenBoundary(filteredMesh, filteredVertexVisibilityCounters, mp, maskCache, threshold, invert);
     }
 
     // Save output mesh
@@ -330,6 +493,7 @@ int main(int argc, char **argv)
 
     int threshold = 1;
     bool invert = false;
+    bool smoothBoundary = false;
 
     po::options_description allParams("AliceVision masking");
 
@@ -352,6 +516,8 @@ int main(int argc, char **argv)
     optionalParams.add_options()
         ("invert", po::value<bool>(&invert)->default_value(invert),
             "Invert the mask.")
+        ("smoothBoundary", po::value<bool>(&smoothBoundary)->default_value(smoothBoundary),
+            "Modify the triangles at the boundary to fit the masks.")
         ;
 
     po::options_description logParams("Log parameters");
@@ -451,7 +617,8 @@ int main(int argc, char **argv)
     mvsUtils::createRefMeshFromDenseSfMData(refMesh, sfmData, mp);
     inputMesh.remapVisibilities(mesh::EVisibilityRemappingMethod::PullPush, refMesh);
 
-    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert);
+    ALICEVISION_LOG_INFO("Mask mesh");
+    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }
