@@ -29,6 +29,19 @@ alicevision_add_software(aliceVision_convertFloatDescriptorToUchar
         Boost::boost
         Boost::timer
 )
+
+alicevision_add_software(aliceVision_importKnownPoses
+  SOURCE main_importKnownPoses.cpp
+  FOLDER ${FOLDER_SOFTWARE_CONVERT}
+  LINKS aliceVision_localization
+        aliceVision_feature
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
+)
 endif() # ALICEVISION_BUILD_SFM
 
 # Convert image to EXR
