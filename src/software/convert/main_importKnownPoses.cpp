@@ -46,7 +46,7 @@ struct XMPData
     std::vector<double> position;
     std::vector<double> distortionCoefficients;
     std::string distortionModel;
-    double focalLength = 0.0;
+    double focalLength35mm = 0.0;
     int skew = 0;
     double aspectRatio = 1.0;
     double principalPointU = 0.0;
@@ -68,14 +68,15 @@ XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath,
     std::string extension = path.extension().string();
     boost::to_lower(extension);
     if(extension != ".xmp")
-        ALICEVISION_THROW_ERROR("Unknown extension: " << extension);
+    {
+       ALICEVISION_THROW_ERROR("Unknown extension: " << extension);
+    }
 
     json::ptree tree;
     read_xml(knownPosesFilePath + '/' + stem + ".xmp", tree);
 
-    xmp.distortionModel =
-        tree.get<std::string>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:DistortionModel", "DEFAULT");
-    xmp.focalLength = tree.get<double>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:FocalLength", 0.0);
+    xmp.distortionModel = tree.get<std::string>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:DistortionModel", "DEFAULT");
+    xmp.focalLength35mm = tree.get<double>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:FocalLength35mm", 0.0);
     xmp.skew = tree.get<int>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:Skew", 0);
     xmp.aspectRatio = tree.get<double>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:AspectRatio", 1.0);
     xmp.principalPointU = tree.get<float>("x:xmpmeta.rdf:RDF.rdf:Description.<xmlattr>.xcr:PrincipalPointU", 0);
@@ -206,74 +207,115 @@ int aliceVision_main(int argc, char **argv)
               viewIdPerStem[stem] = viewIt.first;
           }
 
-          for(const auto& pathIt : fs::directory_iterator(knownPosesFilePath))
+          for (const auto& pathIt : fs::directory_iterator(knownPosesFilePath))
           {
               const std::string stem = pathIt.path().stem().string();
+            if (viewIdPerStem.count(stem) == 0) 
+              {
+                  continue;
+              }
+
               const XMPData xmp = read_xmp(pathIt.path().string(), knownPosesFilePath, stem, pathIt);
 
               const IndexT viewId = viewIdPerStem[stem];
               aliceVision::sfmData::View& view = sfmData.getView(viewId);
               aliceVision::sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
 
-              camera::IntrinsicBase* intrinsicBase = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+              std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
 
-              Mat3 rot;
-              Vec3 row_one(xmp.rotation[0], xmp.rotation[1], xmp.rotation[2]);
-              Vec3 row_two(xmp.rotation[3], xmp.rotation[4], xmp.rotation[5]);
-              Vec3 row_three(xmp.rotation[6], xmp.rotation[7], xmp.rotation[8]);
-              rot.row(0) = row_one;
-              rot.row(1) = row_two;
-              rot.row(2) = row_three;
+              Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> rot(xmp.rotation.data());
+
               Vec3 pos_vec(xmp.position[0], xmp.position[1], xmp.position[2]);
+              Vec3 translation = - rot * pos_vec;
+
+              Eigen::Matrix4d T;
+              T.setIdentity();
+              T.block<3, 3>(0, 0) = rot;
+              T.block<3, 1>(0, 3) = translation;
+
+              Eigen::Matrix4d av_T_cr = Eigen::Matrix4d::Zero();
+              av_T_cr(0, 0) = 1.0;
+              av_T_cr(1, 2) = -1.0;
+              av_T_cr(2, 1) = 1.0;
+              av_T_cr(3, 3) = 1.0;
+
+              T = T * av_T_cr;
+              Eigen::Matrix3d R = T.block<3, 3>(0, 0);
+              translation = T.block<3, 1>(0, 3);
+              pos_vec = -R.transpose() * translation;
+
               
-              aliceVision::geometry::Pose3 pos3(rot, pos_vec);
+              
+              aliceVision::geometry::Pose3 pos3(R, pos_vec);
               pose.setTransform(pos3);
 
-              aliceVision::camera::IntrinsicsScaleOffsetDisto* intrinsic =
-                  dynamic_cast<aliceVision::camera::IntrinsicsScaleOffsetDisto*>(intrinsicBase);
+              std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<aliceVision::camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+              if (intrinsic == nullptr)
+              {
+                  ALICEVISION_THROW_ERROR("Invalid intrinsic");
+                  continue;
+              }
+              
+              const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+              const double sensorWidth = intrinsic->sensorWidth();
+              const double maxSize = std::max(view.getWidth(), view.getHeight());
+              const double focalLengthmm = (sensorWidth * xmp.focalLength35mm) / 36.0;
+              const double focalLengthPix = maxSize * focalLengthmm / sensorWidth;
+              const double offsetX = (double(view.getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
+              const double offsetY = (double(view.getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
+
+              
+              intrinsic->setScale(focalLengthPix, focalLengthPix);
+              intrinsic->setOffset(offsetX, offsetY);
+
+              std::cout << focalLengthPix << std::endl;
 
               if(xmp.distortionModel == "brown3t2")
               {
-                  if(intrinsic->getType() != camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)//camera::EINTRINSIC::PINHOLE_CAMERA_BROWN)
-                  {
-                      ALICEVISION_THROW_ERROR("Error in: " << stem << "'s instinsics...");
-                  }
-                  else
-                  {
-                      if(xmp.distortionCoefficients.size() == 6)
-                      {
-                          // Element 4 is useless and needs to be ignored.
-                          std::vector<double> distortionCoefficients = xmp.distortionCoefficients;
-                          distortionCoefficients.erase(distortionCoefficients.begin() + 5);
-                          distortionCoefficients.erase(distortionCoefficients.begin() + 4);
-                          distortionCoefficients.erase(distortionCoefficients.begin() + 3);
+                std::shared_ptr<camera::PinholeBrownT2> camera = std::dynamic_pointer_cast<camera::PinholeBrownT2>(intrinsic);
+                if (camera == nullptr)
+                {
+                    camera = std::make_shared<camera::PinholeBrownT2>();
+                    camera->copyFrom(*intrinsic);
+                    sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
+                }
 
-                          // IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected: 3, given:5).
-                          intrinsic->setDistortionParams(
-                              distortionCoefficients); // vector of 5 elements (r1, r2, r3, t1, t2)
-                      }
-                      else
-                          ALICEVISION_THROW_ERROR(
-                              "Error in xmp file: " << stem << " the distortion coefficient doesn't have the right size.");
-                  }
+                if(xmp.distortionCoefficients.size() == 6)
+                {
+                    // Element 4 is useless and needs to be ignored.
+                    std::vector<double> distortionCoefficients;
+                    
+                    distortionCoefficients.push_back(xmp.distortionCoefficients[0]);
+                    distortionCoefficients.push_back(xmp.distortionCoefficients[1]);
+                    distortionCoefficients.push_back(xmp.distortionCoefficients[2]);
+                    distortionCoefficients.push_back(xmp.distortionCoefficients[5]);
+                    distortionCoefficients.push_back(xmp.distortionCoefficients[4]);
+                    //camera->setDistortionParams(distortionCoefficients); // vector of 5 elements (r1, r2, r3, t1, t2)
+                }
+                else
+                {
+                    ALICEVISION_THROW_ERROR("Error in xmp file: " << stem << " the distortion coefficient doesn't have the right size.");
+                }
               }
               else if(xmp.distortionModel == "brown3")
               {
-                  if(intrinsic->getType() != camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
-                  {
-                      ALICEVISION_THROW_ERROR("Error in: " << stem << "'s instinsics.");
-                  }
-                  else
-                  {
-                      if(xmp.distortionCoefficients.size() == 3)
-                      {
-                          intrinsic->setDistortionParams(
-                              xmp.distortionCoefficients); // vector of 3 elements (r1, r2, r3)
-                      }
-                      else
-                          ALICEVISION_THROW_ERROR(
-                              "Error in xmp file: " << stem << " the distortion coefficient doesn't have the right size.");
-                  }
+                std::shared_ptr<camera::PinholeBrownT2> camera = std::dynamic_pointer_cast<camera::PinholeBrownT2>(intrinsic);
+                if (camera == nullptr)
+                {
+                    camera = std::make_shared<camera::PinholeBrownT2>();
+                    camera->copyFrom(*intrinsic);
+                    sfmData.getIntrinsics().at(view.getIntrinsicId()) = camera;
+                }
+
+                if(xmp.distortionCoefficients.size() == 3)
+                {
+                    std::vector<double> distortionCoefficients = xmp.distortionCoefficients;
+                    camera->setDistortionParams(distortionCoefficients); // vector of 5 elements (r1, r2, r3)
+                }
+                else
+                {
+                    ALICEVISION_THROW_ERROR("Error in xmp file: " << stem << " the distortion coefficient doesn't have the right size.");
+                }
               }
               else
               {
@@ -286,13 +328,17 @@ int aliceVision_main(int argc, char **argv)
           ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
           return EXIT_FAILURE;
       }
+
+
       // export the SfMData scene in the expected format
       if(!sfmDataIO::Save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
       {
           ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputFilename << "'");
           return EXIT_FAILURE;
       }
+
       return EXIT_SUCCESS;
+
   }
   else if(is_regular_file(fs::path(knownPosesFilePath)))
   {
