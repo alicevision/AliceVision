@@ -196,17 +196,17 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
+  std::map<std::string, IndexT> viewIdPerStem;
+  for(const auto viewIt : sfmData.getViews())
+  {
+    const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+    viewIdPerStem[stem] = viewIt.first;
+ }
+
   if(fs::is_directory(knownPosesFilePath))
   {
       try
       {
-          std::map<std::string, IndexT> viewIdPerStem;
-          for(const auto viewIt : sfmData.getViews())
-          {
-              const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
-              viewIdPerStem[stem] = viewIt.first;
-          }
-
           for (const auto& pathIt : fs::directory_iterator(knownPosesFilePath))
           {
               const std::string stem = pathIt.path().stem().string();
@@ -329,16 +329,6 @@ int aliceVision_main(int argc, char **argv)
           return EXIT_FAILURE;
       }
 
-
-      // export the SfMData scene in the expected format
-      if(!sfmDataIO::Save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
-      {
-          ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputFilename << "'");
-          return EXIT_FAILURE;
-      }
-
-      return EXIT_SUCCESS;
-
   }
   else if(is_regular_file(fs::path(knownPosesFilePath)))
   {
@@ -438,6 +428,110 @@ int aliceVision_main(int argc, char **argv)
             ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
             return EXIT_FAILURE;
         }
+  }
+
+  std::ifstream file("/home/servantf/data/sfm/chr_army01_cesar_soldier1/ma/chr_army01_cesar_soldier1.ma");
+
+  std::string line;
+  std::string name = "";
+  bool hasName = false;
+  bool hasPosition = false;
+  bool hasRotation = false;
+  double pos[3];
+  double rot[3];
+
+  while (std::getline(file, line))
+  {
+    std::regex regex("[^\\s\\t;]+");
+    std::vector<std::string> words;
+    
+    for (auto it = std::sregex_iterator(line.begin(), line.end(), regex); it != std::sregex_iterator(); it++)
+    {
+        std::string tok = it->str();
+        tok.erase(std::remove(tok.begin(), tok.end(), '\"'), tok.end());
+        words.push_back(tok);
+    }
+
+    if (words.size() == 0) continue;
+
+    if (words[0] == "createNode")
+    {
+        if (words.size() == 4)
+        {
+            name = words[3];
+            hasName = true;
+            hasPosition = false;
+            hasRotation = false;
+        }
+    }
+
+    if (words[0] == "setAttr")
+    {
+        if (words[1] == ".translate")
+        {
+            if (hasName && (!hasPosition))
+            {
+                hasPosition = true;
+                pos[0] = std::stod(words[4]);
+                pos[1] = std::stod(words[5]);
+                pos[2] = std::stod(words[6]);
+            }
+        }
+
+        if (words[1] == ".rotate")
+        {
+            if (hasName && (!hasRotation))
+            {
+                hasRotation = true;
+                rot[0] = std::stod(words[4]);
+                rot[1] = std::stod(words[5]);
+                rot[2] = std::stod(words[6]);
+            }
+        }
+    }
+
+    if (hasName && hasRotation && hasPosition)
+    {
+        if (viewIdPerStem.count(name) == 0) 
+        {
+            continue;
+        }
+
+        const IndexT viewId = viewIdPerStem[name];
+        aliceVision::sfmData::View& view = sfmData.getView(viewId);
+        aliceVision::sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
+
+        Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+        const Eigen::AngleAxis<double> MX(degreeToRadian(rot[0]), Eigen::Vector3d::UnitX());
+        const Eigen::AngleAxis<double> MY(degreeToRadian(rot[1]), Eigen::Vector3d::UnitY());
+        const Eigen::AngleAxis<double> MZ(degreeToRadian(rot[2]), Eigen::Vector3d::UnitZ());
+        R = MZ * MY * MX;
+        
+        Eigen::Vector3d position;
+        position(0) = pos[0];
+        position(1) = pos[1];
+        position(2) = pos[2];
+
+        Vec3 translation = - R * position;
+
+        Eigen::Matrix3d alice_R_maya = Eigen::Matrix3d::Identity();
+
+        alice_R_maya(0, 0) = 1.0;
+        alice_R_maya(1, 1) = -1.0;
+        alice_R_maya(2, 2) = -1.0;
+        position = position;
+
+        R =  R * alice_R_maya; 
+
+
+        aliceVision::geometry::Pose3 pose3(R.transpose(), position);
+        pose.setTransform(pose3);
+        std::cout << "ok" << std::endl;
+        
+        hasName = false;
+        hasRotation = false;
+        hasPosition = false;
+    }    
   }
 
   // export the SfMData scene in the expected format
