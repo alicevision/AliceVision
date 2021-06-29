@@ -201,16 +201,16 @@ int aliceVision_main(int argc, char **argv)
   {
     const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
     viewIdPerStem[stem] = viewIt.first;
- }
-
-  if(fs::is_directory(knownPosesFilePath))
+  }
+  fs::path knownPosesPath(knownPosesFilePath);
+  if(fs::is_directory(knownPosesPath))
   {
       try
       {
-          for (const auto& pathIt : fs::directory_iterator(knownPosesFilePath))
+          for (const auto& pathIt : fs::directory_iterator(knownPosesPath))
           {
               const std::string stem = pathIt.path().stem().string();
-            if (viewIdPerStem.count(stem) == 0) 
+              if (viewIdPerStem.count(stem) == 0) 
               {
                   continue;
               }
@@ -218,8 +218,8 @@ int aliceVision_main(int argc, char **argv)
               const XMPData xmp = read_xmp(pathIt.path().string(), knownPosesFilePath, stem, pathIt);
 
               const IndexT viewId = viewIdPerStem[stem];
-              aliceVision::sfmData::View& view = sfmData.getView(viewId);
-              aliceVision::sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
+              sfmData::View& view = sfmData.getView(viewId);
+              sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
 
               std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
 
@@ -244,18 +244,15 @@ int aliceVision_main(int argc, char **argv)
               translation = T.block<3, 1>(0, 3);
               pos_vec = -R.transpose() * translation;
 
-              
-              
-              aliceVision::geometry::Pose3 pos3(R, pos_vec);
+              geometry::Pose3 pos3(R, pos_vec);
               pose.setTransform(pos3);
 
-              std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<aliceVision::camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+              std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
               if (intrinsic == nullptr)
               {
                   ALICEVISION_THROW_ERROR("Invalid intrinsic");
-                  continue;
               }
-              
+
               const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
               const double sensorWidth = intrinsic->sensorWidth();
               const double maxSize = std::max(view.getWidth(), view.getHeight());
@@ -264,7 +261,6 @@ int aliceVision_main(int argc, char **argv)
               const double offsetX = (double(view.getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
               const double offsetY = (double(view.getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
 
-              
               intrinsic->setScale(focalLengthPix, focalLengthPix);
               intrinsic->setOffset(offsetX, offsetY);
 
@@ -282,15 +278,15 @@ int aliceVision_main(int argc, char **argv)
 
                 if(xmp.distortionCoefficients.size() == 6)
                 {
-                    // Element 4 is useless and needs to be ignored.
                     std::vector<double> distortionCoefficients;
-                    
+
                     distortionCoefficients.push_back(xmp.distortionCoefficients[0]);
                     distortionCoefficients.push_back(xmp.distortionCoefficients[1]);
                     distortionCoefficients.push_back(xmp.distortionCoefficients[2]);
+                    // Skip element at index 3 as it is empty
                     distortionCoefficients.push_back(xmp.distortionCoefficients[5]);
                     distortionCoefficients.push_back(xmp.distortionCoefficients[4]);
-                    //camera->setDistortionParams(distortionCoefficients); // vector of 5 elements (r1, r2, r3, t1, t2)
+                    camera->setDistortionParams(distortionCoefficients); // vector of 5 elements (r1, r2, r3, t1, t2)
                 }
                 else
                 {
@@ -330,208 +326,201 @@ int aliceVision_main(int argc, char **argv)
       }
 
   }
-  else if(is_regular_file(fs::path(knownPosesFilePath)))
+  else if(is_regular_file(knownPosesPath))
   {
-      std::ifstream jsonFile(knownPosesFilePath);
-      if(!jsonFile)
+      std::string extension = knownPosesPath.extension().string();
+      boost::to_lower(extension);
+      if(extension == ".json")
       {
-          ALICEVISION_LOG_ERROR("Error opening file: " << knownPosesFilePath);
-          return EXIT_FAILURE;
+          std::ifstream jsonFile(knownPosesFilePath);
+          if(!jsonFile)
+          {
+              ALICEVISION_LOG_ERROR("Error opening file: " << knownPosesFilePath);
+              return EXIT_FAILURE;
+          }
+
+          std::string line;
+          size_t count = 0;
+          std::vector<std::pair<size_t, int>> records;
+          std::vector<std::pair<IndexT, IndexT>> frameIdToPoseId;
+
+          // Here we are making a vector that associate a frameId to a PoseId so we can access each easier
+          for(const auto& view : sfmData.getViews())
+          {
+              frameIdToPoseId.emplace_back(view.second->getFrameId(), view.second->getPoseId());
+          }
+          std::sort(frameIdToPoseId.begin(), frameIdToPoseId.end());
+
+          // ensure there is no duplicated frameId
+          auto it = std::adjacent_find(frameIdToPoseId.begin(), frameIdToPoseId.end(),
+                                       [](const auto& a, const auto& b) { return a.first == b.first; });
+          if(it != frameIdToPoseId.end())
+          {
+              ALICEVISION_THROW_ERROR("Duplicated frameId in sfmData: " << sfmDataFilePath << ", frameID: " << it->first);
+          }
+          // This is where we start to read our json line by line
+          while(getline(jsonFile, line))
+          {
+              std::stringstream linestream(line);
+              std::vector<double> up;
+              std::vector<double> forward;
+              std::vector<double> pose;
+              json::ptree pt;
+
+              // We put each line in a stringstream because that is what boost's parser needs.
+              // The parser turns the json into a property tree.
+              json::json_parser::read_json(linestream, pt);
+              const int sensor = pt.get<int>("sensorwidth", 0);
+              const double fov = pt.get<double>("xFovDegrees", 0);
+              const long timestamp = pt.get<long>("tstamp", 0);
+              const int frmcnt = pt.get<int>("frmcnt", 0);
+              const double expoff = pt.get<double>("exposureOff", 0);
+              const double expdur = pt.get<double>("exposureDur", 0);
+              // These arguments are lists so we need to loop to store them properly
+              for(json::ptree::value_type& up_val : pt.get_child("up"))
+              {
+                  std::string value = up_val.second.data();
+                  up.push_back(std::stof(value));
+              }
+              for(json::ptree::value_type& for_val : pt.get_child("forward"))
+              {
+                  std::string value = for_val.second.data();
+                  forward.push_back(std::stof(value));
+              }
+              for(json::ptree::value_type& pose_val : pt.get_child("pose"))
+              {
+                  std::string value = pose_val.second.data();
+                  pose.push_back(std::stof(value));
+              }
+              // We use records to indexify our frame count this way we know which frame started the list, this will be our offset
+              records.emplace_back(count, frmcnt);
+
+              // Without surprise we store our vector pose to get our position
+              Vec3 pos_vec(pose[0], pose[1], pose[2]);
+              Mat3 rot;
+              // And we need those two vectors to calculate the rotation matrix
+              Vec3 up_vec(up[0], up[1], up[2]);
+              Vec3 forward_vec(forward[0], forward[1], forward[2]);
+
+              rot.row(0) = up_vec.cross(forward_vec);
+              rot.row(1) = -up_vec;
+              rot.row(2) = forward_vec;
+              // we store this new information into a pose3
+              geometry::Pose3 pos3(rot, pos_vec);
+
+              // And we set this pose into the sfmData using our frameId (which corresponds to the count) to set a new pos3 transform
+              IndexT sfmPoseId = frameIdToPoseId[count].second;
+              sfmData.getPoses()[sfmPoseId].setTransform(pos3);
+              count++;
+              // We repeat this to each line of the file which contains a json
+          }
       }
-
-      std::string line;
-      size_t count = 0;
-      std::vector<std::pair<size_t, int>> records;
-      std::vector<std::pair<IndexT, IndexT>> frameIdToPoseId;
-
-      // Here we are making a vector that associate a frameId to a PoseId so we can access each easier
-      for(const auto& view : sfmData.getViews())
+      else if(extension == ".ma")
       {
-          frameIdToPoseId.emplace_back(view.second->getFrameId(), view.second->getPoseId());
+          std::ifstream file(knownPosesPath.string());
+
+          std::string line;
+          std::string name;
+          bool hasName = false;
+          bool hasPosition = false;
+          bool hasRotation = false;
+          double pos[3] = {0.0, 0.0, 0.0};
+          double rot[3] = {0.0, 0.0, 0.0};
+
+          while (std::getline(file, line))
+          {
+            std::regex regex("[^\\s\\t;]+");
+            std::vector<std::string> words;
+
+            for (auto it = std::sregex_iterator(line.begin(), line.end(), regex); it != std::sregex_iterator(); it++)
+            {
+                std::string tok = it->str();
+                tok.erase(std::remove(tok.begin(), tok.end(), '\"'), tok.end());
+                words.push_back(tok);
+            }
+
+            if (words.size() == 0)
+                continue;
+
+            if (words[0] == "createNode")
+            {
+                if (words.size() == 4)
+                {
+                    name = words[3];
+                    hasName = true;
+                    hasPosition = false;
+                    hasRotation = false;
+                }
+            }
+
+            if (words[0] == "setAttr")
+            {
+                if (words[1] == ".translate")
+                {
+                    if (hasName && (!hasPosition))
+                    {
+                        hasPosition = true;
+                        pos[0] = std::stod(words[4]);
+                        pos[1] = std::stod(words[5]);
+                        pos[2] = std::stod(words[6]);
+                    }
+                }
+
+                if (words[1] == ".rotate")
+                {
+                    if (hasName && (!hasRotation))
+                    {
+                        hasRotation = true;
+                        rot[0] = std::stod(words[4]);
+                        rot[1] = std::stod(words[5]);
+                        rot[2] = std::stod(words[6]);
+                    }
+                }
+            }
+
+            if (hasName && hasRotation && hasPosition)
+            {
+                if (viewIdPerStem.count(name) == 0) 
+                {
+                    continue;
+                }
+
+                const IndexT viewId = viewIdPerStem[name];
+                sfmData::View& view = sfmData.getView(viewId);
+                sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
+
+                Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+                const Eigen::AngleAxis<double> MX(degreeToRadian(rot[0]), Eigen::Vector3d::UnitX());
+                const Eigen::AngleAxis<double> MY(degreeToRadian(rot[1]), Eigen::Vector3d::UnitY());
+                const Eigen::AngleAxis<double> MZ(degreeToRadian(rot[2]), Eigen::Vector3d::UnitZ());
+                R = MZ * MY * MX;
+                
+                Eigen::Vector3d position;
+                position(0) = pos[0];
+                position(1) = pos[1];
+                position(2) = pos[2];
+
+                Vec3 translation = - R * position;
+
+                Eigen::Matrix3d alice_R_maya = Eigen::Matrix3d::Identity();
+
+                alice_R_maya(0, 0) = 1.0;
+                alice_R_maya(1, 1) = -1.0;
+                alice_R_maya(2, 2) = -1.0;
+                position = position;
+
+                R =  R * alice_R_maya;
+
+                geometry::Pose3 pose3(R.transpose(), position);
+                pose.setTransform(pose3);
+                ALICEVISION_LOG_TRACE("Read maya: " << name);
+
+                hasName = false;
+                hasRotation = false;
+                hasPosition = false;
+            }
+          }
       }
-      std::sort(frameIdToPoseId.begin(), frameIdToPoseId.end());
-
-      // ensure there is no duplicated frameId
-      auto it = std::adjacent_find(frameIdToPoseId.begin(), frameIdToPoseId.end(),
-                                   [](const auto& a, const auto& b) { return a.first == b.first; });
-      if(it != frameIdToPoseId.end())
-      {
-          ALICEVISION_THROW_ERROR("Duplicated frameId in sfmData: " << sfmDataFilePath << ", frameID: " << it->first);
-      }
-        try
-        {
-            // This is where we start to read our json line by line
-            while(getline(jsonFile, line))
-            {
-                std::stringstream linestream(line);
-                int sensor;
-                float fov;
-                long timestamp;
-                int frmcnt;
-                float expoff;
-                float expdur;
-                std::vector<float> up;
-                std::vector<float> forward;
-                std::vector<float> pose;
-                json::ptree pt;
-
-                // We put each line in a stringstream because that is what boost's parser needs
-                // THe parser turns the json into a property tree in which we access the informations and store them
-                json::json_parser::read_json(linestream, pt);
-                sensor = pt.get<int>("sensorwidth", 0);
-                fov = pt.get<float>("xFovDegrees", 0);
-                timestamp = pt.get<long>("tstamp", 0);
-                frmcnt = pt.get<int>("frmcnt", 0);
-                expoff = pt.get<float>("exposureOff", 0);
-                expdur = pt.get<float>("exposureDur", 0);
-                // These arguments are lists so we need to loop to store them properly
-                for(json::ptree::value_type& up_val : pt.get_child("up"))
-                {
-                    std::string value = up_val.second.data();
-                    up.push_back(std::stof(value));
-                }
-                for(json::ptree::value_type& for_val : pt.get_child("forward"))
-                {
-                    std::string value = for_val.second.data();
-                    forward.push_back(std::stof(value));
-                }
-                for(json::ptree::value_type& pose_val : pt.get_child("pose"))
-                {
-                    std::string value = pose_val.second.data();
-                    pose.push_back(std::stof(value));
-                }
-                // We use records to indexify our frame count this way we know which frame started the list, this will be our offset
-                records.emplace_back(count, frmcnt);
-
-                // Without surprise we store our vector pose to get our position
-                Vec3 pos_vec(pose[0], pose[1], pose[2]);
-                Mat3 rot;
-                // And we need those two vectors to calculate the rotation matrix
-                Vec3 up_vec(up[0], up[1], up[2]);
-                Vec3 forward_vec(forward[0], forward[1], forward[2]);
-
-                rot.row(0) = up_vec.cross(forward_vec);
-                rot.row(1) = -up_vec;
-                rot.row(2) = forward_vec;
-                // we store this new information into a pose3
-                aliceVision::geometry::Pose3 pos3(rot, pos_vec);
-
-                // And we set this pose into the sfmData using our frameId (which corresponds to the count) to set a new pos3 transform
-                IndexT sfmPoseId = frameIdToPoseId[count].second;
-                sfmData.getPoses()[sfmPoseId].setTransform(pos3);
-                count++;
-                // We repeat this to each line of the file which contains a json
-            }
-        }
-        catch(boost::program_options::error& e)
-        {
-            ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-            return EXIT_FAILURE;
-        }
-  }
-
-  std::ifstream file("/home/servantf/data/sfm/chr_army01_cesar_soldier1/ma/chr_army01_cesar_soldier1.ma");
-
-  std::string line;
-  std::string name = "";
-  bool hasName = false;
-  bool hasPosition = false;
-  bool hasRotation = false;
-  double pos[3];
-  double rot[3];
-
-  while (std::getline(file, line))
-  {
-    std::regex regex("[^\\s\\t;]+");
-    std::vector<std::string> words;
-    
-    for (auto it = std::sregex_iterator(line.begin(), line.end(), regex); it != std::sregex_iterator(); it++)
-    {
-        std::string tok = it->str();
-        tok.erase(std::remove(tok.begin(), tok.end(), '\"'), tok.end());
-        words.push_back(tok);
-    }
-
-    if (words.size() == 0) continue;
-
-    if (words[0] == "createNode")
-    {
-        if (words.size() == 4)
-        {
-            name = words[3];
-            hasName = true;
-            hasPosition = false;
-            hasRotation = false;
-        }
-    }
-
-    if (words[0] == "setAttr")
-    {
-        if (words[1] == ".translate")
-        {
-            if (hasName && (!hasPosition))
-            {
-                hasPosition = true;
-                pos[0] = std::stod(words[4]);
-                pos[1] = std::stod(words[5]);
-                pos[2] = std::stod(words[6]);
-            }
-        }
-
-        if (words[1] == ".rotate")
-        {
-            if (hasName && (!hasRotation))
-            {
-                hasRotation = true;
-                rot[0] = std::stod(words[4]);
-                rot[1] = std::stod(words[5]);
-                rot[2] = std::stod(words[6]);
-            }
-        }
-    }
-
-    if (hasName && hasRotation && hasPosition)
-    {
-        if (viewIdPerStem.count(name) == 0) 
-        {
-            continue;
-        }
-
-        const IndexT viewId = viewIdPerStem[name];
-        aliceVision::sfmData::View& view = sfmData.getView(viewId);
-        aliceVision::sfmData::CameraPose& pose = sfmData.getPoses()[view.getPoseId()];
-
-        Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
-        const Eigen::AngleAxis<double> MX(degreeToRadian(rot[0]), Eigen::Vector3d::UnitX());
-        const Eigen::AngleAxis<double> MY(degreeToRadian(rot[1]), Eigen::Vector3d::UnitY());
-        const Eigen::AngleAxis<double> MZ(degreeToRadian(rot[2]), Eigen::Vector3d::UnitZ());
-        R = MZ * MY * MX;
-        
-        Eigen::Vector3d position;
-        position(0) = pos[0];
-        position(1) = pos[1];
-        position(2) = pos[2];
-
-        Vec3 translation = - R * position;
-
-        Eigen::Matrix3d alice_R_maya = Eigen::Matrix3d::Identity();
-
-        alice_R_maya(0, 0) = 1.0;
-        alice_R_maya(1, 1) = -1.0;
-        alice_R_maya(2, 2) = -1.0;
-        position = position;
-
-        R =  R * alice_R_maya; 
-
-
-        aliceVision::geometry::Pose3 pose3(R.transpose(), position);
-        pose.setTransform(pose3);
-        std::cout << "ok" << std::endl;
-        
-        hasName = false;
-        hasRotation = false;
-        hasPosition = false;
-    }    
   }
 
   // export the SfMData scene in the expected format
