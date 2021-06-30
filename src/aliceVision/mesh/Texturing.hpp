@@ -47,7 +47,6 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
 
-
 struct TexturingParams
 {
     unsigned int textureSide = 8192;
@@ -94,6 +93,17 @@ public:
 
     /// Load a mesh from a .obj file and initialize internal structures
     void loadOBJWithAtlas(const std::string& filename, bool flipNormals=false);
+
+    /**
+     * @brief Remap visibilities
+     *
+     * @param[in] remappingMethod the remapping method
+     * @param[in] mp multiview scene params
+     * @param[in] refMesh the reference mesh
+     * @param[in] refPointsVisibilities the reference visibilities
+     */
+    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const mvsUtils::MultiViewParams& mp,
+                           const Mesh& refMesh);
 
     /**
      * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'
