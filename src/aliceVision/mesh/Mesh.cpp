@@ -791,8 +791,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                     int idTri = ti[i];
                     OrientedPoint tri;
                     tri.p = pts[tris[idTri].v[0]];
-                    tri.n = cross((pts[tris[idTri].v[1]] - pts[tris[idTri].v[0]]).normalize(),
-                                  (pts[tris[idTri].v[2]] - pts[tris[idTri].v[0]]).normalize());
+                    tri.n = computeTriangleNormal(idTri);
 
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     triangle_proj tp = getTriangleProjection(idTri, mp, rc, w, h);
