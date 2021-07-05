@@ -12,6 +12,7 @@
 #include <regex>
 #include <string>
 #include <utility>
+#include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -31,6 +32,18 @@ enum class EEXIFOrientation
   , RIGHT = 8
   , UNKNOWN = -1
 };
+
+struct GPSExifTags
+{
+    static std::string latitude();
+    static std::string latitudeRef();
+    static std::string longitude();
+    static std::string longitudeRef();
+    static std::string altitude();
+    static std::string altitudeRef();
+    static std::vector<std::string> all();
+};
+
 
 /**
  * @brief A view define an image by a string and unique indexes for
@@ -230,6 +243,13 @@ public:
   bool hasMetadata(const std::vector<std::string>& names) const;
 
   /**
+   * @brief Return true if the metadata for longitude and latitude exist.
+   * It checks that all the tags from GPSExifTags exists
+   * @return true if GPS data is available
+   */
+  bool hasGpsMetadata() const;
+
+  /**
    * @brief Return true if the given metadata name exists and is a digit
    * @param[in] names List of possible names for the metadata
    * @param[in] isPositive true if the metadata must be positive
@@ -358,6 +378,26 @@ public:
       return EEXIFOrientation::UNKNOWN;
     return static_cast<EEXIFOrientation>(orientation);
   }
+
+  /**
+   * @brief Get the gps position in the absolute cartesian reference system.
+   * @return The position x, y, z as a three dimensional vector.
+   */
+  Vec3 getGpsPositionFromMetadata() const;
+
+  /**
+   * @brief Get the gps position in the WGS84 reference system.
+   * @param[out] lat the latitude
+   * @param[out] lon the longitude
+   * @param[out] alt the altitude
+   */
+  void getGpsPositionWGS84FromMetadata(double& lat, double& lon, double& alt) const;
+
+  /**
+   * @brief Get the gps position in the WGS84 reference system as a vector.
+   * @return A three dimensional vector with latitude, logitude and altitude.
+   */
+  Vec3 getGpsPositionWGS84FromMetadata() const;
 
   const bool getApplyWhiteBalance() const 
   {
