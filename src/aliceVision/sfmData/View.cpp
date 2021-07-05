@@ -106,13 +106,10 @@ std::map<std::string, std::string>::const_iterator View::findMetadataIterator(co
 
 bool View::hasMetadata(const std::vector<std::string>& names) const
 {
-    for(const std::string& name : names)
-    {
-        const auto it = findMetadataIterator(name);
-        if(it != _metadata.end())
-            return true;
-    }
-    return false;
+    return std::any_of(names.cbegin(), names.cend(),
+                       [this](const std::string& name){
+                           return (findMetadataIterator(name) != _metadata.end());
+                       });
 }
 
 bool View::hasDigitMetadata(const std::vector<std::string>& names, bool isPositive) const
