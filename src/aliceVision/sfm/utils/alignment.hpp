@@ -163,7 +163,7 @@ inline void applyTransform(sfmData::SfMData& sfmData,
       sfmData.setPose(view, sfmData::CameraPose(pose));
     }
   }
-  
+
   for(auto& landmark: sfmData.structure)
   {
     landmark.second.X = S * R * landmark.second.X + t;
@@ -211,6 +211,21 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
  */
 void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                              const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
+                                             double& out_S,
+                                             Mat3& out_R,
+                                             Vec3& out_t);
+
+/**
+ * @brief Compute a new coordinate system using the GPS data available in the metadata. The transformation will bring the
+ * model in the cartesian metric reference system.
+ * @param[in] sfmData The sfmdata containing the scene.
+ * @param[in,out] randomNumberGenerator The random number generator.
+ * @param[out] out_S the scale factor.
+ * @param[out] out_R the rotation.
+ * @param[out] out_t the translation.
+ * @return false if no reliable transformation can be computed or the sfmdata does not contain gps metadata, true otherwise.
+ */
+bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std::mt19937 &randomNumberGenerator,
                                              double& out_S,
                                              Mat3& out_R,
                                              Vec3& out_t);
