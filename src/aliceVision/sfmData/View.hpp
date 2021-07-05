@@ -213,7 +213,7 @@ public:
    */
   bool isPoseIndependant() const
   {
-    return (!isPartOfRig() || _isIndependantPose);
+    return (!isPartOfRig() || _isPoseIndependent);
   }
 
   /**
@@ -508,9 +508,9 @@ public:
    * @brief setIndependantPose
    * @param independant
    */
-  void setIndependantPose(bool independant)
+  void setIndependantPose(bool independent)
   {
-    _isIndependantPose = independant;
+      _isPoseIndependent = independent;
   }
 
   /**
@@ -584,8 +584,8 @@ private:
   IndexT _frameId = UndefinedIndexT;
   /// resection id
   IndexT _resectionId = UndefinedIndexT;
-  /// pose independant of other view(s)
-  bool _isIndependantPose = true;
+  /// pose independent of other view(s)
+  bool _isPoseIndependent = true;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
 };
