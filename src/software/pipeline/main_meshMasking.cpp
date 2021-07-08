@@ -13,6 +13,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/visibility.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -73,9 +74,10 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
  */
 struct MaskCache
 {
-    MaskCache(const mvsUtils::MultiViewParams& mp, const std::vector<std::string>& masksFolders, int maxSize = 16)
+    MaskCache(const mvsUtils::MultiViewParams& mp, const std::vector<std::string>& masksFolders, bool undistortMasks, int maxSize = 16)
         : _mp(mp)
         , _masksFolders(masksFolders)
+        , _undistortMasks(undistortMasks)
         , _maxSize(maxSize)
     {
     }
@@ -100,11 +102,30 @@ struct MaskCache
 
             _cache.push_back({ camId, std::make_unique<image::Image<unsigned char>>(), 0 });
             item = &_cache.back();
-            const bool loaded = tryLoadMask(item->mask.get(), _masksFolders, _mp.getViewId(camId), _mp.getImagePath(camId));
+            const IndexT viewId = _mp.getViewId(camId);
+            auto * const mask = item->mask.get();
+            const bool loaded = tryLoadMask(mask, _masksFolders, viewId, _mp.getImagePath(camId));
             if (loaded)
             {
+                if (_undistortMasks)
+                {
+                    const auto& sfm = _mp.getInputSfMData();
+                    const IndexT intrinsicId = sfm.getView(viewId).getIntrinsicId();
+                    const auto intrinsicIt = sfm.intrinsics.find(intrinsicId);
+                    if (intrinsicIt != sfm.intrinsics.end())
+                    {
+                        const auto& intrinsic = intrinsicIt->second;
+                        if (intrinsic->isValid() && intrinsic->hasDistortion())
+                        {
+                            image::Image<unsigned char> mask_ud;
+                            camera::UndistortImage(*mask, intrinsic.get(), mask_ud, (unsigned char)0);
+                            mask->swap(mask_ud);
+                        }
+                    }
+                }
+
                 item->locks = 1;
-                return item->mask.get();
+                return mask;
             }
             else
             {
@@ -161,6 +182,7 @@ private:
 private:
     mvsUtils::MultiViewParams _mp;
     std::vector<std::string> _masksFolders;
+    bool _undistortMasks;
     int _maxSize;
     std::vector<Item> _cache;
 };
@@ -351,10 +373,11 @@ void meshMasking(
     const std::string & outputMeshPath,
     int threshold,
     bool invert,
-    bool smoothBoundary
+    bool smoothBoundary,
+    bool undistortMasks
     )
 {
-    MaskCache maskCache(mp, masksFolders);
+    MaskCache maskCache(mp, masksFolders, undistortMasks);
 
     // compute visibility for every vertex
     // also update inputMesh.pointsVisibilities according to the masks
@@ -493,6 +516,7 @@ int main(int argc, char **argv)
     int threshold = 1;
     bool invert = false;
     bool smoothBoundary = false;
+    bool undistortMasks = false;
 
     po::options_description allParams("AliceVision masking");
 
@@ -517,6 +541,8 @@ int main(int argc, char **argv)
             "Invert the mask.")
         ("smoothBoundary", po::value<bool>(&smoothBoundary)->default_value(smoothBoundary),
             "Modify the triangles at the boundary to fit the masks.")
+        ("undistortMasks", po::value<bool>(&undistortMasks)->default_value(undistortMasks),
+            "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
         ;
 
     po::options_description logParams("Log parameters");
@@ -617,7 +643,7 @@ int main(int argc, char **argv)
     inputMesh.remapVisibilities(mesh::EVisibilityRemappingMethod::PullPush, refMesh);
 
     ALICEVISION_LOG_INFO("Mask mesh");
-    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary);
+    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }
