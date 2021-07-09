@@ -52,7 +52,7 @@ int aliceVision_main(int argc, char** argv)
     // whether to lock or not the poses
     bool lockPoses{true};
 
-    po::options_description allParams("This program generate an SfMData from the configuration files of the Middlebury dataset.");
+    po::options_description allParams("This program generate an SfMData from the configuration files of the Middlebury dataset: https://vision.middlebury.edu/mview/data");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()("input,i", po::value<std::string>(&middleburyFile)->required(), "The text file containing the cameras (e.g. temple_par.txt).")
