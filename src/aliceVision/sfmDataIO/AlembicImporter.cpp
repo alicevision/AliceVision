@@ -11,6 +11,8 @@
 #include <Alembic/AbcCoreFactory/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 
+#include <aliceVision/version.hpp>
+
 namespace aliceVision {
 namespace sfmDataIO {
 
@@ -153,7 +155,7 @@ struct AV_UInt32ArraySamplePtr
   }
 };
 
-bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
+bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
 {
   using namespace aliceVision::geometry;
 
@@ -196,7 +198,16 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
 
 
-    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = sfmData::Landmark(Vec3(pos_i.x, -pos_i.y, -pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+    
+    if (abcVersion < Version(1, 2, 3))
+    {
+      landmark = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    }
+    else
+    {
+      landmark = sfmData::Landmark(Vec3(pos_i.x, -pos_i.y, -pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    }
 
     if(sampleColors)
     {
@@ -610,7 +621,15 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     M(1, 1) = -1.0;
     M(2, 2) = -1.0;
 
-    Mat4 T2 = (M * T * M).inverse();
+    Mat4 T2;
+    if (abcVersion < Version(1, 2, 3))
+    {
+      T2 = (T * M).inverse();
+    }
+    else 
+    {
+      T2 = (M * T * M).inverse();
+    }
 
     Pose3 pose(T2.block<3, 4>(0, 0));
 
@@ -738,8 +757,6 @@ bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::Sf
 
     Pose3 pose(matR, matT);
 
-    std::cout << "ok" << std::endl;
-
     if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
       sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
   }
@@ -762,7 +779,7 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
   const MetaData& md = iObj.getMetaData();
   if(IPoints::matches(md) && (flagsPart & ESfMData::STRUCTURE))
   {
-    readPointCloud(iObj, mat, sfmdata, flagsPart);
+    readPointCloud(abcVersion, iObj, mat, sfmdata, flagsPart);
   }
   else if(IXform::matches(md))
   {

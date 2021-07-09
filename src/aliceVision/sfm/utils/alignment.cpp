@@ -598,7 +598,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 
     // We assume that the X axis of all or majority of the cameras are on a plane.
     // The covariance is a flat ellipsoid and the min axis is our candidate Y axis.
-    const Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
+    Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
 
     const Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();
     const double d = nullestSpace.dot(referenceAxis);
