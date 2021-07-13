@@ -265,8 +265,7 @@ Point3d findBoundaryVertex(
 
             Pixel projectedPixel;
             mp.getPixelFor3DPoint(&projectedPixel, midPoint, camId);
-            if (projectedPixel.x >= 0 && projectedPixel.x < mask.Width()
-             || projectedPixel.y >= 0 || projectedPixel.y < mask.Height())
+            if (mp.isPixelInImage(projectedPixel, camId))
             {
                 const bool maskValue = (mask(projectedPixel.y, projectedPixel.x) == 0);
                 const bool masked = invert ? !maskValue : maskValue;
