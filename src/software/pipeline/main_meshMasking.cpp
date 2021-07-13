@@ -367,15 +367,30 @@ void smoothenBoundary(
     }
 }
 
+void removeCameraVisibility(mesh::Mesh& inputMesh, int camId)
+{
+    #pragma omp parallel for
+    for (int vertexId = 0; vertexId < inputMesh.pts.size(); ++vertexId)
+    {
+        auto& pointVisibilities = inputMesh.pointsVisibilities[vertexId];
+        const int pointVisibilityIndex = pointVisibilities.indexOf(camId);
+        if (pointVisibilityIndex != -1)
+        {
+            pointVisibilities.remove(pointVisibilityIndex);
+        }
+    }
+}
+
 void meshMasking(
     const mvsUtils::MultiViewParams & mp,
     mesh::Mesh & inputMesh,
     const std::vector<std::string> & masksFolders,
     const std::string & outputMeshPath,
-    int threshold,
-    bool invert,
-    bool smoothBoundary,
-    bool undistortMasks
+    const int threshold,
+    const bool invert,
+    const bool smoothBoundary,
+    const bool undistortMasks,
+    const bool usePointsVisibilities
     )
 {
     MaskCache maskCache(mp, masksFolders, undistortMasks);
@@ -390,6 +405,10 @@ void meshMasking(
         auto* maskPtr = maskCache.lock(camId);
         if (!maskPtr)
         {
+            if (usePointsVisibilities)
+            {
+                removeCameraVisibility(inputMesh, camId);
+            }
             continue;
         }
 
@@ -397,6 +416,10 @@ void meshMasking(
         if (mp.getWidth(camId) != mask.Width() || mp.getHeight(camId) != mask.Height())
         {
             ALICEVISION_LOG_WARNING("Invalid mask size: mask is ignored.");
+            if (usePointsVisibilities)
+            {
+                removeCameraVisibility(inputMesh, camId);
+            }
             maskCache.unlock(camId);
             continue;
         }
@@ -409,7 +432,7 @@ void meshMasking(
             // check if the vertex is visible by the camera
             auto& pointVisibilities = inputMesh.pointsVisibilities[vertexId];
             const int pointVisibilityIndex = pointVisibilities.indexOf(camId);
-            if (pointVisibilityIndex == -1)
+            if (usePointsVisibilities && pointVisibilityIndex == -1)
             {
                 continue;
             }
@@ -420,7 +443,10 @@ void meshMasking(
             if (projectedPixel.x < 0 || projectedPixel.x >= mask.Width()
              || projectedPixel.y < 0 || projectedPixel.y >= mask.Height())
             {
-                pointVisibilities.remove(pointVisibilityIndex);  // not visible
+                if (usePointsVisibilities)
+                {
+                    pointVisibilities.remove(pointVisibilityIndex);  // not visible
+                }
                 continue;
             }
 
@@ -429,10 +455,17 @@ void meshMasking(
             const bool masked = invert ? !maskValue : maskValue;
             if (masked)
             {
-                pointVisibilities.remove(pointVisibilityIndex);  // not visible
+                if (usePointsVisibilities)
+                {
+                    pointVisibilities.remove(pointVisibilityIndex);  // not visible
+                }
             }
             else
             {
+                if (!usePointsVisibilities)
+                {
+                    pointVisibilities.push_back(camId);
+                }
                 ++vertexVisibilityCounters[vertexId];
             }
         }
@@ -518,6 +551,7 @@ int main(int argc, char **argv)
     bool invert = false;
     bool smoothBoundary = false;
     bool undistortMasks = false;
+    bool usePointsVisibilities = false;
 
     po::options_description allParams("AliceVision masking");
 
@@ -544,6 +578,8 @@ int main(int argc, char **argv)
             "Modify the triangles at the boundary to fit the masks.")
         ("undistortMasks", po::value<bool>(&undistortMasks)->default_value(undistortMasks),
             "Undistort the masks with the same parameters as the matching image. Use it if the masks are drawn on the original images.")
+        ("usePointsVisibilities", po::value<bool>(&usePointsVisibilities)->default_value(usePointsVisibilities),
+            "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
         ;
 
     po::options_description logParams("Log parameters");
@@ -637,14 +673,22 @@ int main(int argc, char **argv)
 
     mvsUtils::MultiViewParams mp(sfmData);
 
-    // load reference dense point cloud with visibilities
-    ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
-    mesh::Mesh refMesh;
-    mvsUtils::createRefMeshFromDenseSfMData(refMesh, sfmData, mp);
-    inputMesh.remapVisibilities(mesh::EVisibilityRemappingMethod::PullPush, refMesh);
+    if (usePointsVisibilities)
+    {
+        // load reference dense point cloud with visibilities
+        ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
+        mesh::Mesh refMesh;
+        mvsUtils::createRefMeshFromDenseSfMData(refMesh, sfmData, mp);
+        inputMesh.remapVisibilities(mesh::EVisibilityRemappingMethod::PullPush, refMesh);
+    }
+    else
+    {
+        // initialize points visibilities because it is later used to store vertex/mask visibilities
+        inputMesh.pointsVisibilities.resize(inputMesh.pts.size());
+    }
 
     ALICEVISION_LOG_INFO("Mask mesh");
-    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks);
+    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }
