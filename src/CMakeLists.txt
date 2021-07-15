@@ -40,8 +40,8 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# C++11
-set(CMAKE_CXX_STANDARD 11)
+# C++14
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
