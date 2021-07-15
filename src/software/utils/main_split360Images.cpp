@@ -289,7 +289,7 @@ int aliceVision_main(int argc, char** argv)
   std::string dualFisheyeSplitPreset;         // dual-fisheye split type preset
   std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
   std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
-  bool equirectangularDemoMode;
+  bool equirectangularDemoMode = false;
   double fov = 110.0;                         // Field of View in degree
   int nbThreads = 3;
 
@@ -306,16 +306,14 @@ int aliceVision_main(int argc, char** argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("splitMode,m", po::value<std::string>(&splitMode)->default_value("equirectangular"),
-      "Split mode "
-      "(exif, equirectangular, dualfisheye)")
+      "Split mode (equirectangular, dualfisheye)")
     ("dualFisheyeSplitPreset", po::value<std::string>(&dualFisheyeSplitPreset)->default_value("center"),
-      "Dual-Fisheye split type preset "
-      "(center, top, bottom)")
+      "Dual-Fisheye split type preset (center, top, bottom)")
     ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
       "Equirectangular number of splits")
     ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
       "Equirectangular split resolution")
-    ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(false),
+    ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(equirectangularDemoMode),
       "Export a SVG file that simulate the split")
     ("fov", po::value<double>(&fov)->default_value(fov),
       "Field of View to extract (in degree).")
