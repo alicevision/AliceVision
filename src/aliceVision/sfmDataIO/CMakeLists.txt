@@ -4,6 +4,7 @@ set(sfmDataIO_files_headers
   bafIO.hpp
   gtIO.hpp
   jsonIO.hpp
+  middlebury.hpp
   plyIO.hpp
   viewIO.hpp
 )
@@ -14,6 +15,7 @@ set(sfmDataIO_files_sources
   bafIO.cpp
   gtIO.cpp
   jsonIO.cpp
+  middlebury.cpp
   plyIO.cpp
   viewIO.cpp
 )
@@ -35,6 +37,8 @@ alicevision_add_library(aliceVision_sfmDataIO
     aliceVision_sfmData
     Boost::filesystem
   PRIVATE_LINKS
+    aliceVision_image
+    Boost::filesystem
     Boost::regex
     Boost::boost
 )
@@ -63,3 +67,11 @@ alicevision_add_test(sfmDataIO_test.cpp
 if(ALICEVISION_HAVE_ALEMBIC)
   alicevision_add_test(alembicIO_test.cpp NAME "sfmDataIO_alembic" LINKS aliceVision_sfmDataIO Alembic::Alembic)
 endif()
+
+
+alicevision_add_test(middlebury_test.cpp
+        NAME "middlebury"
+        LINKS aliceVision_sfmData
+        aliceVision_numeric
+        aliceVision_sfmDataIO
+        )

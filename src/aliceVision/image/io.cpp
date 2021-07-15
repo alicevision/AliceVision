@@ -201,6 +201,12 @@ void readImageMetadata(const std::string& path, int& width, int& height, std::ma
     metadata.emplace(param.name().string(), param.get_string());
 }
 
+void readImageSize(const std::string& path, int& width, int& height)
+{
+    std::map<std::string, std::string> metadata;
+    readImageMetadata(path, width, height, metadata);
+}
+
 template<typename T>
 void getBufferFromImage(Image<T>& image,
                         oiio::TypeDesc format,

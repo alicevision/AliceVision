@@ -163,6 +163,14 @@ oiio::ParamValueList readImageMetadata(const std::string& path);
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata);
 
 /**
+ * @brief return the size of the image for a given path
+ * @param path The given path to the image
+ * @param[out] width The image header width
+ * @param[out] height The image header height
+ */
+void readImageSize(const std::string& path, int& width, int& height);
+
+/**
  * @brief get OIIO buffer from an AliceVision image
  * @param[in] image Image class
  * @param[out] buffer OIIO buffer

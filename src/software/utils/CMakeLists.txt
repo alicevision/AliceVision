@@ -51,6 +51,18 @@ if(ALICEVISION_HAVE_OPENCV)
   target_link_libraries(aliceVision_utils_imageProcessing PRIVATE ${OpenCV_LIBS})
 endif()
 
+alicevision_add_software(aliceVision_utils_importMiddlebury
+        SOURCE main_importMiddlebury.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS
+        aliceVision_numeric
+        aliceVision_geometry
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_system
+        ${Boost_LIBRARIES}
+        )
+
 # Voctree creation
 alicevision_add_software(aliceVision_utils_voctreeCreation
   SOURCE main_voctreeCreation.cpp
