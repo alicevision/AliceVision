@@ -31,11 +31,11 @@ Vec3 WGS84ToCartesian(const Vec3& gps)
     const double cosLon = std::cos(lon);
 
     // Normalized radius
-    const double normRadius = equRadius / std::sqrt(1 - sqrEccentricity * sinLat * sinLat);
+    const double normRadius = equRadius / std::sqrt(1.0 - sqrEccentricity * sinLat * sinLat);
 
     return {(normRadius + alt) * cosLat * cosLon,
             (normRadius + alt) * cosLat * sinLon,
-            (normRadius * (1 - sqrEccentricity) + alt) * sinLat};
+            (normRadius * (1.0 - sqrEccentricity) + alt) * sinLat};
 }
 
 double parseAltitudeFromString(const std::string& alt, const std::string& altRef)
@@ -50,7 +50,7 @@ double parseAltitudeFromString(const std::string& alt, const std::string& altRef
     const double ref = std::stod(altRef);
     const double altitude = std::stod(alt);
 
-    return ref > 0 ? -altitude : altitude;
+    return ref > 0.0 ? -altitude : altitude;
 }
 
 //WGS84
