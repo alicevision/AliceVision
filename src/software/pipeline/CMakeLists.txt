@@ -37,6 +37,21 @@ if(ALICEVISION_BUILD_SFM)
           Boost::boost
   )
 
+  # Image processing
+  if(ALICEVISION_HAVE_OPENCV)
+    alicevision_add_software(aliceVision_imageMasking
+      SOURCE main_imageMasking.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_image
+            aliceVision_imageMasking
+            aliceVision_system
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            ${OpenCV_LIBRARIES}
+            ${Boost_LIBRARIES}
+    )
+  endif()
+
   # Feature extraction
   alicevision_add_software(aliceVision_featureExtraction
     SOURCE main_featureExtraction.cpp
