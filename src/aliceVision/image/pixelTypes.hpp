@@ -395,6 +395,7 @@ namespace aliceVision
     };
 
     typedef Rgba<unsigned char> RGBAColor;
+    typedef Rgba<float> RGBAfColor;
 
     /// Instantiation for unsigned char color component
     using RGBAColor = Rgba<unsigned char>;
