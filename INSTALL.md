@@ -7,7 +7,7 @@ Build instructions
 Required tools:
 * CMake >= 3.11
 * Git
-* C/C++ compiler (gcc or visual studio or clang) with C++14 support (i.e. gcc >= 5, clang >= 3.4, msvc >=19, cuda => 9.0).
+* C/C++ compiler (gcc or visual studio or clang) with C++14 support (i.e. gcc >= 5, clang >= 3.4, msvc >= 19.10, cuda => 9.0).
 
 ### Compile the project
 
