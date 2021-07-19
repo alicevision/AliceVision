@@ -201,18 +201,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # ==============================================================================
-# Check C++11 support
-# ==============================================================================
-include(CXX11)
-check_for_cxx11_compiler(CXX11_COMPILER)
-
-if(NOT CXX11_COMPILER)
-  message(FATAL_ERROR "The compiler does not support the CXX11 standard.")
-endif(NOT CXX11_COMPILER)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# ==============================================================================
 # Enable code coverage generation (only with GCC)
 # ==============================================================================
 if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
