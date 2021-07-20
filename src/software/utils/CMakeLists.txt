@@ -48,7 +48,7 @@ alicevision_add_software(aliceVision_utils_imageProcessing
 )
 
 if(ALICEVISION_HAVE_OPENCV)
-  target_link_libraries(aliceVision_utils_imageProcessing PRIVATE ${OpenCV_LIBS})
+  target_link_libraries(aliceVision_utils_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
 endif()
 
 alicevision_add_software(aliceVision_utils_importMiddlebury
