@@ -637,33 +637,34 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
   ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
+  const sfmData::View& view = sfmData.getView(viewId);
   switch(orientation)
   {
     case sfmData::EEXIFOrientation::RIGHT:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: RIGHT");
           out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
-                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+                  * sfmData.getPose(view).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::LEFT:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: LEFT");
           out_R = Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
-                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+                  * sfmData.getPose(view).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::UPSIDEDOWN:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: UPSIDEDOWN");
-          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getPose(view).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::NONE:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
-          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getPose(view).getTransform().rotation();
           break;
     default:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
-          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getPose(view).getTransform().rotation();
           break;
   }
 
-  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
+  out_t = - out_R * sfmData.getPose(view).getTransform().center();
   out_S = 1.0;
 }
 
