@@ -150,6 +150,11 @@ int aliceVision_main(int argc, char **argv)
       "UID or filepath or filename of the second image.")
     ("lockAllIntrinsics", po::value<bool>(&sfmParams.lockAllIntrinsics)->default_value(sfmParams.lockAllIntrinsics),
       "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
+    ("minNbCamerasToRefinePrincipalPoint", po::value<int>(&sfmParams.minNbCamerasToRefinePrincipalPoint)->default_value(sfmParams.minNbCamerasToRefinePrincipalPoint),
+        "Minimal number of cameras to refine the principal point of the cameras (one of the intrinsic parameters of the camera). "
+        "If we do not have enough cameras, the principal point in consider is considered in the center of the image. "
+        "If minNbCamerasToRefinePrincipalPoint<=0, the principal point is never refined. "
+        "If minNbCamerasToRefinePrincipalPoint==1, the principal point is always refined.")
     ("useLocalBA,l", po::value<bool>(&sfmParams.useLocalBundleAdjustment)->default_value(sfmParams.useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
@@ -166,8 +171,10 @@ int aliceVision_main(int argc, char **argv)
       "Matches folders previously added to the SfMData file will be ignored.")
     ("filterTrackForks", po::value<bool>(&sfmParams.filterTrackForks)->default_value(sfmParams.filterTrackForks),
       "Enable/Disable the track forks removal. A track contains a fork when incoherent matches leads to multiple features in the same image for a single track.\n")
-    ("useRigConstraint", po::value<bool>(&sfmParams.useRigConstraint)->default_value(sfmParams.useRigConstraint),
+    ("useRigConstraint", po::value<bool>(&sfmParams.rig.useRigConstraint)->default_value(sfmParams.rig.useRigConstraint),
       "Enable/Disable rig constraint.\n")
+    ("rigMinNbCamerasForCalibration", po::value<int>(&sfmParams.rig.minNbCamerasForCalibration)->default_value(sfmParams.rig.minNbCamerasForCalibration),
+        "Minimal number of cameras to start the calibration of the rig.\n")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
       "Lock/Unlock scene previously reconstructed.\n")
     ("observationConstraint", po::value<EFeatureConstraint>(&sfmParams.featureConstraint)->default_value(sfmParams.featureConstraint),

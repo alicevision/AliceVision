@@ -11,6 +11,7 @@
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
+#include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
@@ -44,10 +45,11 @@ public:
     bool useLocalBundleAdjustment = false;
     int localBundelAdjustementGraphDistanceLimit = 1;
 
-    bool useRigConstraint = true;
+    RigParams rig;
 
     /// Has fixed Intrinsics
     bool lockAllIntrinsics = false;
+    int minNbCamerasToRefinePrincipalPoint = 3;
 
     /// minimum number of obersvations to triangulate a 3d point.
     std::size_t minNbObservationsForTriangulation = 2;
