@@ -69,5 +69,7 @@ private:
   std::map<IndexT, SubPoseInfo> _rigInfoPerSubPose;
 };
 
+IndexT getRigPoseId(IndexT rigId, IndexT frameId);
+
 } // namespace sfm
 } // namespace aliceVision
