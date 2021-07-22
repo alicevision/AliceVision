@@ -96,7 +96,7 @@ vcpkg install ^
           geogram ^
           eigen3 ^
           opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
-          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp,tools] ^
+          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
           ceres[suitesparse,cxsparse] ^
           cuda ^
           tbb ^
