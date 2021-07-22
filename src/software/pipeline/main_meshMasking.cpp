@@ -30,18 +30,6 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 
-template <class T>
-auto optInRange(T min, T max, const char * opt_name)
-{
-    return [=] (T v)
-    {
-        if(v < min || v > max)
-        {
-            throw po::validation_error(po::validation_error::invalid_option_value, opt_name, std::to_string(v));
-        }
-    };
-};
-
 bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string& srcImage)
 {
     for (const auto& masksFolder_str : masksFolders)

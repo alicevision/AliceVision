@@ -75,18 +75,6 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
     return in;
 }
 
-template <class T>
-std::function<void(T)> optInRange(T min, T max, const char * opt_name)
-{
-    return [=] (T v)
-    { 
-        if(v < min || v > max)
-        { 
-            throw po::validation_error(po::validation_error::invalid_option_value, opt_name, std::to_string(v));
-        }
-    };
-};
-
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
