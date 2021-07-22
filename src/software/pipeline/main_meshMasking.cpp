@@ -18,6 +18,8 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+#include <memory>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
