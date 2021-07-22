@@ -12,6 +12,7 @@
 #include <regex>
 #include <string>
 #include <utility>
+#include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -31,6 +32,18 @@ enum class EEXIFOrientation
   , RIGHT = 8
   , UNKNOWN = -1
 };
+
+struct GPSExifTags
+{
+    static std::string latitude();
+    static std::string latitudeRef();
+    static std::string longitude();
+    static std::string longitudeRef();
+    static std::string altitude();
+    static std::string altitudeRef();
+    static std::vector<std::string> all();
+};
+
 
 /**
  * @brief A view define an image by a string and unique indexes for
@@ -200,7 +213,7 @@ public:
    */
   bool isPoseIndependant() const
   {
-    return (!isPartOfRig() || _isIndependantPose);
+    return (!isPartOfRig() || _isPoseIndependent);
   }
 
   /**
@@ -228,6 +241,13 @@ public:
    * @return true if the corresponding metadata value exists
    */
   bool hasMetadata(const std::vector<std::string>& names) const;
+
+  /**
+   * @brief Return true if the metadata for longitude and latitude exist.
+   * It checks that all the tags from GPSExifTags exists
+   * @return true if GPS data is available
+   */
+  bool hasGpsMetadata() const;
 
   /**
    * @brief Return true if the given metadata name exists and is a digit
@@ -359,6 +379,26 @@ public:
     return static_cast<EEXIFOrientation>(orientation);
   }
 
+  /**
+   * @brief Get the gps position in the absolute cartesian reference system.
+   * @return The position x, y, z as a three dimensional vector.
+   */
+  Vec3 getGpsPositionFromMetadata() const;
+
+  /**
+   * @brief Get the gps position in the WGS84 reference system.
+   * @param[out] lat the latitude
+   * @param[out] lon the longitude
+   * @param[out] alt the altitude
+   */
+  void getGpsPositionWGS84FromMetadata(double& lat, double& lon, double& alt) const;
+
+  /**
+   * @brief Get the gps position in the WGS84 reference system as a vector.
+   * @return A three dimensional vector with latitude, logitude and altitude.
+   */
+  Vec3 getGpsPositionWGS84FromMetadata() const;
+
   const bool getApplyWhiteBalance() const 
   {
     if (getIntMetadata({"AliceVision:useWhiteBalance"}) == 0)
@@ -468,9 +508,9 @@ public:
    * @brief setIndependantPose
    * @param independant
    */
-  void setIndependantPose(bool independant)
+  void setIndependantPose(bool independent)
   {
-    _isIndependantPose = independant;
+      _isPoseIndependent = independent;
   }
 
   /**
@@ -544,8 +584,8 @@ private:
   IndexT _frameId = UndefinedIndexT;
   /// resection id
   IndexT _resectionId = UndefinedIndexT;
-  /// pose independant of other view(s)
-  bool _isIndependantPose = true;
+  /// pose independent of other view(s)
+  bool _isPoseIndependent = true;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
 };

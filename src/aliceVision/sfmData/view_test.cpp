@@ -50,5 +50,18 @@ BOOST_AUTO_TEST_CASE(View_Metadata)
 
       BOOST_CHECK_EQUAL(view.getMetadataFocalLength(), 5.0);
   }
+
+    {
+        sfmData::View view;
+
+        BOOST_CHECK_THROW(view.getGpsPositionFromMetadata(), std::out_of_range);
+
+        for(const auto& t : sfmData::GPSExifTags::all())
+        {
+            BOOST_CHECK(!view.hasGpsMetadata());
+            view.addMetadata(t, "100.6");
+        }
+        BOOST_CHECK(view.hasGpsMetadata());
+    }
 }
 
