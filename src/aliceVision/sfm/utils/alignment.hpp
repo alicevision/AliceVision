@@ -153,15 +153,18 @@ inline void applyTransform(sfmData::SfMData& sfmData,
                            const Vec3& t,
                            bool transformControlPoints = false)
 {
-  for(auto& viewPair: sfmData.views)
+  for(auto& poseIt: sfmData.getPoses())
   {
-    const sfmData::View& view = *viewPair.second;
-    if(sfmData.existsPose(view))
-    {
-      geometry::Pose3 pose = sfmData.getPose(view).getTransform();
-      pose = pose.transformSRt(S, R, t);
-      sfmData.setPose(view, sfmData::CameraPose(pose));
-    }
+    geometry::Pose3 pose = poseIt.second.getTransform();
+    pose = pose.transformSRt(S, R, t);
+    poseIt.second.setTransform(pose);
+  }
+  for (auto& rigIt : sfmData.getRigs())
+  {
+      for (auto& subPose : rigIt.second.getSubPoses())
+      {
+          subPose.pose.center() *= S;
+      }
   }
 
   for(auto& landmark: sfmData.structure)

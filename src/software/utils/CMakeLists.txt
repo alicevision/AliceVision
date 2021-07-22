@@ -48,7 +48,7 @@ alicevision_add_software(aliceVision_utils_imageProcessing
 )
 
 if(ALICEVISION_HAVE_OPENCV)
-  target_link_libraries(aliceVision_utils_imageProcessing PRIVATE ${OpenCV_LIBS})
+  target_link_libraries(aliceVision_utils_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
 endif()
 
 alicevision_add_software(aliceVision_utils_importMiddlebury
@@ -223,6 +223,16 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
         Boost::filesystem
 )
 
+
+# Print distances between 3D objects
+alicevision_add_software(aliceVision_utils_sfmDistances
+  SOURCE main_sfmDistances.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+)
 
 # Split 360 images in input in order to export square images
 alicevision_add_software(aliceVision_utils_split360Images

@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/stl/regex.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
@@ -144,7 +145,7 @@ int aliceVision_main(int argc, char **argv)
     imageWhiteRegexList.reserve(imageWhiteList.size());
     for (const std::string& exp : imageWhiteList)
     {
-      imageWhiteRegexList.emplace_back(utils::filterToRegex(exp));
+      imageWhiteRegexList.emplace_back(simpleFilterToRegex_noThrow(exp));
     }
     
     std::vector<IndexT> viewsToRemove;

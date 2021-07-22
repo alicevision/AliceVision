@@ -13,14 +13,33 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/stl/bitmask.hpp>
 
-#include <geogram/points/kd_tree.h>
+namespace GEO {
+    class AdaptiveKdTree;
+}
 
 namespace aliceVision {
 namespace mesh {
 
 using PointVisibility = StaticVector<int>;
 using PointsVisibility = StaticVector<PointVisibility>;
+
+
+/**
+ * @brief Method to remap visibilities from the reconstruction onto an other mesh.
+ */
+enum EVisibilityRemappingMethod {
+    Pull = 1,    //< For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.
+    Push = 2,    //< For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.
+    PullPush = Pull | Push  //< Combine results from Pull and Push results.
+};
+
+ALICEVISION_BITMASK(EVisibilityRemappingMethod);
+
+EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
+
 
 class Mesh
 {
@@ -265,7 +284,14 @@ public:
     */
     bool getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool invert = false) const;
 
-
+    /**
+     * @brief Remap visibilities
+     *
+     * @param[in] remappingMethod the remapping method
+     * @param[in] refMesh the reference mesh
+     * @param[in] refPointsVisibilities the reference visibilities
+     */
+    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh);
 };
 
 } // namespace mesh

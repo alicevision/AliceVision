@@ -20,7 +20,6 @@ alicevision_add_library(aliceVision_mvsUtils
     aliceVision_numeric
     aliceVision_multiview
     aliceVision_mvsData
-    aliceVision_sfmData
   PRIVATE_LINKS
     aliceVision_system
     Boost::filesystem

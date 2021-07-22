@@ -40,8 +40,67 @@ using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+template <class ImageT, class MaskFuncT>
+void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)
+{
+  ImageT image, image_ud;
+  readImage(srcImage, image, image::EImageColorSpace::LINEAR);
+
+  //exposure correction
+  if(evCorrection)
+  {
+      for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+      {
+          image(pix) = image(pix) * exposureCompensation;
+      }
+  }
+
+  // mask
+  maskFunc(image);
+
+  // undistort
+  if(cam->isValid() && cam->hasDistortion())
+  {
+    // undistort the image and save it
+    using Pix = typename ImageT::Tpixel;
+    Pix pixZero(Pix::Zero());
+    UndistortImage(image, cam, image_ud, pixZero);
+    writeImage(dstColorImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+  }
+  else
+  {
+    writeImage(dstColorImage, image, image::EImageColorSpace::AUTO, metadata);
+  }
+}
+
+bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
+{
+  for(const auto & masksFolder_str : masksFolders)
+  {
+    if(!masksFolder_str.empty() && fs::exists(masksFolder_str))
+    {
+      const auto masksFolder = fs::path(masksFolder_str);
+      const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension("png");
+      const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension("png");
+
+      if(fs::exists(idMaskPath))
+      {
+        image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
+        return true;
+      }
+      else if(fs::exists(nameMaskPath))
+      {
+        image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 bool prepareDenseScene(const SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
+                       const std::vector<std::string>& masksFolders,
                        int beginIndex,
                        int endIndex,
                        const std::string& outFolder,
@@ -194,9 +253,6 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
       const std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const IntrinsicBase* cam = iterIntrinsic->second.get();
-      Image<RGBfColor> image, image_ud;
-
-      readImage(srcImage, image, image::EImageColorSpace::LINEAR);
 
       // add exposure values to images metadata
       float cameraExposure = view->getCameraExposureSetting();
@@ -205,26 +261,34 @@ bool prepareDenseScene(const SfMData& sfmData,
       metadata.push_back(oiio::ParamValue("AliceVision:EV", ev));
       metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
 
-      //exposure correction
       if(evCorrection)
       {
-          ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
+          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(ev));
+          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev compensation : " + std::to_string(exposureCompensation));
+      }
+
+      image::Image<unsigned char> mask;
+      if(tryLoadMask(&mask, masksFolders, viewId, srcImage))
+      {
+        process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
+        {
+          if(image.Width() * image.Height() != mask.Width() * mask.Height())
+          {
+            ALICEVISION_LOG_WARNING("Invalid image mask size: mask is ignored.");
+            return;
+          }
 
           for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
-              image(pix) = image(pix) * exposureCompensation;
-
-      }
-      
-      // undistort
-      if(cam->isValid() && cam->hasDistortion())
-      {
-        // undistort the image and save it
-        UndistortImage(image, cam, image_ud, FBLACK);
-        writeImage(dstColorImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+          {
+            const bool masked = (mask(pix) == 0);
+            image(pix).a() = masked ? 0.f : 1.f;
+          }
+        });
       }
       else
       {
-        writeImage(dstColorImage, image, image::EImageColorSpace::AUTO, metadata);
+        const auto noMaskingFunc = [] (Image<RGBfColor> & image) {};
+        process<Image<RGBfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
       }
     }
 
@@ -244,6 +308,7 @@ int aliceVision_main(int argc, char *argv[])
   std::string outFolder;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
   std::vector<std::string> imagesFolders;
+  std::vector<std::string> masksFolders;
   int rangeStart = -1;
   int rangeSize = 1;
   bool saveMetadata = true;
@@ -263,6 +328,9 @@ int aliceVision_main(int argc, char *argv[])
   optionalParams.add_options()
     ("imagesFolders",  po::value<std::vector<std::string>>(&imagesFolders)->multitoken(),
       "Use images from specific folder(s) instead of those specify in the SfMData file.\n"
+      "Filename should be the same or the image uid.")
+    ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
+      "Use masks from specific folder(s).\n"
       "Filename should be the same or the image uid.")
     ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
         image::EImageFileType_informations().c_str())
@@ -353,7 +421,7 @@ int aliceVision_main(int argc, char *argv[])
   }
 
   // export
-  if(prepareDenseScene(sfmData, imagesFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
+  if(prepareDenseScene(sfmData, imagesFolders, masksFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
     return EXIT_SUCCESS;
 
   return EXIT_FAILURE;

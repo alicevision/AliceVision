@@ -6,9 +6,12 @@
 
 #include "Mesh.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+
+#include <geogram/points/kd_tree.h>
 
 #include <boost/filesystem.hpp>
 
@@ -2776,6 +2779,20 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
 
     ALICEVISION_LOG_INFO("Get surface " << (invert? "inner part" : "boundaries") << ", done.");
     return true;
+}
+
+void Mesh::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh)
+{
+    if (refMesh.pointsVisibilities.empty())
+        throw std::runtime_error("Texturing: Cannot remap visibilities as there is no reference points.");
+
+    // remap visibilities from the reference onto the mesh
+    if (remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Pull)
+        remapMeshVisibilities_pullVerticesVisibility(refMesh, *this);
+    if (remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Push)
+        remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, *this);
+    if (pointsVisibilities.empty())
+        throw std::runtime_error("No visibility after visibility remapping.");
 }
 
 } // namespace mesh

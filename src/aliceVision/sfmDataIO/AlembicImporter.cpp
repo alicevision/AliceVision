@@ -602,9 +602,12 @@ bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera
 
     Pose3 pose(camR, camT);
 
-    if(view->isPartOfRig())
+    if(view->isPartOfRig() && !view->isPoseIndependant())
     {
-      sfmData::Rig& rig = sfmData.getRigs().at(view->getRigId());
+      sfmData::Rig& rig = sfmData.getRigs()[view->getRigId()];
+      std::vector<sfmData::RigSubPose>& sp = rig.getSubPoses();
+      if(view->getSubPoseId() >= sp.size())
+          sp.resize(view->getSubPoseId()+1);
       sfmData::RigSubPose& subPose = rig.getSubPose(view->getSubPoseId());
       if(subPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
       {
@@ -645,9 +648,6 @@ bool readXform(const std::vector<::uint32_t>& abcVersion, IXform& xform, M44d& m
   }
 
   mat *= xsample.getMatrix();
-
-  if( !(flagsPart & ESfMData::EXTRINSICS) )
-    return true;
 
   ICompoundProperty userProps = getAbcUserProperties(schema);
 
@@ -706,7 +706,7 @@ bool readXform(const std::vector<::uint32_t>& abcVersion, IXform& xform, M44d& m
     return true; //not a rig
   }
 
-  if(isReconstructed)
+  if((flagsPart & ESfMData::EXTRINSICS) && isReconstructed)
   {
     Mat3 matR;
     matR(0,0) = mat[0][0];
@@ -730,7 +730,7 @@ bool readXform(const std::vector<::uint32_t>& abcVersion, IXform& xform, M44d& m
       sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
   }
 
-  if(sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
+  if((rigId != UndefinedIndexT) && sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
     sfmData.getRigs().emplace(rigId, sfmData::Rig(nbSubPoses));
 
   mat.makeIdentity();

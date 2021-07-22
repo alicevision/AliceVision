@@ -12,14 +12,22 @@
 namespace aliceVision {
 namespace sfm {
 
+
+struct RigParams
+{
+    bool useRigConstraint = true;
+    int minNbCamerasForCalibration = 20;
+};
+
 class RigSequence
 {
 public:
 
-  RigSequence(sfmData::SfMData& sfmData, IndexT rigId)
+  RigSequence(sfmData::SfMData& sfmData, IndexT rigId, RigParams params)
     : _sfmData(sfmData)
     , _rigId(rigId)
     , _rig(sfmData.getRigs().at(rigId))
+    , _params(params)
   {}
 
   /**
@@ -67,7 +75,10 @@ private:
   sfmData::SfMData& _sfmData;
   RigInfoPerFrame _rigInfoPerFrame;
   std::map<IndexT, SubPoseInfo> _rigInfoPerSubPose;
+  RigParams _params;
 };
+
+IndexT getRigPoseId(IndexT rigId, IndexT frameId);
 
 } // namespace sfm
 } // namespace aliceVision
