@@ -12,7 +12,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/visibility.hpp>
+#include <aliceVision/sfmMvsUtils/visibility.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>

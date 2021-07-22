@@ -11,6 +11,8 @@
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 
+#include <geogram/points/kd_tree.h>
+
 #include <boost/filesystem.hpp>
 
 #include <fstream>

@@ -15,7 +15,9 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/stl/bitmask.hpp>
 
-#include <geogram/points/kd_tree.h>
+namespace GEO {
+    class AdaptiveKdTree;
+}
 
 namespace aliceVision {
 namespace mesh {

@@ -4,7 +4,6 @@ set(mvsUtils_files_headers
   fileIO.hpp
   ImagesCache.hpp
   MultiViewParams.hpp
-  visibility.hpp
 )
 
 # Sources
@@ -13,7 +12,6 @@ set(mvsUtils_files_sources
   fileIO.cpp
   ImagesCache.cpp
   MultiViewParams.cpp
-  visibility.cpp
 )
 
 alicevision_add_library(aliceVision_mvsUtils
@@ -22,7 +20,6 @@ alicevision_add_library(aliceVision_mvsUtils
     aliceVision_numeric
     aliceVision_multiview
     aliceVision_mvsData
-    aliceVision_sfmData
   PRIVATE_LINKS
     aliceVision_system
     Boost::filesystem

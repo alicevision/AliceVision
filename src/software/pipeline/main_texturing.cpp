@@ -14,7 +14,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
-#include <aliceVision/mvsUtils/visibility.hpp>
+#include <aliceVision/sfmMvsUtils/visibility.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>

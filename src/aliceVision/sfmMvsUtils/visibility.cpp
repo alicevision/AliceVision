@@ -4,13 +4,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/mvsUtils/visibility.hpp>
+#include "visibility.hpp"
+
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+
 #include <aliceVision/mesh/Mesh.hpp>
-#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 
 namespace aliceVision {
