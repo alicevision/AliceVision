@@ -31,6 +31,7 @@
 # defines some properties and option with which the library was built:
 #
 # ALICEVISION_HAVE_CCTAG   -  TRUE if the library is built with CCTAG support
+# ALICEVISION_HAVE_APRILTAG-  TRUE if the library is built with AprilTag support
 # ALICEVISION_HAVE_POPSIFT -  TRUE if the library is built with PopSift support
 # ALICEVISION_HAVE_OPENCV  -  TRUE if the library is built with OpenCV support
 # ALICEVISION_HAVE_OPENMP  -  TRUE if the library is built with openMP support
@@ -53,6 +54,14 @@ set(ALICEVISION_HAVE_CCTAG @ALICEVISION_HAVE_CCTAG@)
 if(ALICEVISION_HAVE_CCTAG)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
+endif()
+
+# whether it is built with AprilTag
+set(ALICEVISION_HAVE_APRILTAG @ALICEVISION_HAVE_APRILTAG@)
+
+if(ALICEVISION_HAVE_APRILTAG)
+  set(apriltag_DIR @apriltag_DIR@)
+  find_dependency(apriltag)
 endif()
 
 # whether it is built with Popsift

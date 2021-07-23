@@ -17,6 +17,10 @@
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
 #endif //ALICEVISION_HAVE_CCTAG
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+#include <aliceVision/feature/apriltag/ImageDescriber_APRILTAG.hpp>
+#endif //ALICEVISION_HAVE_APRILTAG
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
 #include <aliceVision/feature/openCV/ImageDescriber_SIFT_OCV.hpp>
@@ -217,6 +221,10 @@ std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDe
     case EImageDescriberType::CCTAG3:      describerPtr.reset(new ImageDescriber_CCTAG(3)); break;
     case EImageDescriberType::CCTAG4:      describerPtr.reset(new ImageDescriber_CCTAG(4)); break;
 #endif //ALICEVISION_HAVE_CCTAG
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    case EImageDescriberType::APRILTAG16H5:   describerPtr.reset(new ImageDescriber_APRILTAG()); break;
+#endif //ALICEVISION_HAVE_APRILTAG
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)

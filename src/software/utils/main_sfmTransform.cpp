@@ -360,7 +360,10 @@ int aliceVision_main(int argc, char **argv)
     {
         std::vector<feature::EImageDescriberType> markersDescTypes = {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-            feature::EImageDescriberType::CCTAG3, feature::EImageDescriberType::CCTAG4
+            feature::EImageDescriberType::CCTAG3, feature::EImageDescriberType::CCTAG4,
+#endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+            feature::EImageDescriberType::APRILTAG16H5,
 #endif
         };
         std::set<feature::EImageDescriberType> usedDescTypes = sfmData.getLandmarkDescTypes();

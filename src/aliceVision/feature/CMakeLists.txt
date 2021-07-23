@@ -46,6 +46,12 @@ if(ALICEVISION_HAVE_CCTAG)
   list(APPEND features_files_sources cctag/ImageDescriber_CCTAG.cpp)
 endif()
 
+# APRILTAG ImageDescriber
+if(ALICEVISION_HAVE_APRILTAG)
+  list(APPEND features_files_headers apriltag/ImageDescriber_APRILTAG.hpp)
+  list(APPEND features_files_sources apriltag/ImageDescriber_APRILTAG.cpp)
+endif()
+
 # PopSIFT ImageDescriber
 if(ALICEVISION_HAVE_POPSIFT)
   list(APPEND features_files_headers sift/ImageDescriber_SIFT_popSIFT.hpp)
@@ -80,6 +86,11 @@ alicevision_add_library(aliceVision_feature
 # Link CCTAG library
 if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_feature PUBLIC CCTag::CCTag)
+endif()
+
+# Link APRILTAG library
+if(ALICEVISION_HAVE_APRILTAG)
+  target_link_libraries(aliceVision_feature PUBLIC apriltag::apriltag)
 endif()
 
 # Link PopSIFT library

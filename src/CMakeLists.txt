@@ -57,6 +57,7 @@ trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
 trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
+trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
@@ -768,6 +769,26 @@ if(ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
+# AprilTag
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_APRILTAG is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_APRILTAG 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_APRILTAG STREQUAL "OFF")
+    find_package(apriltag CONFIG)
+
+    if(apriltag_FOUND)
+      set(ALICEVISION_HAVE_APRILTAG 1)
+      message(STATUS "AprilTag found.")
+    elseif(ALICEVISION_USE_APRILTAG STREQUAL "ON")
+      message(SEND_ERROR "Failed to find AprilTag.")
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
 # PopSift
 # ==============================================================================
 # - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
@@ -915,6 +936,7 @@ message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
 message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
+message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
 message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
 message("\n")
 

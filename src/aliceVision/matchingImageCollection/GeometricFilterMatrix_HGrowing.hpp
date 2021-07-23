@@ -205,6 +205,13 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       return EstimationStatus(false, false);
     }
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    if (std::find(descTypes.begin(), descTypes.end(),feature::EImageDescriberType::APRILTAG16H5) != descTypes.end())
+    {
+      ALICEVISION_LOG_ERROR("Geometric filtering by Homography Growing cannot handle AprilTag descriptors.");
+      return EstimationStatus(false, false);
+    }
+#endif
     
     // Get back corresponding view index
     const IndexT viewId_I = pairIndex.first;

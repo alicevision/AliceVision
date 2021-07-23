@@ -29,6 +29,9 @@ std::string EImageDescriberType_informations()
           "* cctag3: Concentric circles markers with 3 crowns.\n"
           "* cctag4: Concentric circles markers with 4 crowns.\n"
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+          "* tag16h5: AprilTag family tag16h5.\n"
+#endif
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
           "* sift_ocv: OpenCV implementation of SIFT describer.\n"
@@ -55,6 +58,10 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:        return "cctag3";
     case EImageDescriberType::CCTAG4:        return "cctag4";
+#endif
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    case EImageDescriberType::APRILTAG16H5:  return "tag16h5";
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
@@ -88,6 +95,10 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   if(type == "cctag3")        return EImageDescriberType::CCTAG3;
   if(type == "cctag4")        return EImageDescriberType::CCTAG4;
+#endif
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+  if(type == "tag16h5")       return EImageDescriberType::APRILTAG16H5;
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
