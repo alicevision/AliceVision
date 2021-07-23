@@ -791,8 +791,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                     int idTri = ti[i];
                     OrientedPoint tri;
                     tri.p = pts[tris[idTri].v[0]];
-                    tri.n = cross((pts[tris[idTri].v[1]] - pts[tris[idTri].v[0]]).normalize(),
-                                  (pts[tris[idTri].v[2]] - pts[tris[idTri].v[0]]).normalize());
+                    tri.n = computeTriangleNormal(idTri);
 
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     triangle_proj tp = getTriangleProjection(idTri, mp, rc, w, h);
@@ -2331,6 +2330,7 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
 
     {
         int mtlId = -1;
+        int maxMtlId = -1;
         std::ifstream in(objAsciiFileName.c_str());
         std::string line;
 
@@ -2342,15 +2342,9 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
             {
                 // nothing to do
             }
-            else if(mvsUtils::findNSubstrsInString(line, "usemtl") == 1)
+            else if((line[0] == 's') && (line[1] == ' '))
             {
-                char buff[5000];
-                sscanf(line.c_str(), "usemtl %s", buff);
-                auto it = materialCache.find(buff);
-                if(it == materialCache.end())
-                    materialCache.emplace(buff, ++mtlId); // new material
-                else
-                    mtlId = it->second;                   // already known material
+                // nothing to do
             }
             else if((line[0] == 'v') && (line[1] == ' '))
             {
@@ -2472,7 +2466,7 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
                 }
                 if(!ok)
                 {
-                    throw std::runtime_error("Mesh: Unrecognized facet syntax while reading obj file: " + objAsciiFileName);
+                    ALICEVISION_THROW_ERROR("Mesh: Unrecognized facet syntax while reading obj file: " << objAsciiFileName << ", line=" << idline << ", n1=" << n1 << ", n2=" << n2 << "\nline=\"" << line << "\"");
                 }
 
                 // 1st triangle
@@ -2513,6 +2507,23 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
                         trisNormalsIds.push_back(vertexNormal2 - Voxel(1, 1, 1));
                     }
                 }
+            }
+            else if(mvsUtils::findNSubstrsInString(line, "usemtl") == 1)
+            {
+                char buff[5000];
+                sscanf(line.c_str(), "usemtl %s", buff);
+                auto it = materialCache.find(buff);
+                if(it == materialCache.end())
+                {
+                    mtlId = ++maxMtlId;
+                    materialCache.emplace(buff, mtlId); // new material
+                    ALICEVISION_LOG_TRACE("OBJ material: \"" << buff << "\" [" << mtlId << "]");
+                }
+                else
+                {
+                    mtlId = it->second;                 // already known material
+                }
+                maxMtlId = std::max(mtlId, maxMtlId);
             }
 
             mvsUtils::printfEstimate(idline, nlines, t1);

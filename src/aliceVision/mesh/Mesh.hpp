@@ -25,14 +25,15 @@ namespace mesh {
 using PointVisibility = StaticVector<int>;
 using PointsVisibility = StaticVector<PointVisibility>;
 
-
 /**
  * @brief Method to remap visibilities from the reconstruction onto an other mesh.
  */
-enum EVisibilityRemappingMethod {
-    Pull = 1,    //< For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.
-    Push = 2,    //< For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.
-    PullPush = Pull | Push  //< Combine results from Pull and Push results.
+enum EVisibilityRemappingMethod
+{
+    Pull = 1, //< For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.
+    Push = 2, //< For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.
+    MeshItself = 4,        //< For each vertex of the mesh, test the reprojection in each camera
+    PullPush = Pull | Push //< Combine results from Pull and Push results.
 };
 
 ALICEVISION_BITMASK(EVisibilityRemappingMethod);

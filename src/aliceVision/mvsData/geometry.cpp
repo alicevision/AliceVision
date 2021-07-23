@@ -193,9 +193,8 @@ void linePlaneIntersect(Point3d* out, const Point3d* linePoint, const Point3d* l
 // this angle is always between 0 and 180
 double angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2)
 {
-    Point3d V1, V2;
-    V1 = iV1.normalize();
-    V2 = iV2.normalize();
+    const Point3d V1 = iV1.normalize();
+    const Point3d V2 = iV2.normalize();
 
     const double a = acos((double)(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z));
     if(std::isnan(a))
