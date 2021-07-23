@@ -249,11 +249,12 @@ public:
     return (
       view->getIntrinsicId() != UndefinedIndexT &&
       view->getPoseId() != UndefinedIndexT &&
-      // (!view->isPartOfRig() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
+      (!view->isPartOfRig() || view->isPoseIndependant() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
       intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
-      _poses.find(view->getPoseId()) != _poses.end());
+      _poses.find(view->getPoseId()) != _poses.end()
+      );
   }
-  
+
   /**
    * @brief Check if the given view have defined intrinsic and pose
    * @param[in] viewID The given viewID
@@ -301,7 +302,7 @@ public:
    * @warning: This function returns a CameraPose (a temporary object and not a reference),
    *           because in the RIG context, this pose is the composition of the rig pose and the sub-pose.
    */
-  const CameraPose getPose(const View& view) const
+  CameraPose getPose(const View& view) const
   {
     // check the view has valid pose / rig etc
     if(!view.isPartOfRig() || view.isPoseIndependant())

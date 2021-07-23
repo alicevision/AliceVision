@@ -156,11 +156,13 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
 
 /**
  * @brief Load an Intrinsic from a boost property tree.
+ * @param[in] version File versioning for dealing with compatibility
  * @param[out] intrinsicId The output Intrinsic Id
  * @param[out] intrinsic The output Intrinsic
  * @param intrinsicTree The input tree
  */
-void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic, bpt::ptree& intrinsicTree);
+void loadIntrinsic(const Vec3& version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
+                   bpt::ptree& intrinsicTree);
 
 /**
  * @brief Save a Rig in a boost property tree.

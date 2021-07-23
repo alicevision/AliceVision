@@ -23,8 +23,8 @@ class PinholeBrownT2 : public Pinhole
 {
     public:
 
-    explicit PinholeBrownT2(int w = 0, int h = 0, double focalLengthPix = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double t1 = 0.0, double t2 = 0.0)
-    : Pinhole(w, h, focalLengthPix, ppx, ppy, std::shared_ptr<Distortion>(new DistortionBrown(k1, k2, k3, t1, t2)))
+    explicit PinholeBrownT2(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double t1 = 0.0, double t2 = 0.0)
+    : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new DistortionBrown(k1, k2, k3, t1, t2)))
     {
     }
 

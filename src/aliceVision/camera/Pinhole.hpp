@@ -32,8 +32,8 @@ public:
   {
   }
 
-  Pinhole(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
+  Pinhole(unsigned int w, unsigned int h, double focalLengthPixX, double focalLengthPixY, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPixX, focalLengthPixY, ppx, ppy, distortion)
   {
   }
 
@@ -49,13 +49,24 @@ public:
     *this = dynamic_cast<const Pinhole&>(other); 
   }
 
-  double getFocalLengthPix() const { return _scale(0); }
+  double getFocalLengthPixX() const 
+  { 
+    return _scale(0); 
+  }
 
-  Vec2 getPrincipalPoint() const { return _offset; }
+  double getFocalLengthPixY() const 
+  { 
+    return _scale(1); 
+  }
+
+  Vec2 getPrincipalPoint() const 
+  { 
+    return _offset; 
+  }
 
   bool isValid() const override
   {
-    return getFocalLengthPix() > 0 && IntrinsicBase::isValid(); 
+    return getFocalLengthPixX() > 0 && getFocalLengthPixY() > 0 && IntrinsicBase::isValid(); 
   }
 
   EINTRINSIC getType() const override
@@ -173,7 +184,7 @@ public:
     return getDerivativeCam2ImaWrtPrincipalPoint();
   }
 
-  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) const
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) const
   {
 
     const Vec3 X = pose(pt); // apply pose
@@ -188,14 +199,14 @@ public:
     
     Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
 
-    ret.block<2, 1>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
-    ret.block<2, 2>(0, 1) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+    ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
+    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
 
     if (hasDistortion()) {
 
       size_t distortionSize = _pDistortion->getDistortionParametersCount();
 
-      ret.block(0, 3, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
+      ret.block(0, 4, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
     }
 
     return ret;

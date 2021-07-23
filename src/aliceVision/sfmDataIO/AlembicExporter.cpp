@@ -38,7 +38,7 @@ struct AlembicExporter::DataImpl
     _mvgPointCloud = Alembic::AbcGeom::OXform(_mvgCloud, "mvgPointCloud");
 
     // add version as custom property
-    const std::vector<::uint32_t> abcVersion = {1, 1};
+    const std::vector<::uint32_t> abcVersion = {1, 2};
     const std::vector<::uint32_t> aliceVisionVersion = {ALICEVISION_VERSION_MAJOR, ALICEVISION_VERSION_MINOR, ALICEVISION_VERSION_REVISION};
 
     auto userProps = _mvgRoot.getProperties();
@@ -188,8 +188,10 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     const float sensorWidth = intrinsicCasted->sensorWidth();
     const float sensorHeight = intrinsicCasted->sensorHeight();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLength_pix = static_cast<const float>(intrinsicCasted->getScale()(0));
-    const float focalLength_mm = sensorWidth * focalLength_pix / sensorWidth_pix;
+    const float focalLengthX_pix = static_cast<const float>(intrinsicCasted->getScale()(0));
+    const float focalLengthY_pix = static_cast<const float>(intrinsicCasted->getScale()(1));
+    const float focalLength_mm = sensorWidth * focalLengthX_pix / sensorWidth_pix;
+    const float squeeze = focalLengthX_pix / focalLengthY_pix;
     const float pix2mm = sensorWidth / sensorWidth_pix;
 
     // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
@@ -201,6 +203,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     camSample.setFocalLength(focalLength_mm);
     camSample.setHorizontalAperture(haperture_cm);
     camSample.setVerticalAperture(vaperture_cm);
+    camSample.setLensSqueezeRatio(squeeze);
 
     // Add sensor width (largest image side) in pixels as custom property
     std::vector<::uint32_t> sensorSize_pix = {intrinsicCasted->w(), intrinsicCasted->h()};

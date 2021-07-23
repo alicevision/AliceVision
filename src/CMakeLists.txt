@@ -40,8 +40,8 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# C++11
-set(CMAKE_CXX_STANDARD 11)
+# C++14
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
@@ -200,18 +200,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   AddCompilerFlag("-Werror=switch")
   AddCompilerFlag("-Werror=return-local-addr")
 endif()
-
-# ==============================================================================
-# Check C++11 support
-# ==============================================================================
-include(CXX11)
-check_for_cxx11_compiler(CXX11_COMPILER)
-
-if(NOT CXX11_COMPILER)
-  message(FATAL_ERROR "The compiler does not support the CXX11 standard.")
-endif(NOT CXX11_COMPILER)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
 # Enable code coverage generation (only with GCC)
@@ -515,15 +503,15 @@ set(ALICEVISION_HAVE_OCVSIFT 0)
 
 if(ALICEVISION_BUILD_SFM)
   if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
-    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
+    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d)
 
     if(OpenCV_FOUND)
       # We do not set the minimal version directly in find_package
       # due to this issue in opencv: https://github.com/opencv/opencv/issues/5931
       # which considers major version as exact requirement.
-      if(OpenCV_VERSION VERSION_LESS "3.2.0")
+      if(OpenCV_VERSION VERSION_LESS "3.4.11")
         if(ALICEVISION_USE_OPENCV STREQUAL "ON")
-          message(SEND_ERROR "Failed to find OpenCV 3.2.0+")
+          message(SEND_ERROR "Failed to find OpenCV 3.4.11+")
         endif()
       else()
         set(ALICEVISION_HAVE_OPENCV 1)
@@ -564,70 +552,6 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
       )
     elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
       message(SEND_ERROR "Failed to find Alembic.")
-    endif()
-  endif()
-endif()
-
-# ==============================================================================
-# CCTag
-# ==============================================================================
-# - optional, only external and enabled only if ALICEVISION_USE_CCTAG is ON
-# ==============================================================================
-set(ALICEVISION_HAVE_CCTAG 0)
-
-if(ALICEVISION_BUILD_SFM)
-  if(NOT ALICEVISION_USE_CCTAG STREQUAL "OFF")
-    if(ALICEVISION_HAVE_OPENCV)
-      find_package(CCTag 1.0.0 CONFIG)
-
-      if(CCTag_FOUND)
-        set(ALICEVISION_HAVE_CCTAG 1)
-        message(STATUS "CCTAG ${CCTag_VERSION} found.")
-      elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
-        message(SEND_ERROR "Failed to find CCTAG.")
-      endif()
-    elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
-      message(SEND_ERROR "Can't use CCTAG without OPENCV.")
-    endif()
-  endif()
-endif()
-
-# ==============================================================================
-# AprilTag
-# ==============================================================================
-# - optional, only external and enabled only if ALICEVISION_USE_APRILTAG is ON
-# ==============================================================================
-set(ALICEVISION_HAVE_APRILTAG 0)
-
-if(ALICEVISION_BUILD_SFM)
-  if(NOT ALICEVISION_USE_APRILTAG STREQUAL "OFF")
-    find_package(apriltag CONFIG)
-
-    if(apriltag_FOUND)
-      set(ALICEVISION_HAVE_APRILTAG 1)
-      message(STATUS "AprilTag found.")
-    elseif(ALICEVISION_USE_APRILTAG STREQUAL "ON")
-      message(SEND_ERROR "Failed to find AprilTag.")
-    endif()
-  endif()
-endif()
-
-# ==============================================================================
-# PopSift
-# ==============================================================================
-# - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
-# ==============================================================================
-set(ALICEVISION_HAVE_POPSIFT 0)
-
-if(ALICEVISION_BUILD_SFM)
-  if(NOT ALICEVISION_USE_POPSIFT STREQUAL "OFF")
-    find_package(PopSift CONFIG)
-
-    if(PopSift_FOUND)
-      set(ALICEVISION_HAVE_POPSIFT 1)
-      message(STATUS "PopSIFT found.")
-    elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
-      message(SEND_ERROR "Failed to find PopSIFT.")
     endif()
   endif()
 endif()
@@ -816,6 +740,71 @@ if(ALICEVISION_HAVE_CUDA)
     add_definitions(-DALICEVISION_USE_NVTX)
     include_directories(${CUDA_INCLUDE_DIRS})
     set(ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
+  endif()
+endif()
+
+
+# ==============================================================================
+# CCTag
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_CCTAG is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_CCTAG 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_CCTAG STREQUAL "OFF")
+    if(ALICEVISION_HAVE_OPENCV)
+      find_package(CCTag 1.0.0 CONFIG)
+
+      if(CCTag_FOUND)
+        set(ALICEVISION_HAVE_CCTAG 1)
+        message(STATUS "CCTAG ${CCTag_VERSION} found.")
+      elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
+        message(SEND_ERROR "Failed to find CCTAG.")
+      endif()
+    elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
+      message(SEND_ERROR "Can't use CCTAG without OPENCV.")
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
+# AprilTag
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_APRILTAG is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_APRILTAG 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_APRILTAG STREQUAL "OFF")
+    find_package(apriltag CONFIG)
+
+    if(apriltag_FOUND)
+      set(ALICEVISION_HAVE_APRILTAG 1)
+      message(STATUS "AprilTag found.")
+    elseif(ALICEVISION_USE_APRILTAG STREQUAL "ON")
+      message(SEND_ERROR "Failed to find AprilTag.")
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
+# PopSift
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_POPSIFT 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_POPSIFT STREQUAL "OFF")
+    find_package(PopSift CONFIG)
+
+    if(PopSift_FOUND)
+      set(ALICEVISION_HAVE_POPSIFT 1)
+      message(STATUS "PopSIFT found.")
+    elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
+      message(SEND_ERROR "Failed to find PopSIFT.")
+    endif()
   endif()
 endif()
 

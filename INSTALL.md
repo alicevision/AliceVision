@@ -7,7 +7,7 @@ Build instructions
 Required tools:
 * CMake >= 3.11
 * Git
-* C/C++ compiler (gcc or visual studio or clang) with C++11 support.
+* C/C++ compiler (gcc or visual studio or clang) with C++14 support (i.e. gcc >= 5, clang >= 3.4, msvc >= 19.10, cuda >= 9.0).
 
 ### Compile the project
 
@@ -46,7 +46,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 
 * OpenMP (enable multi-threading)
 * Mosek 5 (linear programming)
-* OpenCV >= 3.2 (feature extraction, calibration module, video IO)
+* OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
 * PopSift (feature extraction on GPU)
@@ -96,7 +96,7 @@ vcpkg install ^
           geogram ^
           eigen3 ^
           opencv[eigen,ffmpeg,webp,contrib,nonFree,cuda] ^
-          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp,tools] ^
+          openimageio[libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
           ceres[suitesparse,cxsparse] ^
           cuda ^
           tbb ^

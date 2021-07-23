@@ -27,7 +27,7 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinholeFisheye_disto_undisto_Fisheye)
 {
-  const PinholeFisheye cam(1000, 1000, 1000, 500, 500,
+  const PinholeFisheye cam(1000, 1000, 1000, 1000, 500, 500,
                                     -0.054, 0.014, 0.006, 0.011); // K1, K2, K3, K4
 
   const double epsilon = 1e-4;

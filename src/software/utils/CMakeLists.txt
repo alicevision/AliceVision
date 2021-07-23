@@ -48,8 +48,20 @@ alicevision_add_software(aliceVision_utils_imageProcessing
 )
 
 if(ALICEVISION_HAVE_OPENCV)
-  target_link_libraries(aliceVision_utils_imageProcessing PRIVATE ${OpenCV_LIBS})
+  target_link_libraries(aliceVision_utils_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
 endif()
+
+alicevision_add_software(aliceVision_utils_importMiddlebury
+        SOURCE main_importMiddlebury.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS
+        aliceVision_numeric
+        aliceVision_geometry
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_system
+        ${Boost_LIBRARIES}
+        )
 
 # Voctree creation
 alicevision_add_software(aliceVision_utils_voctreeCreation
@@ -212,6 +224,16 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
 )
 
 
+# Print distances between 3D objects
+alicevision_add_software(aliceVision_utils_sfmDistances
+  SOURCE main_sfmDistances.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+)
+
 # Split 360 images in input in order to export square images
 alicevision_add_software(aliceVision_utils_split360Images
   SOURCE main_split360Images.cpp
@@ -219,6 +241,7 @@ alicevision_add_software(aliceVision_utils_split360Images
   LINKS aliceVision_system
         aliceVision_numeric
         aliceVision_image
+        aliceVision_panorama
         ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
         Boost::filesystem
@@ -249,6 +272,38 @@ alicevision_add_software(aliceVision_utils_lightingEstimation
         aliceVision_lightingEstimation
         ${Boost_LIBRARIES}
 )
+
+
+# Perform color chart detection
+if(ALICEVISION_HAVE_OPENCV)
+  alicevision_add_software(aliceVision_utils_colorCheckerDetection
+    SOURCE main_colorCheckerDetection.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+          opencv_mcc
+)
+endif()
+
+
+# Perform color correction
+if(ALICEVISION_HAVE_OPENCV)
+  alicevision_add_software(aliceVision_utils_colorCheckerCorrection
+    SOURCE main_colorCheckerCorrection.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+          opencv_mcc
+)
+endif()
 
 endif() # ALICEVISION_BUILD_SFM
 

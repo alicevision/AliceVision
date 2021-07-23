@@ -78,8 +78,8 @@ public:
 
     if (jacobians[0] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
-
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pt) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+  
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pt) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
     }
 
     if (jacobians[1] != nullptr) {
@@ -89,7 +89,7 @@ public:
     }
 
     if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> J(jacobians[2]);
+      Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>> J(jacobians[2]);
       
       J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pt);
     }
@@ -284,10 +284,8 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
 
   if(_ceresOptions.useParametersOrdering)
   {
-    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
-
     // copy ParameterBlockOrdering
-    *(solverOptions.linear_solver_ordering) = _ceresOptions.linearSolverOrdering;
+    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering(_linearSolverOrdering));
   }
 }
 
@@ -320,14 +318,7 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
       return;
     }
 
-    
-    if (refineRotation && refineTranslation)
-    {
-      problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization);
-    }
-    else {
-      ALICEVISION_LOG_ERROR("constant extrinsics not supported at this time");
-    }
+    problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization(refineRotation, refineTranslation));
 
     _statistics.addState(EParameter::POSE, EParameterState::REFINED);
   };
@@ -447,12 +438,15 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
         const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h()); // TODO : check if rounding is needed
         problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() - maxFocalError));
         problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() + maxFocalError));
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->initialScale() - maxFocalError));
+        problem.SetParameterUpperBound(intrinsicBlockPtr, 1, static_cast<double>(intrinsicScaleOffset->initialScale() + maxFocalError));
       }
       else // no initial guess
       {
         // we don't have an initial guess, but we assume that we use
         // a converging lens, so the focal length should be positive.
         problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
       }
     }
     else
@@ -466,27 +460,27 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     if ((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || optional_center)
     {
       // refine optical center within 10% of the image size.
-      assert(intrinsicBlock.size() >= 3);
+      assert(intrinsicBlock.size() >= 4);
 
       const double opticalCenterMinPercent = 0.45;
       const double opticalCenterMaxPercent = 0.55;
 
       // add bounds to the principal point
-      problem.SetParameterLowerBound(intrinsicBlockPtr, 1, opticalCenterMinPercent * intrinsicPtr->w());
-      problem.SetParameterUpperBound(intrinsicBlockPtr, 1, opticalCenterMaxPercent * intrinsicPtr->w());
-      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->h());
-      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->h());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->w());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->w());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 3, opticalCenterMinPercent * intrinsicPtr->h());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 3, opticalCenterMaxPercent * intrinsicPtr->h());
     }
     else
     {
       // don't refine the optical center
-      constantIntrinisc.push_back(1);
       constantIntrinisc.push_back(2);
+      constantIntrinisc.push_back(3);
     }
 
     // lens distortion
     if(!refineIntrinsicsDistortion)
-      for(std::size_t i = 3; i < intrinsicBlock.size(); ++i)
+      for(std::size_t i = 4; i < intrinsicBlock.size(); ++i)
         constantIntrinisc.push_back(i);
 
     if(!constantIntrinisc.empty())
@@ -560,9 +554,9 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
       // apply a specific parameter ordering:
       if(_ceresOptions.useParametersOrdering)
       {
-        _ceresOptions.linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
-        _ceresOptions.linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
-        _ceresOptions.linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
+        _linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
+        _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+        _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
       }
 
       ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, withRig);

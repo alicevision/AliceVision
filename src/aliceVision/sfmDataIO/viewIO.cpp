@@ -219,7 +219,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
         camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
         camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
         camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,
-        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1
+        camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1,
+        camera::EINTRINSIC::PINHOLE_CAMERA
     };
 
     for(const auto& e : intrinsicsPriorities)
@@ -238,7 +239,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   }
 
   // create the desired intrinsic
-  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, ppx, ppy);
   if(hasFocalLengthInput) {
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     if (intrinsicScaleOffset) {
@@ -252,13 +253,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
       case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
     {
       if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
+        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
       break;
     }
       case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
     {
       if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, ppx, ppy, 1.04});
+        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, ppx, ppy, 1.04});
       break;
     }
     default: break;
@@ -276,6 +277,30 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
         const boost::filesystem::path stem = path.stem();
         return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImagePath()).stem());
     });
+}
+
+bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number, std::string& prefix, std::string& suffix)
+{
+    // check if the image stem contains a number
+    // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
+    std::regex regexFrame("^(.*\\D)?"       // the optional prefix which ends with a non digit character
+                          "([0-9]+)"        // the number
+                          "([\\-_\\.]"      // the suffix starts with a separator
+                          ".*[[:alpha:]].*" // at least one letter in the suffix
+                          ")?$"             // suffix is optional
+    );
+
+    std::smatch matches;
+    const bool containsNumber = std::regex_search(imagePathStem, matches, regexFrame);
+
+    if(containsNumber)
+    {
+        prefix = matches[1];
+        suffix = matches[3];
+        number = static_cast<IndexT>(std::stoi(matches[2]));
+    }
+
+    return containsNumber;
 }
 
 } // namespace sfmDataIO

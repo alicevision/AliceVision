@@ -31,9 +31,9 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(sfmDataIO)
   add_subdirectory(track)
   add_subdirectory(voctree)
-
+  add_subdirectory(calibration)
   if(ALICEVISION_HAVE_OPENCV)
-    add_subdirectory(calibration)
+    add_subdirectory(imageMasking)
   endif()
 endif()
 
@@ -54,6 +54,12 @@ if(ALICEVISION_BUILD_MVS)
     add_subdirectory(depthMap)
   endif()
 endif()
+
+
+if(ALICEVISION_BUILD_SFM AND ALICEVISION_BUILD_MVS)
+  add_subdirectory(sfmMvsUtils)
+endif()
+
 
 # Install rules
 

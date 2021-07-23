@@ -7,10 +7,10 @@
 
 #include <aliceVision/sfm/pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
-#include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/sfm/sfmStatistics.hpp>
 
@@ -167,35 +167,41 @@ bool ReconstructionEngine_sequentialSfM::process()
     throw std::runtime_error("No valid tracks.");
   }
 
+  if (!_sfmData.getLandmarks().empty())
+  {
+      if (_sfmData.getPoses().empty())
+        throw std::runtime_error("You cannot have landmarks without valid poses.");
+
+      // If we have already reconstructed landmarks, we need to recognize the corresponding tracks
+      // and update the landmarkIds accordingly.
+      // Note: each landmark has a corresponding track with the same id (landmarkId == trackId).
+      remapLandmarkIdsToTrackIds();
+
+      if (_params.useLocalBundleAdjustment)
+      {
+          const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
+          if (!reconstructedViews.empty())
+          {
+              // Add the reconstructed views to the LocalBA graph
+              _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _params.kMinNbOfMatches);
+              _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
+          }
+      }
+  }
+
   // initial pair choice
   if(_sfmData.getPoses().empty())
   {
     std::vector<Pair> initialImagePairCandidates = getInitialImagePairsCandidates();
     createInitialReconstruction(initialImagePairCandidates);
   }
-  else if(_sfmData.getLandmarks().empty())
+  else
   {
+    // If we don't have any landmark, we need to triangulate them from the known poses.
+    // But even if we already have landmarks, we need to try to triangulate new points with the current set of parameters.
     std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
     triangulate({}, prevReconstructedViews);
     bundleAdjustment(prevReconstructedViews);
-  }
-  else
-  {
-    // If we have already reconstructed landmarks, we need to recognize the corresponding tracks
-    // and update the landmarkIds accordingly.
-    // Note: each landmark has a corresponding track with the same id (landmarkId == trackId).
-    remapLandmarkIdsToTrackIds();
-
-    if(_params.useLocalBundleAdjustment)
-    {
-      const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
-      if(!reconstructedViews.empty())
-      {
-        // Add the reconstructed views to the LocalBA graph
-        _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _params.kMinNbOfMatches);
-        _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
-      }
-    }
   }
 
   // reconstruction
@@ -371,7 +377,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
     }
   }
 
-  ALICEVISION_LOG_INFO("Landmark ids to track ids reampping: " << std::endl
+  ALICEVISION_LOG_INFO("Landmark ids to track ids remapping: " << std::endl
                         << "\t- # tracks: " << _map_tracks.size() << std::endl
                         << "\t- # input landmarks: " << landmarks.size() << std::endl
                         << "\t- # output landmarks: " << _sfmData.getLandmarks().size());
@@ -465,7 +471,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       ++resectionId;
     }
 
-    if(_params.useRigConstraint && !_sfmData.getRigs().empty())
+    if(_params.rig.useRigConstraint && !_sfmData.getRigs().empty())
     {
       ALICEVISION_LOG_INFO("Rig(s) calibration start");
 
@@ -664,7 +670,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     }
   }
 
-  BundleAdjustmentCeres BA(options);
+  BundleAdjustmentCeres BA(options, _params.minNbCamerasToRefinePrincipalPoint);
 
   // give the local strategy graph is local strategy is enable
   if(enableLocalStrategy)
@@ -846,7 +852,7 @@ void ReconstructionEngine_sequentialSfM::calibrateRigs(std::set<IndexT>& updated
 {
   for(const std::pair<IndexT, Rig>& rigPair : _sfmData.getRigs())
   {
-    RigSequence sequence(_sfmData, rigPair.first);
+    RigSequence sequence(_sfmData, rigPair.first, _params.rig);
     sequence.init(_map_tracksPerView);
     sequence.updateSfM(updatedViews);
   }

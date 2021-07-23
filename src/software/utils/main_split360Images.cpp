@@ -13,6 +13,7 @@
 #include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
+#include <aliceVision/panorama/sphericalMapping.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
@@ -69,39 +70,6 @@ private:
   Mat3 _R;
   /// Intrinsic matrix
   Mat3 _K;
-};
-
-/**
- * @brief Function to map 3D coordinates onto a 2D image according a spherical projection
- */
-class SphericalMapping
-{
-public:
-
-  static Vec2 get2DPoint(const Vec3& X, int width, int height)
-  {
-    const Vec3 polarCoord = get3DPointPolar(X);
-
-    const double phi   = polarCoord(0);
-    const double theta = polarCoord(1);
-
-    const double x = ((phi * width) / M_PI + width) / 2.0;  // between 0 and width
-    const double y = theta * height / M_PI;                  // between 0 and height
-
-    return Vec2(x, y);
-  }
-
-  static Vec3 get3DPointPolar(const Vec3& pos3d)
-  {
-    const double x = pos3d(0);
-    const double y = pos3d(1);
-    const double z = pos3d(2);
-
-    const double theta = atan2(y, sqrt(Square(x) + Square(z)));
-    const double phi = atan2(x, z);
-
-    return Vec3 (phi, theta + M_PI/2.0, 1.0);
-  }
 };
 
 /**
@@ -170,7 +138,7 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
   return true;
 }
 
-bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
+bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
   image::Image<image::RGBColor> imageSource;
   image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
@@ -182,12 +150,14 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
-  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60.0));
+
+  const double fov = degreeToRadian(fovDegree);
+  const double focal_px = (splitResolution / 2.0) / tan(fov / 2.0);
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
   {
-    cameras.emplace_back(focal, splitResolution, splitResolution, RotationAroundY(angle));
+    cameras.emplace_back(focal_px, splitResolution, splitResolution, RotationAroundY(angle));
     angle += alpha;
   }
 
@@ -206,7 +176,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
       for(int i = 0; i < splitResolution; ++i)
       {
         const Vec3 ray = camera.getRay(i, j);
-        const Vec2 x = SphericalMapping::get2DPoint(ray, inWidth, inHeight);
+        const Vec2 x = SphericalMapping::toEquirectangular(ray, inWidth, inHeight);
         imaOut(j,i) = sampler(imageSource, x(1), x(0));
       }
     }
@@ -223,7 +193,8 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
     // Ooerride make and model in order to force camera model in SfM
     outMetadataSpec.attribute("Make",  "Custom");
     outMetadataSpec.attribute("Model", "Pinhole");
-    outMetadataSpec.attribute("Exif:FocalLength", static_cast<float>(focal));
+    const float focal_mm = focal_px / splitResolution; // muliplied by sensorWidth (which is 1 for "Custom")
+    outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
     boost::filesystem::path path(imagePath);
     image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
@@ -236,7 +207,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 }
 
 
-bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
+bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
   image::Image<image::RGBColor> imageSource;
   image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
@@ -248,7 +219,9 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
-  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60.0));
+
+  const double fov = degreeToRadian(fovDegree);
+  const double focal = (splitResolution / 2.0) / tan(fov / 2.0);
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
@@ -276,28 +249,30 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
     {
       Vec2 pt(0.,j);
       ray = camera.getRay(pt(0), pt(1));
-      Vec2 x = SphericalMapping::get2DPoint( ray, inWidth, inHeight);
+      Vec2 x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
 
       pt[0] = splitResolution;
       ray = camera.getRay(pt(0), pt(1));
-      x = SphericalMapping::get2DPoint( ray, inWidth, inHeight);
+      x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("magenta").stroke("white", 4));
     }
+
     // Horizontal rectilinear image border:
     for (double j = 0; j <= splitResolution; j += splitResolution/(double)step)
     {
       Vec2 pt(j,0.);
       ray = camera.getRay(pt(0), pt(1));
-      Vec2 x = SphericalMapping::get2DPoint( ray, inWidth, inHeight);
+      Vec2 x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("lime").stroke("white", 4));
 
       pt[1] = splitResolution;
       ray = camera.getRay(pt(0), pt(1));
-      x = SphericalMapping::get2DPoint( ray, inWidth, inHeight);
+      x = SphericalMapping::toEquirectangular( ray, inWidth, inHeight);
       svgStream.drawCircle(x(0), x(1), 8, svg::svgStyle().fill("lime").stroke("white", 4));
     }
   }
+
   boost::filesystem::path path(imagePath);
   std::ofstream svgFile(outputFolder + std::string("/") + path.stem().string() + std::string(".svg"));
   svgFile << svgStream.closeSvgFile().str();
@@ -315,6 +290,8 @@ int aliceVision_main(int argc, char** argv)
   std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
   std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
   bool equirectangularDemoMode;
+  double fov = 110.0;                         // Field of View in degree
+  int nbThreads = 3;
 
   po::options_description allParams("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder\n"
                                     "AliceVision split360Images");
@@ -339,7 +316,12 @@ int aliceVision_main(int argc, char** argv)
     ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
       "Equirectangular split resolution")
     ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(false),
-      "Export a SVG file that simulate the split");
+      "Export a SVG file that simulate the split")
+    ("fov", po::value<double>(&fov)->default_value(fov),
+      "Field of View to extract (in degree).")
+    ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads),
+      "Number of threads.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -441,16 +423,18 @@ int aliceVision_main(int argc, char** argv)
     }
   }
 
-  for(const std::string& imagePath : imagePaths)
+#pragma omp parallel for num_threads(nbThreads)
+  for(int i = 0; i < imagePaths.size(); ++i)
   {
+    const std::string& imagePath = imagePaths[i];
     bool hasCorrectPath = true;
 
     if(splitMode == "equirectangular")
     {
       if(equirectangularDemoMode)
-        hasCorrectPath = splitEquirectangularDemo(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution);
+        hasCorrectPath = splitEquirectangularDemo(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
       else
-        hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution);
+        hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
     }
     else if(splitMode == "dualfisheye")
     {
@@ -462,7 +446,10 @@ int aliceVision_main(int argc, char** argv)
     }
 
     if(!hasCorrectPath)
+    {
+#pragma omp critical
       badPaths.push_back(imagePath);
+    }
   }
 
   if(!badPaths.empty())

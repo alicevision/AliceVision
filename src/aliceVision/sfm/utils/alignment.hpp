@@ -153,17 +153,20 @@ inline void applyTransform(sfmData::SfMData& sfmData,
                            const Vec3& t,
                            bool transformControlPoints = false)
 {
-  for(auto& viewPair: sfmData.views)
+  for(auto& poseIt: sfmData.getPoses())
   {
-    const sfmData::View& view = *viewPair.second;
-    if(sfmData.existsPose(view))
-    {
-      geometry::Pose3 pose = sfmData.getPose(view).getTransform();
-      pose = pose.transformSRt(S, R, t);
-      sfmData.setPose(view, sfmData::CameraPose(pose));
-    }
+    geometry::Pose3 pose = poseIt.second.getTransform();
+    pose = pose.transformSRt(S, R, t);
+    poseIt.second.setTransform(pose);
   }
-  
+  for (auto& rigIt : sfmData.getRigs())
+  {
+      for (auto& subPose : rigIt.second.getSubPoses())
+      {
+          subPose.pose.center() *= S;
+      }
+  }
+
   for(auto& landmark: sfmData.structure)
   {
     landmark.second.X = S * R * landmark.second.X + t;
@@ -211,6 +214,21 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
  */
 void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                              const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
+                                             double& out_S,
+                                             Mat3& out_R,
+                                             Vec3& out_t);
+
+/**
+ * @brief Compute a new coordinate system using the GPS data available in the metadata. The transformation will bring the
+ * model in the cartesian metric reference system.
+ * @param[in] sfmData The sfmdata containing the scene.
+ * @param[in,out] randomNumberGenerator The random number generator.
+ * @param[out] out_S the scale factor.
+ * @param[out] out_R the rotation.
+ * @param[out] out_t the translation.
+ * @return false if no reliable transformation can be computed or the sfmdata does not contain gps metadata, true otherwise.
+ */
+bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std::mt19937 &randomNumberGenerator,
                                              double& out_S,
                                              Mat3& out_R,
                                              Vec3& out_t);

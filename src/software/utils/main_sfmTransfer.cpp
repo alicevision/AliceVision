@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -218,14 +219,15 @@ int aliceVision_main(int argc, char **argv)
     }
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-
     if (matchingMethod == EMatchingMethod::FROM_INTRINSICID) 
     {
-        for (auto intrinsic : sfmData.getIntrinsics()) 
+        for (auto intrinsic : sfmData.getIntrinsics())
         {
-            for (auto intrinsicRef : sfmDataRef.getIntrinsics())  {
-                if (intrinsic.first == intrinsicRef.first) {
-                    *intrinsic.second = *intrinsicRef.second;
+            for (const auto intrinsicRef : sfmDataRef.getIntrinsics())
+            {
+                if (intrinsic.first == intrinsicRef.first)
+                {
+                    intrinsic.second->updateFromParams(intrinsicRef.second->getParams());
                     break;
                 }
             }
@@ -244,30 +246,92 @@ int aliceVision_main(int argc, char **argv)
         }
         for (const auto& matchingViews: commonViewIds)
         {
-            if(!sfmData.isPoseAndIntrinsicDefined(matchingViews.first) &&
-                sfmDataRef.isPoseAndIntrinsicDefined(matchingViews.second))
+            // !sfmData.isPoseAndIntrinsicDefined(matchingViews.first)
+            if(sfmDataRef.isPoseAndIntrinsicDefined(matchingViews.second))
             {
                 // Missing pose in sfmData and valid pose in sfmDataRef,
                 // so we can transfer the pose.
 
                 auto& viewA = sfmData.getView(matchingViews.first);
                 const auto& viewB = sfmDataRef.getView(matchingViews.second);
-                if (viewA.isPartOfRig() || viewB.isPartOfRig())
-                {
-                    ALICEVISION_LOG_DEBUG("Rig poses are not yet supported in SfMTransfer.");
-                    continue;
-                }
 
                 if (transferPoses)
                 {
-                    sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPoses().at(viewB.getPoseId());
+                    ALICEVISION_LOG_TRACE("Transfer pose (pose id: " << viewA.getPoseId() << " <- " << viewB.getPoseId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+
+                    if (viewA.isPartOfRig() && viewB.isPartOfRig())
+                    {
+                        ALICEVISION_LOG_TRACE("Transfer rig (rig id: " << viewA.getRigId() << " <- " << viewB.getRigId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+
+                        if (!viewB.isPoseIndependant())
+                        {
+                            if (viewA.isPoseIndependant())
+                            {
+                                IndexT rigPoseId = sfm::getRigPoseId(viewA.getRigId(), viewA.getFrameId());
+                                viewA.setPoseId(rigPoseId);
+                                viewA.setIndependantPose(false);
+                            }
+                            else
+                            {
+                                if (viewA.getPoseId() == viewA.getPoseId())
+                                    throw std::runtime_error("Invalid RigId/PoseId (in rig) for view: " + viewA.getImagePath());
+                            }
+                        }
+                        else
+                        {
+                            if (!viewA.isPoseIndependant())
+                            {
+                                viewA.setPoseId(viewA.getViewId());
+                                viewA.setIndependantPose(viewB.isPoseIndependant());
+                            }
+                            else
+                            {
+                                if (viewA.getPoseId() != viewA.getPoseId())
+                                    throw std::runtime_error("Invalid RigId/PoseId (out of rig) for view: " + viewA.getImagePath());
+                            }
+                        }
+                        // copy the pose of the rig or the independant pose
+                        sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPoses().at(viewB.getPoseId());
+
+                        // warning: we copy the full rig (and not only the subpose corresponding to the view).
+                        sfmData.getRigs()[viewA.getRigId()] = sfmDataRef.getRigs()[viewB.getRigId()];
+                    }
+                    else
+                    {
+                        if (viewA.isPartOfRig() && !viewA.isPoseIndependant())
+                        {
+                            viewA.setPoseId(viewA.getViewId());
+                            viewA.setIndependantPose(true);
+                        }
+                        sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPose(viewB);
+                    }
                 }
                 if (transferIntrinsics)
                 {
+                    ALICEVISION_LOG_TRACE("Transfer intrinsics (intrinsic id: " << viewA.getIntrinsicId() << " <- " << viewB.getIntrinsicId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
                     sfmData.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataRef.getIntrinsicPtr(viewB.getIntrinsicId()));
                 }
             }
         }
+    }
+
+    // Pose Id to remove
+    {
+        std::set<IndexT> usedPoseIds;
+        for (auto viewIt : sfmData.getViews())
+        {
+            usedPoseIds.insert(viewIt.second->getPoseId());
+        }
+        std::set<IndexT> poseIdsToRemove;
+        for (auto poseIt : sfmData.getPoses())
+        {
+            if (usedPoseIds.find(poseIt.first) == usedPoseIds.end())
+            {
+                poseIdsToRemove.insert(poseIt.first);
+            }
+        }
+        for (auto r : poseIdsToRemove)
+            sfmData.getPoses().erase(r);
     }
 
     ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");

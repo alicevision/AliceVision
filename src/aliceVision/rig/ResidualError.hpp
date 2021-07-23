@@ -27,10 +27,10 @@ public :
     // Set the intrinsics
      _K = intrinsics.K();
      
-     _params.reserve(3);
-     _params.push_back(intrinsics.getParams()[3]);
+     _params.reserve(4);
      _params.push_back(intrinsics.getParams()[4]);
      _params.push_back(intrinsics.getParams()[5]);
+     _params.push_back(intrinsics.getParams()[6]);
      
     // Set the observation
     _observation[0] = pt2d[0];

@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   {
     // Create the intrinsic with unknown focal length
     sfmData2.intrinsics[1] = std::make_shared<camera::Pinhole>
-        (config._cx*2, config._cy*2, -1, config._cx, config._cy);
+        (config._cx*2, config._cy*2, -1, -1, config._cx, config._cy);
     // The 3rd view use this invalid intrinsic
     sfmData2.views[2]->setIntrinsicId(1);
   }
@@ -141,8 +141,8 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   BOOST_CHECK_LT(residual, 0.5);
   BOOST_CHECK_EQUAL(nviews, finalSfMData.getPoses().size());
   BOOST_CHECK_EQUAL(npoints, finalSfMData.getLandmarks().size());
-  BOOST_CHECK_NE(reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(0).get())->getFocalLengthPix(),
-                 reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(1).get())->getFocalLengthPix());
+  BOOST_CHECK_NE(reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(0).get())->getFocalLengthPixX(),
+                 reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(1).get())->getFocalLengthPixX());
 }
 
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)

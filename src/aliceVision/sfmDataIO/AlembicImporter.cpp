@@ -302,7 +302,8 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
   return true;
 }
 
-bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmData, ESfMData flagsPart, const index_t sampleFrame = 0, bool isReconstructed = true)
+bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmData,
+                ESfMData flagsPart, const index_t sampleFrame = 0, bool isReconstructed = true)
 {
   using namespace aliceVision::geometry;
   using namespace aliceVision::camera;
@@ -488,7 +489,25 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
         Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
         Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
         prop.get(sample, ISampleSelector(sampleFrame));
-        mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
+
+        if(abcVersion[0] < 1 || (abcVersion[0] == 1 && abcVersion[1] < 2)) // abcVersion < 1.2
+        {
+            std::vector<double> params;
+            params.assign(sample->get(), sample->get() + sample->size());
+
+            // Fx == Fy
+            mvg_intrinsicParams.push_back(params[0]);
+            mvg_intrinsicParams.push_back(params[0]);
+
+            for (int i = 1; i < params.size(); i++)
+            {
+                mvg_intrinsicParams.push_back(params[i]);
+            }
+        }
+        else // abcVersion >= 1.2
+        {
+            mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
+        }
       }
     }
   }
@@ -583,9 +602,12 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
 
     Pose3 pose(camR, camT);
 
-    if(view->isPartOfRig())
+    if(view->isPartOfRig() && !view->isPoseIndependant())
     {
-      sfmData::Rig& rig = sfmData.getRigs().at(view->getRigId());
+      sfmData::Rig& rig = sfmData.getRigs()[view->getRigId()];
+      std::vector<sfmData::RigSubPose>& sp = rig.getSubPoses();
+      if(view->getSubPoseId() >= sp.size())
+          sp.resize(view->getSubPoseId()+1);
       sfmData::RigSubPose& subPose = rig.getSubPose(view->getSubPoseId());
       if(subPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
       {
@@ -602,7 +624,8 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   return true;
 }
 
-bool readXform(IXform& xform, M44d& mat, sfmData::SfMData& sfmData, ESfMData flagsPart, bool isReconstructed = true)
+bool readXform(const std::vector<::uint32_t>& abcVersion, IXform& xform, M44d& mat, sfmData::SfMData& sfmData,
+               ESfMData flagsPart, bool isReconstructed = true)
 {
   using namespace aliceVision::geometry;
   using namespace aliceVision::camera;
@@ -619,15 +642,12 @@ bool readXform(IXform& xform, M44d& mat, sfmData::SfMData& sfmData, ESfMData fla
     for(index_t frame = 0; frame < xform.getSchema().getNumSamples(); ++frame)
     {
       xform.getSchema().get(xsample, ISampleSelector(frame));
-      readCamera(ICamera(xform.getChild(0), kWrapExisting) , mat * xsample.getMatrix(), sfmData, flagsPart, frame, isReconstructed);
+      readCamera(abcVersion, ICamera(xform.getChild(0), kWrapExisting), mat * xsample.getMatrix(), sfmData, flagsPart, frame, isReconstructed);
     }
     return true;
   }
 
   mat *= xsample.getMatrix();
-
-  if( !(flagsPart & ESfMData::EXTRINSICS) )
-    return true;
 
   ICompoundProperty userProps = getAbcUserProperties(schema);
 
@@ -686,7 +706,7 @@ bool readXform(IXform& xform, M44d& mat, sfmData::SfMData& sfmData, ESfMData fla
     return true; //not a rig
   }
 
-  if(isReconstructed)
+  if((flagsPart & ESfMData::EXTRINSICS) && isReconstructed)
   {
     Mat3 matR;
     matR(0,0) = mat[0][0];
@@ -710,7 +730,7 @@ bool readXform(IXform& xform, M44d& mat, sfmData::SfMData& sfmData, ESfMData fla
       sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
   }
 
-  if(sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
+  if((rigId != UndefinedIndexT) && sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
     sfmData.getRigs().emplace(rigId, sfmData::Rig(nbSubPoses));
 
   mat.makeIdentity();
@@ -718,7 +738,8 @@ bool readXform(IXform& xform, M44d& mat, sfmData::SfMData& sfmData, ESfMData fla
 }
 
 // Top down read of 3d objects
-void visitObject(IObject iObj, M44d mat, sfmData::SfMData& sfmdata, ESfMData flagsPart, bool isReconstructed = true)
+void visitObject(const std::vector<::uint32_t>& abcVersion, IObject iObj, M44d mat, sfmData::SfMData& sfmdata,
+                 ESfMData flagsPart, bool isReconstructed = true)
 {
   // ALICEVISION_LOG_DEBUG("ABC visit: " << iObj.getFullName());
   if(iObj.getName() == "mvgCamerasUndefined")
@@ -732,7 +753,7 @@ void visitObject(IObject iObj, M44d mat, sfmData::SfMData& sfmdata, ESfMData fla
   else if(IXform::matches(md))
   {
     IXform xform(iObj, kWrapExisting);
-    readXform(xform, mat, sfmdata, flagsPart, isReconstructed);
+    readXform(abcVersion, xform, mat, sfmdata, flagsPart, isReconstructed);
   }
   else if(ICamera::matches(md) && ((flagsPart & ESfMData::VIEWS) ||
                                    (flagsPart & ESfMData::INTRINSICS) ||
@@ -742,14 +763,14 @@ void visitObject(IObject iObj, M44d mat, sfmData::SfMData& sfmdata, ESfMData fla
     // If it's not an animated camera we add it here
     if(check_cam.getSchema().getNumSamples() == 1)
     {
-      readCamera(check_cam, mat, sfmdata, flagsPart, 0, isReconstructed);
+      readCamera(abcVersion, check_cam, mat, sfmdata, flagsPart, 0, isReconstructed);
     }
   }
 
   // Recurse
   for(std::size_t i = 0; i < iObj.getNumChildren(); i++)
   {
-    visitObject(iObj.getChild(i), mat, sfmdata, flagsPart, isReconstructed);
+    visitObject(abcVersion, iObj.getChild(i), mat, sfmdata, flagsPart, isReconstructed);
   }
 }
 
@@ -789,6 +810,13 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
   // set SfMData folder absolute path
   sfmdata.setAbsolutePath(_dataImpl->_filename);
 
+  std::vector<::uint32_t> abcVersion = {0, 0};
+
+  if(const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ABC_version"))
+  {
+    getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ABC_version", sampleFrame, abcVersion);
+  }
+
   if(userProps.getPropertyHeader("mvg_featuresFolders"))
   {
     std::vector<std::string> featuresFolders;
@@ -818,7 +846,7 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
 
   // TODO : handle the case where the archive wasn't correctly opened
   M44d xformMat;
-  visitObject(_dataImpl->_rootEntity, xformMat, sfmdata, flagsPart);
+  visitObject(abcVersion, _dataImpl->_rootEntity, xformMat, sfmdata, flagsPart);
 
   // TODO: fusion of common intrinsics
 }
