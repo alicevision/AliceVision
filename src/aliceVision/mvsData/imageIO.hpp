@@ -28,7 +28,8 @@ enum class EImageFileType
   JPEG,
   PNG,
   TIFF,
-  EXR
+  EXR,
+  NONE
 };
 
 /**

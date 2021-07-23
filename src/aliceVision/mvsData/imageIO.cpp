@@ -132,6 +132,7 @@ std::string EImageFileType_enumToString(const EImageFileType imageFileType)
     case EImageFileType::PNG:   return "png";
     case EImageFileType::TIFF:  return "tif";
     case EImageFileType::EXR:   return "exr";
+    case EImageFileType::NONE:  return "none";
   }
   throw std::out_of_range("Invalid EImageType enum");
 }

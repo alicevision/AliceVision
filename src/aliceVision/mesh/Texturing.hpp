@@ -20,6 +20,11 @@
 
 namespace bfs = boost::filesystem;
 
+namespace GEO {
+    class MeshFacetsAABB;
+    class Mesh;
+}
+
 namespace aliceVision {
 namespace mesh {
 
@@ -172,6 +177,15 @@ public:
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                          const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
+
+    void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
+                                     const bfs::path& outPath, imageIO::EImageFileType normalMapFileType,
+                                     imageIO::EImageFileType heightMapFileType);
+
+    void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
+                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache& imageCache,
+                                      const bfs::path& outPath, imageIO::EImageFileType normalMapFileType,
+                                      imageIO::EImageFileType heightMapFileType);
 
     ///Fill holes and write texture files for the given texture atlas
     void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
