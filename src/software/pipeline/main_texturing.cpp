@@ -20,6 +20,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
+#include <geogram/basic/common.h>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -165,6 +167,8 @@ int aliceVision_main(int argc, char* argv[])
 
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
+
+    GEO::initialize();
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
