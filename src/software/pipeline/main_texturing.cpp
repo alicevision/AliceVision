@@ -71,7 +71,7 @@ int aliceVision_main(int argc, char* argv[])
         ("imagesFolder", po::value<std::string>(&imagesFolder),
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
-        ("textureWidth", po::value<unsigned int>(&texParams.textureWidth)->default_value(texParams.textureSize),
+        ("textureWidth", po::value<unsigned int>(&texParams.textureWidth)->default_value(texParams.textureWidth),
             "Output texture width")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
