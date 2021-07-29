@@ -52,9 +52,6 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string outputFolder;
     std::string imagesFolder;
-    std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
-    std::string outNormalMapFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
-    std::string outHeightMapFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::NONE);
     std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
     bool flipNormals = false;
     bool correctEV = false;
@@ -62,6 +59,8 @@ int aliceVision_main(int argc, char* argv[])
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
+
+    mesh::NormalsParams normalsParams;
 
     po::options_description allParams("AliceVision texturing");
 
@@ -85,11 +84,11 @@ int aliceVision_main(int argc, char* argv[])
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
-        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
+        ("outputTextureFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(imageIO::EImageFileType::NONE),
           imageIO::EImageFileType_informations().c_str())
-        ("outputNormalMapFileType", po::value<std::string>(&outNormalMapFileTypeName)->default_value(outNormalMapFileTypeName),
+        ("outputNormalMapFileType", po::value<imageIO::EImageFileType>(&normalsParams.normalMapFileType)->default_value(imageIO::EImageFileType::NONE),
             imageIO::EImageFileType_informations().c_str())
-        ("outputHeightMapFileType", po::value<std::string>(&outHeightMapFileTypeName)->default_value(outHeightMapFileTypeName),
+        ("outputHeightMapFileType", po::value<imageIO::EImageFileType>(&normalsParams.heightMapFileType)->default_value(imageIO::EImageFileType::NONE),
             imageIO::EImageFileType_informations().c_str())
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
@@ -172,11 +171,7 @@ int aliceVision_main(int argc, char* argv[])
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
-    // set output texture file type
-    const imageIO::EImageFileType outputTextureFileType = (inputMeshFilepath.empty() || sfmDataFilename.empty()) ? imageIO::EImageFileType::NONE : imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
-    const imageIO::EImageFileType outputNormalMapFileType = (inputRefMeshFilepath.empty()) ? imageIO::EImageFileType::NONE : imageIO::EImageFileType_stringToEnum(outNormalMapFileTypeName);
-    const imageIO::EImageFileType outputHeightMapFileType = (inputRefMeshFilepath.empty()) ? imageIO::EImageFileType::NONE : imageIO::EImageFileType_stringToEnum(outHeightMapFileTypeName);
-
+    
     texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
     if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
 
@@ -208,8 +203,6 @@ int aliceVision_main(int argc, char* argv[])
         // load input mesh (to texture) obj file
         ALICEVISION_LOG_INFO("Load input mesh.");
         mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
-        ALICEVISION_LOG_INFO("TRIANGLES LOW POLY: " << mesh.mesh->tris.size());
-
 
         // load reference dense point cloud with visibilities
         ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
@@ -244,7 +237,8 @@ int aliceVision_main(int argc, char* argv[])
     // save final obj file
     if(!inputMeshFilepath.empty())
     {
-        mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
+        mesh.saveAsOBJ(outputFolder, "texturedMesh", texParams.textureFileType, 
+            normalsParams.normalMapFileType, normalsParams.heightMapFileType);
     }
 
     if(texParams.subdivisionTargetRatio > 0)
@@ -268,18 +262,17 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // generate diffuse textures
-    if(!inputMeshFilepath.empty() && !sfmDataFilename.empty())
+    if(!inputMeshFilepath.empty() && !sfmDataFilename.empty() && texParams.textureFileType != imageIO::EImageFileType::NONE)
     {
         ALICEVISION_LOG_INFO("Generate textures.");
-        mesh.generateTextures(mp, outputFolder, outputTextureFileType);
+        mesh.generateTextures(mp, outputFolder, texParams.textureFileType);
     }
 
 
     if(!inputRefMeshFilepath.empty() && !inputMeshFilepath.empty() &&
-       (outputNormalMapFileType != imageIO::EImageFileType::NONE || outputHeightMapFileType != imageIO::EImageFileType::NONE))
+       (normalsParams.normalMapFileType != imageIO::EImageFileType::NONE || normalsParams.heightMapFileType != imageIO::EImageFileType::NONE))
     {
         ALICEVISION_LOG_INFO("Generate height and normal maps.");
-
 
         mesh::Mesh denseMesh;
         {
@@ -288,10 +281,7 @@ int aliceVision_main(int argc, char* argv[])
                 throw std::runtime_error("Unable to load: " + inputRefMeshFilepath);
             }
         }
-        ALICEVISION_LOG_INFO("TRIANGLES LOW POLY: " << mesh.mesh->tris.size());
-        ALICEVISION_LOG_INFO("TRIANGLES HIGH POLY: " << denseMesh.tris.size());
-        mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, outputNormalMapFileType,
-                                              outputHeightMapFileType);
+        mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, normalsParams);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

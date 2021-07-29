@@ -709,34 +709,21 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 }
 
 void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
-                                            const bfs::path& outPath, imageIO::EImageFileType normalMapFileType,
-                                            imageIO::EImageFileType heightMapFileType)
+                                            const bfs::path& outPath, const mesh::NormalsParams& normalsParams)
 {
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
     GEO::Mesh geoDenseMesh;
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
     toGeoMesh(denseMesh, geoDenseMesh);
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
-    ALICEVISION_LOG_INFO("geoDenseMesh.vertices.nb(): " << geoDenseMesh.vertices.nb());
-    ALICEVISION_LOG_INFO("geoDenseMesh.facets.nb(): " << geoDenseMesh.facets.nb());
-
     GEO::compute_normals(geoDenseMesh);
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
     GEO::MeshFacetsAABB denseMeshAABB(geoDenseMesh); // warning: mesh_reorder called inside
 
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
     GEO::Mesh geoSparseMesh;
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
     toGeoMesh(*mesh, geoSparseMesh);
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
     GEO::compute_normals(geoSparseMesh);
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: " << __LINE__);
 
     mvsUtils::ImagesCache imageCache(&mp, imageIO::EImageColorSpace::NO_CONVERSION);
-    ALICEVISION_LOG_INFO("generateNormalAndHeightMaps: nb atlases=" << _atlases.size());
+    
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
-        _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, normalMapFileType,
-                                     heightMapFileType);
+        _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, normalsParams);
 }
 
 
@@ -1002,7 +989,8 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
     }
 }
 
-void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, imageIO::EImageFileType textureFileType)
+void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, imageIO::EImageFileType textureFileType,
+                          imageIO::EImageFileType normalMapFileType, imageIO::EImageFileType heightMapFileType)
 {
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
@@ -1232,8 +1220,7 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                              const GEO::MeshFacetsAABB& denseMeshAABB, const GEO::Mesh& sparseMesh,
                                              size_t atlasID, mvsUtils::ImagesCache& imageCache,
-                                             const bfs::path& outPath, imageIO::EImageFileType normalMapFileType,
-                                             imageIO::EImageFileType heightMapFileType)
+                                             const bfs::path& outPath, const mesh::NormalsParams& normalsParams)
 {
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
@@ -1274,13 +1261,6 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             uv = uv - udimBL;
 
             triPixs[k] = uv * texParams.textureSide; // UV coordinates
-
-        for(int k = 0; k < 3; k++)
-        {
-            const int pointIndex = (mesh->tris)[triangleId].v[k];
-            triPts[k] = (mesh->pts)[pointIndex]; // 3D coordinates
-            const int uvPointIndex = mesh->trisUvIds[triangleId].m[k];
-            triPixs[k] = mesh->uvCoords[uvPointIndex] * texParams.textureSide; // UV coordinates
         }
 
         // compute triangle bounding box in pixel indexes
@@ -1364,7 +1344,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     }
 
     // save normal / height maps to images
-    if(normalMapFileType != imageIO::EImageFileType::NONE)
+    if(normalsParams.normalMapFileType != imageIO::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         // downscale texture if required
@@ -1381,7 +1361,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             std::swap(resizedBuffer, normalMap);
         }
 
-        if(normalMapFileType != imageIO::EImageFileType::EXR)
+        if(normalsParams.normalMapFileType != imageIO::EImageFileType::EXR)
         {
             // X: -1 to +1 : Red : 0 to 255
             // Y: -1 to +1 : Green : 0 to 255
@@ -1394,14 +1374,14 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         }
 
         const std::string name =
-            "normalMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalMapFileType);
+            "normalMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalsParams.normalMapFileType);
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
         imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::NO_CONVERSION,imageIO::EImageColorSpace::NO_CONVERSION);
         imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
     }
-    if(heightMapFileType != imageIO::EImageFileType::NONE)
+    if(normalsParams.heightMapFileType != imageIO::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         if(texParams.downscale > 1)
@@ -1414,7 +1394,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             std::swap(resizedBuffer, heightMap);
         }
 
-        if(heightMapFileType != imageIO::EImageFileType::EXR)
+        if(normalsParams.heightMapFileType != imageIO::EImageFileType::EXR)
         {
             // Y: [-1, 0, +1] => [0, 128, 255]
             for(unsigned int i = 0; i < heightMap.size(); ++i)
@@ -1422,7 +1402,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         }
 
         const std::string name =
-            "heightMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(heightMapFileType);
+            "heightMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalsParams.heightMapFileType);
         bfs::path heightMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing height map: " << heightMapPath);
 

@@ -52,6 +52,17 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
 
+ALICEVISION_BITMASK(EVisibilityRemappingMethod);
+
+EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
+
+struct NormalsParams
+{
+    imageIO::EImageFileType normalMapFileType;
+    imageIO::EImageFileType heightMapFileType;
+};
+
 struct TexturingParams
 {
     unsigned int textureSide = 8192;
@@ -69,6 +80,7 @@ struct TexturingParams
     double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
 
+    imageIO::EImageFileType textureFileType;
     imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
     mvsUtils::ImagesCache::ECorrectEV correctEV{mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION};
 
@@ -179,20 +191,21 @@ public:
                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 
     void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
-                                     const bfs::path& outPath, imageIO::EImageFileType normalMapFileType,
-                                     imageIO::EImageFileType heightMapFileType);
+                                     const bfs::path& outPath, const mesh::NormalsParams& normalsParams);
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
                                       const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache& imageCache,
-                                      const bfs::path& outPath, imageIO::EImageFileType normalMapFileType,
-                                      imageIO::EImageFileType heightMapFileType);
+                                      const bfs::path& outPath, const mesh::NormalsParams& normalsParams);
 
     ///Fill holes and write texture files for the given texture atlas
     void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
                       imageIO::EImageFileType textureFileType, const int level);
 
     /// Save textured mesh as an OBJ + MTL file
-    void saveAsOBJ(const bfs::path& dir, const std::string& basename, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
+    void saveAsOBJ(const bfs::path& dir, const std::string& basename,
+                   imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG,
+                   imageIO::EImageFileType normalMapFileType = imageIO::EImageFileType::PNG,
+                   imageIO::EImageFileType heightMapFileType = imageIO::EImageFileType::PNG);
 };
 
 } // namespace mesh
