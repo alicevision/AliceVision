@@ -1373,8 +1373,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                                      normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
         }
 
-        const std::string name =
-            "normalMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalsParams.normalMapFileType);
+        const std::string name = "normalMap_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(normalsParams.normalMapFileType);
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
@@ -1401,8 +1400,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                 heightMap[i] = heightMap[i] * 0.5 + 0.5;
         }
 
-        const std::string name =
-            "heightMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalsParams.heightMapFileType);
+        const std::string name = "heightMap_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(normalsParams.heightMapFileType);
         bfs::path heightMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing height map: " << heightMapPath);
 
