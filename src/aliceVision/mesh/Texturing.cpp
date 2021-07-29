@@ -1255,6 +1255,25 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // retrieve triangle 3D and UV coordinates
         Point2d triPixs[3];
         Point3d triPts[3];
+        auto& triangleUvIds = mesh->trisUvIds[triangleId];
+
+        // compute the Bottom-Left minima of the current UDIM for [0,1] range remapping
+        Point2d udimBL;
+        StaticVector<Point2d>& uvCoords = mesh->uvCoords;
+        udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x),uvCoords[triangleUvIds[2]].x));
+        udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y),uvCoords[triangleUvIds[2]].y));
+
+        for(int k = 0; k < 3; k++)
+        {
+            const int pointIndex = (mesh->tris)[triangleId].v[k];
+            triPts[k] = (mesh->pts)[pointIndex]; // 3D coordinates
+            const int uvPointIndex = triangleUvIds.m[k];
+
+            Point2d uv = uvCoords[uvPointIndex];
+            // UDIM: remap coordinates between [0,1]
+            uv = uv - udimBL;
+
+            triPixs[k] = uv * texParams.textureSide; // UV coordinates
 
         for(int k = 0; k < 3; k++)
         {
