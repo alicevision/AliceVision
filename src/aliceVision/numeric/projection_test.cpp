@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(Numeric_Cheirality)
     const auto test = cheiralityTest(R, t, pt3d);
     for(Eigen::Index i = 0; i < numPts; ++i)
     {
-        BOOST_TEST(expected(i) == test(i));
+        BOOST_CHECK_EQUAL(expected(i), test(i));
     }
 
     BOOST_TEST(!cheiralityTestAll(R, t, pt3d));
