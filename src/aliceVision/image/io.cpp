@@ -258,6 +258,9 @@ void readImage(const std::string& path,
   // check requested channels number
   assert(nchannels == 1 || nchannels >= 3);
 
+  if(!fs::exists(path))
+    ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
+
   oiio::ImageSpec configSpec;
 
   // libRAW configuration
@@ -278,11 +281,11 @@ void readImage(const std::string& path,
   inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
   if(!inBuf.initialized())
-    throw std::runtime_error("Cannot find/open image file '" + path + "'.");
+    ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
 
   // check picture channels number
   if(inBuf.spec().nchannels != 1 && inBuf.spec().nchannels < 3)
-    throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+    ALICEVISION_THROW_ERROR("Can't load channels of image file: '" << path << "', nchannels=" << inBuf.spec().nchannels);
 
   // color conversion
   if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
