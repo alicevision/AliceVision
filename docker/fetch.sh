@@ -38,6 +38,7 @@ cmake -P "opencv-prefix/src/opencv-stamp/download-opencv.cmake"
 cmake -P "opencv_contrib-prefix/src/opencv_contrib-stamp/download-opencv_contrib.cmake"
 
 cmake -P "external/src/alembic-stamp/download-alembic.cmake"
+cmake -P "external/src/assimp-stamp/download-assimp.cmake"
 cmake -P "external/src/boost-stamp/download-boost.cmake"
 # cmake -P "external/src/ceres-stamp/download-ceres.cmake"
 cmake -P "external/src/eigen-stamp/download-eigen.cmake"
