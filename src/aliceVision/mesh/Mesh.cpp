@@ -15,6 +15,11 @@
 
 #include <boost/filesystem.hpp>
 
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <Eigen/Dense>
+
 #include <fstream>
 #include <map>
 
@@ -2258,284 +2263,151 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
 
 bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
 {  
-    ALICEVISION_LOG_INFO("Loading mesh from obj file: " << objAsciiFileName);
-    // read number of points, triangles, uvcoords
-    int npts = 0;
-    int ntris = 0;
-    int nuvs = 0;
-    int nnorms = 0;
-    int nlines = 0;
-    bool useColors = false;
+    Assimp::Importer importer;
 
+    pts.clear();
+    tris.clear();
+    trisNormalsIds.clear();
+    trisUvIds.clear();
+    _trisMtlIds.clear();
+    _colors.clear();
+
+    std::ifstream in(objAsciiFileName.c_str());
+    if (!in.fail())
     {
-        std::ifstream in(objAsciiFileName.c_str());
-        std::string line;
-        while(getline(in, line))
-        {
-            if((line[0] == 'v') && (line[1] == ' '))
-            {
-                if(npts == 0)
-                {
-                  useColors = mvsUtils::findNSubstrsInString(line, ".") == 6;
-                }
-                npts += 1;
-            }
-            if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
-            {
-                nnorms += 1;
-            }
-            if((line[0] == 'v') && (line[1] == 't') && (line[2] == ' '))
-            {
-                nuvs += 1;
-            }
-            if((line[0] == 'f') && (line[1] == ' '))
-            {
-                int n1 = mvsUtils::findNSubstrsInString(line, "/");
-                int n2 = mvsUtils::findNSubstrsInString(line, "//");
-                if((n1 == 3 && n2 == 0) || 
-                   (n1 == 6 && n2 == 0) ||
-                   (n1 == 0 && n2 == 3) ||
-                   (n1 == 0 && n2 == 0))
-                    ntris += 1;
-                else if((n1 == 4 && n2 == 0) ||
-                        (n1 == 8 && n2 == 0) ||
-                        (n1 == 0 && n2 == 4))
-                    ntris += 2;
-            }
-            nlines++;
-        }
         in.close();
     }
-
-    ALICEVISION_LOG_INFO("\t- # vertices: " << npts << std::endl
-      << "\t- # normals: " << nnorms << std::endl
-      << "\t- # uv coordinates: " << nuvs << std::endl
-      << "\t- # triangles: " << ntris);
-
-    pts = StaticVector<Point3d>();
-    pts.reserve(npts);
-    tris = StaticVector<Mesh::triangle>();
-    tris.reserve(ntris);
-    uvCoords.reserve(nuvs);
-    trisUvIds.reserve(ntris);
-    normals.reserve(nnorms);
-    trisNormalsIds.reserve(ntris);
-    _trisMtlIds.reserve(ntris);
-    if(useColors)
+    else
     {
-        _colors.reserve(npts);
+        return false;
     }
 
-    std::map<std::string, int> materialCache;
-
+    const aiScene * scene = importer.ReadFile(objAsciiFileName, aiProcessPreset_TargetRealtime_Fast);
+    if (!scene)
     {
-        int mtlId = -1;
-        int maxMtlId = -1;
-        std::ifstream in(objAsciiFileName.c_str());
-        std::string line;
+        ALICEVISION_LOG_INFO("Failed loading mesh from file : " << objAsciiFileName);
+        return false;
+    }
 
-        long t1 = mvsUtils::initEstimate();
-        int idline = 0;
-        while(getline(in, line))
+    std::list<aiNode *> nodes;
+    nodes.push_back(scene->mRootNode);
+
+    std::map<uint32_t, uint32_t> map_indices;
+    
+
+    while (!nodes.empty())
+    {   
+        aiNode * node = nodes.back();
+        nodes.pop_back();
+
+        Eigen::Matrix4d T;
+        for (int i = 0; i < 4; i++)
         {
-            if(line.size() < 3 || line[0] == '#')
+            for (int j = 0; j < 4; j++)
             {
-                // nothing to do
+                T(i, j) = node->mTransformation[i][j];
             }
-            else if((line[0] == 's') && (line[1] == ' '))
-            {
-                // nothing to do
-            }
-            else if((line[0] == 'v') && (line[1] == ' '))
-            {
-                Point3d pt;
-                if(useColors)
-                {
-                    float r, g, b;
-                    sscanf(line.c_str(), "v %lf %lf %lf %f %f %f", &pt.x, &pt.y, &pt.z, &r, &g, &b);
-                    // convert float color data to uchar
-                    _colors.emplace_back(
-                      static_cast<unsigned char>(r*255.0f),
-                      static_cast<unsigned char>(g*255.0f),
-                      static_cast<unsigned char>(b*255.0f)
-                    );
-                }
-                else
-                {
-                    sscanf(line.c_str(), "v %lf %lf %lf", &pt.x, &pt.y, &pt.z);
-                }
-                pts.push_back(pt);
-            }
-            else if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
-            {
-                Point3d pt;
-                sscanf(line.c_str(), "vn %lf %lf %lf", &pt.x, &pt.y, &pt.z);
-                // printf("%f %f %f\n", pt.x, pt.y, pt.z);
-                normals.push_back(pt);
-            }
-            else if((line[0] == 'v') && (line[1] == 't') && (line[2] == ' '))
-            {
-                Point2d pt;
-                sscanf(line.c_str(), "vt %lf %lf", &pt.x, &pt.y);
-                uvCoords.push_back(pt);
-            }
-            else if((line[0] == 'f') && (line[1] == ' '))
-            {
-                int n1 = mvsUtils::findNSubstrsInString(line, "/");
-                int n2 = mvsUtils::findNSubstrsInString(line, "//");
-                Voxel vertex, uvCoord, vertexNormal;
-                Voxel vertex2, uvCoord2, vertexNormal2;
-                bool ok = false;
-                bool withNormal = false;
-                bool withUV = false;
-                bool withQuad = false;
-                if(n2 == 0)
-                {
-                    if(n1 == 0)
-                    {
-                        sscanf(line.c_str(), "f %i %i %i", &vertex.x, &vertex.y, &vertex.z);
-                        ok = true;
-                    }
-                    else if(n1 == 3)
-                    {
-                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i", &vertex.x, &uvCoord.x, &vertex.y, &uvCoord.y, &vertex.z, &uvCoord.z);
-                        ok = true;
-                        withUV = true;
-                    }
-                    else if(n1 == 6)
-                    {
-                        sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i", &vertex.x, &uvCoord.x, &vertexNormal.x, &vertex.y, &uvCoord.y, &vertexNormal.y,
-                               &vertex.z, &uvCoord.z, &vertexNormal.z);
-                        ok = true;
-                        withUV = true;
-                        withNormal = true;
-                    }
-                    else if(n1 == 4)
-                    {
-                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i %i/%i", &vertex.x, &uvCoord.x, &vertex.y, &uvCoord.y, &vertex.z, &uvCoord.z, &vertex2.z, &uvCoord2.z);
-                        vertex2.x = vertex.x; // same first point
-                        uvCoord2.x = uvCoord.x;
-                        vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
-                        uvCoord2.y = uvCoord.z;
-                        ok = true;
-                        withUV = true;
-                        withQuad = true;
-                    }
-                    else if(n1 == 8)
-                    {
-                        sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i %i/%i/%i",
-                               &vertex.x, &uvCoord.x, &vertexNormal.x,
-                               &vertex.y, &uvCoord.y, &vertexNormal.y,
-                               &vertex.z, &uvCoord.z, &vertexNormal.z,
-                               &vertex2.z, &uvCoord2.z, &vertexNormal2.z);
-                        vertex2.x = vertex.x; // same first point
-                        uvCoord2.x = uvCoord.x;
-                        vertexNormal2.x = vertexNormal.x;
-                        vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
-                        uvCoord2.y = uvCoord.z;
-                        vertexNormal2.y = vertexNormal.z;
-                        ok = true;
-                        withUV = true;
-                        withNormal = true;
-                        withQuad = true;
-                    }
-                }
-                else
-                {
-                    if(n2 == 3)
-                    {
-                        sscanf(line.c_str(), "f %i//%i %i//%i %i//%i", &vertex.x, &vertexNormal.x, &vertex.y, &vertexNormal.y, &vertex.z, &vertexNormal.z);
-                        ok = true;
-                        withNormal = true;
-                    }
-                    else if(n2 == 4)
-                    {
-                        sscanf(line.c_str(), "f %i//%i %i//%i %i//%i %i//%i",
-                               &vertex.x, &vertexNormal.x,
-                               &vertex.y, &vertexNormal.y,
-                               &vertex.z, &vertexNormal.z,
-                               &vertex2.z, &vertexNormal2.z);
-                        vertex2.x = vertex.x; // same first point
-                        vertexNormal2.x = vertexNormal.x;
-                        vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
-                        vertexNormal2.y = vertexNormal.z;
-                        ok = true;
-                        withNormal = true;
-                        withQuad = true;
-                    }
-                }
-                if(!ok)
-                {
-                    ALICEVISION_THROW_ERROR("Mesh: Unrecognized facet syntax while reading obj file: " << objAsciiFileName << ", line=" << idline << ", n1=" << n1 << ", n2=" << n2 << "\nline=\"" << line << "\"");
-                }
-
-                // 1st triangle
-                {
-                    triangle t;
-                    t.v[0] = vertex.x - 1;
-                    t.v[1] = vertex.y - 1;
-                    t.v[2] = vertex.z - 1;
-                    t.alive = true;
-                    tris.push_back(t);
-                    _trisMtlIds.push_back(mtlId);
-                    if(withUV)
-                    {
-                        trisUvIds.push_back(uvCoord - Voxel(1, 1, 1));
-                    }
-                    if(withNormal)
-                    {
-                        trisNormalsIds.push_back(vertexNormal - Voxel(1, 1, 1));
-                    }
-                }
-
-                // potential 2nd triangle
-                if(withQuad)
-                {
-                    triangle t;
-                    t.v[0] = vertex2.x - 1;
-                    t.v[1] = vertex2.y - 1;
-                    t.v[2] = vertex2.z - 1;
-                    t.alive = true;
-                    tris.push_back(t);
-                    _trisMtlIds.push_back(mtlId);
-                    if(withUV)
-                    {
-                        trisUvIds.push_back(uvCoord2 - Voxel(1, 1, 1));
-                    }
-                    if(withNormal)
-                    {
-                        trisNormalsIds.push_back(vertexNormal2 - Voxel(1, 1, 1));
-                    }
-                }
-            }
-            else if(mvsUtils::findNSubstrsInString(line, "usemtl") == 1)
-            {
-                char buff[5000];
-                sscanf(line.c_str(), "usemtl %s", buff);
-                auto it = materialCache.find(buff);
-                if(it == materialCache.end())
-                {
-                    mtlId = ++maxMtlId;
-                    materialCache.emplace(buff, mtlId); // new material
-                    ALICEVISION_LOG_TRACE("OBJ material: \"" << buff << "\" [" << mtlId << "]");
-                }
-                else
-                {
-                    mtlId = it->second;                 // already known material
-                }
-                maxMtlId = std::max(mtlId, maxMtlId);
-            }
-
-            mvsUtils::printfEstimate(idline, nlines, t1);
-            idline++;
         }
-        mvsUtils::finishEstimate();
 
-        in.close();
-        nmtls = materialCache.size();
+        for (int idMesh = 0; idMesh < node->mNumMeshes; idMesh++)
+        {
+            unsigned int meshId = node->mMeshes[idMesh];
+
+            aiMesh * mesh = scene->mMeshes[meshId];
+
+            if (!mesh->HasFaces())
+            {
+                //Why should we have a mesh without faces ?
+                continue;
+            }
+
+            for (int idPoint = 0; idPoint < mesh->mNumVertices; idPoint++)
+            {
+                map_indices[idPoint] = pts.size();
+
+                aiVector3D v = mesh->mVertices[idPoint];
+                pts.push_back(Point3d(v.x, v.y, v.z));
+
+                if (mesh->HasVertexColors(0))
+                {
+                    aiColor4D c = mesh->mColors[0][idPoint];
+                    double r = c.r * 255.0;
+                    double g = c.g * 255.0;
+                    double b = c.b * 255.0;
+                    _colors.push_back(aliceVision::rgb(r, g, b));
+                }
+
+                if (mesh->HasTextureCoords(0))
+                {
+                    aiVector3D t = mesh->mTextureCoords[0][idPoint];
+                    uvCoords.push_back(Point2d(t.x, t.y));
+                }
+                    
+                if (mesh->HasNormals())
+                {
+                    aiVector3D n = mesh->mNormals[idPoint];
+                    normals.push_back(Point3d(n.x, n.y, n.z));      
+                }
+            }
+
+            for (int idFace = 0; idFace < mesh->mNumFaces; idFace++)
+            {
+                aiFace face = mesh->mFaces[idFace];
+
+                Mesh::triangle triangle;
+                Voxel nid;
+                Voxel uvids;
+
+                if (face.mNumIndices != 3)
+                {
+                    continue;
+                }
+
+                for (int idVertex = 0; idVertex < face.mNumIndices; idVertex++)
+                {
+                    unsigned int index = face.mIndices[idVertex];
+                    unsigned int global_index = map_indices[index - 1];
+                    
+                    triangle.v[idVertex] = map_indices[global_index];
+
+                    if (mesh->HasTextureCoords(0))
+                    {
+                        uvids[idVertex] = map_indices[global_index];
+                    }
+                    
+                    if (mesh->HasNormals())
+                    {
+                        nid[idVertex] = map_indices[global_index];
+                    }
+                }
+
+                tris.push_back(triangle);
+                _trisMtlIds.push_back(mesh->mMaterialIndex);
+
+                if (mesh->HasTextureCoords(0))
+                {
+                    trisUvIds.push_back(uvids);
+                }
+                
+                if (mesh->HasNormals())
+                {
+                    trisNormalsIds.push_back(nid);
+                }
+            }
+        }
+
+        for (int idChild = 0; idChild < node->mNumChildren; idChild++)
+        {
+            nodes.push_back(node->mChildren[idChild]);
+        }
+
+        if (node == nullptr) continue;
     }
-    ALICEVISION_LOG_INFO("Mesh loaded: \n\t- #points: " << npts << "\n\t- # triangles: " << ntris);
-    return npts != 0 && ntris != 0;
+
+    std::cout << tris.size() << std::endl;
+    std::cout << pts.size() << std::endl;
+
+    return true;
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,
