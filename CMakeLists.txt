@@ -199,8 +199,10 @@ set(EIGEN_DISABLE_ALIGN_FLAGS
     "-DCMAKE_CXX_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0"
     "-DCMAKE_C_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0")
 ExternalProject_Add(${EIGEN_TARGET}
-       URL https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz
-       URL_HASH MD5=77a2c934eaf35943c43ee600a83b72df
+       URL https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.tar.bz2
+       URL_HASH MD5=2d5a8dac126c4937fd94d5d10fcd7dd1
+       # URL https://gitlab.com/libeigen/eigen/-/archive/3.4-rc1/eigen-3.4-rc1.tar.bz2
+       # URL_HASH MD5=9a656206a91152c77fd9d16b24345688
        DOWNLOAD_DIR ${BUILD_DIR}/download/eigen
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
