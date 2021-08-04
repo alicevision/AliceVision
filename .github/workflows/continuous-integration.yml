@@ -172,6 +172,7 @@ jobs:
                           openimageio[libraw,ffmpeg,freetype,opencv,gif,webp,opencolorio]
                           ceres[suitesparse,cxsparse]
                           tbb
+                          assimp
           # without "cuda" for now
           vcpkgTriplet: x64-windows-release
           # Ensure the vcpkg artifacts are cached, they are generated in the 'CMAKE_BINARY_DIR/vcpkg_installed' directory.
