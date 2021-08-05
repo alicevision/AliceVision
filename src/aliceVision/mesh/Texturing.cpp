@@ -24,7 +24,6 @@
 #include <geogram/mesh/mesh_io.h>
 #include <geogram/parameterization/mesh_atlas_maker.h>
 
-/* TODO remove unnecessary include */
 #include <geogram/basic/permutation.h>
 #include <geogram/basic/attributes.h>
 #include <geogram/basic/geometry_nd.h>
@@ -32,7 +31,6 @@
 #include <geogram/mesh/mesh_AABB.h>
 #include <geogram/mesh/mesh_reorder.h>
 #include <geogram/mesh/mesh_geometry.h>
-/* ---------------------------------- */
 
 #include <boost/algorithm/string/case_conv.hpp> 
 
@@ -1361,17 +1359,16 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             std::swap(resizedBuffer, normalMap);
         }
 
-        if(normalsParams.normalMapFileType != imageIO::EImageFileType::EXR)
-        {
-            // X: -1 to +1 : Red : 0 to 255
-            // Y: -1 to +1 : Green : 0 to 255
-            // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
-            for(unsigned int i = 0; i < normalMap.size(); ++i)
-                // normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B:
-                // 0:+1 => 0-255
-                normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5,
-                                     normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
-        }
+
+        // X: -1 to +1 : Red : 0 to 255
+        // Y: -1 to +1 : Green : 0 to 255
+        // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
+        for(unsigned int i = 0; i < normalMap.size(); ++i)
+            // normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B:
+            // 0:+1 => 0-255
+            normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5,
+                                    normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
+
 
         const std::string name = "normalMap_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(normalsParams.normalMapFileType);
         bfs::path normalMapPath = outPath / name;
