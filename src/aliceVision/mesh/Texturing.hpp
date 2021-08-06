@@ -52,11 +52,6 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
 
-ALICEVISION_BITMASK(EVisibilityRemappingMethod);
-
-EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
-std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
-
 struct NormalsParams
 {
     imageIO::EImageFileType normalMapFileType;
