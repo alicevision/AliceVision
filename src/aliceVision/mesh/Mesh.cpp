@@ -2288,7 +2288,8 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
         return false;
     }
 
-    const aiScene * scene = importer.ReadFile(objAsciiFileName, aiProcessPreset_TargetRealtime_MaxQuality);
+    unsigned int pFlags = aiProcessPreset_TargetRealtime_MaxQuality & (~aiProcess_SplitLargeMeshes);
+    const aiScene * scene = importer.ReadFile(objAsciiFileName, pFlags);
     if (!scene)
     {
         ALICEVISION_LOG_INFO("Failed loading mesh from file : " << objAsciiFileName);
