@@ -6,6 +6,7 @@ set(sfmDataIO_files_headers
   jsonIO.hpp
   plyIO.hpp
   viewIO.hpp
+  sceneSample.hpp
 )
 
 # Sources
@@ -16,6 +17,7 @@ set(sfmDataIO_files_sources
   jsonIO.cpp
   plyIO.cpp
   viewIO.cpp
+  sceneSample.cpp
 )
 
 if(ALICEVISION_HAVE_ALEMBIC)
