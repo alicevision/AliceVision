@@ -851,10 +851,7 @@ void Texturing::loadOBJWithAtlas(const std::string& filename, bool flipNormals)
     clear();
     mesh = new Mesh();
     // Load .obj
-    if(!mesh->loadFromObjAscii(filename.c_str()))
-    {
-        throw std::runtime_error("Unable to load: " + filename);
-    }
+    mesh->loadFromObjAscii(filename);
 
     // Handle normals flipping
     if(flipNormals)

@@ -618,11 +618,7 @@ int main(int argc, char **argv)
     // check input mesh
     ALICEVISION_LOG_INFO("Load input mesh.");
     mesh::Mesh inputMesh;
-    if (!inputMesh.loadFromObjAscii(inputMeshPath))
-    {
-        ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
-        return EXIT_FAILURE;
-    }
+    inputMesh.loadFromObjAscii(inputMeshPath);
 
     // check sfm file
     if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))

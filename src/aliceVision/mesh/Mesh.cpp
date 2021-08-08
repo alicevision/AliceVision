@@ -26,7 +26,6 @@
 namespace aliceVision {
 namespace mesh {
 
-namespace bfs = boost::filesystem;
 
 Mesh::Mesh()
 {
@@ -2263,8 +2262,8 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 }
 
-bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
-{  
+void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
+{
     Assimp::Importer importer;
 
     pts.clear();
@@ -2278,22 +2277,16 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
     normals.clear();
     pointsVisibilities.clear();
 
-    std::ifstream in(objAsciiFileName.c_str());
-    if (!in.fail())
+    if(!boost::filesystem::exists(objAsciiFileName))
     {
-        in.close();
-    }
-    else
-    {
-        return false;
+        ALICEVISION_THROW_ERROR("Mesh::loadFromObjAscii: no such file: " << objAsciiFileName);
     }
 
     unsigned int pFlags = aiProcessPreset_TargetRealtime_MaxQuality & (~aiProcess_SplitLargeMeshes);
     const aiScene * scene = importer.ReadFile(objAsciiFileName, pFlags);
     if (!scene)
     {
-        ALICEVISION_LOG_INFO("Failed loading mesh from file : " << objAsciiFileName);
-        return false;
+        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << objAsciiFileName);
     }
 
     std::list<aiNode *> nodes;
@@ -2409,8 +2402,6 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
 
         if (node == nullptr) continue;
     }
-
-    return true;
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,
