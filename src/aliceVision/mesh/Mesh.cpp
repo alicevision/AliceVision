@@ -2399,8 +2399,6 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
         {
             nodes.push_back(node->mChildren[idChild]);
         }
-
-        if (node == nullptr) continue;
     }
 }
 
