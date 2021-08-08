@@ -964,8 +964,6 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
     const std::string objFilename = (dir / (basename + ".obj")).string();
-    const std::string mtlName = (basename + ".mtl");
-    const std::string mtlFilename = (dir / mtlName).string();
 
     if (_atlases.empty())
     {
