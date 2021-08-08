@@ -408,7 +408,7 @@ void OctreeTracks::trackStruct::addTrack(OctreeTracks::trackStruct* t)
 
 int OctreeTracks::trackStruct::indexOf(int val)
 {
-    if(cams.size() == 0)
+    if(cams.empty())
     {
         return -1;
     }

@@ -70,7 +70,7 @@ bool Rig::initializeCalibration()
     return _isInitialized;
   }
   // check that there are cameras
-  assert(_vLocalizationResults.size()>0);
+  assert(!_vLocalizationResults.empty());
   
   // make all the cameras have the same number of localizationResults (equal to the shortest clip)
   const std::size_t nCams = _vLocalizationResults.size();

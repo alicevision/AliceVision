@@ -118,7 +118,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   if( !ReadInputData() )
     return false;
-  if( _pairwiseMatches.size() == 0 )
+  if( _pairwiseMatches.empty() )
   {
     cout << endl << "Matches file is empty" << endl;
     return false;

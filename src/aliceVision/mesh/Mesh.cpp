@@ -1035,7 +1035,7 @@ void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mes
     outMesh.pts.reserve(j);
     
     // also update vertex color data if any
-    const bool updateColors = _colors.size() != 0;
+    const bool updateColors = !_colors.empty();
     auto& outColors = outMesh.colors();
     outColors.reserve(_colors.size());
 
@@ -1842,7 +1842,7 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
         std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
         loadArrayFromFile<int>(visTris, visTrisFileName);
-        if(visTris.size() != 0)
+        if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
             {
@@ -1870,7 +1870,7 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
         std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
         loadArrayFromFile<int>(visTris, visTrisFileName);
-        if(visTris.size() != 0)
+        if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
             {

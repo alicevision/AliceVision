@@ -188,7 +188,7 @@ bool feathering(CachedImage<image::RGBfColor> & input_output, CachedImage<unsign
     std::vector<std::vector<image::CachedTile::smart_pointer>> & tilesColor = input_output.getTiles();
     std::vector<std::vector<image::CachedTile::smart_pointer>> & tilesMask = inputMask.getTiles();
 
-    if (tilesColor.size() == 0) 
+    if (tilesColor.empty()) 
     {
         return false;
     }

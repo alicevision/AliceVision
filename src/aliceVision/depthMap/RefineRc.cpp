@@ -238,7 +238,7 @@ bool RefineRc::refinerc(bool checkIfExists)
         ALICEVISION_LOG_DEBUG("Refine CUDA (rc: " << (_rc + 1) << " / " << _sp->mp->ncams << ")");
 
     // generate default depthSimMap if rc has no tcam
-    if(_refineTCams.size() == 0 || _depths.empty())
+    if(_refineTCams.empty() || _depths.empty())
     {
         _depthSimMapOpt = new DepthSimMap(_rc, _sp->mp, 1, 1);
         return true;

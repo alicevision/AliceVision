@@ -970,7 +970,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
     std::string mtlName = (basename + ".mtl");
     std::string mtlFilename = (dir / mtlName).string();
 
-    if (_atlases.size() == 0)
+    if (_atlases.empty())
     {
         return;
     }

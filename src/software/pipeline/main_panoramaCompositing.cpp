@@ -66,7 +66,7 @@ size_t getCompositingOptimalScale(int width, int height)
 
 std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const std::string & inputPath, const size_t borderSize)
 {   
-    if (sfmData.getViews().size() == 0) 
+    if (sfmData.getViews().empty()) 
     {
         return nullptr;
     }
@@ -367,7 +367,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             continue;
         }
 
-        if (intersections.size() == 0)
+        if (intersections.empty())
         {
             continue;
         }

@@ -439,7 +439,7 @@ int aliceVision_main(int argc, char **argv)
                 words.push_back(tok);
             }
 
-            if (words.size() == 0)
+            if (words.empty())
                 continue;
 
             if (words[0] == "createNode")

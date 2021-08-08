@@ -159,7 +159,7 @@ void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
                     a.commonCameraIDs.begin(), a.commonCameraIDs.end(),
                     b.commonCameraIDs.begin(), b.commonCameraIDs.end(),
                     back_inserter(cameraIntersection));
-        if(cameraIntersection.size() == 0) // need at least 1 camera in common
+        if(cameraIntersection.empty()) // need at least 1 camera in common
             continue;
         if(a.triangleIDs.size() > b.triangleIDs.size())
         {
