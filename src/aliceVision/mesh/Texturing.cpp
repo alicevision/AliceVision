@@ -963,9 +963,9 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
 {
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
-    std::string objFilename = (dir / (basename + ".obj")).string();
-    std::string mtlName = (basename + ".mtl");
-    std::string mtlFilename = (dir / mtlName).string();
+    const std::string objFilename = (dir / (basename + ".obj")).string();
+    const std::string mtlName = (basename + ".mtl");
+    const std::string mtlFilename = (dir / mtlName).string();
 
     if (_atlases.empty())
     {
@@ -973,7 +973,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
     }
 
     aiScene scene;
-    
+
     scene.mRootNode = new aiNode;
 
     scene.mMeshes = new aiMesh*[_atlases.size()];
@@ -991,11 +991,11 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
         const std::string texturePath = "texture_" + std::to_string(textureId) + "." + imageIO::EImageFileType_enumToString(textureFileType);
 
         //Set material for this atlas
-        aiVector3D valcolor(0.6, 0.6, 0.6);
-        aiVector3D valspecular(0.0, 0.0, 0.0);
-        double shininess = 0.0;
-        aiString texFile(texturePath);
-        aiString texName(std::to_string(textureId));
+        const aiVector3D valcolor(0.6, 0.6, 0.6);
+        const aiVector3D valspecular(0.0, 0.0, 0.0);
+        const double shininess = 0.0;
+        const aiString texFile(texturePath);
+        const aiString texName(std::to_string(textureId));
 
         scene.mMaterials[atlasId] = new aiMaterial;
         scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
@@ -1010,7 +1010,6 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
         aiMesh * aimesh = scene.mMeshes[atlasId];
         aimesh->mMaterialIndex = atlasId;
         aimesh->mNumUVComponents[0] = 2;
-        
 
         //Assimp does not allow vertex indices different from uv indices
         //So we need to group and duplicate
@@ -1026,7 +1025,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
                 unique_pairs[p] = -1;
             }
         }
-        
+
         aimesh->mNumVertices = unique_pairs.size();
         aimesh->mVertices = new aiVector3D[unique_pairs.size()];
         aimesh->mTextureCoords[0] = new aiVector3D[unique_pairs.size()];
@@ -1036,7 +1035,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
         {
             int vertexId = p.first.first;
             int uvId = p.first.second;
-            
+
             aimesh->mVertices[index].x = mesh->pts[vertexId].x;
             aimesh->mVertices[index].y = mesh->pts[vertexId].y;
             aimesh->mVertices[index].z = mesh->pts[vertexId].z;
@@ -1046,7 +1045,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
             aimesh->mTextureCoords[0][index].z = 0.0;
 
             p.second = index;
-            
+
             ++index;
         }
 
@@ -1055,17 +1054,17 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
 
         for(int i = 0; i < _atlases[atlasId].size(); ++i)
         {
-            int triangleId = _atlases[atlasId][i];
+            const int triangleId = _atlases[atlasId][i];
 
             aimesh->mFaces[i].mNumIndices = 3;
             aimesh->mFaces[i].mIndices = new unsigned int[3];
 
             for (int k = 0; k < 3; ++k)
             {
-                int vertexId = mesh->tris[triangleId].v[k];
-                int uvId = mesh->trisUvIds[triangleId].m[k];
+                const int vertexId = mesh->tris[triangleId].v[k];
+                const int uvId = mesh->trisUvIds[triangleId].m[k];
 
-                std::pair<int, int> p = std::make_pair(vertexId, uvId);
+                const std::pair<int, int> p = std::make_pair(vertexId, uvId);
                 aimesh->mFaces[i].mIndices[k] = unique_pairs[p];
             }
         }

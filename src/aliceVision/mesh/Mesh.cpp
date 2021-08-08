@@ -2311,9 +2311,9 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
 
         for (int idMesh = 0; idMesh < node->mNumMeshes; ++idMesh)
         {
-            unsigned int meshId = node->mMeshes[idMesh];
+            const unsigned int meshId = node->mMeshes[idMesh];
 
-            aiMesh * mesh = scene->mMeshes[meshId];
+            const aiMesh* mesh = scene->mMeshes[meshId];
 
             if (!mesh->HasFaces())
             {
@@ -2325,34 +2325,34 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
             {
                 map_indices[idPoint] = pts.size();
 
-                aiVector3D v = mesh->mVertices[idPoint];
+                const aiVector3D v = mesh->mVertices[idPoint];
                 pts.push_back(Point3d(v.x, v.y, v.z));
 
                 if (mesh->HasVertexColors(0))
                 {
-                    aiColor4D c = mesh->mColors[0][idPoint];
-                    double r = c.r * 255.0;
-                    double g = c.g * 255.0;
-                    double b = c.b * 255.0;
+                    const aiColor4D c = mesh->mColors[0][idPoint];
+                    const double r = c.r * 255.0;
+                    const double g = c.g * 255.0;
+                    const double b = c.b * 255.0;
                     _colors.push_back(aliceVision::rgb(r, g, b));
                 }
 
                 if (mesh->HasTextureCoords(0))
                 {
-                    aiVector3D t = mesh->mTextureCoords[0][idPoint];
+                    const aiVector3D t = mesh->mTextureCoords[0][idPoint];
                     uvCoords.push_back(Point2d(t.x, t.y));
                 }
-                    
+
                 if (mesh->HasNormals())
                 {
-                    aiVector3D n = mesh->mNormals[idPoint];
+                    const aiVector3D n = mesh->mNormals[idPoint];
                     normals.push_back(Point3d(n.x, n.y, n.z));      
                 }
             }
 
             for (int idFace = 0; idFace < mesh->mNumFaces; ++idFace)
             {
-                aiFace face = mesh->mFaces[idFace];
+                const aiFace face = mesh->mFaces[idFace];
 
                 Mesh::triangle triangle;
                 Voxel nid;
@@ -2367,8 +2367,8 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
 
                 for (int idVertex = 0; idVertex < face.mNumIndices; ++idVertex)
                 {
-                    unsigned int index = face.mIndices[idVertex];
-                    unsigned int global_index = map_indices[index];
+                    const unsigned int index = face.mIndices[idVertex];
+                    const unsigned int global_index = map_indices[index];
                     
                     triangle.v[idVertex] = global_index;
 
@@ -2386,8 +2386,7 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
                 tris.push_back(triangle);
                 _trisMtlIds.push_back(mesh->mMaterialIndex);
                 trisUvIds.push_back(uvids);
-                
-                
+
                 if (mesh->HasNormals())
                 {
                     trisNormalsIds.push_back(nid);
