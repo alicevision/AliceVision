@@ -117,6 +117,8 @@ jobs:
         run: |
           cd ..
           git clone https://github.com/microsoft/vcpkg.git
+          cd vcpkg
+          git checkout ${{ env.COMMIT_ID }}
           cd ${{ github.workspace }}
 
           New-Item -Path ${{ env.tripletPath}} -ItemType File
@@ -213,3 +215,4 @@ jobs:
           cmakeBuildType: Release
           useVcpkgToolchainFile: true
           buildWithCMake: true
+
