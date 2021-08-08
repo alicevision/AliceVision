@@ -226,7 +226,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
             }
 
         }
-        atlasId++;
+        ++atlasId;
     }
 }
 
@@ -236,7 +236,7 @@ void Texturing::updateAtlases()
     // Fill atlases (1 atlas per material) with triangles issued from mesh subdivision
     _atlases.clear();
     _atlases.resize(std::max(1, mesh->nmtls));
-    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); ++triangleID)
     {
         unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
         if(mesh->trisMtlIds()[triangleID] != -1)
@@ -355,7 +355,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
             // Fuse visibilities of the 3 vertices
             std::vector<int> allTriCams;
-            for (int k = 0; k < 3; k++)
+            for (int k = 0; k < 3; ++k)
             {
                 const int pointIndex = mesh->tris[triangleID].v[k];
                 const StaticVector<int> pointVisibilities = mesh->pointsVisibilities[pointIndex];
@@ -523,7 +523,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
                     udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
 
-                    for(int k = 0; k < 3; k++)
+                    for(int k = 0; k < 3; ++k)
                     {
                        const int pointIndex = mesh->tris[triangleId].v[k];
                        triPts[k] = mesh->pts[pointIndex];                               // 3D coordinates
@@ -552,9 +552,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     RD.y = clamp(RD.y, 0, texSide);
 
                     // iterate over pixels of the triangle's bounding box
-                    for(int y = LU.y; y < RD.y; y++)
+                    for(int y = LU.y; y < RD.y; ++y)
                     {
-                       for(int x = LU.x; x < RD.x; x++)
+                       for(int x = LU.x; x < RD.x; ++x)
                        {
                            Pixel pix(x, y); // top-left corner of the pixel
                            Point2d barycCoords;
@@ -863,7 +863,7 @@ void Texturing::loadOBJWithAtlas(const std::string& filename, bool flipNormals)
     // Fill atlases (1 atlas per material) with corresponding rectangles
     // if no material, create only one atlas with all triangles
     _atlases.resize(std::max(1, mesh->nmtls));
-    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); ++triangleID)
     {
         unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
         _atlases[atlasID].push_back(triangleID);
@@ -1020,7 +1020,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
         std::map<std::pair<int, int>, int> unique_pairs;
         for(const auto triangleID : _atlases[atlasId])
         {
-            for (int k = 0; k < 3; k++)
+            for (int k = 0; k < 3; ++k)
             {
                 int vertexId = mesh->tris[triangleID].v[k];
                 int uvId = mesh->trisUvIds[triangleID].m[k];
@@ -1050,20 +1050,20 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
 
             p.second = index;
             
-            index++;
+            ++index;
         }
 
         aimesh->mNumFaces = _atlases[atlasId].size();
         aimesh->mFaces = new aiFace[aimesh->mNumFaces];
 
-        for(int i = 0; i < _atlases[atlasId].size(); i++)
+        for(int i = 0; i < _atlases[atlasId].size(); ++i)
         {
             int triangleId = _atlases[atlasId][i];
 
             aimesh->mFaces[i].mNumIndices = 3;
             aimesh->mFaces[i].mIndices = new unsigned int[3];
 
-            for (int k = 0; k < 3; k++)
+            for (int k = 0; k < 3; ++k)
             {
                 int vertexId = mesh->tris[triangleId].v[k];
                 int uvId = mesh->trisUvIds[triangleId].m[k];

@@ -66,7 +66,7 @@ void Mesh::saveToObj(const std::string& filename)
       fprintf(f, "v %f %f %f\n", point.x, point.y, point.z);    
   }
 
-  for(int i = 0; i < tris.size(); i++)
+  for(int i = 0; i < tris.size(); ++i)
   {
       Mesh::triangle& t = tris[i];
       fprintf(f, "f %i %i %i\n", t.v[0] + 1, t.v[1] + 1, t.v[2] + 1);
@@ -134,7 +134,7 @@ void Mesh::addMesh(const Mesh& mesh)
     std::copy(mesh._colors.begin(), mesh._colors.end(), std::back_inserter(_colors));
 
     tris.reserveAdd(mesh.tris.size());
-    for(int i = 0; i < mesh.tris.size(); i++)
+    for(int i = 0; i < mesh.tris.size(); ++i)
     {
         Mesh::triangle t = mesh.tris[i];
         // check triangles indices validity
@@ -171,7 +171,7 @@ Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::Multi
     int oh = mp.getHeight(rc);
 
     triangle_proj tp;
-    for(int j = 0; j < 3; j++)
+    for(int j = 0; j < 3; ++j)
     {
         mp.getPixelFor3DPoint(&tp.tp2ds[j], pts[tris[triid].v[j]], rc);
         tp.tp2ds[j].x = (tp.tp2ds[j].x / (float)ow) * (float)w;
@@ -215,7 +215,7 @@ bool Mesh::isTriangleProjectionInImage(const mvsUtils::MultiViewParams& mp, cons
 int Mesh::getTriangleNbVertexInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const
 {
     int nbVertexInImage = 0;
-    for (int j = 0; j < 3; j++)
+    for (int j = 0; j < 3; ++j)
     {
         if(mp.isPixelInImage(tp.tpixs[j], camId, margin) && mp.isPixelInSourceImage(tp.tpixs[j], camId, margin))
         {
@@ -489,7 +489,7 @@ void Mesh::getPtsNeighborTriangles(StaticVector<StaticVector<int>>& out_ptsNeigh
     int firstid = 0;
     while(i < vertexNeighborhoodPairs.size())
     {
-        k++;
+        ++k;
         // (*vertexNeighborhoodPairs)[i].z = j;
         if((i == vertexNeighborhoodPairs.size() - 1) || (vertexNeighborhoodPairs[i].x != vertexNeighborhoodPairs[i + 1].x))
         {
@@ -611,7 +611,7 @@ void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighPt
             // remove duplicates
             StaticVector<int>& vhid1 = out_ptsNeighPts[middlePtId];
             vhid1.reserve(vhid.size());
-            for(int k1 = 0; k1 < vhid.size(); k1++)
+            for(int k1 = 0; k1 < vhid.size(); ++k1)
             {
                 if(vhid1.indexOf(vhid[k1]) == -1)
                 {
@@ -632,15 +632,15 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::Mult
     nmap.resize_with(w * h, 0);
 
     long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
         if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
-            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
+            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; ++pix.x)
             {
-                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; pix.y++)
+                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; ++pix.y)
                 {
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     if(doesTriangleIntersectsRectangle(tp, re))
@@ -657,7 +657,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::Mult
     // allocate
     out.reserve(w * h);
     out.resize(w * h);
-    for(int i = 0; i < w * h; i++)
+    for(int i = 0; i < w * h; ++i)
     {
         if(nmap[i] > 0)
         {
@@ -667,15 +667,15 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::Mult
 
     // fill
     t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
         if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
-            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
+            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; ++pix.x)
             {
-                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; pix.y++)
+                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; ++pix.y)
                 {
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     if(doesTriangleIntersectsRectangle(tp, re))
@@ -703,16 +703,16 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& v
     nmap.resize_with(w * h, 0);
 
     long t1 = mvsUtils::initEstimate();
-    for(int m = 0; m < visTris.size(); m++)
+    for(int m = 0; m < visTris.size(); ++m)
     {
         int i = visTris[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
         if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
-            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
+            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; ++pix.x)
             {
-                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; pix.y++)
+                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; ++pix.y)
                 {
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     if(doesTriangleIntersectsRectangle(tp, re))
@@ -728,7 +728,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& v
 
     // allocate
     out.resize(w * h);
-    for(int i = 0; i < w * h; i++)
+    for(int i = 0; i < w * h; ++i)
     {
         if(nmap[i] > 0)
         {
@@ -738,16 +738,16 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& v
 
     // fill
     t1 = mvsUtils::initEstimate();
-    for(int m = 0; m < visTris.size(); m++)
+    for(int m = 0; m < visTris.size(); ++m)
     {
         int i = visTris[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
         if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
-            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
+            for(pix.x = tp.lu.x; pix.x <= tp.rd.x; ++pix.x)
             {
-                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; pix.y++)
+                for(pix.y = tp.lu.y; pix.y <= tp.rd.y; ++pix.y)
                 {
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     if(doesTriangleIntersectsRectangle(tp, re))
@@ -777,9 +777,9 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
     depthMap.resize_with(w * h, -1.0f);
 
     Pixel pix;
-    for(pix.x = 0; pix.x < w; pix.x++)
+    for(pix.x = 0; pix.x < w; ++pix.x)
     {
-        for(pix.y = 0; pix.y < h; pix.y++)
+        for(pix.y = 0; pix.y < h; ++pix.y)
         {
 
             StaticVector<int>& ti = tmp[pix.x * h + pix.y];
@@ -791,7 +791,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
 
                 double mindepth = 10000000.0;
 
-                for(int i = 0; i < ti.size(); i++)
+                for(int i = 0; i < ti.size(); ++i)
                 {
                     int idTri = ti[i];
                     OrientedPoint tri;
@@ -805,7 +805,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                     getTrianglePixelIntersectionsAndInternalPoints(tp, re, tpis);
 
                     double maxd = -1.0;
-                    for(int k = 0; k < tpis.size(); k++)
+                    for(int k = 0; k < tpis.size(); ++k)
                     {
                         Point3d lpi = linePlaneIntersect(
                             mp.CArr[rc], (mp.iCamArr[rc] * (tpis[k] * (float)scale)).normalize(), tri.p, tri.n);
@@ -822,7 +822,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                             pix, rc, &tp, &re);
 
                             float maxd = -1.0;
-                            for (int k=0;k<tpis1->size();k++) {
+                            for (int k=0;k<tpis1->size();++k) {
                                     maxd = std::max(maxd,(mp->CArr[rc]-(*tpis1)[k]).size());
                             };
 
@@ -835,8 +835,8 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                 }
 
                 /*
-                //for (int idTri=0;idTri<tris->size();idTri++)
-                for (int i=0;i<ti->size();i++)
+                //for (int idTri=0;idTri<tris->size();++idTri)
+                for (int i=0;i<ti->size();++i)
                 {
                         int idTri = (*ti)[i];
                         orientedPoint tri;
@@ -901,7 +901,7 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
 
     out_visTri.reserve(tris.size());
 
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         Point3d cg = computeTriangleCenterOfGravity(i);
         Pixel pix;
@@ -933,9 +933,9 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
     btris.resize_with(tris.size(), false);
 
     Pixel pix;
-    for(pix.x = 0; pix.x < w; pix.x++)
+    for(pix.x = 0; pix.x < w; ++pix.x)
     {
-        for(pix.y = 0; pix.y < h; pix.y++)
+        for(pix.y = 0; pix.y < h; ++pix.y)
         {
             StaticVector<int>& ti = trisMap[pix.x * h + pix.y];
             if(!ti.empty())
@@ -945,7 +945,7 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
                 p.y = (float)pix.y;
 
                 float depth = depthMap[pix.x * h + pix.y];
-                for(int i = 0; i < ti.size(); i++)
+                for(int i = 0; i < ti.size(); ++i)
                 {
                     int idTri = ti[i];
                     OrientedPoint tri;
@@ -960,7 +960,7 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
                     StaticVector<Point2d> *tpis = getTrianglePixelIntersectionsAndInternalPoints(&tp, &re);
                     float mindepth = 10000000.0f;
                     Point3d minlpi;
-                    for (int k=0;k<tpis->size();k++) {
+                    for (int k=0;k<tpis->size();++k) {
                             Point3d lpi =
                     linePlaneIntersect(mp->CArr[rc],(mp->iCamArr[rc]*((*tpis)[k]*(float)scale)).normalize(),tri.p,tri.n);
                             if (mindepth>(mp->CArr[rc]-lpi).size()) {
@@ -992,17 +992,17 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
     }     // for pix.x
 
     int nvistris = 0;
-    for(int i = 0; i < btris.size(); i++)
+    for(int i = 0; i < btris.size(); ++i)
     {
         if(btris[i])
         {
-            nvistris++;
+            ++nvistris;
         }
     }
 
     out_visTri.reserve(nvistris);
 
-    for(int i = 0; i < btris.size(); i++)
+    for(int i = 0; i < btris.size(); ++i)
     {
         if(btris[i])
         {
@@ -1014,7 +1014,7 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
 void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mesh& outMesh, StaticVector<int>& out_ptIdToNewPtId) const
 {
     out_ptIdToNewPtId.resize_with(pts.size(), -1); // -1 means unused
-    for(int i = 0; i < visTris.size(); i++)
+    for(int i = 0; i < visTris.size(); ++i)
     {
         int idTri = visTris[i];
         out_ptIdToNewPtId[tris[idTri].v[0]] = 0; // 0 means used
@@ -1023,7 +1023,7 @@ void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mes
     }
 
     int j = 0;
-    for(int i = 0; i < pts.size(); i++)
+    for(int i = 0; i < pts.size(); ++i)
     {
         if(out_ptIdToNewPtId[i] == 0) // if input point used
         {
@@ -1039,7 +1039,7 @@ void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mes
     auto& outColors = outMesh.colors();
     outColors.reserve(_colors.size());
 
-    for(int i = 0; i < pts.size(); i++)
+    for(int i = 0; i < pts.size(); ++i)
     {
         if(out_ptIdToNewPtId[i] > -1)
         {
@@ -1050,7 +1050,7 @@ void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mes
     }
 
     outMesh.tris.reserve(visTris.size());
-    for(int i = 0; i < visTris.size(); i++)
+    for(int i = 0; i < visTris.size(); ++i)
     {
         int idTri = visTris[i];
         Mesh::triangle t;
@@ -1067,7 +1067,7 @@ void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>>& edgesNeighTris, 
     StaticVector<Voxel> edges;
     edges.reserve(tris.size() * 3);
 
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         int a = tris[i].v[0];
         int b = tris[i].v[1];
@@ -1084,7 +1084,7 @@ void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>>& edgesNeighTris, 
     // remove duplicities
     int i0 = 0;
     long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < edges.size(); i++)
+    for(int i = 0; i < edges.size(); ++i)
     {
         if((i == edges.size() - 1) || (edges[i].x != edges[i + 1].x))
         {
@@ -1094,7 +1094,7 @@ void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>>& edgesNeighTris, 
             qsort(&edges1[0], edges1.size(), sizeof(Voxel), qSortCompareVoxelByYAsc);
 
             int j0 = 0;
-            for(int j = 0; j < edges1.size(); j++)
+            for(int j = 0; j < edges1.size(); ++j)
             {
                 if((j == edges1.size() - 1) || (edges1[j].y != edges1[j + 1].y))
                 {
@@ -1102,7 +1102,7 @@ void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>>& edgesNeighTris, 
                     edgesNeighTris.resize(edgesNeighTris.size() + 1);
                     StaticVector<int>& neighTris = edgesNeighTris.back();
                     neighTris.reserve(j - j0 + 1);
-                    for(int k = j0; k <= j; k++)
+                    for(int k = j0; k <= j; ++k)
                     {
                         neighTris.push_back(edges1[k].z);
                     }
@@ -1121,7 +1121,7 @@ void Mesh::getLaplacianSmoothingVectors(StaticVector<StaticVector<int>>& ptsNeig
 {
     out_nms.reserve(pts.size());
 
-    for(int i = 0; i < pts.size(); i++)
+    for(int i = 0; i < pts.size(); ++i)
     {
         Point3d& p = pts[i];
         StaticVector<int>& nei = ptsNeighPts[i];
@@ -1140,7 +1140,7 @@ void Mesh::getLaplacianSmoothingVectors(StaticVector<StaticVector<int>>& ptsNeig
             double maxNeighDist = 0.0f;
             // laplacian smoothing vector
             Point3d n = Point3d(0.0, 0.0, 0.0);
-            for(int j = 0; j < nneighs; j++)
+            for(int j = 0; j < nneighs; ++j)
             {
                 n = n + pts[nei[j]];
                 maxNeighDist = std::max(maxNeighDist, (p - pts[nei[j]]).size());
@@ -1187,7 +1187,7 @@ void Mesh::laplacianSmoothPts(StaticVector<StaticVector<int>>& ptsNeighPts, doub
     getLaplacianSmoothingVectors(ptsNeighPts, nms, maximalNeighDist);
 
     // smooth
-    for(int i = 0; i < pts.size(); i++)
+    for(int i = 0; i < pts.size(); ++i)
     {
         pts[i] = pts[i] + nms[i];
     }
@@ -1235,14 +1235,14 @@ void Mesh::computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, S
     out_nms.reserve(pts.size());
     out_nms.resize_with(pts.size(), Point3d(0.0f, 0.0f, 0.0f));
 
-    for(int i = 0; i < pts.size(); i++)
+    for(int i = 0; i < pts.size(); ++i)
     {
         StaticVector<int>& triTmp = ptsNeighTris[i];
         if(!triTmp.empty())
         {
             Point3d n = Point3d(0.0f, 0.0f, 0.0f);
             float nn = 0.0f;
-            for(int j = 0; j < triTmp.size(); j++)
+            for(int j = 0; j < triTmp.size(); ++j)
             {
                 Point3d n1 = computeTriangleNormal(triTmp[j]);
                 n1 = n1.normalize();
@@ -1267,10 +1267,10 @@ void Mesh::computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, S
 
 void Mesh::smoothNormals(StaticVector<Point3d>& nms, StaticVector<StaticVector<int>>& ptsNeighPts)
 {
-    for(int i = 0; i < pts.size(); i++)
+    for(int i = 0; i < pts.size(); ++i)
     {
         Point3d& n = nms[i];
-        for(int j = 0; j < sizeOfStaticVector<int>(ptsNeighPts[i]); j++)
+        for(int j = 0; j < sizeOfStaticVector<int>(ptsNeighPts[i]); ++j)
         {
             n = n + nms[ptsNeighPts[i][j]];
         }
@@ -1343,9 +1343,9 @@ void Mesh::getTrianglesEdgesIds(const StaticVector<StaticVector<int>>& edgesNeig
     out.reserve(tris.size());
     out.resize_with(tris.size(), Voxel(-1, -1, -1));
 
-    for(int i = 0; i < edgesNeighTris.size(); i++)
+    for(int i = 0; i < edgesNeighTris.size(); ++i)
     {
-        for(int j = 0; j < edgesNeighTris[i].size(); j++)
+        for(int j = 0; j < edgesNeighTris[i].size(); ++j)
         {
             int idTri = edgesNeighTris[i][j];
 
@@ -1376,7 +1376,7 @@ void Mesh::getTrianglesEdgesIds(const StaticVector<StaticVector<int>>& edgesNeig
     }     // for i
 
     // check ... each triangle has to have three edge ids
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         if((out[i].x == -1) || (out[i].y == -1) || (out[i].z == -1))
         {
@@ -1709,7 +1709,7 @@ int Mesh::subdivideMeshOnce(const Mesh& refMesh, const GEO::AdaptiveKdTree& refM
 
                 trianglesToSubdivide[triangleId].push_back(newEdge);
             }
-            nEdgesToSubdivide++;
+            ++nEdgesToSubdivide;
         }
     }
 
@@ -1803,7 +1803,7 @@ void Mesh::letJustTringlesIdsInMesh(StaticVector<int>& trisIdsToStay)
     StaticVector<Mesh::triangle> trisTmp;
     trisTmp.reserve(trisIdsToStay.size());
 
-    for(int i = 0; i < trisIdsToStay.size(); i++)
+    for(int i = 0; i < trisIdsToStay.size(); ++i)
     {
         trisTmp.push_back(tris[trisIdsToStay[i]]);
     }
@@ -1847,7 +1847,7 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
             for(int i = 0; i < visTris.size(); ++i)
             {
                 int idTri = visTris[i];
-                ntrisCams[idTri]++;
+                ++ntrisCams[idTri];
             }
         }
         mvsUtils::printfEstimate(rc, mp.ncams, t1);
@@ -1888,7 +1888,7 @@ void Mesh::computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams)
     // TODO: try intersection
     trisCams.reserve(tris.size());
 
-    for(int idTri = 0; idTri < tris.size(); idTri++)
+    for(int idTri = 0; idTri < tris.size(); ++idTri)
     {
         const Mesh::triangle& t = tris[idTri];
         StaticVector<int> cams;
@@ -1897,9 +1897,9 @@ void Mesh::computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams)
                       sizeOfStaticVector<int>(pointsVisibilities[t.v[1]]) +
                       sizeOfStaticVector<int>(pointsVisibilities[t.v[2]]);
         cams.reserve(maxcams);
-        for(int k = 0; k < 3; k++)
+        for(int k = 0; k < 3; ++k)
         {
-            for(int i = 0; i < sizeOfStaticVector<int>(pointsVisibilities[t.v[k]]); i++)
+            for(int i = 0; i < sizeOfStaticVector<int>(pointsVisibilities[t.v[k]]); ++i)
             {
                 cams.push_back_distinct(pointsVisibilities[t.v[k]][i]);
             }
@@ -1928,7 +1928,7 @@ void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams& mp,
     pts.reserve(w * h);
     StaticVectorBool usedMap;
     usedMap.reserve(w * h);
-    for(int i = 0; i < w * h; i++)
+    for(int i = 0; i < w * h; ++i)
     {
         int x = i / h;
         int y = i % h;
@@ -1996,14 +1996,14 @@ void Mesh::removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFr
         trisIdsToStay.reserve(tris.size());
 
         long t1 = mvsUtils::initEstimate();
-        for(int i = 0; i < tris.size(); i++)
+        for(int i = 0; i < tris.size(); ++i)
         {
             int nin = 0;
-            for(int k = 0; k < 3; k++)
+            for(int k = 0; k < 3; ++k)
             {
                 Point3d p = pts[tris[i].v[k]];
                 bool isThere = false;
-                for(int j = 0; j < (int)(hexahsToExcludeFromResultingMesh->size() / 8); j++)
+                for(int j = 0; j < (int)(hexahsToExcludeFromResultingMesh->size() / 8); ++j)
                 {
                     if(mvsUtils::isPointInHexahedron(p, &(*hexahsToExcludeFromResultingMesh)[j * 8]))
                     {
@@ -2012,7 +2012,7 @@ void Mesh::removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFr
                 }
                 if(isThere)
                 {
-                    nin++;
+                    ++nin;
                 }
             }
             if(nin < 3)
@@ -2034,10 +2034,10 @@ void Mesh::removeTrianglesOutsideHexahedron(Point3d* hexah)
     trisIdsToStay.reserve(tris.size());
 
     long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         int nout = 0;
-        for(int k = 0; k < 3; k++)
+        for(int k = 0; k < 3; ++k)
         {
             Point3d p = pts[tris[i].v[k]];
             bool isThere = false;
@@ -2047,7 +2047,7 @@ void Mesh::removeTrianglesOutsideHexahedron(Point3d* hexah)
             }
             if(isThere)
             {
-                nout++;
+                ++nout;
             }
         }
         if(nout < 1)
@@ -2115,7 +2115,7 @@ void Mesh::invertTriangleOrientations()
 
 void Mesh::changeTriPtId(int triId, int oldPtId, int newPtId)
 {
-    for(int k = 0; k < 3; k++)
+    for(int k = 0; k < 3; ++k)
     {
         if(oldPtId == tris[triId].v[k])
         {
@@ -2126,7 +2126,7 @@ void Mesh::changeTriPtId(int triId, int oldPtId, int newPtId)
 
 int Mesh::getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists) const
 {
-    for(int k = 0; k < 3; k++)
+    for(int k = 0; k < 3; ++k)
     {
         if(ptId == tris[triId].v[k])
         {
@@ -2145,12 +2145,12 @@ Pixel Mesh::getTriOtherPtsIds(int triId, int _ptId) const
 {
     int others[3];
     int nothers = 0;
-    for(int k = 0; k < 3; k++)
+    for(int k = 0; k < 3; ++k)
     {
         if(_ptId != tris[triId].v[k])
         {
             others[nothers] = tris[triId].v[k];
-            nothers++;
+            ++nothers;
         }
     }
 
@@ -2251,7 +2251,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 
     out.reserve(tris.size());
-    for(int i = 0; i < tris.size(); i++)
+    for(int i = 0; i < tris.size(); ++i)
     {
         if((tris[i].alive) &&
            (colors[tris[i].v[0]] == bestCol) &&
@@ -2308,15 +2308,15 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
         nodes.pop_back();
 
         Eigen::Matrix4d T;
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; ++i)
         {
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < 4; ++j)
             {
                 T(i, j) = node->mTransformation[i][j];
             }
         }
 
-        for (int idMesh = 0; idMesh < node->mNumMeshes; idMesh++)
+        for (int idMesh = 0; idMesh < node->mNumMeshes; ++idMesh)
         {
             unsigned int meshId = node->mMeshes[idMesh];
 
@@ -2328,7 +2328,7 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
                 continue;
             }
 
-            for (int idPoint = 0; idPoint < mesh->mNumVertices; idPoint++)
+            for (int idPoint = 0; idPoint < mesh->mNumVertices; ++idPoint)
             {
                 map_indices[idPoint] = pts.size();
 
@@ -2357,7 +2357,7 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
                 }
             }
 
-            for (int idFace = 0; idFace < mesh->mNumFaces; idFace++)
+            for (int idFace = 0; idFace < mesh->mNumFaces; ++idFace)
             {
                 aiFace face = mesh->mFaces[idFace];
 
@@ -2372,7 +2372,7 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
                     continue;
                 }
 
-                for (int idVertex = 0; idVertex < face.mNumIndices; idVertex++)
+                for (int idVertex = 0; idVertex < face.mNumIndices; ++idVertex)
                 {
                     unsigned int index = face.mIndices[idVertex];
                     unsigned int global_index = map_indices[index];
@@ -2402,7 +2402,7 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
             }
         }
 
-        for (int idChild = 0; idChild < node->mNumChildren; idChild++)
+        for (int idChild = 0; idChild < node->mNumChildren; ++idChild)
         {
             nodes.push_back(node->mChildren[idChild]);
         }
