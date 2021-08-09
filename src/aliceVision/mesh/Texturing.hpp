@@ -56,6 +56,8 @@ struct NormalsParams
 {
     imageIO::EImageFileType normalMapFileType;
     imageIO::EImageFileType heightMapFileType;
+
+    std::string heightMapUsage = "displacement";
 };
 
 struct TexturingParams
@@ -75,7 +77,7 @@ struct TexturingParams
     double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
 
-    imageIO::EImageFileType textureFileType;
+    imageIO::EImageFileType textureFileType = imageIO::EImageFileType::NONE;
     imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
     mvsUtils::ImagesCache::ECorrectEV correctEV{mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION};
 
@@ -198,9 +200,10 @@ public:
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAsOBJ(const bfs::path& dir, const std::string& basename,
-                   imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG,
-                   imageIO::EImageFileType normalMapFileType = imageIO::EImageFileType::PNG,
-                   imageIO::EImageFileType heightMapFileType = imageIO::EImageFileType::PNG);
+                   imageIO::EImageFileType textureFileType = imageIO::EImageFileType::EXR,
+                   imageIO::EImageFileType normalMapFileType = imageIO::EImageFileType::EXR,
+                   imageIO::EImageFileType heightMapFileType = imageIO::EImageFileType::EXR,
+                   const std::string& heightMapUsage = "displacement");
 };
 
 } // namespace mesh

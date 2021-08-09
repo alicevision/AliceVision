@@ -988,7 +988,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
 }
 
 void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, imageIO::EImageFileType textureFileType,
-                          imageIO::EImageFileType normalMapFileType, imageIO::EImageFileType heightMapFileType)
+                          imageIO::EImageFileType normalMapFileType, imageIO::EImageFileType heightMapFileType, const std::string& heightMapUsage)
 {
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
@@ -1031,7 +1031,32 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
         scene.mMaterials[atlasId]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
         scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
         scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
-        
+
+        // Setup textures
+        if(textureFileType != imageIO::EImageFileType::NONE)
+        {
+            const aiString texFile(texturePath);
+            scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
+        }
+        if(normalMapFileType != imageIO::EImageFileType::NONE)
+        {
+            const aiString texFileNormalMap("NormalMap_" + std::to_string(textureId) + "." + EImageFileType_enumToString(normalMapFileType));
+            scene.mMaterials[atlasId]->AddProperty(&texFileNormalMap, AI_MATKEY_TEXTURE_NORMALS(0));
+        }
+        if(heightMapFileType != imageIO::EImageFileType::NONE)
+        {
+            const aiString texFileHeightMap("Heightmap_" + std::to_string(textureId) + "." + EImageFileType_enumToString(heightMapFileType));
+            if (heightMapUsage == "displacement")
+            {
+                scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_DISPLACEMENT(0));
+            }
+            else if (heightMapUsage == "bump")
+            {
+                scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_HEIGHT(0));
+            }
+        }
+
+
         scene.mRootNode->mMeshes[atlasId] = atlasId;
         scene.mMeshes[atlasId] = new aiMesh;
         aiMesh * aimesh = scene.mMeshes[atlasId];

@@ -90,6 +90,8 @@ int aliceVision_main(int argc, char* argv[])
             imageIO::EImageFileType_informations().c_str())
         ("outputHeightMapFileType", po::value<imageIO::EImageFileType>(&normalsParams.heightMapFileType)->default_value(imageIO::EImageFileType::NONE),
             imageIO::EImageFileType_informations().c_str())
+        ("heightMapUsage", po::value<std::string>(&normalsParams.heightMapUsage)->default_value(normalsParams.heightMapUsage),
+            "Use HeightMap for displacement or bump mapping")
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
@@ -219,7 +221,7 @@ int aliceVision_main(int argc, char* argv[])
     if(!inputMeshFilepath.empty())
     {
         mesh.saveAsOBJ(outputFolder, "texturedMesh", texParams.textureFileType, 
-            normalsParams.normalMapFileType, normalsParams.heightMapFileType);
+            normalsParams.normalMapFileType, normalsParams.heightMapFileType, normalsParams.heightMapUsage);
     }
 
     if(texParams.subdivisionTargetRatio > 0)
@@ -256,12 +258,8 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Generate height and normal maps.");
 
         mesh::Mesh denseMesh;
-        {
-            if(!denseMesh.loadFromObjAscii(inputRefMeshFilepath))
-            {
-                throw std::runtime_error("Unable to load: " + inputRefMeshFilepath);
-            }
-        }
+        denseMesh.loadFromObjAscii(inputRefMeshFilepath);
+
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, normalsParams);
     }
 
