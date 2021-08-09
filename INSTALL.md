@@ -25,35 +25,39 @@ As AliceVision use some C++11 features you must have a c++11 ready compiler:
 Dependencies
 ------------
 
-AliceVision depends on:
+AliceVision depends on external libraries:
 
-* Boost >= 1.70.0
-* Eigen >= 3.3.4
-* Ceres >= 1.10.0
-* Flann >= 1.8.4 (internal)
-* CoinUtils >= 2.9.3 (internal)
-* Coin-or linear programming (Clp) (internal)
-* Open Solver Interface (Osi) >= 0.106.10 (internal)
-* Lemon >= 1.3 (internal)
-* OpenEXR >= 2.4.0
-* OpenImageIO >= 2.1.0
-* Geogram >= 1.5.4 (https://gforge.inria.fr/frs/?group_id=5833)
-* MeshSDFilter (internal)
-* OpenMesh (internal)
-* zlib
+* [Assimp >= 5.0.0](https://github.com/assimp/assimp)
+* [Boost >= 1.70.0](https://www.boost.org)
+* [Ceres >= 1.10.0](https://github.com/ceres-solver/ceres-solver)
+* [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
+* [Geogram >= 1.7.5](https://gforge.inria.fr/frs/?group_id=5833)
+* [OpenEXR >= 2.4.0](https://github.com/AcademySoftwareFoundation/openexr)
+* [OpenImageIO >= 2.1.0](https://github.com/OpenImageIO/oiio)
+* [zlib](https://www.zlib.net)
 
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
 
-* OpenMP (enable multi-threading)
-* Mosek 5 (linear programming)
-* OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
+* Cuda >= 7.0 (feature extraction and depth map computation)
+* Magma (required for UncertaintyTE)
+* Mosek >= 5 (linear programming)
+* OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
+* OpenGV (rig calibration and localization)
+* OpenMP (enable multi-threading)
 * PopSift (feature extraction on GPU)
 * UncertaintyTE (Uncertainty computation)
-* Magma (required for UncertaintyTE)
-* Cuda >= 7.0 (feature extraction and depth map computation)
-* OpenGV (rig calibration and localization)
+
+AliceVision also depends on some embedded libraries:
+
+* CoinUtils >= 2.9.3 (internal)
+* Coin-or linear programming (Clp) (internal)
+* Flann >= 1.8.4 (internal)
+* Lemon >= 1.3 (internal)
+* MeshSDFilter (internal)
+* OpenMesh (internal)
+* Open Solver Interface (Osi) >= 0.106.10 (internal)
 
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
@@ -100,6 +104,7 @@ vcpkg install ^
           ceres[suitesparse,cxsparse] ^
           cuda ^
           tbb ^
+          assimp ^
           --triplet x64-windows
 ```
 

@@ -152,7 +152,7 @@ public:
 
     bool loadFromBin(const std::string& binFileName);
     void saveToBin(const std::string& binFileName);
-    bool loadFromObjAscii(const std::string& objAsciiFileName);
+    void loadFromObjAscii(const std::string& objAsciiFileName);
 
     void addMesh(const Mesh& mesh);
 
@@ -284,6 +284,7 @@ public:
     * @return false if no boundaries.
     */
     bool getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool invert = false) const;
+    
 
     /**
      * @brief Remap visibilities

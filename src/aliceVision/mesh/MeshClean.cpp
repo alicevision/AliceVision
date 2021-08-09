@@ -855,7 +855,7 @@ int MeshClean::cleanMesh()
         nWrongPts += static_cast<int>(pth.deployAll() > 0);
     }
     // update vertex color data (if any) if points were modified
-    if(_colors.size() > 0 && newPtsOldPtId.size() != 0)
+    if(!_colors.empty() && !newPtsOldPtId.empty())
     {
         std::vector<rgb> newColors(pts.size(), {0, 0, 0});
         for(std::size_t newId = 0; newId < newPtsOldPtId.size(); ++newId)

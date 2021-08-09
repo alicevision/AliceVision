@@ -26,6 +26,9 @@
 
 #include <boost/algorithm/string/case_conv.hpp> 
 
+#include <assimp/Exporter.hpp>
+#include <assimp/scene.h>
+
 #include <map>
 #include <set>
 
@@ -223,7 +226,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
             }
 
         }
-        atlasId++;
+        ++atlasId;
     }
 }
 
@@ -233,7 +236,7 @@ void Texturing::updateAtlases()
     // Fill atlases (1 atlas per material) with triangles issued from mesh subdivision
     _atlases.clear();
     _atlases.resize(std::max(1, mesh->nmtls));
-    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); ++triangleID)
     {
         unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
         if(mesh->trisMtlIds()[triangleID] != -1)
@@ -352,7 +355,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
             // Fuse visibilities of the 3 vertices
             std::vector<int> allTriCams;
-            for (int k = 0; k < 3; k++)
+            for (int k = 0; k < 3; ++k)
             {
                 const int pointIndex = mesh->tris[triangleID].v[k];
                 const StaticVector<int> pointVisibilities = mesh->pointsVisibilities[pointIndex];
@@ -520,7 +523,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
                     udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
 
-                    for(int k = 0; k < 3; k++)
+                    for(int k = 0; k < 3; ++k)
                     {
                        const int pointIndex = mesh->tris[triangleId].v[k];
                        triPts[k] = mesh->pts[pointIndex];                               // 3D coordinates
@@ -549,9 +552,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     RD.y = clamp(RD.y, 0, texSide);
 
                     // iterate over pixels of the triangle's bounding box
-                    for(int y = LU.y; y < RD.y; y++)
+                    for(int y = LU.y; y < RD.y; ++y)
                     {
-                       for(int x = LU.x; x < RD.x; x++)
+                       for(int x = LU.x; x < RD.x; ++x)
                        {
                            Pixel pix(x, y); // top-left corner of the pixel
                            Point2d barycCoords;
@@ -848,10 +851,7 @@ void Texturing::loadOBJWithAtlas(const std::string& filename, bool flipNormals)
     clear();
     mesh = new Mesh();
     // Load .obj
-    if(!mesh->loadFromObjAscii(filename.c_str()))
-    {
-        throw std::runtime_error("Unable to load: " + filename);
-    }
+    mesh->loadFromObjAscii(filename);
 
     // Handle normals flipping
     if(flipNormals)
@@ -860,7 +860,7 @@ void Texturing::loadOBJWithAtlas(const std::string& filename, bool flipNormals)
     // Fill atlases (1 atlas per material) with corresponding rectangles
     // if no material, create only one atlas with all triangles
     _atlases.resize(std::max(1, mesh->nmtls));
-    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); ++triangleID)
     {
         unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
         _atlases[atlasID].push_back(triangleID);
@@ -963,80 +963,113 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
 {
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
-    std::string objFilename = (dir / (basename + ".obj")).string();
-    std::string mtlName = (basename + ".mtl");
-    std::string mtlFilename = (dir / mtlName).string();
+    const std::string objFilename = (dir / (basename + ".obj")).string();
 
-    // create .OBJ file
-    FILE* fobj = fopen(objFilename.c_str(), "w");
+    if (_atlases.empty())
+    {
+        return;
+    }
 
-    // header
-    fprintf(fobj, "# \n");
-    fprintf(fobj, "# Wavefront OBJ file\n");
-    fprintf(fobj, "# Created with AliceVision\n");
-    fprintf(fobj, "# \n");
-    fprintf(fobj, "mtllib %s\n\n", mtlName.c_str());
-    fprintf(fobj, "g TexturedMesh\n");
+    aiScene scene;
 
-    // write vertices
-    auto vertices = mesh->pts;
-    for(int i = 0; i < vertices.size(); ++i)
-        fprintf(fobj, "v %f %f %f\n", vertices[i].x, vertices[i].y, vertices[i].z);
+    scene.mRootNode = new aiNode;
 
-    // write UV coordinates
-    for(int i=0; i < mesh->uvCoords.size(); ++i)
-        fprintf(fobj, "vt %f %f\n", mesh->uvCoords[i].x, mesh->uvCoords[i].y);
+    scene.mMeshes = new aiMesh*[_atlases.size()];
+    scene.mNumMeshes = _atlases.size();
+    scene.mRootNode->mMeshes = new unsigned int[_atlases.size()];
+    scene.mRootNode->mNumMeshes = _atlases.size();
+    scene.mMaterials = new aiMaterial*[_atlases.size()];
+    scene.mNumMaterials = _atlases.size();
 
     // write faces per texture atlas
-    for(std::size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
-    {
-        const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
-        fprintf(fobj, "usemtl TextureAtlas_%i\n", textureId);
+    for(std::size_t atlasId = 0; atlasId < _atlases.size(); ++atlasId)
+    {      
+        // starts at '1001' for UDIM compatibility
+        const std::size_t textureId = 1001 + atlasId;
+        const std::string texturePath = "texture_" + std::to_string(textureId) + "." + imageIO::EImageFileType_enumToString(textureFileType);
+
+        //Set material for this atlas
+        const aiVector3D valcolor(0.6, 0.6, 0.6);
+        const aiVector3D valspecular(0.0, 0.0, 0.0);
+        const double shininess = 0.0;
+        const aiString texFile(texturePath);
+        const aiString texName(std::to_string(textureId));
+
+        scene.mMaterials[atlasId] = new aiMaterial;
+        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
+        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_DIFFUSE);
+        scene.mMaterials[atlasId]->AddProperty(&valspecular, 1, AI_MATKEY_COLOR_SPECULAR);
+        scene.mMaterials[atlasId]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
+        scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
+        scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
+        
+        scene.mRootNode->mMeshes[atlasId] = atlasId;
+        scene.mMeshes[atlasId] = new aiMesh;
+        aiMesh * aimesh = scene.mMeshes[atlasId];
+        aimesh->mMaterialIndex = atlasId;
+        aimesh->mNumUVComponents[0] = 2;
+
+        //Assimp does not allow vertex indices different from uv indices
+        //So we need to group and duplicate
+        std::map<std::pair<int, int>, int> unique_pairs;
         for(const auto triangleID : _atlases[atlasId])
         {
-            // vertex IDs
-            int vertexID1 = mesh->tris[triangleID].v[0];
-            int vertexID2 = mesh->tris[triangleID].v[1];
-            int vertexID3 = mesh->tris[triangleID].v[2];
+            for (int k = 0; k < 3; ++k)
+            {
+                int vertexId = mesh->tris[triangleID].v[k];
+                int uvId = mesh->trisUvIds[triangleID].m[k];
 
-            int uvID1 = mesh->trisUvIds[triangleID].m[0];
-            int uvID2 = mesh->trisUvIds[triangleID].m[1];
-            int uvID3 = mesh->trisUvIds[triangleID].m[2];
+                std::pair<int, int> p = std::make_pair(vertexId, uvId);
+                unique_pairs[p] = -1;
+            }
+        }
 
-            fprintf(fobj, "f %i/%i %i/%i %i/%i\n", vertexID1 + 1, uvID1 + 1, vertexID2 + 1, uvID2 + 1, vertexID3 + 1, uvID3 + 1); // indexed from 1
+        aimesh->mNumVertices = unique_pairs.size();
+        aimesh->mVertices = new aiVector3D[unique_pairs.size()];
+        aimesh->mTextureCoords[0] = new aiVector3D[unique_pairs.size()];
+
+        int index = 0;
+        for (auto & p : unique_pairs)
+        {
+            int vertexId = p.first.first;
+            int uvId = p.first.second;
+
+            aimesh->mVertices[index].x = mesh->pts[vertexId].x;
+            aimesh->mVertices[index].y = mesh->pts[vertexId].y;
+            aimesh->mVertices[index].z = mesh->pts[vertexId].z;
+
+            aimesh->mTextureCoords[0][index].x = mesh->uvCoords[uvId].x;
+            aimesh->mTextureCoords[0][index].y = mesh->uvCoords[uvId].y;
+            aimesh->mTextureCoords[0][index].z = 0.0;
+
+            p.second = index;
+
+            ++index;
+        }
+
+        aimesh->mNumFaces = _atlases[atlasId].size();
+        aimesh->mFaces = new aiFace[aimesh->mNumFaces];
+
+        for(int i = 0; i < _atlases[atlasId].size(); ++i)
+        {
+            const int triangleId = _atlases[atlasId][i];
+
+            aimesh->mFaces[i].mNumIndices = 3;
+            aimesh->mFaces[i].mIndices = new unsigned int[3];
+
+            for (int k = 0; k < 3; ++k)
+            {
+                const int vertexId = mesh->tris[triangleId].v[k];
+                const int uvId = mesh->trisUvIds[triangleId].m[k];
+
+                const std::pair<int, int> p = std::make_pair(vertexId, uvId);
+                aimesh->mFaces[i].mIndices[k] = unique_pairs[p];
+            }
         }
     }
-    fclose(fobj);
 
-    // create .MTL material file
-    FILE* fmtl = fopen(mtlFilename.c_str(), "w");
-
-    // header
-    fprintf(fmtl, "# \n");
-    fprintf(fmtl, "# Wavefront material file\n");
-    fprintf(fmtl, "# Created with AliceVision\n");
-    fprintf(fmtl, "# \n\n");
-
-    // for each atlas, create a new material with associated texture
-    for(size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
-    {
-        const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
-        const std::string textureName = "texture_" + std::to_string(textureId) + "." + imageIO::EImageFileType_enumToString(textureFileType);
-
-        fprintf(fmtl, "newmtl TextureAtlas_%i\n", textureId);
-        fprintf(fmtl, "Ka  0.6 0.6 0.6\n");
-        fprintf(fmtl, "Kd  0.6 0.6 0.6\n");
-        fprintf(fmtl, "Ks  0.0 0.0 0.0\n");
-        fprintf(fmtl, "d  1.0\n");
-        fprintf(fmtl, "Ns  0.0\n");
-        fprintf(fmtl, "illum 2\n");
-        fprintf(fmtl, "map_Kd %s\n", textureName.c_str());
-    }
-    fclose(fmtl);
-
-    ALICEVISION_LOG_INFO("Writing done: " << std::endl
-                         << "\t- obj file: " << objFilename << std::endl
-                         << "\t- mtl file: " << mtlFilename);
+    Assimp::Exporter exporter;
+    exporter.Export(&scene, "obj", objFilename);
 }
 
 } // namespace mesh

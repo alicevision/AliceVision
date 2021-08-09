@@ -552,7 +552,7 @@ int aliceVision_main(int argc, char** argv)
 
     }
 
-    if (detectedCCheckers.size() == 0)
+    if (detectedCCheckers.empty())
     {
         ALICEVISION_LOG_INFO("Could not find any macbeth color checker in the input images.");
         return EXIT_SUCCESS;

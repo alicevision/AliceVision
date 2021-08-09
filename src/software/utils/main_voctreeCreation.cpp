@@ -131,7 +131,7 @@ int aliceVision_main(int argc, char** argv)
   size_t numTotDescriptors = aliceVision::voctree::readDescFromFiles<DescriptorFloat, DescriptorUChar>(sfmData, featuresFolders, descriptors, descRead);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-  if(descriptors.size() == 0)
+  if(descriptors.empty())
   {
     ALICEVISION_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;

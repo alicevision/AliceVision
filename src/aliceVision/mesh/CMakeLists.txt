@@ -30,7 +30,9 @@ alicevision_add_library(aliceVision_mesh
     aliceVision_mvsUtils
     Geogram::geogram
     Boost::filesystem
+    assimp::assimp
   PRIVATE_LINKS
     aliceVision_system
     Boost::boost
 )
+

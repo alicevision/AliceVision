@@ -195,7 +195,7 @@ public:
 
   bool process()
   {
-    if (_pyramids.size() == 0)
+    if (_pyramids.empty())
     { 
       return false;
     }

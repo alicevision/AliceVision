@@ -151,7 +151,7 @@ bool computePosesRD(const Mat& featureVectors, const Mat& worldPoints, int numOf
     if(std::abs(g1_im(i, 0)) < eps)
       vec_g1_real.push_back(g1_re(i, 0));
   }
-  if(vec_g1_real.size() == 0)
+  if(vec_g1_real.empty())
     return false;
   Vec g1 = Map<Vec>(vec_g1_real.data(), vec_g1_real.size());
 

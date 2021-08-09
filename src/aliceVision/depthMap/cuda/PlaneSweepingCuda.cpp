@@ -705,7 +705,7 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
 
     long t1 = clock();
 
-    if((tcams->size() == 0) || (pixels->size() == 0)) {
+    if((tcams->empty()) || (pixels->empty())) {
         return -1.0f;
     }
 

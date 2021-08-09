@@ -1259,9 +1259,9 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             continue;
         }
         const std::vector<int>& visCams = verticesAttrPrepare[vIndex].cams.getData();
-        if(visCams.size() == 0)
+        if(visCams.empty())
         {
-            ALICEVISION_LOG_WARNING("BAD: visCams.size() == 0");
+            ALICEVISION_LOG_WARNING("BAD: visCams.empty()");
         }
         double maxAngle = 0.0;
         for(int i: visCams)
