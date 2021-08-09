@@ -1,5 +1,6 @@
 # temporary files
 *~
+.nfs*
 .*.swp # vim
 *.flc # xemacs
 .DS_Store # MacOS
