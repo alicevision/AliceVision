@@ -117,8 +117,9 @@ public:
    * @param[in] options The user Ceres options
    * @see BundleAdjustmentSymbolicCeres::CeresOptions
    */
-  BundleAdjustmentSymbolicCeres(const BundleAdjustmentSymbolicCeres::CeresOptions& options = CeresOptions())
+  BundleAdjustmentSymbolicCeres(const CeresOptions& options = CeresOptions(), int minNbImagesToRefineOpticalCenter = 3)
     : _ceresOptions(options)
+    , _minNbImagesToRefineOpticalCenter(minNbImagesToRefineOpticalCenter)
   {}
 
   /**
@@ -270,6 +271,7 @@ private:
 
   /// user Ceres options to use in the solver
   CeresOptions _ceresOptions;
+  int _minNbImagesToRefineOpticalCenter = 3;
 
   /// user FeatureConstraint options to use
   EFeatureConstraint _featureConstraint;
