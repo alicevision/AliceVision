@@ -19,7 +19,7 @@ bool generateSampleScene(sfmData::SfMData & output)
         {
             for(int z = -10; z <= 10; z++)
             {
-                output.getLandmarks().emplace(idpt, Vec3({x,y,z}));
+                output.getLandmarks().emplace(idpt, sfmData::Landmark(Vec3({x,y,z}), feature::EImageDescriberType::UNKNOWN));
                 idpt++;
             }
         }
@@ -48,13 +48,14 @@ bool generateSampleScene(sfmData::SfMData & output)
                 Eigen::AngleAxis<double> aa(thetau.norm(), thetau.normalized());
 
                 output.getPoses().emplace(idpose, geometry::Pose3(aa.toRotationMatrix(), Vec3({x,y,z})));
-                idpose++;
 
                 for (auto itIntrinsic : output.getIntrinsics())
                 {
                     output.getViews().emplace(idview, std::make_shared<sfmData::View>("", idview, itIntrinsic.first, idpose, w, h));
                     idview++;
                 }
+
+                idpose++;
             }
         }
     }
