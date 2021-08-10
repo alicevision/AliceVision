@@ -51,6 +51,18 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
  */
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
+enum class EMeshFileType
+{
+    OBJ = 0,
+    FBX,
+    GLTF2,
+    STL
+};
+
+EMeshFileType EMeshFileType_stringToEnum(const std::string& meshFileType);
+std::string EMeshFileType_enumToString(const EMeshFileType meshFileType);
+std::ostream& operator<<(std::ostream& os, EMeshFileType meshFileType);
+std::istream& operator>>(std::istream& in, EMeshFileType& meshFileType);
 
 struct NormalsParams
 {
@@ -199,11 +211,12 @@ public:
                       imageIO::EImageFileType textureFileType, const int level);
 
     /// Save textured mesh as an OBJ + MTL file
-    void saveAsOBJ(const bfs::path& dir, const std::string& basename,
-                   imageIO::EImageFileType textureFileType = imageIO::EImageFileType::EXR,
-                   imageIO::EImageFileType normalMapFileType = imageIO::EImageFileType::EXR,
-                   imageIO::EImageFileType heightMapFileType = imageIO::EImageFileType::EXR,
-                   const std::string& heightMapUsage = "displacement");
+    void saveAs(const bfs::path& dir, const std::string& basename,
+                aliceVision::mesh::EMeshFileType meshFileType,
+                imageIO::EImageFileType textureFileType = imageIO::EImageFileType::EXR,
+                imageIO::EImageFileType normalMapFileType = imageIO::EImageFileType::EXR,
+                imageIO::EImageFileType heightMapFileType = imageIO::EImageFileType::EXR,
+                const std::string& heightMapUsage = "displacement");
 };
 
 } // namespace mesh
