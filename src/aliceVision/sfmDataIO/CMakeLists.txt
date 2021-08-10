@@ -62,6 +62,14 @@ alicevision_add_test(sfmDataIO_test.cpp
         aliceVision_system
 )
 
+alicevision_add_test(sfmDataIOCompatibility_test.cpp
+  NAME "sfmDataIOCompatibility"
+  LINKS aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_feature
+        aliceVision_system
+)
+
 if(ALICEVISION_HAVE_ALEMBIC)
   alicevision_add_test(alembicIO_test.cpp NAME "sfmDataIO_alembic" LINKS aliceVision_sfmDataIO Alembic::Alembic)
 endif()
