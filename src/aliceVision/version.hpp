@@ -19,22 +19,3 @@
                              ALICEVISION_TO_STRING(ALICEVISION_VERSION_MINOR) "." \
                              ALICEVISION_TO_STRING(ALICEVISION_VERSION_REVISION)
 
-                             
-
-inline bool isVersionOlder(const std::vector<uint32_t> & reference, const std::vector<uint32_t> & compare)
-{
-    for (int i = 0; i < reference.size(); i++)
-    {
-        if (compare[i] < reference[i])
-        {
-            return true;
-        }
-        
-        if (compare[i] > reference[i])
-        {
-            return false;
-        }
-    }
-
-    return false;
-}

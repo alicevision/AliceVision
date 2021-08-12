@@ -75,13 +75,7 @@ int aliceVision_main(int argc, char** argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::generateSampleScene(sfmData))
-    {
-        ALICEVISION_LOG_ERROR("Error while generating scene");
-        return EXIT_FAILURE;
-    }
-
-    
+    sfmDataIO::generateSampleScene(sfmData);
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
     if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))

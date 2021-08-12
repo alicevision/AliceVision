@@ -25,7 +25,7 @@ namespace fs = boost::filesystem;
 BOOST_AUTO_TEST_CASE(Compatibility_abc_1_0) {
 
     sfmData::SfMData sfmData;
-    BOOST_CHECK(generateSampleScene(sfmData));
+    generateSampleScene(sfmData);
 
     fs::path pathSource(__FILE__);
     fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.0.abc";
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(Compatibility_abc_1_0) {
 BOOST_AUTO_TEST_CASE(Compatibility_json_1_0) {
 
     sfmData::SfMData sfmData;
-    BOOST_CHECK(generateSampleScene(sfmData));
+    generateSampleScene(sfmData);
 
     fs::path pathSource(__FILE__);
     fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.0.json";

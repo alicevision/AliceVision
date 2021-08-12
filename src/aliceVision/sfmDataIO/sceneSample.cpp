@@ -9,28 +9,28 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
-bool generateSampleScene(sfmData::SfMData & output)
+void generateSampleScene(sfmData::SfMData & output)
 {
     // Generate points on a cube
     IndexT idpt = 0;
-    for(int x = -10; x <= 10; x++)
+    for(int x = -10; x <= 10; ++x)
     {
-        for(int y = -10; y <= 10; y++)
+        for(int y = -10; y <= 10; ++y)
         {
-            for(int z = -10; z <= 10; z++)
+            for(int z = -10; z <= 10; ++z)
             {
-                output.getLandmarks().emplace(idpt, sfmData::Landmark(Vec3({x,y,z}), feature::EImageDescriberType::UNKNOWN));
-                idpt++;
+                output.getLandmarks().emplace(idpt, sfmData::Landmark(Vec3(x,y,z), feature::EImageDescriberType::UNKNOWN));
+                ++idpt;
             }
         }
     }
 
-    int w = 4092;
-    int h = 2048;
-    double focalLengthPixX = 1000.0;
-    double focalLengthPixY = 2000.0;
-    double ppx = 2020.0;
-    double ppy = 1040.0;
+    const int w = 4092;
+    const int h = 2048;
+    const double focalLengthPixX = 1000.0;
+    const double focalLengthPixY = 2000.0;
+    const double ppx = 2020.0;
+    const double ppy = 1040.0;
     output.getIntrinsics().emplace(0, std::make_shared<camera::Pinhole>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy));
     output.getIntrinsics().emplace(1, std::make_shared<camera::PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, 0.1, 0.05, -0.001));
     output.getIntrinsics().emplace(1, std::make_shared<camera::EquiDistantRadialK3>(w, h, focalLengthPixX, ppx, ppy, 0.1, 0.05, -0.001));
@@ -38,32 +38,28 @@ bool generateSampleScene(sfmData::SfMData & output)
     // Generate poses on another cube
     IndexT idpose = 0;
     IndexT idview = 0;
-    for(int x = -1; x <= 1; x++)
+    for(int x = -1; x <= 1; ++x)
     {
-        for(int y = -1; y <= 1; y++)
+        for(int y = -1; y <= 1; ++y)
         {
-            for(int z = -1; z <= 1; z++)
+            for(int z = -1; z <= 1; ++z)
             {
-                Eigen::Vector3d thetau({x, y, z});
-                Eigen::AngleAxis<double> aa(thetau.norm(), thetau.normalized());
+                const Eigen::Vector3d thetau(x, y, z);
+                const Eigen::AngleAxis<double> aa(thetau.norm(), thetau.normalized());
 
-                output.getPoses().emplace(idpose, geometry::Pose3(aa.toRotationMatrix(), Vec3({x,y,z})));
+                output.getPoses().emplace(idpose, geometry::Pose3(aa.toRotationMatrix(), Vec3(x,y,z)));
 
-                for (auto itIntrinsic : output.getIntrinsics())
+                for (const auto itIntrinsic : output.getIntrinsics())
                 {
                     output.getViews().emplace(idview, std::make_shared<sfmData::View>("", idview, itIntrinsic.first, idpose, w, h));
-                    idview++;
+                    ++idview;
                 }
 
-                idpose++;
+                ++idpose;
             }
         }
     }
-    
-
-    return true;
 }
 
 } // namespace sfmDataIO
 } // namespace aliceVision
-
