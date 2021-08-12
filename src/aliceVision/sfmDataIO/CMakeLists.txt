@@ -7,6 +7,7 @@ set(sfmDataIO_files_headers
   middlebury.hpp
   plyIO.hpp
   viewIO.hpp
+  sceneSample.hpp
 )
 
 # Sources
@@ -18,6 +19,7 @@ set(sfmDataIO_files_sources
   middlebury.cpp
   plyIO.cpp
   viewIO.cpp
+  sceneSample.cpp
 )
 
 if(ALICEVISION_HAVE_ALEMBIC)
@@ -58,6 +60,14 @@ endif()
 
 alicevision_add_test(sfmDataIO_test.cpp
   NAME "sfmDataIO"
+  LINKS aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_feature
+        aliceVision_system
+)
+
+alicevision_add_test(sfmDataIOCompatibility_test.cpp
+  NAME "sfmDataIOCompatibility"
   LINKS aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_feature

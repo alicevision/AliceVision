@@ -274,6 +274,19 @@ alicevision_add_software(aliceVision_utils_lightingEstimation
 )
 
 
+# Lighting estimation from picture, albedo and geometry
+alicevision_add_software(aliceVision_utils_generateSampleScene
+  SOURCE main_generateSampleScene.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_numeric
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_mvsUtils
+        ${Boost_LIBRARIES}
+)
+
+
 # Perform color chart detection
 if(ALICEVISION_HAVE_OPENCV)
   alicevision_add_software(aliceVision_utils_colorCheckerDetection
