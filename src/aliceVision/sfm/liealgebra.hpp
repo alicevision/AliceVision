@@ -222,7 +222,7 @@ constexpr int rowFromCoordinates(int row, int col)
 /**
  * Compute the inverse of source matrix
  */
-inline Eigen::Matrix<double, 16, 16> d_inverse(const Matrix & source)
+inline Eigen::Matrix<double, 16, 16> d_inverse(const Eigen::Matrix4d & source)
 {
   Eigen::Matrix<double, 16, 16> ret = Eigen::Matrix<double, 16, 16>::Zero();
   
