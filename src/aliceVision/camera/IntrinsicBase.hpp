@@ -194,19 +194,6 @@ public:
    */
   virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
 
-  /**
-   * @brief Compute the residual between the 3D projected point X and an image observation x
-   * @param[in] pose The pose
-   * @param[in] X The 3D projected point
-   * @param[in] x The image observation
-   * @return residual
-   */
-  inline Vec2 residual(const geometry::Pose3& pose, const Vec3& X, const Vec2& x) const
-  {
-    const Vec2 proj = this->project(pose, X.homogeneous());
-    return x - proj;
-  }
-
    /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
    * @param[in] pose The pose
@@ -234,7 +221,7 @@ public:
     Mat2X residuals = Mat2X::Zero(2, numPts);
     for(std::size_t i = 0; i < numPts; ++i)
     {
-      residuals.col(i) = residual(pose, (const Vec3&)X.col(i), x.col(i));
+      residuals.col(i) = residual(pose, ((const Vec3&)X.col(i)).homogeneous(), x.col(i));
     }
     return residuals;
   }

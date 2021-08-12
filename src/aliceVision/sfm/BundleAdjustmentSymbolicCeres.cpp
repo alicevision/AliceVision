@@ -624,8 +624,8 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       lockFocal = true;
     }
 
-    bool optional_center = ((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && (usageCount > _minNbImagesToRefineOpticalCenter));
-    if ((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || optional_center)
+    if((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) ||
+       ((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && _minNbImagesToRefineOpticalCenter > 0 && usageCount >= _minNbImagesToRefineOpticalCenter))
     {
       // refine optical center within 10% of the image size.
       assert(intrinsicBlock.size() >= 4);

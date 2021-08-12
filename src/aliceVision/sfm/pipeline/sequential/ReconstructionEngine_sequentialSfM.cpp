@@ -1575,7 +1575,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   {
     const Vec3 X = resectionData.pt3D.col(i);
     const Vec2 x = resectionData.pt2D.col(i);
-    const Vec2 residual = resectionData.optionalIntrinsic->residual(resectionData.pose, X, x);
+    const Vec2 residual = resectionData.optionalIntrinsic->residual(resectionData.pose, X.homogeneous(), x);
     if (residual.norm() < resectionData.error_max &&
         resectionData.pose.depth(X) > 0)
     {
@@ -1748,8 +1748,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       if (angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ) < _params.minAngleForTriangulation ||
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
-          camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
-          camJ->residual(poseJ, X_euclidean, xJ).norm() > acThresholdJ)
+          camI->residual(poseI, X_euclidean.homogeneous(), xI).norm() > acThresholdI || 
+          camJ->residual(poseJ, X_euclidean.homogeneous(), xJ).norm() > acThresholdJ)
         isValidTrack = false;
     }
     else 
@@ -1919,7 +1919,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
             Landmark& landmark = scene.structure.at(trackId);
             if (landmark.observations.count(I) == 0)
             {
-              const Vec2 residual = camI->residual(poseI, landmark.X, xI);
+              const Vec2 residual = camI->residual(poseI, landmark.X.homogeneous(), xI);
               // TODO: scale in residual
               const auto& acThresholdIt = _map_ACThreshold.find(I);
               // TODO assert(acThresholdIt != _map_ACThreshold.end());
@@ -1933,7 +1933,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
             }
             if (landmark.observations.count(J) == 0)
             {
-              const Vec2 residual = camJ->residual(poseJ, landmark.X, xJ);
+              const Vec2 residual = camJ->residual(poseJ, landmark.X.homogeneous(), xJ);
               const auto& acThresholdIt = _map_ACThreshold.find(J);
               // TODO assert(acThresholdIt != _map_ACThreshold.end());
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
@@ -1967,8 +1967,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           //  - Check positive depth
           //  - Check residual values
           const double angle = angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ);
-          const Vec2 residualI = camI->residual(poseI, X_euclidean, xI);
-          const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
+          const Vec2 residualI = camI->residual(poseI, X_euclidean.homogeneous(), xI);
+          const Vec2 residualJ = camJ->residual(poseJ, X_euclidean.homogeneous(), xJ);
           
           // TODO assert(acThresholdIt != _map_ACThreshold.end());
           

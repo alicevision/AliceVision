@@ -214,8 +214,8 @@ int main() {
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
         continue;
 
-      const Vec2 residual0 = intrinsic0.residual(pose0, X, LL.coords().cast<double>());
-      const Vec2 residual1 = intrinsic1.residual(pose1, X, RR.coords().cast<double>());
+      const Vec2 residual0 = intrinsic0.residual(pose0, X.homogeneous(), LL.coords().cast<double>());
+      const Vec2 residual1 = intrinsic1.residual(pose1, X.homogeneous(), RR.coords().cast<double>());
       vec_residuals.push_back(fabs(residual0(0)));
       vec_residuals.push_back(fabs(residual0(1)));
       vec_residuals.push_back(fabs(residual1(0)));
