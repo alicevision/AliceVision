@@ -16,6 +16,7 @@
 #include <boost/filesystem.hpp>
 
 #include <assimp/Importer.hpp>
+#include <assimp/Exporter.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <Eigen/Dense>
@@ -37,41 +38,57 @@ Mesh::~Mesh()
 
 void Mesh::saveToObj(const std::string& filename)
 {
-  ALICEVISION_LOG_INFO("Save mesh to obj: " << filename);
-  ALICEVISION_LOG_INFO("Nb points: " << pts.size());
-  ALICEVISION_LOG_INFO("Nb triangles: " << tris.size());
+    ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
-  FILE* f = fopen(filename.c_str(), "w");
+    aiScene scene;
 
-  fprintf(f, "# \n");
-  fprintf(f, "# Wavefront OBJ file\n");
-  fprintf(f, "# Created with AliceVision\n");
-  fprintf(f, "# \n");
-  fprintf(f, "g Mesh\n");
+    scene.mRootNode = new aiNode;
 
-  if(_colors.size() == pts.size())
-  {
-    std::size_t i = 0;
-    for(const auto& point : pts)
+    scene.mMeshes = new aiMesh*[1];
+    scene.mNumMeshes = 1;
+    scene.mRootNode->mMeshes = new unsigned int[1];
+    scene.mRootNode->mNumMeshes = 1;
+
+    scene.mMaterials = new aiMaterial*[1];
+    scene.mNumMaterials = 1;
+    scene.mMaterials[0] = new aiMaterial;
+
+    scene.mRootNode->mMeshes[0] = 0;
+    scene.mMeshes[0] = new aiMesh;
+    aiMesh * aimesh = scene.mMeshes[0];
+    aimesh->mMaterialIndex = 0;
+
+    aimesh->mNumVertices = pts.size();
+    aimesh->mVertices = new aiVector3D[pts.size()];
+
+    int index = 0;
+    for (const auto & p : pts)
     {
-      const rgb& col = _colors[i];
-      fprintf(f, "v %f %f %f %f %f %f\n", point.x, point.y, point.z, col.r/255.0f, col.g/255.0f, col.b/255.0f);
-      ++i;
-    }
-  }
-  else
-  {
-    for(const auto& point : pts)
-      fprintf(f, "v %f %f %f\n", point.x, point.y, point.z);    
-  }
+        aimesh->mVertices[index].x = p.x;
+        aimesh->mVertices[index].y = p.y;
+        aimesh->mVertices[index].z = p.z;
 
-  for(int i = 0; i < tris.size(); ++i)
-  {
-      Mesh::triangle& t = tris[i];
-      fprintf(f, "f %i %i %i\n", t.v[0] + 1, t.v[1] + 1, t.v[2] + 1);
-  }
-  fclose(f);
-  ALICEVISION_LOG_INFO("Save mesh to obj done.");
+        ++index;
+    }
+
+    aimesh->mNumFaces = tris.size();
+    aimesh->mFaces = new aiFace[tris.size()];
+
+    for(int i = 0; i < tris.size(); ++i)
+    {
+        aimesh->mFaces[i].mNumIndices = 3;
+        aimesh->mFaces[i].mIndices = new unsigned int[3];
+
+        for (int k = 0; k < 3; ++k)
+        {
+            aimesh->mFaces[i].mIndices[k] = tris[i].v[k];
+        }
+    }
+
+    Assimp::Exporter exporter;
+    exporter.Export(&scene, "objnomtl", filename);
+
+    ALICEVISION_LOG_INFO("Save mesh to obj done.");
 }
 
 bool Mesh::loadFromBin(const std::string& binFileName)
