@@ -326,7 +326,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 
 bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const Vec3 version = {1, 2, 0};
+  const Vec3 version = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
 
   // save flags
   const bool saveViews = (partFlag & VIEWS) == VIEWS;
