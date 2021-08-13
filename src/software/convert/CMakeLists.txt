@@ -62,7 +62,7 @@ alicevision_add_software(aliceVision_convertMesh
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_system
         aliceVision_numeric
-	Geogram::geogram
+	aliceVision_mesh
         ${Boost_LIBRARIES}
 )
 
