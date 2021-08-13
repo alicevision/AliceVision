@@ -839,7 +839,7 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
 
   Version abcVersion(vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]);
 
-  Vec3 abcVersion = {vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]};
+  Version abcVersion(vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]);
 
   if(userProps.getPropertyHeader("mvg_featuresFolders"))
   {
