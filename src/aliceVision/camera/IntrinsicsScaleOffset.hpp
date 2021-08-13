@@ -178,6 +178,9 @@ public:
     return true;
   }
 
+  /**
+   * @brief Import a vector of params loaded from a file. It is similar to updateFromParams but it deals with file compatibility.
+   */
   bool importFromParams(const std::vector<double>& params, const Vec3 & inputVersion) override
   {
     if (!updateFromParams(params))
