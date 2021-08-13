@@ -173,12 +173,14 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   Vec2 pxFocalLength;
   if (version < Version(1,2,0))
   {
+    std::cout << "ok1" << std::endl;
       pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
       // Only one focal value for X and Y in previous versions
       pxFocalLength(1) = pxFocalLength(0);
   }
   else if (version < Version(1,2,2)) // version >= 1.2
   {
+    std::cout << "ok" << std::endl;
     loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
   }
   else 
