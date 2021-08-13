@@ -517,7 +517,7 @@ void meshMasking(
     }
 
     // Save output mesh
-    filteredMesh.saveToObj(outputMeshPath);
+    filteredMesh.save(outputMeshPath);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 }
@@ -548,12 +548,12 @@ int main(int argc, char **argv)
         ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath)->required(),
             "A SfMData file (*.sfm).")
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+            "Input Mesh")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
             "Use masks from specific folder(s).\n"
             "Filename should be the same or the image uid.")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).")
+            "Output mesh")
         ("threshold", po::value<int>(&threshold)->default_value(threshold)->notifier(optInRange(1, INT_MAX, "threshold"))->required(),
             "The minimum number of visibility to keep a vertex.")
         ;

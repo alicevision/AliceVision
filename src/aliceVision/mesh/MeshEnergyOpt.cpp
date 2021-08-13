@@ -105,7 +105,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool& pt
         ALICEVISION_LOG_INFO("Optimizing mesh smooth: iteration " << i);
         updateGradientParallel(lambda, LU, RD, ptsCanMove);
         //if(saveDebug)
-        //    saveToObj(folder + "mesh_smoothed_" + std::to_string(i) + ".obj");
+        //    save(folder + "mesh_smoothed_" + std::to_string(i));
     }
 
     return true;

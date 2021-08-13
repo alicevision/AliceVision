@@ -28,7 +28,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
     bool exportDebug = (float)mp.userParams.get<bool>("delaunaycut.exportDebugGC", false);
 
     if(exportDebug)
-        inout_mesh->saveToObj(debugFolderName + "rawGraphCut.obj");
+        inout_mesh->save(debugFolderName + "rawGraphCut");
 
     // copy ptsCams
     {
@@ -74,7 +74,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
         meOpt.cleanMesh(10);
 
         if(exportDebug)
-            meOpt.saveToObj(debugFolderName + "MeshClean.obj");
+            meOpt.save(debugFolderName + "MeshClean");
 
         /////////////////////////////
         {
@@ -128,7 +128,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
             meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
             if(exportDebug)
-                meOpt.saveToObj(debugFolderName + "mesh_smoothed.obj");
+                meOpt.save(debugFolderName + "mesh_smoothed");
         }
 
         meOpt.deallocateCleaningAttributes();

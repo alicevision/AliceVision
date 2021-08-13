@@ -41,6 +41,22 @@ ALICEVISION_BITMASK(EVisibilityRemappingMethod);
 EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
 std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
 
+/**
+ * @brief File type available for exporting mesh
+ */
+enum class EFileType
+{
+    OBJ = 0,
+    FBX,
+    GLTF,
+    STL
+};
+
+EFileType EFileType_stringToEnum(const std::string& filetype);
+std::string EFileType_enumToString(const EFileType filetype);
+std::istream& operator>>(std::istream& in, EFileType& meshFileType);
+std::ostream& operator<<(std::ostream& os, EFileType meshFileType);
+
 
 class Mesh
 {
@@ -148,7 +164,7 @@ public:
     Mesh();
     ~Mesh();
 
-    void saveToObj(const std::string& filename);
+    void save(const std::string& filename, EFileType filetype = EFileType::GLTF);
 
     bool loadFromBin(const std::string& binFileName);
     void saveToBin(const std::string& binFileName);

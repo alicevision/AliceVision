@@ -14,6 +14,7 @@
 #include <geogram/points/kd_tree.h>
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/case_conv.hpp> 
 
 #include <assimp/Importer.hpp>
 #include <assimp/Exporter.hpp>
@@ -36,9 +37,56 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::saveToObj(const std::string& filename)
+
+std::string EFileType_enumToString(const EFileType meshFileType)
 {
-    ALICEVISION_LOG_INFO("Writing obj and mtl file.");
+    switch(meshFileType)
+    {
+        case EFileType::OBJ:
+            return "obj";
+        case EFileType::FBX:
+            return "fbx";
+        case EFileType::STL:
+            return "stl";
+        case EFileType::GLTF:
+            return "gltf";
+    }
+    throw std::out_of_range("Unrecognized EMeshFileType");
+}
+
+EFileType EFileType_stringToEnum(const std::string& meshFileType)
+{
+    std::string m = meshFileType;
+    boost::to_lower(m);
+
+    if(m == "obj")
+        return EFileType::OBJ;
+    if(m == "fbx")
+        return EFileType::FBX;
+    if(m == "stl")
+        return EFileType::STL;
+    if(m == "gltf")
+        return EFileType::GLTF;
+    throw std::out_of_range("Invalid mesh file type " + meshFileType);
+}
+
+std::ostream& operator<<(std::ostream& os, EFileType meshFileType)
+{
+    return os << EFileType_enumToString(meshFileType);
+}
+std::istream& operator>>(std::istream& in, EFileType& meshFileType)
+{
+    std::string token;
+    in >> token;
+    meshFileType = EFileType_stringToEnum(token);
+    return in;
+}
+
+void Mesh::save(const std::string& filename, EFileType filetype)
+{
+    const std::string filetypeStr = EFileType_enumToString(filetype);
+
+    ALICEVISION_LOG_INFO("Save " << filetypeStr << " mesh file");
 
     aiScene scene;
 
@@ -85,10 +133,26 @@ void Mesh::saveToObj(const std::string& filename)
         }
     }
 
-    Assimp::Exporter exporter;
-    exporter.Export(&scene, "objnomtl", filename);
+    std::string formatId;
+    // If gltf, use gltf 2.0
+    if (filetypeStr == "gltf")
+    {
+        formatId = "gltf2";
+    }
+    // If obj, do not use material
+    else if (filetypeStr == "obj")
+    {
+        formatId = "objnomtl";
+    }
+    else
+    {
+        formatId = filetypeStr;
+    }
 
-    ALICEVISION_LOG_INFO("Save mesh to obj done.");
+    Assimp::Exporter exporter;
+    exporter.Export(&scene, formatId, filename);
+
+    ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
 }
 
 bool Mesh::loadFromBin(const std::string& binFileName)

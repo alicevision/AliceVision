@@ -104,53 +104,6 @@ std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod m
     throw std::out_of_range("Unrecognized EVisibilityRemappingMethod");
 }
 
-std::string EMeshFileType_enumToString(const EMeshFileType meshFileType)
-{
-    switch(meshFileType)
-    {
-        case EMeshFileType::OBJ:
-            return "obj";
-        case EMeshFileType::FBX:
-            return "fbx";
-        case EMeshFileType::STL:
-            return "stl";
-        case EMeshFileType::GLTF2:
-            return "gltf";
-    }
-    throw std::out_of_range("Unrecognized EMeshFileType");
-}
-
-EMeshFileType EMeshFileType_stringToEnum(const std::string& meshFileType)
-{
-    std::string m = meshFileType;
-    boost::to_lower(m);
-
-    if(m == "obj")
-        return EMeshFileType::OBJ;
-    if(m == "fbx")
-        return EMeshFileType::FBX;
-    if(m == "stl")
-        return EMeshFileType::STL;
-    if(m == "gltf" || m == "gltf2")
-        return EMeshFileType::GLTF2;
-    throw std::out_of_range("Invalid mesh file type " + meshFileType);
-}
-
-std::ostream& operator<<(std::ostream& os, EMeshFileType meshFileType) 
-{
-    return os << EMeshFileType_enumToString(meshFileType);
-}
-
-std::istream& operator>>(std::istream& in, EMeshFileType& meshFileType) 
-{
-    std::string token;
-    in >> token;
-    meshFileType = EMeshFileType_stringToEnum(token);
-    return in;
-}
-
-
-
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
  * @param[in] triangle the triangle as an array of 3 point2Ds
@@ -1035,17 +988,16 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
 }
 
 void Texturing::saveAs(const bfs::path& dir, const std::string& basename, 
-    aliceVision::mesh::EMeshFileType meshFileType, 
+    aliceVision::mesh::EFileType meshFileType, 
     imageIO::EImageFileType textureFileType,
     imageIO::EImageFileType normalMapFileType, 
     imageIO::EImageFileType heightMapFileType, 
     const std::string& heightMapUsage)
 {
-    const std::string fileTypeStr = EMeshFileType_enumToString(meshFileType);
-    const std::string objFilename = (dir / (basename + "." + fileTypeStr)).string();
+    const std::string filetypeStr = EFileType_enumToString(meshFileType);
+    const std::string filename = (dir / basename).string();
 
-    ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
-
+    ALICEVISION_LOG_INFO("Save " << filetypeStr << " mesh file");
 
     if (_atlases.empty())
     {
@@ -1175,11 +1127,26 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
         }
     }
 
-    Assimp::Exporter exporter;
-    if (fileTypeStr == "gltf")
-        exporter.Export(&scene, "gltf2", objFilename);
+    std::string formatId;
+    // If gltf, use gltf 2.0
+    if(filetypeStr == "gltf")
+    {
+        formatId = "gltf2";
+    }
+    // If obj, do not use material
+    else if(filetypeStr == "obj")
+    {
+        formatId = "objnomtl";
+    }
     else
-        exporter.Export(&scene, fileTypeStr, objFilename);
+    {
+        formatId = filetypeStr;
+    }
+
+    Assimp::Exporter exporter;
+    exporter.Export(&scene, formatId, filename);
+
+    ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
 }
 
 

@@ -49,7 +49,7 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string inputMeshFilepath;    // Model to texture (HighPoly for diffuse, LowPoly for Diffuse+Normal)
     std::string inputRefMeshFilepath; // HighPoly for NormalMap
-    aliceVision::mesh::EMeshFileType outputMeshFileType;
+    aliceVision::mesh::EFileType outputMeshFileType;
 
     std::string outputFolder;
     std::string imagesFolder;
@@ -85,7 +85,7 @@ int aliceVision_main(int argc, char* argv[])
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
-        ("outputMeshFileType", po::value<aliceVision::mesh::EMeshFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EMeshFileType::OBJ),
+        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
             "output mesh file type")
         ("outputTextureFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(imageIO::EImageFileType::NONE),
           imageIO::EImageFileType_informations().c_str())
