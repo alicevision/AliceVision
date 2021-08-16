@@ -489,25 +489,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
         Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
         Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
         prop.get(sample, ISampleSelector(sampleFrame));
-
-        if (abcVersion < Version(1,2,0)) // abcVersion < 1.2
-        {
-            std::vector<double> params;
-            params.assign(sample->get(), sample->get() + sample->size());
-
-            // Fx == Fy
-            mvg_intrinsicParams.push_back(params[0]);
-            mvg_intrinsicParams.push_back(params[0]);
-
-            for (int i = 1; i < params.size(); i++)
-            {
-                mvg_intrinsicParams.push_back(params[i]);
-            }
-        }
-        else // abcVersion >= 1.2
-        {
-            mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
-        }
+        mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
       }
     }
   }

@@ -175,7 +175,24 @@ public:
    */
   bool importFromParams(const std::vector<double>& params, const Version & inputVersion) override
   {
-    if (!updateFromParams(params))
+    std::vector<double> paramsLocal;
+    if (inputVersion < Version(1, 2, 0))
+    {
+      paramsLocal.resize(params.size() + 1);
+      paramsLocal[0] = params[0];
+      paramsLocal[1] = params[0];
+
+      for (int i = 1; i < params.size(); i++)
+      {
+        paramsLocal[i + 1] = params[i];
+      }
+    }
+    else 
+    {
+      paramsLocal = params;
+    }
+
+    if (!updateFromParams(paramsLocal))
     {
        return false;
     }
