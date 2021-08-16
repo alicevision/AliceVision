@@ -72,7 +72,7 @@ int aliceVision_main(int argc, char* argv[])
         ("inputMesh", po::value<std::string>(&inputMeshFilepath)->required(),
             "Input mesh to texture.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-            "Folder for output mesh: OBJ, material and texture files.");
+            "Folder for output mesh");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()

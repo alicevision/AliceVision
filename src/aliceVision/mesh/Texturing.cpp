@@ -995,9 +995,9 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     const std::string& heightMapUsage)
 {
     const std::string filetypeStr = EFileType_enumToString(meshFileType);
-    const std::string filename = (dir / basename).string();
+    const std::string filename = (dir / (basename + "." + filetypeStr)).string();
 
-    ALICEVISION_LOG_INFO("Save " << filetypeStr << " mesh file");
+    ALICEVISION_LOG_INFO("Save " << filename << " mesh file");
 
     if (_atlases.empty())
     {
