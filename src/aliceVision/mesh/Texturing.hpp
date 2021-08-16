@@ -53,12 +53,12 @@ std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
 
 
-struct NormalsParams
+struct BumpMappingParams
 {
-    imageIO::EImageFileType normalMapFileType;
-    imageIO::EImageFileType heightMapFileType;
+    imageIO::EImageFileType bumpMappingFileType = imageIO::EImageFileType::NONE;
+    imageIO::EImageFileType displacementFileType = imageIO::EImageFileType::NONE;
 
-    std::string heightMapUsage = "displacement";
+    std::string bumpType = "Normal";
 };
 
 struct TexturingParams
@@ -189,11 +189,11 @@ public:
                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 
     void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
-                                     const bfs::path& outPath, const mesh::NormalsParams& normalsParams);
+                                     const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
                                       const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache& imageCache,
-                                      const bfs::path& outPath, const mesh::NormalsParams& normalsParams);
+                                      const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     ///Fill holes and write texture files for the given texture atlas
     void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
@@ -203,9 +203,7 @@ public:
     void saveAs(const bfs::path& dir, const std::string& basename,
                 aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::GLTF,
                 imageIO::EImageFileType textureFileType = imageIO::EImageFileType::EXR,
-                imageIO::EImageFileType normalMapFileType = imageIO::EImageFileType::EXR,
-                imageIO::EImageFileType heightMapFileType = imageIO::EImageFileType::EXR,
-                const std::string& heightMapUsage = "displacement");
+                const BumpMappingParams& bumpMappingParams = BumpMappingParams());
 };
 
 } // namespace mesh

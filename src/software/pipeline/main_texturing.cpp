@@ -61,7 +61,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
 
-    mesh::NormalsParams normalsParams;
+    mesh::BumpMappingParams bumpMappingParams;
 
     po::options_description allParams("AliceVision texturing");
 
@@ -87,13 +87,13 @@ int aliceVision_main(int argc, char* argv[])
             "Texture downscale factor")
         ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
             "output mesh file type")
-        ("outputTextureFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(imageIO::EImageFileType::NONE),
+        ("colorMappingFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(texParams.textureFileType),
           imageIO::EImageFileType_informations().c_str())
-        ("outputNormalMapFileType", po::value<imageIO::EImageFileType>(&normalsParams.normalMapFileType)->default_value(imageIO::EImageFileType::NONE),
+        ("bumpMappingFileType", po::value<imageIO::EImageFileType>(&bumpMappingParams.bumpMappingFileType)->default_value(bumpMappingParams.bumpMappingFileType),
             imageIO::EImageFileType_informations().c_str())
-        ("outputHeightMapFileType", po::value<imageIO::EImageFileType>(&normalsParams.heightMapFileType)->default_value(imageIO::EImageFileType::NONE),
+        ("displacementMappingFileType", po::value<imageIO::EImageFileType>(&bumpMappingParams.displacementFileType)->default_value(bumpMappingParams.displacementFileType),
             imageIO::EImageFileType_informations().c_str())
-        ("heightMapUsage", po::value<std::string>(&normalsParams.heightMapUsage)->default_value(normalsParams.heightMapUsage),
+        ("bumpType", po::value<std::string>(&bumpMappingParams.bumpType)->default_value(bumpMappingParams.bumpType),
             "Use HeightMap for displacement or bump mapping")
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
@@ -223,8 +223,7 @@ int aliceVision_main(int argc, char* argv[])
     // save final obj file
     if(!inputMeshFilepath.empty())
     {
-        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType, texParams.textureFileType, 
-            normalsParams.normalMapFileType, normalsParams.heightMapFileType, normalsParams.heightMapUsage);
+        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType, texParams.textureFileType, bumpMappingParams);
     }
 
     if(texParams.subdivisionTargetRatio > 0)
@@ -256,14 +255,15 @@ int aliceVision_main(int argc, char* argv[])
 
 
     if(!inputRefMeshFilepath.empty() && !inputMeshFilepath.empty() &&
-       (normalsParams.normalMapFileType != imageIO::EImageFileType::NONE || normalsParams.heightMapFileType != imageIO::EImageFileType::NONE))
+       (bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE ||
+        bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE))
     {
         ALICEVISION_LOG_INFO("Generate height and normal maps.");
 
         mesh::Mesh denseMesh;
         denseMesh.loadFromObjAscii(inputRefMeshFilepath);
 
-        mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, normalsParams);
+        mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
