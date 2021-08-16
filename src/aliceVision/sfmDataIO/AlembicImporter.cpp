@@ -155,7 +155,7 @@ struct AV_UInt32ArraySamplePtr
   }
 };
 
-bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part, const std::vector<uint32_t> & version)
+bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
 {
   using namespace aliceVision::geometry;
 
@@ -200,7 +200,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
 
     sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
     
-    if (isVersionOlder({1, 2}, version))
+    if (abcVersion < Version(1, 2, 3))
     {
       landmark = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
     }
@@ -622,7 +622,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     M(2, 2) = -1.0;
 
     Mat4 T2;
-    if (abcVersion < Version(1, 2, 3)))
+    if (abcVersion < Version(1, 2, 3))
     {
       T2 = (T * M).inverse();
     }
@@ -779,7 +779,7 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
   const MetaData& md = iObj.getMetaData();
   if(IPoints::matches(md) && (flagsPart & ESfMData::STRUCTURE))
   {
-    readPointCloud(iObj, mat, sfmdata, flagsPart, version);
+    readPointCloud(abcVersion, iObj, mat, sfmdata, flagsPart);
   }
   else if(IXform::matches(md))
   {
