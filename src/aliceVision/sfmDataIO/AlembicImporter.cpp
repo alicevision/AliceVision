@@ -341,7 +341,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
 
   if(userProps)
   {
-    if(flagsPart & ESfMData::VIEWS || flagsPart & ESfMData::INTRINSICS)
+    if((flagsPart & ESfMData::VIEWS) || (flagsPart & ESfMData::INTRINSICS) || (flagsPart & ESfMData::EXTRINSICS))
     {
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
         imagePath = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_imagePath", sampleFrame);
