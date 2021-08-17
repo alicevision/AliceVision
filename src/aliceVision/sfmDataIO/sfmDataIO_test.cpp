@@ -39,7 +39,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
     const IndexT viewId = i, poseId = i;
     const IndexT intrinsicId = sharedIntrinsic ? 0 : i; //(shared or not intrinsics)
 
-    std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>(os.str(),viewId, intrinsicId, poseId, 1000, 1000);
+    std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>(os.str(),viewId, intrinsicId, poseId, 1500, 1000);
 
     sfmData.views[viewId] = view;
 
@@ -47,16 +47,9 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
     sfmData.setPose(*view, sfmData::CameraPose());
 
     // Add intrinsics
-    if(sharedIntrinsic)
+    if(!sharedIntrinsic || (i == 0))
     {
-      if(i == 0)
-      {
-        sfmData.intrinsics[0] = std::make_shared<Pinhole>();
-      }
-    }
-    else
-    {
-      sfmData.intrinsics[i] = std::make_shared<Pinhole>();
+      sfmData.intrinsics[i] = std::make_shared<Pinhole>(1500, 1000, 700, 600, 10, -20);
     }
   }
 
