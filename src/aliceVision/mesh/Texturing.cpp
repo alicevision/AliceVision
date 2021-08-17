@@ -36,6 +36,7 @@
 
 #include <assimp/Exporter.hpp>
 #include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <map>
 #include <set>
@@ -1143,7 +1144,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     }
 
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filename);
+    exporter.Export(&scene, formatId, filename, aiPostProcessSteps::aiProcess_FlipUVs);
 
     ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
 }
