@@ -22,8 +22,8 @@ using namespace aliceVision::sfmDataIO;
 
 namespace fs = boost::filesystem;
 
-BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_0) {
-
+BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_0)
+{
     sfmData::SfMData sfmData;
     generateSampleScene(sfmData);
 
@@ -37,8 +37,8 @@ BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_0) {
     BOOST_CHECK(sfmData == sfmDataLoad); 
 }
 
-BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_0) {
-
+BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_0)
+{
     sfmData::SfMData sfmData;
     generateSampleScene(sfmData);
 
@@ -49,5 +49,5 @@ BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_0) {
     sfmData::SfMData sfmDataLoad;
     BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
 
-    BOOST_CHECK(sfmData == sfmDataLoad); 
+    BOOST_CHECK(sfmData == sfmDataLoad);
 }

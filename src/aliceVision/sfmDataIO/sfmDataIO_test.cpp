@@ -75,107 +75,108 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
   return sfmData;
 }
 
-BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
+BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
+{
+    std::vector<std::string> ext_Type = {"sfm", "json"};
 
-  const std::vector<std::string> ext_Type = {"sfm","json"};
+    for(int i = 0; i < ext_Type.size(); ++i)
+    {
+        std::ostringstream os;
+        os << "SAVE_LOAD"
+           << "." << ext_Type[i];
+        const std::string filename = os.str();
+        ALICEVISION_LOG_DEBUG("Testing:" << filename);
 
-  for(int i = 0; i < ext_Type.size(); ++i)
-  {
-    std::ostringstream os;
-    os << "SAVE_LOAD" << "." << ext_Type[i];
-    const std::string filename = os.str();
-    ALICEVISION_LOG_DEBUG("Testing:" << filename);
+        // SAVE
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, true);
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+        }
 
-  // SAVE
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-  }
+        // LOAD
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, true);
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+            sfmData::SfMData sfmDataLoad;
+            ESfMData flags_part = ALL;
+            BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
+            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), sfmData.structure.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), sfmData.control_points.size());
+        }
 
-  // LOAD
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-    sfmData::SfMData sfmDataLoad;
-    ESfMData flags_part = ALL;
-    BOOST_CHECK( Load(sfmDataLoad, filename, flags_part) );
-    BOOST_CHECK_EQUAL( sfmDataLoad.views.size(), sfmData.views.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.structure.size(), sfmData.structure.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.control_points.size(), sfmData.control_points.size());
-  }
+        // LOAD (only a subpart: VIEWS)
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, true);
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+            sfmData::SfMData sfmDataLoad;
+            ESfMData flags_part = VIEWS;
+            BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
+            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
+        }
 
-  // LOAD (only a subpart: VIEWS)
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-    sfmData::SfMData sfmDataLoad;
-    ESfMData flags_part = VIEWS;
-    BOOST_CHECK( Load(sfmDataLoad, filename, flags_part) );
-    BOOST_CHECK_EQUAL( sfmDataLoad.views.size(), sfmData.views.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.getPoses().size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.intrinsics.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.structure.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.control_points.size(), 0);
-  }
+        // LOAD (only a subpart: POSES)
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, true);
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+            sfmData::SfMData sfmDataLoad;
+            ESfMData flags_part = EXTRINSICS;
+            BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
+            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
+        }
 
-  // LOAD (only a subpart: POSES)
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-    sfmData::SfMData sfmDataLoad;
-    ESfMData flags_part = EXTRINSICS;
-    BOOST_CHECK( Load(sfmDataLoad, filename, flags_part) );
-    BOOST_CHECK_EQUAL( sfmDataLoad.views.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.intrinsics.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.structure.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.control_points.size(), 0);
-  }
+        // LOAD (only a subpart: INTRINSICS)
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, true);
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+            sfmData::SfMData sfmDataLoad;
+            ESfMData flags_part = INTRINSICS;
+            BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
+            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
+        }
 
-  // LOAD (only a subpart: INTRINSICS)
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-    sfmData::SfMData sfmDataLoad;
-    ESfMData flags_part = INTRINSICS;
-    BOOST_CHECK( Load(sfmDataLoad, filename, flags_part) );
-    BOOST_CHECK_EQUAL( sfmDataLoad.views.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.getPoses().size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.structure.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.control_points.size(), 0);
-  }
+        // LOAD (subparts: COMBINED)
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, false); // 2 intrinsics group here
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+            sfmData::SfMData sfmDataLoad;
+            ESfMData flags_part = ESfMData(INTRINSICS | EXTRINSICS);
+            BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
+            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
+        }
 
-  // LOAD (subparts: COMBINED)
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, false); //2 intrinsics group here
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-    sfmData::SfMData sfmDataLoad;
-    ESfMData flags_part = ESfMData(INTRINSICS | EXTRINSICS);
-    BOOST_CHECK( Load(sfmDataLoad, filename, flags_part) );
-    BOOST_CHECK_EQUAL( sfmDataLoad.views.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.structure.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.control_points.size(), 0);
-  }
-
-  // LOAD (subparts: COMBINED)
-  {
-    const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-    BOOST_CHECK( Save(sfmData, filename, ALL) );
-    sfmData::SfMData sfmDataLoad;
-    ESfMData flags_part = ESfMData(VIEWS | INTRINSICS | EXTRINSICS);
-    BOOST_CHECK( Load(sfmDataLoad, filename, flags_part) );
-    BOOST_CHECK_EQUAL( sfmDataLoad.views.size(), sfmData.views.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
-    BOOST_CHECK_EQUAL( sfmDataLoad.structure.size(), 0);
-    BOOST_CHECK_EQUAL( sfmDataLoad.control_points.size(), 0);
+        // LOAD (subparts: COMBINED)
+        {
+            const sfmData::SfMData sfmData = createTestScene(2, 2, true);
+            BOOST_CHECK(Save(sfmData, filename, ALL));
+            sfmData::SfMData sfmDataLoad;
+            ESfMData flags_part = ESfMData(VIEWS | INTRINSICS | EXTRINSICS);
+            BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
+            BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
+            BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), 0);
+            BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
+        }
     }
-  }
 }
 
 /*
