@@ -30,9 +30,8 @@ public:
     {
     }
     
-    Version(int major, int minor, int micro) : _v({major, minor, micro})
+    Version(int major, int minor, int micro) : _v(major, minor, micro)
     {
-
     }
 
     bool operator<(const Version& other) const
