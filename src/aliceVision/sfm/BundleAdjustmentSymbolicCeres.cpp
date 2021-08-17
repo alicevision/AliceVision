@@ -79,24 +79,24 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
       {
         x_plus_delta[0] = x[0] + delta[posDelta]; 
         x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
-        posDelta++;
+        ++posDelta;
       }
       else
       {
         x_plus_delta[0] = x[0] + delta[posDelta];
-        posDelta++;
+        ++posDelta;
         x_plus_delta[1] = x[1] + delta[posDelta];
-        posDelta++;
+        ++posDelta;
       }
     }
 
     if (!_lockCenter)
     {
       x_plus_delta[2] = x[2] + delta[posDelta]; 
-      posDelta++;
+      ++posDelta;
 
       x_plus_delta[3] = x[3] + delta[posDelta];
-      posDelta++;
+      ++posDelta;
     }
 
     if (!_lockDistortion)
@@ -104,7 +104,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
       for (int i = 0; i < _distortionSize; i++)
       {
         x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
-        posDelta++;
+        ++posDelta;
       }
     }
 
@@ -124,24 +124,24 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
       {
         J(0, posDelta) = 1.0;
         J(1, posDelta) = _focalRatio;
-        posDelta++;
+        ++posDelta;
       }
       else
       {
         J(0, posDelta) = 1.0;
-        posDelta++;
+        ++posDelta;
         J(1, posDelta) = 1.0;
-        posDelta++;
+        ++posDelta;
       }
     }
 
     if (!_lockCenter)
     {
       J(2, posDelta) = 1.0;
-      posDelta++;
+      ++posDelta;
 
       J(3, posDelta) = 1.0;
-      posDelta++;
+      ++posDelta;
     }
 
     if (!_lockDistortion)
@@ -149,7 +149,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
       for (int i = 0; i < _distortionSize; i++)
       {
         J(4 + i, posDelta) = 1.0;
-        posDelta++;
+        ++posDelta;
       }
     }
 
@@ -180,19 +180,18 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
 
 class CostProjection : public ceres::CostFunction {
 public:
-  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig) {
-
+  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig)
+  {
     set_num_residuals(2);
 
-    
     mutable_parameter_block_sizes()->push_back(16);
     mutable_parameter_block_sizes()->push_back(16);
     mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
     mutable_parameter_block_sizes()->push_back(3);    
   }
 
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
-
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override
+  {
     const double * parameter_pose = parameters[0];
     const double * parameter_rig = parameters[1];
     const double * parameter_intrinsics = parameters[2];
@@ -202,8 +201,6 @@ public:
     const Eigen::Map<const SE3::Matrix> cTr(parameter_rig);
     const Eigen::Map<const Vec3> pt(parameter_landmark);
 
-    
-
     /*Update intrinsics object with estimated parameters*/
     size_t params_size = _intrinsics->getParams().size();
     std::vector<double> params;
@@ -211,16 +208,15 @@ public:
       params.push_back(parameter_intrinsics[param_id]);
     }
     _intrinsics->updateFromParams(params);
-    
 
-    SE3::Matrix T = cTr * rTo;
-    geometry::Pose3 T_pose3(T.block<3,4>(0, 0));
+    const SE3::Matrix T = cTr * rTo;
+    const geometry::Pose3 T_pose3(T.block<3, 4>(0, 0));
 
-    Vec4 pth = pt.homogeneous();
+    const Vec4 pth = pt.homogeneous();
 
-    Vec2 pt_est = _intrinsics->project(T_pose3, pth, true);
-    double scale = _measured.scale;
-    if (scale < 1e-12) scale = 1.0;
+    const Vec2 pt_est = _intrinsics->project(T_pose3, pth, true);
+    const double scale = (_measured.scale > 1e-12) ? _measured.scale : 1.0;
+
     residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
     residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
 
@@ -288,13 +284,14 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
     problem.SetParameterBlockConstant(poseBlockPtr);
     return;
   }
-  
+
   if (refineRotation && refineTranslation)
   {
     problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization(refineRotation, refineTranslation));
   }
-  else {
-    ALICEVISION_LOG_ERROR("constant extrinsics not supported at this time");
+  else
+  {
+    ALICEVISION_THROW_ERROR("BundleAdjustmentSymbolicCeres: Constant extrinsics not supported at this time");
   }
 
   _statistics.addState(EParameter::POSE, EParameterState::REFINED);
@@ -368,8 +365,12 @@ bool BundleAdjustmentSymbolicCeres::Statistics::exportToFile(const std::string& 
   std::size_t posesWithDistUpperThanTen = 0;
 
   for(const auto& it : nbCamerasPerDistance)
-    if (it.first >= 10)
-      posesWithDistUpperThanTen += it.second;
+  {
+      if (it.first >= 10)
+      {
+          posesWithDistUpperThanTen += it.second;
+      }
+  }
 
   os << time << ";"
      << states[EParameter::POSE][EParameterState::REFINED]  << ";"
@@ -890,7 +891,6 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
     return false;
   }
 
-
   // update input sfmData with the solution
   updateFromSolution(sfmData, refineOptions);
 
@@ -903,10 +903,10 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
   _statistics.RMSEfinal = std::sqrt(summary.final_cost / summary.num_residuals);
 
   //store distance histogram for local strategy
-  if(useLocalStrategy()) {
+  if(useLocalStrategy())
+  {
     _statistics.nbCamerasPerDistance = _localGraph->getDistancesHistogram();
   }
-
 
   return true;
 }
