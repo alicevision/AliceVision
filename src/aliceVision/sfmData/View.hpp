@@ -97,6 +97,8 @@ public:
            _subPoseId == other._subPoseId;
   }
 
+  inline bool operator!=(const View& other) const { return !(*this == other); }
+
   /**
    * @brief Get view image path
    * @return image path

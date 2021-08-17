@@ -38,7 +38,7 @@ bool SfMData::operator==(const SfMData& other) const {
   {
       const View& view1 = *(it->second.get());
       const View& view2 = *(other.views.at(it->first).get());
-      if(!(view1 == view2))
+      if(view1 != view2)
         return false;
 
       // Image paths
@@ -69,7 +69,7 @@ bool SfMData::operator==(const SfMData& other) const {
       // Intrinsic
       camera::IntrinsicBase& intrinsic1 = *(it->second.get());
       camera::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
-      if(!(intrinsic1 == intrinsic2))
+      if(intrinsic1 != intrinsic2)
         return false;
   }
 
@@ -85,7 +85,7 @@ bool SfMData::operator==(const SfMData& other) const {
       // Landmark
       const Landmark& landmark1 = landMarkIt->second;
       const Landmark& landmark2 = otherLandmarkIt->second;
-      if(!(landmark1 == landmark2))
+      if(landmark1 != landmark2)
         return false;
   }
 
@@ -93,13 +93,15 @@ bool SfMData::operator==(const SfMData& other) const {
   if(control_points != other.control_points)
     return false;
 
+  if(constraints2d.size() != other.constraints2d.size())
+    return false;
 
   Constraints2D::const_iterator constraint2dIt = constraints2d.begin();
   Constraints2D::const_iterator otherconstraint2dIt = other.constraints2d.begin();
   for(; constraint2dIt != constraints2d.end() && otherconstraint2dIt != other.constraints2d.end(); ++constraint2dIt, ++otherconstraint2dIt)
   {
-      if(!(*constraint2dIt == *otherconstraint2dIt))
-        return false;
+    if(*constraint2dIt != *otherconstraint2dIt)
+      return false;
   }
 
   // Root path can be reseted during exports
