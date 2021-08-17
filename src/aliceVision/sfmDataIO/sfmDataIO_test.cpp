@@ -91,18 +91,18 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
         const std::string filename = os.str();
         ALICEVISION_LOG_DEBUG("Testing:" << filename);
 
-        // SAVE
+        BOOST_TEST_CONTEXT("SAVE, file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, true);
             BOOST_CHECK(Save(sfmData, filename, ALL));
         }
 
-        // LOAD
+        BOOST_TEST_CONTEXT("LOAD ALL, file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, true);
-            BOOST_CHECK(Save(sfmData, filename, ALL));
+            BOOST_CHECK(Save(sfmData, filename, ESfMData::ALL));
             sfmData::SfMData sfmDataLoad;
-            ESfMData flags_part = ALL;
+            ESfMData flags_part = ESfMData::ALL;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
             BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
@@ -113,12 +113,12 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK(sfmData == sfmDataLoad);
         }
 
-        // LOAD (only a subpart: VIEWS)
+        BOOST_TEST_CONTEXT("LOAD (only a subpart: VIEWS), file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, true);
             BOOST_CHECK(Save(sfmData, filename, ALL));
             sfmData::SfMData sfmDataLoad;
-            ESfMData flags_part = VIEWS;
+            ESfMData flags_part = ESfMData::VIEWS;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
             BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
@@ -127,12 +127,12 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
-        // LOAD (only a subpart: POSES)
+        BOOST_TEST_CONTEXT("LOAD (only a subpart: POSES), file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, true);
             BOOST_CHECK(Save(sfmData, filename, ALL));
             sfmData::SfMData sfmDataLoad;
-            ESfMData flags_part = EXTRINSICS;
+            ESfMData flags_part = ESfMData::EXTRINSICS;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
             BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
@@ -141,12 +141,12 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
-        // LOAD (only a subpart: INTRINSICS)
+        BOOST_TEST_CONTEXT("LOAD (only a subpart: INTRINSICS), file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, true);
             BOOST_CHECK(Save(sfmData, filename, ALL));
             sfmData::SfMData sfmDataLoad;
-            ESfMData flags_part = INTRINSICS;
+            ESfMData flags_part = ESfMData::INTRINSICS;
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
             BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), 0);
@@ -155,12 +155,12 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
-        // LOAD (subparts: COMBINED)
+        BOOST_TEST_CONTEXT("LOAD (subparts: INTRINSICS | EXTRINSICS), file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, false); // 2 intrinsics group here
             BOOST_CHECK(Save(sfmData, filename, ALL));
             sfmData::SfMData sfmDataLoad;
-            ESfMData flags_part = ESfMData(INTRINSICS | EXTRINSICS);
+            ESfMData flags_part = ESfMData(ESfMData::INTRINSICS | ESfMData::EXTRINSICS);
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
             BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), 0);
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
@@ -169,12 +169,12 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), 0);
         }
 
-        // LOAD (subparts: COMBINED)
+        BOOST_TEST_CONTEXT("LOAD (subparts: VIEWS | INTRINSICS | EXTRINSICS), file format: " << ext_Type[i])
         {
             const sfmData::SfMData sfmData = createTestScene(2, 2, true);
             BOOST_CHECK(Save(sfmData, filename, ALL));
             sfmData::SfMData sfmDataLoad;
-            ESfMData flags_part = ESfMData(VIEWS | INTRINSICS | EXTRINSICS);
+            ESfMData flags_part = ESfMData(ESfMData::VIEWS | ESfMData::INTRINSICS | ESfMData::EXTRINSICS);
             BOOST_CHECK(Load(sfmDataLoad, filename, flags_part));
             BOOST_CHECK_EQUAL(sfmDataLoad.views.size(), sfmData.views.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
