@@ -62,6 +62,8 @@ int aliceVision_main(int argc, char* argv[])
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
 
     mesh::BumpMappingParams bumpMappingParams;
+    imageIO::EImageFileType normalFileType;
+    imageIO::EImageFileType heightFileType;
 
     po::options_description allParams("AliceVision texturing");
 
@@ -88,8 +90,10 @@ int aliceVision_main(int argc, char* argv[])
         ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
             "output mesh file type")
         ("colorMappingFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(texParams.textureFileType),
-          imageIO::EImageFileType_informations().c_str())
-        ("bumpMappingFileType", po::value<imageIO::EImageFileType>(&bumpMappingParams.bumpMappingFileType)->default_value(bumpMappingParams.bumpMappingFileType),
+          imageIO::EImageFileType_informations().c_str())(
+        "heightFileType", po::value<imageIO::EImageFileType>(&heightFileType)->default_value(imageIO::EImageFileType::NONE),
+            imageIO::EImageFileType_informations().c_str())
+        ("normalFileType", po::value<imageIO::EImageFileType>(&normalFileType)->default_value(imageIO::EImageFileType::NONE),
             imageIO::EImageFileType_informations().c_str())
         ("displacementMappingFileType", po::value<imageIO::EImageFileType>(&bumpMappingParams.displacementFileType)->default_value(bumpMappingParams.displacementFileType),
             imageIO::EImageFileType_informations().c_str())
@@ -168,6 +172,9 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
+
+    // set bump mapping file type
+    bumpMappingParams.bumpMappingFileType = (bumpMappingParams.bumpType == "Normal") ? normalFileType : heightFileType;
 
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
