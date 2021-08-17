@@ -15,6 +15,7 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <iostream>
+#include <aliceVision/sfm/liealgebra.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfmData;
@@ -47,7 +48,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     sfm_data.views[id_view] = view;
 
     // Add poses
-    const Mat3 r = Mat3::Random();
+    const Mat3 r = SO3::expm(Vec3::Random());
     const Vec3 c = Vec3::Random();
     sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
 
@@ -79,7 +80,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     for(IndexT subPoseId = 0; subPoseId < subPoseCount; ++subPoseId)
     {
       {
-        const Mat3 r = Mat3::Random();
+        const Mat3 r = SO3::expm(Vec3::Random());
         const Vec3 c = Vec3::Random();
         rig.setSubPose(subPoseId, RigSubPose(geometry::Pose3(r, c), ERigSubPoseStatus::ESTIMATED));
       }
@@ -102,7 +103,7 @@ SfMData createTestScene(IndexT singleViewsCount,
 
         if(subPoseId == 0)
         {
-          const Mat3 r = Mat3::Random();
+          const Mat3 r = SO3::expm(Vec3::Random());
           const Vec3 c = Vec3::Random();
           sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
         }
