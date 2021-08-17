@@ -435,7 +435,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       {
         poseIndependant = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseIndependant", sampleFrame);
       }
-      if(userProps.getPropertyHeader("mvg_sensorSizePix"))
+      if(userProps.getPropertyHeader("mvg_metadata"))
       {
         getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_metadata", sampleFrame, rawMetadata);
         assert(rawMetadata.size() % 2 == 0);
