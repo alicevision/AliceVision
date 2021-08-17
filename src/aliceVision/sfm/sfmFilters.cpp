@@ -36,7 +36,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
       const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const camera::IntrinsicBase * intrinsic = sfmData.intrinsics.at(view->getIntrinsicId()).get();
 
-      Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
+      Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
       if(featureConstraint == EFeatureConstraint::SCALE && itObs->second.scale > 0.0)
       {
           // Apply the scale of the feature to get a residual value

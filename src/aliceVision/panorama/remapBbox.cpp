@@ -94,7 +94,7 @@ bool computeCoarseBB_Equidistant(BoundingBox& coarse_bbox, const std::pair<int, 
             /**
              * Project this ray to camera pixel coordinates
              */
-            const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+            const Vec2 pix_disto = intrinsics.project(pose, ray.homogeneous(), true);
 
             /**
              * Ignore invalid coordinates
@@ -122,7 +122,7 @@ bool computeCoarseBB_Equidistant(BoundingBox& coarse_bbox, const std::pair<int, 
             /**
              * Project this ray to camera pixel coordinates
              */
-            const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+            const Vec2 pix_disto = intrinsics.project(pose, ray.homogeneous(), true);
 
             /**
              * Ignore invalid coordinates
@@ -182,7 +182,7 @@ bool computeCoarseBB_Equidistant(BoundingBox& coarse_bbox, const std::pair<int, 
             /**
              * Project this ray to camera pixel coordinates
              */
-            const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+            const Vec2 pix_disto = intrinsics.project(pose, ray.homogeneous(), true);
 
             /**
              * Ignore invalid coordinates

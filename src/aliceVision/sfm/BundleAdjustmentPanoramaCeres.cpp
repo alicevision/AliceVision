@@ -94,7 +94,7 @@ public:
 
     Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
     Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
-    Vec3 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist);
+    Vec4 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist).homogeneous();
 
     Vec2 pt_j_est = _intrinsic->project(T, pt_i_sphere, true);
 
@@ -120,9 +120,11 @@ public:
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>> J(jacobians[2]);
 
-      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtScale(pt_i_undist);
-      Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
-      Eigen::Matrix<double, 2, 3> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
+	Eigen::Matrix<double, 4, 3> Jhomogenous = Eigen::Matrix<double, 4, 3>::Identity();
+
+      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtScale(pt_i_undist);
+      Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
+      Eigen::Matrix<double, 2, 3> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
 
       J.block<2, 2>(0, 0) = Jscale;
       J.block<2, 2>(0, 2) = Jpp;
@@ -178,7 +180,7 @@ public:
 
     Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
     Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
-    Vec3 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist);
+    Vec4 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist).homogeneous();
 
     Vec2 pt_j_est = _intrinsic->project(T, pt_i_sphere, true);
 
@@ -203,9 +205,12 @@ public:
 
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double,  Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
-      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtScale(pt_i);
-      Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
-      Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
+
+      Eigen::Matrix<double, 4, 3> Jhomogenous = Eigen::Matrix<double, 4, 3>::Identity();
+
+      Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtScale(pt_i);
+      Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
+      Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
 
       J.block<2, 2>(0, 0) = Jscale;
       J.block<2, 2>(0, 2) = Jpp;

@@ -78,7 +78,7 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::s
           continue;
         }
 
-        Vec2 im = intrinsic_gt->project(pose, pt, true);
+        Vec2 im = intrinsic_gt->project(pose, pt.homogeneous(), true);
         if (!intrinsic_gt->isVisible(im)) {
           continue;
         }

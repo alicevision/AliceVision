@@ -258,7 +258,7 @@ double RMSE(const SfMData & sfm_data)
       const View* view = sfm_data.getViews().find(itObs->first)->second.get();
       const Pose3 pose = sfm_data.getPose(*view).getTransform();
       const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second;
-      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
+      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
       vec.push_back( residual(0) );
       vec.push_back( residual(1) );
     }

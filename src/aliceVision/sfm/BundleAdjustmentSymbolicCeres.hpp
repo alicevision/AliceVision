@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/sfmData/CameraPose.hpp>
 
 #include <ceres/ceres.h>
 #include "liealgebra.hpp"
@@ -116,8 +117,9 @@ public:
    * @param[in] options The user Ceres options
    * @see BundleAdjustmentSymbolicCeres::CeresOptions
    */
-  BundleAdjustmentSymbolicCeres(const BundleAdjustmentSymbolicCeres::CeresOptions& options = CeresOptions())
+  BundleAdjustmentSymbolicCeres(const CeresOptions& options = CeresOptions(), int minNbImagesToRefineOpticalCenter = 3)
     : _ceresOptions(options)
+    , _minNbImagesToRefineOpticalCenter(minNbImagesToRefineOpticalCenter)
   {}
 
   /**
@@ -167,6 +169,8 @@ public:
   }
 
 private:
+
+  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation);
 
   /**
    * @brief Clear structures for a new problem
@@ -267,6 +271,7 @@ private:
 
   /// user Ceres options to use in the solver
   CeresOptions _ceresOptions;
+  int _minNbImagesToRefineOpticalCenter = 3;
 
   /// user FeatureConstraint options to use
   EFeatureConstraint _featureConstraint;
