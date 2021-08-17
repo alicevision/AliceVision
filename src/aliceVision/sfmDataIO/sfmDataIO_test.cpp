@@ -79,6 +79,10 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
 {
     std::vector<std::string> ext_Type = {"sfm", "json"};
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
+    ext_Type.push_back("abc");
+#endif
+
     for(int i = 0; i < ext_Type.size(); ++i)
     {
         std::ostringstream os;
@@ -105,6 +109,8 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.intrinsics.size(), sfmData.intrinsics.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.structure.size(), sfmData.structure.size());
             BOOST_CHECK_EQUAL(sfmDataLoad.control_points.size(), sfmData.control_points.size());
+
+            BOOST_CHECK(sfmData == sfmDataLoad);
         }
 
         // LOAD (only a subpart: VIEWS)
