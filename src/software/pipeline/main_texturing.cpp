@@ -97,7 +97,7 @@ int aliceVision_main(int argc, char* argv[])
             imageIO::EImageFileType_informations().c_str())
         ("displacementMappingFileType", po::value<imageIO::EImageFileType>(&bumpMappingParams.displacementFileType)->default_value(bumpMappingParams.displacementFileType),
             imageIO::EImageFileType_informations().c_str())
-        ("bumpType", po::value<std::string>(&bumpMappingParams.bumpType)->default_value(bumpMappingParams.bumpType),
+        ("bumpType", po::value<mesh::EBumpMappingType>(&bumpMappingParams.bumpType)->default_value(bumpMappingParams.bumpType),
             "Use HeightMap for displacement or bump mapping")
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
@@ -174,7 +174,7 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_COUT(vm);
 
     // set bump mapping file type
-    bumpMappingParams.bumpMappingFileType = (bumpMappingParams.bumpType == "Normal") ? normalFileType : heightFileType;
+    bumpMappingParams.bumpMappingFileType = (bumpMappingParams.bumpType == mesh::EBumpMappingType::Normal) ? normalFileType : heightFileType;
 
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);

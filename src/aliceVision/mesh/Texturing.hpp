@@ -51,6 +51,15 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
  */
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
+enum class EBumpMappingType
+{
+    Height = 0,
+    Normal
+};
+EBumpMappingType EBumpMappingType_stringToEnum(const std::string& type);
+std::string EBumpMappingType_enumToString(EBumpMappingType type);
+std::istream& operator>>(std::istream& in, EBumpMappingType& meshFileType);
+std::ostream& operator<<(std::ostream& os, EBumpMappingType meshFileType);
 
 
 struct BumpMappingParams
@@ -58,7 +67,7 @@ struct BumpMappingParams
     imageIO::EImageFileType bumpMappingFileType = imageIO::EImageFileType::NONE;
     imageIO::EImageFileType displacementFileType = imageIO::EImageFileType::NONE;
 
-    std::string bumpType = "Normal";
+    EBumpMappingType bumpType = EBumpMappingType::Normal;
 };
 
 struct TexturingParams

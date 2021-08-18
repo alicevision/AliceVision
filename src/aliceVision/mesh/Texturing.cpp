@@ -105,6 +105,37 @@ std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod m
     throw std::out_of_range("Unrecognized EVisibilityRemappingMethod");
 }
 
+EBumpMappingType EBumpMappingType_stringToEnum(const std::string& type) 
+{
+    if(type == "Height")
+        return EBumpMappingType::Height;
+    if(type == "Normal")
+        return EBumpMappingType::Normal;
+    throw std::out_of_range("Invalid bump mapping type " + type);
+}
+std::string EBumpMappingType_enumToString(EBumpMappingType type) 
+{
+    switch(type)
+    {
+        case EBumpMappingType::Height:
+            return "Height";
+        case EBumpMappingType::Normal:
+            return "Normal";
+    }
+    throw std::out_of_range("Invalid bump mapping type enum");
+}
+std::ostream& operator<<(std::ostream& os, EBumpMappingType bumpMappingType)
+{
+    return os << EBumpMappingType_enumToString(bumpMappingType);
+}
+std::istream& operator>>(std::istream& in, EBumpMappingType& bumpMappingType)
+{
+    std::string token;
+    in >> token;
+    bumpMappingType = EBumpMappingType_stringToEnum(token);
+    return in;
+}
+
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
  * @param[in] triangle the triangle as an array of 3 point2Ds
@@ -1051,12 +1082,12 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
         }
         
         // Bump Mapping
-        if(bumpMappingParams.bumpType == "Normal" && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
         {
             const aiString texFileNormalMap("Normal_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileNormalMap, AI_MATKEY_TEXTURE_NORMALS(0));
         }
-        else if(bumpMappingParams.bumpType == "Height" && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+        else if(bumpMappingParams.bumpType == EBumpMappingType::Height && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
         {
             const aiString texFileHeightMap("Bump_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_HEIGHT(0));
@@ -1387,7 +1418,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     }
 
     // Save Normal Map
-    if(bumpMappingParams.bumpType == "Normal" && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+    if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         // downscale texture if required
@@ -1446,7 +1477,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
 
         // Save Bump Map
         imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::AUTO);
-        if(bumpMappingParams.bumpType == "Height")
+        if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
             bfs::path bumpMapPath = outPath / bumpName;
