@@ -792,11 +792,16 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
   // set SfMData folder absolute path
   sfmdata.setAbsolutePath(_dataImpl->_filename);
 
-  std::vector<::uint32_t> vecAbcVersion = {0, 0};
+  std::vector<::uint32_t> vecAbcVersion = {0, 0, 0};
 
   if(const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ABC_version"))
   {
     getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ABC_version", sampleFrame, vecAbcVersion);
+  }
+  // Old versions were using only major,minor
+  if(vecAbcVersion.size() < 3)
+  {
+      vecAbcVersion.resize(3, 0);
   }
 
   Version abcVersion(vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]);
