@@ -1128,15 +1128,12 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     }
 
     std::string formatId;
+    unsigned int pPreprocessing = 0u;
     // If gltf, use gltf 2.0
     if(filetypeStr == "gltf")
     {
         formatId = "gltf2";
-    }
-    // If obj, do not use material
-    else if(filetypeStr == "obj")
-    {
-        formatId = "objnomtl";
+        pPreprocessing |= aiPostProcessSteps::aiProcess_FlipUVs;
     }
     else
     {
@@ -1144,7 +1141,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     }
 
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filename, aiPostProcessSteps::aiProcess_FlipUVs);
+    exporter.Export(&scene, formatId, filename, pPreprocessing);
 
     ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
 }
