@@ -26,17 +26,29 @@ namespace aliceVision {
 class Version
 {
 public:
-    Version(const Vec3 & v) : _v(v)
+    Version()
+        : _v(Vec3i::Zero())
+    {}
+
+    explicit Version(const Vec3i & v)
+        : _v(v)
     {
     }
-    
-    Version(int major, int minor, int micro) : _v(major, minor, micro)
+
+    Version(int major, int minor, int micro)
+        : _v(major, minor, micro)
     {
+    }
+
+    Version& operator=(const Vec3i& other)
+    {
+        _v = other;
+        return *this;
     }
 
     bool operator<(const Version& other) const
     {
-        for (Vec3::Index i = 0; i < 3; i++)
+        for (Vec3i::Index i = 0; i < 3; i++)
         {
             if (_v[i] < other._v[i])
             {
@@ -53,7 +65,7 @@ public:
     }
 
 private:
-    Vec3 _v;
+    Vec3i _v;
 };
 
 }

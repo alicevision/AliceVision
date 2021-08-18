@@ -163,7 +163,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
 
   // Focal length
   Vec2 pxFocalLength;
-  if (version < Version(1,2,0)) // version < 1.2
+  if (version < Version(1,2,0))
   {
       pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
       // Only one focal value for X and Y in previous versions
@@ -332,7 +332,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 
 bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const Vec3 version = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
+  const Vec3i version = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
 
   // save flags
   const bool saveViews = (partFlag & VIEWS) == VIEWS;
@@ -464,7 +464,7 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
 bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag, bool incompleteViews,
               EViewIdMethod viewIdMethod, const std::string& viewIdRegex)
 {
-  Vec3 version;
+  Version version;
 
   // load flags
   const bool loadViews = (partFlag & VIEWS) == VIEWS;
@@ -482,7 +482,11 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
   bpt::read_json(filename, fileTree);
 
   // version
-  loadMatrix("version", version, fileTree);
+  {
+    Vec3i v;
+    loadMatrix("version", v, fileTree);
+    version = v;
+  }
 
   // folders
   if(fileTree.count("featuresFolders"))
