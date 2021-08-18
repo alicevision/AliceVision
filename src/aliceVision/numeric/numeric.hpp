@@ -10,17 +10,7 @@
 
 // AliceVision does not support Eigen with alignment,
 // So ensure Eigen is used with the correct flags.
-#ifndef EIGEN_MAX_ALIGN_BYTES
-#error "EIGEN_MAX_ALIGN_BYTES is not defined"
-#elif EIGEN_MAX_ALIGN_BYTES != 0
-#error "EIGEN_MAX_ALIGN_BYTES is defined but not 0"
-#endif
 
-#ifndef EIGEN_MAX_STATIC_ALIGN_BYTES
-#error "EIGEN_MAX_STATIC_ALIGN_BYTES is not defined"
-#elif EIGEN_MAX_STATIC_ALIGN_BYTES != 0
-#error "EIGEN_MAX_STATIC_ALIGN_BYTES is defined but not 0"
-#endif
 
 
 //--
@@ -43,6 +33,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <memory>
 
 namespace aliceVision {
 
@@ -554,5 +545,17 @@ void SplitRange(const T range_start, const T range_end, const int nb_split,
   }
 }
 
+template<class T, typename... Args> 
+std::shared_ptr<T> make_eigen_shared(Args... args) {
+  return std::allocate_shared<T>(Eigen::aligned_allocator<T>(), args...);
+}
 
 } // namespace aliceVision
+
+
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::Vec2)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::Vec3)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::Vec4)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::Mat3)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::Mat4)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::Mat34)

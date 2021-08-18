@@ -30,27 +30,27 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
   switch(intrinsicType)
   {
     case EINTRINSIC::PINHOLE_CAMERA:
-      return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
-      return std::make_shared<PinholeRadialK1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<PinholeRadialK1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
-      return std::make_shared<PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_3DERADIAL4:
-      return std::make_shared<Pinhole3DERadial4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<Pinhole3DERadial4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_BROWN:
-      return std::make_shared<PinholeBrownT2>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<PinholeBrownT2>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
-      return std::make_shared<PinholeFisheye>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<PinholeFisheye>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
-      return std::make_shared<PinholeFisheye1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<PinholeFisheye1>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4:
-      return std::make_shared<Pinhole3DEAnamorphic4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<Pinhole3DEAnamorphic4>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD:
-      return std::make_shared<Pinhole3DEClassicLD>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
+      return make_eigen_shared<Pinhole3DEClassicLD>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA:
-      return std::make_shared<EquiDistant>(w, h, focalLengthPixX, ppx, ppy);
+      return make_eigen_shared<EquiDistant>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
-      return std::make_shared<EquiDistantRadialK3>(w, h, focalLengthPixX, ppx, ppy);
+      return make_eigen_shared<EquiDistantRadialK3>(w, h, focalLengthPixX, ppx, ppy);
     case EINTRINSIC::UNKNOWN:
     case EINTRINSIC::VALID_PINHOLE:
     case EINTRINSIC::VALID_EQUIDISTANT:

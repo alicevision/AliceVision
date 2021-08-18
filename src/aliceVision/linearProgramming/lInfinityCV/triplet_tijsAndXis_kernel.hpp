@@ -54,6 +54,8 @@ struct TrifocalTensorModel {
 }  // namespace trifocal
 }  // namespace aliceVision
 
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::trifocal::kernel::TrifocalTensorModel)
+
 namespace aliceVision{
 
 using namespace aliceVision::trifocal::kernel;
@@ -117,10 +119,10 @@ struct translations_Triplet_Solver
       ThresholdUpperBound,
       0.0, 1e-8, 2, &gamma, false))
     {
-      const std::vector<Vec3> vec_tis = {
-        Vec3(vec_solution[0], vec_solution[1], vec_solution[2]),
-        Vec3(vec_solution[3], vec_solution[4], vec_solution[5]),
-        Vec3(vec_solution[6], vec_solution[7], vec_solution[8])};
+      std::vector<Vec3> vec_tis;
+      vec_tis.push_back({vec_solution[0], vec_solution[1], vec_solution[2]});
+      vec_tis.push_back({vec_solution[3], vec_solution[4], vec_solution[5]});
+      vec_tis.push_back({vec_solution[6], vec_solution[7], vec_solution[8]});
 
       TrifocalTensorModel PTemp;
       PTemp.P1 = HStack(vec_KR[0], vec_tis[0]);

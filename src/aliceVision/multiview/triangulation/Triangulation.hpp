@@ -14,6 +14,8 @@
 #include <vector>
 #include <random>
 
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(std::pair<aliceVision::Mat34, aliceVision::Vec2>)
+
 namespace aliceVision {
 namespace multiview {
 

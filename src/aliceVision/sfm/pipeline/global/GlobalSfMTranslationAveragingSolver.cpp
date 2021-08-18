@@ -664,8 +664,10 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   }
 
   // Get rotations:
-  const std::vector<Mat3> vec_global_R_Triplet =
-    {map_globalR.at(poses_id.i), map_globalR.at(poses_id.j), map_globalR.at(poses_id.k)};
+  std::vector<Mat3> vec_global_R_Triplet;
+  vec_global_R_Triplet.push_back(map_globalR.at(poses_id.i)); 
+  vec_global_R_Triplet.push_back(map_globalR.at(poses_id.j));
+  vec_global_R_Triplet.push_back(map_globalR.at(poses_id.k));
 
   using namespace aliceVision::trifocal;
   using namespace aliceVision::trifocal::kernel;

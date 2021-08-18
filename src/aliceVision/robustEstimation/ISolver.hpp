@@ -126,3 +126,9 @@ using Mat34Model = MatrixModel<Mat34>;
 
 } // namespace robustEstimation
 } // namespace aliceVision
+
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::robustEstimation::MatrixModel<aliceVision::Vec2>)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::robustEstimation::MatrixModel<aliceVision::Vec3>)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::robustEstimation::MatrixModel<aliceVision::Vec4>)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::robustEstimation::MatrixModel<aliceVision::Mat4>)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(aliceVision::robustEstimation::MatrixModel<aliceVision::Mat34>)
