@@ -12,6 +12,7 @@
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/stl/hash.hpp>
+#include <aliceVision/version.hpp>
 
 #include <vector>
 
@@ -104,14 +105,30 @@ public:
    */
   inline bool operator==(const IntrinsicBase& other) const
   {
+      if(getParams().size() != other.getParams().size())
+      {
+          return false;
+      }
+      for(int i = 0; i < getParams().size(); i++)
+      {
+          const double diff = getParams()[i] - other.getParams()[i];
+          if(std::abs(diff) > 1e-8)
+          {
+              return false;
+          }
+      }
     return _w == other._w &&
            _h == other._h &&
            _sensorWidth == other._sensorWidth &&
            _sensorHeight == other._sensorHeight &&
            _serialNumber == other._serialNumber &&
            _initializationMode == other._initializationMode &&
-           getType() == other.getType() &&
-           getParams() == other.getParams();
+           getType() == other.getType();
+  }
+
+  inline bool operator!=(const IntrinsicBase& other) const
+  {
+    return !(*this == other);
   }
 
   /**
@@ -335,6 +352,14 @@ public:
    * @return true if done
    */
   virtual bool updateFromParams(const std::vector<double>& params) = 0;
+
+  /**
+   * @brief import intrinsic parameters from external array
+   * @param[in] intrinsic parameters
+   * @param[in] inputVersion input source version (for optional transformation)
+   * @return true if done
+   */
+  virtual bool importFromParams(const std::vector<double>& params, const Version & inputVersion) = 0;
 
   /**
    * @brief Transform a point from the camera plane to the image plane

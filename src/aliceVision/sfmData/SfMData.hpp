@@ -81,6 +81,8 @@ public:
 
   bool operator==(const SfMData& other) const;
 
+  inline bool operator!=(const SfMData& other) const { return !(*this == other); }
+
   // Accessors
 
   /**

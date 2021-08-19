@@ -71,6 +71,7 @@ struct Landmark
            observations == other.observations &&
            descType == other.descType;
   }
+  inline bool operator!=(const Landmark& other) const { return !(*this == other); }
 };
 
 } // namespace sfmData

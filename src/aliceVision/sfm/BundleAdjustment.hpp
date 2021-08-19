@@ -106,11 +106,11 @@ public:
     REFINE_TRANSLATION = 2,                               //< refine pose translations
     REFINE_STRUCTURE = 4,                                 //< refine structure (i.e. 3D points)
     REFINE_INTRINSICS_FOCAL = 8,                          //< refine the focal length
-    REFINE_INTRINSICS_OPTICALCENTER_ALWAYS = 16,          //< refine the optical center
-    REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA = 32,  //< refine the optical center only if we have a minimum number of cameras
+    REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS = 16,          //< refine the optical offset from the center
+    REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA = 32,  //< refine the optical offset only if we have a minimum number of cameras
     REFINE_INTRINSICS_DISTORTION = 64,                    //< refine the distortion parameters
     /// Refine all intrinsics parameters
-    REFINE_INTRINSICS_ALL = REFINE_INTRINSICS_FOCAL | REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA | REFINE_INTRINSICS_DISTORTION,
+    REFINE_INTRINSICS_ALL = REFINE_INTRINSICS_FOCAL | REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA | REFINE_INTRINSICS_DISTORTION,
     /// Refine all parameters
     REFINE_ALL = REFINE_ROTATION | REFINE_TRANSLATION | REFINE_INTRINSICS_ALL | REFINE_STRUCTURE,
   };

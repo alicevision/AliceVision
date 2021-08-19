@@ -160,7 +160,7 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
   // empty output vector
   localizationResults.clear();
 
-  Vec3 version;
+  Version version;
 
   // main tree
   bpt::ptree fileTree;
@@ -169,7 +169,11 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
   bpt::read_json(filename, fileTree);
 
   // version
-  sfmDataIO::loadMatrix("version", version, fileTree);
+  {
+    Vec3i v;
+    sfmDataIO::loadMatrix("version", v, fileTree);
+    version = v;
+  }
 
   if(fileTree.count("localizationResults"))
   {
@@ -251,7 +255,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
 {
   using namespace aliceVision::sfm;
 
-  const Vec3 version = {1, 0, 0};
+  const Vec3i version = {1, 0, 0};
 
   // main tree
   bpt::ptree fileTree;

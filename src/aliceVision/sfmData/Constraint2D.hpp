@@ -41,6 +41,7 @@ struct Constraint2D
           (ObservationFirst == other.ObservationFirst) && 
           (ObservationSecond == other.ObservationSecond);
   }
+  inline bool operator!=(const Constraint2D& other) const { return !(*this == other); }
 };
 
 } // namespace sfmData

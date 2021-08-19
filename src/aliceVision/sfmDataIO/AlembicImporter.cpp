@@ -302,7 +302,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
   return true;
 }
 
-bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmData,
+bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmData,
                 ESfMData flagsPart, const index_t sampleFrame = 0, bool isReconstructed = true)
 {
   using namespace aliceVision::geometry;
@@ -341,7 +341,7 @@ bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera
 
   if(userProps)
   {
-    if(flagsPart & ESfMData::VIEWS || flagsPart & ESfMData::INTRINSICS)
+    if((flagsPart & ESfMData::VIEWS) || (flagsPart & ESfMData::INTRINSICS) || (flagsPart & ESfMData::EXTRINSICS))
     {
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
         imagePath = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_imagePath", sampleFrame);
@@ -435,7 +435,7 @@ bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera
       {
         poseIndependant = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseIndependant", sampleFrame);
       }
-      if(userProps.getPropertyHeader("mvg_sensorSizePix"))
+      if(userProps.getPropertyHeader("mvg_metadata"))
       {
         getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_metadata", sampleFrame, rawMetadata);
         assert(rawMetadata.size() % 2 == 0);
@@ -489,25 +489,7 @@ bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera
         Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
         Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
         prop.get(sample, ISampleSelector(sampleFrame));
-
-        if(abcVersion[0] < 1 || (abcVersion[0] == 1 && abcVersion[1] < 2)) // abcVersion < 1.2
-        {
-            std::vector<double> params;
-            params.assign(sample->get(), sample->get() + sample->size());
-
-            // Fx == Fy
-            mvg_intrinsicParams.push_back(params[0]);
-            mvg_intrinsicParams.push_back(params[0]);
-
-            for (int i = 1; i < params.size(); i++)
-            {
-                mvg_intrinsicParams.push_back(params[i]);
-            }
-        }
-        else // abcVersion >= 1.2
-        {
-            mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
-        }
+        mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
       }
     }
   }
@@ -530,7 +512,7 @@ bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera
     intrinsic->setHeight(sensorSize_pix.at(1));
     intrinsic->setSensorWidth(sensorSize_mm.at(0));
     intrinsic->setSensorHeight(sensorSize_mm.at(1));
-    intrinsic->updateFromParams(mvg_intrinsicParams);
+    intrinsic->importFromParams(mvg_intrinsicParams, abcVersion);
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
@@ -624,7 +606,7 @@ bool readCamera(const std::vector<::uint32_t>& abcVersion, const ICamera& camera
   return true;
 }
 
-bool readXform(const std::vector<::uint32_t>& abcVersion, IXform& xform, M44d& mat, sfmData::SfMData& sfmData,
+bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::SfMData& sfmData,
                ESfMData flagsPart, bool isReconstructed = true)
 {
   using namespace aliceVision::geometry;
@@ -738,7 +720,7 @@ bool readXform(const std::vector<::uint32_t>& abcVersion, IXform& xform, M44d& m
 }
 
 // Top down read of 3d objects
-void visitObject(const std::vector<::uint32_t>& abcVersion, IObject iObj, M44d mat, sfmData::SfMData& sfmdata,
+void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfMData& sfmdata,
                  ESfMData flagsPart, bool isReconstructed = true)
 {
   // ALICEVISION_LOG_DEBUG("ABC visit: " << iObj.getFullName());
@@ -810,12 +792,19 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
   // set SfMData folder absolute path
   sfmdata.setAbsolutePath(_dataImpl->_filename);
 
-  std::vector<::uint32_t> abcVersion = {0, 0};
+  std::vector<::uint32_t> vecAbcVersion = {0, 0, 0};
 
   if(const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ABC_version"))
   {
-    getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ABC_version", sampleFrame, abcVersion);
+    getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ABC_version", sampleFrame, vecAbcVersion);
   }
+  // Old versions were using only major,minor
+  if(vecAbcVersion.size() < 3)
+  {
+      vecAbcVersion.resize(3, 0);
+  }
+
+  Version abcVersion(vecAbcVersion[0], vecAbcVersion[1], vecAbcVersion[2]);
 
   if(userProps.getPropertyHeader("mvg_featuresFolders"))
   {

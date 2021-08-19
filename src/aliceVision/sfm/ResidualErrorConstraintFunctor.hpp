@@ -32,8 +32,8 @@ double getJetValue(const double & val) {
  */
 struct ResidualErrorConstraintFunctor_Pinhole
 {
-  ResidualErrorConstraintFunctor_Pinhole(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_Pinhole(int w, int h, const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
+  : m_center(double(w) * 0.5, double(h) * 0.5), m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
   {
   }
 
@@ -48,8 +48,8 @@ struct ResidualErrorConstraintFunctor_Pinhole
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
 
 
     out(0) = (pt(0) - principal_point_x) / focal;
@@ -61,8 +61,8 @@ struct ResidualErrorConstraintFunctor_Pinhole
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
 
     Eigen::Matrix< T, 3, 1> proj_pt = pt / pt(2);
 
@@ -111,6 +111,7 @@ struct ResidualErrorConstraintFunctor_Pinhole
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  Vec2 m_center; // Image center
 };
 
 /**
@@ -125,8 +126,8 @@ struct ResidualErrorConstraintFunctor_Pinhole
  */
 struct ResidualErrorConstraintFunctor_PinholeRadialK1
 {
-  ResidualErrorConstraintFunctor_PinholeRadialK1(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_PinholeRadialK1(int w, int h, const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
+  : m_center(double(w) * 0.5, double(h) * 0.5), m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
   {
   }
 
@@ -148,8 +149,8 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
 
     //Unshift then unscale back to meters
@@ -184,8 +185,8 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
 
     //Project on plane
@@ -247,6 +248,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  Vec2 m_center; // Image center
 };
 
 /**
@@ -261,8 +263,8 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
  */
 struct ResidualErrorConstraintFunctor_PinholeRadialK3
 {
-  ResidualErrorConstraintFunctor_PinholeRadialK3(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_PinholeRadialK3(int w, int h, const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
+  : m_center(double(w) * 0.5, double(h) * 0.5), m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
   {
   }
 
@@ -288,8 +290,8 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK3
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -328,8 +330,8 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK3
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -395,6 +397,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK3
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  Vec2 m_center; // Image center
 };
 
 
@@ -411,8 +414,8 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK3
 
 struct ResidualErrorConstraintFunctor_PinholeFisheye
 {
-  ResidualErrorConstraintFunctor_PinholeFisheye(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_PinholeFisheye(int w, int h, const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
+  : m_center(double(w) * 0.5, double(h) * 0.5), m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
   {
   }
 
@@ -430,8 +433,8 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -490,8 +493,8 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -572,6 +575,7 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  Vec2 m_center; // Image center
 };
 
 /**
@@ -586,8 +590,8 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
  */
 struct ResidualErrorConstraintFunctor_Equidistant
 {
-  ResidualErrorConstraintFunctor_Equidistant(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
+  ResidualErrorConstraintFunctor_Equidistant(int w, int h, const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
+  : m_center(double(w) * 0.5, double(h) * 0.5), m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
   {
   }
 
@@ -602,8 +606,8 @@ struct ResidualErrorConstraintFunctor_Equidistant
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
 
 
     Eigen::Matrix< T, 2, 1> camcoords;
@@ -623,8 +627,8 @@ struct ResidualErrorConstraintFunctor_Equidistant
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
 
     /* To unit sphere */
     Eigen::Matrix< T, 3, 1> pt_normalized = pt;
@@ -683,6 +687,7 @@ struct ResidualErrorConstraintFunctor_Equidistant
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  Vec2 m_center; // Image center
   double m_radius_size;
 };
 
@@ -700,8 +705,8 @@ struct ResidualErrorConstraintFunctor_Equidistant
  */
 struct ResidualErrorConstraintFunctor_EquidistantRadialK3
 {
-  ResidualErrorConstraintFunctor_EquidistantRadialK3(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
+  ResidualErrorConstraintFunctor_EquidistantRadialK3(int w, int h, const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
+  : m_center(double(w) * 0.5, double(h) * 0.5), m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
   {
   }
 
@@ -731,8 +736,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -778,8 +783,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + m_center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + m_center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -860,6 +865,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  Vec2 m_center; // Image center
   double m_radius_size;
 };
 

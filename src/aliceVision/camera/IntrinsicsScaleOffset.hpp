@@ -9,6 +9,8 @@
 
 #include "IntrinsicBase.hpp"
 
+#include <aliceVision/version.hpp>
+
 namespace aliceVision {
 namespace camera {
 
@@ -52,10 +54,22 @@ public:
     return _offset; 
   }
 
+  /**
+   * @brief Principal point in image coordinate ((0,0) is image top-left).
+   */
+  inline const Vec2 getPrincipalPoint() const 
+  {
+    Vec2 ret = _offset;
+    ret(0) += double(_w) * 0.5;
+    ret(1) += double(_h) * 0.5;
+
+    return ret;
+  }
+
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return p.cwiseProduct(_scale) + _offset;
+    return p.cwiseProduct(_scale) + getPrincipalPoint();
   }
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
@@ -88,8 +102,10 @@ public:
   {
     Vec2 np;
 
-    np(0) = (p(0) - _offset(0)) / _scale(0);
-    np(1) = (p(1) - _offset(1)) / _scale(1);
+    Vec2 pp = getPrincipalPoint();
+
+    np(0) = (p(0) - pp(0)) / _scale(0);
+    np(1) = (p(1) - pp(1)) / _scale(1);
 
     return np;
   }
@@ -98,8 +114,10 @@ public:
   {
       Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
-      M(0, 0) = -(p(0) - _offset(0)) / (_scale(0) * _scale(0));
-      M(1, 1) = -(p(1) - _offset(1)) / (_scale(1) * _scale(1));
+      Vec2 pp = getPrincipalPoint();
+
+      M(0, 0) = -(p(0) - pp(0)) / (_scale(0) * _scale(0));
+      M(1, 1) = -(p(1) - pp(1)) / (_scale(1) * _scale(1));
 
       return M;
   }
@@ -148,6 +166,42 @@ public:
     _scale(1) = params[1];
     _offset(0) = params[2];
     _offset(1) = params[3];
+
+    return true;
+  }
+
+  /**
+   * @brief Import a vector of params loaded from a file. It is similar to updateFromParams but it deals with file compatibility.
+   */
+  bool importFromParams(const std::vector<double>& params, const Version & inputVersion) override
+  {
+    std::vector<double> paramsLocal;
+    if (inputVersion < Version(1, 2, 0))
+    {
+      paramsLocal.resize(params.size() + 1);
+      paramsLocal[0] = params[0];
+      paramsLocal[1] = params[0];
+
+      for (int i = 1; i < params.size(); i++)
+      {
+        paramsLocal[i + 1] = params[i];
+      }
+    }
+    else 
+    {
+      paramsLocal = params;
+    }
+
+    if (!updateFromParams(paramsLocal))
+    {
+       return false;
+    }
+
+    if (inputVersion < Version(1, 2, 1))
+    {
+      _offset(0) -= double(_w) / 2.0;
+      _offset(1) -= double(_h) / 2.0;
+    }
 
     return true;
   }

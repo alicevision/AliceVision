@@ -30,8 +30,8 @@ namespace sfm {
  */
 struct ResidualErrorFunctor_Pinhole
 {
-  explicit ResidualErrorFunctor_Pinhole(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_Pinhole(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -51,8 +51,8 @@ struct ResidualErrorFunctor_Pinhole
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
 
     // Apply focal length and principal point to get the final image coordinates
     const T projected_x = principal_point_x + focalX * x_u;
@@ -166,6 +166,7 @@ struct ResidualErrorFunctor_Pinhole
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 /**
@@ -181,8 +182,8 @@ struct ResidualErrorFunctor_Pinhole
  */
 struct ResidualErrorFunctor_PinholeRadialK1
 {
-  explicit ResidualErrorFunctor_PinholeRadialK1(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_PinholeRadialK1(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -204,8 +205,8 @@ struct ResidualErrorFunctor_PinholeRadialK1
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
 
     // Apply distortion (xd,yd) = disto(x_u,y_u)
@@ -323,6 +324,7 @@ struct ResidualErrorFunctor_PinholeRadialK1
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 /**
@@ -338,8 +340,8 @@ struct ResidualErrorFunctor_PinholeRadialK1
  */
 struct ResidualErrorFunctor_PinholeRadialK3
 {
-  explicit ResidualErrorFunctor_PinholeRadialK3(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_PinholeRadialK3(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -362,8 +364,8 @@ struct ResidualErrorFunctor_PinholeRadialK3
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -479,6 +481,7 @@ struct ResidualErrorFunctor_PinholeRadialK3
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 /**
@@ -494,8 +497,8 @@ struct ResidualErrorFunctor_PinholeRadialK3
  */
 struct ResidualErrorFunctor_PinholeBrownT2
 {
-  explicit ResidualErrorFunctor_PinholeBrownT2(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_PinholeBrownT2(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -520,8 +523,8 @@ struct ResidualErrorFunctor_PinholeBrownT2
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -648,6 +651,7 @@ struct ResidualErrorFunctor_PinholeBrownT2
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 
@@ -664,8 +668,8 @@ struct ResidualErrorFunctor_PinholeBrownT2
  */
 struct ResidualErrorFunctor_PinholeFisheye
 {
-  explicit ResidualErrorFunctor_PinholeFisheye(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_PinholeFisheye(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -689,8 +693,8 @@ struct ResidualErrorFunctor_PinholeFisheye
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
     const T& k2 = cam_K[OFFSET_DISTO_K2];
     const T& k3 = cam_K[OFFSET_DISTO_K3];
@@ -819,6 +823,7 @@ struct ResidualErrorFunctor_PinholeFisheye
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 /**
@@ -834,8 +839,8 @@ struct ResidualErrorFunctor_PinholeFisheye
  */
 struct ResidualErrorFunctor_PinholeFisheye1
 {
-  explicit ResidualErrorFunctor_PinholeFisheye1(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_PinholeFisheye1(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -856,8 +861,8 @@ struct ResidualErrorFunctor_PinholeFisheye1
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
     const T& k1 = cam_K[OFFSET_DISTO_K1];
 
     // Apply distortion (xd,yd) = disto(x_u,y_u)
@@ -976,6 +981,7 @@ struct ResidualErrorFunctor_PinholeFisheye1
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 
@@ -992,8 +998,8 @@ struct ResidualErrorFunctor_PinholeFisheye1
  */
 struct ResidualErrorFunctor_Pinhole3DEClassicLD
 {
-  explicit ResidualErrorFunctor_Pinhole3DEClassicLD(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_Pinhole3DEClassicLD(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -1018,8 +1024,8 @@ struct ResidualErrorFunctor_Pinhole3DEClassicLD
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
  
     // Apply distortion (xd,yd) = disto(x_u,y_u)
     const T& delta = cam_K[OFFSET_DISTO_DELTA];
@@ -1155,6 +1161,7 @@ struct ResidualErrorFunctor_Pinhole3DEClassicLD
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 /**
@@ -1170,8 +1177,8 @@ struct ResidualErrorFunctor_Pinhole3DEClassicLD
  */
 struct ResidualErrorFunctor_Pinhole3DERadial4
 {
-  explicit ResidualErrorFunctor_Pinhole3DERadial4(const sfmData::Observation& obs)
-      : _obs(obs)
+  explicit ResidualErrorFunctor_Pinhole3DERadial4(int w, int h, const sfmData::Observation& obs)
+      : _center(double(w) * 0.5, double(h) * 0.5),  _obs(obs)
   {
   }
 
@@ -1197,8 +1204,8 @@ struct ResidualErrorFunctor_Pinhole3DERadial4
   {
     const T& focalX = cam_K[OFFSET_FOCAL_LENGTH_X];
     const T& focalY = cam_K[OFFSET_FOCAL_LENGTH_Y];
-    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
-    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X] + _center(0);
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y] + _center(1);
  
     // Apply distortion (xd,yd) = disto(x_u,y_u)
     const T& c2 = cam_K[OFFSET_DISTO_C2];
@@ -1329,6 +1336,7 @@ struct ResidualErrorFunctor_Pinhole3DERadial4
   }
 
   const sfmData::Observation& _obs; // The 2D observation
+  const Vec2 _center;
 };
 
 

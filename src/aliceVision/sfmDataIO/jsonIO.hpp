@@ -161,7 +161,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
  * @param[out] intrinsic The output Intrinsic
  * @param intrinsicTree The input tree
  */
-void loadIntrinsic(const Vec3& version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
+void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& intrinsic,
                    bpt::ptree& intrinsicTree);
 
 /**
