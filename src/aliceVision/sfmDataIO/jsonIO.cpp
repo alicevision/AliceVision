@@ -110,7 +110,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.put("pxInitialFocalLength", intrinsicScaleOffset->initialScale());
     
     double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
-    double pixelRatio = intrinsicScaleOffset->getScale().x() / intrinsicScaleOffset->getScale().y();
+    double pixelRatio = (intrinsicScaleOffset->getScale().x()) / intrinsicScaleOffset->getScale().y();
 
     intrinsicTree.put("pxFocalLength", focalLengthMM);
     intrinsicTree.put("pixelRatio", pixelRatio);
@@ -171,19 +171,16 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   Vec2 pxFocalLength;
   if (version < Version(1,2,0))
   {
-    std::cout << "ok1" << std::endl;
       pxFocalLength(0) = intrinsicTree.get<double>("pxFocalLength", -1);
       // Only one focal value for X and Y in previous versions
       pxFocalLength(1) = pxFocalLength(0);
   }
   else if (version < Version(1,2,2)) // version >= 1.2
   {
-    std::cout << "ok" << std::endl;
     loadMatrix("pxFocalLength", pxFocalLength, intrinsicTree);
   }
   else 
   {
-    std::cout << "ok2" << std::endl;
     double pxmm = intrinsicTree.get<double>("pxFocalLength", 1.0);
     double ratio = intrinsicTree.get<double>("pixelRatio", 1.0);
 
