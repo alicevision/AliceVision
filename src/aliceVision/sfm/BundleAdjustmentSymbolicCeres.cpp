@@ -180,6 +180,8 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
 
 class CostProjection : public ceres::CostFunction {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig)
   {
     set_num_residuals(2);
@@ -229,26 +231,32 @@ public:
     if (jacobians[0] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[0]);
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+      if (_withRig)
+      {
+        J = (_intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) / scale) * getJacobian_AB_wrt_B<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), rTo);
+      }
+      else
+      {
+        J = (_intrinsics->getDerivativeProjectWrtPoseLeftUpdate(T * pth) / scale);
+      }
     }
 
     if (jacobians[1] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 16, Eigen::RowMajor>> J(jacobians[1]);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
+      J = (_intrinsics->getDerivativeProjectWrtPose(T_pose3, pth) / scale) * getJacobian_AB_wrt_A<4, 4, 4>(cTr, rTo) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTr);
     }
 
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
       
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtParams(T_pose3, pth);
+      J = (_intrinsics->getDerivativeProjectWrtParams(T_pose3, pth) / scale);
     }
 
     if (jacobians[3] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
 
-
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
+      J = _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth).block<2, 3>(0, 0) / scale;
     }
 
     return true;

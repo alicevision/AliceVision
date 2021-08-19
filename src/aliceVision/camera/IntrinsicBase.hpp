@@ -178,6 +178,14 @@ public:
 
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
+   * @param[in] pt3D The already transformed 3d point
+   * @param[in] applyDistortion If true apply distrortion if any
+   * @return The projection jacobian  wrt pose update
+   */
+  virtual Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeftUpdate(const Vec4& pt3D) const = 0;
+
+  /**
+   * @brief get derivative of a projection of a 3D point into the camera plane
    * @param[in] pose The pose
    * @param[in] pt3D The 3d point
    * @param[in] applyDistortion If true apply distrortion if any

@@ -194,6 +194,52 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeftUpdate(const Vec4 & X) const override
+  {
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(Eigen::Matrix4d::Identity(), X);
+
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    const double angle_Z = std::atan2(len2d, X(2));
+    const double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+
+    const double radius = angle_Z / (0.5 * fov);
+
+    const double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
+  }
+
   Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
   {
     Eigen::Matrix4d T = pose.getHomogeneous();

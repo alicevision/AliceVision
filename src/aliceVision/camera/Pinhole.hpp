@@ -150,24 +150,48 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeftUpdate(const Vec4& X) const override
+  {
+    //const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(Eigen::Matrix4d::Identity(), X);
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    Eigen::Matrix<double, 2, 3> J = getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X;
+    
+    //This replaces * d_X_d_T
+    Eigen::Matrix<double, 2, 16> ret = Eigen::Matrix<double, 2, 16>::Zero();
+    ret.block<2, 3>(0, 0) = J * X(0);
+    ret.block<2, 3>(0, 4) = J * X(1);
+    ret.block<2, 3>(0, 8) = J * X(2);
+    ret.block<2, 3>(0, 12) = J;
+
+    return ret;
+  }
+
   Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
   {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
 
-    const Eigen::Matrix<double, 4, 4> & d_X_d_P = getJacobian_AB_wrt_B<4, 4, 1>(T, pt);
+    const Eigen::Matrix<double, 3, 4> & d_X_d_P = T.block<3, 4>(0, 0);
 
     const Vec2 P = X.head<2>() / X(2);
 
-    Eigen::Matrix<double, 2, 4> d_P_d_X;
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
     d_P_d_X(0, 0) = 1 / X(2);
     d_P_d_X(0, 1) = 0;
     d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
-    d_P_d_X(0, 3) = 0;
     d_P_d_X(1, 0) = 0;
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
-    d_P_d_X(1, 3) = 0;
     
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
