@@ -88,7 +88,7 @@ struct MaskCache
         Item * item = findItem(camId);
         if (item)
         {
-            assert(item->locks > 0);
+            assert(item->locks >= 0);
             ++item->locks;
             item = pushToLowPriority(camId);
             assert(item->camId == camId);
