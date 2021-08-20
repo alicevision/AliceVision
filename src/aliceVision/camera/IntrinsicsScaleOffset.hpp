@@ -183,25 +183,6 @@ public:
    */
   bool importFromParams(const std::vector<double>& params, const Version & inputVersion) override
   {
-    if (!updateFromParams(params))
-    {
-       return false;
-    }
-
-    if (inputVersion < Version(1, 2, 1))
-    {
-      _offset(0) -= double(_w) / 2.0;
-      _offset(1) -= double(_h) / 2.0;
-    }
-
-    return true;
-  }
-
-  /**
-   * @brief Import a vector of params loaded from a file. It is similar to updateFromParams but it deals with file compatibility.
-   */
-  bool importFromParams(const std::vector<double>& params, const Version & inputVersion) override
-  {
     std::vector<double> paramsLocal;
     if (inputVersion < Version(1, 2, 0))
     {
