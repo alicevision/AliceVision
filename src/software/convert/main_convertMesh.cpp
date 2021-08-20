@@ -128,7 +128,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input mesh
     mesh::Texturing texturing;
-    texturing.loadOBJWithAtlas(inputMeshPath);
+    texturing.loadWithAtlas(inputMeshPath);
     mesh::Mesh* inputMesh = texturing.mesh;
 
     if(!inputMesh)

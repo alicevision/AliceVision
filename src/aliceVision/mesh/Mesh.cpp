@@ -2343,7 +2343,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 }
 
-void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
+void Mesh::load(const std::string& fileName)
 {
     Assimp::Importer importer;
 
@@ -2358,16 +2358,16 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
     normals.clear();
     pointsVisibilities.clear();
 
-    if(!boost::filesystem::exists(objAsciiFileName))
+    if(!boost::filesystem::exists(fileName))
     {
-        ALICEVISION_THROW_ERROR("Mesh::loadFromObjAscii: no such file: " << objAsciiFileName);
+        ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << fileName);
     }
 
     unsigned int pFlags = aiProcessPreset_TargetRealtime_MaxQuality & (~aiProcess_SplitLargeMeshes);
-    const aiScene * scene = importer.ReadFile(objAsciiFileName, pFlags);
+    const aiScene* scene = importer.ReadFile(fileName, pFlags);
     if (!scene)
     {
-        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << objAsciiFileName);
+        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << fileName);
     }
 
     std::list<aiNode *> nodes;

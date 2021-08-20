@@ -905,13 +905,13 @@ void Texturing::clear()
     mesh = nullptr;
 }
 
-void Texturing::loadOBJWithAtlas(const std::string& filename, bool flipNormals)
+void Texturing::loadWithAtlas(const std::string& filename, bool flipNormals)
 {
     // Clear internal data
     clear();
     mesh = new Mesh();
     // Load .obj
-    mesh->loadFromObjAscii(filename);
+    mesh->load(filename);
 
     // Handle normals flipping
     if(flipNormals)
@@ -965,7 +965,7 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     mesh = nullptr;
     
     // load input obj file
-    loadOBJWithAtlas(otherMeshPath, flipNormals);
+    loadWithAtlas(otherMeshPath, flipNormals);
     // allocate pointsVisibilities for new internal mesh
     mesh->pointsVisibilities = PointsVisibility();
     // remap visibilities from reconstruction onto input mesh

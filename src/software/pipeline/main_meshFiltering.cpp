@@ -202,7 +202,7 @@ int aliceVision_main(int argc, char* argv[])
         bfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
-    texturing.loadOBJWithAtlas(inputMeshPath);
+    texturing.loadWithAtlas(inputMeshPath);
     mesh::Mesh* mesh = texturing.mesh;
 
     if(!mesh)

@@ -210,7 +210,7 @@ int aliceVision_main(int argc, char* argv[])
     // load input mesh (to texture) obj file
     ALICEVISION_LOG_INFO("Load input mesh.");
     mesh.clear();
-    mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
+    mesh.loadWithAtlas(inputMeshFilepath, flipNormals);
 
     // load reference dense point cloud with visibilities
     ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
@@ -268,7 +268,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Generate height and normal maps.");
 
         mesh::Mesh denseMesh;
-        denseMesh.loadFromObjAscii(inputRefMeshFilepath);
+        denseMesh.load(inputRefMeshFilepath);
 
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
     }

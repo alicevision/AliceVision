@@ -116,7 +116,7 @@ public:
     void clear();
 
     /// Load a mesh from a .obj file and initialize internal structures
-    void loadOBJWithAtlas(const std::string& filename, bool flipNormals=false);
+    void loadWithAtlas(const std::string& filename, bool flipNormals=false);
 
     /**
      * @brief Remap visibilities

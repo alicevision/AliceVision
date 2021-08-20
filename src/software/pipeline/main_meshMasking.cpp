@@ -622,7 +622,7 @@ int main(int argc, char **argv)
     // check input mesh
     ALICEVISION_LOG_INFO("Load input mesh.");
     mesh::Mesh inputMesh;
-    inputMesh.loadFromObjAscii(inputMeshPath);
+    inputMesh.load(inputMeshPath);
 
     // check sfm file
     if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
