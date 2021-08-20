@@ -402,6 +402,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   bool intrinsicLocked = false;
   bool poseLocked = false;
   bool poseIndependant = true;
+  bool lockRatio = true;
 
   if(userProps)
   {
@@ -441,6 +442,10 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicLocked"))
       {
         intrinsicLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicLocked", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicFocalRatioLocked"))
+      {
+        lockRatio = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicFocalRatioLocked", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
       {
@@ -532,6 +537,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       
       initialFocalLengthPix(1) = initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0];
       intrinsicScale->setInitialScale(initialFocalLengthPix);
+      intrinsicScale->setLockRatio(lockRatio);
     }
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);

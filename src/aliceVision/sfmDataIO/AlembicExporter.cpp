@@ -218,6 +218,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     ODoubleProperty(userProps, "mvg_initialFocalLength").set(initialFocalLength);
     ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(intrinsicCasted->getParams());
     OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
+    OBoolProperty(userProps, "mvg_intrinsicFocalRatioLocked").set(intrinsicCasted->getLockRatio());
 
     camObj.getSchema().set(camSample);
   }

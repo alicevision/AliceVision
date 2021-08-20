@@ -618,6 +618,12 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       }
 
       focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
+
+      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      if (castedcam_iso)
+      {
+        lockRatio = castedcam_iso->getLockRatio();
+      }
     }
     else
     {

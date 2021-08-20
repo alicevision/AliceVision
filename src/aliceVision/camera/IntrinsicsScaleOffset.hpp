@@ -223,10 +223,25 @@ public:
     return _initialScale;
   }
 
+  /**
+   * @brief lock the ratio between fx and fy
+   * @param lock is the ratio locked
+   */
+  void setLockRatio(bool lock) 
+  {
+    _lockRatio = lock;
+  }
+
+  bool getLockRatio()
+  {
+    return _lockRatio;
+  }
+
 protected:
   Vec2 _scale{1.0, 1.0};
   Vec2 _offset{0.0, 0.0};
   Vec2 _initialScale{-1.0, -1.0};
+  bool _lockRatio{true};
 };
 
 } // namespace camera
