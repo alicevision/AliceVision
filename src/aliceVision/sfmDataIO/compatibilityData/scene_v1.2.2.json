@@ -502,8 +502,8 @@
             "serialNumber": "",
             "type": "pinhole",
             "initializationMode": "none",
-            "pxInitialFocalLength": "-1",
-            "pxFocalLength": "8.7976539589442808",
+            "initialFocalLength": "-0.0087976539589442824",
+            "focalLength": "8.7976539589442808",
             "pixelRatio": "0.5",
             "principalPoint": [
                 "-26",
@@ -521,8 +521,8 @@
             "serialNumber": "",
             "type": "radial3",
             "initializationMode": "none",
-            "pxInitialFocalLength": "-1",
-            "pxFocalLength": "8.7976539589442808",
+            "initialFocalLength": "-0.0087976539589442824",
+            "focalLength": "8.7976539589442808",
             "pixelRatio": "0.5",
             "principalPoint": [
                 "-26",

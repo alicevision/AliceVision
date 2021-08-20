@@ -209,7 +209,7 @@ public:
   /**
    * @brief Set initial Scale (for constraining minimization)
    */
-  inline void setInitialScale(double initialScale)
+  inline void setInitialScale(const Vec2 & initialScale)
   {
     _initialScale = initialScale;
   }
@@ -218,7 +218,7 @@ public:
    * @brief Get the intrinsic initial scale
    * @return The intrinsic initial scale
    */
-  inline double initialScale() const
+  inline Vec2 initialScale() const
   {
     return _initialScale;
   }
@@ -226,7 +226,7 @@ public:
 protected:
   Vec2 _scale{1.0, 1.0};
   Vec2 _offset{0.0, 0.0};
-  double _initialScale{-1};
+  Vec2 _initialScale{-1.0, -1.0};
 };
 
 } // namespace camera

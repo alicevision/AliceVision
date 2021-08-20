@@ -67,20 +67,17 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EVie
  * @param[in] view The given view
  * @param[in] mmFocalLength (-1 if unknown)
  * @param[in] sensorWidth (-1 if unknown)
- * @param[in] defaultFocalLengthPx (-1 if unknown)
+ * @param[in] defaultFocalLength (-1 if unknown)
  * @param[in] defaultFieldOfView (-1 if unknown)
- * @param[in] defaultIntrinsicType (unknown by default)
- * @param[in] defaultPPx 
- * @param[in] defaultPPy 
+ * @param[in] defaultIntrinsicType (unknown by default) 
  * @param[in] allowedEintrinsics The intrinsics values that can be attributed
  * @return shared_ptr IntrinsicBase
  */
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 					const sfmData::View& view, double mmFocalLength = -1.0, double sensorWidth = -1,
-					double defaultFocalLengthPx = -1, double defaultFieldOfView = -1,
+					double defaultFocalLength = -1, double defaultFieldOfView = -1,
 					camera::EINTRINSIC defaultIntrinsicType = camera::EINTRINSIC::UNKNOWN,
-					camera::EINTRINSIC allowedEintrinsics = camera::EINTRINSIC::VALID_CAMERA_MODEL,
-					double defaultPPx = 0, double defaultPPy = 0);
+					camera::EINTRINSIC allowedEintrinsics = camera::EINTRINSIC::VALID_CAMERA_MODEL);
 
 /**
 * @brief Allows you to retrieve the files paths corresponding to a view by searching through a list of folders.

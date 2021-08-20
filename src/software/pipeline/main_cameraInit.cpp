@@ -184,11 +184,10 @@ int aliceVision_main(int argc, char **argv)
   std::string outputFilePath;
 
   // user optional parameters
-  std::string defaultIntrinsicKMatrix;
   std::string defaultCameraModelName;
   std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
 
-  double defaultFocalLengthPixel = -1.0;
+  double defaultFocalLength = -1.0;
   double defaultFieldOfView = -1.0;
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
   EViewIdMethod viewIdMethod = EViewIdMethod::METADATA;
@@ -212,12 +211,10 @@ int aliceVision_main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("defaultFocalLengthPix", po::value<double>(&defaultFocalLengthPixel)->default_value(defaultFocalLengthPixel),
-      "Focal length in pixels. (or '-1' to unset)")
+    ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
+      "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
       "Empirical value for the field of view in degree. (or '-1' to unset)")
-    ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
-      "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
       "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
     ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
@@ -332,32 +329,9 @@ int aliceVision_main(int argc, char **argv)
     }
   }
 
-  // check user don't combine intrinsic options
-  if(!defaultIntrinsicKMatrix.empty() && defaultFocalLengthPixel > 0)
-  {
-    ALICEVISION_LOG_ERROR("Cannot combine --defaultIntrinsic --defaultFocalLengthPix options");
-    return EXIT_FAILURE;
-  }
-
-  if(!defaultIntrinsicKMatrix.empty() && defaultFieldOfView > 0)
-  {
-    ALICEVISION_LOG_ERROR("Cannot combine --defaultIntrinsic --defaultFieldOfView options");
-    return EXIT_FAILURE;
-  }
-
-  if(defaultFocalLengthPixel > 0 && defaultFieldOfView > 0)
+  if(defaultFocalLength > 0 && defaultFieldOfView > 0)
   {
     ALICEVISION_LOG_ERROR("Cannot combine --defaultFocalLengthPix --defaultFieldOfView options");
-    return EXIT_FAILURE;
-  }
-
-  // read K matrix if valid
-  double defaultPPx = 0.0;
-  double defaultPPy = 0.0;
-
-  if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, defaultPPx, defaultPPy))
-  {
-    ALICEVISION_LOG_ERROR("--defaultIntrinsic Invalid K matrix input");
     return EXIT_FAILURE;
   }
 
@@ -617,8 +591,8 @@ int aliceVision_main(int argc, char **argv)
 
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
-        view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel,
-        allowedCameraModels, defaultPPx, defaultPPy);
+        view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, 
+        defaultCameraModel, allowedCameraModels);
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
 
     // set initialization mode

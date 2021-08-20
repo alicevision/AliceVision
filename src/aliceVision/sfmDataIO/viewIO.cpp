@@ -108,13 +108,12 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
 
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
                     const sfmData::View& view, double mmFocalLength, double sensorWidth,
-                    double defaultFocalLengthPx, double defaultFieldOfView,
+                    double defaultFocalLength, double defaultFieldOfView,
                     camera::EINTRINSIC defaultIntrinsicType,
-                    camera::EINTRINSIC allowedEintrinsics, 
-                    double defaultPPx, double defaultPPy)
+                    camera::EINTRINSIC allowedEintrinsics)
 {
   // can't combine defaultFocalLengthPx and defaultFieldOfView
-  assert(defaultFocalLengthPx < 0 || defaultFieldOfView < 0);
+  assert(defaultFocalLength < 0 || defaultFieldOfView < 0);
 
   // get view informations
   const std::string& cameraBrand = view.getMetadataMake();
@@ -122,26 +121,28 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
-  double focalLengthIn35mm = mmFocalLength; // crop factor is apply later if sensor width is defined
-
-  double pxFocalLength;
+  double focalLength;
   bool hasFocalLengthInput = false;
 
-  if(defaultFocalLengthPx > 0.0)
+  if (sensorWidth < 0)
   {
-    pxFocalLength = defaultFocalLengthPx;
+    ALICEVISION_LOG_WARNING("Sensor size is unknown");
+    ALICEVISION_LOG_WARNING("Use default sensor size (36 mm)");
+    sensorWidth = 36.0;
+  }
+  
+  if(defaultFocalLength > 0.0)
+  {
+    focalLength = defaultFocalLength;
   }
 
   if(defaultFieldOfView > 0.0)
   {
     const double focalRatio = 0.5 / std::tan(0.5 * degreeToRadian(defaultFieldOfView));
-    pxFocalLength = focalRatio * std::max(view.getWidth(), view.getHeight());
+    focalLength = focalRatio * sensorWidth;
   }
 
   camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
-
-  double ppx = defaultPPx;
-  double ppy = defaultPPy;
 
   bool isResized = false;
 
@@ -166,45 +167,34 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     }
   }
 
-
   // handle case where focal length (mm) is unset or false
   if(mmFocalLength <= 0.0)
   {
     ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
-                             << "Can't compute focal length (px), use default." << std::endl);
+                             << "Can't compute focal length, use default." << std::endl);
   }
-  else if(sensorWidth > 0.0)
+  else
   {
     // Retrieve the focal from the metadata in mm and convert to pixel.
-    pxFocalLength = std::max(view.getWidth(), view.getHeight()) * mmFocalLength / sensorWidth;
+    focalLength = mmFocalLength;
     hasFocalLengthInput = true;
-
-    //fieldOfView = radianToDegree(2.0 * std::atan(sensorWidth / (mmFocalLength * 2.0))); // [rectilinear] AFOV = 2 * arctan(sensorSize / (2 * focalLength))
-    //fieldOfView = radianToDegree(4.0 * std::asin(sensorWidth / (mmFocalLength * 4.0))); // [fisheye] AFOV = 4 * arcsin(sensorSize / (4 * focalLength))
-
-    focalLengthIn35mm *= 36.0 / sensorWidth; // multiply focal length by the crop factor
   }
+
+  double focalLengthIn35mm = 36.0 * focalLength;
+  double pxFocalLength = (focalLength / sensorWidth) * std::max(view.getWidth(), view.getHeight());
+
+  bool hasFisheyeCompatibleParameters = ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0));
+  bool checkPossiblePinhole = (allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) && hasFisheyeCompatibleParameters;
 
   // choose intrinsic type
   if(cameraBrand == "Custom")
   {
     intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
   }
-  /*
-  // Warning: This resize heuristic is disabled as RAW images have a different size in metadata.
-  else if(isResized)
-  {
-    // if the image has been resized, we assume that it has been undistorted
-    // and we use a camera without lens distortion.
-    intrinsicType = camera::PINHOLE_CAMERA;
-  }
-  */
-  else if((allowedEintrinsics & camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE) &&
-          ((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
-          )
+  else if(checkPossiblePinhole)
   {
     // If the focal lens is short, the fisheye model should fit better.
-      intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
+    intrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE;
   }
   else if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
   {
@@ -226,19 +216,21 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
             break;
         }
     }
+
     // If still unassigned
-    if(intrinsicType == camera::EINTRINSIC::UNKNOWN)
+    if (intrinsicType == camera::EINTRINSIC::UNKNOWN)
     {
         throw std::invalid_argument("No intrinsic type can be attributed.");
     }
   }
 
   // create the desired intrinsic
-  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, ppx, ppy);
+  std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, 0, 0);
   if(hasFocalLengthInput) {
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    
     if (intrinsicScaleOffset) {
-      intrinsicScaleOffset->setInitialScale(pxFocalLength);
+      intrinsicScaleOffset->setInitialScale({pxFocalLength, pxFocalLength});
     }
   }
 
@@ -248,13 +240,13 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
       case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
     {
       if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
+        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 0.0524, 0.0094, -0.0037, -0.0004});
       break;
     }
       case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
     {
       if(cameraBrand == "GoPro")
-        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, ppx, ppy, 1.04});
+        intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 1.04});
       break;
     }
     default: break;

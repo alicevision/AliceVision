@@ -387,7 +387,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
-  double initialFocalLengthPix = -1;
+  Vec2 initialFocalLengthPix = {-1, -1};
   double fisheyeCenterX = 0.0;
   double fisheyeCenterY = 0.0;
   double fisheyeRadius = 1.0;
@@ -478,7 +478,11 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
       {
-        initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+        initialFocalLengthPix(0) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLength"))
+      {
+        initialFocalLengthPix(0) = (sensorSize_pix.at(0) / sensorSize_mm[0]) * getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLength", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterX"))
       {
@@ -525,6 +529,8 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     if (intrinsicScale) {
+      
+      initialFocalLengthPix(1) = initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0];
       intrinsicScale->setInitialScale(initialFocalLengthPix);
     }
 

@@ -107,12 +107,13 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
   if (intrinsicScaleOffset)
   {
-    intrinsicTree.put("pxInitialFocalLength", intrinsicScaleOffset->initialScale());
     
+    double initialFocalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->initialScale().x() / double(intrinsic->w());
     double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
     double pixelRatio = (intrinsicScaleOffset->getScale().x()) / intrinsicScaleOffset->getScale().y();
 
-    intrinsicTree.put("pxFocalLength", focalLengthMM);
+    intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
+    intrinsicTree.put("focalLength", focalLengthMM);
     intrinsicTree.put("pixelRatio", pixelRatio);
 
     saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
@@ -181,14 +182,14 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   }
   else 
   {
-    double pxmm = intrinsicTree.get<double>("pxFocalLength", 1.0);
+    double fmm = intrinsicTree.get<double>("focalLength", 1.0);
     double ratio = intrinsicTree.get<double>("pixelRatio", 1.0);
 
-    double pxpix = (pxmm / sensorWidth) * double(width);
-    double pypix = pxpix / ratio;
+    double px = (fmm / sensorWidth) * double(width);
+    double py = px / ratio;
 
-    pxFocalLength(0) = pxpix;
-    pxFocalLength(1) = pypix;
+    pxFocalLength(0) = px;
+    pxFocalLength(1) = py;
   }
 
   // pinhole parameters
@@ -209,7 +210,24 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
 
   std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicWithScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
   if (intrinsicWithScale != nullptr) {
-    intrinsicWithScale->setInitialScale(intrinsicTree.get<double>("pxInitialFocalLength"));
+
+    if (version < Version(1, 2, 2))
+    {
+      Vec2 initialFocalLengthPx;
+      initialFocalLengthPx(0) = intrinsicTree.get<double>("pxInitialFocalLength");
+      initialFocalLengthPx(1) = initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0);
+      intrinsicWithScale->setInitialScale(initialFocalLengthPx);
+    }
+    else 
+    {
+      double initialFocalLengthMM = intrinsicTree.get<double>("initialFocalLength");
+      
+      Vec2 initialFocalLengthPx;
+      initialFocalLengthPx(0) = (initialFocalLengthMM / sensorWidth) * double(width);
+      initialFocalLengthPx(1) = initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0);
+
+      intrinsicWithScale->setInitialScale(initialFocalLengthPx);
+    }
   }
 
   // Load distortion
