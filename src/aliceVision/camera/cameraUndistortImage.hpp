@@ -45,7 +45,7 @@ void UndistortImage(
       if(camera::isPinhole(intrinsicPtr->getType()))
       {
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
-        ppCorrection = pinholePtr->getPrincipalPoint() - center;
+        ppCorrection = pinholePtr->getPrincipalPointTL() - center;
       }
     }
     

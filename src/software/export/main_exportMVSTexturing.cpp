@@ -118,7 +118,7 @@ int aliceVision_main(int argc, char **argv)
     // Intrinsic
     const double fx = pinhole_cam->getFocalLengthPixX();
     const double fy = pinhole_cam->getFocalLengthPixY();
-    const Vec2 pp = pinhole_cam->getPrincipalPoint();
+    const Vec2 pp = pinhole_cam->getPrincipalPointTL();
 
     // Image size in px
     const int w = pinhole_cam->w();

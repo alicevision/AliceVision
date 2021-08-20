@@ -51,18 +51,25 @@ public:
         for (Vec3i::Index i = 0; i < 3; i++)
         {
             if (_v[i] < other._v[i])
-            {
                 return true;
-            }
-
             if (_v[i] > other._v[i])
-            {
                 return false;
-            }
-        }    
-
-        return false;
+        }
+        return false; // equal
     }
+    bool operator<=(const Version& other) const { return !operator>(other); }
+    bool operator>(const Version& other) const
+    {
+        for(Vec3i::Index i = 0; i < 3; i++)
+        {
+            if(_v[i] > other._v[i])
+                return true;
+            if(_v[i] < other._v[i])
+                return false;
+        }
+        return false; // equal
+    }
+    bool operator>=(const Version& other) const { return !operator<(other); }
 
 private:
     Vec3i _v;

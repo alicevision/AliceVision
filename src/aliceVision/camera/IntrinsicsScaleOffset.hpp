@@ -25,7 +25,7 @@ public:
   IntrinsicsScaleOffset(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY)
     : IntrinsicBase(w, h)
     , _scale(scaleX, scaleY)
-    , _offset(offsetX, offsetY)
+    , _principalPointOffset(offsetX, offsetY)
   {}
 
   ~IntrinsicsScaleOffset() override = default;
@@ -42,7 +42,7 @@ public:
       if(typeid(*this) != typeid(otherBase))
           return false;
       const IntrinsicsScaleOffset& other = static_cast<const IntrinsicsScaleOffset&>(otherBase);
-      return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
+      return _scale.isApprox(other._scale) && _principalPointOffset.isApprox(other._principalPointOffset);
   }
 
   void setScale(const Vec2& scale)
@@ -52,22 +52,22 @@ public:
 
   inline Vec2 getScale() const { return _scale; }
 
-  void setOffset(const Vec2& offset)
+  void setPrincipalPointOffset(const Vec2& offset)
   {
-    _offset = offset;
+    _principalPointOffset = offset;
   }
 
-  inline Vec2 getOffset() const 
+  inline Vec2 getPrincipalPointOffset() const 
   { 
-    return _offset; 
+    return _principalPointOffset; 
   }
 
   /**
    * @brief Principal point in image coordinate ((0,0) is image top-left).
    */
-  inline const Vec2 getPrincipalPoint() const 
+  inline const Vec2 getPrincipalPointTL() const 
   {
-    Vec2 ret = _offset;
+    Vec2 ret = _principalPointOffset;
     ret(0) += double(_w) * 0.5;
     ret(1) += double(_h) * 0.5;
 
@@ -77,7 +77,7 @@ public:
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return p.cwiseProduct(_scale) + getPrincipalPoint();
+    return p.cwiseProduct(_scale) + getPrincipalPointTL();
   }
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
@@ -110,7 +110,7 @@ public:
   {
     Vec2 np;
 
-    Vec2 pp = getPrincipalPoint();
+    Vec2 pp = getPrincipalPointTL();
 
     np(0) = (p(0) - pp(0)) / _scale(0);
     np(1) = (p(1) - pp(1)) / _scale(1);
@@ -122,7 +122,7 @@ public:
   {
       Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
-      Vec2 pp = getPrincipalPoint();
+      Vec2 pp = getPrincipalPointTL();
 
       M(0, 0) = -(p(0) - pp(0)) / (_scale(0) * _scale(0));
       M(1, 1) = -(p(1) - pp(1)) / (_scale(1) * _scale(1));
@@ -159,7 +159,7 @@ public:
     IntrinsicBase::rescale(factor);
 
     _scale *= factor;
-    _offset *= factor;
+    _principalPointOffset *= factor;
   }
 
   // Data wrapper for non linear optimization (update from data)
@@ -172,8 +172,8 @@ public:
 
     _scale(0) = params[0];
     _scale(1) = params[1];
-    _offset(0) = params[2];
-    _offset(1) = params[3];
+    _principalPointOffset(0) = params[2];
+    _principalPointOffset(1) = params[3];
 
     return true;
   }
@@ -207,8 +207,8 @@ public:
 
     if (inputVersion < Version(1, 2, 1))
     {
-      _offset(0) -= double(_w) / 2.0;
-      _offset(1) -= double(_h) / 2.0;
+      _principalPointOffset(0) -= double(_w) / 2.0;
+      _principalPointOffset(1) -= double(_h) / 2.0;
     }
 
     return true;
@@ -240,16 +240,59 @@ public:
     _ratioLocked = lock;
   }
 
+  /**
+   * @brief get the lock on the ratio between fx and fy
+   * @return is the ratio locked
+   */
   bool isRatioLocked() const
   {
     return _ratioLocked;
   }
 
+  /**
+   * @brief lock the scale
+   * @param lock is the scale locked
+   */
+  void setScaleLocked(bool lock) 
+  {
+    _scaleLocked = lock;
+  }
+
+  /**
+   * @brief get the lock on the scale
+   * @return is the scale locked
+   */
+  bool isScaleLocked() const
+  {
+    return _scaleLocked;
+  }
+
+  /**
+   * @brief lock the offset
+   * @param lock is the offset locked
+   */
+  void setPrincipalPointLocked(bool lock) 
+  {
+    _principalPointLocked = lock;
+  }
+
+  /**
+   * @brief get the lock on the principal point offset
+   * @return is the offset locked
+   */
+  bool isPrincipalPointLocked() const
+  {
+    return _principalPointLocked;
+  }
+
 protected:
   Vec2 _scale{1.0, 1.0};
-  Vec2 _offset{0.0, 0.0};
+  Vec2 _principalPointOffset{0.0, 0.0};
   Vec2 _initialScale{-1.0, -1.0};
+
+  bool _scaleLocked{false};
   bool _ratioLocked{true};
+  bool _principalPointLocked{false};
 };
 
 } // namespace camera

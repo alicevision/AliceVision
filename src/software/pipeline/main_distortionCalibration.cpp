@@ -312,7 +312,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 template <class T>
 bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibration::Statistics& statistics, std::vector<T>& items)
 {
-    std::shared_ptr<camera::Pinhole> simpleCamera = std::make_shared<camera::PinholeRadialK1>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getOffset()[0], camera->getOffset()[1], 0.0);
+    std::shared_ptr<camera::Pinhole> simpleCamera = std::make_shared<camera::PinholeRadialK1>(camera->w(), camera->h(), camera->getScale()[0], camera->getScale()[1], camera->getPrincipalPointOffset()[0], camera->getPrincipalPointOffset()[1], 0.0);
     if (!estimateDistortionK1(simpleCamera, statistics, items))
     {
         return false;

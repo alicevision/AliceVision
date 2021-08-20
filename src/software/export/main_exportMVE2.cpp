@@ -168,8 +168,8 @@ bool exportToMVE2Format(
       // Focal length and principal point must be normalized (0..1)
       const float flen = pinhole_cam->getFocalLengthPixX() / static_cast<double>(std::max(cam->w(), cam->h()));
       const float pixelAspect = pinhole_cam->getFocalLengthPixX() / pinhole_cam->getFocalLengthPixY();
-      const float ppX = std::abs(pinhole_cam->getPrincipalPoint()(0)/cam->w());
-      const float ppY = std::abs(pinhole_cam->getPrincipalPoint()(1)/cam->h());
+      const float ppX = std::abs(pinhole_cam->getPrincipalPointTL()(0)/cam->w());
+      const float ppY = std::abs(pinhole_cam->getPrincipalPointTL()(1)/cam->h());
 
       // For each camera, write to bundle:  focal length, radial distortion[0-1], rotation matrix[0-8], translation vector[0-2]
       std::ostringstream fileOut;

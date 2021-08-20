@@ -234,7 +234,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     if (intrinsicScaleOffset)
     {
       intrinsicScaleOffset->setInitialScale({pxFocalLength, pxFocalLength / defaultFocalRatio});
-      intrinsicScaleOffset->setOffset({defaultOffsetX, defaultOffsetY});
+      intrinsicScaleOffset->setPrincipalPointOffset({defaultOffsetX, defaultOffsetY});
     }
   }
 

@@ -48,7 +48,7 @@ oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincip
     if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType())
     {
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
-        ppCorrection = pinholePtr->getPrincipalPoint() - center;
+        ppCorrection = pinholePtr->getPrincipalPointTL() - center;
     }
     const Vec2 opticalCenter = center + ppCorrection;
     pointToBeChecked.push_back(Vec2(opticalCenter[0], 0));

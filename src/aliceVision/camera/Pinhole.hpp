@@ -74,7 +74,7 @@ public:
   {
     Mat3 K;
 
-    Vec2 pp = getPrincipalPoint();
+    Vec2 pp = getPrincipalPointTL();
     
     K  << _scale(0), 0.0, pp(0),
           0.0, _scale(1), pp(1),
@@ -86,16 +86,16 @@ public:
   {
     _scale(0) = focalLengthPix;
     _scale(1) = focalLengthPix;
-    _offset(0) = ppx - double(_w) * 0.5;
-    _offset(1) = ppy - double(_h) * 0.5;
+    _principalPointOffset(0) = ppx - double(_w) * 0.5;
+    _principalPointOffset(1) = ppy - double(_h) * 0.5;
   }
   
   void setK(const Mat3 & K)
   {
     _scale(0) = K(0, 0);
     _scale(1) = K(1, 1);
-    _offset(0) = K(0, 2) - double(_w) * 0.5;
-    _offset(1) = K(1, 2) - double(_h) * 0.5;
+    _principalPointOffset(0) = K(0, 2) - double(_w) * 0.5;
+    _principalPointOffset(1) = K(1, 2) - double(_h) * 0.5;
   }
 
   Vec2 project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion = true) const override

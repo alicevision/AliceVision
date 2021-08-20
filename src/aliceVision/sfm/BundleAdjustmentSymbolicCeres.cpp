@@ -531,11 +531,9 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
 void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)
 {
-  const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
-  const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
-  const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
-  const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
-  const bool fixFocalRatio = true;
+  const bool globalRefineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
+  const bool globalRefineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
+  const bool globalRefineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
 
   std::map<IndexT, std::size_t> intrinsicsUsage;
 
@@ -555,10 +553,37 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
   {
     const IndexT intrinsicId = intrinsicPair.first;
     const auto& intrinsicPtr = intrinsicPair.second;
+    
+    bool refineIntrinsicsOpticalCenter = globalRefineIntrinsicsOpticalCenter;
+    bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
+    bool refineIntrinsicsDistortion = globalRefineIntrinsicsDistortion;
+
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+    if ((intrinsicScaleOffset->isScaleLocked()))
+    {
+      refineIntrinsicsFocalLength = false;
+    }
+
+    if ((intrinsicScaleOffset->isPrincipalPointLocked()))
+    {
+      refineIntrinsicsOpticalCenter = false;
+    }
+      
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicPtr);
+    if ((intrinsicScaleOffsetDisto->getLockDistortion()))
+    {
+      refineIntrinsicsDistortion = false;
+    }
+
+    const bool refineIntrinsics = refineIntrinsicsOpticalCenter || refineIntrinsicsFocalLength || refineIntrinsicsDistortion;
+
+
     const auto usageIt = intrinsicsUsage.find(intrinsicId);
     if(usageIt == intrinsicsUsage.end())
+    {
       // if the intrinsic is never referenced by any view, skip it
       continue;
+    }
     const std::size_t usageCount = usageIt->second;
 
     // do not refine an intrinsic does not used by any reconstructed view
@@ -574,19 +599,21 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     intrinsicBlock = intrinsicPtr->getParams();
 
     double* intrinsicBlockPtr = intrinsicBlock.data();
+
     problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
 
     // add intrinsic parameter to the all parameters blocks pointers list
     _allParametersBlocks.push_back(intrinsicBlockPtr);
 
     // keep the camera intrinsic constant
-    if(intrinsicPtr->isLocked() || !refineIntrinsics || getIntrinsicState(intrinsicId) == EParameterState::CONSTANT)
+    if(intrinsicPtr->isLocked() || getIntrinsicState(intrinsicId) == EParameterState::CONSTANT)
     {
       // set the whole parameter block as constant.
       _statistics.addState(EParameter::INTRINSIC, EParameterState::CONSTANT);
       problem.SetParameterBlockConstant(intrinsicBlockPtr);
       continue;
     }
+
 
     // constant parameters
     bool lockCenter = false;
@@ -599,6 +626,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     if(refineIntrinsicsFocalLength)
     {
       std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+
       if(intrinsicScaleOffset->getInitialScale().x() > 0 && intrinsicScaleOffset->getInitialScale().y() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
@@ -618,12 +646,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       }
 
       focalRatio = intrinsicBlockPtr[1] / intrinsicBlockPtr[0];
-
-      std::shared_ptr<camera::IntrinsicsScaleOffset> castedcam_iso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
-      if (castedcam_iso)
-      {
-        lockRatio = castedcam_iso->isRatioLocked();
-      }
+      lockRatio = intrinsicScaleOffset->isRatioLocked();
     }
     else
     {
@@ -631,11 +654,12 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       lockFocal = true;
     }
 
-    const bool optional_center = ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) && (usageCount > _minNbImagesToRefineOpticalCenter));
-    if ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || optional_center)
+    // optical center
+    if((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) ||
+       ((refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) && _minNbImagesToRefineOpticalCenter > 0 && usageCount >= _minNbImagesToRefineOpticalCenter))
     {
       // refine optical center within 10% of the image size.
-      assert(intrinsicBlock.size() >= 4);
+      assert(intrinsicBlock.size() >= 3);
 
       const double opticalCenterMinPercent = -0.05;
       const double opticalCenterMaxPercent =  0.05;
@@ -658,6 +682,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       lockDistortion = true;
     }
 
+    
     IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
     problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
 
