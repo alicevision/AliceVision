@@ -134,10 +134,12 @@ void Mesh::save(const std::string& filename, EFileType filetype)
     }
 
     std::string formatId;
+    unsigned int pPreprocessing = 0u;
     // If gltf, use gltf 2.0
     if (filetypeStr == "gltf")
     {
         formatId = "gltf2";
+        pPreprocessing |= aiProcess_GenNormals;
     }
     // If obj, do not use material
     else if (filetypeStr == "obj")
@@ -150,7 +152,7 @@ void Mesh::save(const std::string& filename, EFileType filetype)
     }
 
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filename);
+    exporter.Export(&scene, formatId, filename, pPreprocessing);
 
     ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
 }

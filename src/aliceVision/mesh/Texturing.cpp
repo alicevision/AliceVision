@@ -1166,7 +1166,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
         formatId = "gltf2";
         // Flip UVs when exporting (issue with UV origin for gltf2)
         // https://github.com/around-media/ue4-custom-prompto/commit/044dbad90fc2172f4c5a8b67c779b80ceace5e1e
-        pPreprocessing |= aiPostProcessSteps::aiProcess_FlipUVs;
+        pPreprocessing |= aiPostProcessSteps::aiProcess_FlipUVs | aiProcess_GenNormals;
     }
     else
     {
