@@ -40,44 +40,6 @@ using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-/**
- * @brief Check that Kmatrix is a string like "f;0;ppx;0;f;ppy;0;0;1"
- * @param[in] Kmatrix
- * @param[out] focal
- * @param[out] ppx
- * @param[out] ppy
- * @return true if the string is correct
- */
-bool checkIntrinsicStringValidity(const std::string& Kmatrix,
-                                  double& focal,
-                                  double& ppx,
-                                  double& ppy)
-{
-  std::vector<std::string> vec_str;
-  boost::split(vec_str, Kmatrix, boost::is_any_of(";"));
-  if (vec_str.size() != 9)
-  {
-    ALICEVISION_LOG_ERROR("In K matrix string, missing ';' character");
-    return false;
-  }
-
-  // Check that all K matrix value are valid numbers
-  for (size_t i = 0; i < vec_str.size(); ++i)
-  {
-    double readvalue = 0.0;
-    std::stringstream ss;
-    ss.str(vec_str[i]);
-    if(!(ss >> readvalue))
-    {
-      ALICEVISION_LOG_ERROR("In K matrix string, used an invalid not a number character");
-      return false;
-    }
-    if (i==0) focal = readvalue;
-    if (i==2) ppx = readvalue;
-    if (i==5) ppy = readvalue;
-  }
-  return true;
-}
 
 /**
  * @brief Recursively list all files from a folder with a specific extension
@@ -189,6 +151,10 @@ int aliceVision_main(int argc, char **argv)
 
   double defaultFocalLength = -1.0;
   double defaultFieldOfView = -1.0;
+  double defaultFocalRatio = 1.0;
+  double defaultOffsetX = 0.0;
+  double defaultOffsetY = 0.0;
+
   EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
   EViewIdMethod viewIdMethod = EViewIdMethod::METADATA;
   std::string viewIdRegex = ".*?(\\d+)";
@@ -215,6 +181,12 @@ int aliceVision_main(int argc, char **argv)
       "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
       "Empirical value for the field of view in degree. (or '-1' to unset)")
+    ("defaultFocalRatio", po::value<double>(&defaultFocalRatio)->default_value(defaultFocalRatio),
+      "Ratio between the pixel X size on the sensor and the Y size.")
+    ("defaultOffsetX", po::value<double>(&defaultOffsetX)->default_value(defaultOffsetX),
+      "default offset from the principal point X coordinate")
+    ("defaultOffsetY", po::value<double>(&defaultOffsetY)->default_value(defaultOffsetY),
+      "default offset from the principal point Y coordinate")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
       "Default camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
     ("allowedCameraModels", po::value<std::string>(&allowedCameraModelsStr)->default_value(allowedCameraModelsStr),
@@ -333,6 +305,12 @@ int aliceVision_main(int argc, char **argv)
   {
     ALICEVISION_LOG_ERROR("Cannot combine --defaultFocalLengthPix --defaultFieldOfView options");
     return EXIT_FAILURE;
+  }
+
+  if (defaultFocalRatio < 0.0)
+  {
+      ALICEVISION_LOG_ERROR("Focal Ratio can't be a negative value");
+      return EXIT_FAILURE;
   }
 
   // check sensor database
@@ -592,6 +570,7 @@ int aliceVision_main(int argc, char **argv)
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
         view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, 
+        defaultFocalRatio, defaultOffsetX, defaultOffsetY, 
         defaultCameraModel, allowedCameraModels);
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
 

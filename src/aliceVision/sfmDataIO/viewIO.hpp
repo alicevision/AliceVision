@@ -69,6 +69,9 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EVie
  * @param[in] sensorWidth (-1 if unknown)
  * @param[in] defaultFocalLength (-1 if unknown)
  * @param[in] defaultFieldOfView (-1 if unknown)
+ * @param[in] defaultFocalRatio
+ * @param[in] defaultOffsetX
+ * @param[in] defaultOffsetY
  * @param[in] defaultIntrinsicType (unknown by default) 
  * @param[in] allowedEintrinsics The intrinsics values that can be attributed
  * @return shared_ptr IntrinsicBase
@@ -76,6 +79,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EVie
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 					const sfmData::View& view, double mmFocalLength = -1.0, double sensorWidth = -1,
 					double defaultFocalLength = -1, double defaultFieldOfView = -1,
+                    double defaultFocalRatio = 1.0, double defaultOffsetX = 0.0, double defaultOffsetY = 0.0,
 					camera::EINTRINSIC defaultIntrinsicType = camera::EINTRINSIC::UNKNOWN,
 					camera::EINTRINSIC allowedEintrinsics = camera::EINTRINSIC::VALID_CAMERA_MODEL);
 

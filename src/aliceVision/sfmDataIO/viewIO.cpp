@@ -108,7 +108,8 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
 
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
                     const sfmData::View& view, double mmFocalLength, double sensorWidth,
-                    double defaultFocalLength, double defaultFieldOfView,
+                    double defaultFocalLength, double defaultFieldOfView, 
+                    double defaultFocalRatio, double defaultOffsetX, double defaultOffsetY,
                     camera::EINTRINSIC defaultIntrinsicType,
                     camera::EINTRINSIC allowedEintrinsics)
 {
@@ -230,7 +231,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     
     if (intrinsicScaleOffset) {
-      intrinsicScaleOffset->setInitialScale({pxFocalLength, pxFocalLength});
+      intrinsicScaleOffset->setInitialScale({pxFocalLength, pxFocalLength / defaultFocalRatio});
+      intrinsicScaleOffset->setOffset(defaultOffsetX, defaultOffsetY);
     }
   }
 
