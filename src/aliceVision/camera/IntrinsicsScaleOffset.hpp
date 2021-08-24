@@ -35,18 +35,16 @@ public:
     *this = other;
   }
 
-  void setScale(double x, double y)
+  void setScale(const Vec2& scale)
   {
-    _scale(0) = x;
-    _scale(1) = y;
+    _scale = scale;
   }
 
   inline Vec2 getScale() const { return _scale; }
 
-  void setOffset(double offset_x, double offset_y)
+  void setOffset(const Vec2& offset)
   {
-    _offset(0) = offset_x;
-    _offset(1) = offset_y;
+    _offset = offset;
   }
 
   inline Vec2 getOffset() const 
@@ -218,7 +216,7 @@ public:
    * @brief Get the intrinsic initial scale
    * @return The intrinsic initial scale
    */
-  inline Vec2 initialScale() const
+  inline Vec2 getInitialScale() const
   {
     return _initialScale;
   }

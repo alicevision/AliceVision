@@ -533,15 +533,16 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-    if (intrinsicScale) {
-      
+    if (intrinsicScale)
+    {
       initialFocalLengthPix(1) = initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0];
       intrinsicScale->setInitialScale(initialFocalLengthPix);
       intrinsicScale->setRatioLocked(lockRatio);
     }
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-    if (casted) {
+    if (casted)
+    {
       casted->setCircleCenterX(fisheyeCenterX);
       casted->setCircleCenterY(fisheyeCenterY);
       casted->setCircleRadius(fisheyeRadius);

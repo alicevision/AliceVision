@@ -227,25 +227,27 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 
   // create the desired intrinsic
   std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, pxFocalLength, 0, 0);
-  if(hasFocalLengthInput) {
+  if(hasFocalLengthInput)
+  {
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     
-    if (intrinsicScaleOffset) {
+    if (intrinsicScaleOffset)
+    {
       intrinsicScaleOffset->setInitialScale({pxFocalLength, pxFocalLength / defaultFocalRatio});
-      intrinsicScaleOffset->setOffset(defaultOffsetX, defaultOffsetY);
+      intrinsicScaleOffset->setOffset({defaultOffsetX, defaultOffsetY});
     }
   }
 
   // initialize distortion parameters
   switch(intrinsicType)
   {
-      case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
+    case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
     {
       if(cameraBrand == "GoPro")
         intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 0.0524, 0.0094, -0.0037, -0.0004});
       break;
     }
-      case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
+    case camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
     {
       if(cameraBrand == "GoPro")
         intrinsic->updateFromParams({pxFocalLength, pxFocalLength, 0, 0, 1.04});

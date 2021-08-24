@@ -261,8 +261,8 @@ int aliceVision_main(int argc, char **argv)
               const double offsetX = (double(view.getWidth()) * 0.5) + (xmp.principalPointU *  maxSize);
               const double offsetY = (double(view.getHeight()) * 0.5) + (xmp.principalPointV *  maxSize);
 
-              intrinsic->setScale(focalLengthPix, focalLengthPix);
-              intrinsic->setOffset(offsetX, offsetY);
+              intrinsic->setScale({focalLengthPix, focalLengthPix});
+              intrinsic->setOffset({offsetX, offsetY});
 
               std::cout << focalLengthPix << std::endl;
 
