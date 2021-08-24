@@ -81,7 +81,31 @@ public:
     return cam2ima(addDistortion(ima2cam(p)));
   }
 
+  Vec2 toPixels(const Vec2 & p) const 
+  { 
+      return cam2ima(addDistortion(p));
+  }
 
+  Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtPoint(const Vec2 & p) const
+  { 
+      return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(p);
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtScale(const Vec2& p) const
+  {
+      return getDerivativeCam2ImaWrtScale(p);
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeToPixelsWrtDisto(const Vec2 & p) const
+  {
+      return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(p);
+  }
+
+  Eigen::Matrix2d getDerivativeToPixelsWrtOffset() const 
+  { 
+      return getDerivativeCam2ImaWrtPrincipalPoint();
+  }
+  
   std::vector<double> getDistortionParams() const
   {
     if (!hasDistortion()) {

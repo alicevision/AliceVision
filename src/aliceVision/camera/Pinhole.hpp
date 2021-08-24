@@ -103,8 +103,7 @@ public:
     const Vec4 X = pose.getHomogeneous() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    const Vec2 distorted = this->addDistortion(P);
-    const Vec2 impt = this->cam2ima(distorted);
+    const Vec2 impt = toPixels(P);
 
     return impt;
   }
@@ -125,7 +124,7 @@ public:
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_X * d_X_d_R;
   }
 
   Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4& pt) const override
@@ -146,7 +145,7 @@ public:
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
   Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
@@ -169,7 +168,7 @@ public:
     d_P_d_X(1, 3) = 0;
     
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_X * d_X_d_P;
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt) const
@@ -177,12 +176,12 @@ public:
     const Vec4 X = pose.getHomogeneous() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
+    return getDerivativeToPixelsWrtDisto(P);
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt) const
   {
-    return getDerivativeCam2ImaWrtPrincipalPoint();
+      return getDerivativeToPixelsWrtOffset();
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt) const
@@ -192,7 +191,7 @@ public:
 
     const Vec2 distorted = this->addDistortion(P);
 
-    return getDerivativeCam2ImaWrtScale(distorted);
+    return getDerivativeToPixelsWrtScale(distorted);
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const override {

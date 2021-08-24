@@ -90,8 +90,7 @@ public:
     // radius = focal * angle_Z
     const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
-    const Vec2 pt_disto = applyDistortion ? this->addDistortion(P) : P;
-    const Vec2 pt_ima = this->cam2ima(pt_disto);
+    const Vec2 pt_ima = toPixels(P);
 
     return pt_ima;
   }
@@ -142,7 +141,7 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
   }
 
   Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4 & pt) const override
@@ -191,7 +190,7 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
   Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
@@ -241,7 +240,7 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
   }
 
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt)
@@ -265,7 +264,7 @@ public:
     /* radius = focal * angle_Z */
     const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
+    return getDerivativeToPixelsWrtDisto(P);
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt)
@@ -300,12 +299,12 @@ public:
     d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);
     d_fov_d_scale(0, 1) = 0.0;
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
+    return getDerivativeToPixelsWrtPoint(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt)
   {
-    return getDerivativeCam2ImaWrtPrincipalPoint();
+    return getDerivativeToPixelsWrtOffset();
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const override {
