@@ -35,6 +35,16 @@ public:
     *this = other;
   }
 
+  bool operator==(const IntrinsicBase& otherBase) const override
+  {
+      if(!IntrinsicBase::operator==(otherBase))
+          return false;
+      if(typeid(*this) != typeid(otherBase))
+          return false;
+      const IntrinsicsScaleOffset& other = static_cast<const IntrinsicsScaleOffset&>(otherBase);
+      return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
+  }
+
   void setScale(const Vec2& scale)
   {
     _scale = scale;
