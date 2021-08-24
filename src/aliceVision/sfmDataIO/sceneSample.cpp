@@ -29,10 +29,12 @@ void generateSampleScene(sfmData::SfMData & output)
     const int h = 2048;
     const double focalLengthPixX = 1000.0;
     const double focalLengthPixY = 2000.0;
-    const double ppx = 2020.0 - (double(w) / 2.0);
-    const double ppy = 1040.0 - (double(h) / 2.0);
-    output.getIntrinsics().emplace(0, std::make_shared<camera::Pinhole>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy));
-    output.getIntrinsics().emplace(1, std::make_shared<camera::PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, 0.1, 0.05, -0.001));
+    const double offsetX = -26;
+    const double offsetY = 16;
+    output.getIntrinsics().emplace(
+        0, std::make_shared<camera::Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
+    output.getIntrinsics().emplace(1, std::make_shared<camera::PinholeRadialK3>(w, h, focalLengthPixX, focalLengthPixY,
+                                                                                offsetX, offsetY, 0.1, 0.05, -0.001));
 
     // Generate poses on another cube
     IndexT idpose = 0;

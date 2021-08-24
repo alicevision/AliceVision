@@ -108,7 +108,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   if (intrinsicScaleOffset)
   {
     
-    double initialFocalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->initialScale().x() / double(intrinsic->w());
+    double initialFocalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getInitialScale().x() / double(intrinsic->w());
     double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
     double pixelRatio = (intrinsicScaleOffset->getScale().x()) / intrinsicScaleOffset->getScale().y();
 
