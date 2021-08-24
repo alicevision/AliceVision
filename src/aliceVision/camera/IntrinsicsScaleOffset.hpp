@@ -80,6 +80,12 @@ public:
     return p.cwiseProduct(_scale) + getPrincipalPoint();
   }
 
+  // Transform a point from the camera plane to the image plane
+  Vec2 cam2imaCentered(const Vec2& p) const 
+  { 
+      return p.cwiseProduct(_scale) + _offset; 
+  }
+
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
   {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
