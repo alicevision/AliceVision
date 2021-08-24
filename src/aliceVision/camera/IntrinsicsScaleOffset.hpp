@@ -227,21 +227,21 @@ public:
    * @brief lock the ratio between fx and fy
    * @param lock is the ratio locked
    */
-  void setLockRatio(bool lock) 
+  void setRatioLocked(bool lock) 
   {
-    _lockRatio = lock;
+    _ratioLocked = lock;
   }
 
-  bool getLockRatio()
+  bool isRatioLocked() const
   {
-    return _lockRatio;
+    return _ratioLocked;
   }
 
 protected:
   Vec2 _scale{1.0, 1.0};
   Vec2 _offset{0.0, 0.0};
   Vec2 _initialScale{-1.0, -1.0};
-  bool _lockRatio{true};
+  bool _ratioLocked{true};
 };
 
 } // namespace camera

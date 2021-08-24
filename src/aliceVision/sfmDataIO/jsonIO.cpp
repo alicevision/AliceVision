@@ -115,7 +115,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
     intrinsicTree.put("focalLength", focalLengthMM);
     intrinsicTree.put("pixelRatio", pixelRatio);
-    intrinsicTree.put("pixelRatioLock", intrinsicScaleOffset->getLockRatio());
+    intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
 
     saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
   }
@@ -228,7 +228,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
       initialFocalLengthPx(1) = initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0);
 
       intrinsicWithScale->setInitialScale(initialFocalLengthPx);
-      intrinsicWithScale->setLockRatio(intrinsicTree.get<bool>("pixelRatioLock"));
+      intrinsicWithScale->setRatioLocked(intrinsicTree.get<bool>("pixelRatioLocked"));
     }
   }
 
