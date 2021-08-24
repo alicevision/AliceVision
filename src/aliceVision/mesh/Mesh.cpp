@@ -155,6 +155,7 @@ void Mesh::save(const std::string& filename, EFileType filetype)
     exporter.Export(&scene, formatId, filename, pPreprocessing);
 
     ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
+    ALICEVISION_LOG_DEBUG("Vertices: " << aimesh->mNumVertices);
 }
 
 bool Mesh::loadFromBin(const std::string& binFileName)
@@ -2482,6 +2483,7 @@ void Mesh::load(const std::string& fileName)
             nodes.push_back(node->mChildren[idChild]);
         }
     }
+    ALICEVISION_LOG_DEBUG("Vertices Mesh: " << pts.size());
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,
