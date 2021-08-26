@@ -83,7 +83,7 @@ public:
   // Transform a point from the camera plane to the image plane
   Vec2 cam2imaCentered(const Vec2& p) const 
   { 
-      return p.cwiseProduct(_scale) + _offset; 
+      return p.cwiseProduct(_scale); 
   }
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
@@ -184,38 +184,50 @@ public:
     return true;
   }
 
+  virtual bool updateParamsFromVersion(std::vector<double>& updated_params, const std::vector<double>& params, const Version & inputVersion) const
+  {
+    if (inputVersion < Version(1, 2, 0))
+    {
+      updated_params.resize(params.size() + 1);
+      updated_params[0] = params[0];
+      updated_params[1] = params[0];
+
+      for (int i = 1; i < params.size(); i++)
+      {
+        updated_params[i + 1] = params[i];
+      }
+    }
+    else 
+    {
+      updated_params = params;
+    }
+
+    if (inputVersion < Version(1, 2, 1))
+    {
+      updated_params[2] -= double(_w) / 2.0;
+      updated_params[3] -= double(_h) / 2.0;
+    }
+
+    return true;
+  }
+
   /**
    * @brief Import a vector of params loaded from a file. It is similar to updateFromParams but it deals with file compatibility.
    */
   bool importFromParams(const std::vector<double>& params, const Version & inputVersion) override
   {
-    std::vector<double> paramsLocal;
-    if (inputVersion < Version(1, 2, 0))
+    std::vector<double> localParams;
+    if (!updateParamsFromVersion(localParams, params, inputVersion))
     {
-      paramsLocal.resize(params.size() + 1);
-      paramsLocal[0] = params[0];
-      paramsLocal[1] = params[0];
-
-      for (int i = 1; i < params.size(); i++)
-      {
-        paramsLocal[i + 1] = params[i];
-      }
-    }
-    else 
-    {
-      paramsLocal = params;
+      return false;
     }
 
-    if (!updateFromParams(paramsLocal))
+    if (!updateFromParams(localParams))
     {
        return false;
     }
 
-    if (inputVersion < Version(1, 2, 1))
-    {
-      _offset(0) -= double(_w) / 2.0;
-      _offset(1) -= double(_h) / 2.0;
-    }
+    
 
     return true;
   }

@@ -243,7 +243,7 @@ public:
     return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
   }
 
-  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt)
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt) const
   {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -267,7 +267,7 @@ public:
     return getDerivativeToPixelsWrtDisto(P);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt)
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt) const
   {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -302,13 +302,45 @@ public:
     return getDerivativeToPixelsWrtPoint(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt)
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt) const
   {
-    return getDerivativeToPixelsWrtOffset();
+    Eigen::Matrix4d T = pose.getHomogeneous();
+    const Vec4 X = T * pt; // apply pose
+
+    /* Compute angle with optical center */
+    const double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    const double angle_Z = std::atan2(len2d, X(2));
+  
+    /* Ignore depth component and compute radial angle */
+    const double angle_radial = std::atan2(X(1), X(0));
+
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
+    const double radius = angle_Z / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+
+    return getDerivativeToPixelsWrtOffset(P);
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const override {
-    return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 6);
+   
+    Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
+
+    ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
+    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+
+    if (hasDistortion()) {
+
+      size_t distortionSize = _pDistortion->getDistortionParametersCount();
+
+      ret.block(0, 6, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
+    }
+
+    return ret;
   }
 
   Vec3 toUnitSphere(const Vec2 & pt) const override

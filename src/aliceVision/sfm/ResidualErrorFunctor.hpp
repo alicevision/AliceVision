@@ -193,7 +193,7 @@ struct ResidualErrorFunctor_PinholeRadialK1
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_K1 = 4
+    OFFSET_DISTO_K1 = 6
   };
 
 
@@ -351,9 +351,9 @@ struct ResidualErrorFunctor_PinholeRadialK3
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_K1 = 4,
-    OFFSET_DISTO_K2 = 5,
-    OFFSET_DISTO_K3 = 6,
+    OFFSET_DISTO_K1 = 6,
+    OFFSET_DISTO_K2 = 7,
+    OFFSET_DISTO_K3 = 8,
   };
 
   template <typename T>
@@ -508,11 +508,11 @@ struct ResidualErrorFunctor_PinholeBrownT2
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_K1 = 4,
-    OFFSET_DISTO_K2 = 5,
-    OFFSET_DISTO_K3 = 6,
-    OFFSET_DISTO_T1 = 7,
-    OFFSET_DISTO_T2 = 8,
+    OFFSET_DISTO_K1 = 6,
+    OFFSET_DISTO_K2 = 7,
+    OFFSET_DISTO_K3 = 8,
+    OFFSET_DISTO_T1 = 9,
+    OFFSET_DISTO_T2 = 10,
   };
 
   template <typename T>
@@ -679,10 +679,10 @@ struct ResidualErrorFunctor_PinholeFisheye
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_K1 = 4,
-    OFFSET_DISTO_K2 = 5,
-    OFFSET_DISTO_K3 = 6,
-    OFFSET_DISTO_K4 = 7,
+    OFFSET_DISTO_K1 = 6,
+    OFFSET_DISTO_K2 = 7,
+    OFFSET_DISTO_K3 = 8,
+    OFFSET_DISTO_K4 = 9,
   };
 
   template <typename T>
@@ -850,7 +850,7 @@ struct ResidualErrorFunctor_PinholeFisheye1
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_K1 = 4
+    OFFSET_DISTO_K1 = 6
   };
 
   template <typename T>
@@ -1009,11 +1009,11 @@ struct ResidualErrorFunctor_Pinhole3DEClassicLD
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_DELTA = 4,
-    OFFSET_DISTO_IEPS = 5,
-    OFFSET_DISTO_MUX = 6,
-    OFFSET_DISTO_MUY = 7,
-    OFFSET_DISTO_Q = 8,
+    OFFSET_DISTO_DELTA = 6,
+    OFFSET_DISTO_IEPS = 7,
+    OFFSET_DISTO_MUX = 8,
+    OFFSET_DISTO_MUY = 9,
+    OFFSET_DISTO_Q = 10,
   };
 
   template <typename T>
@@ -1188,12 +1188,12 @@ struct ResidualErrorFunctor_Pinhole3DERadial4
     OFFSET_FOCAL_LENGTH_Y = 1,
     OFFSET_PRINCIPAL_POINT_X = 2,
     OFFSET_PRINCIPAL_POINT_Y = 3,
-    OFFSET_DISTO_C2 = 4,
-    OFFSET_DISTO_C4 = 5,
-    OFFSET_DISTO_U1 = 6,
-    OFFSET_DISTO_V1 = 7,
-    OFFSET_DISTO_U3 = 8,
-    OFFSET_DISTO_V3 = 9,
+    OFFSET_DISTO_C2 = 6,
+    OFFSET_DISTO_C4 = 7,
+    OFFSET_DISTO_U1 = 8,
+    OFFSET_DISTO_V1 = 9,
+    OFFSET_DISTO_U3 = 10,
+    OFFSET_DISTO_V3 = 11,
   };
 
   template <typename T>

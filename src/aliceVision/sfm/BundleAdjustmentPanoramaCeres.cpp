@@ -119,8 +119,7 @@ public:
 
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 7, Eigen::RowMajor>> J(jacobians[2]);
-
-	Eigen::Matrix<double, 4, 3> Jhomogenous = Eigen::Matrix<double, 4, 3>::Identity();
+	    Eigen::Matrix<double, 4, 3> Jhomogenous = Eigen::Matrix<double, 4, 3>::Identity();
 
       Eigen::Matrix<double, 2, 2> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtScale(pt_i_undist);
       Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * Jhomogenous * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
@@ -128,7 +127,7 @@ public:
 
       J.block<2, 2>(0, 0) = Jscale;
       J.block<2, 2>(0, 2) = Jpp;
-      J.block<2, 3>(0, 4) = Jdisto;
+      J.block<2, 3>(0, 6) = Jdisto;
     }
 
     return true;
@@ -214,7 +213,7 @@ public:
 
       J.block<2, 2>(0, 0) = Jscale;
       J.block<2, 2>(0, 2) = Jpp;
-      J.block(0, 4, 2, disto_size) = Jdisto;
+      J.block(0, 6, 2, disto_size) = Jdisto;
     }
 
     return true;

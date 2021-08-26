@@ -181,7 +181,10 @@ public:
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt) const
   {
-      return getDerivativeToPixelsWrtOffset();
+      const Vec4 X = pose.getHomogeneous() * pt; // apply pose
+      const Vec2 P = X.head<2>() / X(2);
+
+      return getDerivativeToPixelsWrtOffset(P);
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt) const
@@ -205,7 +208,7 @@ public:
 
       size_t distortionSize = _pDistortion->getDistortionParametersCount();
 
-      ret.block(0, 4, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
+      ret.block(0, 6, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
     }
 
     return ret;

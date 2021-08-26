@@ -36,7 +36,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     _lockCenter(lockCenter),
     _lockDistortion(lockDistortion)
   {
-    _distortionSize = _globalSize - 4;
+    _distortionSize = _globalSize - 6;
     _localSize = 0;
 
     if (!_lockFocal)
@@ -55,6 +55,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     {
       _localSize += 2;
     }
+    
 
     if (!_lockDistortion)
     {
@@ -99,11 +100,14 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
       ++posDelta;
     }
 
+    x_plus_delta[4] = 0;
+    x_plus_delta[5] = 0;
+
     if (!_lockDistortion)
     {
       for (int i = 0; i < _distortionSize; i++)
       {
-        x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
+        x_plus_delta[6 + i] = x[4 + i] + delta[posDelta];
         ++posDelta;
       }
     }
@@ -148,7 +152,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     {
       for (int i = 0; i < _distortionSize; i++)
       {
-        J(4 + i, posDelta) = 1.0;
+        J(6 + i, posDelta) = 1.0;
         ++posDelta;
       }
     }

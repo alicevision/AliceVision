@@ -25,7 +25,9 @@ public:
   IntrinsicsScaleOffsetDisto(unsigned int w, unsigned int h, double scaleX, double scaleY, double offsetX, double offsetY, std::shared_ptr<Distortion> distortion = nullptr)
   : IntrinsicsScaleOffset(w, h, scaleX, scaleY, offsetX, offsetY)
   , _pDistortion(distortion)
-  {}
+  {
+    
+  }
 
   void assign(const IntrinsicBase& other) override
   {
@@ -85,8 +87,12 @@ public:
   {
       Vec2 pt;
 
-      pt.x() = p.x() / double(_w);
-      pt.y() = p.y() / double(_h);
+      double hw = 0.5 * double(_w);
+      double hh = 0.5 * double(_h);
+      double diag = sqrt(hw * hw + hh * hh); 
+
+      pt.x() = p.x() / diag;
+      pt.y() = p.y() / diag;
 
       return p;
   }
@@ -95,8 +101,12 @@ public:
   {
       Vec2 pt;
 
-      pt.x() = p.x() * double(_w);
-      pt.y() = p.y() * double(_h);
+      double hw = 0.5 * double(_w);
+      double hh = 0.5 * double(_h);
+      double diag = sqrt(hw * hw + hh * hh);
+
+      pt.x() = p.x() * diag;
+      pt.y() = p.y() * diag;
 
       return p;
   }
@@ -107,35 +117,141 @@ public:
       {
           return cam2ima(addDistortion(p));
       }
-
       
+
       const Vec2 pixCentered = cam2imaCentered(p);
       const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
-      const Vec2 unitLess = fromUnitless(pixCenteredDisto);
+      const Vec2 unitLess = toUnitless(pixCenteredDisto);
       const Vec2 distorted = addDistortion(unitLess);
-      const Vec2 pixels = toUnitless(distorted);
+      const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
 
       return pixels;
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtPoint(const Vec2 & p) const
   { 
-      return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(p);
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(p);
+      }
+      else 
+      {
+        double hw = 0.5 * double(_w);
+        double hh = 0.5 * double(_h);
+        double diag = sqrt(hw * hw + hh * hh);
+        
+        const Vec2 pixCentered = cam2imaCentered(p);
+        const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
+        const Vec2 unitLess = toUnitless(pixCenteredDisto);
+        const Vec2 distorted = addDistortion(unitLess);
+        const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
+
+        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
+        d_from_unitless(0, 0) = diag;
+        d_from_unitless(1, 1) = diag;
+
+        Eigen::Matrix2d d_to_unitless = Eigen::Matrix2d::Identity();
+        d_to_unitless(0, 0) = 1.0 / diag;
+        d_to_unitless(1, 1) = 1.0 / diag;
+
+        return d_from_unitless * getDerivativeAddDistoWrtPt(unitLess) * d_to_unitless * getDerivativeCam2ImaWrtPoint();
+      }
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtScale(const Vec2& p) const
   {
-      return getDerivativeCam2ImaWrtScale(p);
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeCam2ImaWrtScale(p);
+      }
+      else 
+      {
+        double hw = 0.5 * double(_w);
+        double hh = 0.5 * double(_h);
+        double diag = sqrt(hw * hw + hh * hh);
+
+        const Vec2 pixCentered = cam2imaCentered(p);
+        const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
+        const Vec2 unitLess = toUnitless(pixCenteredDisto);
+        const Vec2 distorted = addDistortion(unitLess);
+        const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
+
+        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
+        d_from_unitless(0, 0) = diag;
+        d_from_unitless(1, 1) = diag;
+
+        Eigen::Matrix2d d_to_unitless = Eigen::Matrix2d::Identity();
+        d_to_unitless(0, 0) = 1.0 / diag;
+        d_to_unitless(1, 1) = 1.0 / diag;
+
+        return d_from_unitless * getDerivativeAddDistoWrtPt(unitLess) * d_to_unitless * getDerivativeCam2ImaWrtScale(p);
+      }
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeToPixelsWrtDisto(const Vec2 & p) const
   {
-      return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(p);
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(p);
+      }
+      else 
+      {
+        double hw = 0.5 * double(_w);
+        double hh = 0.5 * double(_h);
+        double diag = sqrt(hw * hw + hh * hh);
+
+        const Vec2 pixCentered = cam2imaCentered(p);
+        const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
+        const Vec2 unitLess = toUnitless(pixCenteredDisto);
+
+        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
+        d_from_unitless(0, 0) = diag;
+        d_from_unitless(1, 1) = diag;
+
+        return d_from_unitless * getDerivativeAddDistoWrtDisto(unitLess);
+      }
   }
 
-  Eigen::Matrix2d getDerivativeToPixelsWrtOffset() const 
+  Eigen::Matrix2d getDerivativeToPixelsWrtOffset(const Vec2 & p) const 
   { 
-      return getDerivativeCam2ImaWrtPrincipalPoint();
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeCam2ImaWrtPrincipalPoint();
+      }
+      else 
+      {
+        return Eigen::Matrix2d::Identity();
+      }
+  }
+
+  Eigen::Matrix2d getDerivativeToPixelsWrtDistortionOffset(const Vec2 & p) const 
+  { 
+      if (!_useUnitlessDistortion)
+      {
+        return Eigen::Matrix2d::Zero();
+      }
+      else 
+      {
+        double hw = 0.5 * double(_w);
+        double hh = 0.5 * double(_h);
+        double diag = sqrt(hw * hw + hh * hh);
+
+        const Vec2 pixCentered = cam2imaCentered(p);
+        const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
+        const Vec2 unitLess = toUnitless(pixCenteredDisto);
+        const Vec2 distorted = addDistortion(unitLess);
+        const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
+
+        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
+        d_from_unitless(0, 0) = diag;
+        d_from_unitless(1, 1) = diag;
+
+        Eigen::Matrix2d d_to_unitless = Eigen::Matrix2d::Identity();
+        d_to_unitless(0, 0) = 1.0 / double(diag);
+        d_to_unitless(1, 1) = 1.0 / double(diag);
+
+        return d_from_unitless * getDerivativeAddDistoWrtPt(unitLess) * d_to_unitless;
+      }
   }
   
   std::vector<double> getDistortionParams() const
@@ -143,6 +259,7 @@ public:
     if (!hasDistortion()) {
       return std::vector<double>();
     }
+
     return _pDistortion->getParameters();
   }
 
@@ -170,7 +287,7 @@ public:
   // Data wrapper for non linear optimization (get data)
   std::vector<double> getParams() const override
   {
-    std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
+    std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1), _distortionOffset(0), _distortionOffset(1)};
 
     if (hasDistortion())
     {
@@ -180,19 +297,45 @@ public:
     return params;
   }
 
+  virtual bool updateParamsFromVersion(std::vector<double>& updatedParams, const std::vector<double>& params, const Version & inputVersion) const override 
+  {
+    if (!IntrinsicsScaleOffset::updateParamsFromVersion(updatedParams, params, inputVersion))
+    {
+      return false;
+    }
+
+    std::vector<double> localParams(updatedParams.size() + 2);
+
+    localParams[0] = updatedParams[0];
+    localParams[1] = updatedParams[1];
+    localParams[2] = updatedParams[2];
+    localParams[3] = updatedParams[3];
+    localParams[4] = 0.0;
+    localParams[5] = 0.0;
+
+    for (int i = 4; i <= updatedParams.size(); i++)
+    {
+      localParams[i + 2] = updatedParams[i];
+    }
+
+    updatedParams = localParams;
+
+    return true;
+  }
+
   // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params) override
+  virtual bool updateFromParams(const std::vector<double>& params) override
   {
     if (_pDistortion == nullptr)
     {
-      if (params.size() != 4)
+      if (params.size() != 6)
       {
         return false;
       }
     }
     else
     {
-      if (params.size() != (4 + _pDistortion->getDistortionParametersCount()))
+      if (params.size() != (6 + _pDistortion->getDistortionParametersCount()))
       {
         return false;
       }
@@ -202,8 +345,10 @@ public:
     _scale(1) = params[1];
     _offset(0) = params[2];
     _offset(1) = params[3];
+    _distortionOffset(0) = params[4];
+    _distortionOffset(1) = params[5];
 
-    setDistortionParams({params.begin() + 4, params.end()});
+    setDistortionParams({params.begin() + 6, params.end()});
 
     return true;
   }
@@ -287,7 +432,7 @@ public:
 protected:
   std::shared_ptr<Distortion> _pDistortion;
   Vec2 _distortionOffset{0.0, 0.0};
-  bool _useUnitlessDistortion{false};
+  bool _useUnitlessDistortion{true};
 };
 
 } // namespace camera

@@ -7,7 +7,6 @@
 
 #include "SfMLocalizer.hpp"
 #include <aliceVision/config.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
@@ -200,7 +199,7 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
     tinyScene.structure[i] = std::move(landmark);
   }
 
-  BundleAdjustmentCeres BA;
+  BundleAdjustmentSymbolicCeres BA;
   BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
   if(refinePose)
