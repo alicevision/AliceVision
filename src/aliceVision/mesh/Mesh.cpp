@@ -139,6 +139,8 @@ void Mesh::save(const std::string& filename, EFileType filetype)
     if (filetypeStr == "gltf")
     {
         formatId = "gltf2";
+        // gen normals in order to have correct shading in Qt 3D Scene
+        // but cause problems with assimp importer
         pPreprocessing |= aiProcess_GenNormals;
     }
     // If obj, do not use material
@@ -155,7 +157,11 @@ void Mesh::save(const std::string& filename, EFileType filetype)
     exporter.Export(&scene, formatId, filename, pPreprocessing);
 
     ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
-    ALICEVISION_LOG_DEBUG("Vertices: " << aimesh->mNumVertices);
+
+    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
+    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
+    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());  
+    ALICEVISION_LOG_DEBUG("Normals: " << normals.size());
 }
 
 bool Mesh::loadFromBin(const std::string& binFileName)
@@ -2366,7 +2372,49 @@ void Mesh::load(const std::string& fileName)
         ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << fileName);
     }
 
-    unsigned int pFlags = aiProcessPreset_TargetRealtime_MaxQuality & (~aiProcess_SplitLargeMeshes);
+    // see https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h#L85
+    const unsigned int pFlags =
+        // If this flag is not specified, no vertices are referenced by more than one face
+        aiProcess_JoinIdenticalVertices |
+        // if a face contain more than 3 vertices, split it in triangles
+        aiProcess_Triangulate |
+        // Removes the node graph and pre-transforms all vertices with the local transformation matrices of their nodes.
+        //aiProcess_PreTransformVertices |
+        // This is intended to get rid of some common exporter errors
+        //// aiProcess_FindInvalidData |
+        // Face normals are shared between all points of a single face,
+        // so a single point can have multiple normals, which forces the library to duplicate vertices in some cases.
+        aiProcess_DropNormals |
+        // This makes sure that all indices are valid
+        //aiProcess_ValidateDataStructure |
+        aiProcess_RemoveComponent |
+        // This step searches all meshes for degenerate primitives and converts them to proper lines or points.
+        // A face is 'degenerate' if one or more of its points are identical.
+        aiProcess_FindDegenerates |
+        // aiProcess_SortByPType needed for aiProcess_FindDegenerates.
+        // This step splits meshes with more than one primitive type in homogeneous sub-meshes
+        // (point and line in different meshes, so we can remove them with AI_CONFIG_PP_SBP_REMOVE).
+        aiProcess_SortByPType |
+        0;
+    importer.SetPropertyInteger(
+        AI_CONFIG_PP_RVC_FLAGS, 
+        aiComponent_NORMALS | 
+        aiComponent_TANGENTS_AND_BITANGENTS
+        // We do not remove texture coords as we need it for texturing,
+        // but it causes vertices duplicates with assimp. This is problematic for mesh post-processing
+        // but we should face this problem only for mesh coming from retopology,
+        // in which case we will only do texturing.
+        //aiComponent_TEXCOORDS
+        );
+
+    // aiProcess_FindDegenerates will convert degenerate triangles.
+    // As we don't want lines and points, we set the AI_CONFIG_PP_SBP_REMOVE.
+    importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+
+    // aiProcess_FindDegenerates will also remove very small triangles with a surface area smaller than 10^-6.
+    // As we don't want this extra-behavior, we set the property AI_CONFIG_PP_FD_CHECKAREA to false.
+    importer.SetPropertyBool(AI_CONFIG_PP_FD_CHECKAREA, false);
+
     const aiScene* scene = importer.ReadFile(fileName, pFlags);
     if (!scene)
     {
@@ -2483,7 +2531,9 @@ void Mesh::load(const std::string& fileName)
             nodes.push_back(node->mChildren[idChild]);
         }
     }
-    ALICEVISION_LOG_DEBUG("Vertices Mesh: " << pts.size());
+    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
+    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
+    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,

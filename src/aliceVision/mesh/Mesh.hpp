@@ -168,7 +168,7 @@ public:
 
     bool loadFromBin(const std::string& binFileName);
     void saveToBin(const std::string& binFileName);
-    void load(const std::string& objAsciiFileName);
+    void load(const std::string& filename);
 
     void addMesh(const Mesh& mesh);
 
