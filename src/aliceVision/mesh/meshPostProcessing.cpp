@@ -20,7 +20,7 @@ namespace bfs = boost::filesystem;
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inout_ptsCams, mvsUtils::MultiViewParams& mp,
                       const std::string& debugFolderName,
-                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
+                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, const Point3d* hexah)
 {
     long timer = std::clock();
     ALICEVISION_LOG_INFO("Mesh post-processing.");

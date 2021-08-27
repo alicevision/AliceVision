@@ -21,6 +21,8 @@
 #include <geogram/mesh/mesh.h>
 #include <geogram/basic/geometry_nd.h>
 
+#include <dependencies\nanoflann\include\nanoflann.hpp>
+
 #include <map>
 #include <set>
 
@@ -125,6 +127,7 @@ public:
             Edge edge;
         };
         GeometryIntersection() {}
+        GeometryIntersection(const GeometryIntersection&) = default;
         explicit GeometryIntersection(const Facet& f)
             : facet{f}
             , type{EGeometryType::Facet}
@@ -498,12 +501,24 @@ public:
     Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
     double getFaceWeight(const Facet &f1) const;
 
-    float weightFcn(float nrc, bool labatutWeights, int ncams);
+    float weightFcn(float nrc, bool labatutWeights);
 
-    void fillGraph(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight,
-                           float fullWeight);
-    void fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, GeometriesCount& outFrontCount, GeometriesCount& outBehindCount, int vertexIndex, int cam, float weight,
-                           float fullWeight, double nPixelSizeBehind, bool fillOut, float distFcnHeight);
+    /**
+     * @brief Intersect tetrahedralization geometry (facet, edge, vertex) from a custom point in space.
+     */
+    GeometryIntersection intersectGeometryFromCustomPoint(const size_t ret_index,
+                                     const nanoflann::KNNResultSet<double> resultSet, Point3d& originPt,
+                                     const Point3d& camPt);
+    //GeometryIntersection intersectGeometryFromCustomPoint(const KdTree& kdTree, const Point3d& originPt, const Point3d& camPt);
+
+    void fillGraphFromDepthMaps(const Point3d hexah[8], double nPixelSizeBehind, bool labatutWeights, bool fillOut,
+                                float distFcnHeight, float fullWeight);
+    void fillGraphFromVertices(double nPixelSizeBehind, bool labatutWeights, bool fillOut, float distFcnHeight, float fullWeight);
+
+    void fillGraphPartPtRc(int& outTotalStepsFront, int& outTotalStepsBehind, GeometriesCount& outFrontCount,
+                           GeometriesCount& outBehindCount, GeometryIntersection initialGeometry, double pixSize,
+                           const Point3d& originPt, int cam, float weight, float fullWeight, double nPixelSizeBehind,
+                           bool fillOut, float distFcnHeight);
 
     /**
      * @brief Estimate the cells property "on" based on the analysis of the visibility of neigbouring cells.
@@ -518,12 +533,13 @@ public:
 
     void maxflow();
 
-    void voteFullEmptyScore(const StaticVector<int>& cams, const std::string& folderName);
+    void voteFullEmptyScore(const StaticVector<int>& cams, bool fromDepthMaps,
+                            const Point3d hexah[8], const std::string& folderName);
 
     void createDensePointCloud(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
 
-    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, const std::string& folderName,
-                        const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, bool exportDebugTetrahedralization);
+    void createGraphCut(const Point3d hexah[8], const StaticVector<int>& cams, bool fromDepthMaps, const std::string& folderName,
+                        bool removeSmallSegments, bool exportDebugTetrahedralization);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -559,7 +575,9 @@ public:
      * @param[in] maxNbConnectedHelperPoints: maximum number of connected helper points before we remove the group. 0 means that we remove all helper points. -1 means that we do not filter helper points at all.
      */
     mesh::Mesh* createMesh(int maxNbConnectedHelperPoints);
-    mesh::Mesh* createTetrahedralMesh(bool filter = true, const float& downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
+    mesh::Mesh* createTetrahedralMesh(bool filter = true, const float downscaleFactor = 0.95f, const std::function<float(const GC_cellInfo&)> getScore = [](const GC_cellInfo& c) { return c.emptinessScore; }) const;
+    mesh::Mesh* createTetrahedralMesh(const std::vector<CellIndex>& tetrahedronIndexes,
+                                                        const float downscaleFactor) const;
 
     void displayCellsStats() const;
     void exportDebugMesh(const std::string& filename, const Point3d& fromPt, const Point3d& toPt);

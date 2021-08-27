@@ -51,7 +51,7 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
                                                Point2d P[4], StaticVector<Point3d>& out);
 bool isPointInHexahedron(const Point3d &p, const Point3d* hexah);
 double computeHexahedronVolume(const Point3d* hexah);
-void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale);
+void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], double scale);
 bool checkPoint3d(Point3d n);
 bool checkPoint2d(Point2d n);
 
@@ -62,6 +62,9 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
 int computeStep(MultiViewParams* mp, int scale, int maxWidth, int maxHeight);
 
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
+
+StaticVector<Point3d>* cutVoxelsAtFloat(const Point3d* space, const Voxel& dimensions, double cut);
+
 std::vector<int> createRandomArrayOfIntegers(const int size, const unsigned int seed = 0);
 
 int findNSubstrsInString(const std::string& str, const std::string& val);

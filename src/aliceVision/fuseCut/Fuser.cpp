@@ -433,7 +433,7 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
     minPixSize = std::numeric_limits<float>::max();
     //long t1 = mvsUtils::initEstimate();
-    Stat3d s3d = Stat3d();
+    Stat3d s3d;
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         int w = mp->getWidth(rc);

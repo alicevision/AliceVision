@@ -19,11 +19,66 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
+#include <aliceVision/mvsUtils/common.cpp>
 
 using namespace aliceVision;
 using namespace aliceVision::fuseCut;
 using namespace aliceVision::sfmData;
+using namespace aliceVision::mvsUtils;
 
+BOOST_AUTO_TEST_CASE(fuseCut_isPointInTetrahedron) {
+
+    Point3d A = {0.0, 0.0, 0.0};
+    Point3d B = {5.0, 0.0, 0.0};
+    Point3d C = {0.0, 1.8, 0.0};
+    Point3d D = {0.0, 0.0, 2.1};
+
+
+    {   // OUTSIDE
+        const Point3d O = {5.0, 5.0, 5.0};
+        bool res = isPointInTetrahedron(O, A, B, C, D);
+        ALICEVISION_LOG_TRACE("isPointInTetrahedron Outside Point: " << res);
+        BOOST_CHECK(res == false);
+    }
+
+
+    {   // INSIDE
+        const Point3d O = {2.0, 0.2, 0.5};
+        bool res = isPointInTetrahedron(O, A, B, C, D);
+        ALICEVISION_LOG_TRACE("isPointInTetrahedron Inside Point: " << res);
+        BOOST_CHECK(res == true);
+    }
+
+    {   //ON POINT
+        const Point3d O = {0.0, 0.0, 2.1};
+        bool res = isPointInTetrahedron(O, A, B, C, D);
+        ALICEVISION_LOG_TRACE("isPointInTetrahedron On Vertex Point: " << res);
+        BOOST_CHECK(res == true);
+    }
+
+    {   //ON EDGE
+        const Point3d O = {2.5, 0.0, 0.0};
+        bool res = isPointInTetrahedron(O, A, B, C, D);
+        ALICEVISION_LOG_TRACE("isPointInTetrahedron On Edge Point: " << res);
+        BOOST_CHECK(res == true);
+    }
+
+
+    // EXEPTION DEBUG
+    A = {0.151329, 0.0495779, 1.42272};
+    B = {0.148957, 0.0558614, 1.42023};
+    C = {0.146299, 0.049023, 1.42259};
+    D = {0.152603, 0.0584255, 1.42146};
+
+    { 
+        const Point3d O = {0.14561, 0.0567355, 1.42259};
+        bool res = isPointInTetrahedron(O, A, B, C, D);
+        ALICEVISION_LOG_TRACE("isPointInTetrahedron Debug: " << res);
+        BOOST_CHECK(res == true);
+    }
+}
+
+#if 0
 BOOST_AUTO_TEST_CASE(fuseCut_solidAngle)
 {
     using namespace boost::math;
@@ -95,7 +150,8 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     for (size_t i = 0; i < delaunayGC._verticesCoords.size(); i++)
         ALICEVISION_LOG_TRACE("[" << i << "]: " << delaunayGC._verticesCoords[i].x << ", " << delaunayGC._verticesCoords[i].y << ", " << delaunayGC._verticesCoords[i].z);
 
-    delaunayGC.createGraphCut(&hexah[0], cams, tempDirPath + "/", tempDirPath + "/SpaceCamsTracks/", false, false);
+    delaunayGC.createGraphCut(&hexah[0], cams, false, tempDirPath + "/", false, false);
+    /* tempDirPath + "/SpaceCamsTracks/" */
     /*
     delaunayGC.computeDelaunay();
     delaunayGC.displayStatistics();
@@ -204,3 +260,4 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
 
     return sfm_data;
 }
+#endif

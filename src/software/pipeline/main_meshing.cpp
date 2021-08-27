@@ -22,10 +22,17 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
+
 #include <Eigen/Geometry>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/median.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/tail_quantile.hpp>
+#include <boost/accumulators/statistics/weighted_median.hpp>
 
 #include <cmath>
 
@@ -35,6 +42,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
+using namespace boost::accumulators; 
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
@@ -246,6 +254,100 @@ inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
     return in;
 }
 
+std::vector<std::array<Point3d, 8>> divideHexahedron(const std::array<Point3d, 8>& hexah, std::vector<Point3d> coord, int maxVerticesPerBlock)
+{
+    std::unique_ptr<StaticVector<Point3d>> voxels;
+    Voxel dimensions(1, 1, 1);
+
+    const std::size_t cacheSize = coord.size();
+    using namespace boost::accumulators;
+    using AccumulatorLeft  = accumulator_set<double, stats<tag::median, tag::tail_quantile<left>>>;
+    using AccumulatorRight  = accumulator_set<double, stats<tag::median, tag::tail_quantile<right>>>;
+    
+    AccumulatorLeft accLX(tag::tail<left>::cache_size = cacheSize);
+    AccumulatorLeft accLY(tag::tail<left>::cache_size = cacheSize);
+    AccumulatorLeft accLZ(tag::tail<left>::cache_size = cacheSize);
+
+    AccumulatorRight accRX(tag::tail<right>::cache_size = cacheSize);
+    AccumulatorRight accRY(tag::tail<right>::cache_size = cacheSize);
+    AccumulatorRight accRZ(tag::tail<right>::cache_size = cacheSize);
+    int count = 0;
+
+    for(auto point : coord)
+    {
+        if(aliceVision::mvsUtils::isPointInHexahedron(point, &hexah[0]))
+        {
+            accLX(point.x);
+            accRX(point.x);
+
+            accLY(point.y);
+            accRY(point.y);
+            
+            accLZ(point.z);
+            accRZ(point.z);
+
+            count++;
+
+        }
+    }
+
+    if(count < maxVerticesPerBlock)
+    {
+        std::vector<std::array<Point3d, 8>> singleValueList;
+        singleValueList.push_back(hexah);
+        return singleValueList;
+    }
+    const double xMin = quantile(accLX, quantile_probability = 0.1);
+    const double xMax = quantile(accRX, quantile_probability = 0.9);
+    const double xSize = xMax - xMin;
+
+
+    const double yMin = quantile(accLY, quantile_probability = 0.1);
+    const double yMax = quantile(accRY, quantile_probability = 0.9);
+    const double ySize = yMax - yMin;
+
+
+    const double zMin = quantile(accLZ, quantile_probability = 0.1);
+    const double zMax = quantile(accRZ, quantile_probability = 0.9);
+    const double zSize = zMax - zMin;
+
+
+
+    double dimensionsMedian = 0;
+
+    if(xSize >= ySize && xSize >= zSize)
+    {
+        dimensions.x = 2;
+        dimensionsMedian = (median(accLX) - xMin) / xSize;
+    }
+    else if(ySize >= xSize && ySize >= zSize)
+    {
+        dimensions.y = 2;
+        dimensionsMedian = (median(accLY) - yMin) / ySize;
+    }
+    else
+    {
+        dimensions.z = 2;
+        dimensionsMedian = (median(accLZ) - zMin) / zSize;
+    }
+
+    voxels.reset(mvsUtils::cutVoxelsAtFloat(&hexah[0], dimensions, dimensionsMedian)); // Decoupe
+
+    std::array<Point3d, 8> subHexahLeft;
+    std::array<Point3d, 8> subHexahRight;
+
+    std::copy(voxels->begin(), voxels->begin() + 8, subHexahLeft.begin());
+    std::copy(voxels->begin() + 8, voxels->begin() + 16, subHexahRight.begin());
+
+    const auto left = divideHexahedron(subHexahLeft, coord, maxVerticesPerBlock);
+    const auto right = divideHexahedron(subHexahRight, coord, maxVerticesPerBlock);
+
+    std::vector<std::array<Point3d, 8>> resultVect(left.size() + right.size());
+    std::copy(left.begin(), left.end(), resultVect.begin());
+    std::copy(right.begin(), right.end(), resultVect.begin() + left.size());
+    
+    return resultVect;
+}
 
 int aliceVision_main(int argc, char* argv[])
 {
@@ -261,7 +363,8 @@ int aliceVision_main(int argc, char* argv[])
     std::size_t estimateSpaceMinObservations = 3;
     float estimateSpaceMinObservationAngle = 10.0f;
     double universePercentile = 0.999;
-    int maxPtsPerVoxel = 6000000;
+    int maxPointsPerSubdivision = 10000;
+    double inflationRate = 5.0;
     bool meshingFromDepthMaps = true;
     bool estimateSpaceFromSfM = true;
     bool addLandmarksToTheDensePointCloud = false;
@@ -306,8 +409,10 @@ int aliceVision_main(int argc, char* argv[])
             "Max input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
             "Max points at the end of the depth maps fusion.")
-        ("maxPointsPerVoxel", po::value<int>(&maxPtsPerVoxel)->default_value(maxPtsPerVoxel),
-            "Max points per voxel.")
+        ("maxPointsPerSubdivision", po::value<int>(&maxPointsPerSubdivision)->default_value(maxPointsPerSubdivision),
+            "Percentage of meshing division.")
+        ("inflationRate", po::value<double>(&inflationRate)->default_value(inflationRate),
+            "Rate of the mesh inflation after subdivision.")
         ("minStep", po::value<int>(&fuseParams.minStep)->default_value(fuseParams.minStep),
             "The step used to load depth values from depth maps is computed from maxInputPts. Here we define the minimal value for this step, "
             "so on small datasets we will not spend too much time at the beginning loading all depth values.")
@@ -424,23 +529,11 @@ int aliceVision_main(int argc, char* argv[])
 
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
-
+    
     if(depthMapsFolder.empty())
     {
-      if(depthMapsFolder.empty() &&
-         repartitionMode == eRepartitionMultiResolution &&
-         partitioningMode == ePartitioningSingleBlock)
-      {
-        meshingFromDepthMaps = false;
-        addLandmarksToTheDensePointCloud = true;
-      }
-      else
-      {
-        ALICEVISION_LOG_ERROR("Invalid input options:\n"
-                              "- Meshing from depth maps require --depthMapsFolder option.\n"
-                              "- Meshing from SfM require option --partitioning set to 'singleBlock' and option --repartition set to 'multiResolution'.");
-        return EXIT_FAILURE;
-      }
+      meshingFromDepthMaps = false;
+      addLandmarksToTheDensePointCloud = true;
     }
 
     // read the input SfM scene
@@ -487,75 +580,139 @@ int aliceVision_main(int argc, char* argv[])
     {
         case eRepartitionMultiResolution:
         {
+            ALICEVISION_LOG_INFO("Meshing mode: multi-resolution");
+            std::array<Point3d, 8> hexah;
+
+            float minPixSize;
+            fuseCut::Fuser fs(&mp);
+
+            if(boundingBox.isInitialized())
+                boundingBox.toHexahedron(&hexah[0]);
+            else if(meshingFromDepthMaps && (!estimateSpaceFromSfM || sfmData.getLandmarks().empty()))
+                fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
+            else
+                fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations,
+                                      estimateSpaceMinObservationAngle);
+
+            {
+                const double length = hexah[0].x - hexah[1].x;
+                const double width = hexah[0].y - hexah[3].y;
+                const double height = hexah[0].z - hexah[4].z;
+
+                ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width
+                                                               << ", height: " << height);
+            }
+
+            auto createMesh = [&](const std::array<Point3d, 8>& hexah) {
+                StaticVector<int> cams;
+                if(meshingFromDepthMaps)
+                {
+                    cams = mp.findCamsWhichIntersectsHexahedron(&hexah[0]);
+                }
+                else
+                {
+                    cams.resize(mp.getNbCameras());
+                    for(int i = 0; i < cams.size(); ++i)
+                        cams[i] = i;
+                }
+
+                if(cams.empty())
+                    throw std::logic_error("No camera to make the reconstruction");
+
+                fuseCut::DelaunayGraphCut delaunayGC(&mp);
+                delaunayGC.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr,
+                                                 meshingFromDepthMaps ? &fuseParams : nullptr);
+                if(saveRawDensePointCloud)
+                {
+                    ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
+                    StaticVector<StaticVector<int>> rawPtsCams;
+                    delaunayGC.createPtsCams(rawPtsCams);
+                    sfmData::SfMData densePointCloud;
+                    createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, rawPtsCams, densePointCloud);
+                    removeLandmarksWithoutObservations(densePointCloud);
+                    if(colorizeOutput)
+                        sfmData::colorizeTracks(densePointCloud);
+                    sfmDataIO::Save(densePointCloud, (outDirectory / "densePointCloud_raw.abc").string(),
+                                    sfmDataIO::ESfMData::ALL_DENSE);
+                }
+                const bool removeSmallSegments = false;
+                delaunayGC.createGraphCut(&hexah[0], cams, meshingFromDepthMaps, outDirectory.string() + "/",
+                                          removeSmallSegments, exportDebugTetrahedralization);
+
+                delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string() + "/");
+
+                mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
+                delaunayGC.createPtsCams(ptsCams);
+                mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string() + "/", nullptr, &hexah[0]);
+            };
+
             switch(partitioningMode)
             {
                 case ePartitioningAuto:
                 {
-                    throw std::invalid_argument("Meshing mode: 'multiResolution', partitioning: 'auto' is not yet implemented.");
+                    ALICEVISION_LOG_INFO("Meshing mode: 'multiResolution', partitioning: 'auto'.");
+                    std::vector<std::array<Point3d, 8>> voxels;
+                    {
+                        // Create initial point cloud to estimate the partitioning.
+
+                        fuseCut::DelaunayGraphCut delaunayGC(&mp);
+                        StaticVector<int> cams;
+                        if(meshingFromDepthMaps)
+                        {
+                            cams = mp.findCamsWhichIntersectsHexahedron(&hexah[0]);
+                        }
+                        else
+                        {
+                            cams.resize(mp.getNbCameras());
+                            for(int i = 0; i < cams.size(); ++i)
+                                cams[i] = i;
+                        }
+                        ALICEVISION_LOG_INFO("Fusing DepthMap for partitionning...  " << meshingFromDepthMaps);
+
+                        if(meshingFromDepthMaps)
+                            delaunayGC.fuseFromDepthMaps(cams, &hexah[0], fuseParams);
+                        // add points from sfm
+                        if(addLandmarksToTheDensePointCloud)
+                            delaunayGC.addPointsFromSfM(&hexah[0], cams, sfmData);
+
+                        std::array<Point3d, 8> tmp;
+                        for(int i = 0; i < 8; ++i)
+                            tmp[i] = hexah[i];
+
+                        float totalnrc = 0;
+                        for(const auto& attr : delaunayGC._verticesAttr)
+                        {
+                            totalnrc += attr.nrc;
+                        }
+
+                        const double ratioNbPointsUsedAndMax =
+                            float(delaunayGC._verticesCoords.size()) / totalnrc;
+
+                        voxels = divideHexahedron(tmp, delaunayGC._verticesCoords, maxPointsPerSubdivision * ratioNbPointsUsedAndMax);
+                    }
+
+                    for(int i = 0; i < voxels.size() ; ++i)
+                    {
+                        std::array<Point3d, 8> subHexah;
+                        std::copy(voxels[i].begin(), voxels[i].end(), subHexah.begin());
+                        aliceVision::mvsUtils::inflateHexahedron(&subHexah[0], &subHexah[0], 1.0 + inflationRate / 100.0);
+
+                        ALICEVISION_LOG_INFO("[" << i << "/" << voxels.size() << "] Building mesh");
+                        ALICEVISION_LOG_INFO("Fusing DepthMap for partitionning...  " << meshingFromDepthMaps);
+
+                        createMesh(subHexah);
+
+                        mesh->saveToObj(outputMesh + "_" + std::to_string(i) + ".obj");
+                    }
+
+                    // HERE WE MERGE THE SUB-MESHES
+
+                    break;
                 }
                 case ePartitioningSingleBlock:
                 {
                     ALICEVISION_LOG_INFO("Meshing mode: multi-resolution, partitioning: single block.");
-                    std::array<Point3d, 8> hexah;
-
-                    float minPixSize;
-                    fuseCut::Fuser fs(&mp);
-
-                    if (boundingBox.isInitialized())
-                        boundingBox.toHexahedron(&hexah[0]);
-                    else if(meshingFromDepthMaps && (!estimateSpaceFromSfM || sfmData.getLandmarks().empty()))
-                      fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
-                    else
-                      fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
-
-                    {
-                        const double length = hexah[0].x - hexah[1].x;
-                        const double width = hexah[0].y - hexah[3].y;
-                        const double height = hexah[0].z - hexah[4].z;
-
-                        ALICEVISION_LOG_INFO("bounding Box : length: " << length << ", width: " << width << ", height: " << height);
-                    }
-
-                    StaticVector<int> cams;
-                    if(meshingFromDepthMaps)
-                    {
-                      cams = mp.findCamsWhichIntersectsHexahedron(&hexah[0]);
-                    }
-                    else
-                    {
-                      cams.resize(mp.getNbCameras());
-                      for(int i = 0; i < cams.size(); ++i)
-                          cams[i] = i;
-                    }
-
-                    if(cams.empty())
-                        throw std::logic_error("No camera to make the reconstruction");
-                    
-                    fuseCut::DelaunayGraphCut delaunayGC(&mp);
-                    delaunayGC.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
-                    if(saveRawDensePointCloud)
-                    {
-                      ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
-                      StaticVector<StaticVector<int>> ptsCams;
-                      delaunayGC.createPtsCams(ptsCams);
-                      sfmData::SfMData densePointCloud;
-                      createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, ptsCams, densePointCloud);
-                      removeLandmarksWithoutObservations(densePointCloud);
-                      if(colorizeOutput)
-                        sfmData::colorizeTracks(densePointCloud);
-                      sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
-                    }
-
-                    delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string() + "/",
-                                              outDirectory.string() + "/SpaceCamsTracks/", false,
-                                              exportDebugTetrahedralization);
-
-                    delaunayGC.graphCutPostProcessing(&hexah[0], outDirectory.string()+"/");
-
-                    mesh = delaunayGC.createMesh(maxNbConnectedHelperPoints);
-                    delaunayGC.createPtsCams(ptsCams);
-                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, &hexah[0]);
-
+                    createMesh(hexah);
                     break;
                 }
                 case ePartitioningUndefined:

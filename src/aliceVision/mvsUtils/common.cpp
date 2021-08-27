@@ -407,6 +407,31 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(const Point3d& linePoin
     return out;
 }
 
+bool isPointInTetrahedron(const Point3d& originPt, const Point3d& pa, const Point3d& pb,
+                                            const Point3d& pc, const Point3d& pd)
+{
+    // ABC
+    Point3d abc = cross(pa - pb, pb - pc).normalize();
+    double d1 = orientedPointPlaneDistance(originPt, pa, abc);
+
+    // BDC
+    Point3d bdc = cross(pb - pd, pd - pc).normalize();
+    double d2 = orientedPointPlaneDistance(originPt, pb, bdc);
+
+    // CDA
+    Point3d cda = cross(pc - pd, pd - pa).normalize();
+    double d3 = orientedPointPlaneDistance(originPt, pc, cda);
+
+    // ADB
+    Point3d adb = cross(pa - pd, pd - pb).normalize();
+    double d4 = orientedPointPlaneDistance(originPt, pa, adb);
+
+    //Check distance between origin and each triangle (point being handled clockwisely) and see if their sign is the same (all positive here).
+    return (d1 >= 0) && (d2 >= 0) && (d3 >= 0) && (d4 >= 0);
+   
+}
+
+
 void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc,
                                                      Point2d P[4], StaticVector<Point3d>& out)
 {
@@ -534,7 +559,7 @@ double computeHexahedronVolume(const Point3d* hexah)
   return (l * w * h);
 }
 
-void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale)
+void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], double scale)
 {
     Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
     for(int i = 0; i < 8; i++)
@@ -726,6 +751,64 @@ StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensio
             }
         }
     }
+
+    return voxels;
+}
+
+StaticVector<Point3d>* cutVoxelsAtFloat(const Point3d* space, const Voxel& dimensions, double cut)
+{
+    // Cuts only once so the dimension we seek is 2 (and 1 for the others).
+    if(dimensions.x * dimensions.y * dimensions.z != 2)
+        ALICEVISION_CERR("Error in cutting voxels");
+
+    double voxelDimX = dimensions.x;
+    double voxelDimY = dimensions.y;
+    double voxelDimZ = dimensions.z;
+
+    Point3d ox = space[0];
+    Point3d vx = (space[1] - space[0]).normalize();
+    Point3d vy = (space[3] - space[0]).normalize();
+    Point3d vz = (space[4] - space[0]).normalize();
+    double sx = (space[1] - space[0]).size();
+    double sy = (space[3] - space[0]).size();
+    double sz = (space[4] - space[0]).size();
+    double stepx = (dimensions.x == 2) ? (1 - cut) * sx : sx;
+    double stepy = (dimensions.y == 2) ? (1 - cut) * sy : sy;
+    double stepz = (dimensions.z == 2) ? (1 - cut) * sz : sz;
+
+    int nvoxels = dimensions.x * dimensions.y * dimensions.z;
+    StaticVector<Point3d>* voxels = new StaticVector<Point3d>();
+    voxels->resize(nvoxels * 8);
+
+    double x = 0;
+    double y = 0;
+    double z = 0;
+
+    (*voxels)[0] = ox + vx * x + vy * y + vz * z;                               // 0, 0, 0,                    // x,   y,   z
+    (*voxels)[1] = ox + vx * (x + stepx) + vy * y + vz * z;                     // x, 0, 0,                    // x+1, y,   z
+    (*voxels)[2] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * z;           // x, 0, 0,                    // x+1, y+1, z
+    (*voxels)[3] = ox + vx * x + vy * (y + stepy) + vz * z;                     // 0, 0, 0,                    // x,   y+1, z
+    (*voxels)[4] = ox + vx * x + vy * y + vz * (z + stepz);                     // 0, 0, 0,                    // x,   y,   z+1
+    (*voxels)[5] = ox + vx * (x + stepx) + vy * y + vz * (z + stepz);           // x, 0, 0,                    // x+1, y,   z+1
+    (*voxels)[6] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * (z + stepz); // x, 0, 0,                    // x+1, y+1, z+1
+    (*voxels)[7] = ox + vx * x + vy * (y + stepy) + vz * (z + stepz);           // 0, 0, 0,                    // x,   y+1, z+1
+
+    x = sx * (1 - cut) * (dimensions.x == 2);
+    y = sy * (1 - cut) * (dimensions.y == 2);
+    z = sz * (1 - cut) * (dimensions.z == 2);
+
+    stepx = (dimensions.x == 2) ? cut * sx : sx ;
+    stepy = (dimensions.y == 2) ? cut * sy : sy ;
+    stepz = (dimensions.z == 2) ? cut * sz : sz ;
+
+    (*voxels)[8] = ox + vx * x + vy * y + vz * z;                                // x, 0, 0,                   // x,   y,   z
+    (*voxels)[9] = ox + vx * (x + stepx) + vy * y + vz * z;                      // 1, 0, 0,                   // x+1, y,   z
+    (*voxels)[10] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * z;           // 1, 0, 0,                   // x+1, y+1, z
+    (*voxels)[11] = ox + vx * x + vy * (y + stepy) + vz * z;                     // x, 0, 0,                   // x,   y+1, z
+    (*voxels)[12] = ox + vx * x + vy * y + vz * (z + stepz);                     // x, 0, 0,                   // x,   y,   z+1
+    (*voxels)[13] = ox + vx * (x + stepx) + vy * y + vz * (z + stepz);           // 1, 0, 0,                   // x+1, y,   z+1
+    (*voxels)[14] = ox + vx * (x + stepx) + vy * (y + stepy) + vz * (z + stepz); // 1, 0, 0,                   // x+1, y+1, z+1
+    (*voxels)[15] = ox + vx * x + vy * (y + stepy) + vz * (z + stepz);           // x, 0, 0,                   // x,   y+1, z+1
 
     return voxels;
 }
