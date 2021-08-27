@@ -87,7 +87,7 @@ int aliceVision_main(int argc, char* argv[])
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
-        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
+        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::OBJ),
             "output mesh file type")
         ("colorMappingFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(texParams.textureFileType),
           imageIO::EImageFileType_informations().c_str())(

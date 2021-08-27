@@ -210,7 +210,7 @@ public:
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAs(const bfs::path& dir, const std::string& basename,
-                aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::GLTF,
+                aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ,
                 imageIO::EImageFileType textureFileType = imageIO::EImageFileType::EXR,
                 const BumpMappingParams& bumpMappingParams = BumpMappingParams());
 };

@@ -164,7 +164,7 @@ public:
     Mesh();
     ~Mesh();
 
-    void save(const std::string& filename, EFileType filetype = EFileType::GLTF);
+    void save(const std::string& filename, EFileType filetype = EFileType::OBJ);
 
     bool loadFromBin(const std::string& binFileName);
     void saveToBin(const std::string& binFileName);

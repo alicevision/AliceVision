@@ -299,7 +299,7 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
+        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::OBJ),
             "output mesh file type")
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
             "Input filtered depth maps folder.")
