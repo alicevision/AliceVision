@@ -38,7 +38,7 @@ void UndistortImage(
   else // There is distortion
   {
     const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
-    Vec2 ppCorrection(0.0, 0.0);
+    /*Vec2 ppCorrection(0.0, 0.0);
 
     if(correctPrincipalPoint)
     {
@@ -47,7 +47,7 @@ void UndistortImage(
         const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
         ppCorrection = pinholePtr->getPrincipalPoint() - center;
       }
-    }
+    }*/
     
     int widthRoi = imageIn.Width();
     int heightRoi = imageIn.Height();
@@ -64,14 +64,35 @@ void UndistortImage(
     image_ud.resize(widthRoi, heightRoi, true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
     
+    std::shared_ptr<camera::IntrinsicBase> corrected(intrinsicPtr->clone());
+
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> camdist = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(corrected);
+    if (camdist)
+    {
+      std::vector<double> tmp = camdist->getDistortionParams();
+      for (double & v : tmp) v = 0;
+      camdist->setDistortionParams(tmp);
+    }
+
+
+    if (correctPrincipalPoint)
+    {
+      std::shared_ptr<camera::IntrinsicsScaleOffset> camso = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(corrected);
+      if (camso)
+      {
+        camso->setOffset(0.0, 0.0);
+      }
+    }
     
+
     #pragma omp parallel for
     for(int j = 0; j < heightRoi; ++j)
         for(int i = 0; i < widthRoi; ++i)
         {       
-            const Vec2 undisto_pix(i + xOffset, j + yOffset); 
+            const Vec2 refPix(i + xOffset, j + yOffset); 
+
             // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
+            const Vec2 disto_pix = intrinsicPtr->cam2ima(intrinsicPtr->addDistortion(corrected->ima2cam(refPix)));
            
             // pick pixel if it is in the image domain
             if(imageIn.Contains(disto_pix(1), disto_pix(0)))
