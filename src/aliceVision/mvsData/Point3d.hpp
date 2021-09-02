@@ -10,8 +10,13 @@
 #include <cmath>
 #include <ostream>
 
-#include <geogram/basic/vecg.h>
 #include <Eigen/Core>
+
+// #include <geogram/basic/vecg.h>
+namespace GEO {
+    template <unsigned int DIM, class T>
+    class vecng;
+};
 
 namespace aliceVision {
 

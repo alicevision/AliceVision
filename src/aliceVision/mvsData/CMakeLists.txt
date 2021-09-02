@@ -44,7 +44,6 @@ alicevision_add_library(aliceVision_mvsData
     Boost::filesystem
     Boost::boost
     ${OPENIMAGEIO_LIBRARIES}
-    Geogram::geogram
   PUBLIC_INCLUDE_DIRS
     ${ZLIB_INCLUDE_DIR}
     ${OPENIMAGEIO_INCLUDE_DIRS}
