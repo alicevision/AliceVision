@@ -43,7 +43,6 @@ int aliceVision_main(int argc, char** argv)
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputFilePath;
-    aliceVision::mesh::EFileType outputMeshFileType;
 
     po::options_description allParams("AliceVision convertMesh\n"
                                       "The program allows to convert a mesh to another mesh format.");
@@ -55,17 +54,12 @@ int aliceVision_main(int argc, char** argv)
       ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
         "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl)");
 
-    po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()
-        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
-            "output mesh file type");
-
     po::options_description logParams("Log parameters");
     logParams.add_options()
       ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
         "verbosity level (fatal, error, warning, info, debug, trace).");
 
-    allParams.add(requiredParams).add(optionalParams).add(logParams);
+    allParams.add(requiredParams).add(logParams);
 
     po::variables_map vm;
     try
@@ -147,6 +141,7 @@ int aliceVision_main(int argc, char** argv)
 
     // save output mesh
     ALICEVISION_LOG_INFO("Convert mesh.");
+    mesh::EFileType outputMeshFileType = mesh::EFileType_stringToEnum(fs::path(outputFilePath).extension().string().substr(1));
     inputMesh->save(outputFilePath, outputMeshFileType);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
