@@ -82,11 +82,11 @@ std::istream& operator>>(std::istream& in, EFileType& meshFileType)
     return in;
 }
 
-void Mesh::save(const std::string& filename, EFileType filetype)
+void Mesh::save(const std::string& filepath, EFileType fileType)
 {
-    const std::string filetypeStr = EFileType_enumToString(filetype);
+    const std::string fileTypeStr = EFileType_enumToString(fileType);
 
-    ALICEVISION_LOG_INFO("Save " << filetypeStr << " mesh file");
+    ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
 
     aiScene scene;
 
@@ -133,10 +133,10 @@ void Mesh::save(const std::string& filename, EFileType filetype)
         }
     }
 
-    std::string formatId;
+    std::string formatId = fileTypeStr;
     unsigned int pPreprocessing = 0u;
     // If gltf, use gltf 2.0
-    if (filetypeStr == "gltf")
+    if (fileType == EFileType::GLTF)
     {
         formatId = "gltf2";
         // gen normals in order to have correct shading in Qt 3D Scene
@@ -144,19 +144,15 @@ void Mesh::save(const std::string& filename, EFileType filetype)
         pPreprocessing |= aiProcess_GenNormals;
     }
     // If obj, do not use material
-    else if (filetypeStr == "obj")
+    else if (fileType == EFileType::OBJ)
     {
         formatId = "objnomtl";
     }
-    else
-    {
-        formatId = filetypeStr;
-    }
 
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filename, pPreprocessing);
+    exporter.Export(&scene, formatId, filepath, pPreprocessing);
 
-    ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
+    ALICEVISION_LOG_INFO("Save mesh to " << fileTypeStr << " done.");
 
     ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
     ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
@@ -164,9 +160,9 @@ void Mesh::save(const std::string& filename, EFileType filetype)
     ALICEVISION_LOG_DEBUG("Normals: " << normals.size());
 }
 
-bool Mesh::loadFromBin(const std::string& binFileName)
+bool Mesh::loadFromBin(const std::string& binFilepath)
 {
-    FILE* f = fopen(binFileName.c_str(), "rb");
+    FILE* f = fopen(binFilepath.c_str(), "rb");
 
     if(f == nullptr)
         return false;
@@ -187,12 +183,12 @@ bool Mesh::loadFromBin(const std::string& binFileName)
     return true;
 }
 
-void Mesh::saveToBin(const std::string& binFileName)
+void Mesh::saveToBin(const std::string& binFilepath)
 {
     long t = std::clock();
     ALICEVISION_LOG_DEBUG("Save mesh to bin.");
     // printf("open\n");
-    FILE* f = fopen(binFileName.c_str(), "wb");
+    FILE* f = fopen(binFilepath.c_str(), "wb");
 
     int npts = pts.size();
     // printf("write npts %i\n",npts);
@@ -958,26 +954,26 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
     }     // for pix.x
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFileName, const std::string& trisMapFileName,
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFilepath, const std::string& trisMapFilepath,
                                                        const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
     StaticVector<float> depthMap;
-    loadArrayFromFile<float>(depthMap, depthMapFileName);
+    loadArrayFromFile<float>(depthMap, depthMapFilepath);
     StaticVector<StaticVector<int>> trisMap;
-    loadArrayOfArraysFromFile<int>(trisMap, trisMapFileName);
+    loadArrayOfArraysFromFile<int>(trisMap, trisMapFilepath);
 
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
 
 void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
-    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp.getViewId(rc)) + ".bin";
-    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
+    std::string depthMapFilepath = tmpDir + "depthMap" + std::to_string(mp.getViewId(rc)) + ".bin";
+    std::string trisMapFilepath = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
 
     StaticVector<float> depthMap;
-    loadArrayFromFile<float>(depthMap, depthMapFileName);
+    loadArrayFromFile<float>(depthMap, depthMapFilepath);
     StaticVector<StaticVector<int>> trisMap;
-    loadArrayOfArraysFromFile<int>(trisMap, trisMapFileName);
+    loadArrayOfArraysFromFile<int>(trisMap, trisMapFilepath);
 
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
@@ -1928,9 +1924,9 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
     long t1 = mvsUtils::initEstimate();
     for(int rc = 0; rc < mp.ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
+        std::string visTrisFilepath = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
-        loadArrayFromFile<int>(visTris, visTrisFileName);
+        loadArrayFromFile<int>(visTris, visTrisFilepath);
         if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
@@ -1956,9 +1952,9 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
     t1 = mvsUtils::initEstimate();
     for(int rc = 0; rc < mp.ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
+        std::string visTrisFilepath = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
-        loadArrayFromFile<int>(visTris, visTrisFileName);
+        loadArrayFromFile<int>(visTris, visTrisFilepath);
         if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
@@ -2352,7 +2348,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 }
 
-void Mesh::load(const std::string& fileName)
+void Mesh::load(const std::string& filepath)
 {
     Assimp::Importer importer;
 
@@ -2367,9 +2363,9 @@ void Mesh::load(const std::string& fileName)
     normals.clear();
     pointsVisibilities.clear();
 
-    if(!boost::filesystem::exists(fileName))
+    if(!boost::filesystem::exists(filepath))
     {
-        ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << fileName);
+        ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << filepath);
     }
 
     // see https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h#L85
@@ -2415,10 +2411,10 @@ void Mesh::load(const std::string& fileName)
     // As we don't want this extra-behavior, we set the property AI_CONFIG_PP_FD_CHECKAREA to false.
     importer.SetPropertyBool(AI_CONFIG_PP_FD_CHECKAREA, false);
 
-    const aiScene* scene = importer.ReadFile(fileName, pFlags);
+    const aiScene* scene = importer.ReadFile(filepath, pFlags);
     if (!scene)
     {
-        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << fileName);
+        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << filepath);
     }
 
     std::list<aiNode *> nodes;

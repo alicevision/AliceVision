@@ -905,13 +905,13 @@ void Texturing::clear()
     mesh = nullptr;
 }
 
-void Texturing::loadWithAtlas(const std::string& filename, bool flipNormals)
+void Texturing::loadWithAtlas(const std::string& filepath, bool flipNormals)
 {
     // Clear internal data
     clear();
     mesh = new Mesh();
     // Load .obj
-    mesh->load(filename);
+    mesh->load(filepath);
 
     // Handle normals flipping
     if(flipNormals)
@@ -1020,14 +1020,14 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
 }
 
 void Texturing::saveAs(const bfs::path& dir, const std::string& basename, 
-    aliceVision::mesh::EFileType meshFileType, 
+    EFileType meshFileType, 
     imageIO::EImageFileType textureFileType,
     const BumpMappingParams& bumpMappingParams)
 {
-    const std::string filetypeStr = EFileType_enumToString(meshFileType);
-    const std::string filename = (dir / (basename + "." + filetypeStr)).string();
+    const std::string meshFileTypeStr = EFileType_enumToString(meshFileType);
+    const std::string filepath = (dir / (basename + "." + meshFileTypeStr)).string();
 
-    ALICEVISION_LOG_INFO("Save " << filename << " mesh file");
+    ALICEVISION_LOG_INFO("Save " << filepath << " mesh file");
 
     if (_atlases.empty())
     {
@@ -1158,25 +1158,21 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
         }
     }
 
-    std::string formatId;
+    std::string formatId = meshFileTypeStr;
     unsigned int pPreprocessing = 0u;
     // If gltf, use gltf 2.0
-    if(filetypeStr == "gltf")
+    if(meshFileType == EFileType::GLTF)
     {
         formatId = "gltf2";
         // Flip UVs when exporting (issue with UV origin for gltf2)
         // https://github.com/around-media/ue4-custom-prompto/commit/044dbad90fc2172f4c5a8b67c779b80ceace5e1e
         pPreprocessing |= aiPostProcessSteps::aiProcess_FlipUVs | aiProcess_GenNormals;
     }
-    else
-    {
-        formatId = filetypeStr;
-    }
 
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filename, pPreprocessing);
+    exporter.Export(&scene, formatId, filepath, pPreprocessing);
 
-    ALICEVISION_LOG_INFO("Save mesh to " << filetypeStr << " done.");
+    ALICEVISION_LOG_INFO("Save mesh to " << meshFileTypeStr << " done.");
 }
 
 

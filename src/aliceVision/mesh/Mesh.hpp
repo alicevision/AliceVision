@@ -164,11 +164,11 @@ public:
     Mesh();
     ~Mesh();
 
-    void save(const std::string& filename, EFileType filetype = EFileType::OBJ);
+    void save(const std::string& filepath, EFileType filetype = EFileType::OBJ);
 
-    bool loadFromBin(const std::string& binFileName);
-    void saveToBin(const std::string& binFileName);
-    void load(const std::string& filename);
+    bool loadFromBin(const std::string& binFilepath);
+    void saveToBin(const std::string& binFilepath);
+    void load(const std::string& filepath);
 
     void addMesh(const Mesh& mesh);
 
@@ -193,7 +193,7 @@ public:
     void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
 
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
-    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFileName, const std::string& trisMapFileName,
+    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFilepath, const std::string& trisMapFilepath,
                                                   const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>>& trisMap,
                                                   StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int w,
