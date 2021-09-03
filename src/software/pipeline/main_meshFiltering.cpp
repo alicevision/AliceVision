@@ -101,6 +101,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputMeshPath;
+    aliceVision::mesh::EFileType outputMeshFileType;
 
     bool keepLargestMeshOnly = false;
 
@@ -123,12 +124,14 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+            "Input Mesh")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).");
+            "Output mesh");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
+            "output mesh file type")
         ("keepLargestMeshOnly", po::value<bool>(&keepLargestMeshOnly)->default_value(keepLargestMeshOnly),
             "Keep only the largest connected triangles group.")
         ("smoothingSubset",po::value<std::string>(&smoothingSubsetTypeName)->default_value(smoothingSubsetTypeName),
@@ -199,7 +202,7 @@ int aliceVision_main(int argc, char* argv[])
         bfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
-    texturing.loadOBJWithAtlas(inputMeshPath);
+    texturing.loadWithAtlas(inputMeshPath);
     mesh::Mesh* mesh = texturing.mesh;
 
     if(!mesh)
@@ -310,7 +313,7 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Save mesh.");
 
     // Save output mesh
-    outMesh.saveToObj(outputMeshPath);
+    outMesh.save(outputMeshPath, outputMeshFileType);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 

@@ -14,6 +14,7 @@
 #include <geogram/points/kd_tree.h>
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/case_conv.hpp> 
 
 #include <assimp/Importer.hpp>
 #include <assimp/Exporter.hpp>
@@ -36,9 +37,56 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::saveToObj(const std::string& filename)
+
+std::string EFileType_enumToString(const EFileType meshFileType)
 {
-    ALICEVISION_LOG_INFO("Writing obj and mtl file.");
+    switch(meshFileType)
+    {
+        case EFileType::OBJ:
+            return "obj";
+        case EFileType::FBX:
+            return "fbx";
+        case EFileType::STL:
+            return "stl";
+        case EFileType::GLTF:
+            return "gltf";
+    }
+    throw std::out_of_range("Unrecognized EMeshFileType");
+}
+
+EFileType EFileType_stringToEnum(const std::string& meshFileType)
+{
+    std::string m = meshFileType;
+    boost::to_lower(m);
+
+    if(m == "obj")
+        return EFileType::OBJ;
+    if(m == "fbx")
+        return EFileType::FBX;
+    if(m == "stl")
+        return EFileType::STL;
+    if(m == "gltf")
+        return EFileType::GLTF;
+    throw std::out_of_range("Invalid mesh file type " + meshFileType);
+}
+
+std::ostream& operator<<(std::ostream& os, EFileType meshFileType)
+{
+    return os << EFileType_enumToString(meshFileType);
+}
+std::istream& operator>>(std::istream& in, EFileType& meshFileType)
+{
+    std::string token;
+    in >> token;
+    meshFileType = EFileType_stringToEnum(token);
+    return in;
+}
+
+void Mesh::save(const std::string& filepath, EFileType fileType)
+{
+    const std::string fileTypeStr = EFileType_enumToString(fileType);
+
+    ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
 
     aiScene scene;
 
@@ -85,15 +133,36 @@ void Mesh::saveToObj(const std::string& filename)
         }
     }
 
-    Assimp::Exporter exporter;
-    exporter.Export(&scene, "objnomtl", filename);
+    std::string formatId = fileTypeStr;
+    unsigned int pPreprocessing = 0u;
+    // If gltf, use gltf 2.0
+    if (fileType == EFileType::GLTF)
+    {
+        formatId = "gltf2";
+        // gen normals in order to have correct shading in Qt 3D Scene
+        // but cause problems with assimp importer
+        pPreprocessing |= aiProcess_GenNormals;
+    }
+    // If obj, do not use material
+    else if (fileType == EFileType::OBJ)
+    {
+        formatId = "objnomtl";
+    }
 
-    ALICEVISION_LOG_INFO("Save mesh to obj done.");
+    Assimp::Exporter exporter;
+    exporter.Export(&scene, formatId, filepath, pPreprocessing);
+
+    ALICEVISION_LOG_INFO("Save mesh to " << fileTypeStr << " done.");
+
+    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
+    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
+    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());  
+    ALICEVISION_LOG_DEBUG("Normals: " << normals.size());
 }
 
-bool Mesh::loadFromBin(const std::string& binFileName)
+bool Mesh::loadFromBin(const std::string& binFilepath)
 {
-    FILE* f = fopen(binFileName.c_str(), "rb");
+    FILE* f = fopen(binFilepath.c_str(), "rb");
 
     if(f == nullptr)
         return false;
@@ -114,12 +183,12 @@ bool Mesh::loadFromBin(const std::string& binFileName)
     return true;
 }
 
-void Mesh::saveToBin(const std::string& binFileName)
+void Mesh::saveToBin(const std::string& binFilepath)
 {
     long t = std::clock();
     ALICEVISION_LOG_DEBUG("Save mesh to bin.");
     // printf("open\n");
-    FILE* f = fopen(binFileName.c_str(), "wb");
+    FILE* f = fopen(binFilepath.c_str(), "wb");
 
     int npts = pts.size();
     // printf("write npts %i\n",npts);
@@ -885,26 +954,26 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
     }     // for pix.x
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFileName, const std::string& trisMapFileName,
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFilepath, const std::string& trisMapFilepath,
                                                        const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
     StaticVector<float> depthMap;
-    loadArrayFromFile<float>(depthMap, depthMapFileName);
+    loadArrayFromFile<float>(depthMap, depthMapFilepath);
     StaticVector<StaticVector<int>> trisMap;
-    loadArrayOfArraysFromFile<int>(trisMap, trisMapFileName);
+    loadArrayOfArraysFromFile<int>(trisMap, trisMapFilepath);
 
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
 
 void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
-    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp.getViewId(rc)) + ".bin";
-    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
+    std::string depthMapFilepath = tmpDir + "depthMap" + std::to_string(mp.getViewId(rc)) + ".bin";
+    std::string trisMapFilepath = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
 
     StaticVector<float> depthMap;
-    loadArrayFromFile<float>(depthMap, depthMapFileName);
+    loadArrayFromFile<float>(depthMap, depthMapFilepath);
     StaticVector<StaticVector<int>> trisMap;
-    loadArrayOfArraysFromFile<int>(trisMap, trisMapFileName);
+    loadArrayOfArraysFromFile<int>(trisMap, trisMapFilepath);
 
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
@@ -1855,9 +1924,9 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
     long t1 = mvsUtils::initEstimate();
     for(int rc = 0; rc < mp.ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
+        std::string visTrisFilepath = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
-        loadArrayFromFile<int>(visTris, visTrisFileName);
+        loadArrayFromFile<int>(visTris, visTrisFilepath);
         if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
@@ -1883,9 +1952,9 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
     t1 = mvsUtils::initEstimate();
     for(int rc = 0; rc < mp.ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
+        std::string visTrisFilepath = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
-        loadArrayFromFile<int>(visTris, visTrisFileName);
+        loadArrayFromFile<int>(visTris, visTrisFilepath);
         if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
@@ -2279,7 +2348,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 }
 
-void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
+void Mesh::load(const std::string& filepath)
 {
     Assimp::Importer importer;
 
@@ -2294,16 +2363,58 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
     normals.clear();
     pointsVisibilities.clear();
 
-    if(!boost::filesystem::exists(objAsciiFileName))
+    if(!boost::filesystem::exists(filepath))
     {
-        ALICEVISION_THROW_ERROR("Mesh::loadFromObjAscii: no such file: " << objAsciiFileName);
+        ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << filepath);
     }
 
-    unsigned int pFlags = aiProcessPreset_TargetRealtime_MaxQuality & (~aiProcess_SplitLargeMeshes);
-    const aiScene * scene = importer.ReadFile(objAsciiFileName, pFlags);
+    // see https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h#L85
+    const unsigned int pFlags =
+        // If this flag is not specified, no vertices are referenced by more than one face
+        aiProcess_JoinIdenticalVertices |
+        // if a face contain more than 3 vertices, split it in triangles
+        aiProcess_Triangulate |
+        // Removes the node graph and pre-transforms all vertices with the local transformation matrices of their nodes.
+        //aiProcess_PreTransformVertices |
+        // This is intended to get rid of some common exporter errors
+        //// aiProcess_FindInvalidData |
+        // Face normals are shared between all points of a single face,
+        // so a single point can have multiple normals, which forces the library to duplicate vertices in some cases.
+        aiProcess_DropNormals |
+        // This makes sure that all indices are valid
+        //aiProcess_ValidateDataStructure |
+        aiProcess_RemoveComponent |
+        // This step searches all meshes for degenerate primitives and converts them to proper lines or points.
+        // A face is 'degenerate' if one or more of its points are identical.
+        aiProcess_FindDegenerates |
+        // aiProcess_SortByPType needed for aiProcess_FindDegenerates.
+        // This step splits meshes with more than one primitive type in homogeneous sub-meshes
+        // (point and line in different meshes, so we can remove them with AI_CONFIG_PP_SBP_REMOVE).
+        aiProcess_SortByPType |
+        0;
+    importer.SetPropertyInteger(
+        AI_CONFIG_PP_RVC_FLAGS, 
+        aiComponent_NORMALS | 
+        aiComponent_TANGENTS_AND_BITANGENTS
+        // We do not remove texture coords as we need it for texturing,
+        // but it causes vertices duplicates with assimp. This is problematic for mesh post-processing
+        // but we should face this problem only for mesh coming from retopology,
+        // in which case we will only do texturing.
+        //aiComponent_TEXCOORDS
+        );
+
+    // aiProcess_FindDegenerates will convert degenerate triangles.
+    // As we don't want lines and points, we set the AI_CONFIG_PP_SBP_REMOVE.
+    importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+
+    // aiProcess_FindDegenerates will also remove very small triangles with a surface area smaller than 10^-6.
+    // As we don't want this extra-behavior, we set the property AI_CONFIG_PP_FD_CHECKAREA to false.
+    importer.SetPropertyBool(AI_CONFIG_PP_FD_CHECKAREA, false);
+
+    const aiScene* scene = importer.ReadFile(filepath, pFlags);
     if (!scene)
     {
-        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << objAsciiFileName);
+        ALICEVISION_THROW_ERROR("Failed loading mesh from file: " << filepath);
     }
 
     std::list<aiNode *> nodes;
@@ -2416,6 +2527,9 @@ void Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
             nodes.push_back(node->mChildren[idChild]);
         }
     }
+    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
+    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
+    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,

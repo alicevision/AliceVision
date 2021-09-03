@@ -41,6 +41,22 @@ ALICEVISION_BITMASK(EVisibilityRemappingMethod);
 EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
 std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
 
+/**
+ * @brief File type available for exporting mesh
+ */
+enum class EFileType
+{
+    OBJ = 0,
+    FBX,
+    GLTF,
+    STL
+};
+
+EFileType EFileType_stringToEnum(const std::string& filetype);
+std::string EFileType_enumToString(const EFileType filetype);
+std::istream& operator>>(std::istream& in, EFileType& meshFileType);
+std::ostream& operator<<(std::ostream& os, EFileType meshFileType);
+
 
 class Mesh
 {
@@ -148,11 +164,11 @@ public:
     Mesh();
     ~Mesh();
 
-    void saveToObj(const std::string& filename);
+    void save(const std::string& filepath, EFileType filetype = EFileType::OBJ);
 
-    bool loadFromBin(const std::string& binFileName);
-    void saveToBin(const std::string& binFileName);
-    void loadFromObjAscii(const std::string& objAsciiFileName);
+    bool loadFromBin(const std::string& binFilepath);
+    void saveToBin(const std::string& binFilepath);
+    void load(const std::string& filepath);
 
     void addMesh(const Mesh& mesh);
 
@@ -177,7 +193,7 @@ public:
     void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
 
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
-    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFileName, const std::string& trisMapFileName,
+    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFilepath, const std::string& trisMapFilepath,
                                                   const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>>& trisMap,
                                                   StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int w,

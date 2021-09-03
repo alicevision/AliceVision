@@ -378,7 +378,8 @@ void meshMasking(
     const bool invert,
     const bool smoothBoundary,
     const bool undistortMasks,
-    const bool usePointsVisibilities
+    const bool usePointsVisibilities,
+    aliceVision::mesh::EFileType outputMeshFileType
     )
 {
     MaskCache maskCache(mp, masksFolders, undistortMasks);
@@ -517,7 +518,7 @@ void meshMasking(
     }
 
     // Save output mesh
-    filteredMesh.saveToObj(outputMeshPath);
+    filteredMesh.save(outputMeshPath, outputMeshFileType);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 }
@@ -533,6 +534,7 @@ int main(int argc, char **argv)
     std::string inputMeshPath;
     std::vector<std::string> masksFolders;
     std::string outputMeshPath;
+    aliceVision::mesh::EFileType outputMeshFileType;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
     int threshold = 1;
@@ -548,18 +550,20 @@ int main(int argc, char **argv)
         ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath)->required(),
             "A SfMData file (*.sfm).")
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+            "Input Mesh")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
             "Use masks from specific folder(s).\n"
             "Filename should be the same or the image uid.")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).")
+            "Output mesh")
         ("threshold", po::value<int>(&threshold)->default_value(threshold)->notifier(optInRange(1, INT_MAX, "threshold"))->required(),
             "The minimum number of visibility to keep a vertex.")
         ;
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
+            "output mesh file type")
         ("invert", po::value<bool>(&invert)->default_value(invert),
             "Invert the mask.")
         ("smoothBoundary", po::value<bool>(&smoothBoundary)->default_value(smoothBoundary),
@@ -618,7 +622,7 @@ int main(int argc, char **argv)
     // check input mesh
     ALICEVISION_LOG_INFO("Load input mesh.");
     mesh::Mesh inputMesh;
-    inputMesh.loadFromObjAscii(inputMeshPath);
+    inputMesh.load(inputMeshPath);
 
     // check sfm file
     if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
@@ -672,7 +676,7 @@ int main(int argc, char **argv)
     }
 
     ALICEVISION_LOG_INFO("Mask mesh");
-    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities);
+    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities, outputMeshFileType);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

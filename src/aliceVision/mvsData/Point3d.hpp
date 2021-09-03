@@ -10,6 +10,14 @@
 #include <cmath>
 #include <ostream>
 
+#include <Eigen/Core>
+
+// #include <geogram/basic/vecg.h>
+namespace GEO {
+    template <unsigned int DIM, class T>
+    class vecng;
+};
+
 namespace aliceVision {
 
 class Point3d
@@ -128,6 +136,12 @@ public:
         return x * x + y * y + z * z;
     }
 
+    template <class T>
+    operator GEO::vecng<3, T>() const
+    {
+      return GEO::vecng<3, T>(x, y, z);
+    }
+
     friend double dist(const Point3d& p1, const Point3d& p2);
 
     friend double dot(const Point3d& p1, const Point3d& p2);
@@ -184,6 +198,11 @@ inline std::ostream& operator<<(std::ostream& stream, const Point3d& p)
 {
     stream << p.x << "," << p.y << "," << p.z;
     return stream;
+}
+
+inline Eigen::Matrix<double, 3, 1> toEigen(const Point3d& v)
+{
+  return Eigen::Matrix<double, 3, 1>(v.m);
 }
 
 } // namespace aliceVision

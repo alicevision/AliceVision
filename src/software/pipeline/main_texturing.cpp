@@ -20,6 +20,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
+#include <geogram/basic/common.h>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -44,10 +46,13 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string inputMeshFilepath;
+
+    std::string inputMeshFilepath;    // Model to texture (HighPoly for diffuse, LowPoly for Diffuse+Normal)
+    std::string inputRefMeshFilepath; // HighPoly for NormalMap
+    aliceVision::mesh::EFileType outputMeshFileType;
+
     std::string outputFolder;
     std::string imagesFolder;
-    std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
     std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
     bool flipNormals = false;
     bool correctEV = false;
@@ -55,6 +60,10 @@ int aliceVision_main(int argc, char* argv[])
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
+
+    mesh::BumpMappingParams bumpMappingParams;
+    imageIO::EImageFileType normalFileType;
+    imageIO::EImageFileType heightFileType;
 
     po::options_description allParams("AliceVision texturing");
 
@@ -65,10 +74,12 @@ int aliceVision_main(int argc, char* argv[])
         ("inputMesh", po::value<std::string>(&inputMeshFilepath)->required(),
             "Input mesh to texture.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
-            "Folder for output mesh: OBJ, material and texture files.");
+            "Folder for output mesh");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("inputRefMesh", po::value<std::string>(&inputRefMeshFilepath),
+            "Optional input mesh to compute height maps and normal maps. If not provided, no additional maps with geometric information will be generated.")
         ("imagesFolder", po::value<std::string>(&imagesFolder),
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
@@ -76,8 +87,18 @@ int aliceVision_main(int argc, char* argv[])
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
-        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
-          imageIO::EImageFileType_informations().c_str())
+        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::OBJ),
+            "output mesh file type")
+        ("colorMappingFileType", po::value<imageIO::EImageFileType>(&texParams.textureFileType)->default_value(texParams.textureFileType),
+          imageIO::EImageFileType_informations().c_str())(
+        "heightFileType", po::value<imageIO::EImageFileType>(&heightFileType)->default_value(imageIO::EImageFileType::NONE),
+            imageIO::EImageFileType_informations().c_str())
+        ("normalFileType", po::value<imageIO::EImageFileType>(&normalFileType)->default_value(imageIO::EImageFileType::NONE),
+            imageIO::EImageFileType_informations().c_str())
+        ("displacementMappingFileType", po::value<imageIO::EImageFileType>(&bumpMappingParams.displacementFileType)->default_value(bumpMappingParams.displacementFileType),
+            imageIO::EImageFileType_informations().c_str())
+        ("bumpType", po::value<mesh::EBumpMappingType>(&bumpMappingParams.bumpType)->default_value(bumpMappingParams.bumpType),
+            "Use HeightMap for displacement or bump mapping")
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
@@ -152,24 +173,30 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
 
+    // set bump mapping file type
+    bumpMappingParams.bumpMappingFileType = (bumpMappingParams.bumpType == mesh::EBumpMappingType::Normal) ? normalFileType : heightFileType;
+
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    GEO::initialize();
+
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
-    // set output texture file type
-    const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
-
+    
     texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
     if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
-    ALICEVISION_LOG_INFO("Load dense point cloud.");
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
+    if(!sfmDataFilename.empty())
     {
-      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_INFO("Load dense point cloud.");
+        if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
+        {
+          ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+          return EXIT_FAILURE;
+        }
     }
 
     // initialization
@@ -183,7 +210,7 @@ int aliceVision_main(int argc, char* argv[])
     // load input mesh (to texture) obj file
     ALICEVISION_LOG_INFO("Load input mesh.");
     mesh.clear();
-    mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
+    mesh.loadWithAtlas(inputMeshFilepath, flipNormals);
 
     // load reference dense point cloud with visibilities
     ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
@@ -195,13 +222,16 @@ int aliceVision_main(int argc, char* argv[])
     {
         // Need visibilities to compute unwrap
         mesh.remapVisibilities(texParams.visibilityRemappingMethod, mp, refMesh);
-        ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
+        ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod + ")");
         mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
         ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
     // save final obj file
-    mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
+    if(!inputMeshFilepath.empty())
+    {
+        mesh.saveAs(outputFolder, "texturedMesh", outputMeshFileType, texParams.textureFileType, bumpMappingParams);
+    }
 
     if(texParams.subdivisionTargetRatio > 0)
     {
@@ -223,9 +253,25 @@ int aliceVision_main(int argc, char* argv[])
         // mesh.saveAsOBJ(outputFolder, "subdividedMesh", outputTextureFileType);
     }
 
-    // generate textures
-    ALICEVISION_LOG_INFO("Generate textures.");
-    mesh.generateTextures(mp, outputFolder, outputTextureFileType);
+    // generate diffuse textures
+    if(!inputMeshFilepath.empty() && !sfmDataFilename.empty() && texParams.textureFileType != imageIO::EImageFileType::NONE)
+    {
+        ALICEVISION_LOG_INFO("Generate textures.");
+        mesh.generateTextures(mp, outputFolder, texParams.textureFileType);
+    }
+
+
+    if(!inputRefMeshFilepath.empty() && !inputMeshFilepath.empty() &&
+       (bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE ||
+        bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE))
+    {
+        ALICEVISION_LOG_INFO("Generate height and normal maps.");
+
+        mesh::Mesh denseMesh;
+        denseMesh.load(inputRefMeshFilepath);
+
+        mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
+    }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
