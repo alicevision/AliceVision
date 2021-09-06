@@ -378,8 +378,7 @@ void meshMasking(
     const bool invert,
     const bool smoothBoundary,
     const bool undistortMasks,
-    const bool usePointsVisibilities,
-    aliceVision::mesh::EFileType outputMeshFileType
+    const bool usePointsVisibilities
     )
 {
     MaskCache maskCache(mp, masksFolders, undistortMasks);
@@ -518,7 +517,7 @@ void meshMasking(
     }
 
     // Save output mesh
-    filteredMesh.save(outputMeshPath, outputMeshFileType);
+    filteredMesh.save(outputMeshPath);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 }
@@ -534,7 +533,6 @@ int main(int argc, char **argv)
     std::string inputMeshPath;
     std::vector<std::string> masksFolders;
     std::string outputMeshPath;
-    aliceVision::mesh::EFileType outputMeshFileType;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
     int threshold = 1;
@@ -562,8 +560,6 @@ int main(int argc, char **argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
-            "output mesh file type")
         ("invert", po::value<bool>(&invert)->default_value(invert),
             "Invert the mask.")
         ("smoothBoundary", po::value<bool>(&smoothBoundary)->default_value(smoothBoundary),
@@ -676,7 +672,7 @@ int main(int argc, char **argv)
     }
 
     ALICEVISION_LOG_INFO("Mask mesh");
-    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities, outputMeshFileType);
+    meshMasking(mp, inputMesh, masksFolders, outputMeshPath, threshold, invert, smoothBoundary, undistortMasks, usePointsVisibilities);
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

@@ -82,9 +82,10 @@ std::istream& operator>>(std::istream& in, EFileType& meshFileType)
     return in;
 }
 
-void Mesh::save(const std::string& filepath, EFileType fileType)
+void Mesh::save(const std::string& filepath)
 {
-    const std::string fileTypeStr = EFileType_enumToString(fileType);
+    const std::string fileTypeStr = boost::filesystem::path(filepath).extension().string().substr(1);
+    const EFileType fileType = mesh::EFileType_stringToEnum(fileTypeStr);
 
     ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
 

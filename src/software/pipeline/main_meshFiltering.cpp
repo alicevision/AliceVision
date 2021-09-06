@@ -101,7 +101,6 @@ int aliceVision_main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputMeshPath;
-    aliceVision::mesh::EFileType outputMeshFileType;
 
     bool keepLargestMeshOnly = false;
 
@@ -130,8 +129,6 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::GLTF),
-            "output mesh file type")
         ("keepLargestMeshOnly", po::value<bool>(&keepLargestMeshOnly)->default_value(keepLargestMeshOnly),
             "Keep only the largest connected triangles group.")
         ("smoothingSubset",po::value<std::string>(&smoothingSubsetTypeName)->default_value(smoothingSubsetTypeName),
@@ -313,7 +310,7 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Save mesh.");
 
     // Save output mesh
-    outMesh.save(outputMeshPath, outputMeshFileType);
+    outMesh.save(outputMeshPath);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 
