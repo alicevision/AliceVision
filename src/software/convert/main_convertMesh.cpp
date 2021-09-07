@@ -141,8 +141,7 @@ int aliceVision_main(int argc, char** argv)
 
     // save output mesh
     ALICEVISION_LOG_INFO("Convert mesh.");
-    mesh::EFileType outputMeshFileType = mesh::EFileType_stringToEnum(fs::path(outputFilePath).extension().string().substr(1));
-    inputMesh->save(outputFilePath, outputMeshFileType);
+    inputMesh->save(outputFilePath);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 

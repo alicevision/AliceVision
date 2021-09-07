@@ -254,7 +254,6 @@ int aliceVision_main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string outputMesh;
-    aliceVision::mesh::EFileType outputMeshFileType;
     std::string outputDensePointCloud;
     std::string depthMapsFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
@@ -299,8 +298,6 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("outputMeshFileType", po::value<aliceVision::mesh::EFileType>(&outputMeshFileType)->default_value(aliceVision::mesh::EFileType::OBJ),
-            "output mesh file type")
         ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
             "Input filtered depth maps folder.")
         ("boundingBox", po::value<BoundingBox>(&boundingBox),
@@ -606,7 +603,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Save obj mesh file.");
     ALICEVISION_LOG_INFO("OUTPUT MESH " << outputMesh);
-    mesh->save(outputMesh, outputMeshFileType);
+    mesh->save(outputMesh);
     delete mesh;
 
 

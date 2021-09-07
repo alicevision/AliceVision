@@ -164,7 +164,7 @@ public:
     Mesh();
     ~Mesh();
 
-    void save(const std::string& filepath, EFileType filetype = EFileType::OBJ);
+    void save(const std::string& filepath);
 
     bool loadFromBin(const std::string& binFilepath);
     void saveToBin(const std::string& binFilepath);
