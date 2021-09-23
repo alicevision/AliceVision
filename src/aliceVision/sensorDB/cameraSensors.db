@@ -1513,7 +1513,44 @@ Fairphone;FP3;5.75;usercontribution
 Fairphone;FP2;4.61;devicespecifications
 Firefly;Firefly Aurii Envy;4.69;devicespecifications
 Firefly;Firefly Aurii Secret;4.71;devicespecifications
-FLIR;BFS-U3-200S6C-C;13.1
+FLIR;BFS-U3-17S7C-C;14.4;edmundoptics
+FLIR;BFS-U3-17S7M-C;14.4;edmundoptics
+FLIR;BFS-U3-04S2C-CS;4.97;edmundoptics
+FLIR;BFS-U3-04S2M-CS;4.97;edmundoptics
+FLIR;BFS-U3-13Y3C-C;6.14;edmundoptics
+FLIR;BFS-U3-13Y3M-C;6.14;edmundoptics
+FLIR;BFS-U3-16S2C-CS;4.97;edmundoptics
+FLIR;BFS-U3-16S2M-CS;4.97;edmundoptics
+FLIR;BFS-U3-23S3C-C;6.62;edmundoptics
+FLIR;BFS-U3-23S3M-C;6.62;edmundoptics
+FLIR;BFS-U3-28S5C-C;8.71;edmundoptics
+FLIR;BFS-U3-28S5M-C;8.71;edmundoptics
+FLIR;BFS-U3-31S4C-C;7.07;edmundoptics
+FLIR;BFS-U3-31S4M-C;7.07;edmundoptics
+FLIR;BFS-U3-32S4C-C;7.07;edmundoptics
+FLIR;BFS-U3-32S4M-C;7.07;edmundoptics
+FLIR;BFS-U3-51S5C-C;8.45;edmundoptics
+FLIR;BFS-U3-50S5C-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5M-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5PC-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5P-C;8.45;edmundoptics
+FLIR;BFS-U3-50S5M-C;8.45;edmundoptics
+FLIR;BFS-U3-63S4C-C;7.37;edmundoptics
+FLIR;BFS-U3-63S4M-C;7.37;edmundoptics
+FLIR;BFS-U3-70S7C-C;14.44;edmundoptics
+FLIR;BFS-U3-70S7M-C;14.44;edmundoptics
+FLIR;BFS-U3-88S6C-C;14.13;edmundoptics
+FLIR;BFS-U3-89S6C-C;14.13;edmundoptics
+FLIR;BFS-U3-88S6M-C;14.13;edmundoptics
+FLIR;BFS-U3-89S6M-C;14.13;edmundoptics
+FLIR;BFS-U3-120S4C-CS;7.4;edmundoptics
+FLIR;BFS-U3-120S4M-CS;7.4;edmundoptics
+FLIR;BFS-U3-122S6C-C;14.13;edmundoptics
+FLIR;BFS-U3-123S6C-C;14.13;edmundoptics
+FLIR;BFS-U3-122S6M-C;14.13;edmundoptics
+FLIR;BFS-U3-123S6M-C;14.13;edmundoptics
+FLIR;BFS-U3-200S6C-C;13.13;edmundoptics
+FLIR;BFS-U3-200S6M-C;13.13;edmundoptics
 Fly;Fly Power Plus 2;3.67;devicespecifications
 Fly;Fly Tornado One;4.69;devicespecifications
 Fujifilm;Fujifilm A150 ;6.2;imaging-resource
