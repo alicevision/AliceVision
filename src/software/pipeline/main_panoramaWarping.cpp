@@ -393,9 +393,9 @@ int aliceVision_main(int argc, char** argv)
 				spec_mask.tile_height = tileSize;
 				spec_weights.tile_width = tileSize;
 				spec_weights.tile_height = tileSize;
-				spec_view.attribute("compression", "piz");
-				spec_weights.attribute("compression", "piz");
-				spec_mask.attribute("compression", "piz");
+				spec_view.attribute("compression", "zips");
+				spec_weights.attribute("compression", "zips");
+				spec_mask.attribute("compression", "zips");
 				spec_view.extra_attribs = metadata;
 				spec_mask.extra_attribs = metadata;
 				spec_weights.extra_attribs = metadata;
