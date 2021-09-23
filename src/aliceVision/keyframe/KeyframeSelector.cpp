@@ -158,7 +158,6 @@ void KeyframeSelector::process()
     mediaInfo.tileHeight = (image.Height() / 2) / _nbTileSide;
     mediaInfo.tileWidth = (image.Width() / 2) / _nbTileSide;
     mediaInfo.spec = oiio::ImageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::UINT8); // always jpeg
-    mediaInfo.spec.attribute("CompressionQuality", 100);   // always best compression quality
     mediaInfo.spec.attribute("jpeg:subsampling", "4:4:4"); // always subsampling 4:4:4
     mediaInfo.spec.attribute("oiio:ColorSpace", "sRGB");   // always sRGB
     mediaInfo.spec.attribute("Make",  _cameraInfos[mediaIndex].brand);
