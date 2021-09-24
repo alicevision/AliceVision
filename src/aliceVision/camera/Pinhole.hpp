@@ -32,8 +32,8 @@ public:
   {
   }
 
-  Pinhole(unsigned int w, unsigned int h, double focalLengthPix, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPix, focalLengthPix, ppx, ppy, distortion)
+  Pinhole(unsigned int w, unsigned int h, double focalLengthPixX, double focalLengthPixY, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffsetDisto(w,h, focalLengthPixX, focalLengthPixY, ppx, ppy, distortion)
   {
   }
 
@@ -49,13 +49,19 @@ public:
     *this = dynamic_cast<const Pinhole&>(other); 
   }
 
-  double getFocalLengthPix() const { return _scale(0); }
+  double getFocalLengthPixX() const 
+  { 
+    return _scale(0); 
+  }
 
-  Vec2 getPrincipalPoint() const { return _offset; }
+  double getFocalLengthPixY() const 
+  { 
+    return _scale(1); 
+  }
 
   bool isValid() const override
   {
-    return getFocalLengthPix() > 0 && IntrinsicBase::isValid(); 
+    return getFocalLengthPixX() > 0 && getFocalLengthPixY() > 0 && IntrinsicBase::isValid(); 
   }
 
   EINTRINSIC getType() const override
@@ -66,8 +72,11 @@ public:
   Mat3 K() const
   {
     Mat3 K;
-    K  << _scale(0), 0.0, _offset(0),
-          0.0, _scale(1), _offset(1),
+
+    Vec2 pp = getPrincipalPoint();
+    
+    K  << _scale(0), 0.0, pp(0),
+          0.0, _scale(1), pp(1),
           0.0, 0.0, 1.0;
     return K;
   }
@@ -76,21 +85,21 @@ public:
   {
     _scale(0) = focalLengthPix;
     _scale(1) = focalLengthPix;
-    _offset(0) = ppx;
-    _offset(1) = ppy;
+    _offset(0) = ppx - double(_w) * 0.5;
+    _offset(1) = ppy - double(_h) * 0.5;
   }
   
   void setK(const Mat3 & K)
   {
     _scale(0) = K(0, 0);
     _scale(1) = K(1, 1);
-    _offset(0) = K(0, 2);
-    _offset(1) = K(1, 2);
+    _offset(0) = K(0, 2) - double(_w) * 0.5;
+    _offset(1) = K(1, 2) - double(_h) * 0.5;
   }
 
-  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  Vec2 project(const geometry::Pose3& pose, const Vec4& pt, bool applyDistortion = true) const override
   {
-    const Vec3 X = pose(pt); // apply pose
+    const Vec4 X = pose.getHomogeneous() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     const Vec2 distorted = this->addDistortion(P);
@@ -99,11 +108,11 @@ public:
     return impt;
   }
 
-  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec4 & pt)
   {
-    const Vec3 X = pose(pt); // apply pose
+    const Vec4 X = pose.getHomogeneous() * pt; // apply pose
 
-    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
+    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt.head(3));
 
     const Vec2 P = X.head<2>() / X(2);
 
@@ -118,15 +127,13 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
   }
 
-  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec3& pt) const override
+  Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4& pt) const override
   {
-    const Vec3 X = pose(pt); // apply pose
+    Eigen::Matrix4d T = pose.getHomogeneous();
 
-    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
-    T.block<3, 3>(0, 0) = pose.rotation();
-    T.block<3, 1>(0, 3) = pose.translation();
+    const Vec4 X = T * pt; // apply pose
 
-    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt.homogeneous());
+    const Eigen::Matrix<double, 4, 16> d_X_d_T = getJacobian_AB_wrt_A<4, 4, 1>(T, pt);
 
     const Vec2 P = X.head<2>() / X(2);
 
@@ -141,42 +148,45 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
-  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) const override
+  Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
   {
-    const Vec3 X = pose(pt); // apply pose
+    Eigen::Matrix4d T = pose.getHomogeneous();
+    const Vec4 X = T * pt; // apply pose
 
-    const Eigen::Matrix<double, 3, 3>& d_X_d_P = pose.rotation();
+    const Eigen::Matrix<double, 4, 4> & d_X_d_P = getJacobian_AB_wrt_B<4, 4, 1>(T, pt);
 
     const Vec2 P = X.head<2>() / X(2);
 
-    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    Eigen::Matrix<double, 2, 4> d_P_d_X;
     d_P_d_X(0, 0) = 1 / X(2);
     d_P_d_X(0, 1) = 0;
     d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(0, 3) = 0;
     d_P_d_X(1, 0) = 0;
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+    d_P_d_X(1, 3) = 0;
+    
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
   }
 
-  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) const
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt) const
   {
-    const Vec3 X = pose(pt); // apply pose
+    const Vec4 X = pose.getHomogeneous() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) const
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt) const
   {
     return getDerivativeCam2ImaWrtPrincipalPoint();
   }
 
-  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) const
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec4 & pt) const
   {
-
-    const Vec3 X = pose(pt); // apply pose
+    const Vec4 X = pose.getHomogeneous() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     const Vec2 distorted = this->addDistortion(P);
@@ -184,18 +194,18 @@ public:
     return getDerivativeCam2ImaWrtScale(distorted);
   }
 
-  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec3& pt3D) const override {
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(const geometry::Pose3& pose, const Vec4& pt3D) const override {
     
     Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
 
-    ret.block<2, 1>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
-    ret.block<2, 2>(0, 1) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+    ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
+    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
 
     if (hasDistortion()) {
 
       size_t distortionSize = _pDistortion->getDistortionParametersCount();
 
-      ret.block(0, 3, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
+      ret.block(0, 4, 2, distortionSize) = getDerivativeProjectWrtDisto(pose, pt3D);
     }
 
     return ret;
@@ -236,13 +246,8 @@ public:
   Mat34 getProjectiveEquivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
-    Mat3 K = Eigen::Matrix3d::Identity();
-    K(0, 0) = _scale(0);
-    K(1, 1) = _scale(1);
-    K(0, 2) = _offset(0);
-    K(1, 2) = _offset(1);
 
-    P_from_KRt(K, pose.rotation(), pose.translation(), &P);
+    P_from_KRt(K(), pose.rotation(), pose.translation(), &P);
     return P;
   }
 

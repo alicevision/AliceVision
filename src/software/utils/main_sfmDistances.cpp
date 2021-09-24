@@ -89,9 +89,10 @@ void extractLandmarksPositions(std::vector<std::pair<std::string, Vec3>>& output
 {
     const std::set<feature::EImageDescriberType> isCCTag = {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-        feature::EImageDescriberType::CCTAG3, feature::EImageDescriberType::CCTAG4
+      feature::EImageDescriberType::CCTAG3,
+      feature::EImageDescriberType::CCTAG4
 #endif
-        };
+      };
     const std::set<feature::EImageDescriberType> descTypes(landmarksDescriberTypes.begin(), landmarksDescriberTypes.end());
     std::set<IndexT> searchIdx;
     for (const std::string& s : search)

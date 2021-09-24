@@ -8,6 +8,7 @@
 #include "geoMesh.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
 
 #include <geogram/basic/permutation.h>
 #include <geogram/basic/attributes.h>
@@ -136,6 +137,64 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
     }
 
     ALICEVISION_LOG_INFO("remapMeshVisibility done.");
+}
+
+void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh& mesh)
+{
+    ALICEVISION_LOG_INFO("remapMeshVisibility based on triangles normals start.");
+
+    PointsVisibility& out_ptsVisibilities = mesh.pointsVisibilities;
+
+    GEO::initialize();
+    GEO::Mesh meshG;
+    toGeoMesh(mesh, meshG);
+
+    // MeshFacetAABB will reorder the mesh, so we need to keep indices
+    GEO::Attribute<GEO::index_t> reorderedVerticesAttr(meshG.vertices.attributes(), "reorder");
+    for(int i = 0; i < meshG.vertices.nb(); ++i)
+        reorderedVerticesAttr[i] = i;
+
+    GEO::MeshFacetsAABB meshAABB(meshG); // warning: mesh_reorder called inside
+
+    GEO::vector<GEO::index_t> reorderedVertices = reorderedVerticesAttr.get_vector();
+
+    if(out_ptsVisibilities.size() != mesh.pts.size())
+    {
+        out_ptsVisibilities.resize(mesh.pts.size());
+    }
+    const std::size_t nbCameras = mp.CArr.size();
+
+    StaticVector<Point3d> normalsPerVertex;
+    mesh.computeNormalsForPts(normalsPerVertex);
+
+#pragma omp parallel for
+    for(int vi = 0; vi < mesh.pts.size(); ++vi)
+    {
+        const Point3d& v = mesh.pts[vi];
+        PointVisibility& vertexVisibility = out_ptsVisibilities[vi];
+        const Point3d& n = normalsPerVertex[vi];
+
+        // Check by which camera the vertex is visible
+        for(std::size_t camIndex = 0; camIndex < nbCameras; ++camIndex)
+        {
+            const Point3d& c = mp.CArr[camIndex];
+
+            // check vertex normal (another solution would be to check each neighboring triangle)
+            const double angle = angleBetwV1andV2((c - v).normalize(), normalsPerVertex[vi]);
+            if(angle > 90.0)
+                continue;
+
+            const GEO::vec3 gv(v.x, v.y, v.z);
+            const GEO::vec3 gc(c.x, c.y, c.z);
+            const GEO::vec3 vc = gc - gv;
+            // check if there is an occlusion on the segment between the current mesh vertex and the camera
+            const bool occlusion = meshAABB.ray_intersection(GEO::Ray(gv + (vc * 0.00001), vc), 1.0);
+            if(occlusion)
+                continue;
+
+            vertexVisibility.push_back(camIndex);
+        }
+    }
 }
 
 } // namespace mesh

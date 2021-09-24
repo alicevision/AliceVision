@@ -201,6 +201,12 @@ void readImageMetadata(const std::string& path, int& width, int& height, std::ma
     metadata.emplace(param.name().string(), param.get_string());
 }
 
+void readImageSize(const std::string& path, int& width, int& height)
+{
+    std::map<std::string, std::string> metadata;
+    readImageMetadata(path, width, height, metadata);
+}
+
 template<typename T>
 void getBufferFromImage(Image<T>& image,
                         oiio::TypeDesc format,
@@ -252,6 +258,9 @@ void readImage(const std::string& path,
   // check requested channels number
   assert(nchannels == 1 || nchannels >= 3);
 
+  if(!fs::exists(path))
+    ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
+
   oiio::ImageSpec configSpec;
 
   // libRAW configuration
@@ -272,11 +281,11 @@ void readImage(const std::string& path,
   inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
   if(!inBuf.initialized())
-    throw std::runtime_error("Cannot find/open image file '" + path + "'.");
+    ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
 
   // check picture channels number
   if(inBuf.spec().nchannels != 1 && inBuf.spec().nchannels < 3)
-    throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+    ALICEVISION_THROW_ERROR("Can't load channels of image file: '" << path << "', nchannels=" << inBuf.spec().nchannels);
 
   // color conversion
   if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
@@ -436,8 +445,7 @@ void writeImage(const std::string& path,
   imageSpec.extra_attribs = metadata; // add custom metadata
 
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-  imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
-  imageSpec.attribute("compression", isEXR ? "piz" : "none"); // if possible, set compression (piz for EXR, none for the other)
+  imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
   if(roi.defined() && isEXR)
   {
       imageSpec.set_roi_full(roi);
@@ -521,8 +529,7 @@ void writeImageNoFloat(const std::string& path,
   imageSpec.extra_attribs = metadata; // add custom metadata
 
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
-  imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
-  imageSpec.attribute("compression", isEXR ? "none" : "none"); // if possible, set compression (piz for EXR, none for the other)
+  imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
 
   const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write

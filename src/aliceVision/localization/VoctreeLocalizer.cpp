@@ -764,7 +764,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
                                           std::vector<voctree::DocMatch>& out_matchedImages,
                                           const std::string& imagePath) const
 {
-  assert(out_descTypes.size() == 0);
+  assert(out_descTypes.empty());
 
   // A. Find the (visually) similar images in the database 
   // pass the descriptors through the vocabulary tree to get the visual words

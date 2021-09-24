@@ -52,6 +52,21 @@ if(ALICEVISION_BUILD_SFM)
           Boost::boost
   )
 
+  # Image processing
+  if(ALICEVISION_HAVE_OPENCV)
+    alicevision_add_software(aliceVision_imageMasking
+      SOURCE main_imageMasking.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_image
+            aliceVision_imageMasking
+            aliceVision_system
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            ${OpenCV_LIBRARIES}
+            ${Boost_LIBRARIES}
+    )
+  endif()
+
   # Feature extraction
   alicevision_add_software(aliceVision_featureExtraction
     SOURCE main_featureExtraction.cpp
@@ -221,6 +236,19 @@ if(ALICEVISION_BUILD_SFM)
     )
   endif()
 
+  alicevision_add_software(aliceVision_distortionCalibration
+    SOURCE main_distortionCalibration.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_dataio
+          aliceVision_image
+          aliceVision_calibration
+          aliceVision_system
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+  )
+
   # Calibrate a rig
   alicevision_add_software(aliceVision_rigCalibration
     SOURCE main_rigCalibration.cpp
@@ -380,6 +408,20 @@ if(ALICEVISION_BUILD_MVS)
           Boost::filesystem
   )
 
+  # Mesh Masking
+  alicevision_add_software(aliceVision_meshMasking
+    SOURCE main_meshMasking.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_sfmMvsUtils
+          aliceVision_mvsUtils
+          aliceVision_mesh
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+  )
+
   # Mesh Resampling
   alicevision_add_software(aliceVision_meshResampling
     SOURCE main_meshResampling.cpp
@@ -397,6 +439,7 @@ if(ALICEVISION_BUILD_MVS)
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
           aliceVision_mvsData
+          aliceVision_sfmMvsUtils
           aliceVision_mvsUtils
           aliceVision_mesh
           aliceVision_sfmData

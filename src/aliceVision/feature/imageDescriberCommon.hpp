@@ -40,6 +40,10 @@ enum class EImageDescriberType: unsigned char
 #endif
   , AKAZE_OCV = 41
 #endif
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+  , APRILTAG16H5 = 50
+#endif
 };
 
 /**
@@ -72,10 +76,16 @@ std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::st
 inline bool isMarker(EImageDescriberType imageDescriberType)
 {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    return imageDescriberType == EImageDescriberType::CCTAG3 || imageDescriberType == EImageDescriberType::CCTAG4;
-#else
-    return false;
+    if (imageDescriberType == EImageDescriberType::CCTAG3 || imageDescriberType == EImageDescriberType::CCTAG4) {
+      return true;
+    }
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    if (imageDescriberType == EImageDescriberType::APRILTAG16H5) {
+      return true;
+    }
+#endif
+  return false;
 }
 
 /**
@@ -99,6 +109,11 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:
     case EImageDescriberType::CCTAG4:
+        return 1.0f;
+#endif
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    case EImageDescriberType::APRILTAG16H5:
         return 1.0f;
 #endif
 

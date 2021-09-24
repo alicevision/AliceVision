@@ -21,6 +21,9 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     allMarkerDescTypes.insert(feature::EImageDescriberType::CCTAG3);
     allMarkerDescTypes.insert(feature::EImageDescriberType::CCTAG4);
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    allMarkerDescTypes.insert(feature::EImageDescriberType::APRILTAG16H5);
+#endif
     if (allMarkerDescTypes.empty())
         return;
 
@@ -56,15 +59,29 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
 
         const auto obs = landmark.observations.begin();
         const feature::Regions& regions = regionPerView.getRegions(obs->first, landmark.descType);
-        const feature::CCTAG_Regions& cctagRegions = dynamic_cast<const feature::CCTAG_Regions&>(regions);
-        const auto& d = cctagRegions.Descriptors()[obs->second.id_feat];
-        for (int i = 0; i < d.size(); ++i)
-        {
-            if (d[i] == 255)
+        const feature::CCTAG_Regions* cctagRegions = dynamic_cast<const feature::CCTAG_Regions*>(&regions);
+        const feature::APRILTAG_Regions* apriltagRegions = dynamic_cast<const feature::APRILTAG_Regions*>(&regions);
+        if (cctagRegions) {
+            const auto& d = cctagRegions->Descriptors()[obs->second.id_feat];
+            for (int i = 0; i < d.size(); ++i)
             {
-                ALICEVISION_LOG_TRACE("Found marker: " << i << " (landmarkId: " << landmarkIt.first << ").");
-                landmark.rgb.r() = i;
-                break;
+                if (d[i] == 255)
+                {
+                    ALICEVISION_LOG_TRACE("Found cctag marker: " << i << " (landmarkId: " << landmarkIt.first << ").");
+                    landmark.rgb.r() = i;
+                    break;
+                }
+            }
+        } else if (apriltagRegions) {
+            const auto& d = apriltagRegions->Descriptors()[obs->second.id_feat];
+            for (int i = 0; i < d.size(); ++i)
+            {
+                if (d[i] == 255)
+                {
+                    ALICEVISION_LOG_TRACE("Found apriltag marker: " << i << " (landmarkId: " << landmarkIt.first << ").");
+                    landmark.rgb.r() = i;
+                    break;
+                }
             }
         }
     }

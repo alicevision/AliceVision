@@ -70,7 +70,7 @@ bool Rig::initializeCalibration()
     return _isInitialized;
   }
   // check that there are cameras
-  assert(_vLocalizationResults.size()>0);
+  assert(!_vLocalizationResults.empty());
   
   // make all the cameras have the same number of localizationResults (equal to the shortest clip)
   const std::size_t nCams = _vLocalizationResults.size();
@@ -622,7 +622,7 @@ double reprojectionError(const localization::LocalizationResult & localizationRe
     // Inlier 3D point
     const Vec3 & point3D = localizationResult.getPt3D().col(iInliers);
     // Its reprojection
-    const Vec2 itsReprojection = localizationResult.getIntrinsics().project(pose, point3D);
+    const Vec2 itsReprojection = localizationResult.getIntrinsics().project(pose, point3D.homogeneous());
     // Its associated observation location
     const Vec2 & point2D = localizationResult.getPt2D().col(iInliers);
     // Residual

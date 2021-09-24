@@ -109,7 +109,7 @@ void createDenseSfMData(const sfmData::SfMData& sfmData,
       {
         const sfmData::View& view = sfmData.getView(mp.getViewId(cam));
         const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
-        const sfmData::Observation observation(intrinsicPtr->project(sfmData.getPose(view).getTransform(), pt3D, true), UndefinedIndexT, unknownScale); // apply distortion
+        const sfmData::Observation observation(intrinsicPtr->project(sfmData.getPose(view).getTransform(), pt3D.homogeneous(), true), UndefinedIndexT, unknownScale); // apply distortion
         landmark.observations[view.getViewId()] = observation;
       }
     }
@@ -294,7 +294,7 @@ int aliceVision_main(int argc, char* argv[])
         ("output,o", po::value<std::string>(&outputDensePointCloud)->required(),
           "Output Dense SfMData file.")
         ("outputMesh,o", po::value<std::string>(&outputMesh)->required(),
-          "Output mesh (OBJ file format).");
+          "Output mesh");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -602,7 +602,8 @@ int aliceVision_main(int argc, char* argv[])
     sfmDataIO::Save(densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
 
     ALICEVISION_LOG_INFO("Save obj mesh file.");
-    mesh->saveToObj(outputMesh);
+    ALICEVISION_LOG_INFO("OUTPUT MESH " << outputMesh);
+    mesh->save(outputMesh);
     delete mesh;
 
 

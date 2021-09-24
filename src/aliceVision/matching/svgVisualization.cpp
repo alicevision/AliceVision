@@ -34,6 +34,9 @@ std::string describerTypeColor(feature::EImageDescriberType descType )
     case feature::EImageDescriberType::CCTAG3:         return "blue";
     case feature::EImageDescriberType::CCTAG4:         return "blue";
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_APRILTAG)
+    case feature::EImageDescriberType::APRILTAG16H5:   return "blue";
+#endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)

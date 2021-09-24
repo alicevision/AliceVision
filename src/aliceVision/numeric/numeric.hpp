@@ -69,9 +69,12 @@ using Eigen::Map;
 using EigenDoubleTraits = Eigen::NumTraits<double>;
 
 using Vec3 = Eigen::Vector3d;
+using Vec3i = Eigen::Vector3i;
+using Vec3f = Eigen::Vector3f;
+
 using Vec2i = Eigen::Vector2i;
 using Vec2f = Eigen::Vector2f;
-using Vec3f = Eigen::Vector3f;
+
 using Vec9 = Eigen::Matrix<double, 9, 1>;
 
 using Quaternion = Eigen::Quaternion<double>;

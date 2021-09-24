@@ -10,6 +10,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/imageMasking/imageMasking.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
 #include <OpenImageIO/imagebuf.h>
@@ -74,18 +75,6 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
     return in;
 }
 
-template <class T>
-std::function<void(T)> optInRange(T min, T max, const char * opt_name)
-{
-    return [=] (T v)
-    { 
-        if(v < min || v > max)
-        { 
-            throw po::validation_error(po::validation_error::invalid_option_value, opt_name, std::to_string(v));
-        }
-    };
-};
-
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
@@ -135,17 +124,17 @@ int main(int argc, char **argv)
             " * " + EAlgorithm_enumToString(EAlgorithm::HSV) + ": selected range in the Hue Saturation Value color space.\n"
             " * " + EAlgorithm_enumToString(EAlgorithm::GrabCut) + ": not implemented"
             ).c_str())
-        ("hsv-hue", po::value<float>(&hsv.hue)->default_value(hsv.hue)->notifier(optInRange(0.f, 1.f, "hsv-hue")),
+        ("hsvHue", po::value<float>(&hsv.hue)->default_value(hsv.hue)->notifier(optInRange(0.f, 1.f, "hsvHue")),
             "Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.")
-        ("hsv-hueRange", po::value<float>(&hsv.hueRange)->default_value(hsv.hueRange)->notifier(optInRange(0.f, 1.f, "hsv-hueRange")),
+        ("hsvHueRange", po::value<float>(&hsv.hueRange)->default_value(hsv.hueRange)->notifier(optInRange(0.f, 1.f, "hsvHueRange")),
             "Tolerance around the hue value to isolate.")
-        ("hsv-minSaturation", po::value<float>(&hsv.minSaturation)->default_value(hsv.minSaturation)->notifier(optInRange(0.f, 1.f, "hsv-minSaturation")),
+        ("hsvMinSaturation", po::value<float>(&hsv.minSaturation)->default_value(hsv.minSaturation)->notifier(optInRange(0.f, 1.f, "hsvMinSaturation")),
             "Hue is meaningless if saturation is low. Do not mask pixels below this threshold.")
-        ("hsv-maxSaturation", po::value<float>(&hsv.maxSaturation)->default_value(hsv.maxSaturation)->notifier(optInRange(0.f, 1.f, "hsv-maxSaturation")),
+        ("hsvMaxSaturation", po::value<float>(&hsv.maxSaturation)->default_value(hsv.maxSaturation)->notifier(optInRange(0.f, 1.f, "hsvMaxSaturation")),
             "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
-        ("hsv-minValue", po::value<float>(&hsv.minValue)->default_value(hsv.minValue)->notifier(optInRange(0.f, 1.f, "hsv-minValue")),
+        ("hsvMinValue", po::value<float>(&hsv.minValue)->default_value(hsv.minValue)->notifier(optInRange(0.f, 1.f, "hsvMinValue")),
             "Hue is meaningless if value is low. Do not mask pixels below this threshold.")
-        ("hsv-maxValue", po::value<float>(&hsv.maxValue)->default_value(hsv.maxValue)->notifier(optInRange(0.f, 1.f, "hsv-maxValue")),
+        ("hsvMaxValue", po::value<float>(&hsv.maxValue)->default_value(hsv.maxValue)->notifier(optInRange(0.f, 1.f, "hsvMaxValue")),
             "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->default_value(depthMapFolder),
             "Optional input depth map folder to use instead of the color image to generate the mask.")

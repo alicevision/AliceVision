@@ -8,15 +8,11 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/mesh/Texturing.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
-#include <geogram/mesh/mesh.h>
-#include <geogram/mesh/mesh_io.h>
-
-#include <geogram/basic/command_line.h>
-#include <geogram/basic/command_line_args.h>
 
 #include <iostream>
 #include <fstream>
@@ -58,14 +54,12 @@ int aliceVision_main(int argc, char** argv)
       ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
         "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl)");
 
-    po::options_description optionalParams("Optional parameters");
-
     po::options_description logParams("Log parameters");
     logParams.add_options()
       ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
         "verbosity level (fatal, error, warning, info, debug, trace).");
 
-    allParams.add(requiredParams).add(optionalParams).add(logParams);
+    allParams.add(requiredParams).add(logParams);
 
     po::variables_map vm;
     try
@@ -126,30 +120,29 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    GEO::initialize();
-    GEO::CmdLine::import_arg_group("standard");
-    GEO::CmdLine::import_arg_group("algo");
-
-    ALICEVISION_LOG_INFO("Geogram initialized.");
-
-    GEO::Mesh inputMesh;
-
     // load input mesh
-    if(!GEO::mesh_load(inputMeshPath, inputMesh))
+    mesh::Texturing texturing;
+    texturing.loadWithAtlas(inputMeshPath);
+    mesh::Mesh* inputMesh = texturing.mesh;
+
+    if(!inputMesh)
     {
-        ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputMeshPath << "\".");
+        ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
+        return EXIT_FAILURE;
+    }
+
+    if(inputMesh->pts.empty() || inputMesh->tris.empty())
+    {
+        ALICEVISION_LOG_ERROR("Error: empty mesh from the file " << inputMeshPath);
+        ALICEVISION_LOG_ERROR("Input mesh: " << inputMesh->pts.size() << " vertices and " << inputMesh->tris.size()
+                                             << " facets.");
         return EXIT_FAILURE;
     }
 
     // save output mesh
     ALICEVISION_LOG_INFO("Convert mesh.");
-    if(!GEO::mesh_save(inputMesh, outputFilePath))
-    {
-        ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputFilePath << "\".");
-        return EXIT_FAILURE;
-    }
+    inputMesh->save(outputFilePath);
 
-    ALICEVISION_LOG_INFO("Mesh file: \"" << outputFilePath << "\" saved.");
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
     return EXIT_SUCCESS;

@@ -421,7 +421,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 {
     ALICEVISION_LOG_DEBUG("SGM (_rc: " << (_rc + 1) << " / " << _sp.mp.ncams << ")");
 
-    if(_sgmTCams.size() == 0)
+    if(_sgmTCams.empty())
     {
       return false;
     }

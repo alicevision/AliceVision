@@ -4,20 +4,27 @@ set(calibration_files_headers
   bestImages.hpp
   patternDetect.hpp
   exportData.hpp
+  distortionEstimation.hpp
+  checkerDetector.hpp
 )
 
 # Sources
 set(calibration_files_sources
-  calibration.cpp
-  bestImages.cpp
-  patternDetect.cpp
-  exportData.cpp
+  distortionEstimation.cpp
+  checkerDetector.cpp
 )
+
+if(ALICEVISION_HAVE_OPENCV)
+  list(APPEND calibration_files_sources 
+    bestImages.cpp
+    calibration.cpp
+    patternDetect.cpp
+    exportData.cpp
+  )
+endif()
 
 alicevision_add_library(aliceVision_calibration
   SOURCES ${calibration_files_headers} ${calibration_files_sources}
-  PUBLIC_LINKS
-    ${OpenCV_LIBS}
   PRIVATE_LINKS
     aliceVision_image
     aliceVision_system
@@ -25,8 +32,16 @@ alicevision_add_library(aliceVision_calibration
     Boost::filesystem
     Boost::program_options
     Boost::boost
+    ${CERES_LIBRARIES}
 )
+
+if(ALICEVISION_HAVE_OPENCV)
+  target_link_libraries(aliceVision_calibration PUBLIC ${OpenCV_LIBS})
+endif()
 
 if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_calibration PRIVATE CCTag::CCTag)
 endif()
+
+
+alicevision_add_test(distortioncalibration_test.cpp   NAME "calibration_distortion"    LINKS aliceVision_calibration aliceVision_sfm aliceVision_system)

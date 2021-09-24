@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <stdexcept>
 
 
 // These constants define the current software version.
@@ -351,8 +352,8 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // read K matrix if valid
-  double defaultPPx = -1.0;
-  double defaultPPy = -1.0;
+  double defaultPPx = 0.0;
+  double defaultPPy = 0.0;
 
   if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, defaultPPx, defaultPPy))
   {
@@ -443,62 +444,36 @@ int aliceVision_main(int argc, char **argv)
     const fs::path parentPath = fs::path(view.getImagePath()).parent_path();
     if(boost::starts_with(parentPath.parent_path().stem().string(), "rig"))
     {
+      try
+      {
+        IndexT subPoseId;
+        std::string prefix;
+        std::string suffix;
+        if(!sfmDataIO::extractNumberFromFileStem(parentPath.stem().string(), subPoseId, prefix, suffix))
         {
-            // Extract the rig index from the folder name.
-            // Warning: Needs to be an index starting from 0 (and not a random number)
-            boost::smatch matches;
-            std::string p = parentPath.stem().string();
-            if (boost::regex_search(p, matches, extractNumberRegex))
-            {
-                std::string s = matches[matches.size() - 1].str();
-                int subPoseId = boost::lexical_cast<IndexT>(s);
-                view.setRigAndSubPoseId(std::hash<std::string>()(parentPath.parent_path().string()), subPoseId);
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << ", p: " << p << ". Used as single image.");
-            }
+          ALICEVISION_THROW_ERROR("Cannot find sub-pose id from image path: " << parentPath);
         }
-        {
-            // Extract the frame ID which will be used to associate the frames from the different cameras of the rig.
-            IndexT frameId = 0;
-            const std::string p = fs::path(view.getImagePath()).stem().string();
 
-            {
-                boost::smatch matches;
-                std::string s = p;
-                std::string out;
-                while (boost::regex_search(s, matches, extractComposedNumberRegex))
-                {
-                    out = matches[0];
-                    s = matches.suffix().str();
-                }
-                out = boost::regex_replace(out, boost::regex("\\D"), std::string(""));
-                if (!out.empty())
-                {
-                    frameId = boost::lexical_cast<IndexT>(out);
-                }
-                else
-                {
-                    frameId = std::hash<std::string>()(p);
-                }
-            }
-            view.setFrameId(frameId);
-        }
+        std::hash<std::string> hash; // TODO use boost::hash_combine
+        view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
 
         #pragma omp critical
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;
+      }
+      catch(std::exception& e)
+      {
+        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << e.what() << std::endl << "Used as single image.");
+      }
     }
-    else
+
+    // try to detect image sequence
     {
-        // Extract a frame number if there is one.
-        boost::smatch matches;
-        std::string p = fs::path(view.getImagePath()).stem().string();
-        if (boost::regex_search(p, matches, extractNumberRegex))
+        IndexT frameId;
+        std::string prefix;
+        std::string suffix;
+        if(sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
         {
-            std::string s = matches[matches.size() - 1].str();
-            IndexT frameId = boost::lexical_cast<IndexT>(s);
-            view.setFrameId(frameId);
+          view.setFrameId(frameId);
         }
     }
     
@@ -516,6 +491,7 @@ int aliceVision_main(int argc, char **argv)
 
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
+    double sensorHeight = -1;
     enum class ESensorWidthSource {
         FROM_DB,
         FROM_METADATA_ESTIMATION,
@@ -539,7 +515,7 @@ int aliceVision_main(int argc, char **argv)
       camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
       if(intrinsic != nullptr)
       {
-        if(intrinsic->getFocalLengthPix() > 0)
+        if(intrinsic->getFocalLengthPixX() > 0)
         {
           // the view intrinsic is initialized
           #pragma omp atomic
@@ -561,14 +537,14 @@ int aliceVision_main(int argc, char **argv)
         ALICEVISION_LOG_TRACE("Sensor width found in database: " << std::endl
                               << "\t- brand: " << make << std::endl
                               << "\t- model: " << model << std::endl
-                              << "\t- sensor width: " << datasheet._sensorSize << " mm");
+                              << "\t- sensor width: " << datasheet._sensorWidth << " mm");
 
         if(datasheet._model != model) {
           // the camera model in database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
         }
 
-        sensorWidth = datasheet._sensorSize;
+        sensorWidth = datasheet._sensorWidth;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0) {
@@ -649,13 +625,21 @@ int aliceVision_main(int argc, char **argv)
     intrinsic->setInitializationMode(intrinsicInitMode);
 
     // Set sensor size
-    if (imageRatio > 1.0) {
+    if (sensorHeight > 0.0) 
+    {
       intrinsicBase->setSensorWidth(sensorWidth);
-      intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+      intrinsicBase->setSensorHeight(sensorHeight);
     }
-    else {
-      intrinsicBase->setSensorWidth(sensorWidth);
-      intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+    else 
+    {
+      if (imageRatio > 1.0) {
+        intrinsicBase->setSensorWidth(sensorWidth);
+        intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+      }
+      else {
+        intrinsicBase->setSensorWidth(sensorWidth);
+        intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+      }
     }
 
     if(intrinsic && intrinsic->isValid())
@@ -829,7 +813,7 @@ int aliceVision_main(int argc, char **argv)
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
                         << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
                         << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor size: " << unsureSensor.second.second._sensorSize << " mm");
+                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
     ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
   }
 

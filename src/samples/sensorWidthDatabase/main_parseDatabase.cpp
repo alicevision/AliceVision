@@ -69,11 +69,12 @@ int main(int argc, char ** argv)
 
   if ( !aliceVision::sensorDB::getInfo( brandName, modelName, vec_database, datasheet ) )
   {
-    std::cout << "The camera " << modelName << " doesn't exist in the database" << std::endl;
+    ALICEVISION_LOG_ERROR("The camera " << modelName << " doesn't exist in the database.");
     return EXIT_FAILURE;
   }
 
-  std::cout << "Result : " << std::endl << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorSize << std::endl;
+  ALICEVISION_LOG_INFO("Result: " << std::endl
+                       << datasheet._brand << "\t" << datasheet._model << "\t" << datasheet._sensorWidth);
 
   return EXIT_SUCCESS;
 }

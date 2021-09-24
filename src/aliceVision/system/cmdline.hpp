@@ -12,9 +12,10 @@
 // This file is header only, so the module don't need to have program_options as a dependency
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/option.hpp>
+#include <boost/program_options/errors.hpp>
 
+#include <functional>
 #include <ostream>
-
 
 #define ALICEVISION_COMMANDLINE_START \
 \
@@ -42,6 +43,23 @@ system::Timer commandLineTimer; \
   return EXIT_FAILURE; \
 }
 
+
+namespace aliceVision {
+
+template <class T>
+std::function<void(T)> optInRange(T min, T max, const char* opt_name)
+{
+    return [=](T v) {
+        if(v < min || v > max)
+        {
+            throw boost::program_options::validation_error(
+                boost::program_options::validation_error::invalid_option_value, opt_name,
+                                       std::to_string(v));
+        }
+    };
+};
+
+}
 
 namespace boost {
 

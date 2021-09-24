@@ -26,7 +26,7 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinholeFisheye_disto_undisto_Fisheye1)
 {
-  const PinholeFisheye1 cam(1000, 1000, 1000, 500, 500,
+  const PinholeFisheye1 cam(1000, 1000, 1000, 1000, 0, 0,
                                     0.1); // K1
 
   const double epsilon = 1e-4;
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(cameraPinholeFisheye_disto_undisto_Fisheye1)
     const geometry::Pose3 pose(geometry::randomPose());
 
     const Vec3 pt3d = cam.backproject(ptImage_gt, true, pose, depth_gt);
-    const Vec2 pt2d_proj = cam.project(pose, pt3d, true);
+    const Vec2 pt2d_proj = cam.project(pose, pt3d.homogeneous(), true);
 
     EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
   }

@@ -77,8 +77,16 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
   // LS model from the above inliers
   std::vector<typename Kernel::ModelT> models;
   kernel.fitLS(inliers, models);
-  assert(models.size()==1);   // LS fitting must always return 1 model
-  
+  if (models.size() == 0) 
+  {
+    inliers.clear();
+    if(verbose)
+    {
+      ALICEVISION_LOG_WARNING("[IRLS] returning cause models.size() == 0");
+    }
+    return std::numeric_limits<double>::infinity();
+  }
+
   // change threshold for refinement
   theta *= mtheta;
   
@@ -214,9 +222,11 @@ double localOptimization(const Kernel& kernel,
   std::vector<typename Kernel::ModelT> models;
 //  ALICEVISION_LOG_DEBUG("[localOptim] before: ");
   kernel.fitLS(inliersBase, models);
-//  ALICEVISION_LOG_DEBUG("[localOptim] after: ");
-  assert(models.size()==1);   // LS fitting must always return 1 model
-  
+  if (models.size()== 0) 
+  {
+    return bestScore;
+  }
+
   // find inliers with t again over all the samples
   inliersBase.clear();
   scorer.score(kernel, models[0], all_samples, inliersBase, theta);
@@ -243,8 +253,11 @@ double localOptimization(const Kernel& kernel,
     // LS estimation from the sample
     models.clear();
     kernel.fitLS(sample, models);
-    assert(models.size()==1);   // LS fitting must always return 1 model
-  
+    if (models.size() == 0)
+    {
+      continue;
+    }
+
     // IRLS 
     std::vector<std::size_t> inliers;
     const double score = iterativeReweightedLeastSquares(kernel, scorer, models[0], inliers);

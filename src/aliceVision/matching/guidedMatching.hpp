@@ -435,7 +435,7 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
     
     const auto bucket_stop = pix_to_bucket(x0.cast<int>(), widthR, heightR);
 
-    if(bucket_stop - bucket_start > 0)
+    if(bucket_stop > bucket_start)
     {
       // test candidate buckets
       for(Buckets_vec::const_iterator itBs = buckets.begin() + bucket_start;

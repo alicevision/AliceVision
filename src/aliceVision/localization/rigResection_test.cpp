@@ -168,7 +168,7 @@ void generateRandomExperiment(std::size_t numCameras,
         if(localPts(2,i) > 0)
         {
           // project it
-          Vec2 feat = vec_queryIntrinsics[cam].project(geometry::Pose3(), localPts.col(i));
+          Vec2 feat = vec_queryIntrinsics[cam].project(geometry::Pose3(), localPts.col(i).homogeneous());
           
           if(noise > std::numeric_limits<double>::epsilon())
           {

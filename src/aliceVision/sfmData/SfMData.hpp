@@ -81,6 +81,8 @@ public:
 
   bool operator==(const SfMData& other) const;
 
+  inline bool operator!=(const SfMData& other) const { return !(*this == other); }
+
   // Accessors
 
   /**
@@ -302,7 +304,7 @@ public:
    * @warning: This function returns a CameraPose (a temporary object and not a reference),
    *           because in the RIG context, this pose is the composition of the rig pose and the sub-pose.
    */
-  const CameraPose getPose(const View& view) const
+  CameraPose getPose(const View& view) const
   {
     // check the view has valid pose / rig etc
     if(!view.isPartOfRig() || view.isPoseIndependant())

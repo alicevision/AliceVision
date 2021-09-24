@@ -26,11 +26,13 @@ double RMSE(const sfmData::SfMData& sfmData)
       const sfmData::View* view = sfmData.getViews().find(itObs->first)->second.get();
       const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId());
-      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
+      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
       vec.push_back(residual(0));
       vec.push_back(residual(1));
     }
   }
+  if(vec.empty())
+    return -1.0;
   const Eigen::Map<Eigen::RowVectorXd> residuals(&vec[0], vec.size());
   const double RMSE = std::sqrt(residuals.squaredNorm() / vec.size());
   return RMSE;
@@ -38,3 +40,4 @@ double RMSE(const sfmData::SfMData& sfmData)
 
 } // namespace sfm
 } // namespace aliceVision
+

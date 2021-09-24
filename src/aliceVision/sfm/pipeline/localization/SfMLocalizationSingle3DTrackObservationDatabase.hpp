@@ -34,7 +34,7 @@ public:
   * @return True if the database has been correctly setup
   */
   bool Init(const sfmData::SfMData& sfmData,
-            const feature::RegionsPerView& regionsPerView);
+            const feature::RegionsPerView& regionsPerView) override;
 
   /**
   * @brief Try to localize an image in the database
@@ -53,7 +53,7 @@ public:
                 std::mt19937 &randomNumberGenerator, 
                 geometry::Pose3& pose,
                 ImageLocalizerMatchData* resectionDataPtr = nullptr // optional
-                ) const;
+                ) const override;
 
 private:
   // Reference to the scene

@@ -123,9 +123,9 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
-            "Input Mesh (OBJ file format).")
+            "Input Mesh")
         ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).");
+            "Output mesh");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -199,7 +199,7 @@ int aliceVision_main(int argc, char* argv[])
         bfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
-    texturing.loadOBJWithAtlas(inputMeshPath);
+    texturing.loadWithAtlas(inputMeshPath);
     mesh::Mesh* mesh = texturing.mesh;
 
     if(!mesh)
@@ -310,7 +310,7 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Save mesh.");
 
     // Save output mesh
-    outMesh.saveToObj(outputMeshPath);
+    outMesh.save(outputMeshPath);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 

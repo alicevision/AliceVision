@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithNoResults)
   solver.solve(pt2D_3, pt3D_3, models_3);
 
   bool pass = true;
-  if(models_3.size() != 0)
+  if(!models_3.empty())
     pass = false;
   BOOST_CHECK(pass);
 }

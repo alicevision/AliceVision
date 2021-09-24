@@ -8,6 +8,17 @@
 #pragma once
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/version.hpp>
+
+#define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1
+#define ALICEVISION_SFMDATAIO_VERSION_MINOR 2
+#define ALICEVISION_SFMDATAIO_VERSION_REVISION 1
+
+
+// AliceVision version as a string; for example "0.9.0".
+#define ALICEVISION_SFMDATAIO_VERSION_STRING ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_MAJOR) "." \
+                             ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_MINOR) "." \
+                             ALICEVISION_TO_STRING(ALICEVISION_SFMDATAIO_VERSION_REVISION)
 
 namespace aliceVision {
 namespace sfmDataIO {

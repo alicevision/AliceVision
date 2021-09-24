@@ -429,7 +429,7 @@ bool ReconstructionEngine_panorama::Adjust()
   success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
                                 BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
                                 BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION |
-                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALCENTER_ALWAYS);
+                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS);
   if(success)
   {
       ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Optical Center + Distortion");

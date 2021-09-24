@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
   BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing)
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK(dResidual_before > dResidual_after);
+  BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
 /// Compute the Root Mean Square Error of the residuals
@@ -258,7 +258,7 @@ double RMSE(const SfMData & sfm_data)
       const View* view = sfm_data.getViews().find(itObs->first)->second.get();
       const Pose3 pose = sfm_data.getPose(*view).getTransform();
       const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second;
-      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
+      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.x);
       vec.push_back( residual(0) );
       vec.push_back( residual(1) );
     }
@@ -302,7 +302,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
   {
     const unsigned int w = config._cx *2;
     const unsigned int h = config._cy *2;
-    sfm_data.intrinsics[0] = createIntrinsic(eintrinsic, w, h, config._fx, config._cx, config._cy);
+    sfm_data.intrinsics[0] = createIntrinsic(eintrinsic, w, h, config._fx, config._fx, 0, 0);
   }
 
   // 4. Landmarks

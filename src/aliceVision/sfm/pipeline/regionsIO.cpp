@@ -87,7 +87,12 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
   // build up a set with normalized paths to remove duplicates
   std::set<std::string> foldersSet;
   for(const auto& folder : folders)
-    foldersSet.insert(fs::canonical(folder).string());
+  {
+    if(fs::exists(folder))
+    {
+      foldersSet.insert(fs::canonical(folder).string());
+    }
+  }
 
   for(const auto& folder : foldersSet)
   {
@@ -121,6 +126,58 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
 
   ALICEVISION_LOG_TRACE("Feature count: " << regionsPtr->RegionCount());
   return regionsPtr;
+}
+
+bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
+                                const std::vector<IndexT>& viewIds, const std::vector<std::string>& folders,
+                                const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
+{
+  if(folders.empty())
+  {
+    ALICEVISION_LOG_ERROR("Cannot load features, no folders provided");
+    return false;
+  }
+  if(viewIds.empty())
+  {
+    ALICEVISION_LOG_ERROR("Cannot load features, no view ids provided");
+    return false;
+  }
+  if(imageDescriberTypes.empty())
+  {
+    ALICEVISION_LOG_ERROR("Cannot load features, no image desciber types provided");
+    return false;
+  }
+
+  std::vector<std::unique_ptr<feature::ImageDescriber>> imageDescribers;
+  imageDescribers.resize(imageDescriberTypes.size());
+
+  for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+      imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
+
+  featuresPerDescPerView.resize(imageDescribers.size());
+
+  std::atomic_bool loadingSuccess(true);
+
+  for(int descIdx = 0; descIdx < imageDescribers.size(); ++descIdx)
+  {
+    std::vector<std::unique_ptr<feature::Regions>>& featuresPerView = featuresPerDescPerView.at(descIdx);
+    featuresPerView.resize(viewIds.size());
+
+#pragma omp parallel for
+    for(int viewIdx = 0; viewIdx < viewIds.size(); ++viewIdx)
+    {
+      try
+      {
+        featuresPerView.at(viewIdx) = loadFeatures(folders, viewIds.at(viewIdx), *imageDescribers.at(descIdx));
+      }
+      catch(const std::exception& e)
+      {
+        loadingSuccess = false;
+      }
+    }
+  }
+
+  return loadingSuccess;
 }
 
 bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,

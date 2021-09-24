@@ -54,7 +54,7 @@ struct SiftParams
 
   int getImageFirstOctave(int w, int h) const
   {
-    return _firstOctave - (w * h < 5000 * 4000 ? 1 : 0);
+    return _firstOctave - (w * h <= 3000 * 2000 ? 1 : 0); // -1 to upscale for small resolutions
   }
 };
 

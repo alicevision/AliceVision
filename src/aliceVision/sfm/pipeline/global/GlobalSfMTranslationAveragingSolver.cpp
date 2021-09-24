@@ -655,7 +655,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
     const camera::Pinhole * intrinsic = dynamic_cast< const camera::Pinhole * > (intrinsicPtr);
     if (intrinsic && intrinsic->isValid())
     {
-      min_focal = std::min(min_focal, intrinsic->getFocalLengthPix());
+      min_focal = std::min(min_focal, intrinsic->getFocalLengthPixX());
     }
   }
   if (min_focal == std::numeric_limits<double>::max())

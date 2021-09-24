@@ -219,7 +219,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
       const sfmData::View * view = sfmData.views.at(itObs.first).get();
       const IntrinsicBase * intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
       const Pose3 pose = sfmData.getPose(*view).getTransform();
-      const Vec2 residual = intrinsic->residual(pose, current_model, itObs.second.x);
+      const Vec2 residual = intrinsic->residual(pose, current_model.homogeneous(), itObs.second.x);
       const double residual_d = residual.norm();
 
       if (residual_d < dThresholdPixel)

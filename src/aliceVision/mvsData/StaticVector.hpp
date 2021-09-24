@@ -386,7 +386,7 @@ void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool
         return;
     }
 
-    if( a->size() == 0 )
+    if( a->empty() )
     {
         ALICEVISION_LOG_WARNING("[IO] saveArrayToFile called with 0-sized static vector");
         return;

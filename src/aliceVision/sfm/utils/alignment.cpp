@@ -576,7 +576,7 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
   {
     viewId = -1;
   }
-  sfmData::EEXIFOrientation orientation = sfmData::EEXIFOrientation::UNKNOWN; 
+
   if(viewId == -1)
   {
     for(const auto & view : sfmData.getViews())
@@ -584,7 +584,6 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
       const std::string path = view.second->getImagePath();
       if(std::regex_match(path, cameraRegex))
       {
-          orientation = view.second->getMetadataOrientation();
           viewId = view.second->getViewId();
           break;
       }
@@ -638,33 +637,34 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
   ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
+  const sfmData::View& view = sfmData.getView(viewId);
   switch(orientation)
   {
     case sfmData::EEXIFOrientation::RIGHT:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: RIGHT");
           out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
-                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+                  * sfmData.getPose(view).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::LEFT:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: LEFT");
           out_R = Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
-                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+                  * sfmData.getPose(view).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::UPSIDEDOWN:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: UPSIDEDOWN");
-          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getPose(view).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::NONE:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
-          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getPose(view).getTransform().rotation();
           break;
     default:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
-          out_R = sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          out_R = sfmData.getPose(view).getTransform().rotation();
           break;
   }
 
-  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
+  out_t = - out_R * sfmData.getPose(view).getTransform().center();
   out_S = 1.0;
 }
 
@@ -788,6 +788,53 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
     const Mat4 RTS = Eigen::umeyama(ptsSrc, ptsDst, withScaling);
 
     return geometry::decomposeRTS(RTS, out_S, out_t, out_R);
+}
+
+
+
+bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std::mt19937 &randomNumberGenerator, double& out_S, Mat3& out_R, Vec3& out_t)
+{
+    std::vector<Vec3> gpsPositions{};
+    std::vector<Vec3> centers{};
+    gpsPositions.reserve(sfmData.getPoses().size());
+    centers.reserve(sfmData.getPoses().size());
+
+    // for each reconstructed view
+    for(const auto& v : sfmData.getViews())
+    {
+        const auto viewID = v.first;
+        const auto& view = v.second;
+        // skip no pose
+        if(!(sfmData.isPoseAndIntrinsicDefined(viewID) && view->hasGpsMetadata()))
+        {
+            ALICEVISION_LOG_TRACE("Skipping view " << viewID << " because pose " << sfmData.isPoseAndIntrinsicDefined(viewID) << " and gps " << view->hasGpsMetadata());
+            continue;
+        }
+        // extract the gps position
+        gpsPositions.push_back(view->getGpsPositionFromMetadata());
+        // get the center
+        centers.push_back(sfmData.getPose(*view.get()).getTransform().center());
+    }
+
+    // if enough data try to find the transformation
+    if(gpsPositions.size() < 4)
+    {
+        ALICEVISION_LOG_INFO("Not enough points to estimate the rototranslation to align the gps");
+        return false;
+    }
+
+    Mat x1(3, centers.size());
+    Mat x2(3, gpsPositions.size());
+
+    for(Mat::Index i = 0; i < gpsPositions.size(); ++i)
+    {
+        x1.col(i) = centers[i];
+        x2.col(i) = gpsPositions[i];
+    }
+
+    std::vector<std::size_t> inliers;
+    const bool refine{true};
+    return aliceVision::geometry::ACRansac_FindRTS(x1, x2, randomNumberGenerator, out_S, out_t, out_R, inliers, refine);
 }
 
 } // namespace sfm

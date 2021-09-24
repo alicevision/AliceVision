@@ -122,11 +122,7 @@ public:
       return Eigen::Matrix<double, 2, 1>::Zero();
     }
 
-//    const double r2 = r * r;
-    
-    /*const double r_coeff = 1.0 + k1 * r2;*/
-
-    const Eigen::MatrixXd ret = p * 2.0 * k1 * r;
+    const Eigen::MatrixXd ret = p * r * r;
 
     return ret;
   }

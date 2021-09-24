@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/sfmData/CameraPose.hpp>
 
 #include <ceres/ceres.h>
 #include "liealgebra.hpp"
@@ -50,11 +51,10 @@ public:
     ceres::LinearSolverType linearSolverType;
     ceres::PreconditionerType preconditionerType;
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
-    ceres::ParameterBlockOrdering linearSolverOrdering;
     std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
     bool useParametersOrdering = true;
-    bool summary = true;
+    bool summary = false;
     bool verbose = true;
   };
 
@@ -117,8 +117,9 @@ public:
    * @param[in] options The user Ceres options
    * @see BundleAdjustmentSymbolicCeres::CeresOptions
    */
-  BundleAdjustmentSymbolicCeres(const BundleAdjustmentSymbolicCeres::CeresOptions& options = CeresOptions())
+  BundleAdjustmentSymbolicCeres(const CeresOptions& options = CeresOptions(), int minNbImagesToRefineOpticalCenter = 3)
     : _ceresOptions(options)
+    , _minNbImagesToRefineOpticalCenter(minNbImagesToRefineOpticalCenter)
   {}
 
   /**
@@ -169,6 +170,8 @@ public:
 
 private:
 
+  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation);
+
   /**
    * @brief Clear structures for a new problem
    */
@@ -181,6 +184,7 @@ private:
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
     _rigBlocks.clear();
+    _linearSolverOrdering.Clear();
   }
 
   /**
@@ -267,6 +271,7 @@ private:
 
   /// user Ceres options to use in the solver
   CeresOptions _ceresOptions;
+  int _minNbImagesToRefineOpticalCenter = 3;
 
   /// user FeatureConstraint options to use
   EFeatureConstraint _featureConstraint;
@@ -292,6 +297,10 @@ private:
   HashMap<IndexT, HashMap<IndexT, SE3::Matrix>> _rigBlocks;
   ///Rig pose to use when there is no rig
   SE3::Matrix _rigNull = SE3::Matrix::Identity();
+
+  /// hinted order for ceres to eliminate blocks when solving.
+  /// note: this ceres parameter is built internally and must be reset on each call to the solver.
+  ceres::ParameterBlockOrdering _linearSolverOrdering;
 };
 
 } // namespace sfm

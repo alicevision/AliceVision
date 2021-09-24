@@ -100,7 +100,7 @@ public:
   // Data wrapper for non linear optimization (get data)
   std::vector<double> getParams() const override
   {
-    std::vector<double> params = {_scale(0), _offset(0), _offset(1)};
+    std::vector<double> params = {_scale(0), _scale(1), _offset(0), _offset(1)};
 
     if (hasDistortion())
     {
@@ -115,25 +115,25 @@ public:
   {
     if (_pDistortion == nullptr)
     {
-      if (params.size() != 3)
+      if (params.size() != 4)
       {
         return false;
       }
     }
     else
     {
-      if (params.size() != (3 + _pDistortion->getDistortionParametersCount()))
+      if (params.size() != (4 + _pDistortion->getDistortionParametersCount()))
       {
         return false;
       }
     }
 
     _scale(0) = params[0];
-    _scale(1) = params[0];
-    _offset(0) = params[1];
-    _offset(1) = params[2];
+    _scale(1) = params[1];
+    _offset(0) = params[2];
+    _offset(1) = params[3];
 
-    setDistortionParams({params.begin() + 3, params.end()});
+    setDistortionParams({params.begin() + 4, params.end()});
 
     return true;
   }

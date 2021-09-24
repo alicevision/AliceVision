@@ -47,7 +47,7 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
             /**
              * Project this ray to camera pixel coordinates
              */
-            const Vec2 pix_disto = intrinsics.project(pose, ray, true);
+            const Vec2 pix_disto = intrinsics.project(pose, ray.homogeneous(), true);
 
             /**
              * Ignore invalid coordinates
