@@ -728,6 +728,7 @@ ExternalProject_Add(${OPENCV_TARGET}
     -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version,mcc
     <SOURCE_DIR>
   BUILD_COMMAND $(MAKE)
+  DEPENDS ${TBB_TARGET} ${ZLIB_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${TIFF_TARGET} ${LIBRAW_TARGET}
 )
 # set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install -DCMAKE_PREFIX_PATH=${BUILD_DIR}/opencv_install)
 set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4 -DOPENCV_DIR=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4)
