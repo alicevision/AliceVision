@@ -52,6 +52,7 @@ cmake -P "external/src/ffmpeg-stamp/download-ffmpeg.cmake"
 cmake -P "external/src/zlib-stamp/download-zlib.cmake"
 cmake -P "external/src/lapack-stamp/download-lapack.cmake"
 cmake -P "external/src/tbb-stamp/download-tbb.cmake"
+cmake -P "external/src/dcmtk-stamp/download-dcmtk.cmake"
 
 popd
 
