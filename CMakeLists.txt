@@ -7,6 +7,7 @@ option(AV_BUILD_CUDA "Enable building an embedded Cuda" OFF)
 option(AV_BUILD_ZLIB "Enable building an embedded ZLIB" ON)
 option(AV_BUILD_ASSIMP "Enable building an embedded ASSIMP" ON)
 option(AV_BUILD_TIFF "Enable building an embedded Tiff" ON)
+option(AV_BUILD_DCMTK "Enable building an embedded DCMTK" ON)
 option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
 option(AV_BUILD_PNG "Enable building an embedded Png" ON)
 option(AV_BUILD_LIBRAW "Enable building an embedded libraw" ON)
@@ -58,6 +59,7 @@ message(STATUS "AV_BUILD_CUDA: ${AV_BUILD_CUDA}")
 message(STATUS "AV_BUILD_ZLIB: ${AV_BUILD_ZLIB}")
 message(STATUS "AV_BUILD_ASSIMP: ${AV_BUILD_ASSIMP}")
 message(STATUS "AV_BUILD_TIFF: ${AV_BUILD_TIFF}")
+message(STATUS "AV_BUILD_DCMTK: ${AV_BUILD_DCMTK}")
 message(STATUS "AV_BUILD_JPEG: ${AV_BUILD_JPEG}")
 message(STATUS "AV_BUILD_PNG: ${AV_BUILD_PNG}")
 message(STATUS "AV_BUILD_LIBRAW: ${AV_BUILD_LIBRAW}")
@@ -436,6 +438,31 @@ ExternalProject_Add(${PNG_TARGET}
 SET(PNG_CMAKE_FLAGS -DPNG_LIBRARY=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libpng.so -DPNG_PNG_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include)
 endif()
 
+# Add DCMTK
+if(AV_BUILD_DCMTK)
+set(DCMTK_TARGET dcmtk)
+ExternalProject_Add(${DCMTK_TARGET}
+        URL https://github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.6.tar.gz
+        URL_HASH MD5=a9682030c95caea67e32c824ccf3de07
+        DOWNLOAD_DIR ${BUILD_DIR}/download/dcmtk
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/dcmtk
+        BINARY_DIR ${BUILD_DIR}/dcmtk_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${TIFF_CMAKE_FLAGS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        DEPENDS ${ZLIB_TARGET} ${PNG_TARGET} ${TIFF_TARGET}
+       )
+   SET(DCMTK_CMAKE_FLAGS -DDCMTK_ROOT=${CMAKE_INSTALL_PREFIX} -DDCMTK_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib -DDCMTK_INCLUDE_PATH=${CMAKE_INSTALL_PREFIX}/include)
+   SET(DCMTK_MODULES ofstd;oflog;dcmdata;dcmimgle;dcmimage;dcmjpeg;dcmjpls;dcmtls;dcmnet;dcmsr;dcmsign;dcmwlm;dcmqrdb;dcmpstat;dcmrt;dcmiod;dcmfg;dcmseg;dcmtract;dcmpmap;dcmect)
+   foreach(module IN LISTS DCMTK_MODULES)
+       string(APPEND DCMTK_CMAKE_FLAGS " -DDCMTK_${module}_LIB=${CMAKE_INSTALL_PREFIX}/lib/lib${module}.so")
+   endforeach()
+endif()
+
 if(AV_BUILD_JPEG)
 set(JPEG_TARGET turbojpeg)
 # Add turbojpeg
@@ -614,7 +641,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
             -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX} -DOIIO_BUILD_TESTS:BOOL=OFF
             -DILMBASE_HOME=${CMAKE_INSTALL_PREFIX}
             -DOPENEXR_HOME=${CMAKE_INSTALL_PREFIX}
-            ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS}
+            ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS} ${DCMTK_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
             -DSTOP_ON_WARNING=OFF
             -DUSE_FFMPEG=${AV_BUILD_FFMPEG}
@@ -626,7 +653,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
             -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
             # TODO: build with libheif
       BUILD_COMMAND $(MAKE)
-      DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET}
+      DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET} ${DCMTK_TARGET}
       )
 # TODO: openjpeg
 # -DOPENJPEG_INCLUDE_DIR=$OPENJPEG_INCLUDE_DIR/openjpeg-2.0 -DOPENJPEG_OPENJP2_LIBRARIES=$OPENJPEG_OPENJP2_LIBRARIES
