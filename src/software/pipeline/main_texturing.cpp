@@ -184,8 +184,8 @@ int aliceVision_main(int argc, char* argv[])
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
 
-    texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
-    if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
+    texParams.correctEV = mvsUtils::ECorrectEV::NO_CORRECTION;
+    if(correctEV) { texParams.correctEV = mvsUtils::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
     sfmData::SfMData sfmData;

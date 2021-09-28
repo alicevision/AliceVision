@@ -201,7 +201,7 @@ public:
                                      const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
-                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache& imageCache,
+                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
                                       const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     ///Fill holes and write texture files for the given texture atlas

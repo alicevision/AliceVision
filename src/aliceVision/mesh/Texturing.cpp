@@ -750,7 +750,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
     toGeoMesh(*mesh, geoSparseMesh);
     GEO::compute_normals(geoSparseMesh);
 
-    mvsUtils::ImagesCache imageCache(&mp, imageIO::EImageColorSpace::NO_CONVERSION);
+    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, imageIO::EImageColorSpace::NO_CONVERSION);
     
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, bumpMappingParams);
@@ -1274,7 +1274,7 @@ inline Eigen::Matrix3d computeTriangleTransform(const Mesh& mesh, int f, const P
 
 inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f,
                                 const Eigen::Matrix3d& m, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB,
-                                float& out_height, Color& out_normal)
+                                float& out_height, ColorRGBf& out_normal)
 {
     GEO::vec3 intersectionPoint = t * qB + (1.0 - t) * qA;
     out_height = q.distance(intersectionPoint) * orientation;
@@ -1286,18 +1286,18 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 
     Eigen::Vector3d dNormal = m * toEigen(denseMeshNormal);
     dNormal.normalize();
-    out_normal = Color(dNormal(0), dNormal(1), dNormal(2));
+    out_normal = ColorRGBf(dNormal(0), dNormal(1), dNormal(2));
 }
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                              const GEO::MeshFacetsAABB& denseMeshAABB, const GEO::Mesh& sparseMesh,
-                                             size_t atlasID, mvsUtils::ImagesCache& imageCache,
+                                             size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
                                              const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
 {
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
 
-    std::vector<Color> normalMap(texParams.textureSide * texParams.textureSide);
+    std::vector<ColorRGBf> normalMap(texParams.textureSide * texParams.textureSide);
     std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
     const auto& triangles = _atlases[atlasID];
 
@@ -1408,7 +1408,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                     else
                     {
                         heightMap[xyoffset] = 0.0f;
-                        normalMap[xyoffset] = Color(0.0f, 0.0f, 0.0f);
+                        normalMap[xyoffset] = ColorRGBf(0.0f, 0.0f, 0.0f);
                     }
                 }
             }
@@ -1423,7 +1423,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         if(texParams.downscale > 1)
         {
             ALICEVISION_LOG_INFO("Downscaling normal map (" << texParams.downscale << "x).");
-            std::vector<Color> resizedBuffer;
+            std::vector<ColorRGBf> resizedBuffer;
             outTextureSide = texParams.textureSide / texParams.downscale;
             // use nearest-neighbor interpolation to avoid meaningless interpolation of normals on edges.
             const std::string interpolation = "box";
@@ -1437,9 +1437,9 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // Y: -1 to +1 : Green : 0 to 255
         // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
         for(unsigned int i = 0; i < normalMap.size(); ++i)
-            // normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B:
+            // normalMap[i] = ColorRGBf(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B:
             // 0:+1 => 0-255
-            normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5,
+            normalMap[i] = ColorRGBf(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5,
                                     normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
         const std::string name = "Normal_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
