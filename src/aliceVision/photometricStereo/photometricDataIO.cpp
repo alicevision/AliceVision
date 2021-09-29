@@ -168,7 +168,12 @@ void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RG
         {
             for (int ch = 0; ch < 3; ++ch)
             {
-                normalsImPNG(i,j)(ch) = floor((normalsIm(i,j)(ch) + 1)*127.5);
+                if (ch == 0)
+                {
+                    normalsImPNG(i,j)(ch) = floor((normalsIm(i,j)(ch) + 1)*127.5);
+                }
+                else
+                    normalsImPNG(i,j)(ch) = -floor((normalsIm(i,j)(ch) + 1)*127.5);
             }
         }
     }
