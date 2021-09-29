@@ -50,6 +50,7 @@ int aliceVision_main(int argc, char **argv)
     std::string inputPath;
     bool isPerspective;
     std::string pathToDM;
+    std::string pathToAlbedo;
     std::string pathToK;
 
     po::options_description allParams("AliceVision photometricStereo");
@@ -58,6 +59,7 @@ int aliceVision_main(int argc, char **argv)
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
     ("pathToK,k", po::value<std::string>(&pathToK)->default_value(""), "pathToK.")
     ("isPerspective,c", po::value<bool>(&isPerspective)->default_value(false), "isPerspective")
+    ("pathToAlbedo,a", po::value<std::string>(&pathToAlbedo)->default_value(""), "pathToDM.")
     ("pathToDM,o", po::value<std::string>(&pathToDM)->default_value(""), "pathToDM.");
 
     allParams.add(requiredParams);
@@ -91,11 +93,25 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_COUT(vm);
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm;
+    aliceVision::image::Image<aliceVision::image::RGBfColor> albedoIm;
     
-    photometricStero(inputPath, isPerspective, normalsIm);
+    if(boost::filesystem::is_directory(inputPath))
+    {
+        photometricStero(inputPath, isPerspective, normalsIm, albedoIm);
+        //getKnown3DPoints(inputPath, visiblePoints);
+    }
+    else
+    {
+      std::cout << "This case is not available for now" << std::endl;
+
+      return 0;
+    }
 
     int pictCols = normalsIm.Width();
     int pictRows = normalsIm.Height();
+    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
+    convertNormalMap2png(normalsIm, normalsImPNG);
+    aliceVision::image::writeImage(inputPath + "/test.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     readMatrix(pathToK, K);
@@ -106,7 +122,7 @@ int aliceVision_main(int argc, char **argv)
     oiio::ParamValueList metadata;
     metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
     aliceVision::image::writeImage(pathToDM, depth, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
-
+    aliceVision::image::writeImage(pathToAlbedo, albedoIm, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
 
     return 0;
 }

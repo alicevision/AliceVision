@@ -54,8 +54,6 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
             stream.str(line);
 
             stream >> x >> y >> z;
-            for(int i = 0; i< 3; ++i)
-            {
                 if(lineNumber < lightMat.rows())
                 {
                   lightMat(lineNumber, 0) = convertionMatrix(0,0)*x + convertionMatrix(0,1)*y + convertionMatrix(0,2)*z;
@@ -63,7 +61,7 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
                   lightMat(lineNumber, 2) = convertionMatrix(2,0)*x + convertionMatrix(2,1)*y + convertionMatrix(2,2)*z;
                   ++lineNumber;
                 }
-            }
+            //}
         }
         dirFile.close();
     }

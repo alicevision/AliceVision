@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-void photometricStero(const std::string& folderPath, const bool isPerspective, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals);
+void photometricStero(const std::string& folderPath, const bool isPerspective, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo);
 
 void loadPSData(const std::string& folderPath, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat, Eigen::MatrixXf& convertionMatrix, aliceVision::image::Image<float>& mask);
 
