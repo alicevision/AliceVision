@@ -1,5 +1,5 @@
 ARG TRISQUEL_VERSION
-FROM kpengboy/trisquel${TRISQUEL_VERSION}
+FROM kpengboy/trisquel:${TRISQUEL_VERSION}
 
 # Set it here here as they are not available in the RUN commands if set before FROM...
 ARG UBUNTU_CODENAME
