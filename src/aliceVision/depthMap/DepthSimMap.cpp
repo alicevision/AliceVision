@@ -38,9 +38,10 @@ DepthSimMap::~DepthSimMap()
  DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, float x, float y, int width, int height)
 {
     // get the image index in the memory
-
-    int xp = static_cast<int>(x);
-    int yp = static_cast<int>(y);
+   const float xFloat = x - 0.5;
+   const float yFloat = y - 0.5;
+    int xp = static_cast<int>(xFloat);
+    int yp = static_cast<int>(yFloat);
     xp = std::min(xp, width - 2);
     yp = std::min(yp, height - 2);
 
@@ -85,13 +86,14 @@ DepthSimMap::~DepthSimMap()
     }
 
     // bilinear interpolation
-    const double ui = x - static_cast<float>(xp);
-    const double vi = y - static_cast<float>(yp);
+    const float ui = xFloat - static_cast<float>(xp);
+    const float vi = yFloat - static_cast<float>(yp);
     const DepthSim u = lu + (ru - lu) * ui;
     const DepthSim d = ld + (rd - ld) * ui;
     const DepthSim out = u + (d - u) * vi;
 
     return out;
+
 }
 
 void DepthSimMap::initFromSmaller(const DepthSimMap& other)
@@ -100,15 +102,15 @@ void DepthSimMap::initFromSmaller(const DepthSimMap& other)
     {
         throw std::runtime_error("Error DepthSimMap: You cannot init from a larger map.");
     }
-    double ratio = double(_scale * _step) / double(other._scale * other._step);
+    const double ratio = double(_scale * _step) / double(other._scale * other._step);
 
     ALICEVISION_LOG_DEBUG("DepthSimMap::initFromSmaller: ratio=" << ratio << ", otherScaleStep=" << other._scale * other._step << ", scaleStep=" << _scale * _step);
     for (int y = 0; y < _h; ++y)
     {
-        const double oy = y * ratio;
+        const double oy = (y + 0.5) * ratio;
         for (int x = 0; x < _w; ++x)
         {
-            const double ox = x * ratio;
+            const double ox = (x + 0.5) * ratio;
             const DepthSim otherDepthSim = getPixelValueInterpolated(other._dsm, ox, oy, other._w, other._h);
             _dsm[y * _w + x] = otherDepthSim;
         }
@@ -198,10 +200,10 @@ void DepthSimMap::getDepthMapStep1(StaticVector<float>& out_depthMap) const
     ALICEVISION_LOG_DEBUG("DepthSimMap::getDepthMapStep1: ratio=" << ratio);
     for (int y = 0; y < hdm; ++y)
     {
-        const double oy = y * ratio;
+        const double oy = (y + 0.5) * ratio;
         for (int x = 0; x < wdm; ++x)
         {
-            const double ox = x * ratio;
+            const double ox = (x + 0.5) * ratio;
             const float depth = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).depth;
             out_depthMap[y * wdm + x] = depth;
         }
@@ -222,10 +224,10 @@ void DepthSimMap::getSimMapStep1(StaticVector<float>& out_simMap) const
     ALICEVISION_LOG_DEBUG("DepthSimMap::getDepthMapStep1: ratio=" << ratio);
     for (int y = 0; y < hdm; ++y)
     {
-        const double oy = y * ratio;
+        const double oy = (y + 0.5) * ratio;
         for (int x = 0; x < wdm; ++x)
         {
-            const double ox = x * ratio;
+            const double ox = (x + 0.5) * ratio;
             const float sim = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).sim;
             out_simMap[y * wdm + x] = sim;
         }
