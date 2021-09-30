@@ -16,3 +16,7 @@ CUDA_VERSION=9.2 UBUNTU_VERSION=18.04 docker/build-ubuntu.sh
 
 CUDA_VERSION=10.2 CENTOS_VERSION=7 docker/build-centos.sh
 CUDA_VERSION=9.2 CENTOS_VERSION=7 docker/build-centos.sh
+
+# Build on trisquel
+# UBUNTU_CODENAME must be the Ubuntu upstream codename of the given version
+# TRISQUEL_VERSION=9.0 UBUNTU_CODENAME=bionic docker/build-trisquel.sh
