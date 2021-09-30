@@ -142,6 +142,7 @@ set(ASSIMP_AV_VERSION 5.0.1)
 set(ASSIMP_FILENAME v${ASSIMP_AV_VERSION}.tar.gz)
 ExternalProject_Add(${ASSIMP_TARGET}
       URL https://github.com/assimp/assimp/archive/refs/tags/${ASSIMP_FILENAME}
+      URL_HASH MD5=eb7b7385a5c3194ab46d7f869d7ac6cf
       DOWNLOAD_DIR ${BUILD_DIR}/download/assimp
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
