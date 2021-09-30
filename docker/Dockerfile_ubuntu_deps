@@ -23,6 +23,7 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 RUN . ./etc/os-release && \
 	apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		ca-certificates \
 		wget \
 		software-properties-common && \
 	wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
