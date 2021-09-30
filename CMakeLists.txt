@@ -186,7 +186,9 @@ if(AV_USE_CUDA AND AV_BUILD_CUDA)
 set(CUDA_TARGET cuda)
 ExternalProject_Add(${CUDA_TARGET}
        # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-       URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.148_396.37_linux.run
+       URL_HASH MD5=8303cdf46904e6dea8d5d641b0b46f0d
+       DOWNLOAD_DIR ${BUILD_DIR}/download/cuda
        DOWNLOAD_NO_EXTRACT 1
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -197,7 +199,7 @@ ExternalProject_Add(${CUDA_TARGET}
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
        BUILD_COMMAND ""
-       INSTALL_COMMAND sh ${BUILD_DIR}/src/cuda_9.2.88_396.26_linux --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
+       INSTALL_COMMAND sh ${BUILD_DIR}/download/cuda/cuda_9.2.148_396.37_linux.run --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
        )
 set(CUDA_CUDART_LIBRARY "")
 set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CMAKE_INSTALL_PREFIX})
