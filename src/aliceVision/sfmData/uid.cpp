@@ -35,16 +35,13 @@ std::size_t computeViewUID(const View& view)
   {
     stl::hash_combine(uid, view.getMetadata({"Exif:ImageUniqueID", "ImageUniqueID"}));
   }
-  else if((!bodySerialNumber.empty() || !lensSerialNumber.empty()) &&
-          (view.hasMetadataDateTimeOriginal() || view.hasMetadata({"imageCounter"})))
-  {
-      // We can identify the image uniquely, so there is no need to use the image path into the UID.
-  }
   else
   {
-    // no metadata to identify the image, fallback to the filename
-    const fs::path imagePath = view.getImagePath();
-    stl::hash_combine(uid, imagePath.filename().string());
+    // No uid in the metadata to identify the image, fallback to the filename.
+    // File extension is already used in the uid, so add the stem.
+    std::string stem = imagePath.stem().string();
+    boost::to_lower(stem);
+    stl::hash_combine(uid, stem);
   }
 
   if(!bodySerialNumber.empty() || !lensSerialNumber.empty())
@@ -54,19 +51,29 @@ std::size_t computeViewUID(const View& view)
   }
   else if(!hasImageUniqueID)
   {
-    // no metadata to identify the device, fallback to the folder path of the file
+    // No metadata to identify the device, fallback to the folder path of the file.
+    // The image will NOT be relocatable in this particular case.
     stl::hash_combine(uid, imagePath.parent_path().generic_string());
   }
 
+  bool hasTimeOrCounterMetadata = false;
   if(view.hasMetadataDateTimeOriginal())
   {
     stl::hash_combine(uid, view.getMetadataDateTimeOriginal());
     stl::hash_combine(uid, view.getMetadata({"Exif:SubsecTimeOriginal", "SubsecTimeOriginal"}));
+    hasTimeOrCounterMetadata = true;
   }
-  else if(view.hasMetadata({"imageCounter"}))
+
+  if(view.hasMetadata({"imageCounter"}))
   {
     // if the view is from a video camera
     stl::hash_combine(uid, view.getMetadata({"imageCounter"}));
+    hasTimeOrCounterMetadata = true;
+  }
+
+  if(hasTimeOrCounterMetadata)
+  {
+    // already added to the uid
   }
   else if(view.hasMetadata({"DateTime"}))
   {
@@ -80,7 +87,7 @@ std::size_t computeViewUID(const View& view)
     stl::hash_combine(uid, t);
   }
 
-  // can't use view.getWidth() and view.getHeight() directly
+  // cannot use view.getWidth() and view.getHeight() directly
   // because ground truth tests and previous version datasets
   // view UID use EXIF width and height (or 0)
 
