@@ -77,9 +77,13 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                           _rcTcDepthRanges.end(),
                                           MinOffXplusY());
         const int stoppingDepth = depth_it->x + depth_it->y;
-    
+
+        // The overall starting depth index should always be zero.
         assert(startingDepth == 0);
-        assert(_rcDepths.size() == stoppingDepth);
+        // Usually stoppingDepth should be equal to the total number of depths.
+        // But due to sgmMaxDepths and sgmMaxDepthPerTc, we can have more depths
+        // than we finally use in all TC cameras.
+        assert(_rcDepths.size() >= stoppingDepth);
     }
     ALICEVISION_LOG_DEBUG("RC depths: [" << _rcDepths[0] << "-" << _rcDepths[_rcDepths.size() - 1] << "], "
                                          << _rcDepths.size() << " depth planes.");
