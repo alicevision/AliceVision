@@ -14,9 +14,12 @@ namespace depthMap {
 
 #ifdef TSIM_USE_FLOAT
     using TSim = float;
+    using TSimAcc = float;
 #else
     using TSim = unsigned char;
+    using TSimAcc = unsigned int; // TSimAcc is the similarity accumulation type
 #endif
+
 
 void ps_initCameraMatrix( CameraStructBase& base );
 

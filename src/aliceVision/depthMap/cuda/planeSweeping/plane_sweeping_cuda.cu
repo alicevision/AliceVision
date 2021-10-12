@@ -292,16 +292,16 @@ void ps_aggregatePathVolume(
     const dim3 blockVolSlide(blockSizeL, 1, 1);
     const dim3 gridVolSlide(divUp(volDimX, blockVolSlide.x), volDimZ, 1);
 
-    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferA(CudaSize<2>(volDimX, volDimZ));
-    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferB(CudaSize<2>(volDimX, volDimZ));
+    CudaDeviceMemoryPitched<TSimAcc, 2> d_sliceBufferA(CudaSize<2>(volDimX, volDimZ));
+    CudaDeviceMemoryPitched<TSimAcc, 2> d_sliceBufferB(CudaSize<2>(volDimX, volDimZ));
 
-    CudaDeviceMemoryPitched<TSim, 2>* d_xzSliceForY = &d_sliceBufferA; // Y slice
-    CudaDeviceMemoryPitched<TSim, 2>* d_xzSliceForYm1 = &d_sliceBufferB; // Y-1 slice
+    CudaDeviceMemoryPitched<TSimAcc, 2>* d_xzSliceForY = &d_sliceBufferA; // Y slice
+    CudaDeviceMemoryPitched<TSimAcc, 2>* d_xzSliceForYm1 = &d_sliceBufferB; // Y-1 slice
 
-    CudaDeviceMemoryPitched<TSim, 2> d_bestSimInYm1(CudaSize<2>(volDimZ, 1)); // best sim score along the Y axis for each Z value
+    CudaDeviceMemoryPitched<TSimAcc, 2> d_bestSimInYm1(CudaSize<2>(volDimZ, 1)); // best sim score along the Y axis for each Z value
 
     // Copy the first XZ plane (at Y=0) from 'd_volSim' into 'd_xzSliceForYm1'
-    volume_getVolumeXZSlice_kernel<TSim, TSim><<<gridVolXZ, blockVolXZ>>>(
+    volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ>>>(
         d_xzSliceForYm1->getBuffer(),
         d_xzSliceForYm1->getPitch(),
         d_volSim.getBuffer(),
@@ -329,7 +329,7 @@ void ps_aggregatePathVolume(
             volDimX, volDimZ);
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xzSliceForY'
-        volume_getVolumeXZSlice_kernel<TSim, TSim><<<gridVolXZ, blockVolXZ>>>(
+        volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ>>>(
             d_xzSliceForY->getBuffer(),
             d_xzSliceForY->getPitch(),
             d_volSim.getBuffer(),

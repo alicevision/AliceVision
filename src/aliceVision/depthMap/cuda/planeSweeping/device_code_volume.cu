@@ -14,8 +14,10 @@ namespace depthMap {
 
 #ifdef TSIM_USE_FLOAT
 using TSim = float;
+using TSimAcc = float;
 #else
 using TSim = unsigned char;
+using TSimAcc = unsigned int; // TSimAcc is the similarity accumulation type
 #endif
 
 
@@ -253,18 +255,18 @@ __global__ void volume_getVolumeXZSlice_kernel(T1* slice, int slice_p,
     *slice_xz = (T1)(*volume_xyz);
 }
 
-__global__ void volume_computeBestZInSlice_kernel(TSim* xzSlice, int xzSlice_p, TSim* ySliceBestInColCst, int volDimX, int volDimZ)
+__global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice, int xzSlice_p, TSimAcc* ySliceBestInColCst, int volDimX, int volDimZ)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(x >= volDimX)
         return;
 
-    float bestCst = *get2DBufferAt(xzSlice, xzSlice_p, x, 0);
+    TSimAcc bestCst = *get2DBufferAt(xzSlice, xzSlice_p, x, 0);
 
     for(int z = 1; z < volDimZ; ++z)
     {
-        float cst = *get2DBufferAt(xzSlice, xzSlice_p, x, z);
+        const TSimAcc cst = *get2DBufferAt(xzSlice, xzSlice_p, x, z);
         bestCst = cst < bestCst ? cst : bestCst;  // min(cst, bestCst);
     }
     ySliceBestInColCst[x] = bestCst;
@@ -278,9 +280,9 @@ __global__ void volume_computeBestZInSlice_kernel(TSim* xzSlice, int xzSlice_p, 
  */
 __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
             cudaTextureObject_t rc_tex,
-            TSim* xzSliceForY, int xzSliceForY_p,
-            const TSim* xzSliceForYm1, int xzSliceForYm1_p,
-            const TSim* bestSimInYm1,
+            TSimAcc* xzSliceForY, int xzSliceForY_p,
+            const TSimAcc* xzSliceForYm1, int xzSliceForYm1_p,
+            const TSimAcc* bestSimInYm1,
             TSim* volAgr, int volAgr_s, int volAgr_p,
             const int3 volDim,
             const int3 axisT,
@@ -298,8 +300,8 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
     if (x >= (&volDim.x)[axisT.x] || z >= volDim.z)
         return;
 
-    TSim* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
-    float pathCost = 255.0f;
+    TSimAcc* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
+    TSimAcc pathCost = TSimAcc(255);
 
     if((z >= 1) && (z < volDim.z - 1))
     {
@@ -313,38 +315,38 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         const float4 gcr1 = tex2D_float4(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
 
         const float deltaC = Euclidean3(gcr0, gcr1);
-        // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
-        float P1 = _P1;
+        // TSimAcc P1 = TSimAcc(sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC));
+        TSimAcc P1 = TSimAcc(_P1);
         // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
-        float P2 = 0;
+        TSimAcc P2 = 0;
         // _P2 convention: use negative value to skip the use of deltaC
         if(_P2 >= 0)
-            P2 = sigmoid(15.0f, 255.0f, 80.0f, _P2, deltaC);
+            P2 = TSimAcc(sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC));
         else
             P2 = std::abs(_P2);
 
-        const float bestCostInColM1 = bestSimInYm1[x];
-        const float pathCostMDM1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
-        const float pathCostMD   = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z);
-        const float pathCostMDP1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
-        const float minCost = multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostInColM1 + P2);
+        const TSimAcc bestCostInColM1 = bestSimInYm1[x];
+        const TSimAcc pathCostMDM1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
+        const TSimAcc pathCostMD   = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z);
+        const TSimAcc pathCostMDP1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
+        const TSimAcc minCost = TSimAcc(multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostInColM1 + P2));
 
         // if 'pathCostMD' is the minimal value of the depth
         pathCost = (*sim_xz) + minCost - bestCostInColM1;
     }
 
-#ifndef TSIM_USE_FLOAT
-    // clamp if we use uchar
-    pathCost = fminf(255.0f, fmaxf(0.0f, pathCost));
-#endif
-
     // fill the current slice with the new similarity score
     *sim_xz = pathCost;
 
+#ifndef TSIM_USE_FLOAT
+    // clamp if TSim = uchar (TSimAcc = unsigned int)
+    pathCost = min(255, max(0, pathCost));
+#endif
+
     // aggregate into the final output
     TSim* volume_xyz = get3DBufferAt(volAgr, volAgr_s, volAgr_p, v.x, v.y, v.z);
-    const float val = (float(*volume_xyz) * float(filteringIndex) + pathCost) / (float)(filteringIndex + 1);
-    *volume_xyz = (unsigned char)(val);
+    const float val = (float(*volume_xyz) * float(filteringIndex) + float(pathCost)) / float(filteringIndex + 1);
+    *volume_xyz = TSim(val);
 }
 
 } // namespace depthMap
