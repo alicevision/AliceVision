@@ -301,7 +301,7 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         return;
 
     TSimAcc* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
-    TSimAcc pathCost = TSimAcc(255);
+    float pathCost = 255.0f;
 
     if((z >= 1) && (z < volDim.z - 1))
     {
@@ -315,13 +315,11 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         const float4 gcr1 = tex2D_float4(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
 
         const float deltaC = Euclidean3(gcr0, gcr1);
-        // TSimAcc P1 = TSimAcc(sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC));
-        TSimAcc P1 = TSimAcc(_P1);
-        // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
-        TSimAcc P2 = 0;
+
+        float P2 = 0;
         // _P2 convention: use negative value to skip the use of deltaC
         if(_P2 >= 0)
-            P2 = TSimAcc(sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC));
+            P2 = sigmoid(15.0f, 255.0f, 80.0f, _P2, deltaC);
         else
             P2 = std::abs(_P2);
 
@@ -329,23 +327,23 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         const TSimAcc pathCostMDM1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
         const TSimAcc pathCostMD   = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z);
         const TSimAcc pathCostMDP1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
-        const TSimAcc minCost = TSimAcc(multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostInColM1 + P2));
+        const float minCost = multi_fminf(pathCostMD, pathCostMDM1 + _P1, pathCostMDP1 + _P1, bestCostInColM1 + P2);
 
         // if 'pathCostMD' is the minimal value of the depth
         pathCost = (*sim_xz) + minCost - bestCostInColM1;
     }
 
     // fill the current slice with the new similarity score
-    *sim_xz = pathCost;
+    *sim_xz = TSimAcc(pathCost);
 
 #ifndef TSIM_USE_FLOAT
     // clamp if TSim = uchar (TSimAcc = unsigned int)
-    pathCost = min(255, max(0, pathCost));
+    pathCost = fminf(255.0f, fmaxf(0.0f, pathCost));
 #endif
 
     // aggregate into the final output
     TSim* volume_xyz = get3DBufferAt(volAgr, volAgr_s, volAgr_p, v.x, v.y, v.z);
-    const float val = (float(*volume_xyz) * float(filteringIndex) + float(pathCost)) / float(filteringIndex + 1);
+    const float val = (float(*volume_xyz) * float(filteringIndex) + pathCost) / float(filteringIndex + 1);
     *volume_xyz = TSim(val);
 }
 
