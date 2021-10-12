@@ -406,7 +406,6 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
     const std::map<char, std::array<int, 3>> mapAxes = {
         {'X', {1, 0, 2}}, // XYZ -> YXZ
         {'Y', {0, 1, 2}}, // XYZ
-        {'Z', {0, 1, 2}}, // XYZ
     };
 
     for (char axis : filteringAxes)
