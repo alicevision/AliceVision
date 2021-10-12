@@ -287,7 +287,7 @@ void ps_aggregatePathVolume(
 
     const int blockSizeL = 64;
     const dim3 blockColZ(blockSizeL, 1, 1);
-    const dim3 gridColZ(divUp(volDimZ, blockColZ.x), 1, 1);
+    const dim3 gridColZ(divUp(volDimX, blockColZ.x), 1, 1);
 
     const dim3 blockVolSlide(blockSizeL, 1, 1);
     const dim3 gridVolSlide(divUp(volDimX, blockVolSlide.x), volDimZ, 1);
@@ -298,7 +298,7 @@ void ps_aggregatePathVolume(
     CudaDeviceMemoryPitched<TSimAcc, 2>* d_xzSliceForY = &d_sliceBufferA; // Y slice
     CudaDeviceMemoryPitched<TSimAcc, 2>* d_xzSliceForYm1 = &d_sliceBufferB; // Y-1 slice
 
-    CudaDeviceMemoryPitched<TSimAcc, 2> d_bestSimInYm1(CudaSize<2>(volDimZ, 1)); // best sim score along the Y axis for each Z value
+    CudaDeviceMemoryPitched<TSimAcc, 2> d_bestSimInYm1(CudaSize<2>(volDimX, 1)); // best sim score along the Y axis for each Z value
 
     // Copy the first XZ plane (at Y=0) from 'd_volSim' into 'd_xzSliceForYm1'
     volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ>>>(
