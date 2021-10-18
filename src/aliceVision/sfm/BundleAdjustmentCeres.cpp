@@ -593,7 +593,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     const auto& intrinsicPtr = intrinsicPair.second;
     
     bool refineIntrinsicsOpticalCenter = globalRefineIntrinsicsOpticalCenter;
-    bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
+    bool refineIntrinsicsFocalLength = globalRefineIntrinsicsFocalLength;
     bool refineIntrinsicsDistortion = globalRefineIntrinsicsDistortion;
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
@@ -644,7 +644,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     _allParametersBlocks.push_back(intrinsicBlockPtr);
 
     // keep the camera intrinsic constant
-    if(intrinsicPtr->isLocked() || getIntrinsicState(intrinsicId) == EParameterState::CONSTANT)
+    if(intrinsicPtr->isLocked() || !refineIntrinsics || getIntrinsicState(intrinsicId) == EParameterState::CONSTANT)
     {
       // set the whole parameter block as constant.
       _statistics.addState(EParameter::INTRINSIC, EParameterState::CONSTANT);
