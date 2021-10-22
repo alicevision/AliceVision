@@ -38,13 +38,20 @@ DepthSimMap::~DepthSimMap()
  DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, float x, float y, int width, int height)
 {
     // get the image index in the memory
-   const float xFloat = x - 0.5;
-   const float yFloat = y - 0.5;
+    const float xFloat = x - 0.5;
+    const float yFloat = y - 0.5;
+
+#ifdef DEPTHMAP_UPSCALE_NEAREST_NEIGHBOR
+    // Nearest neighbor, no interpolation
+    int xp = static_cast<int>(std::roundf(xFloat));
+    int yp = static_cast<int>(std::roundf(yFloat));
+
+    return depthSimMap[yp * width + xp];
+#else
     int xp = static_cast<int>(xFloat);
     int yp = static_cast<int>(yFloat);
     xp = std::min(xp, width - 2);
     yp = std::min(yp, height - 2);
-
     const DepthSim lu = depthSimMap[yp       * width + xp    ];
     const DepthSim ru = depthSimMap[yp       * width + xp + 1];
     const DepthSim rd = depthSimMap[(yp + 1) * width + xp + 1];
@@ -93,7 +100,7 @@ DepthSimMap::~DepthSimMap()
     const DepthSim out = u + (d - u) * vi;
 
     return out;
-
+#endif
 }
 
 void DepthSimMap::initFromSmaller(const DepthSimMap& other)
