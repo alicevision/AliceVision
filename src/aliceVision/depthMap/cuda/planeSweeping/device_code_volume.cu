@@ -103,13 +103,25 @@ __global__ void volume_slice_kernel(
     constexpr const float fminVal = -1.0f;
     constexpr const float fmaxVal = 1.0f;
     constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
-    fsim = (fsim - fminVal) * fmultiplier;
+
+    if(fsim == CUDART_INF_F) // invalid similarity
+    {
+      fsim = 255.0f;
+    }
+    else // valid similarity
+    {
+      fsim = (fsim - fminVal) * fmultiplier;
+
 #ifdef TSIM_USE_FLOAT
-    // no clamp
+      // no clamp
 #else
-    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+      fsim = fminf(1.0f, fmaxf(0.0f, fsim));
 #endif
-    fsim *= 255.0f; // needed to store in the volume in uchar
+      // convert from (0, 1) to (0, 254)
+      // needed to store in the volume in uchar
+      // 255 is reserved for the similarity initialization, i.e. undefined values
+      fsim *= 254.0f;
+    }
 
     TSim* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
     TSim* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);

@@ -171,6 +171,7 @@ __device__ float compNCCbyH(const CameraStructBase& rc_cam, const CameraStructBa
  * @param[in] _gammaP
  * 
  * @return similarity value
+ *         or invalid similarity (CUDART_INF_F) if uninitialized or masked
  */
 __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
                                    cudaTextureObject_t tc_tex,
@@ -195,7 +196,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
        (tp.x < dd) || (tp.x > (float)(tc_width  - 1) - dd) ||
        (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
     {
-        return 1.0f;
+        return CUDART_INF_F; // uninitialized
     }
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
@@ -207,7 +208,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
 
     if (gcr.w == 0.0f || gct.w == 0.0f)
-        return 1.0f; // if no alpha, invalid pixel from input mask
+        return CUDART_INF_F; // if no alpha, invalid pixel from input mask
 
     float gammaC = _gammaC;
     // float gammaC = ((gcr.w>0)||(gct.w>0))?sigmoid(_gammaC,25.5f,20.0f,10.0f,fmaxf(gcr.w,gct.w)):_gammaC;
