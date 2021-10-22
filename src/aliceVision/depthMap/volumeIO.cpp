@@ -31,13 +31,13 @@ namespace depthMap {
 void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
 {
     sfmData::SfMData pointCloud;
-    int xyStep = 10;
+    const int xyStep = 10;
 
     IndexT landmarkId;
 
-    auto volDim = volumeSim.getSize();
-    size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    const auto volDim = volumeSim.getSize();
+    const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
+    const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
 
     ALICEVISION_LOG_DEBUG("DepthMap exportSimilarityVolume: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ", xyStep=" << xyStep << ".");
 
