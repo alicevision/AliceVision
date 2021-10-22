@@ -117,7 +117,7 @@ __host__ void ps_downscale_gauss( Pyramid& pyramid,
           pyramid[scale].arr->getBuffer(),
           pyramid[scale].arr->getPitch(),
           w / (scale + 1), h / (scale + 1), scale + 1,
-          radius //, 15.5f
+          radius
           );
 }
 /*********************************************************************************
