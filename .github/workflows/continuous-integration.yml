@@ -104,7 +104,7 @@ jobs:
       tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      COMMIT_ID: 261c458af6e3eed5d099144aff95d2b5035f656b
+      COMMIT_ID: 2169ab765b49cfc5cd7eddfc8ff3e579326776f8
     steps:
       - name: Checkout
         uses: actions/checkout@v2
