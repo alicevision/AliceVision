@@ -132,7 +132,7 @@ void ps_refineRcDepthMap(
     int ntcsteps,
     CameraStruct& rc_cam,
     CameraStruct& tc_cam,
-    int width, int height,
+    int partWidth, int height,
     int rcWidth, int rcHeight,
     int tcWidth, int tcHeight,
     int scale,
@@ -144,6 +144,13 @@ void ps_refineRcDepthMap(
     bool moveByTcOrRc,
     int xFrom);
 
+void ps_refineRcDepthMap(const CudaDeviceMemoryPitched<float2, 2>& rDepthSimData_d,
+    CudaDeviceMemoryPitched<float2, 2>& tDepthSimData_d, int ntcsteps,
+    CameraStruct& rc_cam,
+    CameraStruct& tc_cam, int partWidth, int height, int rcWidth, int rcHeight, int tcWidth,
+    int tcHeight, int CUDAdeviceNo, int ncamsAllocated, bool verbose, int wsh, float gammaC,
+    float gammaP, bool moveByTcOrRc, cudaStream_t stream);
+
 void ps_fuseDepthSimMapsGaussianKernelVoting(
     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
     std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
@@ -153,6 +160,11 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(
     float sigma,
     int width, int height,
     bool verbose);
+
+void ps_fuseDepthSimMapsGaussianKernelVoting(std::vector<CudaDeviceMemoryPitched<float2, 2>>& dataMaps_d,
+    const CudaDeviceMemory<const float2*>& dataMapsPtrs_d,
+    int ndepthSimMaps, int nSamplesHalf, int nDepthsToRefine, float sigma,
+    int width, int height, bool verbose);
 
 void ps_optimizeDepthSimMapGradientDescent(
     CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
@@ -175,6 +187,16 @@ void ps_getSilhoueteMap(
 void ps_loadCameraStructs( const CameraStructBase* hst,
                            const CamCacheIdx&      offset,
                            cudaStream_t            stream );
+
+void ps_initFromSmaller(CudaDeviceMemoryPitched<float2, 2>& out, const int out_w, const int out_h,
+    const CudaDeviceMemoryPitched<float2, 2>& in, const int in_w, const int in_h,
+    const float ratio, const cudaStream_t stream, bool verbose);
+
+void ps_setPixSizesInit(int rc_cam_cache_idx, CudaDeviceMemoryPitched<float2, 2>& r_data, const int r_w, const int r_h,
+    int tc_cam_cache_idx, const cudaStream_t stream, bool verbose);
+
+void ps_setPixSizesMin(int rc_cam_cache_idx, CudaDeviceMemoryPitched<float2, 2>& r_data, const int r_w, const int r_h,
+    int tc_cam_cache_idx, const cudaStream_t stream, bool verbose);
 
 } // namespace depthMap
 } // namespace aliceVision

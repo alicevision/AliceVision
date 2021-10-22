@@ -77,6 +77,81 @@ __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMa
         *oDepthSim = make_float2(midDepthPixSize.x - bestGsvSample.y * depthStep, bestGsvSample.x);
 }
 
+#define SAMPLES_PER_BATCH 16
+__global__ void fuse_gaussianVotedDepthSim_kernel(const float2* const* depthSimMaps, int depthSimMap_p, int nDepthSimMaps, const float2* midDepthPixSizeMap,
+                                                  int midDepthPixSizeMap_p, float2* outDepthPixSizeMap,
+                                                  int outDepthPixSizeMap_p, int width,
+                                                  int height, int nSamples, float samplesPerPixSize,
+                                                  float twoTimesSigmaPowerTwo)
+{
+    assert(nSamples % SAMPLES_PER_BATCH == 0);
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(x >= width || y >= height)
+        return;
+
+    const float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
+    int nextDepthMapIdx = 0;
+    float2 nextDepthSim = *get2DBufferAt(depthSimMaps[nextDepthMapIdx], depthSimMap_p, x, y);
+    nextDepthMapIdx = (nextDepthMapIdx + 1) % nDepthSimMaps;
+    const int nSamplesHalf = nSamples / 2;
+
+    float votes[SAMPLES_PER_BATCH];
+    float bestVote = 1.0f;
+    int bestS = 0;
+
+    float2 out = make_float2(-1.0f, 1.0f);
+
+    if(midDepthPixSize.x > 0.0f)
+    {
+        const float depthStep = midDepthPixSize.y / samplesPerPixSize;
+        for(int s = -nSamplesHalf; s < nSamplesHalf; s += SAMPLES_PER_BATCH)
+        {
+#pragma unroll SAMPLES_PER_BATCH
+            for(int sb = 0; sb < SAMPLES_PER_BATCH; ++sb)
+            {
+                votes[sb] = 0.0f;
+            }
+
+            for(int dsm_idx = 0; dsm_idx < nDepthSimMaps; ++dsm_idx)
+            {
+                // Get next depthSim and preload for next iteration
+                float2 depthSim = nextDepthSim;
+                nextDepthSim = *get2DBufferAt(depthSimMaps[nextDepthMapIdx], depthSimMap_p, x, y);
+                nextDepthMapIdx = (nextDepthMapIdx + 1) % nDepthSimMaps;
+
+                if(depthSim.x > 0.0f)
+                {
+                    float i = (midDepthPixSize.x - depthSim.x) / depthStep;
+                    float sim = -sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthSim.y);
+
+#pragma unroll SAMPLES_PER_BATCH
+                    for(int sb = 0; sb < SAMPLES_PER_BATCH; ++sb)
+                    {
+                        votes[sb] += sim * expf(-((i - s - sb) * (i - s - sb)) / twoTimesSigmaPowerTwo);
+                    }
+                }
+            }
+
+#pragma unroll SAMPLES_PER_BATCH
+            for(int sb = 0; sb < SAMPLES_PER_BATCH; ++sb)
+            {
+                if(votes[sb] < bestVote)
+                {
+                    bestVote = votes[sb];
+                    bestS = s + sb;
+                }
+            }
+        }
+
+        out = make_float2(midDepthPixSize.x - static_cast<float>(bestS) * depthStep, bestVote);
+    }
+
+    *get2DBufferAt(outDepthPixSizeMap, outDepthPixSizeMap_p, x, y) = out;
+}
+
 __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, int optDepthMap_p,
                                                             float2* optDepthMapSimMap, int optDepthMapSimMap_p,
                                                             int width, int partHeight)

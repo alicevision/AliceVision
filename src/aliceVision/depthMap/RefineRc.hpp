@@ -38,9 +38,14 @@ private:
     DepthSimMap _depthSimMapOpt;
 
     void getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1);
+    void getDepthPixSizeMapFromSGM(std::vector<CudaDeviceMemoryPitched<float2, 2>>& dataMaps_d,
+                                   cudaStream_t stream = 0);
     void filterMaskedPixels(DepthSimMap& out_depthSimMap, int rc);
 
     void refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis);
+    void refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused,
+                                      std::vector<CudaDeviceMemoryPitched<float2, 2>>& dataMaps_d,
+                                      CudaDeviceMemory<const float2*>& dataMapsPtrs_d);
     void optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, const DepthSimMap& depthPixSizeMapVis, const DepthSimMap& depthSimMapPhoto);
 };
 

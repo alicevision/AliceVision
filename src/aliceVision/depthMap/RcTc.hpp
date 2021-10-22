@@ -23,6 +23,9 @@ public:
 
     void refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc, int ndepthsToRefine,
                                int wsh, float gammaC, float gammaP);
+    void refineRcTcDepthSimMap(bool useTcOrRcPixSize, const CudaDeviceMemoryPitched<float2, 2>& rDepthSimData_d,
+                               CudaDeviceMemoryPitched<float2, 2>& tDepthSimData_d, int rc, int tc, int ndepthsToRefine,
+                               int wsh, float gammaC, float gammaP, int w, int h, cudaStream_t stream);
 
     // void smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP);
     // void filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC);

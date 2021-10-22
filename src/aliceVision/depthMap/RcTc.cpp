@@ -30,7 +30,7 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
 
     long t1 = clock();
 
-    int nParts = 4;
+    int nParts = 1;
     int wPart = w / nParts;
     for(int p = 0; p < nParts; p++)
     {
@@ -39,7 +39,8 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
         StaticVector<float> depthMap;
         depthSimMap->getDepthMapStep1XPart(depthMap, xFrom, wPartAct);
         StaticVector<float> simMap;
-        depthSimMap->getSimMapStep1XPart(simMap, xFrom, wPartAct);
+        simMap.resize(w*h);
+        // depthSimMap->getSimMapStep1XPart(simMap, xFrom, wPartAct); // H2H
 
         cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
                                 xFrom, wPartAct);
@@ -63,6 +64,23 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
         if(mp.verbose)
             mvsUtils::printfElapsedTime(t1, "refineRcTcDepthSimMap");
     }
+}
+
+void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, const CudaDeviceMemoryPitched<float2, 2>& rDepthSimData_d,
+                                 CudaDeviceMemoryPitched<float2, 2>& tDepthSimData_d, int rc, int tc,
+                                 int ndepthsToRefine, int wsh, float gammaC, float gammaP, int w, int h,
+                                 cudaStream_t stream)
+{
+    if(mp.verbose)
+        ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
+ 
+    long t1 = clock();
+    // Writes refined to tDepthSimData_d
+        cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, rDepthSimData_d, tDepthSimData_d, rc, tc, wsh, gammaC,
+                           gammaP, w, h, stream);
+
+        if(mp.verbose)
+            mvsUtils::printfElapsedTime(t1, "refineRcTcDepthSimMap");
 }
 
 #if 0

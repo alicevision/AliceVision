@@ -23,6 +23,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <nvtx3/nvToolsExt.h>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -713,6 +715,32 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     return true;
 }
 
+bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine,
+                                           const CudaDeviceMemoryPitched<float2, 2>& rDepthSimData_d,
+                                           CudaDeviceMemoryPitched<float2, 2>& tDepthSimData_d, int rc_global_id,
+                                           int tc_global_id, int wsh, float gammaC, float gammaP, int w, int h,
+                                           cudaStream_t stream)
+{
+    // Here, scale/step of 1 is assumed
+    long t1 = clock();
+
+    ALICEVISION_LOG_DEBUG("\t- rc: " << rc_global_id << std::endl << "\t- tcams: " << tc_global_id);
+
+    int rc_idx = addCam(rc_global_id, 1, stream);
+    int tc_idx = addCam(tc_global_id, 1, stream);
+
+    // sweep
+    ps_refineRcDepthMap(rDepthSimData_d, tDepthSimData_d, nStepsToRefine,
+                        _cams[rc_idx], _cams[tc_idx], w, h, _mp.getWidth(rc_global_id),
+                        _mp.getHeight(rc_global_id), _mp.getWidth(tc_global_id),
+                        _mp.getHeight(tc_global_id), _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh, gammaC, gammaP,
+                        useTcOrRcPixSize, stream);
+
+    mvsUtils::printfElapsedTime(t1);
+
+    return true;
+}
+
 /* Be very careful with volume indexes:
  * volume is indexed with the same index as tc. The values of tc can be quite different.
  * depths is indexed with the index_set elements
@@ -843,7 +871,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
                             _CUDADeviceNo, _nImgsInGPUAtTime);
 
     ALICEVISION_LOG_INFO("==== SGMoptimizeSimVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
-
+    nvtxRangePop();
     return true;
 }
 
@@ -961,6 +989,20 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
     {
         delete dataMaps_hmh[i];
     }
+
+    mvsUtils::printfElapsedTime(t1);
+
+    return true;
+}
+
+bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(
+    int w, int h, std::vector<CudaDeviceMemoryPitched<float2, 2>>& dataMaps_d,
+    const CudaDeviceMemory<const float2*>& dataMapsPtrs_d, int nSamplesHalf, int nDepthsToRefine, float sigma)
+{
+    long t1 = clock();
+
+    ps_fuseDepthSimMapsGaussianKernelVoting(dataMaps_d, dataMapsPtrs_d, (int)dataMaps_d.size(), nSamplesHalf,
+                                            nDepthsToRefine, sigma, w, h, _mp.verbose);
 
     mvsUtils::printfElapsedTime(t1);
 
@@ -1168,6 +1210,8 @@ void FrameCacheEntry::fillHostFrameFromImageCache(
     int c,
     mvsUtils::MultiViewParams& mp )
 {
+    nvtxRangePush(__func__);
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
     mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c );
     ALICEVISION_LOG_TRACE(__FUNCTION__ << ": " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
@@ -1188,6 +1232,7 @@ void FrameCacheEntry::fillHostFrameFromImageCache(
         }
     }
     ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
+    nvtxRangePop();
 }
 
 void FrameCacheEntry::setLocalCamId( int cache_cam_id )

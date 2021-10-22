@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <map>
 #include <array>
+#include <nvtx3/nvToolsExt.h>
 
 namespace aliceVision {
 namespace depthMap {
@@ -702,130 +703,159 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
     cudaTextureObject_t rc_tex = rc_pyramid[scale].tex;
     cudaTextureObject_t tc_tex = tc_pyramid[scale].tex;
 
-    CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(partWidth, height));
-    copy(rcDepthMap_dmp, inout_rcDepthMap_hmh, partWidth, height);
-    CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(partWidth, height));
     CudaDeviceMemoryPitched<float, 2> bestDptMap_dmp(CudaSize<2>(partWidth, height));
+    copy(bestDptMap_dmp, inout_rcDepthMap_hmh, partWidth, height);
+    CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(partWidth, height));
 
     clock_t tall = tic();
-    int halfNSteps = ((ntcsteps - 1) / 2) + 1; // Default ntcsteps = 31
-    for(int i = 0; i < halfNSteps; ++i)
-    {
-        refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rc_cam.param_dev.i,
-            tc_cam.param_dev.i,
-            rc_tex, tc_tex,
-            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(),
-            partWidth, height, wsh, gammaC, gammaP,
-            float(i), moveByTcOrRc, xFrom,
-            rcWidth, rcHeight,
-            tcWidth, tcHeight);
-    }
-    for(int i = 1; i < halfNSteps; ++i)
-    {
-        refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
-            bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(), partWidth, height, wsh, gammaC, gammaP,
-            float(-i), moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight);
-    }
 
-    /*
-    // Filter intermediate refined images does not improve
-    // if(false)
-    // for (int i = 0; i < 5; ++i)
+    float gammaCInv = 1.0 / gammaC;
+    float gammaPInv = 1.0 / gammaP;
+ 
+    switch (wsh)
     {
-        // Filter refined depth map
-        CudaTexture<float> depthTex(bestDptMap_dmp);
-        float euclideanDelta = 1.0;
-        int radius = 3;
-        ps_bilateralFilter<float>(
-            depthTex.textureObj,
-            bestDptMap_dmp,
-            euclideanDelta,
-            radius);
-        ps_medianFilter<float>(
-            depthTex.textureObj,
-            bestDptMap_dmp,
-            radius);
-    }
-    */
-
-    {
-        CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap_dmp(CudaSize<2>(partWidth, height));
-        CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(partWidth, height));
-
+        case 2:
         {
-            // Set best sim map into lastThreeSimsMap_dmp.y
-            refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(), partWidth, height, 1);
-            /*
-            // Compute NCC for depth-1
-            refine_compYKNCCSimMapPatch_kernel << <grid, block >> >(
-                *rc_cam.param_dev.i, *tc_cam.param_dev.i,
-                rc_tex, tc_tex,
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-                partWidth,
-                height, wsh, gammaC, gammaP, 0.0f, moveByTcOrRc, xFrom,
-                rcWidth, rcHeight,
-                tcWidth, tcHeight);
-            // Set sim for depth-1 into lastThreeSimsMap_dmp.y
-            refine_setLastThreeSimsMap_kernel << <grid, block >> >(
-                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                partWidth, height, 1);
-            */
+            refine_sweep_optimized_kernel<2>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<2>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
         }
-
+        case 3:
         {
-            // Compute NCC for depth-1
-            refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-                rc_cam.param_dev.i,
-                tc_cam.param_dev.i, 
-                rc_tex, tc_tex,
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth,
-                height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom,
-                rcWidth, rcHeight,
-                tcWidth, tcHeight);
-            // Set sim for depth-1 into lastThreeSimsMap_dmp.x
-            refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(), partWidth, height, 0);
-        }
+            
+            refine_sweep_optimized_kernel<3>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
 
+            refine_interpolate_optimized_kernel<3>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
+        }
+        case 4:
         {
-            // Compute NCC for depth+1
-            refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-                rc_cam.param_dev.i,
-                tc_cam.param_dev.i,
-                rc_tex, tc_tex,
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth,
-                height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom,
-                rcWidth, rcHeight,
-                tcWidth, tcHeight);
-            // Set sim for depth+1 into lastThreeSimsMap_dmp.z
-            refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(), partWidth, height, 2);
+            refine_sweep_optimized_kernel<4>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<4>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
         }
-
-        // Interpolation from the lastThreeSimsMap_dmp
-        refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
-            rc_cam.param_dev.i,
-            tc_cam.param_dev.i,
-            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(), partWidth, height, moveByTcOrRc, xFrom);
+        case 5:
+        {
+            refine_sweep_optimized_kernel<5>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<5>
+                <<<grid, block>>>(rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                                  bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                                  gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
+        }
+        default:
+            refine_merged_optimized_fallback_kernel<<<grid, block>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+                bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth, height,
+                wsh, gammaCInv, gammaPInv, moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
     }
+
     copy(out_osimMap_hmh, partWidth, height, bestSimMap_dmp);
     copy(inout_rcDepthMap_hmh, partWidth, height, bestDptMap_dmp);
 
+    if(verbose)
+        printf("gpu elapsed time: %f ms \n", toc(tall));
+}
+
+void ps_refineRcDepthMap(const CudaDeviceMemoryPitched<float2, 2>& rDepthSimData_d,
+                         CudaDeviceMemoryPitched<float2, 2>& tDepthSimData_d, int ntcsteps,
+                         CameraStruct& rc_cam,
+                         CameraStruct& tc_cam, int partWidth, int height, int rcWidth, int rcHeight, int tcWidth,
+                         int tcHeight, int CUDAdeviceNo, int ncamsAllocated, bool verbose, int wsh, float _gammaC,
+                         float _gammaP, bool moveByTcOrRc, cudaStream_t stream)
+{
+    // setup block and grid
+    dim3 block(16, 16, 1);
+    dim3 grid(divUp(partWidth, block.x), divUp(height, block.y), 1);
+
+    Pyramid& rc_pyramid = *rc_cam.pyramid;
+    Pyramid& tc_pyramid = *tc_cam.pyramid;
+    cudaTextureObject_t rc_tex = rc_pyramid[0].tex;
+    cudaTextureObject_t tc_tex = tc_pyramid[0].tex;
+
+    clock_t tall = tic();
+
+    float gammaCInv = 1.0 / _gammaC;
+    float gammaPInv = 1.0 / _gammaP;
+
+    switch(wsh)
+    {
+        case 2:
+        {
+            refine_sweep_optimized_kernel<2><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, rDepthSimData_d.getBuffer(),
+                rDepthSimData_d.getPitch(), tDepthSimData_d.getBuffer(), tDepthSimData_d.getPitch(), partWidth, height,
+                gammaCInv, gammaPInv, moveByTcOrRc, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<2><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, tDepthSimData_d.getBuffer(),
+                tDepthSimData_d.getPitch(), partWidth, height, gammaCInv, gammaPInv, moveByTcOrRc, rcWidth,
+                rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
+        }
+        case 3:
+        {
+            refine_sweep_optimized_kernel<3><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, rDepthSimData_d.getBuffer(),
+                rDepthSimData_d.getPitch(), tDepthSimData_d.getBuffer(), tDepthSimData_d.getPitch(), partWidth, height,
+                gammaCInv, gammaPInv, moveByTcOrRc, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<3><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, tDepthSimData_d.getBuffer(),
+                tDepthSimData_d.getPitch(), partWidth, height, gammaCInv, gammaPInv, moveByTcOrRc, rcWidth,
+                rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
+        }
+        case 4:
+        {
+            refine_sweep_optimized_kernel<4><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, rDepthSimData_d.getBuffer(),
+                rDepthSimData_d.getPitch(), tDepthSimData_d.getBuffer(), tDepthSimData_d.getPitch(), partWidth, height,
+                gammaCInv, gammaPInv, moveByTcOrRc, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<4><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, tDepthSimData_d.getBuffer(),
+                tDepthSimData_d.getPitch(), partWidth, height, gammaCInv, gammaPInv, moveByTcOrRc, rcWidth,
+                                  rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
+        }
+        case 5:
+        {
+            refine_sweep_optimized_kernel<5><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, rDepthSimData_d.getBuffer(),
+                rDepthSimData_d.getPitch(), tDepthSimData_d.getBuffer(), tDepthSimData_d.getPitch(), partWidth, height,
+                gammaCInv, gammaPInv, moveByTcOrRc, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+            refine_interpolate_optimized_kernel<5><<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, tDepthSimData_d.getBuffer(),
+                tDepthSimData_d.getPitch(), partWidth, height, gammaCInv, gammaPInv, moveByTcOrRc, rcWidth,
+                                  rcHeight, tcWidth, tcHeight, ntcsteps);
+            break;
+        }
+        default:
+            refine_merged_optimized_fallback_kernel<<<grid, block, 0, stream>>>(
+                rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, rDepthSimData_d.getBuffer(),
+                rDepthSimData_d.getPitch(), tDepthSimData_d.getBuffer(), tDepthSimData_d.getPitch(), partWidth, height,
+                wsh, gammaCInv, gammaPInv, moveByTcOrRc, rcWidth, rcHeight, tcWidth, tcHeight, ntcsteps);
+    }
+ 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
@@ -858,9 +888,6 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    CudaDeviceMemoryPitched<float2, 2> bestDepthSimMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float2, 2> bestGsvSampleMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float, 2> gsvSampleMap_dmp(CudaSize<2>(width, height));
     std::vector<CudaDeviceMemoryPitched<float2, 2>*> depthSimMaps_dmp(ndepthSimMaps);
 
     for(int i = 0; i < ndepthSimMaps; i++)
@@ -869,29 +896,23 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
         copy((*depthSimMaps_dmp[i]), (*depthSimMaps_hmh[i]));
     }
 
-    for(int s = -nSamplesHalf; s <= nSamplesHalf; s++) // (-150, 150)
+    std::vector<float2*> depthSimMapsPtrs_host(ndepthSimMaps-1);
+    for (int i=0; i< depthSimMapsPtrs_host.size(); ++i)
     {
-        for(int c = 1; c < ndepthSimMaps; c++) // number of Tc cameras
-        {
-            fuse_computeGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
-                gsvSampleMap_dmp.getBuffer(), gsvSampleMap_dmp.getPitch(),
-                depthSimMaps_dmp[c]->getBuffer(), depthSimMaps_dmp[c]->getPitch(),
-                depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(),
-                width, height, (float)s, c - 1, samplesPerPixSize, twoTimesSigmaPowerTwo);
-        }
-        fuse_updateBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
-            bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.getPitch(),
-            gsvSampleMap_dmp.getBuffer(), gsvSampleMap_dmp.getPitch(),
-            width, height, (float)s, s + nSamplesHalf);
+      depthSimMapsPtrs_host[i] = depthSimMaps_dmp[i+1]->getBuffer();
     }
+    CudaDeviceMemory<const float2*> depthSimMapsPtrs_dmp(ndepthSimMaps-1);
+    cudaMemcpyAsync(depthSimMapsPtrs_dmp.getBuffer(), depthSimMapsPtrs_host.data(), (ndepthSimMaps-1)*sizeof(float2*), cudaMemcpyHostToDevice, 0); // TODO: Add error check
+    int nSamples = ((2*nSamplesHalf+SAMPLES_PER_BATCH-1) / SAMPLES_PER_BATCH)*SAMPLES_PER_BATCH;
 
-    fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
-        bestDepthSimMap_dmp.getBuffer(), bestDepthSimMap_dmp.getPitch(),
-        bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.getPitch(),
-        depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(),
-        width, height, samplesPerPixSize);
+    samplesPerPixSize = (float)(nSamples / (nDepthsToRefine - 1));
+    fuse_gaussianVotedDepthSim_kernel<<<grid, block>>>(
+        depthSimMapsPtrs_dmp.getBuffer() + 1, depthSimMaps_dmp[1]->getPitch(), ndepthSimMaps - 1, 
+                depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(), depthSimMaps_dmp[0]->getBuffer(),
+        depthSimMaps_dmp[0]->getPitch(),
+                width, height, nSamples, samplesPerPixSize, twoTimesSigmaPowerTwo);
 
-    copy((*odepthSimMap_hmh), bestDepthSimMap_dmp);
+    copy((*odepthSimMap_hmh), *depthSimMaps_dmp[0]);
 
     for(int i = 0; i < ndepthSimMaps; i++)
     {
@@ -902,15 +923,52 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
-void ps_optimizeDepthSimMapGradientDescent(
-        CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
-        const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
-        const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
-        int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
-        CameraStruct& rc_cam,
-        int width, int partHeight, int scale,
-        int CUDAdeviceNo, int ncamsAllocated, bool verbose, int yFrom)
+/**
+ * @brief ps_fuseDepthSimMapsGaussianKernelVoting
+ * @param odepthSimMap_hmh
+ * @param depthSimMaps_hmh
+ * @param ndepthSimMaps: number of Tc cameras
+ * @param nSamplesHalf (default value 150)
+ * @param nDepthsToRefine (default value 31)
+ * @param sigma
+ * @param width
+ * @param height
+ * @param verbose
+ */
+void ps_fuseDepthSimMapsGaussianKernelVoting(std::vector<CudaDeviceMemoryPitched<float2, 2>>& dataMaps_d,
+                                             const CudaDeviceMemory<const float2*>& dataMapsPtrs_d,
+                                             int ndepthSimMaps, int nSamplesHalf, int nDepthsToRefine, float sigma,
+                                             int width, int height, bool verbose)
 {
+    clock_t tall = tic();
+
+    // setup block and grid
+    int block_size = 16;
+    dim3 block(block_size, block_size, 1);
+    dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
+
+    const int nSamples = ((2 * nSamplesHalf + SAMPLES_PER_BATCH - 1) / SAMPLES_PER_BATCH) * SAMPLES_PER_BATCH;
+    const float samplesPerPixSize = (float)(nSamples / (nDepthsToRefine - 1));
+    const float twoTimesSigmaPowerTwo = 2.0f * sigma * sigma;
+
+    fuse_gaussianVotedDepthSim_kernel<<<grid, block>>>(
+        dataMapsPtrs_d.getBuffer()+1, dataMaps_d[1].getPitch(), ndepthSimMaps - 1, dataMaps_d[0].getBuffer(),
+        dataMaps_d[0].getPitch(), dataMaps_d[1].getBuffer(), dataMaps_d[1].getPitch(), width, height, nSamples,
+        samplesPerPixSize,
+        twoTimesSigmaPowerTwo);
+
+    if(verbose)
+        printf("gpu elapsed time: %f ms \n", toc(tall));
+}
+
+void ps_optimizeDepthSimMapGradientDescent(CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
+                                           int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
+                                           CameraStruct& rc_cam, int width, int partHeight, int scale, int CUDAdeviceNo,
+                                           int ncamsAllocated, bool verbose, int yFrom)
+{
+    nvtxRangePush(__func__);
     clock_t tall = tic();
 
     float samplesPerPixSize = (float)(nSamplesHalf / ((nDepthsToRefine - 1) / 2));
@@ -969,6 +1027,7 @@ void ps_optimizeDepthSimMapGradientDescent(
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
+    nvtxRangePop();
 }
 
 // uchar4 with 0..255 components => float3 with 0..1 components
@@ -1037,6 +1096,58 @@ void ps_loadCameraStructs( const CameraStructBase* hst,
                                        stream );
     }
     THROW_ON_CUDA_ERROR( err, "Failed to copy CameraStructs from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
+}
+
+void ps_initFromSmaller(CudaDeviceMemoryPitched<float2, 2>& out, const int out_w, const int out_h,
+                               const CudaDeviceMemoryPitched<float2, 2>& in, const int in_w, const int in_h,
+                               const float ratio, const cudaStream_t stream, bool verbose)
+{
+    clock_t tall = tic();
+
+    // setup block and grid
+    int block_size = 16;
+    dim3 block(block_size, block_size, 1);
+    dim3 grid(divUp(out_w, block_size), divUp(out_h, block_size), 1);
+
+    initFromSmaller_kernel<<<grid, block, 0, stream>>>(out.getBuffer(), out.getPitch(), out_w, out_h, in.getBuffer(),
+                                                       in.getPitch(), in_w, in_h, ratio);
+
+    if(verbose)
+        printf("gpu elapsed time: %f ms \n", toc(tall));
+}
+
+void ps_setPixSizesInit(int rc_cam_cache_idx, CudaDeviceMemoryPitched<float2, 2>& r_data, const int r_w, const int r_h,
+                        int tc_cam_cache_idx, const cudaStream_t stream, bool verbose)
+{
+    clock_t tall = tic();
+
+    // setup block and grid
+    int block_size = 16;
+    dim3 block(block_size, block_size, 1);
+    dim3 grid(divUp(r_w, block_size), divUp(r_h, block_size), 1);
+
+    setCamSizesInit_kernel<<<grid, block, 0, stream>>>(rc_cam_cache_idx, r_data.getBuffer(), r_data.getPitch(), r_w,
+                                                       r_h, tc_cam_cache_idx);
+
+    if(verbose)
+        printf("gpu elapsed time: %f ms \n", toc(tall));
+}
+
+void ps_setPixSizesMin(int rc_cam_cache_idx, CudaDeviceMemoryPitched<float2, 2>& r_data, const int r_w, const int r_h,
+                       int tc_cam_cache_idx, const cudaStream_t stream, bool verbose)
+{
+    clock_t tall = tic();
+
+    // setup block and grid
+    int block_size = 16;
+    dim3 block(block_size, block_size, 1);
+    dim3 grid(divUp(r_w, block_size), divUp(r_h, block_size), 1);
+
+    setCamSizesMin_kernel<<<grid, block, 0, stream>>>(rc_cam_cache_idx, r_data.getBuffer(), r_data.getPitch(), r_w, r_h,
+                                                      tc_cam_cache_idx);
+
+    if(verbose)
+        printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
 } // namespace depthMap

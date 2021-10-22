@@ -157,6 +157,28 @@ public:
 class PlaneSweepingCuda
 {
 public:
+    struct parameters
+    {
+        int epipShift;
+        int rotX;
+        int rotY;
+        bool estimated;
+
+        parameters& operator=(const parameters& m)
+        {
+            epipShift = m.epipShift;
+            rotX = m.rotX;
+            rotY = m.rotY;
+            estimated = m.estimated;
+            return *this;
+        }
+
+        inline bool operator==(const parameters& m) const
+        {
+            return ((epipShift == m.epipShift) && (rotX == m.rotX) && (rotY == m.rotY));
+        }
+    };
+
     const int _scales;
 
     mvsUtils::MultiViewParams& _mp;
@@ -194,6 +216,11 @@ public:
     bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
                             StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
                             float gammaP, int xFrom, int wPart);
+
+    bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine,
+                            const CudaDeviceMemoryPitched<float2, 2>& rDepthSimData_d,
+                            CudaDeviceMemoryPitched<float2, 2>& tDepthSimData_d, int rc_global_id, int tc_global_id,
+                            int wsh, float gammaC, float gammaP, int w, int h, cudaStream_t stream);
 
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
@@ -236,6 +263,10 @@ public:
 
     bool fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim> &oDepthSimMap,
                                               const StaticVector<StaticVector<DepthSim> *>& dataMaps, int nSamplesHalf,
+                                              int nDepthsToRefine, float sigma);
+
+    bool fuseDepthSimMapsGaussianKernelVoting(int w, int h, std::vector<CudaDeviceMemoryPitched<float2, 2>>& dataMaps_d,
+                                              const CudaDeviceMemory<const float2*>& dataMapsPtrs_d, int nSamplesHalf,
                                               int nDepthsToRefine, float sigma);
 
     bool optimizeDepthSimMapGradientDescent(PinnedDepthSims& oDepthSimMap, const PinnedDepthSims& sgmDepthPixSizeMap,
