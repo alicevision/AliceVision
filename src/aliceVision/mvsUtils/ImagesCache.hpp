@@ -79,8 +79,6 @@ public:
     void refreshImages_sync(const std::vector<int>& camIds);
 
     void refreshImages_async(const std::vector<int>& camIds);
-
-    Color getPixelValueInterpolated(const Point2d* pix, int camId);
 };
 
 } // namespace mvsUtils

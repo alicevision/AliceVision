@@ -150,33 +150,6 @@ void ImagesCache<Image>::refreshImages_async(const std::vector<int>& camIds)
     _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache<Image>::refreshImages_sync, this, camIds));
 }
 
-template<typename Image>
-typename ImagesCache<Image>::Color ImagesCache<Image>::getPixelValueInterpolated(const Point2d* pix, int camId)
-{
-    // get the image index in the memory
-    const int i = _camIdMapId[camId];
-    const ImgSharedPtr& img = _imgs[i];
-    
-    const int xp = static_cast<int>(pix->x);
-    const int yp = static_cast<int>(pix->y);
-
-    // precision to 4 decimal places
-    const float ui = pix->x - static_cast<float>(xp);
-    const float vi = pix->y - static_cast<float>(yp);
-
-    const Color lu = img->at( xp  , yp   );
-    const Color ru = img->at( xp+1, yp   );
-    const Color rd = img->at( xp+1, yp+1 );
-    const Color ld = img->at( xp  , yp+1 );
-
-    // bilinear interpolation of the pixel intensity value
-    const Color u = lu + (ru - lu) * ui;
-    const Color d = ld + (rd - ld) * ui;
-    const Color out = u + (d - u) * vi;
-
-    return out;
-}
-
 template class ImagesCache<ImageRGBf>;
 template class ImagesCache<ImageRGBAf>;
 
