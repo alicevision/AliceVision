@@ -50,8 +50,8 @@ DepthSimMap::~DepthSimMap()
     const DepthSim rd = depthSimMap[(yp + 1) * width + xp + 1];
     const DepthSim ld = depthSimMap[(yp + 1) * width + xp    ];
 
-    if(lu.depth < 0.0f || ru.depth < 0.0f ||
-        rd.depth < 0.0f || ld.depth < 0.0f)
+    if(lu.depth <= 0.0f || ru.depth <= 0.0f ||
+        rd.depth <= 0.0f || ld.depth <= 0.0f)
     {
         DepthSim acc(0.0f, 0.0f);
         int count = 0;
@@ -81,7 +81,7 @@ DepthSimMap::~DepthSimMap()
         }
         else
         {
-            return DepthSim(-1.0f, -1.0f);
+            return DepthSim(-1.0f, 1.0f);
         }
     }
 
