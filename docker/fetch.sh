@@ -18,8 +18,8 @@ test -d dl || \
         mkdir dl
 test -f dl/vlfeat_K80L3.SIFT.tree || \
         wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree -O dl/vlfeat_K80L3.SIFT.tree
-test -f dl/cmake-3.16.3.tar.gz || \
-        wget https://cmake.org/files/v3.16/cmake-3.16.3.tar.gz -O dl/cmake-3.16.3.tar.gz
+test -f dl/cmake-3.21.3.tar.gz || \
+        wget https://cmake.org/files/v3.21/cmake-3.21.3.tar.gz -O dl/cmake-3.21.3.tar.gz
 test -d  dl/deps || \
 	mkdir dl/deps
 
