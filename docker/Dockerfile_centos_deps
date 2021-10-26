@@ -91,28 +91,29 @@ RUN cmake "${AV_DEV}" \
 RUN mkdir -p "${AV_INSTALL}/lib" && \
 	ln -s lib "${AV_INSTALL}/lib64"
 
-#RUN make -j"$(nproc)" zlib
-#RUN make -j"$(nproc)" geogram
-#RUN make -j"$(nproc)" tbb
-#RUN make -j"$(nproc)" eigen
-#RUN make -j"$(nproc)" opengv
-#RUN make -j"$(nproc)" lapack
-
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
-#RUN make -j"$(nproc)" suitesparse
-#RUN make -j"$(nproc)" ceres
-#RUN make -j"$(nproc)" openexr
-#RUN make -j"$(nproc)" tiff
-#RUN make -j"$(nproc)" png
-#RUN make -j"$(nproc)" turbojpeg
-#RUN make -j"$(nproc)" libraw
-#RUN make -j"$(nproc)" boost
-#RUN make -j"$(nproc)" openimageio
-#RUN make -j"$(nproc)" alembic
-#RUN make -j"$(nproc)" popsift
-#RUN make -j"$(nproc)" ffmpeg
-#RUN make -j"$(nproc)" opencv
-#RUN make -j"$(nproc)" cctag
+
+# RUN make -j"$(nproc)" cctag
+# RUN make -j"$(nproc)" openexr
+# RUN make -j"$(nproc)" tbb
+# RUN make -j"$(nproc)" assimp
+# RUN make -j"$(nproc)" zlib
+# RUN make -j"$(nproc)" geogram
+# RUN make -j"$(nproc)" eigen
+# RUN make -j"$(nproc)" opengv
+# RUN make -j"$(nproc)" lapack
+# RUN make -j"$(nproc)" suitesparse
+# RUN make -j"$(nproc)" ceres
+# RUN make -j"$(nproc)" tiff
+# RUN make -j"$(nproc)" png
+# RUN make -j"$(nproc)" turbojpeg
+# RUN make -j"$(nproc)" libraw
+# RUN make -j"$(nproc)" boost
+# RUN make -j"$(nproc)" openimageio
+# RUN make -j"$(nproc)" alembic
+# RUN make -j"$(nproc)" popsift
+# RUN make -j"$(nproc)" ffmpeg
+# RUN make -j"$(nproc)" opencv
 
 RUN cmake --build . -j "$(nproc)" && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
