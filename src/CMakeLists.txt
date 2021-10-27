@@ -283,7 +283,7 @@ endif()
 # ==============================================================================
 # OpenEXR
 # ==============================================================================
-find_package(OpenEXR 2.5 REQUIRED)
+find_package(OpenEXR 3.0 REQUIRED)
 if(TARGET OpenEXR::OpenEXR)
   message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
 else()
