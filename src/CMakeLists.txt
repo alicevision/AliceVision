@@ -284,7 +284,7 @@ endif()
 # OpenEXR >= 2.5
 # ==============================================================================
 find_package(OpenEXR REQUIRED)
-if(TARGET OpenEXR::OpenEXR)
+if(TARGET OpenEXR::OpenEXR OR TARGET IlmBase::Half)
   if(OpenEXR_VERSION VERSION_GREATER_EQUAL 2.5)
     message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
   else()
