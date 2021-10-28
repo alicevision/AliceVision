@@ -281,11 +281,15 @@ endif()
 
 
 # ==============================================================================
-# OpenEXR
+# OpenEXR >= 2.5
 # ==============================================================================
-find_package(OpenEXR 3.0 REQUIRED)
+find_package(OpenEXR REQUIRED)
 if(TARGET OpenEXR::OpenEXR)
-  message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
+  if(OpenEXR_VERSION VERSION_GREATER_EQUAL 2.5)
+    message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
+  else()
+    message(SEND_ERROR "OpenEXR: Version found is ${OpenEXR_VERSION}, the minimal version required is 2.5.")
+  endif()
 else()
   message(SEND_ERROR "Failed to find OpenEXR.")
 endif()

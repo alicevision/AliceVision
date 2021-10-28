@@ -32,7 +32,7 @@ AliceVision depends on external libraries:
 * [Ceres >= 1.10.0](https://github.com/ceres-solver/ceres-solver)
 * [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
 * [Geogram >= 1.7.5](https://gforge.inria.fr/frs/?group_id=5833)
-* [OpenEXR >= 3.0.0](https://github.com/AcademySoftwareFoundation/openexr)
+* [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
 * [OpenImageIO >= 2.1.0](https://github.com/OpenImageIO/oiio)
 * [zlib](https://www.zlib.net)
 
