@@ -1,8 +1,7 @@
 #include "warper.hpp"
-#include <Imath/half.h>
+#include <aliceVision/half.hpp>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 bool Warper::warp(const CoordinatesMap& map, const aliceVision::image::Image<image::RGBfColor>& source)
 {
