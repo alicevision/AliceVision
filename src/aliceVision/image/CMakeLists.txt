@@ -32,6 +32,7 @@ alicevision_add_library(aliceVision_image
   PUBLIC_LINKS
     aliceVision_numeric
     OpenImageIO::OpenImageIO
+    OpenImageIO::OpenImageIO_Util
   PRIVATE_LINKS
     aliceVision_system
     ${OPENEXR_LIBRARIES}
