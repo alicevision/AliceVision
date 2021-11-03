@@ -709,21 +709,19 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
     vol.initOutputVolumes( volBestSim_dmp,
                            volSecBestSim_dmp,
                            0 );
-    vol.WaitSweepStream( 0 );
+    vol.WaitSweepStream(0);
 
     for(int tci = 0; tci < tcs.size(); ++tci)
     {
-        if( tci % MAX_CONSTANT_CAMERA_PARAM_SETS == MAX_CONSTANT_CAMERA_PARAM_SETS - 1 )
-        {
-            vol.WaitSweepStream( tci );
-        }
+        vol.WaitSweepStream(tci);
+        cudaStream_t stream = vol.SweepStream(tci);
 
         int tc_global_id = tcs[tci].getTCIndex();
 
-        const int rcamCacheId = addCam(rc_global_id, vol.Scale(), vol.SweepStream( tci ) );
+        const int rcamCacheId = addCam(rc_global_id, vol.Scale(), stream);
         CameraStruct& rcam = _cams[rcamCacheId];
 
-        const int tcamCacheId = addCam(tc_global_id, vol.Scale(), vol.SweepStream( tci ) );
+        const int tcamCacheId = addCam(tc_global_id, vol.Scale(), stream);
         CameraStruct& tcam = _cams[tcamCacheId];
 
         ALICEVISION_LOG_DEBUG("rc: " << rc_global_id << " tcams: " << tc_global_id);
