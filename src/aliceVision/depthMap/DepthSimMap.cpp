@@ -16,6 +16,8 @@
 
 #include <iostream>
 
+#define ALICEVISION_DEPTHMAP_UPSCALE_NEAREST_NEIGHBOR
+
 
 namespace aliceVision {
 namespace depthMap {

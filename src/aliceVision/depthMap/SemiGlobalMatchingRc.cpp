@@ -505,7 +505,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     }
 
     // For each pixel: choose the voxel with the minimal similarity value
-    bool interpolate = true;
+    bool interpolate = false;
     _sp.cps.SGMretrieveBestDepth(_sgmDepthSimMap, volumeFilteredSim_d, _depths, _rc, volDimX, volDimY, volDimZ,
                                  _scale * _step, interpolate);
 
