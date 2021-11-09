@@ -30,7 +30,7 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams& _m
     ndepthsToRefine = mp.userParams.get<int>("semiGlobalMatching.ndepthsToRefine", ndepthsToRefine);
 
     P1 = mp.userParams.get<float>("semiGlobalMatching.P1", P1);
-    P2 = mp.userParams.get<float>("semiGlobalMatching.P2", P2); // direct P2 was 125.0, now it's only the P2 weighting
+    P2 = mp.userParams.get<float>("semiGlobalMatching.P2", P2); // P2 weighting
 
     stepZ = mp.userParams.get<int>("semiGlobalMatching.stepZ", stepZ);
     maxDepthsToStore = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToStore", maxDepthsToStore);

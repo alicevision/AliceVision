@@ -95,7 +95,7 @@ void ps_SGMoptimizeSimVolume(
     const std::string& filteringAxes,
     bool verbose,
     float P1, float P2,
-    int scale,
+    int scale, int step,
     int CUDAdeviceNo,
     int ncamsAllocated);
 

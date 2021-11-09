@@ -488,7 +488,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     if(_sp.doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
                                 // optimized depthmaps ... it must equals to true in normal case
     {
-        _sp.cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDimX, volDimY, volDimZ, _filteringAxes, _scale, _sp.P1, _sp.P2);
+        _sp.cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDimX, volDimY, volDimZ, _filteringAxes, _scale, _step, _sp.P1, _sp.P2);
     }
     else
     {

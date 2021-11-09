@@ -298,6 +298,7 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
             TSim* volAgr, int volAgr_s, int volAgr_p,
             const int3 volDim,
             const int3 axisT,
+            float step,
             int y, float _P1, float _P2,
             int ySign, int filteringIndex)
 {
@@ -317,23 +318,31 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
 
     if((z >= 1) && (z < volDim.z - 1))
     {
-        const int imX0 = v.x; // current
-        const int imY0 = v.y;
-
-        const int imX1 = imX0 - ySign * (axisT.y == 0); // M1
-        const int imY1 = imY0 - ySign * (axisT.y == 1);
-
-        const float4 gcr0 = tex2D_float4(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
-        const float4 gcr1 = tex2D_float4(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
-
-        const float deltaC = Euclidean3(gcr0, gcr1);
-
         float P2 = 0;
-        // _P2 convention: use negative value to skip the use of deltaC
-        if(_P2 >= 0)
-            P2 = sigmoid(15.0f, 255.0f, 80.0f, _P2, deltaC);
+
+        if(_P2 < 0)
+        {
+          // _P2 convention: use negative value to skip the use of deltaC.
+          P2 = std::abs(_P2);
+        }
         else
-            P2 = std::abs(_P2);
+        {
+          const int imX0 = v.x * step; // current
+          const int imY0 = v.y * step;
+
+          const int imX1 = imX0 - ySign * step * (axisT.y == 0); // M1
+          const int imY1 = imY0 - ySign * step * (axisT.y == 1);
+
+          const float4 gcr0 = tex2D_float4(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
+          const float4 gcr1 = tex2D_float4(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
+          const float deltaC = Euclidean3(gcr0, gcr1);
+
+          // sigmoid f(x) = i + (a - i) * (1 / ( 1 + e^(10 * (x - P2) / w)))
+          // see: https://www.desmos.com/calculator/1qvampwbyx
+          // best values found from tests: i = 80, a = 255, w = 80, P2 = 100
+          // historical values: i = 15, a = 255, w = 80, P2 = 20
+          P2 = sigmoid(80.f, 255.f, 80.f, _P2, deltaC);
+        }
 
         const TSimAcc bestCostInColM1 = bestSimInYm1[x];
         const TSimAcc pathCostMDM1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths

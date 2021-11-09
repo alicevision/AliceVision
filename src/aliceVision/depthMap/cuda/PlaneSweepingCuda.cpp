@@ -785,7 +785,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
                                              CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                              int volDimX, int volDimY, int volDimZ,
                                              const std::string& filteringAxes,
-                                             int scale, unsigned char P1, unsigned char P2)
+                                             int scale, int step, float P1, float P2)
 {
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -802,7 +802,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
                             volSimFiltered_dmp,
                             volDimX, volDimY, volDimZ,
                             filteringAxes,
-                            _mp.verbose, P1, P2, scale,
+                            _mp.verbose, P1, P2, scale, step,
                             _CUDADeviceNo, _nImgsInGPUAtTime);
 
     ALICEVISION_LOG_INFO("==== SGMoptimizeSimVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");

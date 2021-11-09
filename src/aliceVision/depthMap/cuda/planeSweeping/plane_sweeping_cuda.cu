@@ -264,6 +264,7 @@ void ps_aggregatePathVolume(
     const CudaSize<3>& volDim,
     const CudaSize<3>& axisT,
     cudaTextureObject_t rc_tex,
+    float step,
     float P1, float P2,
     bool invY, int filteringIndex,
     bool verbose)
@@ -344,6 +345,7 @@ void ps_aggregatePathVolume(
             d_bestSimInYm1.getBuffer(),                                         // in:    bestSimInYm1
             d_volAgr.getBuffer(), d_volAgr.getBytesPaddedUpToDim(1), d_volAgr.getBytesPaddedUpToDim(0), // out:   volAgr
             volDim_, axisT_,
+            step,
             y, P1, P2,
             ySign, filteringIndex);
 
@@ -367,7 +369,8 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
                              int volDimX, int volDimY, int volDimZ,
                              const std::string& filteringAxes,
                              bool verbose, float P1, float P2,
-                             int scale, int CUDAdeviceNo, int ncamsAllocated)
+                             int scale, int step,
+                             int CUDAdeviceNo, int ncamsAllocated)
 {
     clock_t tall = tic();
 
@@ -395,6 +398,7 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
                                                           volDim,
                                                           axisT,
                                                           rc_tex,
+                                                          step,
                                                           P1, P2,
                                                           invX,
                                                           npaths,

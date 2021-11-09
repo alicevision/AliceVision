@@ -61,7 +61,7 @@ int aliceVision_main(int argc, char* argv[])
     double sgmGammaC = 5.5;
     double sgmGammaP = 8.0;
     double sgmP1 = 10;
-    double sgmP2 = 20.0;
+    double sgmP2 = 100.0;
     int sgmMaxDepths = 3000;
     int sgmMaxDepthsPerTc = 1500;
     bool sgmUseSfmSeeds = true;

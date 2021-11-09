@@ -26,7 +26,7 @@ public:
     bool doRefine = true;
     int ndepthsToRefine = 15;
     float P1 = 10.0f;
-    float P2 = 20.0f;
+    float P2 = 100.0f; // P2 weighting
     int stepZ = -1;
     int maxDepthsToStore = 3000;
     int maxDepthsToSweep = 1500;
