@@ -19,11 +19,11 @@ class PlaneSweepingCuda;
 /**
  * @brief Depth Map Estimation Refine
  */
-class RefineRc
+class Refine
 {
 public:
-    RefineRc(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
-    ~RefineRc();
+    Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
+    ~Refine();
 
     bool refineRc(const DepthSimMap& depthSimMapToRefine);
 

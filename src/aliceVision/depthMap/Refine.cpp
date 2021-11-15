@@ -24,7 +24,7 @@ namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
-RefineRc::RefineRc(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
+Refine::Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
     : _rc(rc)
     , _mp(mp)
     , _cps(cps)
@@ -34,10 +34,10 @@ RefineRc::RefineRc(const RefineParams& refineParams, const mvsUtils::MultiViewPa
     _tCams = _mp.findNearestCamsFromLandmarks(_rc, _refineParams.maxTCams);
 }
 
-RefineRc::~RefineRc()
+Refine::~Refine()
 {}
 
-void RefineRc::getDepthPixSizeMapFromSGM(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapScale1Step1)
+void Refine::getDepthPixSizeMapFromSGM(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapScale1Step1)
 {
     const int w11 = _mp.getWidth(_rc);
     const int h11 = _mp.getHeight(_rc);
@@ -59,7 +59,7 @@ void RefineRc::getDepthPixSizeMapFromSGM(const DepthSimMap& sgmDepthSimMap, Dept
     }
 }
 
-void RefineRc::filterMaskedPixels(DepthSimMap& out_depthSimMap)
+void Refine::filterMaskedPixels(DepthSimMap& out_depthSimMap)
 {
     mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = _cps._ic.getImg_sync(_rc);
 
@@ -81,7 +81,7 @@ void RefineRc::filterMaskedPixels(DepthSimMap& out_depthSimMap)
     }
 }
 
-void RefineRc::refineRcTcDepthSimMap(DepthSimMap& depthSimMap, int tc)
+void Refine::refineRcTcDepthSimMap(DepthSimMap& depthSimMap, int tc)
 {
     const int scale = depthSimMap._scale;
     const int w = _mp.getWidth(_rc) / scale;
@@ -125,7 +125,7 @@ void RefineRc::refineRcTcDepthSimMap(DepthSimMap& depthSimMap, int tc)
     }
 }
 
-void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis)
+void Refine::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis)
 {
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -207,7 +207,7 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
     ALICEVISION_LOG_INFO("==== refineAndFuseDepthSimMapCUDA done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
-void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, // optimized
+void Refine::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, // optimized
                                        const DepthSimMap& depthPixSizeMapVis, // SGM
                                        const DepthSimMap& depthSimMapPhoto) // refined
 {
@@ -234,7 +234,7 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, //
     ALICEVISION_LOG_INFO("==== optimizeDepthSimMapCUDA done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
-bool RefineRc::refineRc(const DepthSimMap& depthSimMapToRefine)
+bool Refine::refineRc(const DepthSimMap& depthSimMapToRefine)
 {
     const auto startTime = std::chrono::high_resolution_clock::now();
     const IndexT viewId = _mp.getViewId(_rc);
@@ -290,22 +290,22 @@ bool RefineRc::refineRc(const DepthSimMap& depthSimMapToRefine)
     return true;
 }
 
-std::string RefineRc::getPhotoDepthMapFileName(IndexT viewId, int scale, int step) const
+std::string Refine::getPhotoDepthMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depthMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_refinePhoto.exr";
 }
 
-std::string RefineRc::getPhotoSimMapFileName(IndexT viewId, int scale, int step) const
+std::string Refine::getPhotoSimMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_simMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_refinePhoto.exr";
 }
 
-std::string RefineRc::getOptDepthMapFileName(IndexT viewId, int scale, int step) const
+std::string Refine::getOptDepthMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depthMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_refineOpt.exr";
 }
 
-std::string RefineRc::getOptSimMapFileName(IndexT viewId, int scale, int step) const
+std::string Refine::getOptSimMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_simMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_refineOpt.exr";
 }

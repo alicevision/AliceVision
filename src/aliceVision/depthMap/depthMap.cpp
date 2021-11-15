@@ -77,7 +77,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
     for(const int rc : cams)
     {
         SemiGlobalMatchingRc sgmRc(sgmParams, mp, cps, rc);
-        RefineRc refineRc(refineParams, mp, cps, rc);
+        Refine refine(refineParams, mp, cps, rc);
         
         // preload sgmTcams async
         {
@@ -89,17 +89,17 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
         sgmRc.sgmRc();
 
         // rc has no tcam
-        if(refineRc.getTCams().empty() || sgmRc.getDepths().empty())
+        if(refine.getTCams().empty() || sgmRc.getDepths().empty())
         {
             ALICEVISION_LOG_INFO("No T cameras for camera rc: " << rc << ", generate default depth and sim maps.");
-            refineRc.getDepthSimMap().save(); // generate default depthSimMap
+            refine.getDepthSimMap().save(); // generate default depthSimMap
             continue;
         }
 
-        refineRc.refineRc(sgmRc.getDepthSimMap());
+        refine.refineRc(sgmRc.getDepthSimMap());
 
         // write results
-        refineRc.getDepthSimMap().save();
+        refine.getDepthSimMap().save();
     }
 }
 
