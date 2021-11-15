@@ -71,7 +71,7 @@ void UndistortImage(
         {       
             const Vec2 undisto_pix(i + xOffset, j + yOffset); 
             // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
+            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
            
             // pick pixel if it is in the image domain
             if(imageIn.Contains(disto_pix(1), disto_pix(0)))
