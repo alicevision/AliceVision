@@ -6,24 +6,8 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/depthMap/DepthSimMap.hpp>
-#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
-
 namespace aliceVision {
 namespace depthMap {
-
-class RcTc
-{
-public:
-    mvsUtils::MultiViewParams& mp;
-    PlaneSweepingCuda&         cps;
-
-    RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps);
-
-    // void smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP);
-    // void filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC);
-};
 
 } // namespace depthMap
 } // namespace aliceVision
