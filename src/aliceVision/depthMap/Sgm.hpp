@@ -20,11 +20,11 @@ class PlaneSweepingCuda;
 /**
  * @brief Depth Map Estimation Semi Global Matching
  */
-class SemiGlobalMatchingRc
+class Sgm
 {
 public:
-    SemiGlobalMatchingRc(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
-    ~SemiGlobalMatchingRc();
+    Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
+    ~Sgm();
 
     bool sgmRc();
 

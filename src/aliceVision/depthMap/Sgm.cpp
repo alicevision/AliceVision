@@ -32,7 +32,7 @@ namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
-SemiGlobalMatchingRc::SemiGlobalMatchingRc(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
+Sgm::Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
     : _rc(rc)
     , _mp(mp)
     , _cps(cps)
@@ -47,10 +47,10 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(const SgmParams& sgmParams, const mvs
     computeDepthsAndResetTCams();
 }
 
-SemiGlobalMatchingRc::~SemiGlobalMatchingRc()
+Sgm::~Sgm()
 {}
 
-bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)
+bool Sgm::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)
 {
     if(_depths.size() <= nDepthsThr)
         return true;
@@ -90,7 +90,7 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<fl
     return true;
 }
 
-bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths)
+bool Sgm::selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths)
 {
     if(nDepthsThr <= 0 || _depths.size() <= nDepthsThr)
         return true;
@@ -128,7 +128,7 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<St
     return true;
 }
 
-float SemiGlobalMatchingRc::getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
+float Sgm::getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
                                      StaticVector<StaticVector<float>*>* alldepths)
 {
     float minTcStep = maxDepth - minDepth;
@@ -158,7 +158,7 @@ float SemiGlobalMatchingRc::getMinTcStepAtDepth(float depth, float minDepth, flo
     return minTcStep;
 }
 
-void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths)
+void Sgm::computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths)
 {
     _depths.clear();
 
@@ -173,7 +173,7 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, float s
     }
 }
 
-void SemiGlobalMatchingRc::checkStartingAndStopppingDepth() const
+void Sgm::checkStartingAndStopppingDepth() const
 {
     struct MinOffX
     {
@@ -203,7 +203,7 @@ void SemiGlobalMatchingRc::checkStartingAndStopppingDepth() const
                                          << " depth planes.");
 }
 
-StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndResetTCams(float midDepth)
+StaticVector<StaticVector<float>*>* Sgm::computeAllDepthsAndResetTCams(float midDepth)
 {
     StaticVector<int> tCamsNew;
     StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>();
@@ -247,7 +247,7 @@ StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndRes
     return alldepths;
 }
 
-void SemiGlobalMatchingRc::computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths)
+void Sgm::computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths)
 {
     _depthsTcamsLimits.resize(_tCams.size());
 
@@ -271,7 +271,7 @@ void SemiGlobalMatchingRc::computeDepthsTcamsLimits(StaticVector<StaticVector<fl
     }
 }
 
-void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
+void Sgm::computeDepthsAndResetTCams()
 {
     std::size_t nbObsDepths;
     float minObsDepth, maxObsDepth, midObsDepth;
@@ -442,7 +442,7 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     deleteArrayOfArrays<float>(&alldepths);
 }
 
-bool SemiGlobalMatchingRc::sgmRc()
+bool Sgm::sgmRc()
 {
     const auto startTime = std::chrono::high_resolution_clock::now();
     const IndexT viewId = _mp.getViewId(_rc);
@@ -570,27 +570,27 @@ bool SemiGlobalMatchingRc::sgmRc()
     return true;
 }
 
-std::string SemiGlobalMatchingRc::getIdDepthMapFileName(IndexT viewId, int scale, int step) const
+std::string Sgm::getIdDepthMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_idDepthMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_SGM.png";
 }
 
-std::string SemiGlobalMatchingRc::getDepthMapFileName(IndexT viewId, int scale, int step) const
+std::string Sgm::getDepthMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depthMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_SGM.bin";
 }
 
-std::string SemiGlobalMatchingRc::getSimMapFileName(IndexT viewId, int scale, int step) const
+std::string Sgm::getSimMapFileName(IndexT viewId, int scale, int step) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_simMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_SGM.bin";
 }
 
-std::string SemiGlobalMatchingRc::getTCamsFileName(IndexT viewId) const
+std::string Sgm::getTCamsFileName(IndexT viewId) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_tcams.bin";
 }
 
-std::string SemiGlobalMatchingRc::getDepthsFileName(IndexT viewId) const
+std::string Sgm::getDepthsFileName(IndexT viewId) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depths.bin";
 }
