@@ -16,6 +16,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
@@ -210,17 +211,13 @@ private:
         int scale);
 
 public:
-    void sweepPixelsToVolume(
+    void computeDepthSimMapVolume(int rc, int width, int height,
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
-        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-        const int volDimX,
-        const int volDimY,
-        const int volStepXY,
-        const std::vector<OneTC>& tcs,
+        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
+        const std::vector<int>& rc_tCams,
+        const std::vector<Pixel>& rc_depthsTcamsLimit,
         const std::vector<float>& rc_depths,
-        int rc,
-        int wsh, float gammaC, float gammaP,
-        int scale);
+        const SgmParams& sgmParams);
 
     bool SGMoptimizeSimVolume(int rc,
         const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,

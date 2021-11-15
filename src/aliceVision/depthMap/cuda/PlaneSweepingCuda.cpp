@@ -682,33 +682,39 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
  * volume is indexed with the same index as tc. The values of tc can be quite different.
  * depths is indexed with the index_set elements
  */
-void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
-                                             CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-                                             const int volDimX,
-                                             const int volDimY,
-                                             const int volStepXY,
-                                             const std::vector<OneTC>& tcs,
-                                             const std::vector<float>& rc_depths,
-                                             int rc_global_id,
-                                             int wsh, float gammaC, float gammaP,
-                                             const int scale)
+void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id, int width, int height,
+                                                 CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+                                                 CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
+                                                 const std::vector<int>& rc_tCams,
+                                                 const std::vector<Pixel>& rc_depthsTcamsLimit,
+                                                 const std::vector<float>& rc_depths,
+                                                 const SgmParams& sgmParams)
 {
+    std::vector<OneTC> tcs;
+    tcs.reserve(rc_depthsTcamsLimit.size());
+
+    for(std::size_t i = 0; i < rc_depthsTcamsLimit.size(); ++i)
+    {
+        tcs.emplace_back(rc_tCams[i], rc_depthsTcamsLimit[i].x, rc_depthsTcamsLimit[i].y);
+        ALICEVISION_LOG_DEBUG(" RC: " << rc_global_id << ", TC: " << rc_tCams[i] << ", " << rc_depthsTcamsLimit[i].y
+                                      << " depth planes, "<< "depth range=[" << rc_depths[rc_depthsTcamsLimit[i].x] << "-"
+                                      << rc_depths[rc_depthsTcamsLimit[i].x + rc_depthsTcamsLimit[i].y - 1] << "], "
+                                      << "range index=[" << rc_depthsTcamsLimit[i].x << "-"<< rc_depthsTcamsLimit[i].x + rc_depthsTcamsLimit[i].y << "]");
+    }
+
+
     nvtxPush("preload host cache ");
     _ic.getImg_sync( rc_global_id );
     for( const auto& tc : tcs) _ic.getImg_sync( tc.getTCIndex() );
     nvtxPop("preload host cache ");
 
+    const int volDimX = width;
+    const int volDimY = height;
     const int volDimZ = rc_depths.size();
 
-    ps::SimilarityVolume vol( volDimX, volDimY, volDimZ,
-                              volStepXY,
-                              scale,
-                              rc_depths,
-                              _mp.verbose );
+    ps::SimilarityVolume vol(volDimX, volDimY, volDimZ, sgmParams.stepXY, sgmParams.scale, rc_depths, _mp.verbose);
 
-    vol.initOutputVolumes( volBestSim_dmp,
-                           volSecBestSim_dmp,
-                           0 );
+    vol.initOutputVolumes(volBestSim_dmp, volSecBestSim_dmp, 0);
     vol.WaitSweepStream(0);
 
     for(int tci = 0; tci < tcs.size(); ++tci)
@@ -767,8 +773,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                 rcam, rcWidth, rcHeight,
                 tcam, tcWidth, tcHeight,
                 tcs[tci],
-                wsh,
-                gammaC, gammaP,
+                sgmParams,
                 tci);
 
             ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume elapsed time: " << toc(t1) << " ms.");

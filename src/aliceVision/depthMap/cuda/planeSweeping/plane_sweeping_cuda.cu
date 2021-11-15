@@ -532,7 +532,7 @@ void SimilarityVolume::compute(
                         const CameraStruct& rcam, int rcWidth, int rcHeight,
                         const CameraStruct& tcam, int tcWidth, int tcHeight,
                         const OneTC& cell,
-                        int wsh, float gammaC, float gammaP,
+                        const SgmParams& sgmParams,
                         const int streamIndex )
 {
     TSim* gpu_volume_1st = volBestSim_dmp.getBuffer();
@@ -578,8 +578,9 @@ void SimilarityVolume::compute(
               nbDepthsToSearch,
               rcWidth / _scale, rcHeight / _scale,
               tcWidth / _scale, tcHeight / _scale,
-              wsh,
-              gammaC, gammaP,
+              sgmParams.wsh,
+              float(sgmParams.gammaC), 
+              float(sgmParams.gammaP),
               gpu_volume_1st,
               volBestSim_dmp.getBytesPaddedUpToDim(1),
               volBestSim_dmp.getBytesPaddedUpToDim(0),

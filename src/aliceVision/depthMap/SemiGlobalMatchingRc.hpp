@@ -6,43 +6,39 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/depthMap/DepthSimMap.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
+struct SgmParams;
+class PlaneSweepingCuda;
+
+/**
+ * @brief Depth Map Estimation Semi Global Matching
+ */
 class SemiGlobalMatchingRc
 {
 public:
-    SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlobalMatchingParams& sp);
+    SemiGlobalMatchingRc(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
     ~SemiGlobalMatchingRc();
 
-    bool sgmrc(bool checkIfExists = true);
+    bool sgmRc();
 
-protected:
-
-    const int _rc;
-    const int _scale;
-    const int _step;
-
-    int _width;
-    int _height;
-    int _sgmWsh = 4;
-    float _sgmGammaC = 5.5;
-    float _sgmGammaP = 8.0;
-
-    std::string _filteringAxes = "YX";
-
-    StaticVector<int> _sgmTCams;
-    StaticVector<Pixel> _depthsTcamsLimits;
-    DepthSimMap _sgmDepthSimMap;
-    StaticVector<float> _depths;
-
-    SemiGlobalMatchingParams& _sp;
+    const StaticVector<int>& getTCams() const { return _tCams; }
+    const StaticVector<float>& getDepths() const { return _depths; }
+    const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
 
 private:
+
+    std::string getIdDepthMapFileName(IndexT viewId, int scale, int step) const;
+    std::string getDepthMapFileName(IndexT viewId, int scale, int step) const;
+    std::string getSimMapFileName(IndexT viewId, int scale, int step) const;
+    std::string getTCamsFileName(IndexT viewId) const;
+    std::string getDepthsFileName(IndexT viewId) const;
 
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
@@ -58,18 +54,23 @@ private:
      * @brief Fill depthsTcamsLimits member variable with index range of depths to sweep
      */
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
+    void checkStartingAndStopppingDepth() const;
     void computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 
-protected:
-    std::string outDir;
-    std::string tmpDir;
-    std::string tcamsFileName;
-    std::string depthsFileName;
-    std::string depthsTcamsLimitsFileName;
-    std::string SGM_depthMapFileName;
-    std::string SGM_simMapFileName;
-    std::string SGM_idDepthMapFileName;
+
+    const SgmParams& _sgmParams;
+    const mvsUtils::MultiViewParams& _mp;
+    PlaneSweepingCuda& _cps;
+    const int _rc;
+    const int _width;
+    const int _height;
+
+    StaticVector<int> _tCams;
+    StaticVector<float> _depths;
+    StaticVector<Pixel> _depthsTcamsLimits;
+    DepthSimMap _depthSimMap;
+
 };
 
 } // namespace depthMap

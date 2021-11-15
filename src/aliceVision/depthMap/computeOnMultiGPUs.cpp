@@ -3,8 +3,10 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #include "computeOnMultiGPUs.hpp"
-#include "aliceVision/alicevision_omp.hpp"
+#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp> // useful for listCUDADevices
+#include <aliceVision/alicevision_omp.hpp>
 
 namespace aliceVision {
 namespace depthMap {

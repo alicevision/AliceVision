@@ -15,55 +15,7 @@ namespace depthMap {
 RcTc::RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps)
     : cps(_cps)
     , mp(_mp)
-{
-}
-
-void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
-                                    int ndepthsToRefine, int wsh, float gammaC, float gammaP)
-{
-    int scale = depthSimMap->_scale;
-    int w = mp.getWidth(rc) / scale;
-    int h = mp.getHeight(rc) / scale;
-
-    if(mp.verbose)
-        ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
-
-    long t1 = clock();
-
-    int nParts = 4;
-    int wPart = w / nParts;
-    for(int p = 0; p < nParts; p++)
-    {
-        int xFrom = p * wPart;
-        int wPartAct = std::min(wPart, w - xFrom);
-        StaticVector<float> depthMap;
-        depthSimMap->getDepthMapStep1XPart(depthMap, xFrom, wPartAct);
-        StaticVector<float> simMap;
-        depthSimMap->getSimMapStep1XPart(simMap, xFrom, wPartAct);
-
-        cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
-                                xFrom, wPartAct);
-
-        for(int yp = 0; yp < h; yp++)
-        {
-            for(int xp = xFrom; xp < xFrom + wPartAct; xp++)
-            {
-                float depth = depthMap[yp * wPartAct + (xp - xFrom)];
-                float sim = simMap[yp * wPartAct + (xp - xFrom)];
-                float oldSim =
-                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)].sim;
-                if((depth > 0.0f) && (sim < oldSim))
-                {
-                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)] =
-                        DepthSim(depth, sim);
-                }
-            }
-        }
-
-        if(mp.verbose)
-            mvsUtils::printfElapsedTime(t1, "refineRcTcDepthSimMap");
-    }
-}
+{}
 
 #if 0
 void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP)

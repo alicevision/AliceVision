@@ -6,18 +6,15 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
-#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
-#include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/main.hpp>
-#include <aliceVision/system/Timer.hpp>
-#include <aliceVision/gpu/gpu.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
+#include <aliceVision/depthMap/depthMap.hpp>
+#include <aliceVision/depthMap/sgmParams.hpp>
+#include <aliceVision/depthMap/refineParams.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
+#include <aliceVision/gpu/gpu.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -51,32 +48,11 @@ int aliceVision_main(int argc, char* argv[])
     float minViewAngle = 2.0f;
     float maxViewAngle = 70.0f;
 
-    // semiGlobalMatching
-    int sgmScale = -1;
-    int sgmStepXY = -1;
-    int sgmStepZ = -1;
-    int sgmMaxSideXY = 700;
-    int sgmMaxTCams = 10;
-    int sgmWSH = 4;
-    double sgmGammaC = 5.5;
-    double sgmGammaP = 8.0;
-    double sgmP1 = 10;
-    double sgmP2 = 100.0;
-    int sgmMaxDepths = 3000;
-    int sgmMaxDepthsPerTc = 1500;
-    bool sgmUseSfmSeeds = true;
-    std::string sgmFilteringAxes = "YX";
+    // Semi Global Matching Parameters
+    depthMap::SgmParams sgmParams; 
 
-    // refineRc
-    int refineMaxTCams = 6;
-    int refineNSamplesHalf = 150;
-    int refineNDepthsToRefine = 31;
-    int refineNiters = 100;
-    int refineWSH = 3;
-    double refineSigma = 15.0;
-    double refineGammaC = 15.5;
-    double refineGammaP = 8.0;
-    bool refineUseTcOrRcPixSize = false;
+    // Refine Parameters
+    depthMap::RefineParams refineParams;
 
     // intermediate results
     bool exportIntermediateResults = false;
@@ -108,51 +84,51 @@ int aliceVision_main(int argc, char* argv[])
             "minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
             "maximum angle between two views.")
-        ("sgmScale", po::value<int>(&sgmScale)->default_value(sgmScale),
+        ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),
             "Semi Global Matching: Downscale factor used to compute the similarity volume.")
-        ("sgmStepXY", po::value<int>(&sgmStepXY)->default_value(sgmStepXY),
+        ("sgmStepXY", po::value<int>(&sgmParams.stepXY)->default_value(sgmParams.stepXY),
             "Semi Global Matching: Step used to compute the similarity volume on the X and Y axis.")
-        ("sgmStepZ", po::value<int>(&sgmStepZ)->default_value(sgmStepZ),
+        ("sgmStepZ", po::value<int>(&sgmParams.stepZ)->default_value(sgmParams.stepZ),
             "Semi Global Matching: Step used to compute the similarity volume on the Z axis.")
-        ("sgmMaxSideXY", po::value<int>(&sgmMaxSideXY)->default_value(sgmMaxSideXY),
+        ("sgmMaxSideXY", po::value<int>(&sgmParams.maxSideXY)->default_value(sgmParams.maxSideXY),
             "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
-        ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
+        ("sgmMaxTCams", po::value<int>(&sgmParams.maxTCams)->default_value(sgmParams.maxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
-        ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
+        ("sgmWSH", po::value<int>(&sgmParams.wsh)->default_value(sgmParams.wsh),
             "Semi Global Matching: Size of the patch used to compute the similarity.")
-        ("sgmGammaC", po::value<double>(&sgmGammaC)->default_value(sgmGammaC),
+        ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
             "Semi Global Matching: GammaC threshold.")
-        ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
+        ("sgmGammaP", po::value<double>(&sgmParams.gammaP)->default_value(sgmParams.gammaP),
             "Semi Global Matching: GammaP threshold.")
-        ("sgmP1", po::value<double>(&sgmP1)->default_value(sgmP1),
+        ("sgmP1", po::value<double>(&sgmParams.p1)->default_value(sgmParams.p1),
             "Semi Global Matching: P1.")
-        ("sgmP2", po::value<double>(&sgmP2)->default_value(sgmP2),
-            "Semi Global Matching: P2.")
-        ("sgmMaxDepths", po::value<int>(&sgmMaxDepths)->default_value(sgmMaxDepths),
+        ("sgmP2", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
+            "Semi Global Matching: P2 Weighting.")
+        ("sgmMaxDepths", po::value<int>(&sgmParams.maxDepths)->default_value(sgmParams.maxDepths),
             "Semi Global Matching: Max number of depths in the overall similarity volume.")
-        ("sgmMaxDepthsPerTc", po::value<int>(&sgmMaxDepthsPerTc)->default_value(sgmMaxDepthsPerTc),
+        ("sgmMaxDepthsPerTc", po::value<int>(&sgmParams.maxDepthsPerTc)->default_value(sgmParams.maxDepthsPerTc),
             "Semi Global Matching: Max number of depths to sweep in the similarity volume per Rc/Tc cameras.")
-        ("sgmUseSfmSeeds", po::value<bool>(&sgmUseSfmSeeds)->default_value(sgmUseSfmSeeds),
+        ("sgmUseSfmSeeds", po::value<bool>(&sgmParams.useSfmSeeds)->default_value(sgmParams.useSfmSeeds),
             "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
-        ("sgmFilteringAxes", po::value<std::string>(&sgmFilteringAxes)->default_value(sgmFilteringAxes),
+        ("sgmFilteringAxes", po::value<std::string>(&sgmParams.filteringAxes)->default_value(sgmParams.filteringAxes),
             "Semi Global Matching: Filtering axes for the 3D volume.")
-        ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
+        ("refineMaxTCams", po::value<int>(&refineParams.maxTCams)->default_value(refineParams.maxTCams),
             "Refine: Number of neighbour cameras.")
-        ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
+        ("refineNSamplesHalf", po::value<int>(&refineParams.nSamplesHalf)->default_value(refineParams.nSamplesHalf),
             "Refine: Number of samples.")
-        ("refineNDepthsToRefine", po::value<int>(&refineNDepthsToRefine)->default_value(refineNDepthsToRefine),
+        ("refineNDepthsToRefine", po::value<int>(&refineParams.nDepthsToRefine)->default_value(refineParams.nDepthsToRefine),
             "Refine: Number of depths.")
-        ("refineNiters", po::value<int>(&refineNiters)->default_value(refineNiters),
+        ("refineNiters", po::value<int>(&refineParams.nIters)->default_value(refineParams.nIters),
             "Refine: Number of iterations.")
-        ("refineWSH", po::value<int>(&refineWSH)->default_value(refineWSH),
+        ("refineWSH", po::value<int>(&refineParams.wsh)->default_value(refineParams.wsh),
             "Refine: Size of the patch used to compute the similarity.")
-        ("refineSigma", po::value<double>(&refineSigma)->default_value(refineSigma),
+        ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
             "Refine: Sigma threshold.")
-        ("refineGammaC", po::value<double>(&refineGammaC)->default_value(refineGammaC),
+        ("refineGammaC", po::value<double>(&refineParams.gammaC)->default_value(refineParams.gammaC),
             "Refine: GammaC threshold.")
-        ("refineGammaP", po::value<double>(&refineGammaP)->default_value(refineGammaP),
+        ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold.")
-        ("refineUseTcOrRcPixSize", po::value<bool>(&refineUseTcOrRcPixSize)->default_value(refineUseTcOrRcPixSize),
+        ("refineUseTcOrRcPixSize", po::value<bool>(&refineParams.useTcOrRcPixSize)->default_value(refineParams.useTcOrRcPixSize),
             "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
         ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
             "Export intermediate results from the SGM and Refine steps.")
@@ -161,8 +137,8 @@ int aliceVision_main(int argc, char* argv[])
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
-      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-        "verbosity level (fatal, error, warning, info, debug, trace).");
+        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+            "Verbosity level (fatal, error, warning, info, debug, trace).");
 
     allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -232,38 +208,34 @@ int aliceVision_main(int argc, char* argv[])
 
     // set params in bpt
 
-    // semiGlobalMatching
-    mp.userParams.put("semiGlobalMatching.maxTCams", sgmMaxTCams);
-    mp.userParams.put("semiGlobalMatching.wsh", sgmWSH);
-    mp.userParams.put("semiGlobalMatching.gammaC", sgmGammaC);
-    mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
-    mp.userParams.put("semiGlobalMatching.P1", sgmP1);
-    mp.userParams.put("semiGlobalMatching.P2", sgmP2);
+    // SGM Parameters
+    mp.userParams.put("sgm.maxTCams", sgmParams.maxTCams);
+    mp.userParams.put("sgm.wsh", sgmParams.wsh);
+    mp.userParams.put("sgm.gammaC", sgmParams.gammaC);
+    mp.userParams.put("sgm.gammaP", sgmParams.gammaP);
+    mp.userParams.put("sgm.p1", sgmParams.p1);
+    mp.userParams.put("sgm.p2Weighting", sgmParams.p2Weighting);
+    mp.userParams.put("sgm.scale", sgmParams.scale);
+    mp.userParams.put("sgm.stepXY", sgmParams.stepXY);
+    mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
+    mp.userParams.put("sgm.maxSideXY", sgmParams.maxSideXY);
+    mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
+    mp.userParams.put("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
+    mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
+    mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
+    mp.userParams.put("sgm.exportIntermediateResults", exportIntermediateResults);
 
-    mp.userParams.put("semiGlobalMatching.scale", sgmScale);
-    mp.userParams.put("semiGlobalMatching.stepXY", sgmStepXY);
-    mp.userParams.put("semiGlobalMatching.stepZ", sgmStepZ);
-    mp.userParams.put("semiGlobalMatching.maxSideXY", sgmMaxSideXY);
-
-    mp.userParams.put("semiGlobalMatching.maxDepthsToStore", sgmMaxDepths);
-    mp.userParams.put("semiGlobalMatching.maxDepthsToSweep", sgmMaxDepthsPerTc);
-    mp.userParams.put("semiGlobalMatching.useSeedsToCompDepthsToSweep", sgmUseSfmSeeds);
-
-    mp.userParams.put("semiGlobalMatching.filteringAxes", sgmFilteringAxes);
-
-    // refineRc
-    mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
-    mp.userParams.put("refineRc.nSamplesHalf", refineNSamplesHalf);
-    mp.userParams.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
-    mp.userParams.put("refineRc.niters", refineNiters);
-    mp.userParams.put("refineRc.wsh", refineWSH);
-    mp.userParams.put("refineRc.sigma", refineSigma);
-    mp.userParams.put("refineRc.gammaC", refineGammaC);
-    mp.userParams.put("refineRc.gammaP", refineGammaP);
-    mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
-
-    // intermediate results
-    mp.userParams.put("depthMap.intermediateResults", exportIntermediateResults);
+    // Refine Parameters
+    mp.userParams.put("refine.maxTCams", refineParams.maxTCams);
+    mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
+    mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
+    mp.userParams.put("refine.nIters", refineParams.nIters);
+    mp.userParams.put("refine.wsh", refineParams.wsh);
+    mp.userParams.put("refine.sigma", refineParams.sigma);
+    mp.userParams.put("refine.gammaC", refineParams.gammaC);
+    mp.userParams.put("refine.gammaP", refineParams.gammaP);
+    mp.userParams.put("refine.useTcOrRcPixSize", refineParams.useTcOrRcPixSize);
+    mp.userParams.put("refine.exportIntermediateResults", exportIntermediateResults);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);

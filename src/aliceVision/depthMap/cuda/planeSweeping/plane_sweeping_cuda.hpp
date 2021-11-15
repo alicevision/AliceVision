@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
 
@@ -49,7 +50,7 @@ public:
           const CameraStruct& rcam, int rcWidth, int rcHeight,
           const CameraStruct& tcams, int tcWidth, int tcHeight,
           const OneTC&  cell,
-          int wsh, float gammaC, float gammaP,
+          const SgmParams& sgmParams,
           int streamIndex );
 
     inline int DimX()      const { return _dimX; }

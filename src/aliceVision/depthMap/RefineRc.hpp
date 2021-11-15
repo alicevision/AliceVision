@@ -6,47 +6,50 @@
 
 #pragma once
 
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
+#include <aliceVision/depthMap/DepthSimMap.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-class RefineRc : public SemiGlobalMatchingRc
+struct RefineParams;
+class PlaneSweepingCuda;
+
+/**
+ * @brief Depth Map Estimation Refine
+ */
+class RefineRc
 {
 public:
-    RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams& sp);
+    RefineRc(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
     ~RefineRc();
 
-    void preloadSgmTcams_async();
+    bool refineRc(const DepthSimMap& depthSimMapToRefine);
 
-    bool refinerc(bool checkIfExists = true);
-
-    void writeDepthMap();
+    const StaticVector<int>& getTCams() const { return _tCams; }
+    const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
 
 private:
-    StaticVector<int> _refineTCams;
-    float _refineSigma;
-    float _refineGammaC;
-    float _refineGammaP;
-    int _refineWsh;
-    int _refineNSamplesHalf;
-    int _refineNiters;
-    int _nbDepthsToRefine;
-    bool _userTcOrPixSize;
 
-    DepthSimMap _depthSimMapOpt;
+    const RefineParams& _refineParams;
+    const mvsUtils::MultiViewParams& _mp;
+    PlaneSweepingCuda& _cps;
+    const int _rc;
+    StaticVector<int> _tCams;
+    DepthSimMap _depthSimMap;
 
-    void getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1);
-    void filterMaskedPixels(DepthSimMap& out_depthSimMap, int rc);
+    std::string getPhotoDepthMapFileName(IndexT viewId, int scale, int step) const;
+    std::string getPhotoSimMapFileName(IndexT viewId, int scale, int step) const;
+    std::string getOptDepthMapFileName(IndexT viewId, int scale, int step) const;
+    std::string getOptSimMapFileName(IndexT viewId, int scale, int step) const;
 
+    void getDepthPixSizeMapFromSGM(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapScale1Step1);
+    void filterMaskedPixels(DepthSimMap& out_depthSimMap);
+    void refineRcTcDepthSimMap(DepthSimMap& depthSimMap, int tc);
     void refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis);
     void optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, const DepthSimMap& depthPixSizeMapVis, const DepthSimMap& depthSimMapPhoto);
 };
-
-void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
-
-void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
 
 } // namespace depthMap
 } // namespace aliceVision
