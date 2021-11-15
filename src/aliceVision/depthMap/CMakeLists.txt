@@ -3,9 +3,9 @@ set(depthMap_files_headers
   computeOnMultiGPUs.hpp
   depthMap.hpp
   DepthSimMap.hpp
-  RefineParams.hpp
   Refine.hpp
-  SemiGlobalMatchingRc.hpp
+  RefineParams.hpp
+  Sgm.hpp
   SgmParams.hpp
   volumeIO.hpp
 )
@@ -16,7 +16,7 @@ set(depthMap_files_sources
   depthMap.cpp
   DepthSimMap.cpp
   Refine.cpp
-  SemiGlobalMatchingRc.cpp
+  Sgm.cpp
   SgmParams.cpp
   volumeIO.cpp
 )
