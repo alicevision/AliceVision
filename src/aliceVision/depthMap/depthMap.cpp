@@ -12,7 +12,7 @@
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/Refine.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
