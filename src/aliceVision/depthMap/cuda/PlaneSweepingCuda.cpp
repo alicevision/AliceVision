@@ -790,24 +790,48 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
 {
     const auto startTime = std::chrono::high_resolution_clock::now();
 
-    ALICEVISION_LOG_DEBUG("SGM optimizing volume:" << std::endl
-                          << "\t- volDimX: " << volDim.x() << std::endl
-                          << "\t- volDimY: " << volDim.y() << std::endl
-                          << "\t- volDimZ: " << volDim.z() << std::endl
-                          << "\t- filteringAxes: " << sgmParams.filteringAxes);
+    ALICEVISION_LOG_INFO("SGM Optimizing volume:" << std::endl
+                          << "\t- filtering axes: " << sgmParams.filteringAxes << std::endl
+                          << "\t- volume dimensions: (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ")" << std::endl
+                          << "\t- volume size in GPU memory: " << (double(volSim_dmp.getBytesPadded()) / (1024.0 * 1024.0)) << std::endl);
 
-    int rc_cam_idx = addCam(rc, sgmParams.scale);
+    const int rcCacheId = addCam(rc, sgmParams.scale);
 
-    ps_SGMoptimizeSimVolume(_cams[rc_cam_idx],
-                            volSim_dmp, 
-                            volSimFiltered_dmp, 
-                            volDim, 
-                            sgmParams,
-                            _mp.verbose, 
-                            _CUDADeviceNo, _nImgsInGPUAtTime);
+    // update aggregation volume
+    int npaths = 0;
+    const Pyramid& rc_pyramid = *(_cams[rcCacheId].pyramid);
+    const size_t rc_pyramidScaleIndex = size_t(sgmParams.scale) - 1;
+    cudaTextureObject_t rc_tex = rc_pyramid[rc_pyramidScaleIndex].tex;
 
-    ALICEVISION_LOG_INFO("==== SGMoptimizeSimVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
+    const auto updateAggrVolume = [&](const CudaSize<3>& axisT, bool invX) 
+    {
+        ALICEVISION_LOG_DEBUG("Update aggregate volume (npaths: " << npaths << ", invX: " << invX << ")");
 
+        ps_aggregatePathVolume(volSimFiltered_dmp, 
+                               volSim_dmp, 
+                               volDim, 
+                               axisT, rc_tex, 
+                               sgmParams, 
+                               invX, npaths);
+        npaths++;
+
+        ALICEVISION_LOG_DEBUG("Update aggregate volume done.");
+    };
+
+    // filtering is done on the last axis
+    const std::map<char, CudaSize<3>> mapAxes = {
+        {'X', {1, 0, 2}}, // XYZ -> YXZ
+        {'Y', {0, 1, 2}}, // XYZ
+    };
+
+    for(char axis : sgmParams.filteringAxes)
+    {
+        const CudaSize<3>& axisT = mapAxes.at(axis);
+        updateAggrVolume(axisT, false); // without transpose
+        updateAggrVolume(axisT, true);  // with transpose of the last axis
+    }
+
+    ALICEVISION_LOG_INFO("SGM Optimizing volume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
     return true;
 }
 

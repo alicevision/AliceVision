@@ -85,15 +85,12 @@ private:
 };
 }; // namespace ps
 
-void ps_SGMoptimizeSimVolume(
-    const CameraStruct& rccam,
-    const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp, 
-    const CudaSize<3>& volDim,
-    const SgmParams& sgmParams,
-    bool verbose,
-    int CUDAdeviceNo,
-    int ncamsAllocated);
+void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
+                            const CudaDeviceMemoryPitched<TSim, 3>& d_volSim, 
+                            const CudaSize<3>& volDim,
+                            const CudaSize<3>& axisT, cudaTextureObject_t rc_tex, 
+                            const SgmParams& sgmParams,
+                            bool invY, int filteringIndex);
 
   void ps_SGMretrieveBestDepth(
     CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,

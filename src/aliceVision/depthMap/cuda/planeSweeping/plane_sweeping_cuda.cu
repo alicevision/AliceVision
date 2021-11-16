@@ -263,24 +263,18 @@ void ps_aggregatePathVolume(
     const CudaDeviceMemoryPitched<TSim, 3>& d_volSim,
     const CudaSize<3>& volDim,
     const CudaSize<3>& axisT,
-    cudaTextureObject_t rc_tex,
-    float step,
-    float P1, float P2,
-    bool invY, int filteringIndex,
-    bool verbose)
+    cudaTextureObject_t rc_tex, 
+    const SgmParams& sgmParams,
+    bool invY, int filteringIndex)
 {
-    if(verbose)
-        printf("ps_aggregatePathVolume\n");
+    const size_t volDimX = volDim[axisT[0]];
+    const size_t volDimY = volDim[axisT[1]];
+    const size_t volDimZ = volDim[axisT[2]];
 
-    size_t volDimX = volDim[axisT[0]];
-    size_t volDimY = volDim[axisT[1]];
-    size_t volDimZ = volDim[axisT[2]];
+    const int3 volDim_ = make_int3(volDim[0], volDim[1], volDim[2]);
+    const int3 axisT_ = make_int3(axisT[0], axisT[1], axisT[2]);
+    const int ySign = (invY ? -1 : 1);
 
-    int3 volDim_ = make_int3(volDim[0], volDim[1], volDim[2]);
-    int3 axisT_ = make_int3(axisT[0], axisT[1], axisT[2]);
-    int ySign = (invY ? -1 : 1);
-
-    ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
     const int blockSize = 8;
     const dim3 blockVolXZ(blockSize, blockSize, 1);
@@ -344,84 +338,16 @@ void ps_aggregatePathVolume(
             d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),          // in:    xzSliceForYm1
             d_bestSimInYm1.getBuffer(),                                         // in:    bestSimInYm1
             d_volAgr.getBuffer(), d_volAgr.getBytesPaddedUpToDim(1), d_volAgr.getBytesPaddedUpToDim(0), // out:   volAgr
-            volDim_, axisT_,
-            step,
-            y, P1, P2,
+            volDim_, axisT_, 
+            sgmParams.stepXY, 
+            y, 
+            sgmParams.p1, 
+            sgmParams.p2Weighting,
             ySign, filteringIndex);
 
         std::swap(d_xzSliceForYm1, d_xzSliceForY);
     }
-
     // CHECK_CUDA_ERROR();
-
-    if(verbose)
-        printf("ps_aggregatePathVolume done\n");
-}
-
-/**
-* @param[in] ps_texs_arr table of image (in Lab colorspace) for all scales
-* @param[in] rccam RC camera
-* @param[inout] iovol_hmh input similarity volume (after Z reduction)
-*/
-void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
-                             const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-                             CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
-                             const CudaSize<3>& volDim,
-                             const SgmParams& sgmParams, 
-                             bool verbose, int CUDAdeviceNo, int ncamsAllocated)
-
-{
-    clock_t tall = tic();
-
-    // setup block and grid
-    int block_size = 8;
-    dim3 blockvol(block_size, block_size, 1);
-    dim3 gridvol(divUp(volDim.x(), block_size), divUp(volDim.y(), block_size), 1);
-
-    if (verbose)
-        printf("ps_SGMoptimizeSimVolume: Total size of volume map in GPU memory: %f\n", double(volSim_dmp.getBytesPadded())/(1024.0*1024.0));
-
-    // update aggregation volume
-    int npaths = 0;
-    Pyramid& rc_pyramid = *rccam.pyramid;
-    cudaTextureObject_t rc_tex = rc_pyramid[sgmParams.scale - 1].tex;
-
-    const auto updateAggrVolume = [&](const std::array<int, 3>& axisTrn, bool invX)
-                                  {
-                                      CudaSize<3> axisT(axisTrn[0], axisTrn[1], axisTrn[2]);
-
-                                      ps_aggregatePathVolume(volSimFiltered_dmp,
-                                                          volSim_dmp,
-                                                          volDim,
-                                                          axisT,
-                                                          rc_tex,
-                                                          sgmParams.stepXY, 
-                                                          sgmParams.p1, 
-                                                          sgmParams.p2Weighting,
-                                                          invX,
-                                                          npaths,
-                                                          verbose);
-                                      npaths++;
-                                  };
-
-    // Filtering is done on the last axis
-    const std::map<char, std::array<int, 3>> mapAxes = {
-        {'X', {1, 0, 2}}, // XYZ -> YXZ
-        {'Y', {0, 1, 2}}, // XYZ
-    };
-
-    for(char axis : sgmParams.filteringAxes)
-    {
-        const std::array<int, 3>& axisT = mapAxes.at(axis);
-        updateAggrVolume(axisT, false); // without transpose
-        updateAggrVolume(axisT, true); // with transpose of the last axis
-    }
-
-    if (verbose)
-    {
-        printf("SGM volume gpu elapsed time: %f ms \n", toc(tall));
-        printf("ps_SGMoptimizeSimVolume done\n");
-    }
 }
 
 void ps_SGMretrieveBestDepth(
