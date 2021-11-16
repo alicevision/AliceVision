@@ -527,22 +527,6 @@ bool Sgm::sgmRc()
     // For each pixel, choose the voxel with the minimal similarity value
     _cps.SGMretrieveBestDepth(_depthSimMap, volumeFilteredSim_d, _depths, _rc, volDim, _sgmParams);
 
-    /*
-    if(rcSilhoueteMap != nullptr)
-    {
-        for(int i = 0; i < _width * _height; i++)
-        {
-            if((*rcSilhoueteMap)[i])
-            {
-                _volumeBestIdVal[i].id = 0;
-                _volumeBestIdVal[i].value = 1.0f;
-            }
-        }
-        delete rcSilhoueteMap;
-        rcSilhoueteMap = nullptr;
-    }
-    */
-
     if(_sgmParams.exportIntermediateResults)
     {
         // {
@@ -553,11 +537,6 @@ bool Sgm::sgmRc()
         // }
         _depthSimMap.save("_sgm");
         _depthSimMap.save("_sgmStep1", true);
-
-        // std::vector<unsigned short> volumeBestId(_volumeBestIdVal.size());
-        // for(int i = 0; i < _volumeBestIdVal.size(); i++)
-          //   volumeBestId.at(i) = std::max(0, _volumeBestIdVal[i].id);
-        // imageIO::writeImage(_sp.getSGM_idDepthMapFileName(viewId, _scale, _step), _width, _height, volumeBestId, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
     }
 
     ALICEVISION_LOG_INFO("SGM depth map done in: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
