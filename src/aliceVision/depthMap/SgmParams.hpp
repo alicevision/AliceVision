@@ -46,7 +46,6 @@ struct SgmParams
   const double seedsRangePercentile = 0.999;
   const bool doSGMoptimizeVolume = true;
   const bool saveDepthsToSweepTxtFile = false;
-  const bool checkAlreadyComputed = true;
 };
 
 void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams);

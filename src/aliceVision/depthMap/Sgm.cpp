@@ -454,12 +454,6 @@ bool Sgm::sgmRc()
       return false;
     }
 
-    if((mvsUtils::FileExists(getIdDepthMapFileName(viewId, _sgmParams.scale, _sgmParams.stepXY))) && (_sgmParams.checkAlreadyComputed))
-    {
-        ALICEVISION_LOG_INFO("Already computed: " + getIdDepthMapFileName(viewId, _sgmParams.scale, _sgmParams.stepXY));
-      return false;
-    }
-
     long tall = clock();
 
     const int volDimX = _width;
@@ -568,11 +562,6 @@ bool Sgm::sgmRc()
 
     ALICEVISION_LOG_INFO("SGM depth map done in: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
     return true;
-}
-
-std::string Sgm::getIdDepthMapFileName(IndexT viewId, int scale, int step) const
-{
-    return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_idDepthMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_SGM.png";
 }
 
 std::string Sgm::getDepthMapFileName(IndexT viewId, int scale, int step) const

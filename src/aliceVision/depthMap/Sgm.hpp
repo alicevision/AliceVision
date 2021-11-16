@@ -34,7 +34,6 @@ public:
 
 private:
 
-    std::string getIdDepthMapFileName(IndexT viewId, int scale, int step) const;
     std::string getDepthMapFileName(IndexT viewId, int scale, int step) const;
     std::string getSimMapFileName(IndexT viewId, int scale, int step) const;
     std::string getTCamsFileName(IndexT viewId) const;
