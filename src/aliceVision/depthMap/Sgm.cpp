@@ -38,8 +38,6 @@ Sgm::Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneS
     , _cps(cps)
     , _sgmParams(sgmParams)
     , _depthSimMap(_rc, _mp, _sgmParams.scale, _sgmParams.stepXY)
-    , _width(_mp.getWidth(_rc) / (_sgmParams.scale * _sgmParams.stepXY))
-    , _height(_mp.getHeight(_rc) / (_sgmParams.scale * _sgmParams.stepXY))
 {
     _tCams = _mp.findNearestCamsFromLandmarks(_rc, _sgmParams.maxTCams);
     _depthsTcamsLimits.clear();
@@ -454,12 +452,6 @@ bool Sgm::sgmRc()
       return false;
     }
 
-    long tall = clock();
-
-    const int volDimX = _width;
-    const int volDimY = _height;
-    const int volDimZ = _depths.size();
-
     _cps.logCamerasRcTc( _rc, _tCams );
 
     if(_mp.verbose)
@@ -474,6 +466,12 @@ bool Sgm::sgmRc()
         ALICEVISION_LOG_DEBUG( ostr.str() );
     }
 
+    const int volDimX = _mp.getWidth(_rc) / (_sgmParams.scale * _sgmParams.stepXY);
+    const int volDimY = _mp.getHeight(_rc) / (_sgmParams.scale * _sgmParams.stepXY);
+    const int volDimZ = _depths.size();
+
+    const CudaSize<3> volDim(volDimX, volDimY, volDimZ);
+
     /* request this device to allocate
      *   (max_img - 1) * X * Y * dims_at_a_time * sizeof(float)
      * of device memory.
@@ -482,14 +480,14 @@ bool Sgm::sgmRc()
     {
         int devid;
         cudaGetDevice( &devid );
-        ALICEVISION_LOG_DEBUG( "Allocating " << volDimX << " x " << volDimY << " x " << volDimZ << " on device " << devid << ".");
+        ALICEVISION_LOG_DEBUG("Allocating " << volDim.x() << " x " << volDim.y() << " x " << volDim.z() << " on device " << devid << ".");
     }
 
-    CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
-    CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
+    CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(volDim);
+    CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(volDim);
 
     checkStartingAndStopppingDepth();
-    _cps.computeDepthSimMapVolume(_rc, _width, _height, volumeBestSim_d, volumeSecBestSim_d, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
+    _cps.computeDepthSimMapVolume(_rc, volumeBestSim_d, volumeSecBestSim_d, volDim, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
 
     if (_sgmParams.exportIntermediateResults)
     {
@@ -502,12 +500,14 @@ bool Sgm::sgmRc()
 
     // reuse best sim to put filtered sim volume
     CudaDeviceMemoryPitched<TSim, 3>& volumeFilteredSim_d = volumeBestSim_d;
+
     // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
     // So it downweights local minimums that are not supported by their neighborhood.
-    if(_sgmParams.doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
-                                // optimized depthmaps ... it must equals to true in normal case
+    // this is here for experimental reason ... to show how SGGC work on non
+    // optimized depthmaps ... it must equals to true in normal case
+    if(_sgmParams.doSGMoptimizeVolume)                      
     {
-        _cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDimX, volDimY, volDimZ, _sgmParams.filteringAxes, _sgmParams.scale, _sgmParams.stepXY, _sgmParams.p1, _sgmParams.p2Weighting);
+        _cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDim, _sgmParams);
     }
     else
     {
@@ -523,9 +523,9 @@ bool Sgm::sgmRc()
         exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, "afterFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
     }
 
-    // For each pixel: choose the voxel with the minimal similarity value
-    bool interpolate = false;
-    _cps.SGMretrieveBestDepth(_depthSimMap, volumeFilteredSim_d, _depths, _rc, volDimX, volDimY, volDimZ, _sgmParams.scale * _sgmParams.stepXY, interpolate);
+    // Retrieve best depth per pixel
+    // For each pixel, choose the voxel with the minimal similarity value
+    _cps.SGMretrieveBestDepth(_depthSimMap, volumeFilteredSim_d, _depths, _rc, volDim, _sgmParams);
 
     /*
     if(rcSilhoueteMap != nullptr)

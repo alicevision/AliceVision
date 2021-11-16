@@ -366,18 +366,17 @@ void ps_aggregatePathVolume(
 void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
                              const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                              CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
-                             int volDimX, int volDimY, int volDimZ,
-                             const std::string& filteringAxes,
-                             bool verbose, float P1, float P2,
-                             int scale, int step,
-                             int CUDAdeviceNo, int ncamsAllocated)
+                             const CudaSize<3>& volDim,
+                             const SgmParams& sgmParams, 
+                             bool verbose, int CUDAdeviceNo, int ncamsAllocated)
+
 {
     clock_t tall = tic();
 
     // setup block and grid
     int block_size = 8;
     dim3 blockvol(block_size, block_size, 1);
-    dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
+    dim3 gridvol(divUp(volDim.x(), block_size), divUp(volDim.y(), block_size), 1);
 
     if (verbose)
         printf("ps_SGMoptimizeSimVolume: Total size of volume map in GPU memory: %f\n", double(volSim_dmp.getBytesPadded())/(1024.0*1024.0));
@@ -385,9 +384,7 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
     // update aggregation volume
     int npaths = 0;
     Pyramid& rc_pyramid = *rccam.pyramid;
-    cudaTextureObject_t rc_tex = rc_pyramid[scale - 1].tex;
-
-    CudaSize<3> volDim(volDimX, volDimY, volDimZ);
+    cudaTextureObject_t rc_tex = rc_pyramid[sgmParams.scale - 1].tex;
 
     const auto updateAggrVolume = [&](const std::array<int, 3>& axisTrn, bool invX)
                                   {
@@ -398,8 +395,9 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
                                                           volDim,
                                                           axisT,
                                                           rc_tex,
-                                                          step,
-                                                          P1, P2,
+                                                          sgmParams.stepXY, 
+                                                          sgmParams.p1, 
+                                                          sgmParams.p2Weighting,
                                                           invX,
                                                           npaths,
                                                           verbose);
@@ -412,7 +410,7 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
         {'Y', {0, 1, 2}}, // XYZ
     };
 
-    for (char axis : filteringAxes)
+    for(char axis : sgmParams.filteringAxes)
     {
         const std::array<int, 3>& axisT = mapAxes.at(axis);
         updateAggrVolume(axisT, false); // without transpose
@@ -432,11 +430,11 @@ void ps_SGMretrieveBestDepth(
     int rc_cam_cache_idx,
     const CudaDeviceMemory<float>& depths_d,
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate)
+    const CudaSize<3>& volDim, int scaleStep, bool interpolate)
 {
   int block_size = 8;
   dim3 block(block_size, block_size, 1);
-  dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
+  dim3 grid(divUp(volDim.x(), block_size), divUp(volDim.y(), block_size), 1);
 
   volume_retrieveBestZ_kernel<<<grid, block>>>(
     rc_cam_cache_idx,
@@ -446,9 +444,10 @@ void ps_SGMretrieveBestDepth(
     bestSim_dmp.getBytesPaddedUpToDim(0),
     depths_d.getBuffer(),
     volSim_dmp.getBuffer(),
-    volSim_dmp.getBytesPaddedUpToDim(1),
-    volSim_dmp.getBytesPaddedUpToDim(0),
-    volDimX, volDimY, volDimZ,
+    volSim_dmp.getBytesPaddedUpToDim(1), volSim_dmp.getBytesPaddedUpToDim(0), 
+    int(volDim.x()), 
+    int(volDim.y()), 
+    int(volDim.z()),
     scaleStep,
     interpolate);
 }
@@ -463,19 +462,17 @@ namespace ps
 bool SimilarityVolume::_configured = false;
 dim3 SimilarityVolume::_block( 32, 1, 1 ); // minimal default settings
 
-SimilarityVolume::SimilarityVolume( int volDimX, int volDimY, int volDimZ,
+SimilarityVolume::SimilarityVolume( const CudaSize<3>& volDim,
                                     int volStepXY,
                                     int scale,
-                                    const std::vector<float>& depths_h,
-                                    bool verbose )
-    : _dimX( volDimX )
-    , _dimY( volDimY )
-    , _dimZ( volDimZ )
-    , _stepXY( volStepXY )
-    , _scale( scale )
+                                    const std::vector<float>& depths_h)
+    : _dimX(int(volDim.x()))
+    , _dimY(int(volDim.y()))
+    , _dimZ(int(volDim.z()))
+    , _stepXY(volStepXY)
+    , _scale(scale)
     , _depths_d(depths_h.data(), depths_h.size())
     , _stream_max( 2 )
-    , _verbose( verbose )
 {
     configureGrid();
 

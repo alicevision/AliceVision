@@ -18,7 +18,7 @@ struct SgmParams;
 class PlaneSweepingCuda;
 
 /**
- * @brief Depth Map Estimation Semi Global Matching
+ * @brief Depth Map Estimation Semi-Global Matching
  */
 class Sgm
 {
@@ -62,8 +62,6 @@ private:
     const mvsUtils::MultiViewParams& _mp;
     PlaneSweepingCuda& _cps;
     const int _rc;
-    const int _width;
-    const int _height;
 
     StaticVector<int> _tCams;
     StaticVector<float> _depths;

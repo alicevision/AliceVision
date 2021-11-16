@@ -32,11 +32,10 @@ namespace ps
 class SimilarityVolume
 {
 public:
-    SimilarityVolume( int volDimX, int volDimY, int volDimZ,
+    SimilarityVolume( const CudaSize<3>& volDim,
                       int volStepXY,
                       int scale,
-                      const std::vector<float>& depths_h,
-                      bool verbose );
+                      const std::vector<float>& depths_h);
     ~SimilarityVolume( );
 
     void initOutputVolumes(
@@ -70,8 +69,6 @@ private:
     const int  _stepXY;
     const int  _scale;
 
-    const bool _verbose;
-
     const CudaDeviceMemory<float> _depths_d;
 
     const int                 _stream_max;
@@ -91,12 +88,10 @@ private:
 void ps_SGMoptimizeSimVolume(
     const CameraStruct& rccam,
     const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
-    int volDimX, int volDimY, int volDimZ,
-    const std::string& filteringAxes,
+    CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp, 
+    const CudaSize<3>& volDim,
+    const SgmParams& sgmParams,
     bool verbose,
-    float P1, float P2,
-    int scale, int step,
     int CUDAdeviceNo,
     int ncamsAllocated);
 
@@ -105,7 +100,7 @@ void ps_SGMoptimizeSimVolume(
     int rc_cam_cache_id,
     const CudaDeviceMemory<float>& depths_d,
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate);
+    const CudaSize<3>& volDim, int scaleStep, bool interpolate);
 
 int ps_listCUDADevices(bool verbose);
 
