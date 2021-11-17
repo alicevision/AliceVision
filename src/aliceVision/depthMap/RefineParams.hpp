@@ -28,7 +28,7 @@ struct RefineParams
   bool exportIntermediateResults = false;
 
   // constant parameters
-
+  const int scale = 1;
   const int ndepthsToRefine = 15;
   const bool doRefineFuse = true;
   const bool doRefineOpt = true;
