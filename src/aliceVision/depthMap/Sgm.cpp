@@ -526,26 +526,6 @@ bool Sgm::sgmRc()
     return true;
 }
 
-std::string Sgm::getDepthMapFileName(IndexT viewId, int scale, int step) const
-{
-    return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depthMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_SGM.bin";
-}
-
-std::string Sgm::getSimMapFileName(IndexT viewId, int scale, int step) const
-{
-    return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_simMap_scale" + mvsUtils::num2str(scale) + "_step" + mvsUtils::num2str(step) + "_SGM.bin";
-}
-
-std::string Sgm::getTCamsFileName(IndexT viewId) const
-{
-    return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_tcams.bin";
-}
-
-std::string Sgm::getDepthsFileName(IndexT viewId) const
-{
-    return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depths.bin";
-}
-
 void Sgm::logRcTcDepthInformation() const 
 {
     std::ostringstream ostr;

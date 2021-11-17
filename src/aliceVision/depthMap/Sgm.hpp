@@ -34,11 +34,6 @@ public:
 
 private:
 
-    std::string getDepthMapFileName(IndexT viewId, int scale, int step) const;
-    std::string getSimMapFileName(IndexT viewId, int scale, int step) const;
-    std::string getTCamsFileName(IndexT viewId) const;
-    std::string getDepthsFileName(IndexT viewId) const;
-
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
