@@ -191,14 +191,12 @@ void Sgm::checkStartingAndStopppingDepth() const
 
         // The overall starting depth index should always be zero.
         assert(startingDepth == 0);
+
         // Usually stoppingDepth should be equal to the total number of depths.
         // But due to sgmMaxDepths and sgmMaxDepthPerTc, we can have more depths
         // than we finally use in all TC cameras.
         assert(_rcDepths.size() >= stoppingDepth);
     }
-
-    ALICEVISION_LOG_DEBUG("RC depths: [" << _depths[0] << "-" << _depths[_depths.size() - 1] << "], " << _depths.size()
-                                         << " depth planes.");
 }
 
 StaticVector<StaticVector<float>*>* Sgm::computeAllDepthsAndResetTCams(float midDepth)
@@ -271,6 +269,8 @@ void Sgm::computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths
 
 void Sgm::computeDepthsAndResetTCams()
 {
+    ALICEVISION_LOG_DEBUG("Compute depths and reset TCams");
+
     std::size_t nbObsDepths;
     float minObsDepth, maxObsDepth, midObsDepth;
     _mp.getMinMaxMidNbDepth(_rc, minObsDepth, maxObsDepth, midObsDepth, nbObsDepths, _sgmParams.seedsRangePercentile);
@@ -304,10 +304,8 @@ void Sgm::computeDepthsAndResetTCams()
         if(_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
         {
             const float scaleFactor = float(_depths.size()) / float(_sgmParams.maxDepths);
-            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths);
-            ALICEVISION_LOG_DEBUG("scaleFactor: " << scaleFactor);
+            ALICEVISION_LOG_DEBUG("nbDepths: " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths << ", scaleFactor: " << scaleFactor);
             computeDepths(minDepthAll, maxDepthAll, scaleFactor, alldepths);
-            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size());
         }
         if(_sgmParams.saveDepthsToSweepTxtFile)
         {
@@ -354,8 +352,7 @@ void Sgm::computeDepthsAndResetTCams()
         if(_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
         {
             const float scaleFactor = float(_depths.size()) / float(_sgmParams.maxDepths);
-            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths);
-            ALICEVISION_LOG_DEBUG("scaleFactor: " << scaleFactor);
+            ALICEVISION_LOG_DEBUG("nbDepths: " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths << ", scaleFactor: " << scaleFactor);
             computeDepths(minDepth, maxDepth, scaleFactor, alldepths);
         }
         ALICEVISION_LOG_DEBUG("Selected depth range: [" << minDepth << "-" << maxDepth << "], nb selected depths: " << _depths.size());
@@ -435,14 +432,14 @@ void Sgm::computeDepthsAndResetTCams()
         fclose(f);
     }
 
-    ALICEVISION_LOG_DEBUG("rc depths: " << _depths.size());
-
     deleteArrayOfArrays<float>(&alldepths);
+
+    ALICEVISION_LOG_DEBUG("Compute depths and reset TCams done, rc depths: " << _depths.size());
 }
 
 bool Sgm::sgmRc()
 {
-    const auto startTime = std::chrono::high_resolution_clock::now();
+    const system::Timer timer;
     const IndexT viewId = _mp.getViewId(_rc);
 
     ALICEVISION_LOG_INFO("Estimate depth map (SGM) of view id: " << viewId << " (rc: " << (_rc + 1) << " / " << _mp.ncams << ")");
@@ -452,35 +449,23 @@ bool Sgm::sgmRc()
       return false;
     }
 
-    _cps.logCamerasRcTc( _rc, _tCams );
+    // log debug camera / depth information
+    logRcTcDepthInformation();
 
-    if(_mp.verbose)
-    {
-        std::ostringstream ostr;
-        ostr << "In " << __FUNCTION__ << std::endl
-             << "    _rc camera " << _rc << " has depth " << _depths.size() << std::endl;
-        for( int c = 0; c < _tCams.size(); c++ )
-            ostr << "    tc camera " << _tCams[c]
-                 << " uses " << _depthsTcamsLimits[c].y << " depths" << std::endl;
-
-        ALICEVISION_LOG_DEBUG( ostr.str() );
-    }
-
+    // compute volume dimensions
     const int volDimX = _mp.getWidth(_rc) / (_sgmParams.scale * _sgmParams.stepXY);
     const int volDimY = _mp.getHeight(_rc) / (_sgmParams.scale * _sgmParams.stepXY);
     const int volDimZ = _depths.size();
 
     const CudaSize<3> volDim(volDimX, volDimY, volDimZ);
 
-    /* request this device to allocate
-     *   (max_img - 1) * X * Y * dims_at_a_time * sizeof(float)
-     * of device memory.
-     */
-    if(_mp.verbose)
+    // log volumes allocation size / gpu device id
+    // this device need also to allocate: 
+    // (max_img - 1) * X * Y * dims_at_a_time * sizeof(float) of device memory.
     {
         int devid;
         cudaGetDevice( &devid );
-        ALICEVISION_LOG_DEBUG("Allocating " << volDim.x() << " x " << volDim.y() << " x " << volDim.z() << " on device " << devid << ".");
+        ALICEVISION_LOG_DEBUG("Allocating 2 volumes (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ") on GPU device " << devid << ".");
     }
 
     CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(volDim);
@@ -539,7 +524,7 @@ bool Sgm::sgmRc()
         _depthSimMap.save("_sgmStep1", true);
     }
 
-    ALICEVISION_LOG_INFO("SGM depth map done in: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
+    ALICEVISION_LOG_INFO("Estimate depth map (SGM) done in: " << timer.elapsedMs() << " ms.");
     return true;
 }
 
@@ -561,6 +546,32 @@ std::string Sgm::getTCamsFileName(IndexT viewId) const
 std::string Sgm::getDepthsFileName(IndexT viewId) const
 {
     return _mp.getDepthMapsFolder() + std::to_string(viewId) + "_depths.bin";
+}
+
+void Sgm::logRcTcDepthInformation() const 
+{
+    std::ostringstream ostr;
+    ostr << "Camera / Depth information: " << std::endl
+         << "\t- rc camera:" << std::endl  
+         << "\t  - id: " << _rc << std::endl
+         << "\t  - view id: " << _mp.getViewId(_rc) << std::endl
+         << "\t  - depth planes: " << _depths.size() << std::endl
+         << "\t  - depths range: [" << _depths[0] << "-" << _depths[_depths.size() - 1] << "]" << std::endl 
+         << "\t- tc cameras:" << std::endl;
+
+    for(int c = 0; c < _tCams.size(); c++)
+    {
+        ostr << "\t  - tc camera (" << (c+1) << "/" << _tCams.size() << "):" << std::endl
+             << "\t    - id: " << _tCams[c] << std::endl
+             << "\t    - view id: " << _mp.getViewId(_tCams[c]) << std::endl
+             << "\t    - depth planes: " << _depthsTcamsLimits[c].y << std::endl
+             << "\t    - depths range: [" << _depths[_depthsTcamsLimits[c].x] << "-"
+             << _depths[_depthsTcamsLimits[c].x + _depthsTcamsLimits[c].y - 1] << "]" << std::endl
+             << "\t    - depth indexes range: [" << _depthsTcamsLimits[c].x << "-" 
+             << _depthsTcamsLimits[c].x + _depthsTcamsLimits[c].y << "]" << std::endl;
+    }
+
+    ALICEVISION_LOG_DEBUG(ostr.str());
 }
 
 } // namespace depthMap

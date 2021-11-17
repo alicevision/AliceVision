@@ -461,8 +461,6 @@ void SimilarityVolume::compute(
     TSim* gpu_volume_1st = volBestSim_dmp.getBuffer();
     TSim* gpu_volume_2nd = volSecBestSim_dmp.getBuffer();
 
-    ALICEVISION_CU_PRINT_DEBUG("Cell RC: " << rcam.camId << ", TC: " << tcam.camId << ", nb all depths: " << (int)_depths_d.getUnitsTotal() << ", start depth: " << cell.getDepthToStart() << ", nb depths to search: " << cell.getDepthsToSearch());
-
     {
       const int startDepthIndex = cell.getDepthToStart();
       const int nbDepthsToSearch = cell.getDepthsToSearch();
@@ -479,6 +477,7 @@ void SimilarityVolume::compute(
       ALICEVISION_CU_PRINT_DEBUG("block: " << _block.x << ", " << _block.y << ", " << _block.z);
       ALICEVISION_CU_PRINT_DEBUG("startDepthIndex: " << startDepthIndex);
       ALICEVISION_CU_PRINT_DEBUG("nbDepthsToSearch: " << nbDepthsToSearch);
+      ALICEVISION_CU_PRINT_DEBUG("nb all depths: " << int(_depths_d.getUnitsTotal()));
       ALICEVISION_CU_PRINT_DEBUG("startDepthIndex+nbDepthsToSearch: " << startDepthIndex+nbDepthsToSearch);
       ALICEVISION_CU_PRINT_DEBUG("_dimX: " << _dimX << ", _dimY: " << _dimY);
       ALICEVISION_CU_PRINT_DEBUG("scale-1: " << PrevScale() );
