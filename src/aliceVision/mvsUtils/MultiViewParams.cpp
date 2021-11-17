@@ -506,7 +506,7 @@ double MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc,
     return avmax;
 }
 
-double MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const
+double MultiViewParams::getCamsMinPixelSize(const Point3d& x0, const StaticVector<int>& tcams) const
 {
     if(tcams.empty())
     {

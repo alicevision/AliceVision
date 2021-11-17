@@ -248,7 +248,7 @@ public:
     double getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale, int step) const;
 
     double getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
-    double getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
+    double getCamsMinPixelSize(const Point3d& x0, const StaticVector<int>& tcams) const;
 
     bool isPixelInSourceImage(const Pixel& pixRC, int camId, int margin) const;
     bool isPixelInImage(const Pixel& pix, int camId, int margin) const;
