@@ -54,6 +54,7 @@ private:
      */
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
     void logRcTcDepthInformation() const;
+    void checkStartingAndStoppingDepth() const;
     void computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 

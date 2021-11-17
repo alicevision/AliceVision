@@ -8,6 +8,7 @@
 #include "volumeIO.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <aliceVision/depthMap/SgmParams.hpp>
@@ -171,7 +172,7 @@ void Sgm::computeDepths(float minDepth, float maxDepth, float scaleFactor, Stati
     }
 }
 
-void Sgm::checkStartingAndStopppingDepth() const
+void Sgm::checkStartingAndStoppingDepth() const
 {
     struct MinOffX
     {
@@ -471,7 +472,8 @@ bool Sgm::sgmRc()
     CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(volDim);
     CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(volDim);
 
-    checkStartingAndStopppingDepth();
+    checkStartingAndStoppingDepth();
+
     _cps.computeDepthSimMapVolume(_rc, volumeBestSim_d, volumeSecBestSim_d, volDim, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
 
     if (_sgmParams.exportIntermediateResults)
@@ -490,9 +492,9 @@ bool Sgm::sgmRc()
     // So it downweights local minimums that are not supported by their neighborhood.
     // this is here for experimental reason ... to show how SGGC work on non
     // optimized depthmaps ... it must equals to true in normal case
-    if(_sgmParams.doSGMoptimizeVolume)                      
+    if(_sgmParams.doSgmOptimizeVolume)                      
     {
-        _cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDim, _sgmParams);
+        _cps.SgmOptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDim, _sgmParams);
     }
     else
     {
@@ -510,14 +512,14 @@ bool Sgm::sgmRc()
 
     // Retrieve best depth per pixel
     // For each pixel, choose the voxel with the minimal similarity value
-    _cps.SGMretrieveBestDepth(_depthSimMap, volumeFilteredSim_d, _depths, _rc, volDim, _sgmParams);
+    _cps.SgmRetrieveBestDepth(_depthSimMap, volumeFilteredSim_d, _depths, _rc, volDim, _sgmParams);
 
     if(_sgmParams.exportIntermediateResults)
     {
         // {
         //     // Export RAW SGM results with the depths based on the input planes without interpolation
         //     DepthSimMap depthSimMapRawPlanes(_rc, _mp, _scale, _step);
-        //     _sp.cps.SGMretrieveBestDepth(depthSimMapRawPlanes, volumeSecBestSim_d, _depths, volDimX, volDimY, volDimZ, false); // interpolate=false
+        //     _sp.cps.SgmRetrieveBestDepth(depthSimMapRawPlanes, volumeSecBestSim_d, _depths, volDimX, volDimY, volDimZ, false); // interpolate=false
         //     depthSimMapRawPlanes.save("_sgmPlanes");
         // }
         _depthSimMap.save("_sgm");

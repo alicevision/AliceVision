@@ -214,17 +214,17 @@ public:
         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
         const CudaSize<3>& volDim,
         const std::vector<int>& rc_tCams,
-        const std::vector<Pixel>& rc_depthsTcamsLimit,
+        const std::vector<Pixel>& rc_depthsTcamsLimits,
         const std::vector<float>& rc_depths,
         const SgmParams& sgmParams);
 
-    bool SGMoptimizeSimVolume(int rc,
+    bool SgmOptimizeSimVolume(int rc,
         const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
         CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp, 
         const CudaSize<3>& volDim,
         const SgmParams& sgmParams);
 
-    void SGMretrieveBestDepth(DepthSimMap& bestDepth, 
+    void SgmRetrieveBestDepth(DepthSimMap& bestDepth, 
         CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
         const StaticVector<float>& depths, 
         const int rcCamId, 

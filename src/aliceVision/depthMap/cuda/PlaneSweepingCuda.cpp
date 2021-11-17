@@ -674,7 +674,7 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
                                                  CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
                                                  const CudaSize<3>& volDim,
                                                  const std::vector<int>& rc_tCams,
-                                                 const std::vector<Pixel>& rc_depthsTcamsLimit,
+                                                 const std::vector<Pixel>& rc_depthsTcamsLimits,
                                                  const std::vector<float>& rc_depths,
                                                  const SgmParams& sgmParams)
 {
@@ -683,11 +683,11 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
     ALICEVISION_LOG_INFO("SGM Compute similarity volume (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ")");
 
     std::vector<OneTC> tcs;
-    tcs.reserve(rc_depthsTcamsLimit.size());
+    tcs.reserve(rc_depthsTcamsLimits.size());
 
-    for(std::size_t i = 0; i < rc_depthsTcamsLimit.size(); ++i)
+    for(std::size_t i = 0; i < rc_depthsTcamsLimits.size(); ++i)
     {
-        tcs.emplace_back(rc_tCams[i], rc_depthsTcamsLimit[i].x, rc_depthsTcamsLimit[i].y);
+        tcs.emplace_back(rc_tCams[i], rc_depthsTcamsLimits[i].x, rc_depthsTcamsLimits[i].y);
     }
 
     nvtxPush("preload host cache ");
@@ -760,7 +760,7 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
 /**
  * @param[inout] volume input similarity volume
  */
-bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
+bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc,
                                              const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                                              CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                              const CudaSize<3>& volDim, 
@@ -813,7 +813,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
     return true;
 }
 
-void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, 
+void PlaneSweepingCuda::SgmRetrieveBestDepth(DepthSimMap& bestDepth, 
                                              CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
                                              const StaticVector<float>& depths, 
                                              const int rcCamId,
