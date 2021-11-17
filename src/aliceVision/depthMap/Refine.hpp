@@ -25,7 +25,7 @@ public:
     Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
     ~Refine();
 
-    bool refineRc(const DepthSimMap& depthSimMapToRefine);
+    bool refineRc(const DepthSimMap& sgmDepthSimMap);
 
     const StaticVector<int>& getTCams() const { return _tCams; }
     const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
@@ -37,18 +37,13 @@ private:
     PlaneSweepingCuda& _cps;
     const int _rc;
     StaticVector<int> _tCams;
-    DepthSimMap _depthSimMap;
+    DepthSimMap _depthSimMap; // refined, fused and optimized depth map
 
-    std::string getPhotoDepthMapFileName(IndexT viewId, int scale, int step) const;
-    std::string getPhotoSimMapFileName(IndexT viewId, int scale, int step) const;
-    std::string getOptDepthMapFileName(IndexT viewId, int scale, int step) const;
-    std::string getOptSimMapFileName(IndexT viewId, int scale, int step) const;
-
-    void getDepthPixSizeMapFromSGM(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapScale1Step1);
+    void upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapUpscaled) const;
     void filterMaskedPixels(DepthSimMap& out_depthSimMap);
-    void refineRcTcDepthSimMap(DepthSimMap& depthSimMap, int tc);
-    void refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis);
-    void optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, const DepthSimMap& depthPixSizeMapVis, const DepthSimMap& depthSimMapPhoto);
+    void refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const;
+    void refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, DepthSimMap& out_depthSimMapRefinedFused) const;
+    void optimizeDepthSimMap(const DepthSimMap& depthSimMapToRefine, const DepthSimMap& depthSimMapRefinedFused, DepthSimMap& out_depthSimMapOptimized) const;
 };
 
 } // namespace depthMap
