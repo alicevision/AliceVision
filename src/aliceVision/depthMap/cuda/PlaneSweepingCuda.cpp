@@ -350,7 +350,7 @@ void PlaneSweepingCuda::getMinMaxdepths(int rc, const StaticVector<int>& tcams, 
 StaticVector<float>* PlaneSweepingCuda::getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth,
                                                                int scale, int step, int maxDepthsHalf)
 {
-    float d = (float)step;
+    const float d = float(step);
 
     OrientedPoint rcplane;
     rcplane.p = _mp.CArr[rc];
@@ -430,14 +430,14 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     rcplane.n = _mp.iRArr[rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
-    Point2d rmid = Point2d((float)_mp.getWidth(rc) / 2.0f, (float)_mp.getHeight(rc) / 2.0f);
+    const Point2d rmid = Point2d((float)_mp.getWidth(rc) / 2.0f, (float)_mp.getHeight(rc) / 2.0f);
     Point2d pFromTar, pToTar; // segment of epipolar line of the principal point of the rc camera to the tc camera
     getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, rc, tc, _mp);
 
     int allDepths = static_cast<int>((pToTar - pFromTar).size());
     ALICEVISION_LOG_DEBUG("allDepths: " << allDepths);
 
-    Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0f, (float)scale);
+    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0f, (float)scale);
     // printf("%f %f %i %i\n",pixelVect.size(),((float)(scale*step)/3.0f),scale,step);
 
     Point2d cg = Point2d(0.0f, 0.0f);
@@ -554,9 +554,9 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     // compute depths for all pixels from the middle point to the other side of the epipolar line
     while((out2->size() < maxDepthsHalf) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
     {
-        Point3d refvect = _mp.iCamArr[rc] * rmid;
-        Point3d tarvect = _mp.iCamArr[tc] * tpix;
-        float rptpang = angleBetwV1andV2(refvect, tarvect);
+        const Point3d refvect = _mp.iCamArr[rc] * rmid;
+        const Point3d tarvect = _mp.iCamArr[tc] * tpix;
+        const float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
         ok = triangulateMatch(p, rmid, tpix, rc, tc, _mp);
@@ -724,8 +724,8 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
         const int rcamCacheId = addCam(rc_global_id, vol.Scale(), stream);
         const int tcamCacheId = addCam(tc_global_id, vol.Scale(), stream);
 
-        CameraStruct& rcam = _cams[rcamCacheId];
-        CameraStruct& tcam = _cams[tcamCacheId];
+        const CameraStruct& rcam = _cams[rcamCacheId];
+        const CameraStruct& tcam = _cams[tcamCacheId];
 
         const auto deviceMemoryInfo = getDeviceMemoryInfo();
 

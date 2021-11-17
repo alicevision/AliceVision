@@ -187,8 +187,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     const CameraStructBase& tcCam = camsBasesDev[tc_cam_cache_idx];
 
     float3 p = ptch.p;
-    float2 rp = project3DPoint(rcCam.P, p);
-    float2 tp = project3DPoint(tcCam.P, p);
+    const float2 rp = project3DPoint(rcCam.P, p);
+    const float2 tp = project3DPoint(tcCam.P, p);
 
     const float dd = wsh + 2.0f; // TODO FACA
     if((rp.x < dd) || (rp.x > (float)(rc_width  - 1) - dd) ||
@@ -201,8 +201,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
     // value od I(i,j) ... it is what we want
-    float4 gcr = tex2D_float4(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
-    float4 gct = tex2D_float4(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
+    const float4 gcr = tex2D_float4(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
+    const float4 gct = tex2D_float4(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
 
     // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
     // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
@@ -210,10 +210,11 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     if (gcr.w == 0.0f || gct.w == 0.0f)
         return CUDART_INF_F; // if no alpha, invalid pixel from input mask
 
-    float gammaC = _gammaC;
+    const float gammaC = _gammaC;
+    const float gammaP = _gammaP;
     // float gammaC = ((gcr.w>0)||(gct.w>0))?sigmoid(_gammaC,25.5f,20.0f,10.0f,fmaxf(gcr.w,gct.w)):_gammaC;
     // float gammaP = ((gcr.w>0)||(gct.w>0))?sigmoid(1.5,(float)(wsh+3),30.0f,20.0f,fmaxf(gcr.w,gct.w)):_gammaP;
-    float gammaP = _gammaP;
+
 
     simStat sst;
     for(int yp = -wsh; yp <= wsh; yp++)
@@ -221,13 +222,13 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
         for(int xp = -wsh; xp <= wsh; xp++)
         {
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
-            float2 rp1 = project3DPoint(rcCam.P, p);
-            float2 tp1 = project3DPoint(tcCam.P, p);
+            const float2 rp1 = project3DPoint(rcCam.P, p);
+            const float2 tp1 = project3DPoint(tcCam.P, p);
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            float4 gcr1 = tex2D_float4(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1 = tex2D_float4(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
+            const float4 gcr1 = tex2D_float4(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
+            const float4 gct1 = tex2D_float4(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
 
             // TODO: Does it make a difference to accurately test it for each pixel of the patch?
             // if (gcr1.w == 0.0f || gct1.w == 0.0f)
@@ -240,9 +241,11 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
             //  * distance in image to the center pixel of the patch:
             //    ** low value (close to 0) means that the pixel is close to the center of the patch
             //    ** high value (close to 1) means that the pixel is far from the center of the patch
-            float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
+            const float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
+
             assert(w >= 0.f);
             assert(w <= 1.f);
+
             sst.update(gcr1.x, gct1.x, w);
         }
     }

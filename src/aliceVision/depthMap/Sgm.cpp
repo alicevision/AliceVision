@@ -161,14 +161,13 @@ void Sgm::computeDepths(float minDepth, float maxDepth, float scaleFactor, Stati
 {
     _depths.clear();
 
+    float depth = minDepth;
+    while(depth < maxDepth)
     {
-        float depth = minDepth;
-        while(depth < maxDepth)
-        {
-            _depths.push_back(depth);
-            float step = getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
-            depth += step * scaleFactor;
-        }
+        _depths.push_back(depth);
+
+        const float step = getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
+        depth += step * scaleFactor;
     }
 }
 
@@ -187,7 +186,7 @@ void Sgm::checkStartingAndStoppingDepth() const
     {
         const std::vector<Pixel>& depthTcamsLimitsVec = _depthsTcamsLimits.getData();
         const int startingDepth = std::min_element(depthTcamsLimitsVec.begin(), depthTcamsLimitsVec.end(), MinOffX())->x;
-        auto depth_it = std::max_element(depthTcamsLimitsVec.begin(), depthTcamsLimitsVec.end(), MinOffXplusY());
+        const auto depth_it = std::max_element(depthTcamsLimitsVec.begin(), depthTcamsLimitsVec.end(), MinOffXplusY());
         const int stoppingDepth = depth_it->x + depth_it->y;
 
         // The overall starting depth index should always be zero.
@@ -310,12 +309,11 @@ void Sgm::computeDepthsAndResetTCams()
         }
         if(_sgmParams.saveDepthsToSweepTxtFile)
         {
-            std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsAll.txt";
+            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsAll.txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < _depths.size(); j++)
             {
-                float depth = _depths[j];
-                fprintf(f, "%f\n", depth);
+                fprintf(f, "%f\n", _depths[j]);
             }
             fclose(f);
         }
@@ -360,12 +358,11 @@ void Sgm::computeDepthsAndResetTCams()
 
         if(_sgmParams.saveDepthsToSweepTxtFile)
         {
-            std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsAll.txt";
+            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsAll.txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < _depths.size(); j++)
             {
-                float depth = _depths[j];
-                fprintf(f, "%f\n", depth);
+                fprintf(f, "%f\n", _depths[j]);
             }
             fclose(f);
         }
@@ -376,7 +373,7 @@ void Sgm::computeDepthsAndResetTCams()
 
     if(_sgmParams.saveDepthsToSweepTxtFile)
     {
-        std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsTcamsLimits.txt";
+        const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsTcamsLimits.txt";
         FILE* f = fopen(fn.c_str(), "w");
         for(int j = 0; j < _depthsTcamsLimits.size(); j++)
         {
@@ -389,12 +386,11 @@ void Sgm::computeDepthsAndResetTCams()
 
     if(_sgmParams.saveDepthsToSweepTxtFile)
     {
-        std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depths.txt";
+        const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depths.txt";
         FILE* f = fopen(fn.c_str(), "w");
         for(int j = 0; j < _depths.size(); j++)
         {
-            float depth = _depths[j];
-            fprintf(f, "%f\n", depth);
+            fprintf(f, "%f\n", _depths[j]);
         }
         fclose(f);
     }
@@ -403,11 +399,11 @@ void Sgm::computeDepthsAndResetTCams()
     {
         for(int i = 0; i < alldepths->size(); i++)
         {
-            std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depths" + mvsUtils::num2str(i) + ".txt";
+            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depths" + mvsUtils::num2str(i) + ".txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < (*alldepths)[i]->size(); j++)
             {
-                float depth = (*(*alldepths)[i])[j];
+                const float depth = (*(*alldepths)[i])[j];
                 fprintf(f, "%f\n", depth);
             }
             fclose(f);
@@ -421,13 +417,13 @@ void Sgm::computeDepthsAndResetTCams()
         rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
         rcplane.n = rcplane.n.normalize();
 
-        std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "rcDepths.txt";
+        const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "rcDepths.txt";
         FILE* f = fopen(fn.c_str(), "w");
         float depth = minDepthAll;
         while(depth < maxDepthAll)
         {
             fprintf(f, "%f\n", depth);
-            Point3d p = rcplane.p + rcplane.n * depth;
+            const Point3d p = rcplane.p + rcplane.n * depth;
             depth = depth + _mp.getCamPixelSize(p, _rc);
         }
         fclose(f);

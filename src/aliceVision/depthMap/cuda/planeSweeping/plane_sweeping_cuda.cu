@@ -313,7 +313,7 @@ void ps_aggregatePathVolume(
 
     for(int iy = 1; iy < volDimY; ++iy)
     {
-        int y = invY ? volDimY - 1 - iy : iy;
+        const int y = invY ? volDimY - 1 - iy : iy;
 
         // For each column: compute the best score
         // Foreach x:
@@ -358,9 +358,9 @@ void ps_SGMretrieveBestDepth(
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     const CudaSize<3>& volDim, int scaleStep, bool interpolate)
 {
-  int block_size = 8;
-  dim3 block(block_size, block_size, 1);
-  dim3 grid(divUp(volDim.x(), block_size), divUp(volDim.y(), block_size), 1);
+  const int block_size = 8;
+  const dim3 block(block_size, block_size, 1);
+  const dim3 grid(divUp(volDim.x(), block_size), divUp(volDim.y(), block_size), 1);
 
   volume_retrieveBestZ_kernel<<<grid, block>>>(
     rc_cam_cache_idx,
@@ -429,11 +429,8 @@ void SimilarityVolume::initOutputVolumes(
     CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
     const int streamIndex )
 {
-  dim3 block(32, 4, 1);
-
-  dim3 grid(divUp(_dimX, block.x),
-            divUp(_dimY, block.y),
-            _dimZ);
+  const dim3 block(32, 4, 1);
+  const dim3 grid(divUp(_dimX, block.x), divUp(_dimY, block.y), _dimZ);
 
   volume_init_kernel
     <<<grid, block, 0, SweepStream(streamIndex)>>>
@@ -465,10 +462,7 @@ void SimilarityVolume::compute(
       const int startDepthIndex = cell.getDepthToStart();
       const int nbDepthsToSearch = cell.getDepthsToSearch();
 
-      dim3 grid(
-        divUp(_dimX, _block.x),
-        divUp(_dimY, _block.y),
-        nbDepthsToSearch);
+      const dim3 grid(divUp(_dimX, _block.x), divUp(_dimY, _block.y), nbDepthsToSearch);
 
       ALICEVISION_CU_PRINT_DEBUG("====================");
       ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId << ", TC: " << tcam.camId);
@@ -485,10 +479,11 @@ void SimilarityVolume::compute(
       ALICEVISION_CU_PRINT_DEBUG("tcWH / scale: " << tcWidth / _scale << "x" << tcHeight / _scale);
       ALICEVISION_CU_PRINT_DEBUG("====================");
 
-      Pyramid& rc_pyramid = *rcam.pyramid;
-      Pyramid& tc_pyramid = *tcam.pyramid;
+      const Pyramid& rc_pyramid = *rcam.pyramid;
+      const Pyramid& tc_pyramid = *tcam.pyramid;
       cudaTextureObject_t rc_tex = rc_pyramid[PrevScale()].tex;
       cudaTextureObject_t tc_tex = tc_pyramid[PrevScale()].tex;
+
       volume_slice_kernel
             <<<grid, _block, 0, SweepStream(streamIndex)>>>
             ( rc_tex,
