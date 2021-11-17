@@ -32,7 +32,6 @@ struct RefineParams
   const int ndepthsToRefine = 15;
   const bool doRefineFuse = true;
   const bool doRefineOpt = true;
-  const bool checkAlreadyComputed = true;
 };
 
 } // namespace depthMap

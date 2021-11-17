@@ -241,12 +241,6 @@ bool Refine::refineRc(const DepthSimMap& depthSimMapToRefine)
 
     ALICEVISION_LOG_INFO("Refine depth map of view id: " << viewId << " (rc: " << (_rc + 1) << " / " << _mp.ncams << ")");
 
-    if(_refineParams.checkAlreadyComputed && (mvsUtils::FileExists(getOptSimMapFileName(viewId, 1, 1))))
-    {
-        ALICEVISION_LOG_INFO("Already computed: " << getOptSimMapFileName(viewId, 1, 1));
-        return false;
-    }
-
     long tall = clock();
 
     DepthSimMap depthPixSizeMapVis(_rc, _mp, 1, 1);
