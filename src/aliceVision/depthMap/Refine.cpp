@@ -5,17 +5,21 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Refine.hpp"
+
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
+
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/alicevision_omp.hpp>
+
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 
 #include <boost/filesystem.hpp>
 

@@ -5,23 +5,25 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Sgm.hpp"
-#include "volumeIO.hpp"
 
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/alicevision_omp.hpp>
+
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+
+#include <aliceVision/sfmData/SfMData.hpp>
 
 #include <boost/filesystem.hpp>
 
