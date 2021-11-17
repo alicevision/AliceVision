@@ -35,14 +35,45 @@ private:
     const RefineParams& _refineParams;
     const mvsUtils::MultiViewParams& _mp;
     PlaneSweepingCuda& _cps;
-    const int _rc;
-    StaticVector<int> _tCams;
+
+    const int _rc;            // refine R camera index
+    StaticVector<int> _tCams; // refine T camera indexes, compute in the constructor
     DepthSimMap _depthSimMap; // refined, fused and optimized depth map
 
+    /**
+     * @brief Upscale the given SGM depth/sim map.
+     * @param[in] sgmDepthSimMap the given SGM depth/sim map
+     * @param[in,out] out_depthSimMapUpscaled the given output depth/sim map
+     * @note Dimensions of the given output depth/sim map are used to compute the scale factor.
+     */
     void upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapUpscaled) const;
+
+    /**
+     * @brief Filter masked pixels (alpha < 0.1) of the given depth/sim map.
+     * @param[in,out] out_depthSimMap the given depth/sim map
+     */
     void filterMaskedPixels(DepthSimMap& out_depthSimMap);
+
+    /**
+     * @brief Refine the given depth/sim map with the given T camera.
+     * @param[in] tc the given T camera index
+     * @param[out] out_depthSimMapRefinedFused the given output refined depth/sim map
+     */
     void refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const;
+
+    /**
+     * @brief Refine and fuse the given depth/sim map.
+     * @param[in] depthSimMapToRefine the given upscaled SGM depth sim/map
+     * @param[out] out_depthSimMapRefinedFused the given output refined and fused depth/sim map
+     */
     void refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, DepthSimMap& out_depthSimMapRefinedFused) const;
+
+    /**
+     * @brief Optimize the given depth/sim maps.
+     * @param[in] depthSimMapToRefine the given upscaled SGM depth/sim map
+     * @param[in] depthSimMapRefinedFused the given refined and fused depth/sim map
+     * @param[out] out_depthSimMapOptimized the given output optimized depth/sim map
+     */
     void optimizeDepthSimMap(const DepthSimMap& depthSimMapToRefine, const DepthSimMap& depthSimMapRefinedFused, DepthSimMap& out_depthSimMapOptimized) const;
 };
 
