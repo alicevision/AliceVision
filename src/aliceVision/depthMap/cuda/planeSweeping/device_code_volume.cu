@@ -155,14 +155,13 @@ __device__ float depthPlaneToDepth(
 
 
 __global__ void volume_retrieveBestZ_kernel(
-  int cam_cache_idx,
+  int rcamCacheId,
   float* bestDepthM, int bestDepthM_s,
   float* bestSimM, int bestSimM_s,
-  const float* depths_d,
   const TSim* simVolume, int simVolume_s, int simVolume_p,
   int volDimX, int volDimY, int volDimZ,
-  int scaleStep,
-  bool interpolate)
+  const float* depths_d,
+  int scaleStep, bool interpolate)
 {
   const int x = blockIdx.x * blockDim.x + threadIdx.x;
   const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -195,7 +194,7 @@ __global__ void volume_retrieveBestZ_kernel(
   // Without depth interpolation (for debug purpose only)
   if(!interpolate)
   {
-    *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(cam_cache_idx, pix, depths_d[bestZIdx]);
+    *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(rcamCacheId, pix, depths_d[bestZIdx]);
     *get2DBufferAt(bestSimM, bestSimM_s, x, y) = (bestSim / 255.0f) * 2.0f - 1.0f; // convert from (0, 255) to (-1, +1)
     return;
   }
@@ -222,7 +221,7 @@ __global__ void volume_retrieveBestZ_kernel(
   // Interpolation between the 3 depth planes candidates
   const float refinedDepth = refineDepthSubPixel(depths, sims);
 
-  *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(cam_cache_idx, pix, refinedDepth);
+  *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(rcamCacheId, pix, refinedDepth);
   *get2DBufferAt(bestSimM, bestSimM_s, x, y) = sims.y;
 }
 

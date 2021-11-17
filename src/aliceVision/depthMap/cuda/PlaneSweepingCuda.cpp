@@ -669,13 +669,13 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
  * volume is indexed with the same index as tc. The values of tc can be quite different.
  * depths is indexed with the index_set elements
  */
-void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
+void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
                                                  CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
                                                  CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
                                                  const CudaSize<3>& volDim,
-                                                 const std::vector<int>& rc_tCams,
-                                                 const std::vector<Pixel>& rc_depthsTcamsLimits,
-                                                 const std::vector<float>& rc_depths,
+                                                 const std::vector<int>& tCams,
+                                                 const std::vector<Pixel>& rcDepthsTcamsLimits,
+                                                 const std::vector<float>& rcDepths,
                                                  const SgmParams& sgmParams)
 {
     const system::Timer timer;
@@ -683,19 +683,19 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
     ALICEVISION_LOG_INFO("SGM Compute similarity volume (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ")");
 
     std::vector<OneTC> tcs;
-    tcs.reserve(rc_depthsTcamsLimits.size());
+    tcs.reserve(rcDepthsTcamsLimits.size());
 
-    for(std::size_t i = 0; i < rc_depthsTcamsLimits.size(); ++i)
+    for(std::size_t i = 0; i < rcDepthsTcamsLimits.size(); ++i)
     {
-        tcs.emplace_back(rc_tCams[i], rc_depthsTcamsLimits[i].x, rc_depthsTcamsLimits[i].y);
+        tcs.emplace_back(tCams[i], rcDepthsTcamsLimits[i].x, rcDepthsTcamsLimits[i].y);
     }
 
     nvtxPush("preload host cache ");
-    _ic.getImg_sync( rc_global_id );
+    _ic.getImg_sync(rc);
     for( const auto& tc : tcs) _ic.getImg_sync( tc.getTCIndex() );
     nvtxPop("preload host cache ");
 
-    ps::SimilarityVolume vol(volDim, sgmParams.stepXY, sgmParams.scale, rc_depths);
+    ps::SimilarityVolume vol(volDim, sgmParams.stepXY, sgmParams.scale, rcDepths);
 
     vol.initOutputVolumes(volBestSim_dmp, volSecBestSim_dmp, 0);
     vol.WaitSweepStream(0);
@@ -703,8 +703,8 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
     ALICEVISION_LOG_DEBUG("Initialize output volumes: " << std::endl
                           << "\t- volBestSim_dmp : " << volBestSim_dmp.getUnitsInDim(0) << ", " << volBestSim_dmp.getUnitsInDim(1) << ", " << volBestSim_dmp.getUnitsInDim(2) << std::endl
                           << "\t- volSecBestSim_dmp : " << volSecBestSim_dmp.getUnitsInDim(0) << ", " << volSecBestSim_dmp.getUnitsInDim(1) << ", " << volSecBestSim_dmp.getUnitsInDim(2) << std::endl
-                          << "\t- scale: " << vol.Scale() << std::endl
-                          << "\t- volStepXY: " << vol.StepXY() << std::endl);
+                          << "\t- scale: " << vol.scale() << std::endl
+                          << "\t- volStepXY: " << vol.stepXY() << std::endl);
 
     for(int tci = 0; tci < tcs.size(); ++tci)
     {
@@ -713,27 +713,27 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
 
         const system::Timer timerPerTc;
 
-        const int tc_global_id = tcs[tci].getTCIndex();
+        const int tc = tcs[tci].getTCIndex();
 
-        const int rcWidth = _mp.getWidth(rc_global_id);
-        const int rcHeight = _mp.getHeight(rc_global_id);
+        const int rcWidth = _mp.getWidth(rc);
+        const int rcHeight = _mp.getHeight(rc);
 
-        const int tcWidth = _mp.getWidth(tc_global_id);
-        const int tcHeight = _mp.getHeight(tc_global_id);
+        const int tcWidth = _mp.getWidth(tc);
+        const int tcHeight = _mp.getHeight(tc);
 
-        const int rcamCacheId = addCam(rc_global_id, vol.Scale(), stream);
-        const int tcamCacheId = addCam(tc_global_id, vol.Scale(), stream);
+        const int rcFrameCacheId = addCam(rc, vol.scale(), stream);
+        const int tcFrameCacheId = addCam(tc, vol.scale(), stream);
 
-        const CameraStruct& rcam = _cams[rcamCacheId];
-        const CameraStruct& tcam = _cams[tcamCacheId];
+        const CameraStruct& rcam = _cams[rcFrameCacheId];
+        const CameraStruct& tcam = _cams[tcFrameCacheId];
 
         const auto deviceMemoryInfo = getDeviceMemoryInfo();
 
         ALICEVISION_LOG_DEBUG("Compute similarity volume:" << std::endl
-                              << "\t- rc: " << rc_global_id << std::endl
-                              << "\t- tc: " << tc_global_id << " (" << tci << "/" << tcs.size() << ")" << std::endl 
-                              << "\t- rc cache id: " << rcamCacheId << std::endl 
-                              << "\t- tc cache id: " << tcamCacheId << std::endl 
+                              << "\t- rc: " << rc << std::endl
+                              << "\t- tc: " << tc << " (" << tci << "/" << tcs.size() << ")" << std::endl 
+                              << "\t- rc frame cache id: " << rcFrameCacheId << std::endl 
+                              << "\t- tc frame cache id: " << tcFrameCacheId << std::endl 
                               << "\t- tc depth to start: " << tcs[tci].getDepthToStart() << std::endl
                               << "\t- tc depths to search: " << tcs[tci].getDepthsToSearch() << std::endl
                               << "\t- device similarity volume size: " << volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB" << std::endl
@@ -751,7 +751,7 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
             sgmParams,
             tci);
 
-        ALICEVISION_LOG_DEBUG("Compute similarity volume (with tc: " << tc_global_id << ") done in: " << timerPerTc.elapsedMs() << " ms.");
+        ALICEVISION_LOG_DEBUG("Compute similarity volume (with tc: " << tc << ") done in: " << timerPerTc.elapsedMs() << " ms.");
     }
     ALICEVISION_LOG_INFO("SGM Compute similarity volume done in: " << timer.elapsedMs() << " ms.");
 }
@@ -760,9 +760,9 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc_global_id,
 /**
  * @param[inout] volume input similarity volume
  */
-bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc,
-                                             const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc, 
                                              CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
+                                             const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                                              const CudaSize<3>& volDim, 
                                              const SgmParams& sgmParams)
 {
@@ -773,13 +773,13 @@ bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc,
                           << "\t- volume dimensions: (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ")" << std::endl
                           << "\t- device similarity volume size: " << (double(volSim_dmp.getBytesPadded()) / (1024.0 * 1024.0)) << " MB" << std::endl);
 
-    const int rcCacheId = addCam(rc, sgmParams.scale);
+    const int rcFrameCacheId = addCam(rc, sgmParams.scale);
 
     // update aggregation volume
     int npaths = 0;
-    const Pyramid& rc_pyramid = *(_cams[rcCacheId].pyramid);
-    const size_t rc_pyramidScaleIndex = size_t(sgmParams.scale) - 1;
-    cudaTextureObject_t rc_tex = rc_pyramid[rc_pyramidScaleIndex].tex;
+    const Pyramid& rcPyramid = *(_cams[rcFrameCacheId].pyramid);
+    const size_t rcPyramidScaleIndex = size_t(sgmParams.scale) - 1;
+    cudaTextureObject_t rc_tex = rcPyramid[rcPyramidScaleIndex].tex;
 
     const auto updateAggrVolume = [&](const CudaSize<3>& axisT, bool invX) 
     {
@@ -813,34 +813,34 @@ bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc,
     return true;
 }
 
-void PlaneSweepingCuda::SgmRetrieveBestDepth(DepthSimMap& bestDepth, 
-                                             CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
-                                             const StaticVector<float>& depths, 
-                                             const int rcCamId,
-                                             const CudaSize<3>& volDim,  
+void PlaneSweepingCuda::SgmRetrieveBestDepth(int rc, 
+                                             DepthSimMap& bestDepth,
+                                             const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
+                                             const CudaSize<3>& volDim,
+                                             const StaticVector<float>& rcDepths, 
                                              const SgmParams& sgmParams)
 {
   const system::Timer timer;
   
   ALICEVISION_LOG_INFO("SGM Retrieve best depth in volume (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ")");
 
-  const int rc_frame_cache_idx = addCam(rcCamId, 1 );
-  const int rc_cam_cache_idx = _hidden->getLocalCamId(rc_frame_cache_idx);
+  const int rcFrameCacheId = addCam(rc, 1);
+  const int rcamCacheId = _hidden->getLocalCamId(rcFrameCacheId);
   const CudaSize<2> depthSimDim(volDim.x(), volDim.y());
 
-  CudaDeviceMemory<float> depths_d(depths.getData().data(), depths.size());
+  CudaDeviceMemory<float> depths_d(rcDepths.getData().data(), rcDepths.size());
   CudaDeviceMemoryPitched<float, 2> bestDepth_dmp(depthSimDim);
   CudaDeviceMemoryPitched<float, 2> bestSim_dmp(depthSimDim);
 
   const int scaleStep = sgmParams.scale * sgmParams.stepXY;
 
   ps_SGMretrieveBestDepth(
+    rcamCacheId,
     bestDepth_dmp,
-    bestSim_dmp,
-    rc_cam_cache_idx,
-    depths_d,
+    bestSim_dmp, 
     volSim_dmp, 
     volDim,
+    depths_d,
     scaleStep,
     sgmParams.interpolateRetrieveBestDepth);
 

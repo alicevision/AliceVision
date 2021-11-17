@@ -213,22 +213,22 @@ public:
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
         const CudaSize<3>& volDim,
-        const std::vector<int>& rc_tCams,
-        const std::vector<Pixel>& rc_depthsTcamsLimits,
-        const std::vector<float>& rc_depths,
+        const std::vector<int>& tCams, 
+        const std::vector<Pixel>& rcDepthsTcamsLimits,
+        const std::vector<float>& rcDepths,
         const SgmParams& sgmParams);
 
-    bool SgmOptimizeSimVolume(int rc,
-        const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+    bool SgmOptimizeSimVolume(int rc, 
         CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp, 
+        const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
         const CudaSize<3>& volDim,
         const SgmParams& sgmParams);
 
-    void SgmRetrieveBestDepth(DepthSimMap& bestDepth, 
-        CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
-        const StaticVector<float>& depths, 
-        const int rcCamId, 
+    void SgmRetrieveBestDepth(int rc, 
+        DepthSimMap& bestDepth, 
+        const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
         const CudaSize<3>& volDim,
+        const StaticVector<float>& rcDepths, 
         const SgmParams& sgmParams);
 
     Point3d getDeviceMemoryInfo();

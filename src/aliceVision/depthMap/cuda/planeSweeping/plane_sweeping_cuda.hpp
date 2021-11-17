@@ -52,12 +52,12 @@ public:
           const SgmParams& sgmParams,
           int streamIndex );
 
-    inline int DimX()      const { return _dimX; }
-    inline int DimY()      const { return _dimY; }
-    inline int DimZ()      const { return _dimZ; }
-    inline int StepXY()    const { return _stepXY; }
-    inline int Scale()     const { return _scale; }
-    inline int PrevScale() const { return _scale-1; }
+    inline int dimX()      const { return _dimX; }
+    inline int dimY()      const { return _dimY; }
+    inline int dimZ()      const { return _dimZ; }
+    inline int stepXY()    const { return _stepXY; }
+    inline int scale()     const { return _scale; }
+    inline int prevScale() const { return _scale-1; }
 
     cudaStream_t SweepStream( int offset );
     void WaitSweepStream( int offset );
@@ -92,12 +92,13 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
                             const SgmParams& sgmParams,
                             bool invY, int filteringIndex);
 
-  void ps_SGMretrieveBestDepth(
-    CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
-    int rc_cam_cache_id,
-    const CudaDeviceMemory<float>& depths_d,
-    CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    const CudaSize<3>& volDim, int scaleStep, bool interpolate);
+void ps_SGMretrieveBestDepth(int rcamCacheId, 
+                            CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
+                            CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
+                            const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
+                            const CudaSize<3>& volDim, 
+                            const CudaDeviceMemory<float>& depths_d, 
+                            int scaleStep, bool interpolate);
 
 int ps_listCUDADevices(bool verbose);
 

@@ -465,24 +465,24 @@ bool Sgm::sgmRc()
         ALICEVISION_LOG_DEBUG("Allocating 2 volumes (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ") on GPU device " << devid << ".");
     }
 
-    CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(volDim);
-    CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(volDim);
+    CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_dmp(volDim);
+    CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_dmp(volDim);
 
     checkStartingAndStoppingDepth();
 
-    _cps.computeDepthSimMapVolume(_rc, volumeBestSim_d, volumeSecBestSim_d, volDim, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
+    _cps.computeDepthSimMapVolume(_rc, volumeBestSim_dmp, volumeSecBestSim_dmp, volDim, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
 
     if (_sgmParams.exportIntermediateResults)
     {
-        CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
-        volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
+        CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeSecBestSim_dmp.getSize());
+        volumeSecBestSim_h.copyFrom(volumeSecBestSim_dmp);
 
         exportSimilarityVolume(volumeSecBestSim_h, _depths, _mp, _rc, _sgmParams.scale, _sgmParams.stepXY, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_beforeFiltering.abc");
         exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, "beforeFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
     }
 
     // reuse best sim to put filtered sim volume
-    CudaDeviceMemoryPitched<TSim, 3>& volumeFilteredSim_d = volumeBestSim_d;
+    CudaDeviceMemoryPitched<TSim, 3>& volumeFilteredSim_dmp = volumeBestSim_dmp;
 
     // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
     // So it downweights local minimums that are not supported by their neighborhood.
@@ -490,17 +490,17 @@ bool Sgm::sgmRc()
     // optimized depthmaps ... it must equals to true in normal case
     if(_sgmParams.doSgmOptimizeVolume)                      
     {
-        _cps.SgmOptimizeSimVolume(_rc, volumeSecBestSim_d, volumeFilteredSim_d, volDim, _sgmParams);
+        _cps.SgmOptimizeSimVolume(_rc, volumeFilteredSim_dmp, volumeSecBestSim_dmp, volDim, _sgmParams);
     }
     else
     {
-        volumeFilteredSim_d.copyFrom(volumeSecBestSim_d);
+        volumeFilteredSim_dmp.copyFrom(volumeSecBestSim_dmp);
     }
 
     if(_sgmParams.exportIntermediateResults)
     {
-        CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeFilteredSim_d.getSize());
-        volumeSecBestSim_h.copyFrom(volumeFilteredSim_d);
+        CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeFilteredSim_dmp.getSize());
+        volumeSecBestSim_h.copyFrom(volumeFilteredSim_dmp);
 
         exportSimilarityVolume(volumeSecBestSim_h, _depths, _mp, _rc, _sgmParams.scale, _sgmParams.stepXY, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_afterFiltering.abc");
         exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, "afterFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
@@ -508,7 +508,7 @@ bool Sgm::sgmRc()
 
     // Retrieve best depth per pixel
     // For each pixel, choose the voxel with the minimal similarity value
-    _cps.SgmRetrieveBestDepth(_depthSimMap, volumeFilteredSim_d, _depths, _rc, volDim, _sgmParams);
+    _cps.SgmRetrieveBestDepth(_rc, _depthSimMap, volumeFilteredSim_dmp, volDim, _depths, _sgmParams);
 
     if(_sgmParams.exportIntermediateResults)
     {
