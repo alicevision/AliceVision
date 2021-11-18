@@ -130,15 +130,13 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
                          const RefineParams& refineParams, 
                          int xFrom, int wPart, int CUDAdeviceNo);
 
-void ps_fuseDepthSimMapsGaussianKernelVoting(
-    CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-    std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
-    int ndepthSimMaps,
-    int nSamplesHalf,
-    int nDepthsToRefine,
-    float sigma,
-    int width, int height,
-    bool verbose);
+void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
+                                            CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
+                                            std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
+                                            int ndepthSimMaps,
+                                            int nSamplesHalf,
+                                            int nDepthsToRefine,
+                                            float sigma);
 
 void ps_optimizeDepthSimMapGradientDescent(
     CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,

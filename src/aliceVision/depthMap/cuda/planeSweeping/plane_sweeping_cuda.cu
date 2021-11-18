@@ -744,31 +744,25 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
 
 /**
  * @brief ps_fuseDepthSimMapsGaussianKernelVoting
- * @param odepthSimMap_hmh
- * @param depthSimMaps_hmh
  * @param ndepthSimMaps: number of Tc cameras
  * @param nSamplesHalf (default value 150)
  * @param nDepthsToRefine (default value 31)
- * @param sigma
- * @param width
- * @param height
- * @param verbose
  */
-void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-                                             std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh, int ndepthSimMaps,
-                                             int nSamplesHalf, int nDepthsToRefine, float sigma, int width, int height,
-                                             bool verbose)
+void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
+                                             CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
+                                             std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh, 
+                                             int ndepthSimMaps,
+                                             int nSamplesHalf, 
+                                             int nDepthsToRefine, 
+                                             float sigma)
 {
-    clock_t tall = tic();
+    const float samplesPerPixSize = float(nSamplesHalf / ((nDepthsToRefine - 1) / 2));
+    const float twoTimesSigmaPowerTwo = 2.0f * sigma * sigma;
 
-    float samplesPerPixSize = (float)(nSamplesHalf / ((nDepthsToRefine - 1) / 2));
-    float twoTimesSigmaPowerTwo = 2.0f * sigma * sigma;
-
-    ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 16;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
+    const int block_size = 16;
+    const dim3 block(block_size, block_size, 1);
+    const dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
     CudaDeviceMemoryPitched<float2, 2> bestDepthSimMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float2, 2> bestGsvSampleMap_dmp(CudaSize<2>(width, height));
@@ -783,7 +777,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
 
     for(int s = -nSamplesHalf; s <= nSamplesHalf; s++) // (-150, 150)
     {
-        for(int c = 1; c < ndepthSimMaps; c++) // number of Tc cameras
+        for(int c = 1; c < ndepthSimMaps; c++) // number of T cameras
         {
             fuse_computeGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
                 gsvSampleMap_dmp.getBuffer(), gsvSampleMap_dmp.getPitch(),
@@ -803,15 +797,12 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
         depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(),
         width, height, samplesPerPixSize);
 
-    copy((*odepthSimMap_hmh), bestDepthSimMap_dmp);
+    copy((*out_depthSimMap_hmh), bestDepthSimMap_dmp);
 
     for(int i = 0; i < ndepthSimMaps; i++)
     {
         delete depthSimMaps_dmp[i];
     }
-
-    if(verbose)
-        printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
 void ps_optimizeDepthSimMapGradientDescent(

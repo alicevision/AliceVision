@@ -236,9 +236,10 @@ public:
 
     Point3d getDeviceMemoryInfo();
 
-    bool fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim> &oDepthSimMap,
-                                              const StaticVector<StaticVector<DepthSim> *>& dataMaps, int nSamplesHalf,
-                                              int nDepthsToRefine, float sigma);
+    bool fuseDepthSimMapsGaussianKernelVoting(int wPart, int hPart, 
+                                              StaticVector<DepthSim>& out_depthSimMap,
+                                              const StaticVector<StaticVector<DepthSim>*>& dataMaps,
+                                              const RefineParams& refineParams);
 
     bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
                                             const StaticVector<DepthSim>& sgmDepthPixSizeMap,

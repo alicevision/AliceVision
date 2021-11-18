@@ -178,13 +178,15 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, De
     {
         const int hPartHeight = std::min(h, (hPart + 1) * hPartHeightGlob) - hPart * hPartHeightGlob;
 
-        // vector of one depthSimMap tile per Tc
+        // vector of one depthSimMap tile per T cameras
         StaticVector<StaticVector<DepthSim>*> dataMapsHPart;
         dataMapsHPart.reserve(dataMaps.size());
-        for(int i = 0; i < dataMaps.size(); i++) // iterate over Tc cameras
+
+        for(int i = 0; i < dataMaps.size(); ++i) // iterate over T cameras
         {
             StaticVector<DepthSim>* dataMapHPart = new StaticVector<DepthSim>();
             dataMapHPart->resize(w * hPartHeight);
+
             const StaticVector<DepthSim>& dsm = dataMaps[i]->_dsm;
 
 #pragma omp parallel for
@@ -202,7 +204,10 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, De
         StaticVector<DepthSim> depthSimMapFusedHPart;
         depthSimMapFusedHPart.resize_with(w * hPartHeight, DepthSim(-1.0f, 1.0f));
 
-        _cps.fuseDepthSimMapsGaussianKernelVoting(w, hPartHeight, depthSimMapFusedHPart, dataMapsHPart, _refineParams.nSamplesHalf, _refineParams.nDepthsToRefine, _refineParams.sigma);
+        _cps.fuseDepthSimMapsGaussianKernelVoting(w, hPartHeight, 
+                                                  depthSimMapFusedHPart, 
+                                                  dataMapsHPart, 
+                                                  _refineParams);
 
 #pragma omp parallel for
         for(int y = 0; y < hPartHeight; ++y)
@@ -221,6 +226,7 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, De
     {
         delete dataMaps[c];
     }
+
     ALICEVISION_LOG_INFO("Refine and fuse depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
 }
 
