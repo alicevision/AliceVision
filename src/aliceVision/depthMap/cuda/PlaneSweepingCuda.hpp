@@ -191,27 +191,6 @@ public:
 
     StaticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
 
-    bool refineRcTcDepthMap(int rc, int tc, 
-                            StaticVector<float>& inout_depthMap, 
-                            StaticVector<float>& out_simMap,
-                            const RefineParams& refineParams, 
-                            int xFrom, int wPart);
-
-private:
-    /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
-    void sweepPixelsToVolumeSubset(
-        CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
-        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-        CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp,
-        const int volDimX, const int volDimY, const int volStepXY,
-        const std::vector<OneTC>& cells,
-        const CudaDeviceMemory<float>& depths_d,
-        const CameraStruct& rcam, int rcWidth, int rcHeight,
-        const CameraStruct& tcam, int tcWidth, int tcHeight,
-        int wsh, float gammaC, float gammaP,
-        int scale);
-
-public:
     void computeDepthSimMapVolume(int rc,
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
@@ -235,6 +214,12 @@ public:
         const SgmParams& sgmParams);
 
     Point3d getDeviceMemoryInfo();
+
+    bool refineRcTcDepthMap(int rc, int tc, 
+                            StaticVector<float>& inout_depthMap, 
+                            StaticVector<float>& out_simMap,
+                            const RefineParams& refineParams,
+                            int xFrom, int wPart);
 
     bool fuseDepthSimMapsGaussianKernelVoting(int wPart, int hPart, 
                                               StaticVector<DepthSim>& out_depthSimMap,
