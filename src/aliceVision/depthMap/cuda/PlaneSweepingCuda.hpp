@@ -221,13 +221,13 @@ public:
         const std::vector<float>& rcDepths,
         const SgmParams& sgmParams);
 
-    bool SgmOptimizeSimVolume(int rc, 
+    bool sgmOptimizeSimVolume(int rc, 
         CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp, 
         const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
         const CudaSize<3>& volDim,
         const SgmParams& sgmParams);
 
-    void SgmRetrieveBestDepth(int rc, 
+    void sgmRetrieveBestDepth(int rc, 
         DepthSimMap& bestDepth, 
         const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
         const CudaSize<3>& volDim,

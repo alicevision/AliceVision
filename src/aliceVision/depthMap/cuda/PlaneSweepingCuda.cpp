@@ -758,7 +758,7 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
 /**
  * @param[inout] volume input similarity volume
  */
-bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc, 
+bool PlaneSweepingCuda::sgmOptimizeSimVolume(int rc, 
                                              CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                              const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                                              const CudaSize<3>& volDim, 
@@ -811,7 +811,7 @@ bool PlaneSweepingCuda::SgmOptimizeSimVolume(int rc,
     return true;
 }
 
-void PlaneSweepingCuda::SgmRetrieveBestDepth(int rc, 
+void PlaneSweepingCuda::sgmRetrieveBestDepth(int rc, 
                                              DepthSimMap& bestDepth,
                                              const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
                                              const CudaSize<3>& volDim,

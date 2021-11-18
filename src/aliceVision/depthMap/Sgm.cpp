@@ -492,7 +492,7 @@ bool Sgm::sgmRc()
     // optimized depthmaps ... it must equals to true in normal case
     if(_sgmParams.doSgmOptimizeVolume)                      
     {
-        _cps.SgmOptimizeSimVolume(_rc, volumeFilteredSim_dmp, volumeSecBestSim_dmp, volDim, _sgmParams);
+        _cps.sgmOptimizeSimVolume(_rc, volumeFilteredSim_dmp, volumeSecBestSim_dmp, volDim, _sgmParams);
     }
     else
     {
@@ -510,7 +510,7 @@ bool Sgm::sgmRc()
 
     // Retrieve best depth per pixel
     // For each pixel, choose the voxel with the minimal similarity value
-    _cps.SgmRetrieveBestDepth(_rc, _depthSimMap, volumeFilteredSim_dmp, volDim, _depths, _sgmParams);
+    _cps.sgmRetrieveBestDepth(_rc, _depthSimMap, volumeFilteredSim_dmp, volDim, _depths, _sgmParams);
 
     if(_sgmParams.exportIntermediateResults)
     {
