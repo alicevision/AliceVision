@@ -20,6 +20,7 @@
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/FrameCacheMemory.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
 #include <aliceVision/depthMap/cuda/lrucache.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
@@ -61,94 +62,6 @@ struct CamSelection : public std::pair<int,int>
 
 bool operator==( const CamSelection& l, const CamSelection& r );
 bool operator<( const CamSelection& l, const CamSelection& r );
-
-/*********************************************************************************
- * FrameCacheEntry
- * Support class to maintain CUDA memory and textures for an image frame in
- * the GPU Cache.
- * _cache_cam_id contains the own position in the memory array.
- * _global_cam_id should contain the global frame that is currently stored in
- *                this cache slot.
- *********************************************************************************/
-
-class FrameCacheEntry
-{
-    // cache slot for image, identical to index in FrameCacheMemory vector
-    const int                        _cache_frame_id;
-
-    // cache slot for camera parameters
-    int                              _cache_cam_id;
-
-    // cache slot in the global host-sided image cache
-    int                              _global_cam_id;
-
-    Pyramid                          _pyramid;
-    CudaHostMemoryHeap<CudaRGBA, 2>* _host_frame;
-    int                              _width;
-    int                              _height;
-    int                              _scales;
-    int                              _memBytes;
-
-public:
-    FrameCacheEntry( int cache_frame_id, int w, int h, int s );
-
-    ~FrameCacheEntry( );
-
-    Pyramid& getPyramid();
-
-    Pyramid* getPyramidPtr();
-
-    int getPyramidMem() const;
-
-    void fillFrame( int global_cam_id,
-                    mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-                    mvsUtils::MultiViewParams& mp,
-                    cudaStream_t stream );
-
-    void setLocalCamId( int cache_cam_id );
-    int  getLocalCamId( ) const;
-
-private:
-    static void fillHostFrameFromImageCache(
-                    mvsUtils::ImagesCache<ImageRGBAf>& ic,
-                    CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame,
-                    int c,
-                    mvsUtils::MultiViewParams& mp );
-};
-
-/*********************************************************************************
- * FrameCacheMemory
- * Support class that maintains the memory for the GPU memory used for caching
- * currently loaded images.
- *********************************************************************************/
-
-class FrameCacheMemory
-{
-    std::vector<FrameCacheEntry*> _v;
-
-public:
-    FrameCacheMemory( int ImgsInGPUAtTime, int maxWidth, int maxHeight, int scales, int CUDADeviceNO );
-
-    ~FrameCacheMemory( );
-
-    inline Pyramid& getPyramid( int camera )
-    {
-        return _v[camera]->getPyramid();
-    }
-
-    inline Pyramid* getPyramidPtr( int camera )
-    {
-        return _v[camera]->getPyramidPtr();
-    }
-
-    void fillFrame( int cache_id,
-                    int global_cam_id,
-                    mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-                    mvsUtils::MultiViewParams& mp,
-                    cudaStream_t stream );
-    void setLocalCamId( int cache_id, int cache_cam_id );
-    int  getLocalCamId( int cache_id ) const;
-};
 
 /*********************************************************************************
  * PlaneSweepingCuda

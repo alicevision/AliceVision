@@ -53,6 +53,8 @@ set_source_files_properties(${depthMap_cuda_files_headers}
 # Cuda Sources
 set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
+  cuda/FrameCacheMemory.cpp
+  cuda/FrameCacheMemory.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
   cuda/planeSweeping/plane_sweeping_cuda.hpp
