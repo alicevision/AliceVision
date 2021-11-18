@@ -39,6 +39,11 @@ struct SgmParams
   bool exportIntermediateResults = false;
 
   // constant parameters
+  
+  const bool prematchinMinMaxDepthDontUseSeeds = false;
+  const float prematchingMaxDepthScale = 1.5f;
+  const float prematchingMinCamDist = 0.0f;
+  const float prematchingMaxCamDist = 15.0f;
 
   const int rcTcDepthsHalfLimit = 2048;
   const int rcDepthsCompStep = 6;

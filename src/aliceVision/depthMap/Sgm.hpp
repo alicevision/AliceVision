@@ -35,13 +35,12 @@ public:
 private:
 
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
-    void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
+    void getMinMaxdepths(float& minDepth, float& midDepth, float& maxDepth);
 
-    StaticVector<float>* getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth, int scale,
-                                              int step, int maxDepthsHalf = 1024);
+    StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
 
 
-    StaticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
+    StaticVector<float>* getDepthsRcTc(int tc, float midDepth);
 
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);

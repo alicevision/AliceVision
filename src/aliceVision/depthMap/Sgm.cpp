@@ -159,45 +159,39 @@ float Sgm::getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
     return minTcStep;
 }
 
-void Sgm::getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth,
-                                        float& maxDepth)
+void Sgm::getMinMaxdepths(float& minDepth, float& midDepth, float& maxDepth)
 {
-    const bool minMaxDepthDontUseSeeds = _mp.userParams.get<bool>("prematching.minMaxDepthDontUseSeeds", false);
-    const float maxDepthScale = static_cast<float>(_mp.userParams.get<double>("prematching.maxDepthScale", 1.5f));
-
-    if(minMaxDepthDontUseSeeds)
+    if(_sgmParams.prematchinMinMaxDepthDontUseSeeds)
     {
-        const float minCamDist = static_cast<float>(_mp.userParams.get<double>("prematching.minCamDist", 0.0f));
-        const float maxCamDist = static_cast<float>(_mp.userParams.get<double>("prematching.maxCamDist", 15.0f));
-
         minDepth = 0.0f;
         maxDepth = 0.0f;
-        for(int c = 0; c < tcams.size(); c++)
+        for(int c = 0; c < _tCams.size(); ++c)
         {
-            int tc = tcams[c];
-            minDepth += (_mp.CArr[rc] - _mp.CArr[tc]).size() * minCamDist;
-            maxDepth += (_mp.CArr[rc] - _mp.CArr[tc]).size() * maxCamDist;
+            const int tc = _tCams[c];
+            minDepth += (_mp.CArr[_rc] - _mp.CArr[tc]).size() * _sgmParams.prematchingMinCamDist;
+            maxDepth += (_mp.CArr[_rc] - _mp.CArr[tc]).size() * _sgmParams.prematchingMaxCamDist;
         }
-        minDepth /= static_cast<float>(tcams.size());
-        maxDepth /= static_cast<float>(tcams.size());
+        minDepth /= static_cast<float>(_tCams.size());
+        maxDepth /= static_cast<float>(_tCams.size());
         midDepth = (minDepth + maxDepth) / 2.0f;
     }
     else
     {
         std::size_t nbDepths;
-        _mp.getMinMaxMidNbDepth(rc, minDepth, maxDepth, midDepth, nbDepths);
-        maxDepth = maxDepth * maxDepthScale;
+        _mp.getMinMaxMidNbDepth(_rc, minDepth, maxDepth, midDepth, nbDepths);
+        maxDepth = maxDepth * _sgmParams.prematchingMaxDepthScale;
     }
 }
 
-StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth,
-                                                             int scale, int step, int maxDepthsHalf)
+StaticVector<float>* Sgm::getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth)
 {
-    const float d = float(step);
+    const int maxDepthsHalf = 1024;
+    
+    const float d = float(_sgmParams.scale) * float(_sgmParams.rcDepthsCompStep);
 
     OrientedPoint rcplane;
-    rcplane.p = _mp.CArr[rc];
-    rcplane.n = _mp.iRArr[rc] * Point3d(0.0, 0.0, 1.0);
+    rcplane.p = _mp.CArr[_rc];
+    rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
     int ndepthsMidMax = 0;
@@ -205,7 +199,7 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float mid
     while((maxdepth < maxDepth) && (ndepthsMidMax < maxDepthsHalf))
     {
         Point3d p = rcplane.p + rcplane.n * maxdepth;
-        float pixSize = _mp.getCamPixelSize(p, rc, (float)scale * d);
+        float pixSize = _mp.getCamPixelSize(p, _rc, d);
         maxdepth += pixSize;
         ndepthsMidMax++;
     }
@@ -215,7 +209,7 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float mid
     while((mindepth > minDepth) && (ndepthsMidMin < maxDepthsHalf * 2 - ndepthsMidMax))
     {
         Point3d p = rcplane.p + rcplane.n * mindepth;
-        float pixSize = _mp.getCamPixelSize(p, rc, (float)scale * d);
+        float pixSize = _mp.getCamPixelSize(p, _rc, d);
         mindepth -= pixSize;
         ndepthsMidMin++;
     }
@@ -227,7 +221,7 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float mid
     while((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
     {
         Point3d p = rcplane.p + rcplane.n * depth;
-        pixSize = _mp.getCamPixelSize(p, rc, (float)scale * d);
+        pixSize = _mp.getCamPixelSize(p, _rc, d);
         depth += pixSize;
         ndepths++;
     }
@@ -243,7 +237,7 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float mid
     {
         out->push_back(depth);
         Point3d p = rcplane.p + rcplane.n * depth;
-        pixSize = _mp.getCamPixelSize(p, rc, (float)scale * d);
+        pixSize = _mp.getCamPixelSize(p, _rc, d);
         depth += pixSize;
         ndepths++;
     }
@@ -253,7 +247,6 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float mid
     {
         if((*out)[i] >= (*out)[i + 1])
         {
-
             for(int j = 0; j <= i + 1; j++)
             {
                 ALICEVISION_LOG_TRACE("getDepthsByPixelSize: check if it is asc: " << (*out)[j]);
@@ -261,25 +254,24 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(int rc, float minDepth, float mid
             throw std::runtime_error("getDepthsByPixelSize not asc.");
         }
     }
-
     return out;
 }
 
-StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf)
+StaticVector<float>* Sgm::getDepthsRcTc(int tc, float midDepth)
 {
     OrientedPoint rcplane;
-    rcplane.p = _mp.CArr[rc];
-    rcplane.n = _mp.iRArr[rc] * Point3d(0.0, 0.0, 1.0);
+    rcplane.p = _mp.CArr[_rc];
+    rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
-    const Point2d rmid = Point2d((float)_mp.getWidth(rc) / 2.0f, (float)_mp.getHeight(rc) / 2.0f);
+    const Point2d rmid = Point2d((float)_mp.getWidth(_rc) / 2.0f, (float)_mp.getHeight(_rc) / 2.0f);
     Point2d pFromTar, pToTar; // segment of epipolar line of the principal point of the rc camera to the tc camera
-    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, rc, tc, _mp);
+    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, _rc, tc, _mp);
 
     int allDepths = static_cast<int>((pToTar - pFromTar).size());
     ALICEVISION_LOG_DEBUG("allDepths: " << allDepths);
 
-    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0f, (float)scale);
+    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0f, (float)_sgmParams.scale);
     // printf("%f %f %i %i\n",pixelVect.size(),((float)(scale*step)/3.0f),scale,step);
 
     Point2d cg = Point2d(0.0f, 0.0f);
@@ -292,13 +284,13 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
     {
         Point2d tpix = pFromTar + pixelVect * (float)i;
         Point3d p;
-        if(triangulateMatch(p, rmid, tpix, rc, tc, _mp)) // triangulate principal point from rc with tpix
+        if(triangulateMatch(p, rmid, tpix, _rc, tc, _mp)) // triangulate principal point from rc with tpix
         {
             float depth = orientedPointPlaneDistance(
                 p, rcplane.p,
                 rcplane.n); // todo: can compute the distance to the camera (as it's the principal point it's the same)
             if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) &&
-               checkPair(p, rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
+               checkPair(p, _rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
             {
                 cg = cg + tpix;
                 cg3 = cg3 + p;
@@ -327,7 +319,7 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
     float direction = 1.0f;
     {
         Point3d p;
-        if(!triangulateMatch(p, rmid, midpoint, rc, tc, _mp))
+        if(!triangulateMatch(p, rmid, midpoint, _rc, tc, _mp))
         {
             StaticVector<float>* out = new StaticVector<float>();
             return out;
@@ -335,7 +327,7 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        if(!triangulateMatch(p, rmid, midpoint + pixelVect, rc, tc, _mp))
+        if(!triangulateMatch(p, rmid, midpoint + pixelVect, _rc, tc, _mp))
         {
             StaticVector<float>* out = new StaticVector<float>();
             return out;
@@ -349,7 +341,7 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
     }
 
     StaticVector<float>* out1 = new StaticVector<float>();
-    out1->reserve(2 * maxDepthsHalf);
+    out1->reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
 
     Point2d tpix = midpoint;
     float depthOld = -1.0f;
@@ -357,20 +349,20 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
     bool ok = true;
 
     // compute depths for all pixels from the middle point to on one side of the epipolar line
-    while((out1->size() < maxDepthsHalf) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
+    while((out1->size() < _sgmParams.rcTcDepthsHalfLimit) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
     {
         tpix = tpix + pixelVect * direction;
 
-        Point3d refvect = _mp.iCamArr[rc] * rmid;
+        Point3d refvect = _mp.iCamArr[_rc] * rmid;
         Point3d tarvect = _mp.iCamArr[tc] * tpix;
         float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
-        ok = triangulateMatch(p, rmid, tpix, rc, tc, _mp);
+        ok = triangulateMatch(p, rmid, tpix, _rc, tc, _mp);
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
         if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth > depthOld) &&
-           checkPair(p, rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()) &&
+           checkPair(p, _rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()) &&
            (rptpang >
             _mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
            &&
@@ -392,24 +384,24 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
     }
 
     StaticVector<float>* out2 = new StaticVector<float>();
-    out2->reserve(2 * maxDepthsHalf);
+    out2->reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
     tpix = midpoint;
     istep = 0;
     ok = true;
 
     // compute depths for all pixels from the middle point to the other side of the epipolar line
-    while((out2->size() < maxDepthsHalf) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
+    while((out2->size() < _sgmParams.rcTcDepthsHalfLimit) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
     {
-        const Point3d refvect = _mp.iCamArr[rc] * rmid;
+        const Point3d refvect = _mp.iCamArr[_rc] * rmid;
         const Point3d tarvect = _mp.iCamArr[tc] * tpix;
         const float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
-        ok = triangulateMatch(p, rmid, tpix, rc, tc, _mp);
+        ok = triangulateMatch(p, rmid, tpix, _rc, tc, _mp);
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
         if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth < depthOld) &&
-           checkPair(p, rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()) &&
+           checkPair(p, _rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()) &&
            (rptpang >
             _mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
            &&
@@ -430,7 +422,7 @@ StaticVector<float>* Sgm::getDepthsRcTc(int rc, int tc, int scale, float midDept
 
     // printf("out2\n");
     StaticVector<float>* out = new StaticVector<float>();
-    out->reserve(2 * maxDepthsHalf);
+    out->reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
     for(int i = out2->size() - 1; i >= 0; i--)
     {
         out->push_back((*out2)[i]);
@@ -534,7 +526,7 @@ StaticVector<StaticVector<float>*>* Sgm::computeAllDepthsAndResetTCams(float mid
     for(int c = 0; c < _tCams.size(); c++)
     {
         // depths of all meaningful points on the principal ray of the reference camera regarding the target camera tc
-        StaticVector<float>* tcdepths = getDepthsRcTc(_rc, _tCams[c], _sgmParams.scale, midDepth, _sgmParams.rcTcDepthsHalfLimit);
+        StaticVector<float>* tcdepths = getDepthsRcTc(_tCams[c], midDepth);
         if(sizeOfStaticVector<float>(tcdepths) < 50)
         {
             // fallback if we don't have enough valid samples over the epipolar line
@@ -544,8 +536,8 @@ StaticVector<StaticVector<float>*>* Sgm::computeAllDepthsAndResetTCams(float mid
                 tcdepths = nullptr;
             }
             float avMinDist, avMidDist, avMaxDist;
-            getMinMaxdepths(_rc, _tCams, avMinDist, avMidDist, avMaxDist);
-            tcdepths = getDepthsByPixelSize(_rc, avMinDist, avMidDist, avMaxDist, _sgmParams.scale, _sgmParams.rcDepthsCompStep);
+            getMinMaxdepths(avMinDist, avMidDist, avMaxDist);
+            tcdepths = getDepthsByPixelSize(avMinDist, avMidDist, avMaxDist);
 
             if(sizeOfStaticVector<float>(tcdepths) < 50)
             {
