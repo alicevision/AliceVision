@@ -805,73 +805,68 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
     }
 }
 
-void ps_optimizeDepthSimMapGradientDescent(
-        CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
-        const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
-        const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
-        int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
-        CameraStruct& rc_cam,
-        int width, int partHeight, int scale,
-        int CUDAdeviceNo, int ncamsAllocated, bool verbose, int yFrom)
+void ps_optimizeDepthSimMapGradientDescent(const CameraStruct& rcam,
+                                           CudaHostMemoryHeap<float2, 2>& out_optimizedDepthSimMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
+                                           const CudaSize<2>& depthSimMapPartDim, 
+                                           const RefineParams& refineParams,
+                                           int CUDAdeviceNo, int nbCamsAllocated, int yFrom)
 {
-    clock_t tall = tic();
+    const int partWidth = depthSimMapPartDim.x();
+    const int partHeight = depthSimMapPartDim.y(); 
+    const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
 
-    float samplesPerPixSize = (float)(nSamplesHalf / ((nDepthsToRefine - 1) / 2));
-
-    ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 16;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(width, block_size), divUp(partHeight, block_size), 1);
+    const int block_size = 16;
+    const dim3 block(block_size, block_size, 1);
+    const dim3 grid(divUp(partWidth, block_size), divUp(partHeight, block_size), 1);
 
     const CudaDeviceMemoryPitched<float2, 2> sgmDepthPixSizeMap_dmp(sgmDepthPixSizeMap_hmh);
     const CudaDeviceMemoryPitched<float2, 2> refinedDepthSimMap_dmp(refinedDepthSimMap_hmh);
 
-    CudaDeviceMemoryPitched<float, 2> optDepthMap_dmp(CudaSize<2>(width, partHeight));
-    CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(CudaSize<2>(width, partHeight));
+    CudaDeviceMemoryPitched<float, 2> optDepthMap_dmp(depthSimMapPartDim);
+    CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(depthSimMapPartDim);
     copy(optDepthSimMap_dmp, sgmDepthPixSizeMap_dmp);
 
-    Pyramid& rc_pyramid = *rc_cam.pyramid;
-    cudaTextureObject_t rc_tex = rc_pyramid[scale].tex;
+    // get rc CUDA texture object
+    const size_t pyramidScaleIndex = size_t(refineParams.scale) - 1;
+    const Pyramid& rcPyramid = *rcam.pyramid;
+    cudaTextureObject_t rc_tex = rcPyramid[pyramidScaleIndex].tex;
 
-    CudaDeviceMemoryPitched<float, 2> imgVariance_dmp(CudaSize<2>(width, partHeight));
+    CudaDeviceMemoryPitched<float, 2> imgVariance_dmp(depthSimMapPartDim);
     {
         const dim3 lblock(32, 2, 1);
-        const dim3 lgrid(divUp(width, lblock.x), divUp(partHeight, lblock.y), 1);
+        const dim3 lgrid(divUp(partWidth, lblock.x), divUp(partHeight, lblock.y), 1);
 
-        compute_varLofLABtoW_kernel<<<lgrid, lblock>>>
-            (rc_tex,
-             imgVariance_dmp.getBuffer(), imgVariance_dmp.getPitch(),
-             width, partHeight, yFrom);
+        compute_varLofLABtoW_kernel<<<lgrid, lblock>>>(rc_tex,
+                                                       imgVariance_dmp.getBuffer(), 
+                                                       imgVariance_dmp.getPitch(),
+                                                       partWidth, partHeight, yFrom);
     }
     CudaTexture<float> imgVarianceTex(imgVariance_dmp);
 
-    for(int iter = 0; iter < nIters; iter++) // nIters: 100 by default
+    for(int iter = 0; iter < refineParams.nIters; ++iter) // nIters: 100 by default
     {
         // Copy depths values from optDepthSimMap to optDepthMap
-        fuse_getOptDeptMapFromOPtDepthSimMap_kernel<<<grid, block>>>(
-            optDepthMap_dmp.getBuffer(), optDepthMap_dmp.getPitch(),
-            optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
-            width, partHeight);
+        fuse_getOptDeptMapFromOptDepthSimMap_kernel<<<grid, block>>>(optDepthMap_dmp.getBuffer(), optDepthMap_dmp.getPitch(),
+                                                                     optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(), 
+                                                                     partWidth, partHeight);
 
         CudaTexture<float> depthTex(optDepthMap_dmp);
 
         // Adjust depth/sim by using previously computed depths
-        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
-            rc_tex,
-            rc_cam.param_dev.i,
-            imgVarianceTex.textureObj, depthTex.textureObj,
-            optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
-            sgmDepthPixSizeMap_dmp.getBuffer(), sgmDepthPixSizeMap_dmp.getPitch(),
-            refinedDepthSimMap_dmp.getBuffer(), refinedDepthSimMap_dmp.getPitch(),
-            width, partHeight, iter,
-            samplesPerPixSize, yFrom);
+        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(rc_tex, 
+                                                         rcam.param_dev.i,
+                                                         imgVarianceTex.textureObj, 
+                                                         depthTex.textureObj,
+                                                         optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
+                                                         sgmDepthPixSizeMap_dmp.getBuffer(), sgmDepthPixSizeMap_dmp.getPitch(),
+                                                         refinedDepthSimMap_dmp.getBuffer(), refinedDepthSimMap_dmp.getPitch(), 
+                                                         partWidth, partHeight, iter, samplesPerPixSize, yFrom);
     }
 
-    copy(out_depthSimMap_hmh, optDepthSimMap_dmp);
-
-    if(verbose)
-        printf("gpu elapsed time: %f ms \n", toc(tall));
+    copy(out_optimizedDepthSimMap_hmh, optDepthSimMap_dmp);
 }
 
 // uchar4 with 0..255 components => float3 with 0..1 components

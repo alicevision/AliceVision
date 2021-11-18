@@ -255,11 +255,11 @@ void Refine::optimizeDepthSimMap(const DepthSimMap& depthSimMapToRefine,       /
     {
         const int yFrom = part * hPart;
         const int hPartAct = std::min(hPart, h - yFrom);
-        _cps.optimizeDepthSimMapGradientDescent(out_depthSimMapOptimized._dsm, 
+        _cps.optimizeDepthSimMapGradientDescent(_rc, 
+                                                out_depthSimMapOptimized._dsm, 
                                                 depthSimMapToRefine._dsm, 
                                                 depthSimMapRefinedFused._dsm, 
-                                                _rc, 
-                                                _refineParams.nSamplesHalf, _refineParams.nDepthsToRefine, _refineParams.sigma, _refineParams.nIters,
+                                                _refineParams,
                                                 yFrom, hPartAct);
     }
 

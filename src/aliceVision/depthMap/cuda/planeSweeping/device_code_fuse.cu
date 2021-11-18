@@ -77,7 +77,7 @@ __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMa
         *oDepthSim = make_float2(midDepthPixSize.x - bestGsvSample.y * depthStep, bestGsvSample.x);
 }
 
-__global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, int optDepthMap_p,
+__global__ void fuse_getOptDeptMapFromOptDepthSimMap_kernel(float* optDepthMap, int optDepthMap_p,
                                                             float2* optDepthMapSimMap, int optDepthMapSimMap_p,
                                                             int width, int partHeight)
 {
@@ -223,7 +223,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
         // if depthEnergy > weightedColorVariance   => energyLowerThanVarianceWeight=0 => smooth
         // else:                                    => energyLowerThanVarianceWeight=1 => use fineDM
-        // weightedColorVariance max value is 30, so if depthEnergy > 30 (which means depthAngle < 150°) energyLowerThanVarianceWeight will be 0
+        // weightedColorVariance max value is 30, so if depthEnergy > 30 (which means depthAngle < 150ï¿½) energyLowerThanVarianceWeight will be 0
         // https://www.desmos.com/calculator/jzbweilb85
         const float energyLowerThanVarianceWeight = sigmoid(0.0f, 1.0f, 30.0f, weightedColorVariance, depthEnergy); // TODO: 30 => 60
 

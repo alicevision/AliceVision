@@ -241,11 +241,12 @@ public:
                                               const StaticVector<StaticVector<DepthSim>*>& dataMaps,
                                               const RefineParams& refineParams);
 
-    bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
-                                            const StaticVector<DepthSim>& sgmDepthPixSizeMap,
-                                            const StaticVector<DepthSim>& refinedDepthSimMap,
-                                            int rc, int nSamplesHalf,
-                                            int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
+    bool optimizeDepthSimMapGradientDescent(int rc, 
+                                            StaticVector<DepthSim>& out_depthSimMapOptimized,
+                                            const StaticVector<DepthSim>& depthSimMapSgmUpscale,
+                                            const StaticVector<DepthSim>& depthSimMapRefinedFused,
+                                            const RefineParams& refineParams,
+                                            int yFrom, int hPart);
 
     /* create object to store intermediate data for repeated use */
     NormalMapping* createNormalMapping();
