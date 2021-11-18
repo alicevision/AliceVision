@@ -751,13 +751,11 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
 void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
                                              CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
                                              std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh, 
-                                             int ndepthSimMaps,
-                                             int nSamplesHalf, 
-                                             int nDepthsToRefine, 
-                                             float sigma)
+                                             int ndepthSimMaps, 
+                                             const RefineParams& refineParams)
 {
-    const float samplesPerPixSize = float(nSamplesHalf / ((nDepthsToRefine - 1) / 2));
-    const float twoTimesSigmaPowerTwo = 2.0f * sigma * sigma;
+    const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
+    const float twoTimesSigmaPowerTwo = 2.0f * refineParams.sigma * refineParams.sigma;
 
     // setup block and grid
     const int block_size = 16;
@@ -775,7 +773,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
         copy((*depthSimMaps_dmp[i]), (*depthSimMaps_hmh[i]));
     }
 
-    for(int s = -nSamplesHalf; s <= nSamplesHalf; s++) // (-150, 150)
+    for(int s = -refineParams.nSamplesHalf; s <= refineParams.nSamplesHalf; s++) // (-150, 150)
     {
         for(int c = 1; c < ndepthSimMaps; c++) // number of T cameras
         {
@@ -787,14 +785,14 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
         }
         fuse_updateBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
             bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.getPitch(),
-            gsvSampleMap_dmp.getBuffer(), gsvSampleMap_dmp.getPitch(),
-            width, height, (float)s, s + nSamplesHalf);
+            gsvSampleMap_dmp.getBuffer(), gsvSampleMap_dmp.getPitch(), 
+            width, height, (float)s, s + refineParams.nSamplesHalf);
     }
 
     fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
         bestDepthSimMap_dmp.getBuffer(), bestDepthSimMap_dmp.getPitch(),
         bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.getPitch(),
-        depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(),
+        depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(), 
         width, height, samplesPerPixSize);
 
     copy((*out_depthSimMap_hmh), bestDepthSimMap_dmp);

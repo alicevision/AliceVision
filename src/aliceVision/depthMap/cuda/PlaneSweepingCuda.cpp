@@ -914,9 +914,7 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int wPart, int hPar
     ps_fuseDepthSimMapsGaussianKernelVoting(wPart, hPart, 
                                             &depthSimMap_hmh, 
                                             dataMaps_hmh, dataMaps.size(), 
-                                            refineParams.nSamplesHalf,
-                                            refineParams.nDepthsToRefine, 
-                                            refineParams.sigma);
+                                            refineParams);
     for(int y = 0; y < hPart; ++y)
     {
         for(int x = 0; x < wPart; ++x)
