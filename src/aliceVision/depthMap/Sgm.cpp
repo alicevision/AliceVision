@@ -148,7 +148,7 @@ void Sgm::getMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth)
     else
     {
         std::size_t nbDepths;
-        _mp.getMinMaxMidNbDepth(_rc, minDepth, maxDepth, midDepth, nbDepths);
+        _mp.getMinMaxMidNbDepth(_rc, minDepth, maxDepth, midDepth, nbDepths, _sgmParams.seedsRangePercentile);
         maxDepth = maxDepth * _sgmParams.prematchingMaxDepthScale;
     }
 }
@@ -227,7 +227,7 @@ StaticVector<float>* Sgm::getDepthsByPixelSize(float minDepth, float midDepth, f
     return out;
 }
 
-StaticVector<float>* Sgm::getDepthsRcTc(int tc, float midDepth)
+StaticVector<float>* Sgm::getDepthsTc(int tc, float midDepth)
 {
     OrientedPoint rcplane;
     rcplane.p = _mp.CArr[_rc];
@@ -521,7 +521,7 @@ StaticVector<StaticVector<float>*>* Sgm::computeAllDepthsAndResetTCams(float mid
     for(int c = 0; c < _tCams.size(); c++)
     {
         // depths of all meaningful points on the principal ray of the reference camera regarding the target camera tc
-        StaticVector<float>* tcdepths = getDepthsRcTc(_tCams[c], midDepth);
+        StaticVector<float>* tcdepths = getDepthsTc(_tCams[c], midDepth);
         if(sizeOfStaticVector<float>(tcdepths) < 50)
         {
             // fallback if we don't have enough valid samples over the epipolar line

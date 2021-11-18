@@ -39,7 +39,7 @@ private:
     StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
 
 
-    StaticVector<float>* getDepthsRcTc(int tc, float midDepth);
+    StaticVector<float>* getDepthsTc(int tc, float midDepth);
 
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
