@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
 
@@ -120,23 +121,14 @@ void ps_device_fillPyramidFromHostFrame(
     int scales, int w, int h,
     cudaStream_t stream );
 
-void ps_refineRcDepthMap(
-    float* out_osimMap_hmh,
-    float* inout_rcDepthMap_hmh,
-    int ntcsteps,
-    CameraStruct& rc_cam,
-    CameraStruct& tc_cam,
-    int width, int height,
-    int rcWidth, int rcHeight,
-    int tcWidth, int tcHeight,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    bool verbose,
-    int wsh,
-    float gammaC, float gammaP,
-    bool moveByTcOrRc,
-    int xFrom);
+void ps_refineRcDepthMap(const CameraStruct& rcam, 
+                         const CameraStruct& tcam, 
+                         float* inout_depthMap_hmh,
+                         float* out_simMap_hmh, 
+                         int rcWidth, int rcHeight, 
+                         int tcWidth, int tcHeight,
+                         const RefineParams& refineParams, 
+                         int xFrom, int wPart, int CUDAdeviceNo);
 
 void ps_fuseDepthSimMapsGaussianKernelVoting(
     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,

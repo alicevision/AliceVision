@@ -635,33 +635,31 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     return out;
 }
 
-bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
-                                             StaticVector<float>& out_rcDepthMap,
-                                             int rc_global_id,
-                                             int tc_global_id, int scale, int wsh,
-                                             float gammaC, float gammaP, int xFrom, int wPart)
+bool PlaneSweepingCuda::refineRcTcDepthMap(int rc, int tc, 
+                                           StaticVector<float>& inout_depthMap,
+                                           StaticVector<float>& out_simMap, 
+                                           const RefineParams& refineParams, 
+                                           int xFrom, int wPart)
 {
-    int h = _mp.getHeight(rc_global_id) / scale;
+    const int rcWidth = _mp.getWidth(rc) / refineParams.scale;
+    const int rcHeight = _mp.getHeight(rc) / refineParams.scale;
 
-    long t1 = clock();
+    const int tcWidth = _mp.getWidth(tc) / refineParams.scale;
+    const int tcHeight = _mp.getHeight(tc) / refineParams.scale;
 
-    ALICEVISION_LOG_DEBUG("\t- rc: " << rc_global_id << std::endl << "\t- tcams: " << tc_global_id);
+    const int rcFrameCacheId = addCam(rc, refineParams.scale);
+    const int tcFrameCacheId = addCam(tc, refineParams.scale);
 
-    int rc_idx = addCam(rc_global_id, scale );
-    int tc_idx = addCam(tc_global_id, scale );
+    const CameraStruct& rcam = _cams[rcFrameCacheId];
+    const CameraStruct& tcam = _cams[tcFrameCacheId];
 
-    // sweep
-    ps_refineRcDepthMap(out_simMap.getDataWritable().data(),
-                        out_rcDepthMap.getDataWritable().data(), nStepsToRefine,
-                        _cams[rc_idx],
-                        _cams[tc_idx], wPart, h,
-                        _mp.getWidth(rc_global_id)/scale, _mp.getHeight(rc_global_id)/scale,
-                        _mp.getWidth(tc_global_id)/scale, _mp.getHeight(tc_global_id)/scale,
-                        scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh,
-                        gammaC, gammaP, useTcOrRcPixSize, xFrom);
-
-    mvsUtils::printfElapsedTime(t1);
-
+    ps_refineRcDepthMap(rcam, tcam, 
+                        inout_depthMap.getDataWritable().data(), 
+                        out_simMap.getDataWritable().data(),
+                        rcWidth, rcHeight, 
+                        tcWidth, tcHeight, 
+                        refineParams, 
+                        xFrom, wPart, _CUDADeviceNo);
     return true;
 }
 

@@ -117,12 +117,7 @@ void Refine::refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const
         StaticVector<float> simMap;
         depthSimMap.getSimMapStep1XPart(simMap, xFrom, wPartAct);
 
-        _cps.refineRcTcDepthMap(_refineParams.useTcOrRcPixSize, 
-                                _refineParams.ndepthsToRefine, 
-                                simMap, depthMap, 
-                                _rc, tc, scale,
-                                _refineParams.wsh, _refineParams.gammaC, _refineParams.gammaP, xFrom,
-                                wPartAct);
+        _cps.refineRcTcDepthMap(_rc, tc, depthMap, simMap, _refineParams, xFrom, wPartAct);
 
         for(int yp = 0; yp < h; ++yp)
         {

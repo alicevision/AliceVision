@@ -17,6 +17,7 @@
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
@@ -190,9 +191,11 @@ public:
 
     StaticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
 
-    bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
-                            StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
-                            float gammaP, int xFrom, int wPart);
+    bool refineRcTcDepthMap(int rc, int tc, 
+                            StaticVector<float>& inout_depthMap, 
+                            StaticVector<float>& out_simMap,
+                            const RefineParams& refineParams, 
+                            int xFrom, int wPart);
 
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
