@@ -34,15 +34,10 @@ public:
 
 private:
 
-    void getMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth);
+    void logRcTcDepthInformation() const;
+    void checkStartingAndStoppingDepth() const;
 
-    StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
-
-
-    StaticVector<float>* getDepthsTc(int tc, float midDepth);
-
-    bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
-    bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
+    void computeDepthsAndResetTCams();
 
     /**
      * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
@@ -54,15 +49,19 @@ private:
      * @brief Fill depthsTcamsLimits member variable with index range of depths to sweep
      */
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
-    void logRcTcDepthInformation() const;
-    void checkStartingAndStoppingDepth() const;
 
     /**
      * @brief Fill the list of "best" depths (_depths) for rc, from all tc cameras depths
      */
     void computeDepths(float minDepth, float maxDepth, float scaleFactor, const StaticVector<StaticVector<float>*>* alldepths);
-    void computeDepthsAndResetTCams();
 
+    void getMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth);
+
+    StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
+    StaticVector<float>* getDepthsTc(int tc, float midDepth);
+
+    bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
+    bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
 
     const SgmParams& _sgmParams;
     const mvsUtils::MultiViewParams& _mp;
