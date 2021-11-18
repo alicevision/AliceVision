@@ -57,24 +57,24 @@ private:
     /**
      * @brief Refine the given depth/sim map with the given T camera.
      * @param[in] tc the given T camera index
-     * @param[out] out_depthSimMapRefinedFused the given output refined depth/sim map
+     * @param[int,out] depthSimMap the given output refined depth/sim map
      */
     void refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const;
 
     /**
      * @brief Refine and fuse the given depth/sim map.
-     * @param[in] depthSimMapToRefine the given upscaled SGM depth sim/map
+     * @param[in] depthSimMapSgmUpscale the given upscaled SGM depth sim/map
      * @param[out] out_depthSimMapRefinedFused the given output refined and fused depth/sim map
      */
-    void refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, DepthSimMap& out_depthSimMapRefinedFused) const;
+    void refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, DepthSimMap& out_depthSimMapRefinedFused) const;
 
     /**
      * @brief Optimize the given depth/sim maps.
-     * @param[in] depthSimMapToRefine the given upscaled SGM depth/sim map
+     * @param[in] depthSimMapSgmUpscale the given upscaled SGM depth/sim map
      * @param[in] depthSimMapRefinedFused the given refined and fused depth/sim map
      * @param[out] out_depthSimMapOptimized the given output optimized depth/sim map
      */
-    void optimizeDepthSimMap(const DepthSimMap& depthSimMapToRefine, const DepthSimMap& depthSimMapRefinedFused, DepthSimMap& out_depthSimMapOptimized) const;
+    void optimizeDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, const DepthSimMap& depthSimMapRefinedFused, DepthSimMap& out_depthSimMapOptimized) const;
 };
 
 } // namespace depthMap

@@ -138,7 +138,7 @@ void Refine::refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const
     ALICEVISION_LOG_DEBUG("Refine depth/sim map per tc (rc: " << _rc << ", tc: " << tc << ") done in: " << timer.elapsedMs() << " ms.");
 }
 
-void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, DepthSimMap& out_depthSimMapRefinedFused) const
+void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, DepthSimMap& out_depthSimMapRefinedFused) const
 {
     const system::Timer timer;
 
@@ -151,14 +151,14 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, De
     dataMaps.reserve(_tCams.size() + 1);
 
     // Put the raw upscaled SGM result first:
-    dataMaps.push_back(&depthSimMapToRefine); // DO NOT ERASE !
+    dataMaps.push_back(&depthSimMapSgmUpscale); // DO NOT ERASE !
 
     for(int c = 0; c < _tCams.size(); ++c)
     {
         const int tc = _tCams[c];
 
         DepthSimMap* depthSimMapC = new DepthSimMap(_rc, _mp, 1, 1);
-        depthSimMapC->initJustFromDepthMap(depthSimMapToRefine, 1.0f);
+        depthSimMapC->initJustFromDepthMap(depthSimMapSgmUpscale, 1.0f);
 
         refineDepthSimMapPerTc(tc, *depthSimMapC);
         
@@ -230,7 +230,7 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapToRefine, De
     ALICEVISION_LOG_INFO("Refine and fuse depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
 }
 
-void Refine::optimizeDepthSimMap(const DepthSimMap& depthSimMapToRefine,       // upscaled SGM depth sim map
+void Refine::optimizeDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale,     // upscaled SGM depth sim map
                                  const DepthSimMap& depthSimMapRefinedFused,   // refined and fused depth sim map
                                  DepthSimMap& out_depthSimMapOptimized) const  // optimized depth sim map
 {
@@ -257,7 +257,7 @@ void Refine::optimizeDepthSimMap(const DepthSimMap& depthSimMapToRefine,       /
         const int hPartAct = std::min(hPart, h - yFrom);
         _cps.optimizeDepthSimMapGradientDescent(_rc, 
                                                 out_depthSimMapOptimized._dsm, 
-                                                depthSimMapToRefine._dsm, 
+                                                depthSimMapSgmUpscale._dsm, 
                                                 depthSimMapRefinedFused._dsm, 
                                                 _refineParams,
                                                 yFrom, hPartAct);
@@ -278,20 +278,20 @@ bool Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
         return false;
     }
 
-    DepthSimMap depthSimMapToRefine(_rc, _mp, 1, 1); // depthSimMapVis
-    upscaleSgmDepthSimMap(sgmDepthSimMap, depthSimMapToRefine);
-    filterMaskedPixels(depthSimMapToRefine);
+    DepthSimMap depthSimMapSgmUpscale(_rc, _mp, 1, 1); // depthSimMapVis
+    upscaleSgmDepthSimMap(sgmDepthSimMap, depthSimMapSgmUpscale);
+    filterMaskedPixels(depthSimMapSgmUpscale);
 
     if(_refineParams.exportIntermediateResults)
     {
-        depthSimMapToRefine.save("_sgmUpscaled");
+        depthSimMapSgmUpscale.save("_sgmUpscaled");
     }
 
     DepthSimMap depthSimMapRefinedFused(_rc, _mp, 1, 1); // depthSimMapPhoto
 
     if(_refineParams.doRefineFuse)
     {
-        refineAndFuseDepthSimMap(depthSimMapToRefine, depthSimMapRefinedFused);
+        refineAndFuseDepthSimMap(depthSimMapSgmUpscale, depthSimMapRefinedFused);
 
         if(_refineParams.exportIntermediateResults)
         {
@@ -300,12 +300,12 @@ bool Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
     }
     else
     {
-        depthSimMapRefinedFused.initJustFromDepthMap(depthSimMapToRefine, 1.0f);
+        depthSimMapRefinedFused.initJustFromDepthMap(depthSimMapSgmUpscale, 1.0f);
     }
 
     if(_refineParams.doRefineOpt && _refineParams.nIters != 0)
     {
-        optimizeDepthSimMap(depthSimMapToRefine, depthSimMapRefinedFused, _depthSimMap);
+        optimizeDepthSimMap(depthSimMapSgmUpscale, depthSimMapRefinedFused, _depthSimMap);
     }
     else
     {
