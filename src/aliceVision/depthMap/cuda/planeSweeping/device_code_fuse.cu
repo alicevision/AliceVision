@@ -116,23 +116,23 @@ __device__ float2 getCellSmoothStepEnergy( int rc_cam_cache_idx, cudaTextureObje
         return out;
 
     // Consider the neighbor pixels
-    int2 cellL = cell0 + make_int2(0, -1);	// Left
-    int2 cellR = cell0 + make_int2(0, 1);	// Right
-    int2 cellU = cell0 + make_int2(-1, 0);	// Up
-    int2 cellB = cell0 + make_int2(1, 0);	// Bottom
+    const int2 cellL = cell0 + make_int2(0, -1); // Left
+    const int2 cellR = cell0 + make_int2(0, 1);	 // Right
+    const int2 cellU = cell0 + make_int2(-1, 0); // Up
+    const int2 cellB = cell0 + make_int2(1, 0);	 // Bottom
 
     // Get associated depths from depth texture
-    float dL = tex2D<float>(depthTex, float(cellL.x), float(cellL.y - yFrom));
-    float dR = tex2D<float>(depthTex, float(cellR.x), float(cellR.y - yFrom));
-    float dU = tex2D<float>(depthTex, float(cellU.x), float(cellU.y - yFrom));
-    float dB = tex2D<float>(depthTex, float(cellB.x), float(cellB.y - yFrom));
+    const float dL = tex2D<float>(depthTex, float(cellL.x), float(cellL.y - yFrom));
+    const float dR = tex2D<float>(depthTex, float(cellR.x), float(cellR.y - yFrom));
+    const float dU = tex2D<float>(depthTex, float(cellU.x), float(cellU.y - yFrom));
+    const float dB = tex2D<float>(depthTex, float(cellB.x), float(cellB.y - yFrom));
 
     // Get associated 3D points
-    float3 p0 = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cell0, d0);
-    float3 pL = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellL, dL);
-    float3 pR = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellR, dR);
-    float3 pU = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellU, dU);
-    float3 pB = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellB, dB);
+    const float3 p0 = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cell0, d0);
+    const float3 pL = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellL, dL);
+    const float3 pR = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellR, dR);
+    const float3 pU = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellU, dU);
+    const float3 pB = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellB, dB);
 
     // Compute the average point based on neighbors (cg)
     float3 cg = make_float3(0.0f, 0.0f, 0.0f);
@@ -150,7 +150,7 @@ __device__ float2 getCellSmoothStepEnergy( int rc_cam_cache_idx, cudaTextureObje
         float3 vcn = camsBasesDev[rc_cam_cache_idx].C - p0;
         normalize(vcn);
         // pS: projection of cg on the line from p0 to camera
-        float3 pS = closestPointToLine3D(cg, p0, vcn);
+        const float3 pS = closestPointToLine3D(cg, p0, vcn);
         // keep the depth difference between pS and p0 as the smoothing step
         out.x = size(camsBasesDev[rc_cam_cache_idx].C - pS) - d0;
     }
