@@ -56,7 +56,11 @@ private:
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
     void logRcTcDepthInformation() const;
     void checkStartingAndStoppingDepth() const;
-    void computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths);
+
+    /**
+     * @brief Fill the list of "best" depths (_depths) for rc, from all tc cameras depths
+     */
+    void computeDepths(float minDepth, float maxDepth, float scaleFactor, const StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 
 
@@ -69,7 +73,6 @@ private:
     StaticVector<float> _depths;
     StaticVector<Pixel> _depthsTcamsLimits;
     DepthSimMap _depthSimMap;
-
 };
 
 } // namespace depthMap

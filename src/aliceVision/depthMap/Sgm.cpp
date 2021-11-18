@@ -445,7 +445,7 @@ StaticVector<float>* Sgm::getDepthsTc(int tc, float midDepth)
     return out;
 }
 
-void Sgm::computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths)
+void Sgm::computeDepths(float minDepth, float maxDepth, float scaleFactor, const StaticVector<StaticVector<float>*>* alldepths)
 {
     _depths.clear();
 
