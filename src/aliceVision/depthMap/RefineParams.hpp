@@ -18,7 +18,7 @@ struct RefineParams
 
   int wsh = 3;
   int maxTCams = 6;
-  int nDepthsToRefine = 31;
+  int nDepthsToRefine = 31; // use 15 before in refineRcTcDepthMap
   int nSamplesHalf = 150;
   int nIters = 100;
   double sigma = 15.0;
@@ -28,8 +28,8 @@ struct RefineParams
   bool exportIntermediateResults = false;
 
   // constant parameters
-  const int scale = 1;
-  const int ndepthsToRefine = 15;
+
+  const int scale = 1; // should remain at 1 for now, some Refine functions do not support this parameter
   const bool doRefineFuse = true;
   const bool doRefineOpt = true;
 };
