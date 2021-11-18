@@ -18,7 +18,7 @@ struct RefineParams
 
   int wsh = 3;
   int maxTCams = 6;
-  int nDepthsToRefine = 31; // use 15 before in refineRcTcDepthMap
+  int nDepthsToRefine = 31;
   int nSamplesHalf = 150;
   int nIters = 100;
   double sigma = 15.0;
