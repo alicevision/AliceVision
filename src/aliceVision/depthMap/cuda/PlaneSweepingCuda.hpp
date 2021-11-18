@@ -71,23 +71,19 @@ bool operator<( const CamSelection& l, const CamSelection& r );
  *********************************************************************************/
 class PlaneSweepingCuda
 {
-public:
-    const int _scales;
-
-    mvsUtils::MultiViewParams& _mp;
-    const int _CUDADeviceNo = 0;
-
 private:
     std::unique_ptr<FrameCacheMemory> _hidden;
 
 public:
+   
     CameraStructBase*          _camsBasesHst;
     std::vector<CameraStruct>  _cams;
     LRUCache<int>              _camsHost;
     LRUCache<CamSelection>     _cameraParamCache;
-
-    const int  _nbestkernelSizeHalf = 1;
-    int  _nImgsInGPUAtTime = 2;
+    mvsUtils::MultiViewParams& _mp;
+    const int _scales;
+    const int _CUDADeviceNo = 0;
+    int _nImgsInGPUAtTime = 2;
     mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
@@ -96,13 +92,6 @@ public:
     ~PlaneSweepingCuda();
 
     int addCam( int rc, int scale, cudaStream_t stream = 0 );
-
-    void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
-
-    StaticVector<float>* getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth, int scale,
-                                              int step, int maxDepthsHalf = 1024);
-
-    StaticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
 
     void computeDepthSimMapVolume(int rc,
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
