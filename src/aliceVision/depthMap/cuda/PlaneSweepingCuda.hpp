@@ -22,7 +22,7 @@
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/FrameCacheMemory.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
-#include <aliceVision/depthMap/cuda/lrucache.hpp>
+#include <aliceVision/depthMap/cuda/LRUCache.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 
 namespace aliceVision {

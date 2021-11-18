@@ -55,6 +55,7 @@ set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
   cuda/FrameCacheMemory.cpp
   cuda/FrameCacheMemory.hpp
+  cuda/LRUCache.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
   cuda/planeSweeping/plane_sweeping_cuda.hpp
