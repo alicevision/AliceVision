@@ -34,8 +34,7 @@ public:
 
 private:
 
-    float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
-    void getMinMaxdepths(float& minDepth, float& midDepth, float& maxDepth);
+    void getMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth);
 
     StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
 

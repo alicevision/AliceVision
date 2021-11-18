@@ -129,37 +129,7 @@ bool Sgm::selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>
     return true;
 }
 
-float Sgm::getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
-                                     StaticVector<StaticVector<float>*>* alldepths)
-{
-    float minTcStep = maxDepth - minDepth;
-
-    // for each tc camera
-    for(int i = 0; i < alldepths->size(); i++)
-    {
-        // list of valid depths for the tc
-        StaticVector<float>* tcDepths = (*alldepths)[i];
-
-        // get the tc depth closest to the current depth
-        const int id = tcDepths->indexOfNearestSorted(depth);
-
-        // continue on no result or last element (we need id + 1)
-        if(id < 0 || id >= tcDepths->size() - 1)
-            continue;
-
-        // consider the enclosing depth range
-        const float did = (*tcDepths)[id];     // closest depth
-        const float nid = (*tcDepths)[id + 1]; // next depth
-        const float tcStep = fabs(did - nid);  // [closest; next] depths distance
-
-        // keep this value if smallest step so far
-        minTcStep = std::min(minTcStep, tcStep);
-    }
-
-    return minTcStep;
-}
-
-void Sgm::getMinMaxdepths(float& minDepth, float& midDepth, float& maxDepth)
+void Sgm::getMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth)
 {
     if(_sgmParams.prematchinMinMaxDepthDontUseSeeds)
     {
@@ -480,12 +450,37 @@ void Sgm::computeDepths(float minDepth, float maxDepth, float scaleFactor, Stati
     _depths.clear();
 
     float depth = minDepth;
+
     while(depth < maxDepth)
     {
         _depths.push_back(depth);
 
-        const float step = getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
-        depth += step * scaleFactor;
+        // get min tc step at depth
+        float minTcStep = maxDepth - minDepth;
+
+        // for each tc camera
+        for(int i = 0; i < alldepths->size(); i++)
+        {
+            // list of valid depths for the tc
+            StaticVector<float>* tcDepths = (*alldepths)[i];
+
+            // get the tc depth closest to the current depth
+            const int id = tcDepths->indexOfNearestSorted(depth);
+
+            // continue on no result or last element (we need id + 1)
+            if(id < 0 || id >= tcDepths->size() - 1)
+                continue;
+
+            // consider the enclosing depth range
+            const float did = (*tcDepths)[id];     // closest depth
+            const float nid = (*tcDepths)[id + 1]; // next depth
+            const float tcStep = fabs(did - nid);  // [closest; next] depths distance
+
+            // keep this value if smallest step so far
+            minTcStep = std::min(minTcStep, tcStep);
+        }
+
+        depth += minTcStep * scaleFactor;
     }
 }
 
@@ -536,7 +531,7 @@ StaticVector<StaticVector<float>*>* Sgm::computeAllDepthsAndResetTCams(float mid
                 tcdepths = nullptr;
             }
             float avMinDist, avMidDist, avMaxDist;
-            getMinMaxdepths(avMinDist, avMidDist, avMaxDist);
+            getMinMaxDepths(avMinDist, avMidDist, avMaxDist);
             tcdepths = getDepthsByPixelSize(avMinDist, avMidDist, avMaxDist);
 
             if(sizeOfStaticVector<float>(tcdepths) < 50)
