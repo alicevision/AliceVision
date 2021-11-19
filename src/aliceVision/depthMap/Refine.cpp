@@ -271,7 +271,7 @@ bool Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
     const system::Timer timer;
     const IndexT viewId = _mp.getViewId(_rc);
 
-    ALICEVISION_LOG_INFO("Refine depth map of view id: " << viewId << " (rc: " << (_rc + 1) << " / " << _mp.ncams << ")");
+    ALICEVISION_LOG_INFO("Refine depth/sim map of view id: " << viewId << ", rc: " << _rc << " (" << (_rc + 1) << " / " << _mp.ncams << ")");
 
     if(_tCams.empty())
     {
@@ -312,7 +312,7 @@ bool Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
         _depthSimMap.init(depthSimMapRefinedFused);
     }
 
-    ALICEVISION_LOG_INFO("Refine depth map done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("Refine depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
     return true;
 }
 

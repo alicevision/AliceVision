@@ -56,7 +56,7 @@ bool Sgm::sgmRc()
     const system::Timer timer;
     const IndexT viewId = _mp.getViewId(_rc);
 
-    ALICEVISION_LOG_INFO("Estimate depth map (SGM) of view id: " << viewId << " (rc: " << (_rc + 1) << " / " << _mp.ncams << ")");
+    ALICEVISION_LOG_INFO("SGM depth/sim map of view id: " << viewId << ", rc: " << _rc << " (" << (_rc + 1) << " / " << _mp.ncams << ")");
 
     if(_tCams.empty())
     {
@@ -139,7 +139,7 @@ bool Sgm::sgmRc()
         _depthSimMap.save("_sgmStep1", true);
     }
 
-    ALICEVISION_LOG_INFO("Estimate depth map (SGM) done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("SGM depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
     return true;
 }
 

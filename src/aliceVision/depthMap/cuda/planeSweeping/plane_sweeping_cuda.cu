@@ -465,6 +465,7 @@ void SimilarityVolume::compute(
       const dim3 grid(divUp(_dimX, _block.x), divUp(_dimY, _block.y), nbDepthsToSearch);
 
       ALICEVISION_CU_PRINT_DEBUG("====================");
+      ALICEVISION_CU_PRINT_DEBUG("Volume slice kernel");
       ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId << ", TC: " << tcam.camId);
       ALICEVISION_CU_PRINT_DEBUG("Cell TC index: " << cell.getTCIndex());
       ALICEVISION_CU_PRINT_DEBUG("grid:  " << grid.x << ", " << grid.y << ", " << grid.z);
