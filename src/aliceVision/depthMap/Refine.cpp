@@ -66,6 +66,15 @@ void Refine::upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMa
             }
         }
     }
+
+    // perform a median filter
+    if(_refineParams.medianFilterUpscale)
+    {
+        const int sgmScaleStep = sgmDepthSimMap._scale * sgmDepthSimMap._step;
+        const int outScaleStep = out_depthSimMapUpscaled._scale * out_depthSimMapUpscaled._step;
+        const int size = sgmScaleStep / outScaleStep;
+        out_depthSimMapUpscaled.medianFilter(size);
+    }
 }
 
 void Refine::filterMaskedPixels(DepthSimMap& out_depthSimMap)

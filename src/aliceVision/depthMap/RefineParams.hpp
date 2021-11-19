@@ -24,6 +24,7 @@ struct RefineParams
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
+  bool medianFilterUpscale = false;
   bool useTcOrRcPixSize = false;
   bool exportIntermediateResults = false;
 

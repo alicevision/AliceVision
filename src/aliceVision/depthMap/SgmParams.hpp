@@ -36,6 +36,7 @@ struct SgmParams
   double p2Weighting = 100.0;
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
+  bool medianFilter = false;
   bool exportIntermediateResults = false;
 
   // constant parameters

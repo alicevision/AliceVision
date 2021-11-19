@@ -112,9 +112,13 @@ public:
     void getDepthMap(StaticVector<float>& out_depthMap) const;
     void getSimMap(StaticVector<float>& out_simMap) const;
 
+    void setDepthMap(const StaticVector<float>& depthMap);
+    void setSimMap(const StaticVector<float>& simMap);
+
     void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
     void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
 
+    void medianFilter(int size);
     void saveToImage(const std::string& filename, float simThr) const;
     void save(const std::string& customSuffix = "", bool useStep1 = false) const;
     void load(int fromScale);

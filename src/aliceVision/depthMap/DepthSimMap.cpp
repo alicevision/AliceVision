@@ -6,6 +6,7 @@
 
 #include "DepthSimMap.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/Color.hpp>
@@ -352,6 +353,55 @@ void DepthSimMap::getSimMap(StaticVector<float>& out_simMap) const
     {
         out_simMap[i] = _dsm[i].sim;
     }
+}
+void DepthSimMap::setDepthMap(const StaticVector<float>& depthMap) 
+{
+    assert(_dsm.size() == depthMap.size());
+
+    for(int i = 0; i < _dsm.size(); ++i)
+    {
+        _dsm[i].depth = depthMap[i];
+    }
+}
+
+void DepthSimMap::setSimMap(const StaticVector<float>& simMap) 
+{
+    assert(_dsm.size() == simMap.size());
+
+    for(int i = 0; i < _dsm.size(); ++i)
+    {
+        _dsm[i].sim = simMap[i];
+    }
+}
+
+void DepthSimMap::medianFilter(int size)
+{
+    system::Timer timer;
+
+    StaticVector<float> depthMap;
+    StaticVector<float> simMap;
+    
+    getDepthMap(depthMap);
+    getSimMap(simMap);
+
+    const int scaleStep = _scale * _step;
+    const int width = _mp.getWidth(_rc) / scaleStep;
+    const int height = _mp.getHeight(_rc) / scaleStep;
+
+    {
+        using namespace imageIO;
+        oiio::ImageSpec imageSpec(width, height, 1, oiio::TypeDesc::FLOAT);
+        oiio::ImageBuf depthImgBuf(imageSpec, depthMap.getDataWritable().data());
+        oiio::ImageBuf simImgBuf(imageSpec, simMap.getDataWritable().data());
+
+        depthImgBuf.copy_pixels(oiio::ImageBufAlgo::median_filter(depthImgBuf, size, size));
+        simImgBuf.copy_pixels(oiio::ImageBufAlgo::median_filter(simImgBuf, size, size));
+    }
+
+    setDepthMap(depthMap);
+    setSimMap(simMap);
+
+    ALICEVISION_LOG_DEBUG("Median filter on depth/sim map done in: " << timer.elapsedMs() << " ms.");
 }
 
 void DepthSimMap::saveToImage(const std::string& filename, float simThr) const

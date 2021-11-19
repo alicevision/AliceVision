@@ -127,6 +127,12 @@ bool Sgm::sgmRc()
     // For each pixel, choose the voxel with the minimal similarity value
     _cps.sgmRetrieveBestDepth(_rc, _depthSimMap, volumeFilteredSim_dmp, volDim, _depths, _sgmParams);
 
+    // Perform a median filter (3x3)
+    if(_sgmParams.medianFilter)
+    {
+        _depthSimMap.medianFilter(3);
+    }
+
     if(_sgmParams.exportIntermediateResults)
     {
         // {
