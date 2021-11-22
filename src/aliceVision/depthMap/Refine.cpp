@@ -171,12 +171,11 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, 
     }
 
     // slicing in order to fit into GPU memory
-    const int nhParts = 4;
-    const int hPartHeightGlob = h / nhParts;
+    const int hPartSize = h / _refineParams.nbGpuSlices;
 
-    for(int hPart = 0; hPart < nhParts; hPart++)
+    for(int hPart = 0; hPart < _refineParams.nbGpuSlices; hPart++)
     {
-        const int hPartHeight = std::min(h, (hPart + 1) * hPartHeightGlob) - hPart * hPartHeightGlob;
+        const int hPartHeight = std::min(h, (hPart + 1) * hPartSize) - hPart * hPartSize;
 
         // vector of one depthSimMap tile per T cameras
         StaticVector<StaticVector<DepthSim>*> dataMapsHPart;
@@ -194,7 +193,7 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, 
             {
                 for(int x = 0; x < w; x++)
                 {
-                    (*dataMapHPart)[y * w + x] = dsm[(y + hPart * hPartHeightGlob) * w + x];
+                    (*dataMapHPart)[y * w + x] = dsm[(y + hPart * hPartSize) * w + x];
                 }
             }
 
@@ -214,7 +213,7 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, 
         {
             for(int x = 0; x < w; ++x)
             {
-                out_depthSimMapRefinedFused._dsm[(y + hPart * hPartHeightGlob) * w + x] = depthSimMapFusedHPart[y * w + x];
+                out_depthSimMapRefinedFused._dsm[(y + hPart * hPartSize) * w + x] = depthSimMapFusedHPart[y * w + x];
             }
         }
 
@@ -248,13 +247,12 @@ void Refine::optimizeDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale,     /
 
     // slicing in order to fit into GPU memory
     // TODO: estimate the amount of VRAM available to decide the tiling
-    const int nParts = 4; 
-    const int hPart = h / nParts;
+    const int hPartSize = h / _refineParams.nbGpuSlices;
 
-    for(int part = 0; part < nParts; ++part)
+    for(int hPart = 0; hPart < _refineParams.nbGpuSlices; ++hPart)
     {
-        const int yFrom = part * hPart;
-        const int hPartAct = std::min(hPart, h - yFrom);
+        const int yFrom = hPart * hPartSize;
+        const int hPartAct = std::min(hPartSize, h - yFrom);
         _cps.optimizeDepthSimMapGradientDescent(_rc, 
                                                 out_depthSimMapOptimized._dsm, 
                                                 depthSimMapSgmUpscale._dsm, 
