@@ -72,7 +72,7 @@ void LargeScale::loadSpaceFromFile()
 void LargeScale::initialEstimateSpace(int maxOcTreeDim)
 {
     float minPixSize;
-    Fuser* fs = new Fuser(mp);
+    Fuser* fs = new Fuser(*mp);
     fs->divideSpaceFromDepthMaps(&space[0], minPixSize);
     dimensions = fs->estimateDimensions(&space[0], &space[0], 0, maxOcTreeDim);
     delete fs;
@@ -161,7 +161,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
             (float)mp->userParams.get<int>("LargeScale.addRandomNoiseNoisPixSizeDistHalfThr", 10);
 
         std::string depthMapsPtsSimsTmpDir = generateTempPtsSimsFiles(
-            spaceFolderName, mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
+            spaceFolderName, *mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
 
         ALICEVISION_LOG_INFO("Creating tracks: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z);
         StaticVector<Point3d>* ReconstructionPlan = new StaticVector<Point3d>();
@@ -172,17 +172,14 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, tmpdir, doVisualize);
         int maxlevel = 0;
         vg->generateTracksForEachVoxel(ReconstructionPlan, maxOcTreeDim, maxPts, 1, maxlevel, depthMapsPtsSimsTmpDir);
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("max rec level: " << maxlevel);
+        ALICEVISION_LOG_DEBUG("max rec level: " << maxlevel);
         for(int i = 1; i < maxlevel; i++)
         {
             dimensions = dimensions * 2;
             maxOcTreeDim = maxOcTreeDim / 2;
-            if(mp->verbose)
-                ALICEVISION_LOG_DEBUG("dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
+            ALICEVISION_LOG_DEBUG("dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
         }
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("final dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
+        ALICEVISION_LOG_DEBUG("final dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
 
         VoxelsGrid* vgnew = new VoxelsGrid(dimensions, &space[0], mp, spaceVoxelsFolderName, doVisualize);
         vg->generateSpace(vgnew, Voxel(0, 0, 0), dimensions, depthMapsPtsSimsTmpDir);
@@ -195,7 +192,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
 
         mvsUtils::DeleteDirectory(tmpdir);
 
-        deleteTempPtsSimsFiles(mp, depthMapsPtsSimsTmpDir);
+        deleteTempPtsSimsFiles(*mp, depthMapsPtsSimsTmpDir);
 
         saveArrayToFile<Point3d>(spaceFolderName + "spacePatitioning.bin", ReconstructionPlan);
         delete ReconstructionPlan;

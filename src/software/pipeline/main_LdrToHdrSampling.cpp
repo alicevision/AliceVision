@@ -248,7 +248,7 @@ int aliceVision_main(int argc, char** argv)
             for(const hdr::ImageSample& sample: out_samples)
             {
                 const float score = float(sample.descriptions.size()) / float(usedNbBrackets);
-                const Color color = getColorFromJetColorMap(score);
+                const ColorRGBf color = getColorFromJetColorMap(score);
                 selectedPixels(sample.y, sample.x) = image::RGBfColor(color.r, color.g, color.b);
             }
             oiio::ParamValueList metadata;

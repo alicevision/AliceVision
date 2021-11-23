@@ -30,18 +30,18 @@ static float jetb[64] = {0.5625, 0.6250, 0.6875, 0.7500, 0.8125, 0.8750, 0.9375,
                          0,      0,      0,      0,      0,      0,      0,      0,      0};
 
 
-Color getColorFromJetColorMap(float value)
+ColorRGBf getColorFromJetColorMap(float value)
 {
     if(value <= 0.0f)
-        return Color(0, 0, 0);
+        return ColorRGBf(0, 0, 0);
     if(value >= 1.0f)
-        return Color(1.0f, 1.0f, 1.0f);
+        return ColorRGBf(1.0f, 1.0f, 1.0f);
     const float idx_f = value * 63.0f;
     float integral;
     const float fractB = std::modf(idx_f, &integral);
     const float fractA = 1.0f - fractB;
     const int idx = static_cast<int>(integral);
-    Color c;
+    ColorRGBf c;
     c.r = jetr[idx] * fractA + jetr[idx + 1] * fractB;
     c.g = jetg[idx] * fractA + jetg[idx + 1] * fractB;
     c.b = jetb[idx] * fractA + jetb[idx + 1] * fractB;
@@ -50,7 +50,7 @@ Color getColorFromJetColorMap(float value)
 
 rgb getRGBFromJetColorMap(float value)
 {
-    const Color color = getColorFromJetColorMap(value);
+    const ColorRGBf color = getColorFromJetColorMap(value);
     return {static_cast<unsigned char>(color.r * 255.0f),
             static_cast<unsigned char>(color.g * 255.0f),
             static_cast<unsigned char>(color.b * 255.0f)};

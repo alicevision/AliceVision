@@ -588,7 +588,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
             // printf("distributing %i tracks to %i camspts files  \n", tracksPoints->size(), cams->size());
             StaticVector<StaticVector<Pixel>*>* camsTracksPoints =
-                convertObjectsCamsToCamsObjects(mp, tracksPointsCams);
+                convertObjectsCamsToCamsObjects(*mp, tracksPointsCams);
 
 #pragma omp parallel for
             for(int c = 0; c < cams->size(); c++)

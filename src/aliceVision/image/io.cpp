@@ -348,9 +348,9 @@ void readImage(const std::string& path,
     int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
     float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
     oiio::ImageBufAlgo::channels(requestedBuf, inBuf,
-                                 4, // create an image with 4 channels
-                                 channelOrder,
-                                 channelValues); // only the 4th value is used
+                                  4, // create an image with 4 channels
+                                  channelOrder,
+                                  channelValues); // only the 4th value is used
     inBuf.swap(requestedBuf);
   }
 

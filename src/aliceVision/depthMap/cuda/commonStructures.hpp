@@ -14,6 +14,8 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <cstring>
+
 
 #define THROW_ON_CUDA_ERROR(rcode, message) \
   if (rcode != cudaSuccess) {  \
@@ -24,6 +26,10 @@
 
 namespace aliceVision {
 namespace depthMap {
+
+#define MAX_CONSTANT_CAMERA_PARAM_SETS   10
+
+
 
 /*********************************************************************************
  * forward declarations
@@ -186,7 +192,7 @@ public:
     }
 
     /* Return the Size struct.
-     * It is best to use this as an opague type.
+     * It is best to use this as an opaque type.
      */
     inline const CudaSize<Dim>& getSize() const
     {
@@ -295,7 +301,7 @@ protected:
 
 template <class Type, unsigned Dim> class CudaHostMemoryHeap : public CudaMemorySizeBase<Type,Dim>
 {
-    Type* buffer;
+    Type* buffer = nullptr;
 public:
     CudaHostMemoryHeap( )
         : buffer( nullptr )
@@ -305,7 +311,6 @@ public:
         : buffer( nullptr )
     {
         allocate( size );
-        memset(buffer, 0, this->getBytesPadded() );
     }
 
     CudaHostMemoryHeap<Type,Dim>& operator=(const CudaHostMemoryHeap<Type,Dim>& rhs)
@@ -329,6 +334,11 @@ public:
         deallocate();
     }
 
+    void initBuffer()
+    {
+        memset(buffer, 0, this->getBytesPadded());
+    }
+
     // see below with copy() functions
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
 
@@ -344,7 +354,15 @@ public:
     {
         return buffer[x];
     }
+    inline const Type& operator()(size_t x) const
+    {
+        return buffer[x];
+    }
     inline Type& operator()(size_t x, size_t y)
+    {
+        return getRow(y)[x];
+    }
+    inline const Type& operator()(size_t x, size_t y) const
     {
         return getRow(y)[x];
     }
@@ -359,9 +377,15 @@ public:
     }
 
 private:
-    inline Type* getRow( size_t row )
+    inline Type* getRow(size_t row)
     {
         unsigned char* ptr = getBytePtr();
+        ptr += row * this->getPitch();
+        return (Type*)ptr;
+    }
+    inline const Type* getRow(size_t row) const
+    {
+        const unsigned char* ptr = getBytePtr();
         ptr += row * this->getPitch();
         return (Type*)ptr;
     }
@@ -390,7 +414,7 @@ public:
 
 template <class Type, unsigned Dim> class CudaDeviceMemoryPitched : public CudaMemorySizeBase<Type,Dim>
 {
-    Type* buffer;
+    Type* buffer = nullptr;
 public:
     CudaDeviceMemoryPitched( )
         : buffer( nullptr )
@@ -441,9 +465,11 @@ public:
     }
 
     // see below with copy() functions
-    void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src );
+    void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream = 0 );
     void copyFrom( const Type* src, size_t sx, size_t sy );
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
+
+    void copyTo( Type* dst, size_t sx, size_t sy ) const;
 
     Type* getBuffer()
     {
@@ -476,7 +502,6 @@ public:
         return (unsigned char*)buffer;
     }
 
-private:
     inline Type* getRow( size_t row )
     {
         unsigned char* ptr = getBytePtr();
@@ -484,7 +509,6 @@ private:
         return (Type*)ptr;
     }
 
-public:
     void allocate( const CudaSize<Dim>& size )
     {
         this->setSize( size, false );
@@ -533,6 +557,10 @@ public:
             buffer = (Type*)pitchDevPtr.ptr;
             this->setPitch( pitchDevPtr.pitch );
         }
+        else
+        {
+            throw std::runtime_error("CudaDeviceMemoryPitched does not support " + std::to_string(Dim) + " dimensions.");
+        }
     }
 
     void deallocate()
@@ -543,7 +571,7 @@ public:
         if( err != cudaSuccess )
         {
             std::stringstream ss;
-            ss << "Device free failed, " << cudaGetErrorString(err);
+            ss << "CudaDeviceMemoryPitched: Device free failed, " << cudaGetErrorString(err);
             throw std::runtime_error(ss.str());
         }
 
@@ -557,7 +585,7 @@ public:
 
 template <class Type> class CudaDeviceMemory : public CudaMemorySizeBase<Type,1>
 {
-    Type* buffer;
+    Type* buffer = nullptr;
 public:
     explicit CudaDeviceMemory(const size_t size)
     {
@@ -643,7 +671,7 @@ public:
         if( err != cudaSuccess )
         {
             std::stringstream ss;
-            ss << "Device free failed, " << cudaGetErrorString(err);
+            ss << "CudaDeviceMemory: Device free failed, " << cudaGetErrorString(err);
             throw std::runtime_error(ss.str());
         }
 
@@ -756,15 +784,23 @@ public:
  *********************************************************************************/
 
 template<class Type, unsigned Dim>
-void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src )
+void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream )
 {
     const cudaMemcpyKind kind = cudaMemcpyHostToDevice;
+    cudaError_t err;
     if(Dim == 1)
     {
-        cudaError_t err = cudaMemcpy(this->getBytePtr(),
-                                     src.getBytePtr(),
-                                     src.getBytesUnpadded(),
-                                     kind);
+        if( stream == 0 )
+            err = cudaMemcpy( this->getBytePtr(),
+                              src.getBytePtr(),
+                              src.getBytesUnpadded(),
+                              kind );
+        else
+            err = cudaMemcpyAsync( this->getBytePtr(),
+                                   src.getBytePtr(),
+                                   src.getBytesUnpadded(),
+                                   kind,
+                                   stream );
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
     else if(Dim >= 2)
@@ -772,13 +808,23 @@ void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type
         size_t number_of_rows = 1;
         for( int i=1; i<Dim; i++ ) number_of_rows *= src.getUnitsInDim(i);
 
-        cudaError_t err = cudaMemcpy2D( this->getBytePtr(),
-                                        this->getPitch(),
-                                        src.getBytePtr(),
-                                        src.getPitch(),
-                                        src.getUnpaddedBytesInRow(),
-                                        number_of_rows,
-                                        kind);
+        if( stream == 0 )
+            err = cudaMemcpy2D( this->getBytePtr(),
+                                this->getPitch(),
+                                src.getBytePtr(),
+                                src.getPitch(),
+                                src.getUnpaddedBytesInRow(),
+                                number_of_rows,
+                                kind );
+        else
+            err = cudaMemcpy2DAsync( this->getBytePtr(),
+                                     this->getPitch(),
+                                     src.getBytePtr(),
+                                     src.getPitch(),
+                                     src.getUnpaddedBytesInRow(),
+                                     number_of_rows,
+                                     kind,
+                                     stream );
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
 }
@@ -855,6 +901,26 @@ void CudaHostMemoryHeap<Type, Dim>::copyFrom( const CudaDeviceMemoryPitched<Type
                                         this->getUnpaddedBytesInRow(),
                                         number_of_rows,
                                         kind);
+
+        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
+    }
+}
+
+template<class Type, unsigned Dim>
+void CudaDeviceMemoryPitched<Type, Dim>::copyTo( Type* dst, size_t sx, size_t sy ) const
+{
+    if(Dim == 2)
+    {
+        const size_t dst_pitch  = sx * sizeof(Type);
+        const size_t dst_width  = sx * sizeof(Type);
+        const size_t dst_height = sy;
+        cudaError_t err = cudaMemcpy2D(dst,
+                                       dst_pitch,
+                                       this->getBytePtr(),
+                                       this->getPitch(),
+                                       dst_width,
+                                       dst_height,
+                                       cudaMemcpyDeviceToHost);
 
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
@@ -1129,12 +1195,15 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 {
     if(Dim >= 3)
     {
+      const size_t src_pitch      = sx * sizeof(Type);
+      const size_t width_in_bytes = sx * sizeof(Type);
+      const size_t height         = sy * sz;
       cudaError_t err = cudaMemcpy2D( _dst.getBytePtr(),
                                       _dst.getPitch(),
                                       _src,
-                                      sx * sizeof(Type),
-                                      sx * sizeof(Type),
-                                      sy * sz,
+                                      src_pitch,
+                                      width_in_bytes,
+                                      height,
                                       cudaMemcpyHostToDevice);
       THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
@@ -1144,37 +1213,123 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
                                   Type* src, size_t src_pitch,
                                   cudaStream_t stream )
 {
+    const size_t dst_pitch      = sx * sizeof(Type);
+    const size_t width_in_bytes = sx * sizeof(Type);
+    const size_t height         = sy;
     cudaError_t err = cudaMemcpy2DAsync( dst,
-                                         sx * sizeof(Type),
+                                         dst_pitch,
                                          src,
                                          src_pitch,
-                                         sx * sizeof(Type),
-                                         sy,
+                                         width_in_bytes,
+                                         height,
                                          cudaMemcpyDeviceToHost,
                                          stream );
     THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
 }
 
-struct cameraStruct
+template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
+                                  Type* src, size_t src_pitch )
 {
-    float P[12], iP[9], R[9], iR[9], K[9], iK[9], C[3];
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh = nullptr;
-    int camId;
-    int rc;
-    float* H = nullptr;
-    int scale;
-    int blurid;
+    const size_t dst_pitch      = sx * sizeof(Type);
+    const size_t width_in_bytes = sx * sizeof(Type);
+    const size_t height         = sy;
+    cudaError_t err = cudaMemcpy2D( dst,
+                                    dst_pitch,
+                                    src,
+                                    src_pitch,
+                                    width_in_bytes,
+                                    height,
+                                    cudaMemcpyDeviceToHost );
+    THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
+}
+
+struct CameraStructBase
+{
+    float  P[12];
+    float  iP[9];
+    float  R[9];
+    float  iR[9];
+    float  K[9];
+    float  iK[9];
+    float3 C;
+    float3 XVect;
+    float3 YVect;
+    float3 ZVect;
 };
 
-struct ps_parameters
+// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+#define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+using CudaColorBaseType = unsigned char;
+using CudaRGBA = uchar4;
+
+#else
+using CudaColorBaseType = float;
+using CudaRGBA = float4;
+
+#endif
+
+
+struct TexturedArray
 {
-    int epipShift;
-    int rotX;
-    int rotY;
+    CudaDeviceMemoryPitched<CudaRGBA, 2>* arr = nullptr;
+    cudaTextureObject_t tex;
 };
 
-#define MAX_PTS 500           // 500
-#define MAX_PATCH_PIXELS 2500 // 50*50
+struct CamCacheIdx
+{
+    int i = 0;
+
+    CamCacheIdx() = default;
+    explicit CamCacheIdx( int val ) : i(val) { }
+};
+
+typedef std::vector<TexturedArray> Pyramid;
+
+struct CameraStruct
+{
+    CamCacheIdx  param_dev;
+    Pyramid*     pyramid = nullptr;
+    int          camId = -1;
+    cudaStream_t stream = 0; // allow async work on cameras used in parallel
+};
+
+/**
+* @notes: use normalized coordinates
+*/
+template <class Type>
+struct CudaTexture
+{
+    cudaTextureObject_t textureObj = 0;
+    CudaTexture(CudaDeviceMemoryPitched<Type, 2>& buffer_dmp)
+    {
+        cudaTextureDesc  tex_desc;
+        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
+        tex_desc.addressMode[0] = cudaAddressModeClamp;
+        tex_desc.addressMode[1] = cudaAddressModeClamp;
+        tex_desc.addressMode[2] = cudaAddressModeClamp;
+        tex_desc.readMode = cudaReadModeElementType;
+        tex_desc.filterMode = cudaFilterModePoint;
+
+        cudaResourceDesc res_desc;
+        res_desc.resType = cudaResourceTypePitch2D;
+        res_desc.res.pitch2D.desc = cudaCreateChannelDesc<Type>();
+        res_desc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
+        res_desc.res.pitch2D.width = buffer_dmp.getSize()[0];
+        res_desc.res.pitch2D.height = buffer_dmp.getSize()[1];
+        res_desc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
+
+        // create texture object: we only have to do this once!
+        cudaCreateTextureObject(&textureObj, &res_desc, &tex_desc, NULL);
+    }
+    ~CudaTexture()
+    {
+        cudaDestroyTextureObject(textureObj);
+    }
+};
 
 } // namespace depthMap
 } // namespace aliceVision
+

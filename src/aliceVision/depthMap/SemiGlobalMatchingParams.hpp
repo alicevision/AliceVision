@@ -19,47 +19,42 @@ namespace depthMap {
 class SemiGlobalMatchingParams
 {
 public:
-    mvsUtils::MultiViewParams* mp;
-    RcTc* prt;
+    mvsUtils::MultiViewParams& mp;
     PlaneSweepingCuda& cps;
-    bool exportIntermediateResults;
-    bool doSmooth;
-    // int   s_wsh;
-    // float s_gammaC;
-    // float s_gammaP;
-    // int   wsh;
-    // float gammaC;
-    // float gammaP;
-    bool doRefine;
-    int ndepthsToRefine;
-    unsigned char P1;
-    unsigned char P2;
-    unsigned char P3;
-    int maxDepthsToStore;
-    int maxDepthsToSweep;
-    int rcTcDepthsHalfLimit;
-    int rcDepthsCompStep;
-    bool refineUseTcOrPixSize;
-    bool useSeedsToCompDepthsToSweep;
-    float seedsRangePercentile;
-    float seedsRangeInflate;
-    bool saveDepthsToSweepToTxtForVis;
-    int modalsMapDistLimit;
-    int minNumOfConsistentCams;
-    float maxTcRcPixSizeInVoxRatio;
-    int nSGGCIters;
-    bool doSGMoptimizeVolume;
-    bool doRefineRc;
-    std::string SGMoutDirName;
-    std::string SGMtmpDirName;
-    bool useSilhouetteMaskCodedByColor;
-    rgb silhouetteMaskColor;
+    bool exportIntermediateResults = false;
+    bool doSmooth = true;
+    bool doRefine = true;
+    int ndepthsToRefine = 15;
+    float P1 = 10.0f;
+    float P2 = 100.0f; // P2 weighting
+    int stepZ = -1;
+    int maxDepthsToStore = 3000;
+    int maxDepthsToSweep = 1500;
+    int rcTcDepthsHalfLimit = 2048;
+    int rcDepthsCompStep = 6;
+    bool refineUseTcOrPixSize = true;
+    bool useSeedsToCompDepthsToSweep = true;
+    float seedsRangePercentile = 0.999;
+    float seedsRangeInflate = 0.2;
+    bool saveDepthsToSweepToTxtForVis = false;
+    int modalsMapDistLimit = 2;
+    int minNumOfConsistentCams = 2;
+    float maxTcRcPixSizeInVoxRatio = 2.0f;
+    int nSGGCIters = 0;
+    bool doSGMoptimizeVolume = true;
+    bool doRefineFuse = true;
+    bool doRefineOpt = true;
+    std::string SGMoutDirName = "SGM";
+    std::string SGMtmpDirName = "_tmp";
+    bool useSilhouetteMaskCodedByColor = false;
+    rgb silhouetteMaskColor{0, 0, 0};
 
-    SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps);
-    ~SemiGlobalMatchingParams(void);
+    SemiGlobalMatchingParams(mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& _cps);
+    ~SemiGlobalMatchingParams();
 
-    DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal, int scale,
-                                                int step, int rc, int zborder, const StaticVector<float>& planesDepths);
+    void getDepthSimMapFromBestIdVal(DepthSimMap& out_depthSimMap, int w, int h,
+                                     StaticVector<IdValue>& volumeBestIdVal, int scale,
+                                     int step, int rc, int zborder, const StaticVector<float>& planesDepths);
 
     std::string getREFINE_photo_depthMapFileName(IndexT viewId, int scale, int step);
     std::string getREFINE_photo_simMapFileName(IndexT viewId, int scale, int step);

@@ -5,31 +5,34 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingRcTc.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/depthMap/cuda/tcinfo.hpp>
+#include <algorithm>
 
 namespace aliceVision {
 namespace depthMap {
 
+
 SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
-                         const std::vector<float>& _rcTcDepths,
-                         int _rc,
-                         int _tc,
-                         int scale,
-                         int step,
-                         SemiGlobalMatchingParams* _sp,
-                         StaticVectorBool* _rcSilhoueteMap)
-    : rcTcDepths(_rcTcDepths)
-    , sp( _sp )
-    , rc( _rc )
+            const std::vector<float>& rcDepths,
+            const std::vector<Pixel>&  rcTcDepthRanges,
+            int rc,
+            const StaticVector<int>& tc,
+            int scale,
+            int step,
+            SemiGlobalMatchingParams& sp)
+    : _sp( sp )
+    , _rc( rc )
+    , _tc( tc )
     , _scale( scale )
     , _step( step )
-    , _w( sp->mp->getWidth(rc) / (scale * step) )
-    , _h( sp->mp->getHeight(rc) / (scale * step) )
+    , _w( sp.mp.getWidth(rc) / (scale * step) )
+    , _h( sp.mp.getHeight(rc) / (scale * step) )
+    , _rcDepths( rcDepths )
+    , _rcTcDepthRanges( rcTcDepthRanges )
 {
-    tc = _tc;
-    epipShift = 0.0f;
-
-    rcSilhoueteMap = _rcSilhoueteMap;
+    ALICEVISION_LOG_DEBUG("Create SemiGlobalMatchingRcTc with " << rcTcDepthRanges.size() << " T cameras.");
 }
 
 SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
@@ -37,76 +40,75 @@ SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
     //
 }
 
-StaticVector<Voxel>* SemiGlobalMatchingRcTc::getPixels()
+struct MinOffX
 {
-    StaticVector<Voxel>* pixels = new StaticVector<Voxel>();
-
-    pixels->reserve(_w * _h);
-
-    for(int y = 0; y < _h; y++)
+    bool operator()( const Pixel& l, const Pixel& r ) const
     {
-        for(int x = 0; x < _w; x++)
-        {
-            if(rcSilhoueteMap == nullptr)
-            {
-                pixels->push_back(Voxel(x * _step, y * _step, 0));
-            }
-            else
-            {
-                bool isBackgroundPixel = (*rcSilhoueteMap)[y * _w + x];
-                if(!isBackgroundPixel)
-                {
-                    pixels->push_back(Voxel(x * _step, y * _step, 0));
-                }
-            }
-        }
+        return ( l.x < r.x );
     }
-    return pixels;
-}
+};
 
-StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC,
-                                                                   float gammaP)
+struct MinOffXplusY
 {
-    long tall = clock();
-
-    int volStepXY = _step;
-    int volDimX = _w;
-    int volDimY = _h;
-    int volDimZ = rcTcDepths.size();
-
-    StaticVector<unsigned char>* volume = new StaticVector<unsigned char>();
-    volume->reserve(volDimX * volDimY * volDimZ);
-    volume->resize_with(volDimX * volDimY * volDimZ, 255);
-
-    StaticVector<int>* tcams = new StaticVector<int>();
-    tcams->push_back(tc);
-
-    StaticVector<Voxel>* pixels = getPixels();
-
-    volumeMBinGPUMem =
-        sp->cps.sweepPixelsToVolume(rcTcDepths.size(), volume, volDimX, volDimY, volDimZ, volStepXY, 0, 0, 0,
-                                     &rcTcDepths, rc, wsh, gammaC, gammaP, pixels, _scale, 1, tcams, 0.0f);
-    delete pixels;
-
-    if(sp->mp->verbose)
-        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
-
-    if(sp->P3 > 0)
+    bool operator()( const Pixel& l, const Pixel& r ) const
     {
-#pragma omp parallel for
-        for(int y = 0; y < volDimY; y++)
-        {
-            for(int x = 0; x < volDimX; x++)
-            {
-                (*volume)[(volDimZ - 1) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                (*volume)[(volDimZ - 2) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                (*volume)[(volDimZ - 3) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                (*volume)[(volDimZ - 4) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-            }
-        }
+        return ( l.x+l.y < r.x+r.y );
+    }
+};
+
+void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
+        CudaDeviceMemoryPitched<TSim, 3>& volumeBestSim,
+        CudaDeviceMemoryPitched<TSim, 3>& volumeSecBestSim,
+        int wsh,
+        float gammaC,
+        float gammaP)
+{
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    const int volStepXY = _step;
+    const int volDimX   = _w;
+    const int volDimY   = _h;
+
+    {
+        const int startingDepth = std::min_element( _rcTcDepthRanges.begin(),
+                                                    _rcTcDepthRanges.end(),
+                                                    MinOffX())->x;
+        auto depth_it = std::max_element( _rcTcDepthRanges.begin(),
+                                          _rcTcDepthRanges.end(),
+                                          MinOffXplusY());
+        const int stoppingDepth = depth_it->x + depth_it->y;
+
+        // The overall starting depth index should always be zero.
+        assert(startingDepth == 0);
+        // Usually stoppingDepth should be equal to the total number of depths.
+        // But due to sgmMaxDepths and sgmMaxDepthPerTc, we can have more depths
+        // than we finally use in all TC cameras.
+        assert(_rcDepths.size() >= stoppingDepth);
+    }
+    ALICEVISION_LOG_DEBUG("RC depths: [" << _rcDepths[0] << "-" << _rcDepths[_rcDepths.size() - 1] << "], "
+                                         << _rcDepths.size() << " depth planes.");
+
+    std::vector<OneTC> tcs;
+    for(size_t j = 0; j < _rcTcDepthRanges.size(); ++j)
+    {
+        tcs.emplace_back(_tc[j], _rcTcDepthRanges[j].x, _rcTcDepthRanges[j].y);
+        ALICEVISION_LOG_DEBUG(" RC: " << _rc << ", TC: " << _tc[j] << ", "
+                              << _rcTcDepthRanges[j].y << " depth planes, "
+                              << "depth range=[" << _rcDepths[_rcTcDepthRanges[j].x] << "-" << _rcDepths[_rcTcDepthRanges[j].x + _rcTcDepthRanges[j].y - 1] << "], "
+                              << "range index=[" << _rcTcDepthRanges[j].x << "-" << _rcTcDepthRanges[j].x + _rcTcDepthRanges[j].y << "]"
+                              );
     }
 
-    return volume;
+    _sp.cps.sweepPixelsToVolume( volumeBestSim,
+                                 volumeSecBestSim,
+                                 volDimX, volDimY,
+                                 volStepXY,
+                                 tcs,
+                                 _rcDepths,
+                                 _rc,
+                                 wsh, gammaC, gammaP, _scale);
+
+    ALICEVISION_LOG_INFO("==== computeDepthSimMapVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
 } // namespace depthMap

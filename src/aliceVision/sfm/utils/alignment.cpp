@@ -576,13 +576,13 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
   {
     viewId = -1;
   }
-  
+
   if(viewId == -1)
   {
     for(const auto & view : sfmData.getViews())
     {
       const std::string path = view.second->getImagePath();
-      if (std::regex_match(path, cameraRegex))
+      if(std::regex_match(path, cameraRegex))
       {
           viewId = view.second->getViewId();
           break;

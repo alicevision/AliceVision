@@ -1,23 +1,25 @@
 # Headers
 set(depthMap_files_headers
+  computeOnMultiGPUs.hpp
   DepthSimMap.hpp
   RcTc.hpp
   RefineRc.hpp
   SemiGlobalMatchingParams.hpp
   SemiGlobalMatchingRc.hpp
   SemiGlobalMatchingRcTc.hpp
-  SemiGlobalMatchingVolume.hpp
+  volumeIO.hpp
 )
 
 # Sources
 set(depthMap_files_sources
+  computeOnMultiGPUs.cpp
   DepthSimMap.cpp
   RcTc.cpp
   RefineRc.cpp
   SemiGlobalMatchingParams.cpp
   SemiGlobalMatchingRc.cpp
   SemiGlobalMatchingRcTc.cpp
-  SemiGlobalMatchingVolume.cpp
+  volumeIO.cpp
 )
 
 # Cuda Headers
@@ -28,19 +30,21 @@ set(depthMap_cuda_files_headers
   cuda/planeSweeping/plane_sweeping_cuda.hpp
   # deviceCommon
   cuda/deviceCommon/device_color.cu
-  cuda/deviceCommon/device_eig33.cu
   cuda/deviceCommon/device_global.cu
   cuda/deviceCommon/device_matrix.cu
+  cuda/deviceCommon/device_matrix.cuh
   cuda/deviceCommon/device_patch_es.cu
   cuda/deviceCommon/device_simStat.cu
-  cuda/deviceCommon/device_operators.h
+  cuda/deviceCommon/device_operators.cuh
+  cuda/deviceCommon/device_utils.cuh
+  cuda/deviceCommon/device_utils.h
   # planeSweeping
   cuda/planeSweeping/device_code.cu
   cuda/planeSweeping/device_code_refine.cu
   cuda/planeSweeping/device_code_volume.cu
   cuda/planeSweeping/device_code_fuse.cu
-  cuda/planeSweeping/device_utils.cu
-  cuda/planeSweeping/device_utils.h
+  # normalmap
+  cuda/normalmap/device_eig33.cuh
 )
 
 set_source_files_properties(${depthMap_cuda_files_headers}
@@ -52,7 +56,12 @@ set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
+  cuda/planeSweeping/plane_sweeping_cuda.hpp
   cuda/planeSweeping/plane_sweeping_cuda.cu
+  cuda/normalmap/normal_map.hpp
+  cuda/normalmap/normal_map.cu
+  cuda/images/gauss_filter.hpp
+  cuda/images/gauss_filter.cu
   ${depthMap_cuda_files_headers}
 )
 
@@ -78,3 +87,6 @@ alicevision_add_library(aliceVision_depthMap
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )
+
+# target_compile_definitions(aliceVision_depthMap PUBLIC TSIM_USE_FLOAT)
+

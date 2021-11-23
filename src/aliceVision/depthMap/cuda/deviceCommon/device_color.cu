@@ -6,27 +6,21 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
 
 namespace aliceVision {
 namespace depthMap {
 
 inline __device__ float Euclidean(const float3 x1, const float3 x2)
 {
-    return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
 inline __device__ float Euclidean3(const float4 x1, const float4 x2)
 {
-    return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
-}
-
-//== data conversion utils ========================================================================
-
-// uchar4 with 0..255 components => float3 with 0..1 components
-inline __device__ __host__ float3 uchar4_to_float3(const uchar4 c)
-{
-    return make_float3(float(c.x) / 255.0f, float(c.y) / 255.0f, float(c.z) / 255.0f);
+    // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
 //== colour conversion utils ======================================================================
@@ -97,9 +91,8 @@ inline __device__ float3 rgb2hsl(const float3& c)
     return make_float3(h, s, l);
 }
 
-// XYZ (0..1) to CIELAB (0..100) assuming D65 whitepoint - old
-// XYZ (0..1) to CIELAB (0..255) assuming D65 whitepoint - new
-inline __device__ float3 xyz2lab(const float3 c)
+// XYZ (0..1) to CIELAB (0..255) assuming D65 whitepoint
+inline __host__ __device__ float3 xyz2lab(const float3 c)
 {
     // assuming whitepoint D65, XYZ=(0.95047, 1.00000, 1.08883)
     float3 r = make_float3(c.x / 0.95047f, c.y, c.z / 1.08883f);
@@ -108,25 +101,10 @@ inline __device__ float3 xyz2lab(const float3 c)
                            (r.y > 216.0f / 24389.0f ? cbrtf(r.y) : (24389.0f / 27.0f * r.y + 16.0f) / 116.0f),
                            (r.z > 216.0f / 24389.0f ? cbrtf(r.z) : (24389.0f / 27.0f * r.z + 16.0f) / 116.0f));
 
-    // location of xzy2lab-bug (CR 2010-03-14): 116.0f * f.x - 16.0f is wrong
     float3 out = make_float3(116.0f * f.y - 16.0f, 500.0f * (f.x - f.y), 200.0f * (f.y - f.z));
-    out.x = out.x * 2.55f;
-    out.y = out.y * 2.55f;
-    out.z = out.z * 2.55f;
-    return out;
-}
 
-inline __host__ float3 h_xyz2lab(const float3 c)
-{
-    // assuming whitepoint D65, XYZ=(0.95047, 1.00000, 1.08883)
-    float3 r = make_float3(c.x / 0.95047f, c.y, c.z / 1.08883f);
-
-    float3 f = make_float3((r.x > 216.0f / 24389.0f ? cbrtf(r.x) : (24389.0f / 27.0f * r.x + 16.0f) / 116.0f),
-                           (r.y > 216.0f / 24389.0f ? cbrtf(r.y) : (24389.0f / 27.0f * r.y + 16.0f) / 116.0f),
-                           (r.z > 216.0f / 24389.0f ? cbrtf(r.z) : (24389.0f / 27.0f * r.z + 16.0f) / 116.0f));
-
-    // location of xzy2lab-bug (CR 2010-03-14): 116.0f * f.x - 16.0f is wrong
-    float3 out = make_float3(116.0f * f.y - 16.0f, 500.0f * (f.x - f.y), 200.0f * (f.y - f.z));
+    // convert values to fit into 0..255 (could be out-of-range)
+    // TODO FACA: use float textures, the values are out-of-range for a and b.
     out.x = out.x * 2.55f;
     out.y = out.y * 2.55f;
     out.z = out.z * 2.55f;
@@ -136,12 +114,6 @@ inline __host__ float3 h_xyz2lab(const float3 c)
 inline __device__ float rgb2gray(const uchar4 c)
 {
     return 0.2989f * (float)c.x + 0.5870f * (float)c.y + 0.1140f * (float)c.z;
-}
-
-inline __device__ float distColor(const uchar4 cf1, const uchar4 cf2)
-{
-    return fmaxf(fabs((float)cf1.x - (float)cf2.x),
-                 fmaxf(fabs((float)cf1.y - (float)cf2.y), fabs((float)cf1.z - (float)cf2.z)));
 }
 
 /**
@@ -158,8 +130,8 @@ inline __device__ float distColor(const uchar4 cf1, const uchar4 cf2)
  * @param[in] gammaP Strength of Grouping by Proximity          8 / 4
  * @return distance value
  */
-inline __device__ float CostYK(const int dx, const int dy, const uchar4 c1, const uchar4 c2, const float gammaC,
-                               const float gammaP)
+inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaC,
+                                      const float gammaP)
 {
     // const float deltaC = 0; // ignore colour difference
 
@@ -182,32 +154,22 @@ inline __device__ float CostYK(const int dx, const int dy, const uchar4 c1, cons
     //);
 
     // Euclidean distance in Lab, assuming linear RGB
-    const float deltaC = Euclidean(xyz2lab(rgb2xyz(uchar4_to_float3(c1))), xyz2lab(rgb2xyz(uchar4_to_float3(c2))));
-
-    // spatial distance
-    const float deltaP = sqrtf(float(dx * dx + dy * dy));
-
-    return __expf(-(deltaC / gammaC + deltaP / gammaP)); // Yoon & Kweon
-    // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP *
-    // gammaP)))); // DCB
-}
-
-/**
- * @see CostYK
- */
-inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaC,
-                                      const float gammaP)
-{
-    // Euclidean distance in Lab, assuming linear RGB
-    const float deltaC = Euclidean3(c1, c2);
+    float deltaC = Euclidean3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
+    deltaC /= gammaC;
+
     // spatial distance to the center of the patch (in pixels)
-    const float deltaP = sqrtf(float(dx * dx + dy * dy));
+    float deltaP = sqrtf(float(dx * dx + dy * dy));
 
-    return __expf(-(deltaC / gammaC + deltaP / gammaP)); // Yoon & Kweon
+    deltaP /= gammaP;
+
+    deltaC += deltaP;
+
+    return __expf(-deltaC); // Yoon & Kweon
+    // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
-
+/*
 inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
 {
     // Euclidean distance in Lab, assuming linear RGB
@@ -216,33 +178,21 @@ inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const fl
 
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }
-
-inline static __device__ float computeADCost(const uchar4 pixL, const uchar4 pixR)
-{
-    const float diffX = (float)pixL.x - (float)pixR.x;
-    const float diffY = (float)pixL.y - (float)pixR.y;
-    const float diffZ = (float)pixL.z - (float)pixR.z;
-    return fminf(40.0f, fabs(diffX) + fabs(diffY) + fabs(diffZ));
-}
-
-__global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, int height)
+*/
+__global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x < width) && (y < height))
-    {
-        uchar4* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
-        float3 flab = xyz2lab(rgb2xyz(uchar4_to_float3(*rgb)));
+    if((x >= width) || (y >= height))
+        return;
 
-        uchar4 lab;
-        lab.x = (unsigned char)(flab.x);
-        lab.y = (unsigned char)(flab.y);
-        lab.z = (unsigned char)(flab.z);
-        lab.w = 0;
+    CudaRGBA* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
+    float3 flab = xyz2lab(rgb2xyz(make_float3(rgb->x / 255.f, rgb->y / 255.f, rgb->z / 255.f)));
 
-        *rgb = lab;
-    }
+    rgb->x = flab.x;
+    rgb->y = flab.y;
+    rgb->z = flab.z;
 }
 
 /*
@@ -260,11 +210,6 @@ __global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, in
              (total filter size = 2 * radius + 1)
 */
 // use only one block
-__global__ void generateGaussian_kernel(float* og, float delta, int radius)
-{
-    int x = threadIdx.x - radius;
-    og[threadIdx.x] = __expf(-(x * x) / (2 * delta * delta));
-}
 
 /*
 __global__ void downscale_kernel(unsigned char* tex, int tex_p, int width, int height, int scale)

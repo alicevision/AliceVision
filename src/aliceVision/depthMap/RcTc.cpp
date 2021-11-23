@@ -12,21 +12,20 @@
 namespace aliceVision {
 namespace depthMap {
 
-RcTc::RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps)
-    : cps( _cps )
+RcTc::RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps)
+    : cps(_cps)
+    , mp(_mp)
 {
-    mp = _mp;
-    verbose = mp->verbose;
 }
 
 void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
-                                    int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
+                                    int ndepthsToRefine, int wsh, float gammaC, float gammaP)
 {
-    int scale = depthSimMap->scale;
-    int w = mp->getWidth(rc) / scale;
-    int h = mp->getHeight(rc) / scale;
+    int scale = depthSimMap->_scale;
+    int w = mp.getWidth(rc) / scale;
+    int h = mp.getHeight(rc) / scale;
 
-    if(verbose)
+    if(mp.verbose)
         ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
 
     long t1 = clock();
@@ -37,33 +36,32 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
     {
         int xFrom = p * wPart;
         int wPartAct = std::min(wPart, w - xFrom);
-        StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
-        StaticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
+        StaticVector<float> depthMap;
+        depthSimMap->getDepthMapStep1XPart(depthMap, xFrom, wPartAct);
+        StaticVector<float> simMap;
+        depthSimMap->getSimMapStep1XPart(simMap, xFrom, wPartAct);
 
         cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
-                                epipShift, xFrom, wPartAct);
+                                xFrom, wPartAct);
 
         for(int yp = 0; yp < h; yp++)
         {
             for(int xp = xFrom; xp < xFrom + wPartAct; xp++)
             {
-                float depth = (*depthMap)[yp * wPartAct + (xp - xFrom)];
-                float sim = (*simMap)[yp * wPartAct + (xp - xFrom)];
+                float depth = depthMap[yp * wPartAct + (xp - xFrom)];
+                float sim = simMap[yp * wPartAct + (xp - xFrom)];
                 float oldSim =
-                    (*depthSimMap->dsm)[(yp / depthSimMap->step) * depthSimMap->w + (xp / depthSimMap->step)].sim;
+                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)].sim;
                 if((depth > 0.0f) && (sim < oldSim))
                 {
-                    (*depthSimMap->dsm)[(yp / depthSimMap->step) * depthSimMap->w + (xp / depthSimMap->step)] =
+                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)] =
                         DepthSim(depth, sim);
                 }
             }
         }
 
-        if(verbose)
+        if(mp.verbose)
             mvsUtils::printfElapsedTime(t1, "refineRcTcDepthSimMap");
-
-        delete depthMap;
-        delete simMap;
     }
 }
 
@@ -79,10 +77,10 @@ void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     {
         int x = (i % depthSimMap->w) * depthSimMap->step;
         int y = (i / depthSimMap->w) * depthSimMap->step;
-        (*depthSimMap->dsm)[i].depth = (*depthMap)[y * depthSimMap->w * depthSimMap->step + x];
+        depthSimMap->dsm[i].depth = (*depthMap)[y * depthSimMap->w * depthSimMap->step + x];
     }
 
-    if(verbose)
+    if(mp.verbose)
         mvsUtils::printfElapsedTime(t1, "smoothDepth11");
 
     delete depthMap;
@@ -103,10 +101,10 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     {
         int x = (i % depthSimMap->w) * depthSimMap->step;
         int y = (i / depthSimMap->w) * depthSimMap->step;
-        (*depthSimMap->dsm)[i].depth = (*depthMap)[y * depthSimMap->w * depthSimMap->step + x];
+        depthSimMap->dsm[i].depth = (*depthMap)[y * depthSimMap->w * depthSimMap->step + x];
     }
 
-    if(verbose)
+    if(mp.verbose)
         mvsUtils::printfElapsedTime(t1, "smoothDepth11");
 
     delete depthMap;

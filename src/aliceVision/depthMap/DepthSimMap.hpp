@@ -39,11 +39,46 @@ public:
         sim = _sim;
     }
 
-    inline DepthSim& operator=(const DepthSim& param)
+    inline DepthSim& operator=(const DepthSim& v)
     {
-        depth = param.depth;
-        sim = param.sim;
+        depth = v.depth;
+        sim = v.sim;
         return *this;
+    }
+
+    inline DepthSim operator+(const DepthSim& v) const
+    {
+        DepthSim out;
+        out.depth = depth + v.depth;
+        out.sim = sim + v.sim;
+        return out;
+    }
+    inline DepthSim operator-(const DepthSim& v) const
+    {
+        DepthSim out;
+        out.depth = depth - v.depth;
+        out.sim = sim - v.sim;
+        return out;
+    }
+    inline DepthSim operator*(float v) const
+    {
+        DepthSim out;
+        out.depth = depth * v;
+        out.sim = sim * v;
+        return out;
+    }
+    inline DepthSim operator/(float v) const
+    {
+        DepthSim out;
+        out.depth = depth / v;
+        out.sim = sim / v;
+        return out;
+    }
+    inline bool operator<(const DepthSim& other) const
+    {
+        if(depth == other.depth)
+            return sim < other.sim;
+        return (depth < other.depth);
     }
 };
 
@@ -51,42 +86,38 @@ public:
 class DepthSimMap
 {
 public:
-    mvsUtils::MultiViewParams* mp;
-    const int scale;
-    const int step;
-    int rc, w, h;
-    StaticVector<DepthSim>* dsm; //< depth similarity map
+    mvsUtils::MultiViewParams& _mp;
+    const int _scale;
+    const int _step;
+    int _rc, _w, _h;
+    StaticVector<DepthSim> _dsm; //< depth similarity map
 
-    DepthSimMap(int rc, mvsUtils::MultiViewParams* _mp, int _scale, int _step);
-    ~DepthSimMap(void);
+    DepthSimMap(int rc, mvsUtils::MultiViewParams& mp, int scale, int step);
+    ~DepthSimMap();
 
-    void initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim);
-    void initJustFromDepthMap(StaticVector<float>* depthMap, float defaultSim);
-    void initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
+    void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
+    void initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim);
+    void initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                      int depthSimMapsScale);
 
-    void add11(DepthSimMap* depthSimMap);
-    void add(DepthSimMap* depthSimMap);
+    void initFromSmaller(const DepthSimMap& depthSimMap);
+    void init(const DepthSimMap& depthSimMap);
 
     Point2d getMaxMinDepth() const;
     Point2d getMaxMinSim() const;
 
-    float getPercentileDepth(float perc);
-    StaticVector<float>* getDepthMapStep1();
-    StaticVector<float>* getDepthMapTStep1();
-    StaticVector<float>* getSimMapStep1();
-    StaticVector<float>* getDepthMap();
+    float getPercentileDepth(float perc) const;
+    void getDepthMapStep1(StaticVector<float>& out_depthMap) const;
+    void getSimMapStep1(StaticVector<float>& out_simMap) const;
+    void getDepthMap(StaticVector<float>& out_depthMap) const;
+    void getSimMap(StaticVector<float>& out_simMap) const;
 
-    StaticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
-    StaticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
+    void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
+    void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
 
-    void saveToImage(std::string pngFileName, float simThr);
-    void save(int rc, const StaticVector<int>& tcams);
-    void load(int rc, int fromScale);
-    void saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName);
-
-    float getCellSmoothStep(int rc, const int cellId);
-    float getCellSmoothStep(int rc, const Pixel& cell);
+    void saveToImage(const std::string& filename, float simThr) const;
+    void save(const std::string& customSuffix = "", bool useStep1 = false) const;
+    void load(int fromScale);
 };
 
 } // namespace depthMap

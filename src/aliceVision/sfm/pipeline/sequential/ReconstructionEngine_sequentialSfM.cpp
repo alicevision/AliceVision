@@ -197,7 +197,8 @@ bool ReconstructionEngine_sequentialSfM::process()
   }
   else
   {
-    // Optimize input before starting adding new views
+    // If we don't have any landmark, we need to triangulate them from the known poses.
+    // But even if we already have landmarks, we need to try to triangulate new points with the current set of parameters.
     std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
 
     triangulate({}, prevReconstructedViews);

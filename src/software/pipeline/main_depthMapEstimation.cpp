@@ -10,12 +10,14 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/gpu/gpu.hpp>
+#include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -31,7 +33,7 @@ namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
 {
-    system::Timer timer;
+    ALICEVISION_COMMANDLINE_START
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
@@ -50,10 +52,20 @@ int aliceVision_main(int argc, char* argv[])
     float maxViewAngle = 70.0f;
 
     // semiGlobalMatching
+    int sgmScale = -1;
+    int sgmStepXY = -1;
+    int sgmStepZ = -1;
+    int sgmMaxSideXY = 700;
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
     double sgmGammaC = 5.5;
     double sgmGammaP = 8.0;
+    double sgmP1 = 10;
+    double sgmP2 = 100.0;
+    int sgmMaxDepths = 3000;
+    int sgmMaxDepthsPerTc = 1500;
+    bool sgmUseSfmSeeds = true;
+    std::string sgmFilteringAxes = "YX";
 
     // refineRc
     int refineMaxTCams = 6;
@@ -96,6 +108,14 @@ int aliceVision_main(int argc, char* argv[])
             "minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
             "maximum angle between two views.")
+        ("sgmScale", po::value<int>(&sgmScale)->default_value(sgmScale),
+            "Semi Global Matching: Downscale factor used to compute the similarity volume.")
+        ("sgmStepXY", po::value<int>(&sgmStepXY)->default_value(sgmStepXY),
+            "Semi Global Matching: Step used to compute the similarity volume on the X and Y axis.")
+        ("sgmStepZ", po::value<int>(&sgmStepZ)->default_value(sgmStepZ),
+            "Semi Global Matching: Step used to compute the similarity volume on the Z axis.")
+        ("sgmMaxSideXY", po::value<int>(&sgmMaxSideXY)->default_value(sgmMaxSideXY),
+            "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
         ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
@@ -104,6 +124,18 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: GammaC threshold.")
         ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
             "Semi Global Matching: GammaP threshold.")
+        ("sgmP1", po::value<double>(&sgmP1)->default_value(sgmP1),
+            "Semi Global Matching: P1.")
+        ("sgmP2", po::value<double>(&sgmP2)->default_value(sgmP2),
+            "Semi Global Matching: P2.")
+        ("sgmMaxDepths", po::value<int>(&sgmMaxDepths)->default_value(sgmMaxDepths),
+            "Semi Global Matching: Max number of depths in the overall similarity volume.")
+        ("sgmMaxDepthsPerTc", po::value<int>(&sgmMaxDepthsPerTc)->default_value(sgmMaxDepthsPerTc),
+            "Semi Global Matching: Max number of depths to sweep in the similarity volume per Rc/Tc cameras.")
+        ("sgmUseSfmSeeds", po::value<bool>(&sgmUseSfmSeeds)->default_value(sgmUseSfmSeeds),
+            "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
+        ("sgmFilteringAxes", po::value<std::string>(&sgmFilteringAxes)->default_value(sgmFilteringAxes),
+            "Semi Global Matching: Filtering axes for the 3D volume.")
         ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
             "Refine: Number of neighbour cameras.")
         ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
@@ -205,6 +237,19 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.wsh", sgmWSH);
     mp.userParams.put("semiGlobalMatching.gammaC", sgmGammaC);
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
+    mp.userParams.put("semiGlobalMatching.P1", sgmP1);
+    mp.userParams.put("semiGlobalMatching.P2", sgmP2);
+
+    mp.userParams.put("semiGlobalMatching.scale", sgmScale);
+    mp.userParams.put("semiGlobalMatching.stepXY", sgmStepXY);
+    mp.userParams.put("semiGlobalMatching.stepZ", sgmStepZ);
+    mp.userParams.put("semiGlobalMatching.maxSideXY", sgmMaxSideXY);
+
+    mp.userParams.put("semiGlobalMatching.maxDepthsToStore", sgmMaxDepths);
+    mp.userParams.put("semiGlobalMatching.maxDepthsToSweep", sgmMaxDepthsPerTc);
+    mp.userParams.put("semiGlobalMatching.useSeedsToCompDepthsToSweep", sgmUseSfmSeeds);
+
+    mp.userParams.put("semiGlobalMatching.filteringAxes", sgmFilteringAxes);
 
     // refineRc
     mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
@@ -244,9 +289,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     ALICEVISION_LOG_INFO("Create depth maps.");
+    depthMap::computeOnMultiGPUs(mp, cams, depthMap::estimateAndRefineDepthMaps, nbGPUs);
 
-    depthMap::estimateAndRefineDepthMaps(&mp, cams, nbGPUs);
-
-    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
-    return EXIT_SUCCESS;
+    ALICEVISION_COMMANDLINE_END
 }

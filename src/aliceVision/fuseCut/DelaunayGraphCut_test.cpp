@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 
     std::array<Point3d, 8> hexah;
 
-    Fuser fs(&mp);
+    Fuser fs(mp);
     const size_t minObservations = 2;
     const float minObservationsAngle = 0.01f;
     fs.divideSpaceFromSfM(sfmData, &hexah[0], minObservations, minObservationsAngle);
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     
     const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
     
-    DelaunayGraphCut delaunayGC(&mp);
+    DelaunayGraphCut delaunayGC(mp);
     ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");
 
     // delaunayGC.createDensePointCloud(&hexah[0], cams, &sfmData, nullptr);

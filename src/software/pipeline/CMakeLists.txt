@@ -22,21 +22,6 @@ if(ALICEVISION_BUILD_SFM)
           Boost::boost
   )
 
-  # Make sure all images are defined the same way
-  alicevision_add_software(aliceVision_panoramaPrepareImages
-    SOURCE main_panoramaPrepareImages.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_sensorDB
-          aliceVision_image
-          aliceVision_feature
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          Boost::program_options
-          Boost::filesystem
-          Boost::boost
-  )
-
   # Image processing
   if(ALICEVISION_HAVE_OPENCV)
     alicevision_add_software(aliceVision_imageMasking
@@ -51,6 +36,21 @@ if(ALICEVISION_BUILD_SFM)
             ${Boost_LIBRARIES}
     )
   endif()
+
+  # Make sure all images are defined the same way
+  alicevision_add_software(aliceVision_panoramaPrepareImages
+    SOURCE main_panoramaPrepareImages.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_sensorDB
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+  )
 
   # Feature extraction
   alicevision_add_software(aliceVision_featureExtraction

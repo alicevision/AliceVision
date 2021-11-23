@@ -17,6 +17,7 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -26,6 +27,7 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -428,6 +430,9 @@ int aliceVision_main(int argc, char **argv)
   // create missing intrinsics
   auto viewPairItBegin = sfmData.getViews().begin();
 
+  boost::regex extractComposedNumberRegex("\\d+(?:[\\-\\:\\_\\.]\\d+)*");
+  boost::regex extractNumberRegex("\\d+");
+
   std::map<IndexT, std::vector<IndexT>> poseGroups;
 
   #pragma omp parallel for
@@ -437,7 +442,7 @@ int aliceVision_main(int argc, char **argv)
 
     // try to detect rig structure in the input folder
     const fs::path parentPath = fs::path(view.getImagePath()).parent_path();
-    if(parentPath.parent_path().stem() == "rig")
+    if(boost::starts_with(parentPath.parent_path().stem().string(), "rig"))
     {
       try
       {
@@ -729,9 +734,14 @@ int aliceVision_main(int argc, char **argv)
       for(const auto& nbPosePerSubPoseId : subPosesPerRigId.second)
       {
         // check subPoseId
-        if((nbPosePerSubPoseId.first >= nbSubPose) || (nbPosePerSubPoseId.first < 0))
+        if(nbPosePerSubPoseId.first >= nbSubPose)
         {
-          ALICEVISION_LOG_ERROR("Wrong subPoseId in detected rig structure.");
+            ALICEVISION_LOG_ERROR("Wrong subPoseId in rig structure: it should be an index not a random number (subPoseId: " << nbPosePerSubPoseId.first << ", number of subposes: " << nbSubPose << ").");
+            return EXIT_FAILURE;
+        }
+        if(nbPosePerSubPoseId.first < 0)
+        {
+          ALICEVISION_LOG_ERROR("Wrong subPoseId in rig structure: cannot contain negative value: " << nbPosePerSubPoseId.first);
           return EXIT_FAILURE;
         }
 

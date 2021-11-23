@@ -40,7 +40,7 @@ alicevision_add_library(aliceVision_mvsData
   SOURCES ${mvsData_files_headers} ${mvsData_files_sources}
   PUBLIC_LINKS
     aliceVision_system
-    ${ZLIB_LIBRARIES}
+    ZLIB::ZLIB
     Boost::filesystem
     Boost::boost
     ${OPENIMAGEIO_LIBRARIES}

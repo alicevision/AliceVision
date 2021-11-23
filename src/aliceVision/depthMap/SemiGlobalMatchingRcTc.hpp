@@ -13,30 +13,36 @@
 namespace aliceVision {
 namespace depthMap {
 
+
 class SemiGlobalMatchingRcTc
 {
 public:
-    SemiGlobalMatchingRcTc(const std::vector<float>& _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
-                StaticVectorBool* _rcSilhoueteMap = NULL);
-    ~SemiGlobalMatchingRcTc(void);
+    SemiGlobalMatchingRcTc( const std::vector<float>& rcDepths,
+                            const std::vector<Pixel>&  rcTcDepthRanges,
+                            int _rc,
+                            const StaticVector<int>& _tc,
+                            int _scale,
+                            int _step,
+                            SemiGlobalMatchingParams& sp);
+    ~SemiGlobalMatchingRcTc();
 
-    StaticVector<unsigned char>* computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC, float gammaP);
+    void computeDepthSimMapVolume( CudaDeviceMemoryPitched<TSim, 3>& volumeBestSim,
+                                   CudaDeviceMemoryPitched<TSim, 3>& volumeSecBestSim,
+                                   int wsh,
+                                   float gammaC,
+                                   float gammaP );
 
 private:
-    StaticVector<Voxel>* getPixels();
-    const SemiGlobalMatchingParams* const sp;
+    const SemiGlobalMatchingParams& _sp;
 
-    const int rc;
-
-    int tc;
-    const std::vector<float> rcTcDepths;
+    const int _rc;
+    const StaticVector<int>& _tc;
     const int _scale;
     const int _step;
     const int _w;
     const int _h;
-    float epipShift;
-    // int w, h;
-    StaticVectorBool* rcSilhoueteMap;
+    const std::vector<float>& _rcDepths;
+    const std::vector<Pixel>& _rcTcDepthRanges;
 };
 
 } // namespace depthMap

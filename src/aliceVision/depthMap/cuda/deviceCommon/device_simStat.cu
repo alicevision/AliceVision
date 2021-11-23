@@ -18,7 +18,6 @@ struct simStat
     float xysum;
     float count;
     float wsum;
-    float sim;
 
     __device__ simStat()
     {
@@ -29,7 +28,6 @@ struct simStat
         xysum = 0.0f;
         count = 0.0f;
         wsum = 0.0f;
-        sim = 1.0f;
     }
 
     __device__ simStat& operator=(const simStat& param)
@@ -44,10 +42,9 @@ struct simStat
         return *this;
     }
 
-    __device__ void computeSimSub(simStat& ss)
+    __device__ float computeSimSub(simStat& ss)
     {
         // NCC
-
         float avx = ss.xsum / ss.count;
         float avy = ss.ysum / ss.count;
         float dx = xsum - 2.0f * avx * xsum + count * avx;
@@ -55,64 +52,26 @@ struct simStat
         float d = dx * dy;
         float u = xysum - avx * ysum - avy * xsum + count * avx * avy;
 
+        float sim = 1.0f;
         if(fabs(d) > 0.0f)
         {
             sim = u / sqrtf(d);
             sim = 0.0f - sim;
         }
-        else
-        {
-            sim = 1.0f;
-        };
+        return sim;
     }
 
-    __device__ float getVarianceX() { return (xxsum / count - (xsum * xsum) / (count * count)); }
+    __device__ float getVarianceX() const { return (xxsum / count - (xsum * xsum) / (count * count)); }
 
-    __device__ float getVarianceY() { return (yysum / count - (ysum * ysum) / (count * count)); }
+    __device__ float getVarianceY() const { return (yysum / count - (ysum * ysum) / (count * count)); }
 
-    __device__ float getVarianceXY() { return (xysum / count - (xsum * ysum) / (count * count)); }
-
-    /*
-            __device__ void computeSim()
-            {
-                    //NCC
-                    float d = (xxsum - ( (xsum*xsum)/count ) ) * (yysum - ( (ysum*ysum)/count ));
-                    if (fabs(d)>0.0f)
-                    {
-                            sim = ( ( xysum - ( (xsum*ysum)/count ) ) ) /  sqrtf( d );
-                            sim = 0.0f - sim;
-                    }else
-                    {
-                            sim = 1.0f;
-                    };
-
-                    sim = fmaxf(sim,-1.0f);
-                    sim = fminf(sim,1.0f);
-            };
-    */
-    __device__ void computeSim()
-    {
-        // NCC
-        float d = getVarianceX() * getVarianceY();
-        if(fabs(d) > 0.0f)
-        {
-            sim = getVarianceXY() / sqrtf(d);
-            sim = 0.0f - sim;
-        }
-        else
-        {
-            sim = 1.0f;
-        };
-
-        sim = fmaxf(sim, -1.0f);
-        sim = fminf(sim, 1.0f);
-    }
+    __device__ float getVarianceXY() const { return (xysum / count - (xsum * ysum) / (count * count)); }
 
     /**
     * @brief Variance of X
     * formula: sum(w*x*x) / sum(w) - sum(w*x)^2 / sum(w)^2
     */
-    __device__ float getVarianceXW()
+    __device__ float getVarianceXW() const
     {
         return (xxsum - xsum * xsum / wsum) / wsum;
     }
@@ -121,7 +80,7 @@ struct simStat
     * @brief Variance of Y
     * formula: sum(w*y*y) / sum(w) - sum(w*y)^2 / sum(w)^2
     */
-    __device__ float getVarianceYW()
+    __device__ float getVarianceYW() const
     {
         return (yysum - ysum * ysum / wsum) / wsum;
     }
@@ -131,7 +90,7 @@ struct simStat
      * Formula is: sum(w*x*y) - 2 * sum(w*x)*sum(w*y) / sum(w) + sum(w*x*y)
      * Simplified as: sum(w*x*y) / sum(w) - sum(w*y) * sum(w*x) / sum(w)^2
      */
-    __device__ float getVarianceXYW()
+    __device__ float getVarianceXYW() const
     {
         return (xysum - xsum * ysum / wsum) / wsum;
     }
@@ -140,15 +99,16 @@ struct simStat
      * @brief Compute Normalized Cross-Correlation.
      * @return similarity value in range (-1, 0) or 1 if infinity
      */
-    __device__ void computeWSim()
+    __device__ float computeWSim()
     {
         // NCC
-        sim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
-        sim = isinf(sim) ? 1.0f : 0.0f - sim;
-        sim = fmaxf(fminf(sim, 1.0f), -1.0f);
+        const float rawSim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
+        const float sim = isfinite(rawSim) ? -rawSim : 1.0f;
+        // sim = fmaxf(fminf(sim, 1.0f), -1.0f); // clamp
+        return sim;
     }
 
-    __device__ void update(const float2 g)
+    __device__ void update(const float2& g)
     {
         count += 1.0f;
         xsum += g.x;
@@ -158,7 +118,7 @@ struct simStat
         xysum += g.x * g.y;
     }
 
-    __device__ void update(const float2 g, float w)
+    __device__ void update(const float2& g, float w)
     {
         wsum += w;
         count += 1.0f;
@@ -190,23 +150,7 @@ struct simStat
         xysum += w * gx * gy;
     }
 
-    __device__ void update(const uchar4 c1, const uchar4 c2)
-    {
-        float2 g;
-        g.x = (float)c1.x / 255.0f;
-        g.y = (float)c2.x / 255.0f;
-        update(g);
-
-        g.x = (float)c1.y / 255.0f;
-        g.y = (float)c2.y / 255.0f;
-        update(g);
-
-        g.x = (float)c1.z / 255.0f;
-        g.y = (float)c2.z / 255.0f;
-        update(g);
-    }
-
-    __device__ void update(const float3 c1, const float3 c2)
+    __device__ void update(const float3& c1, const float3& c2)
     {
         float2 g;
         g.x = c1.x;

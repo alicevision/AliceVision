@@ -9,7 +9,9 @@
 
 #include <aliceVision/sfmData/View.hpp>
 
+#include <boost/algorithm/string/case_conv.hpp> 
 #include <boost/filesystem.hpp>
+
 
 namespace fs = boost::filesystem;
 

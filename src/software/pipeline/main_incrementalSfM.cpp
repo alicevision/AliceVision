@@ -105,8 +105,7 @@ int aliceVision_main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfM)->required(),
-      "Path to the output SfMData file.")
-    ;
+      "Path to the output SfMData file.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()

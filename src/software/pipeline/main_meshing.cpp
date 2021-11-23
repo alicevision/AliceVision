@@ -499,7 +499,7 @@ int aliceVision_main(int argc, char* argv[])
                     std::array<Point3d, 8> hexah;
 
                     float minPixSize;
-                    fuseCut::Fuser fs(&mp);
+                    fuseCut::Fuser fs(mp);
 
                     if (boundingBox.isInitialized())
                         boundingBox.toHexahedron(&hexah[0]);
@@ -531,7 +531,7 @@ int aliceVision_main(int argc, char* argv[])
                     if(cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
                     
-                    fuseCut::DelaunayGraphCut delaunayGC(&mp);
+                    fuseCut::DelaunayGraphCut delaunayGC(mp);
                     delaunayGC.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
                     if(saveRawDensePointCloud)
                     {

@@ -27,9 +27,9 @@ bool FolderExists(const std::string& folderPath)
     return boost::filesystem::is_directory(folderPath);
 }
 
-std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileType fileType, int scale)
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix)
 {
-  std::string folder = mp->_imagesFolder;
+  std::string folder = mp._imagesFolder;
   std::string suffix;
   std::string ext;
 
@@ -218,16 +218,16 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::depthMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapsFilterFolder();
+              folder = mp.getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapsFolder();
+              folder = mp.getDepthMapsFolder();
           suffix = "_depthMap";
           ext = "exr";
           break;
       }
       case EFileType::normalMap:
       {
-          folder = mp->getDepthMapsFilterFolder();
+          folder = mp.getDepthMapsFilterFolder();
           suffix = "_normalMap";
           ext = "exr";
           break;
@@ -235,9 +235,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::simMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapsFilterFolder();
+              folder = mp.getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapsFolder();
+              folder = mp.getDepthMapsFolder();
           suffix = "_simMap";
           ext = "exr";
           break;
@@ -262,7 +262,7 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       }
       case EFileType::nmodMap:
       {
-          folder = mp->getDepthMapsFilterFolder();
+          folder = mp.getDepthMapsFilterFolder();
           suffix = "_nmodMap";
           ext = "png";
           break;
@@ -279,18 +279,18 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       suffix += "_scale" + num2str(scale);
   }
 
-  std::string fileName = folder + std::to_string(viewId) + suffix + "." + ext;
+  std::string fileName = folder + std::to_string(viewId) + suffix + customSuffix + "." + ext;
   return fileName;
 }
 
-std::string getFileNameFromIndex(const MultiViewParams* mp, int index, EFileType mv_file_type, int scale)
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale, const std::string& customSuffix)
 {
-    return getFileNameFromViewId(mp, mp->getViewId(index), mv_file_type, scale);
+    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale, customSuffix);
 }
 
-FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite)
+FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite)
 {
-    const std::string fileName = getFileNameFromIndex(mp, index, mv_file_type);
+    const std::string fileName = getFileNameFromIndex(mp, index, mv_file_type, 0, "");
     FILE* out = fopen(fileName.c_str(), readWrite);
     if (out==NULL)
         throw std::runtime_error(std::string("Cannot create file: ") + fileName);
@@ -323,22 +323,23 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ImagesCache::ECorrectEV correctEV)
+template<class Image>
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
 {
     // check image size
     auto checkImageSize = [&path, &mp, camId, &img](){
-        if((mp->getOriginalWidth(camId) != img.width()) || (mp->getOriginalHeight(camId) != img.height()))
+        if((mp.getOriginalWidth(camId) != img.width()) || (mp.getOriginalHeight(camId) != img.height()))
         {
             std::stringstream s;
             s << "Bad image dimension for camera : " << camId << "\n";
             s << "\t- image path : " << path << "\n";
-            s << "\t- expected dimension : " << mp->getOriginalWidth(camId) << "x" << mp->getOriginalHeight(camId) << "\n";
+            s << "\t- expected dimension : " << mp.getOriginalWidth(camId) << "x" << mp.getOriginalHeight(camId) << "\n";
             s << "\t- real dimension : " << img.width() << "x" << img.height() << "\n";
             throw std::runtime_error(s.str());
         }
     };
 
-    if(correctEV == ImagesCache::ECorrectEV::NO_CORRECTION)
+    if(correctEV == ECorrectEV::NO_CORRECTION)
     {
         imageIO::readImage(path, img, colorspace);
         checkImageSize();
@@ -371,16 +372,19 @@ void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Im
     }
 
     // scale choosed by the user and apply during the process
-    const int processScale = mp->getProcessDownscale();
+    const int processScale = mp.getProcessDownscale();
 
     if(processScale > 1)
     {
-        ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp->getViewId(camId) << ".");
+        ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp.getViewId(camId) << ".");
         Image bmpr;
         imageAlgo::resizeImage(processScale, img, bmpr);
         img.swap(bmpr);
     }
 }
+
+template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 bool DeleteDirectory(const std::string& sPath)
 {

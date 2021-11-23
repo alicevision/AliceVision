@@ -16,7 +16,7 @@ namespace depthMap {
 class SemiGlobalMatchingRc
 {
 public:
-    SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp);
+    SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlobalMatchingParams& sp);
     ~SemiGlobalMatchingRc();
 
     bool sgmrc(bool checkIfExists = true);
@@ -29,16 +29,18 @@ protected:
 
     int _width;
     int _height;
-    int _sgmWsh;
-    float _sgmGammaC;
-    float _sgmGammaP;
+    int _sgmWsh = 4;
+    float _sgmGammaC = 5.5;
+    float _sgmGammaP = 8.0;
+
+    std::string _filteringAxes = "YX";
 
     StaticVector<int> _sgmTCams;
     StaticVector<Pixel> _depthsTcamsLimits;
-    StaticVector<IdValue> _volumeBestIdVal;
+    DepthSimMap _sgmDepthSimMap;
     StaticVector<float> _depths;
 
-    SemiGlobalMatchingParams* _sp;
+    SemiGlobalMatchingParams& _sp;
 
 private:
 
@@ -56,9 +58,18 @@ private:
      * @brief Fill depthsTcamsLimits member variable with index range of depths to sweep
      */
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
-    void computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
+    void computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
-    void getSubDepthsForTCam(int tcamid, std::vector<float>& subDepths);
+
+protected:
+    std::string outDir;
+    std::string tmpDir;
+    std::string tcamsFileName;
+    std::string depthsFileName;
+    std::string depthsTcamsLimitsFileName;
+    std::string SGM_depthMapFileName;
+    std::string SGM_simMapFileName;
+    std::string SGM_idDepthMapFileName;
 };
 
 } // namespace depthMap

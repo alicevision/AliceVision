@@ -105,8 +105,7 @@ public:
                     const std::string& depthMapsFolder = "",
                     const std::string& depthMapsFilterFolder = "",
                     bool readFromDepthMaps = false,
-                    int downscale = 1,
-                    StaticVector<CameraMatrices>* cameras = nullptr);
+                    int downscale = 1);
 
     ~MultiViewParams();
 
@@ -177,12 +176,12 @@ public:
 
     inline int getMaxImageWidth() const
     {
-        return _maxImageWidth;
+        return _maxImageWidth / getProcessDownscale();
     }
 
     inline int getMaxImageHeight() const
     {
-        return _maxImageHeight;
+        return _maxImageHeight / getProcessDownscale();
     }
 
     inline int getNbCameras() const

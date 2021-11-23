@@ -263,8 +263,7 @@ bool prepareDenseScene(const SfMData& sfmData,
 
       if(evCorrection)
       {
-          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(ev));
-          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev compensation : " + std::to_string(exposureCompensation));
+          ALICEVISION_LOG_INFO("image " << viewId << ", exposure: " << cameraExposure << ", Ev " << ev << " Ev compensation: " + std::to_string(exposureCompensation));
       }
 
       image::Image<unsigned char> mask;
@@ -287,8 +286,8 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
       else
       {
-        const auto noMaskingFunc = [] (Image<RGBfColor> & image) {};
-        process<Image<RGBfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
+        const auto noMaskingFunc = [] (Image<RGBAfColor> & image) {};
+        process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
       }
     }
 

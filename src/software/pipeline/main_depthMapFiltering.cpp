@@ -16,6 +16,7 @@
 #include <aliceVision/system/Timer.hpp>
 
 #include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -48,6 +49,7 @@ int aliceVision_main(int argc, char* argv[])
 
     int minNumOfConsistentCams = 3;
     int minNumOfConsistentCamsWithLowSimilarity = 4;
+    float pixToleranceFactor = 2.0f;
     int pixSizeBall = 0;
     int pixSizeBallWithLowSimilarity = 0;
     int nNearestCams = 10;
@@ -79,6 +81,8 @@ int aliceVision_main(int argc, char* argv[])
             "Minimal number of consistent cameras to consider the pixel.")
         ("minNumOfConsistentCamsWithLowSimilarity", po::value<int>(&minNumOfConsistentCamsWithLowSimilarity)->default_value(minNumOfConsistentCamsWithLowSimilarity),
             "Minimal number of consistent cameras to consider the pixel when the similarity is weak or ambiguous.")
+        ("pixToleranceFactor", po::value<float>(&pixToleranceFactor)->default_value(pixToleranceFactor),
+            "Filtering tolerance size factor (in px).")
         ("pixSizeBall", po::value<int>(&pixSizeBall)->default_value(pixSizeBall),
             "Filter ball size (in px).")
         ("pixSizeBallWithLowSimilarity", po::value<int>(&pixSizeBallWithLowSimilarity)->default_value(pixSizeBallWithLowSimilarity),
@@ -142,7 +146,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
 
-    StaticVector<int> cams;
+    std::vector<int> cams;
     cams.reserve(mp.ncams);
 
     if(rangeSize == -1)
@@ -169,13 +173,16 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Filter depth maps.");
 
     {
-        fuseCut::Fuser fs(&mp);
-        fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
+        fuseCut::Fuser fs(mp);
+        fs.filterGroups(cams, pixToleranceFactor, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
-    if(computeNormalMaps)
-      depthMap::computeNormalMaps(&mp, cams);
+    if (computeNormalMaps)
+    {
+        int nbGPUs = 0;
+        depthMap::computeOnMultiGPUs(mp, cams, depthMap::computeNormalMaps, nbGPUs);
+    }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
