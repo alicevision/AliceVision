@@ -201,11 +201,11 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
     {
         const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam_cache_idx, depthTex, pix, yFrom); // (smoothStep, energy)
         float stepToSmoothDepth = depthSmoothStepEnergy.x;
-        stepToSmoothDepth = copysign(fminf(fabsf(stepToSmoothDepth), roughPixSize / 10.0f), stepToSmoothDepth);
+        stepToSmoothDepth = copysignf(fminf(fabsf(stepToSmoothDepth), roughPixSize / 10.0f), stepToSmoothDepth);
         const float depthEnergy = depthSmoothStepEnergy.y; // max angle with neighbors
 
         float stepToFineDM = fineDepth - depthOpt; // distance to refined/noisy input depth map
-        stepToFineDM = copysign(fminf(fabsf(stepToFineDM), roughPixSize / 10.0f), stepToFineDM);
+        stepToFineDM = copysignf(fminf(fabsf(stepToFineDM), roughPixSize / 10.0f), stepToFineDM);
 
         const float stepToRoughDM = roughDepth - depthOpt; // distance to smooth/robust input depth map
 
