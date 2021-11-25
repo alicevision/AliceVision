@@ -248,7 +248,7 @@ CMake Options
 * `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
   By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
-* `ALICEVISION_BUILD_SHARED` (default `OFF`)
+* `BUILD_SHARED_LIBS` (default `ON`)
   Build AliceVision as shared libs (instead of static libs)
 
 * `ALICEVISION_BUILD_TESTS` (default `OFF`)
