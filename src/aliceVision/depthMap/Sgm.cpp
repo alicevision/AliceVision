@@ -194,7 +194,7 @@ void Sgm::checkStartingAndStoppingDepth() const
         // Usually stoppingDepth should be equal to the total number of depths.
         // But due to sgmMaxDepths and sgmMaxDepthPerTc, we can have more depths
         // than we finally use in all TC cameras.
-        assert(_rcDepths.size() >= stoppingDepth);
+        assert(_depths.size() >= stoppingDepth);
     }
 }
 
