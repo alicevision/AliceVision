@@ -707,7 +707,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     nbOutliers = removeOutliers();
 
     std::set<IndexT> removedViewsIdIteration;
-    eraseUnstablePosesAndObservations(this->_sfmData, _params.minPointsPerPose, _params.minTrackLength, &removedViewsIdIteration);
+//    eraseUnstablePosesAndObservations(this->_sfmData, _params.minPointsPerPose, _params.minTrackLength, &removedViewsIdIteration);
 
     for(IndexT v : removedViewsIdIteration)
       newReconstructedViews.erase(v);
