@@ -1216,7 +1216,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   // From the k view pairs with the highest number of verified matches
   // select a pair that have the largest baseline (mean angle between its bearing vectors).
   
-  const unsigned iMin_inliers_count = 100;
+  const unsigned iMin_inliers_count = 5;
   // Use a min angle limit to ensure quality of the geometric evaluation.
   const float fRequired_min_angle = _params.minAngleInitialPair;
   // Use a max angle limit to ensure good matching quality.

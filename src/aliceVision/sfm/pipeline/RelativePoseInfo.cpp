@@ -104,9 +104,12 @@ bool robustRelativePose(const Mat3& K1, const Mat3& K2,
   relativePose_info.essential_matrix = model.getMatrix();
   relativePose_info.found_residual_precision = acRansacOut.first;
 
-  if(relativePose_info.vec_inliers.size() < kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF)
+//  const auto thresh = kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF;
+  const auto thresh = 8;// kernel.getMinimumNbRequiredSamples();
+  if(relativePose_info.vec_inliers.size() < thresh)
   {
-    ALICEVISION_LOG_INFO("robustRelativePose: no sufficient coverage (the model does not support enough samples): " << relativePose_info.vec_inliers.size());
+    ALICEVISION_LOG_INFO("robustRelativePose: no sufficient coverage (the model does not support enough samples): " << relativePose_info.vec_inliers.size()
+                           << " required for F: " << thresh);
     return false; // no sufficient coverage (the model does not support enough samples)
   }
 
