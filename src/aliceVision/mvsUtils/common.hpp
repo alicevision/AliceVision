@@ -54,7 +54,6 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
                                                                   StaticVector<StaticVector<int>*>* ptsCams);
 StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams& mp,
                                                                     StaticVector<StaticVector<Pixel>*>* ptsCams);
-int computeStep(const MultiViewParams& mp, int scale, int maxWidth, int maxHeight);
 
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
 std::vector<int> createRandomArrayOfIntegers(const int size, const unsigned int seed = 0);

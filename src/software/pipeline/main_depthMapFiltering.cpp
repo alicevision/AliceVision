@@ -15,7 +15,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
-#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/depthMap.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 
 #include <boost/program_options.hpp>

@@ -1,24 +1,23 @@
 # Headers
 set(depthMap_files_headers
   computeOnMultiGPUs.hpp
+  depthMap.hpp
   DepthSimMap.hpp
-  RcTc.hpp
-  RefineRc.hpp
-  SemiGlobalMatchingParams.hpp
-  SemiGlobalMatchingRc.hpp
-  SemiGlobalMatchingRcTc.hpp
+  Refine.hpp
+  RefineParams.hpp
+  Sgm.hpp
+  SgmParams.hpp
   volumeIO.hpp
 )
 
 # Sources
 set(depthMap_files_sources
   computeOnMultiGPUs.cpp
+  depthMap.cpp
   DepthSimMap.cpp
-  RcTc.cpp
-  RefineRc.cpp
-  SemiGlobalMatchingParams.cpp
-  SemiGlobalMatchingRc.cpp
-  SemiGlobalMatchingRcTc.cpp
+  Refine.cpp
+  Sgm.cpp
+  SgmParams.cpp
   volumeIO.cpp
 )
 
@@ -54,6 +53,10 @@ set_source_files_properties(${depthMap_cuda_files_headers}
 # Cuda Sources
 set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
+  cuda/FrameCacheMemory.cpp
+  cuda/FrameCacheMemory.hpp
+  cuda/LRUCache.hpp
+  cuda/OneTC.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
   cuda/planeSweeping/plane_sweeping_cuda.hpp
