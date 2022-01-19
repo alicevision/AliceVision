@@ -74,11 +74,11 @@ void photometricStero(const std::string& folderPath, const bool isPerspective, a
         Eigen::MatrixXf IPixel(imageList.size(),3);
         IPixel = IPixel_transposed.transpose();
 
-        // M = pinv(S)*I :
-        Eigen::MatrixXf M = pseudoInverse*IPixel;
+        // M_0 = pinv(S)*I :
+        Eigen::MatrixXf M_0 = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(IPixel);
 
         // SVD(M_0) :
-        Eigen::JacobiSVD<Eigen::MatrixXf> svd(M, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::JacobiSVD<Eigen::MatrixXf> svd(M_0, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
         Eigen::MatrixXf U = svd.matrixU();
         Eigen::MatrixXf V = svd.matrixV();
@@ -106,7 +106,7 @@ void photometricStero(const std::string& folderPath, const bool isPerspective, a
 
 }
 
-void loadPSData(const std::string& folderPath, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat, Eigen::MatrixXf& convertionMatrix, aliceVision::image::Image<float>& mask)
+void loadPSData(const std::string& folderPath, const size_t& HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat, Eigen::MatrixXf& convertionMatrix, aliceVision::image::Image<float>& mask)
 {
     std::string intFileName;
     std::string pathToCM;
@@ -114,19 +114,25 @@ void loadPSData(const std::string& folderPath, std::vector<std::array<float, 3>>
     std::string maskName;
 
     // Light instensities :
-    intFileName = folderPath + "light_intensities.txt";
+    intFileName = folderPath + "/light_intensities.txt";
     loadLightIntensities(intFileName, intList);
 
     // Convertion matrix :
-    pathToCM = folderPath + "convertionMatrix.txt";
+    pathToCM = folderPath + "/convertionMatrix.txt";
     readMatrix(pathToCM, convertionMatrix);
-    
+
     // Light directions :
-    dirFileName = folderPath + "light_directions.txt";
-    loadLightDirections(dirFileName, convertionMatrix, lightMat);
+    if(HS_order == 0)
+    {
+        dirFileName = folderPath + "/light_directions.txt";
+        loadLightDirections(dirFileName, convertionMatrix, lightMat);
+    } else if (HS_order == 2) {
+        dirFileName = folderPath + "/light_directions_HS.txt";
+        loadLightHS(dirFileName, lightMat);
+    }
     
     // Mask :
-    maskName = folderPath + "mask.png";
+    maskName = folderPath + "/mask.png";
     loadMask(maskName, mask);
 }
 
