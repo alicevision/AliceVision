@@ -2,7 +2,7 @@
 
 #include <aliceVision/image/all.hpp>
 #include "cachedImage.hpp"
-#include <Imath/half.h>
+#include <OpenEXR/half.h>
 
 namespace aliceVision
 {

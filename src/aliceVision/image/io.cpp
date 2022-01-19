@@ -13,7 +13,7 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <Imath/half.h>
+#include <OpenEXR/half.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
