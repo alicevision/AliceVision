@@ -31,11 +31,13 @@ alicevision_add_library(aliceVision_image
   SOURCES ${image_files_headers} ${image_files_sources}
   PUBLIC_LINKS
     aliceVision_numeric
-    OpenImageIO::OpenImageIO
+    ${OPENIMAGEIO_LIBRARIES}
   PRIVATE_LINKS
     aliceVision_system
     ${OPENEXR_LIBRARIES}
     Boost::filesystem
+  PUBLIC_INCLUDE_DIRS
+    ${OPENIMAGEIO_INCLUDE_DIRS}
   PRIVATE_INCLUDE_DIRS
     ${OPENEXR_INCLUDE_DIR}
 )

@@ -218,7 +218,7 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
         aliceVision_keyframe
-        OpenImageIO::OpenImageIO
+        ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
         Boost::filesystem
 )
@@ -242,7 +242,7 @@ alicevision_add_software(aliceVision_utils_split360Images
         aliceVision_numeric
         aliceVision_image
         aliceVision_panorama
-        OpenImageIO::OpenImageIO
+        ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
         Boost::filesystem
 )
@@ -255,7 +255,7 @@ alicevision_add_software(aliceVision_utils_fisheyeProjection
   LINKS aliceVision_system
         aliceVision_numeric
         aliceVision_image
-        OpenImageIO::OpenImageIO
+        ${OPENIMAGEIO_LIBRARIES}
         ${Boost_LIBRARIES}
 )
 

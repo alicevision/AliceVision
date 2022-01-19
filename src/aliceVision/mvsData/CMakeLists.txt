@@ -43,7 +43,8 @@ alicevision_add_library(aliceVision_mvsData
     ZLIB::ZLIB
     Boost::filesystem
     Boost::boost
-    OpenImageIO::OpenImageIO
+    ${OPENIMAGEIO_LIBRARIES}
   PUBLIC_INCLUDE_DIRS
     ${ZLIB_INCLUDE_DIR}
+    ${OPENIMAGEIO_INCLUDE_DIRS}
 )
