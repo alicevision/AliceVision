@@ -12,6 +12,8 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
 
 void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat);
 
+void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
+
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask);
 
 void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& indexes);

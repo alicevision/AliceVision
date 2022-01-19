@@ -54,17 +54,56 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
             stream.str(line);
 
             stream >> x >> y >> z;
-                if(lineNumber < lightMat.rows())
-                {
-                  lightMat(lineNumber, 0) = convertionMatrix(0,0)*x + convertionMatrix(0,1)*y + convertionMatrix(0,2)*z;
-                  lightMat(lineNumber, 1) = convertionMatrix(1,0)*x + convertionMatrix(1,1)*y + convertionMatrix(1,2)*z;
-                  lightMat(lineNumber, 2) = convertionMatrix(2,0)*x + convertionMatrix(2,1)*y + convertionMatrix(2,2)*z;
-                  ++lineNumber;
-                }
-            //}
+
+            if(lineNumber < lightMat.rows())
+            {
+              lightMat(lineNumber, 0) = convertionMatrix(0,0)*x + convertionMatrix(0,1)*y + convertionMatrix(0,2)*z;
+              lightMat(lineNumber, 1) = convertionMatrix(1,0)*x + convertionMatrix(1,1)*y + convertionMatrix(1,2)*z;
+              lightMat(lineNumber, 2) = convertionMatrix(2,0)*x + convertionMatrix(2,1)*y + convertionMatrix(2,2)*z;
+              ++lineNumber;
+            }
         }
         dirFile.close();
     }
+}
+
+void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
+{
+    std::stringstream stream;
+    std::string line;
+    float x, y, z, ambiant, nxny, nxnz, nynz, nx2ny2, nz2;
+
+    std::fstream dirFile;
+    dirFile.open(dirFileName, std::ios::in);
+
+    if (dirFile.is_open())
+    {
+        int lineNumber = 0;
+
+        while(!dirFile.eof())
+        {
+            getline(dirFile,line);
+            stream.clear();
+            stream.str(line);
+
+            stream >> x >> y >> z >> ambiant >> nxny >> nxnz >> nynz >> nx2ny2 >> nz2;
+            if(lineNumber < lightMat.rows())
+            {
+                lightMat(lineNumber, 0) = x;
+                lightMat(lineNumber, 1) = -y;
+                lightMat(lineNumber, 2) = -z;
+                lightMat(lineNumber, 3) = ambiant;
+                lightMat(lineNumber, 4) = nxny;
+                lightMat(lineNumber, 5) = nxnz;
+                lightMat(lineNumber, 6) = nynz;
+                lightMat(lineNumber, 7) = nx2ny2;
+                lightMat(lineNumber, 8) = nz2;
+                ++lineNumber;
+            }
+        }
+        dirFile.close();
+    }
+
 }
 
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask)
