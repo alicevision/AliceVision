@@ -8,7 +8,7 @@
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/DeviceCameraParams.hpp>
 
 namespace aliceVision {

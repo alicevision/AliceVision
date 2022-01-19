@@ -52,7 +52,7 @@ set_source_files_properties(${depthMap_cuda_files_headers}
 
 # Cuda Sources
 set(depthMap_cuda_files_sources
-  cuda/commonStructures.hpp
+  cuda/memory.hpp
   cuda/utils.hpp
   cuda/utils.cpp
   cuda/DeviceCache.cpp

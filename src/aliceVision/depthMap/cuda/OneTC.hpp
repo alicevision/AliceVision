@@ -6,8 +6,6 @@
 
 #pragma once
 
-// #include <aliceVision/depthMap/cuda/commonStructures.hpp>
-
 namespace aliceVision {
 namespace depthMap {
 
