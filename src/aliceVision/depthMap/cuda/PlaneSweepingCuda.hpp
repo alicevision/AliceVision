@@ -20,7 +20,6 @@
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
-#include <aliceVision/depthMap/cuda/FrameCacheMemory.hpp>
 #include <aliceVision/depthMap/cuda/OneTC.hpp>
 #include <aliceVision/depthMap/cuda/LRUCache.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
@@ -34,64 +33,21 @@ namespace depthMap {
     using TSim = unsigned char;
 #endif
 
-/*********************************************************************************
- * CamSelection
- * Support class for operating an LRU cache of the currently selection cameras
- *********************************************************************************/
+using TSimRefine = unsigned char;
 
-struct CamSelection : public std::pair<int,int>
-{
-    CamSelection( )
-        : std::pair<int,int>( 0, 0 )
-    { }
-
-    CamSelection( int i )
-        : std::pair<int,int>( i, i )
-    { }
-
-    CamSelection( int i, int j )
-        : std::pair<int,int>( i, j )
-    { }
-
-    CamSelection& operator=( int i )
-    {
-        this->first = this->second = i;
-        return *this;
-    }
-};
-
-bool operator==( const CamSelection& l, const CamSelection& r );
-bool operator<( const CamSelection& l, const CamSelection& r );
-
-/*********************************************************************************
- * PlaneSweepingCuda
- * Class for performing plane sweeping for some images on a selected GPU.
- * There may be several instances of these class that are operating on the same
- * GPU. It must therefore switch GPUs by ID.
- *********************************************************************************/
+/**
+ * @class PlaneSweepingCuda
+ * @brief Performing plane sweeping for some images.
+ */
 class PlaneSweepingCuda
 {
-private:
-    std::unique_ptr<FrameCacheMemory> _hidden;
-
 public:
-   
-    CameraStructBase*          _camsBasesHst;
-    std::vector<CameraStruct>  _cams;
-    LRUCache<int>              _camsHost;
-    LRUCache<CamSelection>     _cameraParamCache;
+
     mvsUtils::MultiViewParams& _mp;
-    const int _scales;
-    const int _CUDADeviceNo = 0;
-    int _nImgsInGPUAtTime = 2;
     mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
-    inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
-
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
+    PlaneSweepingCuda(mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp);
     ~PlaneSweepingCuda();
-
-    int addCam( int rc, int scale, cudaStream_t stream = 0 );
 
     void computeDepthSimMapVolume(int rc,
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
@@ -114,8 +70,6 @@ public:
         const CudaSize<3>& volDim,
         const StaticVector<float>& rcDepths, 
         const SgmParams& sgmParams);
-
-    Point3d getDeviceMemoryInfo();
 
     bool refineRcTcDepthMap(int rc, int tc, 
                             StaticVector<float>& inout_depthMap, 
@@ -148,21 +102,7 @@ public:
                            float igammaC, float igammaP, int wsh);
 
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
-
-private:
-    /* Support function for addCam that loads cameraStructs into the GPU constant
-     * memory if necessary.
-     * Returns the index in the constant cache. */
-    CamCacheIdx loadCameraParam( int global_cam_id, int scale, cudaStream_t stream );
-
-    /* Compute the number of images that can be stored in the current GPU. Called only by
-     * the constructor. */
-    static int imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int scales );
-
 };
-
-int listCUDADevices(bool verbose);
-
 
 } // namespace depthMap
 } // namespace aliceVision

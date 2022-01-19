@@ -24,12 +24,12 @@ set(depthMap_files_sources
 # Cuda Headers
 set(depthMap_cuda_files_headers
   # Headers
+  cuda/deviceCommon/device_color.hpp
   cuda/deviceCommon/device_patch_es_glob.hpp
   cuda/planeSweeping/host_utils.h
   cuda/planeSweeping/plane_sweeping_cuda.hpp
   # deviceCommon
   cuda/deviceCommon/device_color.cu
-  cuda/deviceCommon/device_global.cu
   cuda/deviceCommon/device_matrix.cu
   cuda/deviceCommon/device_matrix.cuh
   cuda/deviceCommon/device_patch_es.cu
@@ -53,8 +53,13 @@ set_source_files_properties(${depthMap_cuda_files_headers}
 # Cuda Sources
 set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
-  cuda/FrameCacheMemory.cpp
-  cuda/FrameCacheMemory.hpp
+  cuda/utils.hpp
+  cuda/utils.cpp
+  cuda/DeviceCache.cpp
+  cuda/DeviceCache.hpp
+  cuda/DeviceCamera.cpp
+  cuda/DeviceCamera.hpp
+  cuda/LRUCameraCache.hpp
   cuda/LRUCache.hpp
   cuda/OneTC.hpp
   cuda/PlaneSweepingCuda.cpp
@@ -65,6 +70,8 @@ set(depthMap_cuda_files_sources
   cuda/normalmap/normal_map.cu
   cuda/images/gauss_filter.hpp
   cuda/images/gauss_filter.cu
+  cuda/deviceCommon/DeviceCameraParams.hpp
+  cuda/deviceCommon/DeviceCameraParams.cu
   ${depthMap_cuda_files_headers}
 )
 

@@ -7,8 +7,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
-                                                         int tc_cam_cache_idx,
+__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rcDeviceCamId,
+                                                         int tcDeviceCamId,
                                                          cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                          float* osimMap, int osimMap_p,
                                                          float* odptMap, int odptMap_p,
@@ -42,17 +42,17 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
     }
 
     {
-        float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, odpt);
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, p, tcStep, moveByTcOrRc);
+        float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, odpt);
+        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, p, tcStep, moveByTcOrRc);
 
-        odpt = size(p - camsBasesDev[rc_cam_cache_idx].C);
+        odpt = size(p - constantCameraParametersArray_d[rcDeviceCamId].C);
 
         Patch ptch;
         ptch.p = p;
-        ptch.d = computePixSize(rc_cam_cache_idx, p);
+        ptch.d = computePixSize(rcDeviceCamId, p);
         // TODO: we could compute the orientation of the path from the input depth map instead of relying on the cameras orientations
-        computeRotCSEpip(rc_cam_cache_idx, tc_cam_cache_idx, ptch);
-        osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
+        osim = compNCCby3DptsYK(rc_tex, tc_tex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
 
     if(tcStep == 0.0f)
@@ -73,8 +73,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
     }
 }
 
-__global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
-                                                   int tc_cam_cache_idx,
+__global__ void refine_compYKNCCSimMapPatch_kernel(int rcDeviceCamId,
+                                                   int tcDeviceCamId,
                                                    cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                    float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
                                                    int partWidth, int height, int wsh, float gammaC,
@@ -94,15 +94,16 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
 
     if(depth > 0.0f)
     {
-        float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, depth);
+        float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, depth);
         // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, p, tcStep, moveByTcOrRc);
 
         Patch ptch;
         ptch.p = p;
-        ptch.d = computePixSize(rc_cam_cache_idx, p);
-        computeRotCSEpip(rc_cam_cache_idx, tc_cam_cache_idx, ptch);
-        osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        ptch.d = computePixSize(rcDeviceCamId, p);
+        computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
+        osim = compNCCby3DptsYK(rc_tex, tc_tex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth,
+                                tcHeight, gammaC, gammaP);
     }
     *get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y) = osim;
 }
@@ -133,8 +134,8 @@ __global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int 
     }
 }
 
-__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_cache_idx,
-                                                                     int tc_cam_cache_idx,
+__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rcDeviceCamId,
+                                                                     int tcDeviceCamId,
                                                                      float* osimMap, int osimMap_p, float* iodepthMap,
                                                                      int iodepthMap_p, float3* lastThreeSimsMap,
                                                                      int lastThreeSimsMap_p, int partWidth, int height,
@@ -155,16 +156,16 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_
 
     if(outDepth > 0.0f)
     {
-        float3 pMid = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, midDepth);
+        float3 pMid = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, midDepth);
         float3 pm1 = pMid;
         float3 pp1 = pMid;
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pm1, -1.0f, moveByTcOrRc);
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pp1, +1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, pm1, -1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, pp1, +1.0f, moveByTcOrRc);
 
         float3 depths;
-        depths.x = size(pm1 - camsBasesDev[rc_cam_cache_idx].C);
+        depths.x = size(pm1 - constantCameraParametersArray_d[rcDeviceCamId].C);
         depths.y = midDepth;
-        depths.z = size(pp1 - camsBasesDev[rc_cam_cache_idx].C);
+        depths.z = size(pp1 - constantCameraParametersArray_d[rcDeviceCamId].C);
 
         outDepth = refineDepthSubPixel(depths, sims);
     }
