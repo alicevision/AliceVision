@@ -21,37 +21,21 @@
 namespace aliceVision {
 namespace depthMap {
 
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                    \
-    if(cudaError_t err = cudaGetLastError())                                  \
-    {                                                                         \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-        std::stringstream s;                                                  \
-        s << "\n  CUDA Error: " << cudaGetErrorString(err)                    \
-          << "\n  file:       " << __FILE__                                   \
-          << "\n  function:   " << __FUNCTION__                               \
-          << "\n  line:       " << __LINE__ << "\n";                          \
-        throw std::runtime_error(s.str());                                    \
-    }
-
 __device__ static inline
-float3 get3DPointForPixelAndDepthFromRC(const CameraStructBase& rc_cam, const float2& pix, float depth)
+float3 get3DPointForPixelAndDepthFromRC(const DeviceCameraParams& rcDeviceCamParams, const float2& pix, float depth)
 {
-    float3 rpv = M3x3mulV2(rc_cam.iP, pix);
+    float3 rpv = M3x3mulV2(rcDeviceCamParams.iP, pix);
     normalize(rpv);
-    return rc_cam.C + rpv * depth;
+    return rcDeviceCamParams.C + rpv * depth;
 }
 
 __device__ static inline
-float3 get3DPointForPixelAndDepthFromRC(const CameraStructBase& rc_cam, const int2& pixi, float depth)
+float3 get3DPointForPixelAndDepthFromRC(const DeviceCameraParams& rcDeviceCamParams, const int2& pixi, float depth)
 {
     float2 pix;
-    pix.x = (float)pixi.x;
-    pix.y = (float)pixi.y;
-    return get3DPointForPixelAndDepthFromRC(rc_cam, pix, depth);
+    pix.x = float(pixi.x);
+    pix.y = float(pixi.y);
+    return get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, pix, depth);
 }
 
 __device__ static inline
@@ -62,7 +46,7 @@ float orientedPointPlaneDistanceNormalizedNormal(const float3& point, const floa
 }
 
 __global__ void computeNormalMap_kernel(
-    const CameraStructBase& rc_cam,
+    const DeviceCameraParams& rcDeviceCamParams,
     float* depthMap, int depthMap_p, //cudaTextureObject_t depthsTex,
     float3* nmap, int nmap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP)
@@ -81,11 +65,11 @@ __global__ void computeNormalMap_kernel(
   }
 
   int2 pix1 = make_int2(x, y);
-  float3 p = get3DPointForPixelAndDepthFromRC(rc_cam, pix1, depth);
+  float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, pix1, depth);
   float pixSize = 0.0f;
   {
     int2 pix2 = make_int2(x + 1, y);
-    float3 p2 = get3DPointForPixelAndDepthFromRC(rc_cam, pix2, depth);
+    float3 p2 = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, pix2, depth);
     pixSize = size(p - p2);
   }
 
@@ -100,7 +84,7 @@ __global__ void computeNormalMap_kernel(
       {
         float w = 1.0f;
         float2 pixn = make_float2(x + xp, y + yp);
-        float3 pn = get3DPointForPixelAndDepthFromRC(rc_cam, pixn, depthn);
+        float3 pn = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, pixn, depthn);
         s3d.update(pn, w);
       }
     }
@@ -114,7 +98,7 @@ __global__ void computeNormalMap_kernel(
     return;
   }
 
-  float3 nc = rc_cam.C - p;
+  float3 nc = rcDeviceCamParams.C - p;
   normalize(nc);
   if (orientedPointPlaneDistanceNormalizedNormal(pp + nn, pp, nc) < 0.0f)
   {
@@ -128,28 +112,22 @@ __global__ void computeNormalMap_kernel(
 void ps_computeNormalMap(
     NormalMapping* mapping,
     int width, int height,
-    int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
-    float gammaC, float gammaP)
+    int wsh, float gammaC, float gammaP)
 {
-  clock_t tall = tic();
-
-  const CameraStructBase* camera = mapping->camsBasesDev;
+  const DeviceCameraParams* cameraParameters_d = mapping->cameraParameters_d;
 
   CudaDeviceMemoryPitched<float, 2>  depthMap_dmp(CudaSize<2>( width, height ));
   depthMap_dmp.copyFrom( mapping->getDepthMapHst(), width, height );
 
   CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(CudaSize<2>( width, height ));
 
-  int block_size = 8;
-  dim3 block(block_size, block_size, 1);
-  dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
-
-  if (verbose)
-    printf("computeNormalMap_kernel\n");
+  const int blockSize = 8;
+  const dim3 block(blockSize, blockSize, 1);
+  const dim3 grid(divUp(width, blockSize), divUp(height, blockSize), 1);
 
   // compute normal map
   computeNormalMap_kernel<<<grid, block>>>(
-    *camera,
+    *cameraParameters_d,
     depthMap_dmp.getBuffer(),
     depthMap_dmp.getPitch(),
     normalMap_dmp.getBuffer(),
@@ -160,14 +138,11 @@ void ps_computeNormalMap(
   // cudaThreadSynchronize();
   // CHECK_CUDA_ERROR();
 
-  if (verbose)
-    printf("copy normal map to host\n");
+
+  //printf("copy normal map to host\n");
 
   normalMap_dmp.copyTo( mapping->getNormalMapHst(), width, height );
   CHECK_CUDA_ERROR();
-
-  if (verbose)
-    printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
 NormalMapping::NormalMapping()
@@ -177,17 +152,17 @@ NormalMapping::NormalMapping()
 {
     cudaError_t err;
 
-    err = cudaMallocHost( &camsBasesHst, sizeof(CameraStructBase) );
+    err = cudaMallocHost(&cameraParameters_h, sizeof(DeviceCameraParams) );
     THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on host in normal mapping" );
 
-    err = cudaMalloc(     &camsBasesDev, sizeof(CameraStructBase) );
+    err = cudaMalloc(&cameraParameters_d, sizeof(DeviceCameraParams));
     THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on device in normal mapping" );
 }
 
 NormalMapping::~NormalMapping()
 {
-    cudaFree(     camsBasesDev );
-    cudaFreeHost( camsBasesHst );
+    cudaFree(cameraParameters_d);
+    cudaFreeHost(cameraParameters_h);
 
     if( _depthMapHst  ) cudaFreeHost( _depthMapHst );
     if( _normalMapHst ) cudaFreeHost( _normalMapHst );
@@ -196,10 +171,7 @@ NormalMapping::~NormalMapping()
 void NormalMapping::loadCameraParameters()
 {
     cudaError_t err;
-    err = cudaMemcpy( camsBasesDev,
-                      camsBasesHst,
-                      sizeof(CameraStructBase),
-                      cudaMemcpyHostToDevice );
+    err = cudaMemcpy(cameraParameters_d, cameraParameters_h, sizeof(DeviceCameraParams), cudaMemcpyHostToDevice);
     THROW_ON_CUDA_ERROR( err, "Failed to copy camera parameters from host to device in normal mapping" );
 }
 

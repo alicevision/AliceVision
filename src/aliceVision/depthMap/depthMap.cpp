@@ -14,6 +14,8 @@
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/Sgm.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/cuda/utils.hpp>
+#include <aliceVision/depthMap/cuda/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
 namespace aliceVision {
@@ -56,8 +58,12 @@ void getRefineParams(const mvsUtils::MultiViewParams& mp, RefineParams& refinePa
     refineParams.exportIntermediateResults = mp.userParams.get<bool>("refine.exportIntermediateResults", refineParams.exportIntermediateResults);
 }
 
-void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
+void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
 {
+    // set the device to use for GPU executions
+    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
+    setCudaDeviceId(cudaDeviceId);
+
     SgmParams sgmParams;
     RefineParams refineParams;
 
@@ -72,7 +78,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
 
     // load stuff on GPU memory and creates multi-level images and computes gradients
-    PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, sgmParams.scale);
+    PlaneSweepingCuda cps(ic, mp);
 
     for(const int rc : cams)
     {
@@ -87,7 +93,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
         }
 
         sgm.sgmRc();
-
+        
         // rc has no tcam
         if(refine.getTCams().empty() || sgm.getDepths().empty())
         {
@@ -101,18 +107,26 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
         // write results
         refine.getDepthSimMap().save();
     }
+
+    // DeviceCache countains CUDA objects 
+    // this objects should be destroyed before the end of the program (i.e. the end of the CUDA context)
+    DeviceCache::getInstance().clear();
 }
 
-void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
+void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
 {
     using namespace imageIO;
+
+    // set the device to use for GPU executions
+    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
+    setCudaDeviceId(cudaDeviceId);
     
     const float gammaC = 1.0f;
     const float gammaP = 1.0f;
     const int wsh = 3;
 
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, EImageColorSpace::LINEAR);
-    PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, 1);
+    PlaneSweepingCuda cps(ic, mp);
 
     NormalMapping* mapping = cps.createNormalMapping();
 

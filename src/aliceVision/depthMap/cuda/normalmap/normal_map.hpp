@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/deviceCommon/DeviceCameraParams.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -25,8 +26,8 @@ public:
     float3*      getNormalMapHst();       // an output
 
 public:
-    CameraStructBase*   camsBasesHst;
-    CameraStructBase*   camsBasesDev;
+    DeviceCameraParams* cameraParameters_h;
+    DeviceCameraParams* cameraParameters_d;
 
 private:
     int     _allocated_floats;
@@ -37,8 +38,7 @@ private:
 void ps_computeNormalMap(
     NormalMapping* mapping,
     int width, int height,
-    int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
-    float gammaC, float gammaP);
+    int wsh, float gammaC, float gammaP);
 
 } // namespace depthMap
 } // namespace aliceVision

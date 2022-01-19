@@ -16,6 +16,24 @@
 #include <vector>
 #include <cstring>
 
+// Macro for checking cuda errors
+#define CHECK_CUDA_ERROR()                                                    \
+    if(cudaError_t err = cudaGetLastError())                                  \
+    {                                                                         \
+        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
+        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
+        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
+        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
+        std::stringstream s;                                                  \
+        s << "\n  CUDA Error: " << cudaGetErrorString(err)                    \
+          << "\n  file:       " << __FILE__                                   \
+          << "\n  function:   " << __FUNCTION__                               \
+          << "\n  line:       " << __LINE__ << "\n";                          \
+        throw std::runtime_error(s.str());                                    \
+    }
+
+#define ALICEVISION_CU_PRINT_DEBUG(a) std::cerr << a << std::endl;
+#define ALICEVISION_CU_PRINT_ERROR(a) std::cerr << a << std::endl;
 
 #define THROW_ON_CUDA_ERROR(rcode, message) \
   if (rcode != cudaSuccess) {  \
@@ -23,13 +41,8 @@
     throw std::runtime_error(s.str());  \
   }
 
-
 namespace aliceVision {
 namespace depthMap {
-
-#define MAX_CONSTANT_CAMERA_PARAM_SETS   10
-
-
 
 /*********************************************************************************
  * forward declarations
@@ -1250,20 +1263,6 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
     THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
 }
 
-struct CameraStructBase
-{
-    float  P[12];
-    float  iP[9];
-    float  R[9];
-    float  iR[9];
-    float  K[9];
-    float  iK[9];
-    float3 C;
-    float3 XVect;
-    float3 YVect;
-    float3 ZVect;
-};
-
 // #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 #define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
 
@@ -1284,27 +1283,9 @@ struct TexturedArray
     cudaTextureObject_t tex;
 };
 
-struct CamCacheIdx
-{
-    int i = 0;
-
-    CamCacheIdx() = default;
-    explicit CamCacheIdx( int val ) : i(val) { }
-};
-
-typedef std::vector<TexturedArray> Pyramid;
-
-struct CameraStruct
-{
-    CamCacheIdx  param_dev;
-    Pyramid*     pyramid = nullptr;
-    int          camId = -1;
-    cudaStream_t stream = 0; // allow async work on cameras used in parallel
-};
-
-/**
-* @notes: use normalized coordinates
-*/
+/*
+ * @notes: use normalized coordinates
+ */
 template <class Type>
 struct CudaTexture
 {

@@ -10,6 +10,7 @@
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/OneTC.hpp>
+#include <aliceVision/depthMap/cuda/DeviceCamera.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -21,12 +22,6 @@ namespace depthMap {
     using TSim = unsigned char;
     using TSimAcc = unsigned int; // TSimAcc is the similarity accumulation type
 #endif
-
-
-void ps_initCameraMatrix( CameraStructBase& base );
-
-void pr_printfDeviceMemoryInfo();
-
 
 namespace ps
 {
@@ -47,9 +42,11 @@ public:
     void compute(
           CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
           CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-          const CameraStruct& rcam, int rcWidth, int rcHeight,
-          const CameraStruct& tcams, int tcWidth, int tcHeight,
-          const OneTC&  cell,
+          const DeviceCamera& rcDeviceCamera, 
+          const DeviceCamera& tcDeviceCamera, 
+          int rcWidth, int rcHeight,
+          int tcWidth, int tcHeight,
+          const OneTC& cell,
           const SgmParams& sgmParams,
           int streamIndex );
 
@@ -58,7 +55,7 @@ public:
     inline int dimZ()      const { return _dimZ; }
     inline int stepXY()    const { return _stepXY; }
     inline int scale()     const { return _scale; }
-    inline int prevScale() const { return _scale-1; }
+    //inline int prevScale() const { return _scale-1; }
 
     cudaStream_t SweepStream( int offset );
     void WaitSweepStream( int offset );
@@ -82,7 +79,7 @@ private:
     static bool _configured;
     static dim3 _block;
 
-    static void configureGrid( );
+    static void configureGrid();
 };
 }; // namespace ps
 
@@ -103,32 +100,14 @@ void ps_SGMretrieveBestDepth(int rcamCacheId,
 
 int ps_listCUDADevices(bool verbose);
 
-int ps_deviceAllocate(
-    Pyramid& pyramid,
-    int width,
-    int height,
-    int scales );
-
-void ps_deviceDeallocate(
-    Pyramid& pyramid,
-    int scales );
-
-void ps_testCUDAdeviceNo(int CUDAdeviceNo);
-
-void ps_device_fillPyramidFromHostFrame(
-    Pyramid& pyramid,
-    CudaHostMemoryHeap<CudaRGBA, 2>* host_frame,
-    int scales, int w, int h,
-    cudaStream_t stream );
-
-void ps_refineRcDepthMap(const CameraStruct& rcam, 
-                         const CameraStruct& tcam, 
+void ps_refineRcDepthMap(const DeviceCamera& rcDeviceCamera, 
+                         const DeviceCamera& tcDeviceCamera,
                          float* inout_depthMap_hmh,
                          float* out_simMap_hmh, 
                          int rcWidth, int rcHeight, 
                          int tcWidth, int tcHeight,
                          const RefineParams& refineParams, 
-                         int xFrom, int wPart, int CUDAdeviceNo);
+                         int xFrom, int wPart);
 
 void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
                                             CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
@@ -136,26 +115,22 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
                                             int ndepthSimMaps, 
                                             const RefineParams& refineParams);
 
-void ps_optimizeDepthSimMapGradientDescent(const CameraStruct& rcam,
+void ps_optimizeDepthSimMapGradientDescent(const DeviceCamera& rcDeviceCamera, 
                                            CudaHostMemoryHeap<float2, 2>& out_optimizedDepthSimMap_hmh,
                                            const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
                                            const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
                                            const CudaSize<2>& depthSimMapPartDim, 
                                            const RefineParams& refineParams,
-                                           int CUDAdeviceNo, int nbCamsAllocated, int yFrom);
+                                           int yFrom);
 
 void ps_getSilhoueteMap(
     CudaHostMemoryHeap<bool, 2>* omap_hmh,
     int width, int height,
     int scale,
     int step,
-    CameraStruct& cam,
+    const DeviceCamera& rcDeviceCamera, 
     uchar4 maskColorRgb,
     bool verbose);
-
-void ps_loadCameraStructs( const CameraStructBase* hst,
-                           const CamCacheIdx&      offset,
-                           cudaStream_t            stream );
 
 } // namespace depthMap
 } // namespace aliceVision

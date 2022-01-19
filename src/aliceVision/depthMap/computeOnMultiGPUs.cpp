@@ -5,15 +5,16 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "computeOnMultiGPUs.hpp"
-#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp> // useful for listCUDADevices
+
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/depthMap/cuda/utils.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
 void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, GPUJob gpujob, int nbGPUsToUse)
 {
-    const int nbGPUDevices = listCUDADevices(true);
+    const int nbGPUDevices = listCudaDevices();
     const int nbCPUThreads = omp_get_num_procs();
 
     ALICEVISION_LOG_INFO("Number of GPU devices: " << nbGPUDevices << ", number of CPU threads: " << nbCPUThreads);
@@ -39,14 +40,14 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
 #pragma omp parallel
         {
             const int cpuThreadId = omp_get_thread_num();
-            const int cudaDeviceIndex = cpuThreadId % nbThreads;
+            const int cudaDeviceId = cpuThreadId % nbThreads;
 
-            ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " (of " << nbThreads << ") uses CUDA device: " << cudaDeviceIndex);
+            ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " (of " << nbThreads << ") uses CUDA device: " << cudaDeviceId);
 
             const int nbCamsPerThread = (cams.size() / nbThreads);
-            const int rcFrom = cudaDeviceIndex * nbCamsPerThread;
-            int rcTo = (cudaDeviceIndex + 1) * nbCamsPerThread;
-            if (cudaDeviceIndex == nbThreads - 1)
+            const int rcFrom = cudaDeviceId * nbCamsPerThread;
+            int rcTo = (cudaDeviceId + 1) * nbCamsPerThread;
+            if(cudaDeviceId == nbThreads - 1)
             {
                 rcTo = cams.size();
             }
@@ -59,7 +60,7 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
                 subcams.push_back(cams[rc]);
             }
 
-            gpujob(cudaDeviceIndex, mp, subcams);
+            gpujob(cudaDeviceId, mp, subcams);
         }
     }
 }

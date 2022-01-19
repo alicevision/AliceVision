@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include "device_color.hpp"
 #include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
+#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 
 namespace aliceVision {
 namespace depthMap {
@@ -179,6 +181,7 @@ inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const fl
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }
 */
+
 __global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -195,6 +198,15 @@ __global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, 
     rgb->z = flab.z;
 }
 
+__host__ void cuda_rgb2lab(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, int width, int height, cudaStream_t stream)
+{
+    const dim3 block(32, 2, 1);
+    const dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
+
+    // in-place color conversion into CIELAB
+    rgb2lab_kernel<<<grid, block, 0, stream>>>(frame_dmp.getBuffer(), frame_dmp.getPitch(), width, height);
+    CHECK_CUDA_ERROR();
+}
 /*
     Because a 2D gaussian mask is symmetry in row and column,
     here only generate a 1D mask, and use the product by row

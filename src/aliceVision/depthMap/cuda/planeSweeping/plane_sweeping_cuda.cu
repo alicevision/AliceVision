@@ -15,6 +15,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 #include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
+#include <aliceVision/depthMap/cuda/DeviceCamera.hpp>
 
 #include <math_constants.h>
 
@@ -25,235 +26,6 @@
 
 namespace aliceVision {
 namespace depthMap {
-
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                    \
-    if(cudaError_t err = cudaGetLastError())                                  \
-    {                                                                         \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-        std::stringstream s;                                                  \
-        s << "\n  CUDA Error: " << cudaGetErrorString(err)                    \
-          << "\n  file:       " << __FILE__                                   \
-          << "\n  function:   " << __FUNCTION__                               \
-          << "\n  line:       " << __LINE__ << "\n";                          \
-        throw std::runtime_error(s.str());                                    \
-    }
-
-#define ALICEVISION_CU_PRINT_DEBUG(a) \
-    std::cerr << a << std::endl;
-
-#define ALICEVISION_CU_PRINT_ERROR(a) \
-    std::cerr << a << std::endl;
-
-__host__ float3 ps_M3x3mulV3(const float* M3x3, const float3& V)
-{
-    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
-                       M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
-}
-
-__host__ void ps_normalize(float3& a)
-{
-    float d = sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-    a.x /= d;
-    a.y /= d;
-    a.z /= d;
-}
-
-void pr_printfDeviceMemoryInfo()
-{
-    size_t iavail;
-    size_t itotal;
-    cudaMemGetInfo(&iavail, &itotal);
-    size_t iused = itotal - iavail;
-
-    double avail = double(iavail) / (1024.0 * 1024.0);
-    double total = double(itotal) / (1024.0 * 1024.0);
-    double used = double(iused) / (1024.0 * 1024.0);
-
-    int CUDAdeviceNo;
-    cudaGetDevice(&CUDAdeviceNo);
-
-    printf("Device %i memory - used: %f, free: %f, total: %f\n", CUDAdeviceNo, used, avail, total);
-}
-
-__host__ void ps_initCameraMatrix( CameraStructBase& base )
-{
-    float3 z;
-    z.x = 0.0f;
-    z.y = 0.0f;
-    z.z = 1.0f;
-    base.ZVect = ps_M3x3mulV3(base.iR, z);
-    ps_normalize(base.ZVect);
-
-    float3 y;
-    y.x = 0.0f;
-    y.y = 1.0f;
-    y.z = 0.0f;
-    base.YVect = ps_M3x3mulV3(base.iR, y);
-    ps_normalize(base.YVect);
-
-    float3 x;
-    x.x = 1.0f;
-    x.y = 0.0f;
-    x.z = 0.0f;
-    base.XVect = ps_M3x3mulV3(base.iR, x);
-    ps_normalize(base.XVect);
-}
-
-int ps_listCUDADevices(bool verbose)
-{
-    int num_gpus = 0; // number of CUDA GPUs
-
-    // determine the number of CUDA capable GPUs
-    cudaError_t err = cudaGetDeviceCount(&num_gpus);
-    CHECK_CUDA_ERROR();
-    if(err != cudaSuccess)
-    {
-        printf("Error getting cuda device count");
-        return 0;
-    }
-
-    if(num_gpus < 1)
-    {
-        printf("ERROR: no CUDA capable devices detected");
-        return 0;
-    }
-
-    if(verbose == true)
-    {
-        // display CPU and GPU configuration
-        printf("number of CUDA devices:\t%d\n", num_gpus);
-        for(int i = 0; i < num_gpus; i++)
-        {
-            cudaDeviceProp dprop;
-            cudaGetDeviceProperties(&dprop, i);
-            printf("   %d: %s\n", i, dprop.name);
-        }
-    }
-
-    return num_gpus;
-}
-
-int ps_deviceAllocate(Pyramid& pyramid, int width, int height, int scales )
-{
-    int bytesAllocated = 0;
-
-    pyramid.resize(scales);
-
-    for(int s = 0; s < scales; s++)
-    {
-        int w = width / (s + 1);
-        int h = height / (s + 1);
-        // printf("ps_deviceAllocate: CudaDeviceMemoryPitched: [c%i][s%i] %ix%i\n", c, s, w, h);
-        pyramid[s].arr = new CudaDeviceMemoryPitched<CudaRGBA, 2>(CudaSize<2>(w, h));
-        bytesAllocated += pyramid[s].arr->getBytesPadded();
-
-        cudaTextureDesc  tex_desc;
-        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
-        tex_desc.addressMode[0]   = cudaAddressModeClamp;
-        tex_desc.addressMode[1]   = cudaAddressModeClamp;
-        tex_desc.addressMode[2]   = cudaAddressModeClamp;
-#if defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR) && defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION)
-        tex_desc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
-#else
-        tex_desc.readMode = cudaReadModeElementType;
-#endif
-#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
-        // with subpixel interpolation (can have a large performance impact on some graphic cards)
-        // but could be critical for quality during SGM in small resolution
-        tex_desc.filterMode = cudaFilterModeLinear;
-#else
-        // without interpolation
-        tex_desc.filterMode = cudaFilterModePoint;
-#endif
-
-        cudaResourceDesc res_desc;
-        res_desc.resType = cudaResourceTypePitch2D;
-        res_desc.res.pitch2D.desc = cudaCreateChannelDesc<CudaRGBA>();
-        res_desc.res.pitch2D.devPtr       = pyramid[s].arr->getBuffer();
-        res_desc.res.pitch2D.width        = pyramid[s].arr->getSize()[0];
-        res_desc.res.pitch2D.height       = pyramid[s].arr->getSize()[1];
-        res_desc.res.pitch2D.pitchInBytes = pyramid[s].arr->getPitch();
-
-        cudaError_t err = cudaCreateTextureObject( &pyramid[s].tex, &res_desc, &tex_desc, 0 );
-        THROW_ON_CUDA_ERROR( err, "Failed to bind texture object to cam array" );
-    }
-
-    return bytesAllocated;
-}
-
-void ps_deviceDeallocate( Pyramid& pyramid, int scales )
-{
-    for( TexturedArray& entry : pyramid )
-    {
-        delete entry.arr;
-        cudaDestroyTextureObject( entry.tex );
-    }
-    pyramid.clear();
-}
-
-void ps_testCUDAdeviceNo(int CUDAdeviceNo)
-{
-    int myCUDAdeviceNo;
-    cudaGetDevice(&myCUDAdeviceNo);
-    if(myCUDAdeviceNo != CUDAdeviceNo)
-    {
-        printf("WARNING different device %i %i\n", myCUDAdeviceNo, CUDAdeviceNo);
-    }
-}
-
-// void ps_device_updateCam( const CameraStruct& cam, int CUDAdeviceNo,
-//                           int scales, int w, int h)
-void ps_device_fillPyramidFromHostFrame( Pyramid& pyramid,
-                          CudaHostMemoryHeap<CudaRGBA, 2>* host_frame,
-                          int scales, int w, int h,
-                          cudaStream_t stream )
-{
-    ALICEVISION_CU_PRINT_DEBUG(std::endl
-              << "Calling " << __FUNCTION__ << std::endl
-              << "    for " << scales << " scales"
-              << ", w: " << w << ", h: " << h
-              << std::endl);
-
-    {
-        /* copy texture's data from host to device */
-        pyramid[0].arr->copyFrom( *host_frame, stream );
-
-        const dim3 block(32, 2, 1);
-        const dim3 grid(divUp(w, block.x), divUp(h, block.y), 1);
-        ALICEVISION_CU_PRINT_DEBUG("rgb2lab_kernel: block=(" << block.x << ", " << block.y << ", " << block.z << "), grid=(" << grid.x << ", " << grid.y << ", " << grid.z << ")");
-
-        /* in-place color conversion into CIELAB */
-        rgb2lab_kernel<<<grid, block, 0, stream>>>(
-            pyramid[0].arr->getBuffer(), pyramid[0].arr->getPitch(),
-            w, h);
-        CHECK_CUDA_ERROR();
-    }
-
-    /* For each scale, create a Gaussian-filtered and scaled version of the
-     * initial texture */
-    for(int scale = 1; scale < scales; ++scale)
-    {
-        const int radius = scale + 1;
-        // const int sWidth = w / (scale + 1);
-        // const int sHeight = h / (scale + 1);
-        // ALICEVISION_CU_PRINT_DEBUG("Create downscaled image for camera id " << camId << " at scale " << scale << ": " << sWidth << "x" << sHeight);
-
-        // const dim3 block(32, 2, 1);
-        // const dim3 grid(divUp(sWidth, block.x), divUp(sHeight, block.y), 1);
-        // ALICEVISION_CU_PRINT_DEBUG("ps_downscale_gauss: block=(" << block.x << ", " << block.y << ", " << block.z << "), grid=(" << grid.x << ", " << grid.y << ", " << grid.z << ")");
-
-        ps_downscale_gauss(pyramid, scale, w, h, radius, stream);
-        CHECK_CUDA_ERROR();
-    }
-
-    CHECK_CUDA_ERROR();
-}
-
 
 /**
  * @param[inout] d_volSimT similarity volume
@@ -448,12 +220,14 @@ void SimilarityVolume::initOutputVolumes(
 
 void SimilarityVolume::compute(
                         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
-                        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-                        const CameraStruct& rcam, int rcWidth, int rcHeight,
-                        const CameraStruct& tcam, int tcWidth, int tcHeight,
+                        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
+                        const DeviceCamera& rcDeviceCamera,
+                        const DeviceCamera& tcDeviceCamera,
+                        int rcWidth, int rcHeight,
+                        int tcWidth, int tcHeight,
                         const OneTC& cell,
                         const SgmParams& sgmParams,
-                        const int streamIndex )
+                        const int streamIndex)
 {
     TSim* gpu_volume_1st = volBestSim_dmp.getBuffer();
     TSim* gpu_volume_2nd = volSecBestSim_dmp.getBuffer();
@@ -466,7 +240,8 @@ void SimilarityVolume::compute(
 
       ALICEVISION_CU_PRINT_DEBUG("====================");
       ALICEVISION_CU_PRINT_DEBUG("Volume slice kernel");
-      ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId << ", TC: " << tcam.camId);
+      ALICEVISION_CU_PRINT_DEBUG("RC: " << rcDeviceCamera.getGlobalCamId() << ", TC: " << tcDeviceCamera.getGlobalCamId());
+      ALICEVISION_CU_PRINT_DEBUG("RC: " << rcDeviceCamera.getDeviceCamId() << ", TC: " << tcDeviceCamera.getDeviceCamId());
       ALICEVISION_CU_PRINT_DEBUG("Cell TC index: " << cell.getTCIndex());
       ALICEVISION_CU_PRINT_DEBUG("grid:  " << grid.x << ", " << grid.y << ", " << grid.z);
       ALICEVISION_CU_PRINT_DEBUG("block: " << _block.x << ", " << _block.y << ", " << _block.z);
@@ -475,22 +250,16 @@ void SimilarityVolume::compute(
       ALICEVISION_CU_PRINT_DEBUG("nb all depths: " << int(_depths_d.getUnitsTotal()));
       ALICEVISION_CU_PRINT_DEBUG("startDepthIndex+nbDepthsToSearch: " << startDepthIndex+nbDepthsToSearch);
       ALICEVISION_CU_PRINT_DEBUG("_dimX: " << _dimX << ", _dimY: " << _dimY);
-      ALICEVISION_CU_PRINT_DEBUG("scale-1: " << prevScale() );
       ALICEVISION_CU_PRINT_DEBUG("rcWH / scale: " << rcWidth / _scale << "x" << rcHeight / _scale);
       ALICEVISION_CU_PRINT_DEBUG("tcWH / scale: " << tcWidth / _scale << "x" << tcHeight / _scale);
       ALICEVISION_CU_PRINT_DEBUG("====================");
-
-      const Pyramid& rc_pyramid = *rcam.pyramid;
-      const Pyramid& tc_pyramid = *tcam.pyramid;
-      cudaTextureObject_t rc_tex = rc_pyramid[prevScale()].tex;
-      cudaTextureObject_t tc_tex = tc_pyramid[prevScale()].tex;
-
+      
       volume_slice_kernel
-            <<<grid, _block, 0, SweepStream(streamIndex)>>>
-            ( rc_tex,
-              tc_tex,
-              rcam.param_dev.i,
-              tcam.param_dev.i,
+            <<<grid, _block, 0, SweepStream(streamIndex)>>>(
+              rcDeviceCamera.getTextureObject(),
+              tcDeviceCamera.getTextureObject(),
+              rcDeviceCamera.getDeviceCamId(),
+              tcDeviceCamera.getDeviceCamId(),
               _depths_d.getBuffer(),
               startDepthIndex,
               nbDepthsToSearch,
@@ -555,25 +324,18 @@ void SimilarityVolume::configureGrid( )
 }
 }; // namespace ps
 
-void ps_refineRcDepthMap(const CameraStruct& rcam, 
-                         const CameraStruct& tcam,
+void ps_refineRcDepthMap(const DeviceCamera& rcDeviceCamera, 
+                         const DeviceCamera& tcDeviceCamera,
                          float* inout_depthMap_hmh,
                          float* out_simMap_hmh,
                          int rcWidth, int rcHeight,
                          int tcWidth, int tcHeight,
                          const RefineParams& refineParams, 
-                         int xFrom, int wPart, int CUDAdeviceNo)
+                         int xFrom, int wPart)
 {
     // setup block and grid
     const dim3 block(16, 16, 1);
     const dim3 grid(divUp(wPart, block.x), divUp(rcHeight, block.y), 1);
-
-    const Pyramid& rcPyramid = *rcam.pyramid;
-    const Pyramid& tcPyramid = *tcam.pyramid;
-    const size_t pyramidScaleIndex = size_t(refineParams.scale) - 1;
-
-    cudaTextureObject_t rc_tex = rcPyramid[pyramidScaleIndex].tex;
-    cudaTextureObject_t tc_tex = tcPyramid[pyramidScaleIndex].tex;
 
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(wPart, rcHeight));
     copy(rcDepthMap_dmp, inout_depthMap_hmh, wPart, rcHeight);
@@ -586,9 +348,10 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
     for(int i = 0; i < halfNSteps; ++i)
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rcam.param_dev.i,
-            tcam.param_dev.i,
-            rc_tex, tc_tex,
+            rcDeviceCamera.getDeviceCamId(),
+            tcDeviceCamera.getDeviceCamId(),
+            rcDeviceCamera.getTextureObject(), 
+            tcDeviceCamera.getTextureObject(),
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(), 
@@ -606,9 +369,10 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
     for(int i = 1; i < halfNSteps; ++i)
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rcam.param_dev.i, 
-            tcam.param_dev.i, 
-            rc_tex, tc_tex, 
+            rcDeviceCamera.getDeviceCamId(),
+            tcDeviceCamera.getDeviceCamId(),
+            rcDeviceCamera.getTextureObject(), 
+            tcDeviceCamera.getTextureObject(),
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(), 
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(), 
@@ -681,9 +445,10 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
     {
         // Compute NCC for depth-1
         refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rcam.param_dev.i,
-            tcam.param_dev.i, 
-            rc_tex, tc_tex,
+            rcDeviceCamera.getDeviceCamId(),
+            tcDeviceCamera.getDeviceCamId(),
+            rcDeviceCamera.getTextureObject(), 
+            tcDeviceCamera.getTextureObject(),
             simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), 
             wPart, rcHeight, 
@@ -706,9 +471,10 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
     {
         // Compute NCC for depth+1
         refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rcam.param_dev.i,
-            tcam.param_dev.i,
-            rc_tex, tc_tex,
+            rcDeviceCamera.getDeviceCamId(),
+            tcDeviceCamera.getDeviceCamId(),
+            rcDeviceCamera.getTextureObject(), 
+            tcDeviceCamera.getTextureObject(),
             simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), 
             wPart, rcHeight, 
@@ -730,8 +496,8 @@ void ps_refineRcDepthMap(const CameraStruct& rcam,
 
     // Interpolation from the lastThreeSimsMap_dmp
     refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
-        rcam.param_dev.i,
-        tcam.param_dev.i,
+        rcDeviceCamera.getDeviceCamId(),
+        tcDeviceCamera.getDeviceCamId(),
         bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(), 
@@ -804,13 +570,13 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
     }
 }
 
-void ps_optimizeDepthSimMapGradientDescent(const CameraStruct& rcam,
+void ps_optimizeDepthSimMapGradientDescent(const DeviceCamera& rcDeviceCamera,
                                            CudaHostMemoryHeap<float2, 2>& out_optimizedDepthSimMap_hmh,
                                            const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
                                            const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
                                            const CudaSize<2>& depthSimMapPartDim, 
                                            const RefineParams& refineParams,
-                                           int CUDAdeviceNo, int nbCamsAllocated, int yFrom)
+                                           int yFrom)
 {
     const int partWidth = depthSimMapPartDim.x();
     const int partHeight = depthSimMapPartDim.y(); 
@@ -827,18 +593,13 @@ void ps_optimizeDepthSimMapGradientDescent(const CameraStruct& rcam,
     CudaDeviceMemoryPitched<float, 2> optDepthMap_dmp(depthSimMapPartDim);
     CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(depthSimMapPartDim);
     copy(optDepthSimMap_dmp, sgmDepthPixSizeMap_dmp);
-
-    // get rc CUDA texture object
-    const size_t pyramidScaleIndex = size_t(refineParams.scale) - 1;
-    const Pyramid& rcPyramid = *rcam.pyramid;
-    cudaTextureObject_t rc_tex = rcPyramid[pyramidScaleIndex].tex;
-
+    
     CudaDeviceMemoryPitched<float, 2> imgVariance_dmp(depthSimMapPartDim);
     {
         const dim3 lblock(32, 2, 1);
         const dim3 lgrid(divUp(partWidth, lblock.x), divUp(partHeight, lblock.y), 1);
 
-        compute_varLofLABtoW_kernel<<<lgrid, lblock>>>(rc_tex,
+        compute_varLofLABtoW_kernel<<<lgrid, lblock>>>(rcDeviceCamera.getTextureObject(),
                                                        imgVariance_dmp.getBuffer(), 
                                                        imgVariance_dmp.getPitch(),
                                                        partWidth, partHeight, yFrom);
@@ -855,8 +616,8 @@ void ps_optimizeDepthSimMapGradientDescent(const CameraStruct& rcam,
         CudaTexture<float> depthTex(optDepthMap_dmp);
 
         // Adjust depth/sim by using previously computed depths
-        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(rc_tex, 
-                                                         rcam.param_dev.i,
+        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(rcDeviceCamera.getTextureObject(), 
+                                                         rcDeviceCamera.getDeviceCamId(),
                                                          imgVarianceTex.textureObj, 
                                                          depthTex.textureObj,
                                                          optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
@@ -877,7 +638,7 @@ inline __device__ __host__ float3 uchar4_to_float3(const uchar4 c)
 void ps_getSilhoueteMap(CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
                         int height, int scale,
                         int step,
-                        CameraStruct& cam,
+                        const DeviceCamera& rcDeviceCamera,
                         uchar4 maskColorRgb, bool verbose)
 {
     clock_t tall = tic();
@@ -893,12 +654,10 @@ void ps_getSilhoueteMap(CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
     int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width / step, block_size), divUp(height / step, block_size), 1);
-
-    Pyramid& pyramid = *cam.pyramid;
-
+    
     CudaDeviceMemoryPitched<bool, 2> map_dmp(CudaSize<2>(width / step, height / step));
     getSilhoueteMap_kernel<<<grid, block>>>(
-        pyramid[scale].tex,
+        rcDeviceCamera.getTextureObject(),
         map_dmp.getBuffer(), map_dmp.getPitch(),
         step, width, height, maskColorLab);
     CHECK_CUDA_ERROR();
@@ -910,31 +669,7 @@ void ps_getSilhoueteMap(CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
 }
 
 
-void ps_loadCameraStructs( const CameraStructBase* hst,
-                           const CamCacheIdx&      offset,
-                           cudaStream_t            stream )
-{
-    cudaMemcpyKind kind = cudaMemcpyHostToDevice;
-    cudaError_t err;
-    if( stream == 0 )
-    {
-        err = cudaMemcpyToSymbol( camsBasesDev,
-                                  &hst[offset.i],
-                                  sizeof(CameraStructBase),
-                                  offset.i*sizeof(CameraStructBase),
-                                  kind );
-    }
-    else
-    {
-        err = cudaMemcpyToSymbolAsync( camsBasesDev,
-                                       &hst[offset.i],
-                                       sizeof(CameraStructBase),
-                                       offset.i*sizeof(CameraStructBase),
-                                       kind,
-                                       stream );
-    }
-    THROW_ON_CUDA_ERROR( err, "Failed to copy CameraStructs from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
-}
+
 
 } // namespace depthMap
 } // namespace aliceVision
