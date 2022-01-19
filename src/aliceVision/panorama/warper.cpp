@@ -1,5 +1,5 @@
 #include "warper.hpp"
-#include <OpenEXR/half.h>
+#include <Imath/half.h>
 
 namespace aliceVision
 {
