@@ -283,8 +283,8 @@ endif()
 # ==============================================================================
 # OpenEXR
 # ==============================================================================
-find_package(OpenEXR)
-if(TARGET OpenEXR::IlmImf)
+find_package(OpenEXR CONFIG)
+if(TARGET OpenEXR::OpenEXR)
   message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
 else()
   # fallback for old openexr versions (<2.5)
@@ -300,13 +300,13 @@ endif()
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-find_package(OpenImageIO 2.0.9 REQUIRED)
-if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
+find_package(OpenImageIO 2.0.9 CONFIG REQUIRED)
+if(TARGET OpenImageIO::OpenImageIO)
   message(STATUS "OpenImageIO found.")
-  if(UNIX)
+  #if(UNIX)
     # Add DL dependency on linux
-    set(OPENIMAGEIO_LIBRARIES "${OPENIMAGEIO_LIBRARIES};dl")
-  endif()
+    #set(OPENIMAGEIO_LIBRARIES "${OPENIMAGEIO_LIBRARIES};dl")
+  #endif()
 else()
   message(SEND_ERROR "Failed to find OpenImageIO.")
 endif()

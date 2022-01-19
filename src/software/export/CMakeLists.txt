@@ -106,7 +106,7 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
           Boost::filesystem
           Boost::boost
           Boost::timer
-          ${OPENIMAGEIO_LIBRARIES}
+          OpenImageIO::OpenImageIO
   )
 endif()
 
