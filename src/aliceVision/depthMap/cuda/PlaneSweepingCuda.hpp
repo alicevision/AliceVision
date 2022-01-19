@@ -19,7 +19,7 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/OneTC.hpp>
 #include <aliceVision/depthMap/cuda/LRUCache.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>

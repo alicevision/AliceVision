@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_color.cu>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cu>
 // #include <aliceVision/depthMap/cuda/deviceCommon/device_eig33.cu>

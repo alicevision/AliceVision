@@ -7,7 +7,8 @@
 #include "utils.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+
+#include <cuda_runtime.h>
 
 namespace aliceVision {
 namespace depthMap {

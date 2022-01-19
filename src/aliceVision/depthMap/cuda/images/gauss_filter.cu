@@ -10,7 +10,7 @@
 #include <aliceVision/depthMap/cuda/deviceCommon/device_operators.cuh>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/memory.hpp>
 
 
 namespace aliceVision {

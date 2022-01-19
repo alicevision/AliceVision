@@ -6,7 +6,10 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/cuda/utils.hpp>
+
 #include <cuda_runtime.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
@@ -16,33 +19,21 @@
 #include <vector>
 #include <cstring>
 
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                    \
-    if(cudaError_t err = cudaGetLastError())                                  \
-    {                                                                         \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-        std::stringstream s;                                                  \
-        s << "\n  CUDA Error: " << cudaGetErrorString(err)                    \
-          << "\n  file:       " << __FILE__                                   \
-          << "\n  function:   " << __FUNCTION__                               \
-          << "\n  line:       " << __LINE__ << "\n";                          \
-        throw std::runtime_error(s.str());                                    \
-    }
-
-#define ALICEVISION_CU_PRINT_DEBUG(a) std::cerr << a << std::endl;
-#define ALICEVISION_CU_PRINT_ERROR(a) std::cerr << a << std::endl;
-
-#define THROW_ON_CUDA_ERROR(rcode, message) \
-  if (rcode != cudaSuccess) {  \
-    std::stringstream s; s << message << ": " << cudaGetErrorString(err);  \
-    throw std::runtime_error(s.str());  \
-  }
-
 namespace aliceVision {
 namespace depthMap {
+
+// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+#define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+using CudaColorBaseType = unsigned char;
+using CudaRGBA = uchar4;
+
+#else
+using CudaColorBaseType = float;
+using CudaRGBA = float4;
+
+#endif
 
 /*********************************************************************************
  * forward declarations
@@ -1262,26 +1253,6 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
                                     cudaMemcpyDeviceToHost );
     THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
 }
-
-// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
-#define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
-
-#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
-using CudaColorBaseType = unsigned char;
-using CudaRGBA = uchar4;
-
-#else
-using CudaColorBaseType = float;
-using CudaRGBA = float4;
-
-#endif
-
-
-struct TexturedArray
-{
-    CudaDeviceMemoryPitched<CudaRGBA, 2>* arr = nullptr;
-    cudaTextureObject_t tex;
-};
 
 /*
  * @notes: use normalized coordinates
