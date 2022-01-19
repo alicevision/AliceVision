@@ -48,19 +48,17 @@ int aliceVision_main(int argc, char **argv)
     namespace fs = boost::filesystem;
 
     std::string inputPath;
-    bool isPerspective;
-    std::string pathToDM;
-    std::string pathToAlbedo;
-    std::string pathToK;
+    std::string outputPath;
+    std::string pathToLightData;
+    size_t HS_order;
 
     po::options_description allParams("AliceVision photometricStereo");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
-    ("pathToK,k", po::value<std::string>(&pathToK)->default_value(""), "pathToK.")
-    ("isPerspective,c", po::value<bool>(&isPerspective)->default_value(false), "isPerspective")
-    ("pathToAlbedo,a", po::value<std::string>(&pathToAlbedo)->default_value(""), "pathToDM.")
-    ("pathToDM,o", po::value<std::string>(&pathToDM)->default_value(""), "pathToDM.");
+    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures")
+    ("pathToLightData,l", po::value<std::string>(&pathToLightData)->required(), "Path to input; could be SfMData file or folder with pictures")
+    ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
+    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path");
 
     allParams.add(requiredParams);
 
@@ -97,8 +95,7 @@ int aliceVision_main(int argc, char **argv)
     
     if(boost::filesystem::is_directory(inputPath))
     {
-        photometricStero(inputPath, isPerspective, normalsIm, albedoIm);
-        //getKnown3DPoints(inputPath, visiblePoints);
+        photometricStereo(inputPath, pathToLightData, HS_order, normalsIm, albedoIm);
     }
     else
     {
@@ -111,18 +108,10 @@ int aliceVision_main(int argc, char **argv)
     int pictRows = normalsIm.Height();
     aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
     convertNormalMap2png(normalsIm, normalsImPNG);
-    aliceVision::image::writeImage(inputPath + "/test.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+    aliceVision::image::writeImage(outputPath + "/normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 
-    Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
-    readMatrix(pathToK, K);
-
-    aliceVision::image::Image<float> depth(pictCols, pictRows);
-    normalIntegration(normalsIm, depth, isPerspective, K);
-    
     oiio::ParamValueList metadata;
     metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-    aliceVision::image::writeImage(pathToDM, depth, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
-    aliceVision::image::writeImage(pathToAlbedo, albedoIm, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
-
+    aliceVision::image::writeImage(outputPath + "/albedo.exr", albedoIm, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
     return 0;
 }

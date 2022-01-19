@@ -14,18 +14,72 @@
 #include "photometricDataIO.hpp"
 #include "photometricStereo.hpp"
 
-void photometricStero(const std::string& folderPath, const bool isPerspective, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
+    size_t dim = 3;
+    if(HS_order == 2)
+    {
+        dim = 9;
+    }
+
     std::vector<std::string> imageList;
-    std::string pictureFolder = folderPath + "PS_Pictures/";
+    std::string pictureFolder = inputPath + "/PS_Pictures/";
     getPicturesNames(pictureFolder, imageList);
-    
-    std::vector<std::array<float, 3>> intList; // Light intensities
-    Eigen::MatrixXf lightMat(imageList.size(), 3); //Light directions
+
     Eigen::MatrixXf convertionMatrix = Eigen::MatrixXf::Zero(3,3); // Convertion matrix
 
+    std::vector<std::array<float, 3>> intList; // Light intensities
+
+    Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
+
     aliceVision::image::Image<float> mask;
-    loadPSData(folderPath, intList, lightMat, convertionMatrix, mask);
+    loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
+
+    photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
+
+}
+
+void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+{
+    size_t dim = 3;
+    if(HS_order == 2)
+    {
+        dim = 9;
+    }
+
+    std::vector<std::string> imageList;
+
+    std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewsPerPoseId;
+    for(auto& viewIt: sfmData.getViews())
+    {
+        viewsPerPoseId[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
+    }
+
+    for(auto& posesIt: viewsPerPoseId)
+    {
+        ALICEVISION_LOG_INFO("Pose Id: " << posesIt.first);
+        std::vector<aliceVision::IndexT>& viewIds = posesIt.second;
+        for(auto& viewId: viewIds)
+        {
+            ALICEVISION_LOG_INFO("  - " << sfmData.getView(viewId).getImagePath());
+            imageList.push_back(sfmData.getView(viewId).getImagePath());
+        }
+    }
+
+    Eigen::MatrixXf convertionMatrix = Eigen::MatrixXf::Zero(3,3); // Convertion matrix
+    std::vector<std::array<float, 3>> intList; // Light intensities
+
+    Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
+
+    aliceVision::image::Image<float> mask;
+    loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
+
+    photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
+
+}
+
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, const aliceVision::image::Image<float>& mask, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+{
 
     std::vector<int> indexes;
     getIndMask(mask, indexes);
@@ -50,26 +104,23 @@ void photometricStero(const std::string& folderPath, const bool isPerspective, a
         aliceVision::image::ImageReadOptions options;
         options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
         aliceVision::image::readImage(picturePath, imageFloat, options);
-        intensityScaling(intList.at(i), imageFloat);        
+        intensityScaling(intList.at(i), imageFloat);
         image2PsMatrix(imageFloat, currentPicture);
 
         allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
     }
     applyMask(allPictures, indexes, imMat);
 
-    // Evaluate pinv(S) :
-    Eigen::MatrixXf lightMatTranspose = lightMat.transpose();
-    Eigen::Matrix3f product = lightMatTranspose*lightMat;
-    Eigen::MatrixXf pseudoInverse = product.inverse()*lightMatTranspose;
 
-    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
+    Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(),pictRows*pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
-    
+
     // Pixelwise normal and albedo evaluation :
     for (size_t i = 0; i < maskSize; ++i)
     {
         // Create I matrix for current pixel :
         Eigen::MatrixXf allPixelValues = imMat.col(i);
+
         Eigen::Map<Eigen::MatrixXf> IPixel_transposed(allPixelValues.data(), 3, imageList.size());
         Eigen::MatrixXf IPixel(imageList.size(),3);
         IPixel = IPixel_transposed.transpose();
@@ -84,7 +135,7 @@ void photometricStero(const std::string& folderPath, const bool isPerspective, a
         Eigen::MatrixXf V = svd.matrixV();
         Eigen::MatrixXf n_pixel = U.col(0);
         Eigen::MatrixXf rho_pixel = V.col(0);
-        
+
         if (n_pixel(2) > 0)
         {
             n_pixel = -n_pixel;
@@ -92,10 +143,10 @@ void photometricStero(const std::string& folderPath, const bool isPerspective, a
         }
 
         int currentIdx = indexes.at(i); // index in picture
-        normalsVect.block(0,currentIdx, 3, 1) = n_pixel;
+        normalsVect.block(0,currentIdx, normalsVect.rows(), 1) = n_pixel;
         albedoVect.block(0,currentIdx, 3, 1) = rho_pixel;
     }
-    
+
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
     normals2picture(normalsVect, normalsIm);
     normals = normalsIm;
@@ -103,7 +154,6 @@ void photometricStero(const std::string& folderPath, const bool isPerspective, a
     aliceVision::image::Image<aliceVision::image::RGBfColor> albedoIm(pictCols,pictRows);
     normals2picture(albedoVect, albedoIm);
     albedo = albedoIm;
-
 }
 
 void loadPSData(const std::string& folderPath, const size_t& HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat, Eigen::MatrixXf& convertionMatrix, aliceVision::image::Image<float>& mask)
