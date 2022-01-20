@@ -79,12 +79,6 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(int rc, int tc,
                                            const RefineParams& refineParams, 
                                            int xFrom, int wPart)
 {
-    const int rcWidth = _mp.getWidth(rc) / refineParams.scale;
-    const int rcHeight = _mp.getHeight(rc) / refineParams.scale;
-
-    const int tcWidth = _mp.getWidth(tc) / refineParams.scale;
-    const int tcHeight = _mp.getHeight(tc) / refineParams.scale;
-
     DeviceCache& deviceCache = DeviceCache::getInstance();
 
     const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, refineParams.scale, _ic, _mp);
@@ -94,8 +88,6 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(int rc, int tc,
                         tcDeviceCamera, 
                         inout_depthMap.getDataWritable().data(), 
                         out_simMap.getDataWritable().data(),
-                        rcWidth, rcHeight, 
-                        tcWidth, tcHeight, 
                         refineParams, 
                         xFrom, wPart);
     return true;
@@ -151,12 +143,6 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
 
         const int tc = tcs[tci].getTCIndex();
 
-        const int rcWidth = _mp.getWidth(rc);
-        const int rcHeight = _mp.getHeight(rc);
-
-        const int tcWidth = _mp.getWidth(tc);
-        const int tcHeight = _mp.getHeight(tc);
-
         DeviceCache& deviceCache = DeviceCache::getInstance();
 
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, vol.scale(), _ic, _mp, stream);
@@ -181,8 +167,6 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
             volSecBestSim_dmp, 
             rcDeviceCamera,
             tcDeviceCamera,
-            rcWidth, rcHeight,
-            tcWidth, tcHeight,
             tcs[tci],
             sgmParams,
             tci);

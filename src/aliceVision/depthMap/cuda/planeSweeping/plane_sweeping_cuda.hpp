@@ -44,8 +44,6 @@ public:
           CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
           const DeviceCamera& rcDeviceCamera, 
           const DeviceCamera& tcDeviceCamera, 
-          int rcWidth, int rcHeight,
-          int tcWidth, int tcHeight,
           const OneTC& cell,
           const SgmParams& sgmParams,
           int streamIndex );
@@ -104,8 +102,6 @@ void ps_refineRcDepthMap(const DeviceCamera& rcDeviceCamera,
                          const DeviceCamera& tcDeviceCamera,
                          float* inout_depthMap_hmh,
                          float* out_simMap_hmh, 
-                         int rcWidth, int rcHeight, 
-                         int tcWidth, int tcHeight,
                          const RefineParams& refineParams, 
                          int xFrom, int wPart);
 
