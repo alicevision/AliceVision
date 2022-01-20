@@ -14,6 +14,8 @@
 
 #include "normalIntegration.hpp"
 
+using namespace aliceVision;
+
 void normal2PQ(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, Eigen::Matrix3f K){
 
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
