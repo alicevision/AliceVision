@@ -7,17 +7,107 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/deviceCommon/DeviceCameraParams.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cu>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es_glob.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_simStat.cu>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/color.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/SimStat.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
 
 #include <math_constants.h>
 
 namespace aliceVision {
 namespace depthMap {
 
-__device__ void computeRotCSEpip(int rcDeviceCamId, int tcDeviceCamId, Patch& ptch)
+struct Patch
+{
+    float3 p; //< 3d point
+    float3 n; //< normal
+    float3 x; //< x axis
+    float3 y; //< y axis
+    float d;  //< pixel size
+};
+
+__device__ static void rotPointAroundVect(float3& out, float3& X, float3& vect, int angle)
+{
+    double ux, uy, uz, vx, vy, vz, wx, wy, wz, sa, ca, x, y, z, u, v, w;
+
+    double sizeX = sqrt(dot(X, X));
+    x = X.x / sizeX;
+    y = X.y / sizeX;
+    z = X.z / sizeX;
+    u = vect.x;
+    v = vect.y;
+    w = vect.z;
+
+    /*Rotate the point (x,y,z) around the vector (u,v,w)*/
+    ux = u * x;
+    uy = u * y;
+    uz = u * z;
+    vx = v * x;
+    vy = v * y;
+    vz = v * z;
+    wx = w * x;
+    wy = w * y;
+    wz = w * z;
+    sa = sin((double)angle * (M_PI / 180.0f));
+    ca = cos((double)angle * (M_PI / 180.0f));
+    x = u * (ux + vy + wz) + (x * (v * v + w * w) - u * (vy + wz)) * ca + (-wy + vz) * sa;
+    y = v * (ux + vy + wz) + (y * (u * u + w * w) - v * (ux + wz)) * ca + (wx - uz) * sa;
+    z = w * (ux + vy + wz) + (z * (u * u + v * v) - w * (ux + vy)) * ca + (-vx + uy) * sa;
+
+    u = sqrt(x * x + y * y + z * z);
+    x /= u;
+    y /= u;
+    z /= u;
+
+    out.x = x * sizeX;
+    out.y = y * sizeX;
+    out.z = z * sizeX;
+}
+
+__device__ static void rotatePatch(Patch& ptch, int rx, int ry)
+{
+    float3 n, y, x;
+
+    // rotate patch around x axis by angle rx
+    rotPointAroundVect(n, ptch.n, ptch.x, rx);
+    rotPointAroundVect(y, ptch.y, ptch.x, rx);
+    ptch.n = n;
+    ptch.y = y;
+
+    // rotate new patch around y axis by angle ry
+    rotPointAroundVect(n, ptch.n, ptch.y, ry);
+    rotPointAroundVect(x, ptch.x, ptch.y, ry);
+    ptch.n = n;
+    ptch.x = x;
+}
+
+__device__ static void movePatch(Patch& ptch, int pt)
+{
+    // float3 v = ptch.p-rC;
+    // normalize(v);
+    float3 v = ptch.n;
+
+    float d = ptch.d * (float)pt;
+    float3 p = ptch.p + v * d;
+    ptch.p = p;
+}
+
+__device__ static void computeRotCS(float3& xax, float3& yax, float3& n)
+{
+    xax.x = -n.y + n.z; // get any cross product
+    xax.y = +n.x + n.z;
+    xax.z = -n.x - n.y;
+    if(fabs(xax.x) < 0.0000001f && fabs(xax.y) < 0.0000001f && fabs(xax.z) < 0.0000001f)
+    {
+        xax.x = -n.y - n.z; // get any cross product (complementar)
+        xax.y = +n.x - n.z;
+        xax.z = +n.x + n.y;
+    };
+    normalize(xax);
+    yax = cross(n, xax);
+}
+
+__device__ static void computeRotCSEpip(int rcDeviceCamId, int tcDeviceCamId, Patch& ptch)
 {
     // Vector from the reference camera to the 3d point
     float3 v1 = constantCameraParametersArray_d[rcDeviceCamId].C - ptch.p;
@@ -41,13 +131,13 @@ __device__ void computeRotCSEpip(int rcDeviceCamId, int tcDeviceCamId, Patch& pt
     normalize(ptch.x);
 }
 
-__device__ int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
+__device__ static inline int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
 {
     return (int)fabs(acos(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
 }
 
 /*
-__device__ float getRefCamPixSize(Patch &ptch)
+__device__ static float getRefCamPixSize(Patch &ptch)
 {
         float2 rp = project3DPoint(sg_s_r.P,ptch.p);
 
@@ -67,7 +157,7 @@ __device__ float getRefCamPixSize(Patch &ptch)
         return minstep;
 }
 
-__device__ float getTarCamPixSize(Patch &ptch)
+__device__ static float getTarCamPixSize(Patch &ptch)
 {
         float2 tp = project3DPoint(sg_s_t.P,ptch.p);
 
@@ -87,19 +177,18 @@ __device__ float getTarCamPixSize(Patch &ptch)
         return minstep;
 }
 
-__device__ float getPatchPixSize(Patch &ptch)
+__device__ static float getPatchPixSize(Patch &ptch)
 {
         return fmaxf(getTarCamPixSize(ptch),getRefCamPixSize(ptch));
 }
 */
 
-__device__ void computeHomography(int rcDeviceCamId, 
-                                  int tcDeviceCamId,
-                                  float* _H, const float3& _p, const float3& _n)
+__device__ static void computeHomography(int rcDeviceCamId, int tcDeviceCamId, float* _H, const float3& _p,
+                                        const float3& _n)
 {
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCamId];
     const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCamId];
-    
+
     // hartley zisserman second edition p.327 (13.2)
     float3 _tl = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(rcDeviceCamParams.R, rcDeviceCamParams.C);
     float3 _tr = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(tcDeviceCamParams.R, tcDeviceCamParams.C);
@@ -130,7 +219,8 @@ __device__ void computeHomography(int rcDeviceCamId,
 }
 
 /*
-__device__ float compNCCbyH(const DeviceCameraParams& rc_cam, const DeviceCameraParams& tc_cam, const Patch& ptch, int wsh)
+__device__ static float compNCCbyH(const DeviceCameraParams& rc_cam, const DeviceCameraParams& tc_cam, const Patch& ptch, int
+wsh)
 {
     float2 rpix = project3DPoint(sg_s_r.P, ptch.p);
     float2 tpix = project3DPoint(sg_s_t.P, ptch.p);
@@ -163,26 +253,20 @@ __device__ float compNCCbyH(const DeviceCameraParams& rc_cam, const DeviceCamera
 
 /**
  * @brief Compute Normalized Cross-Correlation
- * 
+ *
  * @param[inout] ptch
  * @param[in] wsh half-width of the similarity homography matrix (width = wsh*2+1)
  * @param[in] width image width
  * @param[in] height image height
  * @param[in] _gammaC
  * @param[in] _gammaP
- * 
+ *
  * @return similarity value
  *         or invalid similarity (CUDART_INF_F) if uninitialized or masked
  */
-__device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
-                                   cudaTextureObject_t tc_tex,
-                                   int rcDeviceCamId,
-                                   int tcDeviceCamId,
-                                   const Patch& ptch,
-                                   int wsh,
-                                   int rc_width, int rc_height,
-                                   int tc_width, int tc_height,
-                                   const float _gammaC, const float _gammaP)
+__device__ static float compNCCby3DptsYK(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex, int rcDeviceCamId,
+                                  int tcDeviceCamId, const Patch& ptch, int wsh, int rc_width, int rc_height,
+                                  int tc_width, int tc_height, const float _gammaC, const float _gammaP)
 {
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCamId];
     const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCamId];
@@ -192,10 +276,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     const float2 tp = project3DPoint(tcDeviceCamParams.P, p);
 
     const float dd = wsh + 2.0f; // TODO FACA
-    if((rp.x < dd) || (rp.x > (float)(rc_width  - 1) - dd) ||
-       (rp.y < dd) || (rp.y > (float)(rc_height - 1) - dd) ||
-       (tp.x < dd) || (tp.x > (float)(tc_width  - 1) - dd) ||
-       (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
+    if((rp.x < dd) || (rp.x > (float)(rc_width - 1) - dd) || (rp.y < dd) || (rp.y > (float)(rc_height - 1) - dd) ||
+       (tp.x < dd) || (tp.x > (float)(tc_width - 1) - dd) || (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
     {
         return CUDART_INF_F; // uninitialized
     }
@@ -208,14 +290,13 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
     // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
 
-    if (gcr.w == 0.0f || gct.w == 0.0f)
+    if(gcr.w == 0.0f || gct.w == 0.0f)
         return CUDART_INF_F; // if no alpha, invalid pixel from input mask
 
     const float gammaC = _gammaC;
     const float gammaP = _gammaP;
     // float gammaC = ((gcr.w>0)||(gct.w>0))?sigmoid(_gammaC,25.5f,20.0f,10.0f,fmaxf(gcr.w,gct.w)):_gammaC;
     // float gammaP = ((gcr.w>0)||(gct.w>0))?sigmoid(1.5,(float)(wsh+3),30.0f,20.0f,fmaxf(gcr.w,gct.w)):_gammaP;
-
 
     simStat sst;
     for(int yp = -wsh; yp <= wsh; yp++)
@@ -237,12 +318,14 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
             // Weighting is based on:
             //  * color difference to the center pixel of the patch:
-            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
+            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly
+            //    supported surface)
             //    ** high value (close to 1) means that the color is close the center pixel (ie. uniform color)
             //  * distance in image to the center pixel of the patch:
             //    ** low value (close to 0) means that the pixel is close to the center of the patch
             //    ** high value (close to 1) means that the pixel is far from the center of the patch
-            const float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
+            const float w =
+                CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
 
             assert(w >= 0.f);
             assert(w <= 1.f);
@@ -253,9 +336,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     return sst.computeWSim();
 }
 
-
-__device__ void getPixelFor3DPoint(int deviceCamId,
-                                   float2& out, float3& X)
+__device__ static void getPixelFor3DPoint(int deviceCamId, float2& out, float3& X)
 {
     const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
 
@@ -271,23 +352,16 @@ __device__ void getPixelFor3DPoint(int deviceCamId,
     }
 }
 
-__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(int deviceCamId,
-                                                            const float2& pix,
-                                                            float fpPlaneDepth)
+__device__ static float3 get3DPointForPixelAndFrontoParellePlaneRC(int deviceCamId, const float2& pix, float fpPlaneDepth)
 {
     const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
     const float3 planep = deviceCamParams.C + deviceCamParams.ZVect * fpPlaneDepth;
     float3 v = M3x3mulV2(deviceCamParams.iP, pix);
     normalize(v);
-    return linePlaneIntersect(deviceCamParams.C,
-                              v,
-                              planep,
-                              deviceCamParams.ZVect);
+    return linePlaneIntersect(deviceCamParams.C, v, planep, deviceCamParams.ZVect);
 }
 
-__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(int deviceCamId,
-                                                            const int2& pixi,
-                                                            float fpPlaneDepth)
+__device__ static float3 get3DPointForPixelAndFrontoParellePlaneRC(int deviceCamId, const int2& pixi, float fpPlaneDepth)
 {
     float2 pix;
     pix.x = (float)pixi.x;
@@ -295,8 +369,7 @@ __device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(int deviceCamId,
     return get3DPointForPixelAndFrontoParellePlaneRC(deviceCamId, pix, fpPlaneDepth);
 }
 
-__device__ float3 get3DPointForPixelAndDepthFromRC(int deviceCamId,
-                                                    const float2& pix, float depth)
+__device__ static float3 get3DPointForPixelAndDepthFromRC(int deviceCamId, const float2& pix, float depth)
 {
     const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
     float3 rpv = M3x3mulV2(deviceCamParams.iP, pix);
@@ -304,7 +377,7 @@ __device__ float3 get3DPointForPixelAndDepthFromRC(int deviceCamId,
     return deviceCamParams.C + rpv * depth;
 }
 
-__device__ float3 get3DPointForPixelAndDepthFromRC(int deviceCamId, const int2& pixi, float depth)
+__device__ static float3 get3DPointForPixelAndDepthFromRC(int deviceCamId, const int2& pixi, float depth)
 {
     float2 pix;
     pix.x = float(pixi.x);
@@ -312,7 +385,7 @@ __device__ float3 get3DPointForPixelAndDepthFromRC(int deviceCamId, const int2& 
     return get3DPointForPixelAndDepthFromRC(deviceCamId, pix, depth);
 }
 
-__device__ float3 triangulateMatchRef(int rcDeviceCamId, int tcDeviceCamId, float2& refpix, float2& tarpix)
+__device__ static float3 triangulateMatchRef(int rcDeviceCamId, int tcDeviceCamId, float2& refpix, float2& tarpix)
 {
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCamId];
     const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCamId];
@@ -328,17 +401,12 @@ __device__ float3 triangulateMatchRef(int rcDeviceCamId, int tcDeviceCamId, floa
     float k, l;
     float3 lli1, lli2;
 
-    lineLineIntersect(&k, &l, &lli1, &lli2,
-                      rcDeviceCamParams.C,
-                      refpoint,
-                      tcDeviceCamParams.C,
-                      tarpoint);
+    lineLineIntersect(&k, &l, &lli1, &lli2, rcDeviceCamParams.C, refpoint, tcDeviceCamParams.C, tarpoint);
 
     return rcDeviceCamParams.C + refvect * k;
 }
 
-__device__ float computePixSize(int deviceCamId,
-                                const float3& p)
+__device__ static float computePixSize(int deviceCamId, const float3& p)
 {
     const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
 
@@ -350,7 +418,7 @@ __device__ float computePixSize(int deviceCamId,
     return pointLineDistance3D(p, deviceCamParams.C, refvect);
 }
 
-__device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
+__device__ static float refineDepthSubPixel(const float3& depths, const float3& sims)
 {
     // subpixel refinement
     // subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation, and
@@ -358,9 +426,9 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
     // quadratic polynomial interpolation is used to approximate the cost function between three discrete depth
     // candidates: d, dA, and dB.
     // TODO: get formula back from paper as it has been lost by encoding.
-    // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as f?x? ? ax2
-    // B bx B c.
-    
+    // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as
+    // f?x? ? ax2 B bx B c.
+
     float simM1 = sims.x;
     float sim = sims.y;
     float simP1 = sims.z;

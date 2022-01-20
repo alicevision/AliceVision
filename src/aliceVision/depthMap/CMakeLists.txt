@@ -23,25 +23,19 @@ set(depthMap_files_sources
 
 # Cuda Headers
 set(depthMap_cuda_files_headers
-  # Headers
-  cuda/deviceCommon/device_color.hpp
-  cuda/deviceCommon/device_patch_es_glob.hpp
-  cuda/planeSweeping/host_utils.h
-  cuda/planeSweeping/plane_sweeping_cuda.hpp
   # deviceCommon
-  cuda/deviceCommon/device_color.cu
-  cuda/deviceCommon/device_matrix.cu
-  cuda/deviceCommon/device_matrix.cuh
-  cuda/deviceCommon/device_patch_es.cu
-  cuda/deviceCommon/device_simStat.cu
-  cuda/deviceCommon/device_operators.cuh
-  cuda/deviceCommon/device_utils.cuh
+  cuda/deviceCommon/color.cuh
+  cuda/deviceCommon/matrix.cuh
+  cuda/deviceCommon/operators.cuh
+  cuda/deviceCommon/utils.cuh
+  cuda/deviceCommon/Patch.cuh
+  cuda/deviceCommon/SimStat.cuh
   cuda/deviceCommon/device_utils.h
   # planeSweeping
-  cuda/planeSweeping/device_code.cu
-  cuda/planeSweeping/device_code_refine.cu
-  cuda/planeSweeping/device_code_volume.cu
-  cuda/planeSweeping/device_code_fuse.cu
+  cuda/planeSweeping/deviceFuseKernels.cuh
+  cuda/planeSweeping/deviceRefineKernels.cuh
+  cuda/planeSweeping/deviceSimilarityVolumeKernels.cuh
+  cuda/planeSweeping/host_utils.h
   # normalmap
   cuda/normalmap/device_eig33.cuh
 )
@@ -64,12 +58,19 @@ set(depthMap_cuda_files_sources
   cuda/OneTC.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
-  cuda/planeSweeping/plane_sweeping_cuda.hpp
-  cuda/planeSweeping/plane_sweeping_cuda.cu
+  cuda/planeSweeping/similarity.hpp
+  cuda/planeSweeping/deviceFuse.hpp
+  cuda/planeSweeping/deviceFuse.cu
+  cuda/planeSweeping/deviceRefine.hpp
+  cuda/planeSweeping/deviceRefine.cu
+  cuda/planeSweeping/deviceSimilarityVolume.hpp
+  cuda/planeSweeping/deviceSimilarityVolume.cu
   cuda/normalmap/normal_map.hpp
   cuda/normalmap/normal_map.cu
   cuda/images/gauss_filter.hpp
   cuda/images/gauss_filter.cu
+  cuda/images/deviceColorConversion.hpp
+  cuda/images/deviceColorConversion.cu
   cuda/deviceCommon/DeviceCameraParams.hpp
   cuda/deviceCommon/DeviceCameraParams.cu
   ${depthMap_cuda_files_headers}

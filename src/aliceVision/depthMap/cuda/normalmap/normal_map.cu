@@ -6,8 +6,8 @@
 
 #include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/device_eig33.cuh>
 

@@ -9,8 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_color.hpp>
+#include <aliceVision/depthMap/cuda/images/deviceColorConversion.hpp>
 
 namespace aliceVision {
 namespace depthMap {

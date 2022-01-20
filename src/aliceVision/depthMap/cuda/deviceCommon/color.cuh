@@ -6,52 +6,55 @@
 
 #pragma once
 
-#include "device_color.hpp"
-#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
-#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
 
 namespace aliceVision {
 namespace depthMap {
 
-inline __device__ float Euclidean(const float3 x1, const float3 x2)
+__device__ static inline float Euclidean(const float3 x1, const float3 x2)
 {
     // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
     return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
-inline __device__ float Euclidean3(const float4 x1, const float4 x2)
+__device__ static inline float Euclidean3(const float4 x1, const float4 x2)
 {
     // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
     return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
-//== colour conversion utils ======================================================================
+// colour conversion utils
 
-// sRGB (0..1) to linear RGB (0..1)
-inline __device__ float3 srgb2rgb(const float3 c)
+/**
+ * @brief sRGB (0..1) to linear RGB (0..1)
+ * @param[in] c the float3 sRGB
+ * @return float3 linear RGB
+ */
+__device__ static inline float3 srgb2rgb(const float3 c)
 {
     return make_float3(c.x <= 0.04045f ? c.x / 12.92f : __powf((c.x + 0.055f) / 1.055f, 2.4f),
                        c.y <= 0.04045f ? c.y / 12.92f : __powf((c.y + 0.055f) / 1.055f, 2.4f),
                        c.z <= 0.04045f ? c.z / 12.92f : __powf((c.z + 0.055f) / 1.055f, 2.4f));
 }
 
-// linear RGB (0..1) to XZY (0..1) using sRGB primaries
-inline __device__ float3 rgb2xyz(const float3 c)
+/**
+ * @brief Linear RGB (0..1) to XZY (0..1) using sRGB primaries
+ * @param[in] c the float3 Linear RGB
+ * @return float3 XYZ
+ */
+__device__ static inline float3 rgb2xyz(const float3 c)
 {
     return make_float3(0.4124564f * c.x + 0.3575761f * c.y + 0.1804375f * c.z,
                        0.2126729f * c.x + 0.7151522f * c.y + 0.0721750f * c.z,
                        0.0193339f * c.x + 0.1191920f * c.y + 0.9503041f * c.z);
 }
 
-inline __host__ float3 h_rgb2xyz(const float3 c)
-{
-    return make_float3(0.4124564f * c.x + 0.3575761f * c.y + 0.1804375f * c.z,
-                       0.2126729f * c.x + 0.7151522f * c.y + 0.0721750f * c.z,
-                       0.0193339f * c.x + 0.1191920f * c.y + 0.9503041f * c.z);
-}
-
-// linear RGB (0..1) to HSL (0..1)
-inline __device__ float3 rgb2hsl(const float3& c)
+/**
+ * @brief Linear RGB (0..1) to HSL (0..1)
+ * @param[in] c the float3 Linear RGB
+ * @return float3 HSL
+ */
+__device__ static float3 rgb2hsl(const float3& c)
 {
     const float cmin = fminf(c.x, fminf(c.y, c.z));
     const float cmax = fmaxf(c.x, fmaxf(c.y, c.z));
@@ -93,8 +96,12 @@ inline __device__ float3 rgb2hsl(const float3& c)
     return make_float3(h, s, l);
 }
 
-// XYZ (0..1) to CIELAB (0..255) assuming D65 whitepoint
-inline __host__ __device__ float3 xyz2lab(const float3 c)
+/**
+ * @brief XYZ (0..1) to CIELAB (0..255) assuming D65 whitepoint
+ * @param[in] c the float3 XYZ
+ * @return float3 CIELAB
+ */
+__device__ static inline float3 xyz2lab(const float3 c)
 {
     // assuming whitepoint D65, XYZ=(0.95047, 1.00000, 1.08883)
     float3 r = make_float3(c.x / 0.95047f, c.y, c.z / 1.08883f);
@@ -113,7 +120,12 @@ inline __host__ __device__ float3 xyz2lab(const float3 c)
     return out;
 }
 
-inline __device__ float rgb2gray(const uchar4 c)
+/**
+ * @brief RGB (uchar4) to gray (float)
+ * @param[in] c the uchar4 RGB
+ * @return float gray
+ */
+__device__ static inline float rgb2gray(const uchar4 c)
 {
     return 0.2989f * (float)c.x + 0.5870f * (float)c.y + 0.1140f * (float)c.z;
 }
@@ -132,8 +144,9 @@ inline __device__ float rgb2gray(const uchar4 c)
  * @param[in] gammaP Strength of Grouping by Proximity          8 / 4
  * @return distance value
  */
-inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaC,
-                                      const float gammaP)
+__device__ static float CostYKfromLab(const int dx, const int dy, 
+                                      const float4 c1, const float4 c2, 
+                                      const float gammaC, const float gammaP)
 {
     // const float deltaC = 0; // ignore colour difference
 
@@ -171,67 +184,15 @@ inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c
     return __expf(-deltaC); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
+
 /*
-inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
+ __device__ static inline float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
 {
     // Euclidean distance in Lab, assuming linear RGB
     const float deltaC = Euclidean3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
-}
-*/
-
-__global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, int height)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((x >= width) || (y >= height))
-        return;
-
-    CudaRGBA* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
-    float3 flab = xyz2lab(rgb2xyz(make_float3(rgb->x / 255.f, rgb->y / 255.f, rgb->z / 255.f)));
-
-    rgb->x = flab.x;
-    rgb->y = flab.y;
-    rgb->z = flab.z;
-}
-
-__host__ void cuda_rgb2lab(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, int width, int height, cudaStream_t stream)
-{
-    const dim3 block(32, 2, 1);
-    const dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
-
-    // in-place color conversion into CIELAB
-    rgb2lab_kernel<<<grid, block, 0, stream>>>(frame_dmp.getBuffer(), frame_dmp.getPitch(), width, height);
-    CHECK_CUDA_ERROR();
-}
-/*
-    Because a 2D gaussian mask is symmetry in row and column,
-    here only generate a 1D mask, and use the product by row
-    and column index later.
-
-    1D gaussian distribution :
-        g(x, d) -- C * exp(-x^2/d^2), C is a constant amplifier
-
-    parameters:
-    og - output gaussian array in global memory
-    delta - the 2nd parameter 'd' in the above function
-    radius - half of the filter size
-             (total filter size = 2 * radius + 1)
-*/
-// use only one block
-
-/*
-__global__ void downscale_kernel(unsigned char* tex, int tex_p, int width, int height, int scale)
-{
-        int x = blockIdx.x*blockDim.x + threadIdx.x;
-        int y = blockIdx.y*blockDim.y + threadIdx.y;
-
-        if ((x<width)&&(y<height)) {
-                tex[y*tex_p+x] = 255.0f*tex2D(rtex, (float)x*(float)scale+0.5f, (float)y*(float)scale+0.5f);
-        };
 }
 */
 
