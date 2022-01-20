@@ -6,7 +6,7 @@
 
 
 #include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>

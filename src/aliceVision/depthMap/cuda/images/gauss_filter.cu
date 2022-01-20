@@ -7,9 +7,9 @@
 #include <cuda_runtime.h>
 
 #include "gauss_filter.hpp"
-#include <aliceVision/depthMap/cuda/deviceCommon/device_operators.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/operators.cuh>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
 #include <aliceVision/depthMap/cuda/memory.hpp>
 
 

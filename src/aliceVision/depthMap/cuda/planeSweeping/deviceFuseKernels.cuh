@@ -4,8 +4,41 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#pragma once
+
+#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/Patch.cuh>
+
 namespace aliceVision {
 namespace depthMap {
+
+__device__ float computeGradientSizeOfL(cudaTextureObject_t rc_tex, int x, int y)
+{
+    float xM1 = tex2D_float4(rc_tex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x;
+    float xP1 = tex2D_float4(rc_tex, (float)(x + 1) + 0.5f, (float)(y + 0) + 0.5f).x;
+    float yM1 = tex2D_float4(rc_tex, (float)(x + 0) + 0.5f, (float)(y - 1) + 0.5f).x;
+    float yP1 = tex2D_float4(rc_tex, (float)(x + 0) + 0.5f, (float)(y + 1) + 0.5f).x;
+
+    // not divided by 2?
+    float2 g = make_float2(xM1 - xP1, yM1 - yP1);
+
+    return size(g);
+}
+
+__global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, float* varianceMap, int varianceMap_p,
+                                            int partWidth, int partHeight, int yFrom)
+{
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(x < partWidth && y < partHeight)
+    {
+        const float grad = computeGradientSizeOfL(rc_tex, x, y + yFrom);
+        float* val = get2DBufferAt(varianceMap, varianceMap_p, x, y);
+        *val = grad;
+    }
+}
 
 /**
  * @param[in] s: iteration over nSamplesHalf

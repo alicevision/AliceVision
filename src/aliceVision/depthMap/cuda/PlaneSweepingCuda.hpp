@@ -23,17 +23,10 @@
 #include <aliceVision/depthMap/cuda/OneTC.hpp>
 #include <aliceVision/depthMap/cuda/LRUCache.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
 namespace depthMap {
-
-#ifdef TSIM_USE_FLOAT
-    using TSim = float;
-#else
-    using TSim = unsigned char;
-#endif
-
-using TSimRefine = unsigned char;
 
 /**
  * @class PlaneSweepingCuda
@@ -100,8 +93,6 @@ public:
                            std::vector<ColorRGBf>&   normalMap,
                            int rc, int scale,
                            float igammaC, float igammaP, int wsh);
-
-    bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
 };
 
 } // namespace depthMap

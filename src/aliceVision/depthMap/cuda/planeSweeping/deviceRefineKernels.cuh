@@ -4,8 +4,60 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#pragma once
+
+#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/Patch.cuh>
+
 namespace aliceVision {
 namespace depthMap {
+
+__device__ void move3DPointByRcPixSize(int deviceCamId, float3& p, float rcPixSize)
+{
+    float3 rpv = p - constantCameraParametersArray_d[deviceCamId].C;
+    normalize(rpv);
+    p = p + rpv * rcPixSize;
+}
+
+__device__ void move3DPointByTcPixStep(int rcDeviceCamId, int tcDeviceCamId, float3& p, float tcPixStep)
+{
+    float3 rpv = constantCameraParametersArray_d[rcDeviceCamId].C - p;
+    float3 prp = p;
+    float3 prp1 = p + rpv / 2.0f;
+
+    float2 rp;
+    getPixelFor3DPoint(rcDeviceCamId, rp, prp);
+
+    float2 tpo;
+    getPixelFor3DPoint(tcDeviceCamId, tpo, prp);
+
+    float2 tpv;
+    getPixelFor3DPoint(tcDeviceCamId, tpv, prp1);
+
+    tpv = tpv - tpo;
+    normalize(tpv);
+
+    float2 tpd = tpo + tpv * tcPixStep;
+
+    p = triangulateMatchRef(rcDeviceCamId, tcDeviceCamId, rp, tpd);
+}
+
+__device__ float move3DPointByTcOrRcPixStep(int rcDeviceCamId, int tcDeviceCamId, float3& p, float pixStep,
+                                            bool moveByTcOrRc)
+{
+    if(moveByTcOrRc == true)
+    {
+        move3DPointByTcPixStep(rcDeviceCamId, tcDeviceCamId, p, pixStep);
+        return 0.0f;
+    }
+    else
+    {
+        float pixSize = pixStep * computePixSize(rcDeviceCamId, p);
+        move3DPointByRcPixSize(rcDeviceCamId, p, pixSize);
+
+        return pixSize;
+    }
+}
 
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rcDeviceCamId,
                                                          int tcDeviceCamId,

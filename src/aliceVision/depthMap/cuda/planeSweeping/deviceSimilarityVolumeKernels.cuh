@@ -6,32 +6,36 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
+#include <aliceVision/depthMap/cuda/deviceCommon/Patch.cuh>
 
+#include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-#ifdef TSIM_USE_FLOAT
-using TSim = float;
-using TSimAcc = float;
-#else
-using TSim = unsigned char;
-using TSimAcc = unsigned int; // TSimAcc is the similarity accumulation type
-#endif
-
-
-inline __device__ void volume_computePatch(int rcDeviceCamId,
-                                           int tcDeviceCamId,
-                                           Patch& ptch,
-                                           const float fpPlaneDepth, const int2& pix )
+inline __device__ void volume_computePatch(int rcDeviceCamId, int tcDeviceCamId, Patch& ptch, const float fpPlaneDepth,
+                                           const int2& pix)
 {
     ptch.p = get3DPointForPixelAndFrontoParellePlaneRC(rcDeviceCamId, pix, fpPlaneDepth); // no texture use
     ptch.d = computePixSize(rcDeviceCamId, ptch.p);                                       // no texture use
     computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);                                 // no texture use
 }
 
-__global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p, int volDimX, int volDimY )
+__device__ float depthPlaneToDepth(int deviceCamId, const float2& pix, float fpPlaneDepth)
+{
+    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
+    float3 planen = M3x3mulV3(deviceCamParams.iR, make_float3(0.0f, 0.0f, 1.0f));
+    normalize(planen);
+    float3 planep = deviceCamParams.C + planen * fpPlaneDepth;
+    float3 v = M3x3mulV2(deviceCamParams.iP, pix);
+    normalize(v);
+    float3 p = linePlaneIntersect(deviceCamParams.C, v, planep, planen);
+    float depth = size(deviceCamParams.C - p);
+    return depth;
+}
+
+__global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p, int volDimX, int volDimY)
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -43,8 +47,7 @@ __global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p, int
     *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = 255.0f;
 }
 
-__global__ void volume_slice_kernel(
-                                    cudaTextureObject_t rc_tex,
+__global__ void volume_slice_kernel(cudaTextureObject_t rc_tex,
                                     cudaTextureObject_t tc_tex,
                                     int rcDeviceCamId,
                                     int tcDeviceCamId,
@@ -135,20 +138,6 @@ __global__ void volume_slice_kernel(
         *fsim_2nd = TSim(fsim);
     }
 }
-
-__device__ float depthPlaneToDepth(int deviceCamId, const float2& pix, float fpPlaneDepth)
-{
-    const DeviceCameraParams& deviceCamParams = constantCameraParametersArray_d[deviceCamId];
-    float3 planen = M3x3mulV3(deviceCamParams.iR, make_float3(0.0f, 0.0f, 1.0f));
-    normalize(planen);
-    float3 planep = deviceCamParams.C + planen * fpPlaneDepth;
-    float3 v = M3x3mulV2(deviceCamParams.iP, pix);
-    normalize(v);
-    float3 p = linePlaneIntersect(deviceCamParams.C, v, planep, planen);
-    float depth = size(deviceCamParams.C - p);
-    return depth;
-}
-
 
 __global__ void volume_retrieveBestZ_kernel(
   int rcDeviceCamId,

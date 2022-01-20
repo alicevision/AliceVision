@@ -18,10 +18,12 @@
 
 #include <aliceVision/depthMap/cuda/utils.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCache.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
-#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
+
 #include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
+#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceRefine.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceFuse.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -84,7 +86,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(int rc, int tc,
     const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, refineParams.scale, _ic, _mp);
     const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera(tc, refineParams.scale, _ic, _mp);
 
-    ps_refineRcDepthMap(rcDeviceCamera, 
+    cuda_refineDepthMap(rcDeviceCamera, 
                         tcDeviceCamera, 
                         inout_depthMap.getDataWritable().data(), 
                         out_simMap.getDataWritable().data(),
@@ -123,30 +125,25 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
     for( const auto& tc : tcs) _ic.getImg_sync( tc.getTCIndex() );
     nvtxPop("preload host cache ");
 
-    ps::SimilarityVolume vol(volDim, sgmParams.stepXY, sgmParams.scale, rcDepths);
+    cuda_volumeInitialize(volBestSim_dmp, 255.f, 0);
+    cuda_volumeInitialize(volSecBestSim_dmp, 255.f, 0);
 
-    vol.initOutputVolumes(volBestSim_dmp, volSecBestSim_dmp, 0);
-    vol.WaitSweepStream(0);
+    CudaDeviceMemory<float> depths_d(rcDepths.data(), rcDepths.size());
 
     ALICEVISION_LOG_DEBUG("Initialize output volumes: " << std::endl
                           << "\t- volBestSim_dmp : " << volBestSim_dmp.getUnitsInDim(0) << ", " << volBestSim_dmp.getUnitsInDim(1) << ", " << volBestSim_dmp.getUnitsInDim(2) << std::endl
-                          << "\t- volSecBestSim_dmp : " << volSecBestSim_dmp.getUnitsInDim(0) << ", " << volSecBestSim_dmp.getUnitsInDim(1) << ", " << volSecBestSim_dmp.getUnitsInDim(2) << std::endl
-                          << "\t- scale: " << vol.scale() << std::endl
-                          << "\t- volStepXY: " << vol.stepXY() << std::endl);
+                          << "\t- volSecBestSim_dmp : " << volSecBestSim_dmp.getUnitsInDim(0) << ", " << volSecBestSim_dmp.getUnitsInDim(1) << ", " << volSecBestSim_dmp.getUnitsInDim(2) << std::endl);
 
     for(int tci = 0; tci < tcs.size(); ++tci)
     {
-        vol.WaitSweepStream(tci);
-        cudaStream_t stream = vol.SweepStream(tci);
-
         const system::Timer timerPerTc;
 
         const int tc = tcs[tci].getTCIndex();
 
         DeviceCache& deviceCache = DeviceCache::getInstance();
 
-        const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, vol.scale(), _ic, _mp, stream);
-        const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera(tc, vol.scale(), _ic, _mp, stream);
+        const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, sgmParams.scale, _ic, _mp, 0);
+        const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera(tc, sgmParams.scale, _ic, _mp, 0);
 
         logDeviceMemoryInfo();
 
@@ -160,17 +157,16 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
                               << "\t- device similarity volume size: " << volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB" << std::endl
                               << "\t- device unpadded similarity volume size: " << volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB" << std::endl);
 
-        // last synchronous step
-        // cudaDeviceSynchronize();
-        vol.compute(
-            volBestSim_dmp,
-            volSecBestSim_dmp, 
-            rcDeviceCamera,
-            tcDeviceCamera,
-            tcs[tci],
-            sgmParams,
-            tci);
 
+        cuda_volumeComputeSimilarity(volBestSim_dmp,
+                                     volSecBestSim_dmp, 
+                                     depths_d,
+                                     rcDeviceCamera,
+                                     tcDeviceCamera,
+                                     tcs[tci],
+                                     sgmParams,
+                                     0);
+        CHECK_CUDA_ERROR();
         ALICEVISION_LOG_DEBUG("Compute similarity volume (with tc: " << tc << ") done in: " << timerPerTc.elapsedMs() << " ms.");
     }
     ALICEVISION_LOG_INFO("SGM Compute similarity volume done in: " << timer.elapsedMs() << " ms.");
@@ -203,13 +199,13 @@ bool PlaneSweepingCuda::sgmOptimizeSimVolume(int rc,
     {
         ALICEVISION_LOG_DEBUG("Update aggregate volume (npaths: " << npaths << ", invX: " << invX << ")");
 
-        ps_aggregatePathVolume(volSimFiltered_dmp, 
-                               volSim_dmp, 
-                               volDim, 
-                               axisT, 
-                               rcDeviceCamera.getTextureObject(), 
-                               sgmParams, 
-                               invX, npaths);
+        cuda_volumeAggregatePath(volSimFiltered_dmp, 
+                                 volSim_dmp, 
+                                 volDim, 
+                                 axisT, 
+                                 rcDeviceCamera.getTextureObject(), 
+                                 sgmParams, 
+                                 invX, npaths);
         npaths++;
 
         ALICEVISION_LOG_DEBUG("Update aggregate volume done.");
@@ -254,15 +250,14 @@ void PlaneSweepingCuda::sgmRetrieveBestDepth(int rc,
 
   const int scaleStep = sgmParams.scale * sgmParams.stepXY;
 
-  ps_SGMretrieveBestDepth(
-    rcDeviceCamera.getDeviceCamId(),
-    bestDepth_dmp,
-    bestSim_dmp, 
-    volSim_dmp, 
-    volDim,
-    depths_d,
-    scaleStep,
-    sgmParams.interpolateRetrieveBestDepth);
+  cuda_volumeRetrieveBestDepth(rcDeviceCamera.getDeviceCamId(),
+                               bestDepth_dmp,
+                               bestSim_dmp, 
+                               volSim_dmp, 
+                               volDim,
+                               depths_d,
+                               scaleStep,
+                               sgmParams.interpolateRetrieveBestDepth);
 
   /*
   {
@@ -318,10 +313,10 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int wPart, int hPar
 
     CudaHostMemoryHeap<float2, 2> depthSimMap_hmh(depthSimMapPartDim);
 
-    ps_fuseDepthSimMapsGaussianKernelVoting(wPart, hPart, 
-                                            &depthSimMap_hmh, 
-                                            dataMaps_hmh, dataMaps.size(), 
-                                            refineParams);
+    cuda_fuseDepthSimMapsGaussianKernelVoting(wPart, hPart, 
+                                              &depthSimMap_hmh, 
+                                              dataMaps_hmh, dataMaps.size(), 
+                                              refineParams);
     for(int y = 0; y < hPart; ++y)
     {
         for(int x = 0; x < wPart; ++x)
@@ -365,13 +360,13 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(int rc,
 
     CudaHostMemoryHeap<float2, 2> optimizedDepthSimMap_hmh(depthSimMapPartDim);
 
-    ps_optimizeDepthSimMapGradientDescent(rcDeviceCamera,
-                                          optimizedDepthSimMap_hmh,
-                                          sgmDepthPixSizeMap_hmh, 
-                                          refinedDepthSimMap_hmh, 
-                                          depthSimMapPartDim,
-                                          refineParams,
-                                          yFrom);
+    cuda_optimizeDepthSimMapGradientDescent(rcDeviceCamera,
+                                            optimizedDepthSimMap_hmh,
+                                            sgmDepthPixSizeMap_hmh, 
+                                            refinedDepthSimMap_hmh, 
+                                            depthSimMapPartDim,
+                                            refineParams,
+                                            yFrom);
 
     copy(out_depthSimMapOptimized, optimizedDepthSimMap_hmh, yFrom);
 
@@ -434,41 +429,6 @@ bool PlaneSweepingCuda::computeNormalMap(
     mvsUtils::printfElapsedTime(t1);
 
   return true;
-}
-
-bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc)
-{
-    ALICEVISION_LOG_DEBUG("getSilhoueteeMap: rc: " << rc);
-
-    int w = _mp.getWidth(rc) / scale;
-    int h = _mp.getHeight(rc) / scale;
-
-    long t1 = clock();
-
-    DeviceCache& deviceCache = DeviceCache::getInstance();
-    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, scale, _ic, _mp);
-
-    uchar4 maskColorRgb;
-    maskColorRgb.x = maskColor.r;
-    maskColorRgb.y = maskColor.g;
-    maskColorRgb.z = maskColor.b;
-    maskColorRgb.w = 1.0f;
-
-    CudaHostMemoryHeap<bool, 2> omap_hmh(CudaSize<2>(w / step, h / step));
-
-    ps_getSilhoueteMap( &omap_hmh, w, h, scale - 1,
-                        step,
-                        rcDeviceCamera,
-                        maskColorRgb, _mp.verbose );
-
-    for(int i = 0; i < (w / step) * (h / step); i++)
-    {
-        (*oMap)[i] = omap_hmh.getBuffer()[i];
-    }
-
-    mvsUtils::printfElapsedTime(t1);
-
-    return true;
 }
 
 } // namespace depthMap

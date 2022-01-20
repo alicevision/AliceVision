@@ -18,7 +18,7 @@ namespace depthMap {
  * @param[in] height the frame height
  * @param[in] stream the CUDA stream for gpu execution
  */
-void cuda_rgb2lab(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, int width, int height, cudaStream_t stream);
+extern void cuda_rgb2lab(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, int width, int height, cudaStream_t stream);
 
 } // namespace depthMap
 } // namespace aliceVision
