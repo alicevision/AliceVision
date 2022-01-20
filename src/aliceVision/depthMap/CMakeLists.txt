@@ -21,31 +21,13 @@ set(depthMap_files_sources
   volumeIO.cpp
 )
 
-# Cuda Headers
-set(depthMap_cuda_files_headers
-  # deviceCommon
-  cuda/deviceCommon/color.cuh
-  cuda/deviceCommon/matrix.cuh
-  cuda/deviceCommon/operators.cuh
-  cuda/deviceCommon/utils.cuh
-  cuda/deviceCommon/Patch.cuh
-  cuda/deviceCommon/SimStat.cuh
-  cuda/deviceCommon/device_utils.h
-  # planeSweeping
-  cuda/planeSweeping/deviceFuseKernels.cuh
-  cuda/planeSweeping/deviceRefineKernels.cuh
-  cuda/planeSweeping/deviceSimilarityVolumeKernels.cuh
-  cuda/planeSweeping/host_utils.h
-  # normalmap
-  cuda/normalmap/device_eig33.cuh
+# Cuda Common Headers
+set(depthMap_cuda_common_headers
+  cuda/hostUtils.hpp
 )
 
-set_source_files_properties(${depthMap_cuda_files_headers}
-  PROPERTIES HEADER_FILE_ONLY true
-)
-
-# Cuda Sources
-set(depthMap_cuda_files_sources
+# Cuda Common Sources
+set(depthMap_cuda_common_sources
   cuda/memory.hpp
   cuda/utils.hpp
   cuda/utils.cpp
@@ -58,6 +40,55 @@ set(depthMap_cuda_files_sources
   cuda/OneTC.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
+)
+
+# device CUDA Headers
+set(depthMap_cuda_device_headers
+  cuda/device/color.cuh
+  cuda/device/matrix.cuh
+  cuda/device/operators.cuh
+  cuda/device/utils.cuh
+  cuda/device/Patch.cuh
+  cuda/device/SimStat.cuh
+  cuda/device/device_utils.h
+)
+
+# device CUDA Sources
+set(depthMap_cuda_device_sources
+  cuda/device/DeviceCameraParams.hpp
+  cuda/device/DeviceCameraParams.cu
+)
+
+# imageProcessing CUDA Sources
+set(depthMap_cuda_imageProcessing_sources
+  cuda/imageProcessing/deviceGaussianFilter.hpp
+  cuda/imageProcessing/deviceGaussianFilter.cu
+  cuda/imageProcessing/deviceColorConversion.hpp
+  cuda/imageProcessing/deviceColorConversion.cu
+)
+
+# normalMapping CUDA Headers
+set(depthMap_cuda_normalMapping_headers
+  cuda/normalMapping/eig33.cuh
+)
+
+# normalMapping CUDA Sources
+set(depthMap_cuda_normalMapping_sources
+  cuda/normalMapping/deviceNormalMap.hpp
+  cuda/normalMapping/deviceNormalMap.cu
+  cuda/normalMapping/DeviceNormalMapper.hpp
+  cuda/normalMapping/DeviceNormalMapper.cpp
+)
+
+# planeSweeping CUDA Headers
+set(depthMap_cuda_planeSweeping_headers
+  cuda/planeSweeping/deviceFuseKernels.cuh
+  cuda/planeSweeping/deviceRefineKernels.cuh
+  cuda/planeSweeping/deviceSimilarityVolumeKernels.cuh
+)
+
+# planeSweeping CUDA Sources
+set(depthMap_cuda_planeSweeping_sources
   cuda/planeSweeping/similarity.hpp
   cuda/planeSweeping/deviceFuse.hpp
   cuda/planeSweeping/deviceFuse.cu
@@ -65,18 +96,34 @@ set(depthMap_cuda_files_sources
   cuda/planeSweeping/deviceRefine.cu
   cuda/planeSweeping/deviceSimilarityVolume.hpp
   cuda/planeSweeping/deviceSimilarityVolume.cu
-  cuda/normalmap/normal_map.hpp
-  cuda/normalmap/normal_map.cu
-  cuda/images/gauss_filter.hpp
-  cuda/images/gauss_filter.cu
-  cuda/images/deviceColorConversion.hpp
-  cuda/images/deviceColorConversion.cu
-  cuda/deviceCommon/DeviceCameraParams.hpp
-  cuda/deviceCommon/DeviceCameraParams.cu
-  ${depthMap_cuda_files_headers}
 )
 
-source_group("aliceVision_depthMap_cuda" FILES ${depthMap_cuda_files_sources})
+set_source_files_properties(${depthMap_cuda_common_headers}
+		            ${depthMap_cuda_device_headers} 
+			    ${depthMap_cuda_normalMapping_headers}
+			    ${depthMap_cuda_planeSweeping_headers}
+
+  PROPERTIES HEADER_FILE_ONLY true
+)
+
+source_group("aliceVision_depthMap_cuda_common" FILES ${depthMap_cuda_common_headers} ${depthMap_cuda_common_sources})
+source_group("aliceVision_depthMap_cuda_device" FILES ${depthMap_cuda_device_headers} ${depthMap_cuda_device_sources})
+source_group("aliceVision_depthMap_cuda_imageProcessing" FILES ${depthMap_cuda_imageProcessing_sources})
+source_group("aliceVision_depthMap_cuda_normalMapping" FILES ${depthMap_cuda_normalMapping_headers} ${depthMap_cuda_normalMapping_sources})
+source_group("aliceVision_depthMap_cuda_planeSweeping" FILES ${depthMap_cuda_planeSweeping_headers} ${depthMap_cuda_planeSweeping_sources})
+
+# Cuda Sources
+set(depthMap_cuda_files_sources
+  ${depthMap_cuda_common_headers} 
+  ${depthMap_cuda_common_sources}
+  ${depthMap_cuda_device_headers} 
+  ${depthMap_cuda_device_sources}
+  ${depthMap_cuda_imageProcessing_sources}
+  ${depthMap_cuda_normalMapping_headers} 
+  ${depthMap_cuda_normalMapping_sources}
+  ${depthMap_cuda_planeSweeping_headers} 
+  ${depthMap_cuda_planeSweeping_sources}
+)
 
 alicevision_add_library(aliceVision_depthMap
   USE_CUDA

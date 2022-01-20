@@ -7,9 +7,8 @@
 #include "DeviceCamera.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-
-#include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
-#include <aliceVision/depthMap/cuda/images/deviceColorConversion.hpp>
+#include <aliceVision/depthMap/cuda/imageProcessing/deviceGaussianFilter.hpp>
+#include <aliceVision/depthMap/cuda/imageProcessing/deviceColorConversion.hpp>
 
 namespace aliceVision {
 namespace depthMap {

@@ -14,7 +14,6 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>

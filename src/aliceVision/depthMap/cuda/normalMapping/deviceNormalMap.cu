@@ -4,19 +4,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "deviceNormalMap.hpp"
+
 #include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
-#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
-#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
-#include <aliceVision/depthMap/cuda/normalmap/device_eig33.cuh>
+#include <aliceVision/depthMap/cuda/hostUtils.hpp>
+#include <aliceVision/depthMap/cuda/device/matrix.cuh>
+#include <aliceVision/depthMap/cuda/device/utils.cuh>
+#include <aliceVision/depthMap/cuda/normalMapping/eig33.cuh>
 
 #include <math_constants.h>
-
-#include <iostream>
-#include <algorithm>
-#include <map>
-#include <array>
 
 namespace aliceVision {
 namespace depthMap {
@@ -109,10 +105,12 @@ __global__ void computeNormalMap_kernel(
   *get2DBufferAt(nmap, nmap_p, x, y) = nn;
 }
 
-void ps_computeNormalMap(
-    NormalMapping* mapping,
-    int width, int height,
-    int wsh, float gammaC, float gammaP)
+__host__ void cuda_computeNormalMap(DeviceNormalMapper* mapping,
+                                    int width, 
+                                    int height,
+                                    int wsh, 
+                                    float gammaC, 
+                                    float gammaP)
 {
   const DeviceCameraParams* cameraParameters_d = mapping->cameraParameters_d;
 
@@ -143,85 +141,6 @@ void ps_computeNormalMap(
 
   normalMap_dmp.copyTo( mapping->getNormalMapHst(), width, height );
   CHECK_CUDA_ERROR();
-}
-
-NormalMapping::NormalMapping()
-    : _allocated_floats(0)
-    , _depthMapHst(0)
-    , _normalMapHst(0)
-{
-    cudaError_t err;
-
-    err = cudaMallocHost(&cameraParameters_h, sizeof(DeviceCameraParams) );
-    THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on host in normal mapping" );
-
-    err = cudaMalloc(&cameraParameters_d, sizeof(DeviceCameraParams));
-    THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on device in normal mapping" );
-}
-
-NormalMapping::~NormalMapping()
-{
-    cudaFree(cameraParameters_d);
-    cudaFreeHost(cameraParameters_h);
-
-    if( _depthMapHst  ) cudaFreeHost( _depthMapHst );
-    if( _normalMapHst ) cudaFreeHost( _normalMapHst );
-}
-
-void NormalMapping::loadCameraParameters()
-{
-    cudaError_t err;
-    err = cudaMemcpy(cameraParameters_d, cameraParameters_h, sizeof(DeviceCameraParams), cudaMemcpyHostToDevice);
-    THROW_ON_CUDA_ERROR( err, "Failed to copy camera parameters from host to device in normal mapping" );
-}
-
-void NormalMapping::allocHostMaps( int w, int h )
-{
-    cudaError_t err;
-    if( _depthMapHst )
-    {
-        if( w*h > _allocated_floats );
-        {
-            err = cudaFreeHost( _depthMapHst );
-            THROW_ON_CUDA_ERROR( err, "Failed to free host depth map in normal mapping" );
-            err = cudaMallocHost( &_depthMapHst, w*h*sizeof(float) );
-            THROW_ON_CUDA_ERROR( err, "Failed to re-allocate host depth map in normal mapping" );
-
-            err = cudaFreeHost( _normalMapHst );
-            THROW_ON_CUDA_ERROR( err, "Failed to free host normal map in normal mapping" );
-            err = cudaMallocHost( &_normalMapHst, w*h*sizeof(float3) );
-            THROW_ON_CUDA_ERROR( err, "Failed to re-allocate host normal map in normal mapping" );
-            _allocated_floats = w * h;
-        }
-    }
-    else
-    {
-        err = cudaMallocHost( &_depthMapHst, w*h*sizeof(float) );
-        THROW_ON_CUDA_ERROR( err, "Failed to allocate host depth map in normal mapping" );
-        err = cudaMallocHost( &_normalMapHst, w*h*sizeof(float3) );
-        THROW_ON_CUDA_ERROR( err, "Failed to allocate host normal map in normal mapping" );
-        _allocated_floats = w * h;
-    }
-}
-
-void NormalMapping::copyDepthMap( const std::vector<float>& depthMap )
-{
-    if( _allocated_floats > depthMap.size() )
-    {
-        std::cerr << "WARNING: " << __FILE__ << ":" << __LINE__
-                  << ": copying depthMap whose origin is too small" << std::endl;
-    }
-    memcpy( _depthMapHst, depthMap.data(), _allocated_floats*sizeof(float) );
-}
-
-const float* NormalMapping::getDepthMapHst() const
-{
-    return _depthMapHst;
-}
-
-float3* NormalMapping::getNormalMapHst()
-{
-    return _normalMapHst;
 }
 
 } // namespace depthMap

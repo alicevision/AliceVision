@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
+#include <aliceVision/depthMap/cuda/device/device_utils.h>
 
 #include <set>
 

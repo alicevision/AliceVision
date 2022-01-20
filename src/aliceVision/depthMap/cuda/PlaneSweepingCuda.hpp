@@ -15,14 +15,17 @@
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
+
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+
 #include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/OneTC.hpp>
 #include <aliceVision/depthMap/cuda/LRUCache.hpp>
-#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
+#include <aliceVision/depthMap/cuda/normalMapping/DeviceNormalMapper.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
@@ -83,12 +86,12 @@ public:
                                             int yFrom, int hPart);
 
     /* create object to store intermediate data for repeated use */
-    NormalMapping* createNormalMapping();
+    DeviceNormalMapper* createNormalMapping();
 
     /* delete object to store intermediate data for repeated use */
-    void deleteNormalMapping( NormalMapping* m );
+    void deleteNormalMapping(DeviceNormalMapper* m);
 
-    bool computeNormalMap( NormalMapping* mapping,
+    bool computeNormalMap(DeviceNormalMapper* mapping,
                            const std::vector<float>& depthMap,
                            std::vector<ColorRGBf>&   normalMap,
                            int rc, int scale,

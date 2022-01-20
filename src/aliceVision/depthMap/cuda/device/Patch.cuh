@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/deviceCommon/DeviceCameraParams.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/color.cuh>
-#include <aliceVision/depthMap/cuda/deviceCommon/matrix.cuh>
-#include <aliceVision/depthMap/cuda/deviceCommon/SimStat.cuh>
-#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
+#include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
+#include <aliceVision/depthMap/cuda/device/color.cuh>
+#include <aliceVision/depthMap/cuda/device/matrix.cuh>
+#include <aliceVision/depthMap/cuda/device/SimStat.cuh>
+#include <aliceVision/depthMap/cuda/device/utils.cuh>
 
 #include <math_constants.h>
 

@@ -5,22 +5,24 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "PlaneSweepingCuda.hpp"
-#include <aliceVision/depthMap/volumeIO.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/nvtx.hpp>
+
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
+
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 
+#include <aliceVision/depthMap/volumeIO.hpp>
+
 #include <aliceVision/depthMap/cuda/utils.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCache.hpp>
-
-#include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
-#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
+#include <aliceVision/depthMap/cuda/imageProcessing/deviceGaussianFilter.hpp>
+#include <aliceVision/depthMap/cuda/normalMapping/deviceNormalMap.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceRefine.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceFuse.hpp>
@@ -375,18 +377,18 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(int rc,
     return true;
 }
 
-NormalMapping* PlaneSweepingCuda::createNormalMapping()
+DeviceNormalMapper* PlaneSweepingCuda::createNormalMapping()
 {
-    return new NormalMapping;
+    return new DeviceNormalMapper;
 }
 
-void PlaneSweepingCuda::deleteNormalMapping( NormalMapping* m )
+void PlaneSweepingCuda::deleteNormalMapping(DeviceNormalMapper* m)
 {
     delete m;
 }
 
 bool PlaneSweepingCuda::computeNormalMap(
-    NormalMapping*            mapping,
+    DeviceNormalMapper*            mapping,
     const std::vector<float>& depthMap,
     std::vector<ColorRGBf>&   normalMap,
     int rc, int scale,
@@ -406,7 +408,7 @@ bool PlaneSweepingCuda::computeNormalMap(
   mapping->allocHostMaps(w, h);
   mapping->copyDepthMap(depthMap);
 
-  ps_computeNormalMap(mapping, w, h, wsh, igammaC, igammaP);
+  cuda_computeNormalMap(mapping, w, h, wsh, igammaC, igammaP);
 
   float3* normalMapPtr = mapping->getNormalMapHst();
 

@@ -6,8 +6,9 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/cuda/device/operators.cuh>
+
 #include <math_constants.h>
-#include <aliceVision/depthMap/cuda/deviceCommon/operators.cuh>
 
 // mn MATRIX ADDRESSING: mxy = x*n+y (x-row,y-col), (m-number of rows, n-number of columns)
 

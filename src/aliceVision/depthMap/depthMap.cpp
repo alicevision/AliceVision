@@ -132,7 +132,7 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, EImageColorSpace::LINEAR);
     PlaneSweepingCuda cps(ic, mp);
 
-    NormalMapping* mapping = cps.createNormalMapping();
+    DeviceNormalMapper* mapping = cps.createNormalMapping();
 
     for(const int rc : cams)
     {
