@@ -7,16 +7,16 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/DeviceCameraParams.hpp>
+#include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-class NormalMapping
+class DeviceNormalMapper
 {
 public:
-    NormalMapping();
-    ~NormalMapping();
+    DeviceNormalMapper();
+    ~DeviceNormalMapper();
 
     void loadCameraParameters();
     void allocHostMaps( int w, int h );
@@ -34,11 +34,6 @@ private:
     float*  _depthMapHst;
     float3* _normalMapHst;
 };
-
-void ps_computeNormalMap(
-    NormalMapping* mapping,
-    int width, int height,
-    int wsh, float gammaC, float gammaP);
 
 } // namespace depthMap
 } // namespace aliceVision

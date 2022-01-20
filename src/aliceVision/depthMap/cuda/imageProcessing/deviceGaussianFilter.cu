@@ -4,14 +4,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <cuda_runtime.h>
+#include "deviceGaussianFilter.hpp"
 
-#include "gauss_filter.hpp"
-#include <aliceVision/depthMap/cuda/deviceCommon/operators.cuh>
-#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
 #include <aliceVision/depthMap/cuda/memory.hpp>
+#include <aliceVision/depthMap/cuda/hostUtils.hpp>
+#include <aliceVision/depthMap/cuda/device/utils.cuh>
+#include <aliceVision/depthMap/cuda/device/operators.cuh>
 
+#include <cuda_runtime.h>
 
 namespace aliceVision {
 namespace depthMap {

@@ -8,10 +8,9 @@
 
 #include "deviceColorConversion.hpp"
 
-#include <aliceVision/depthMap/cuda/deviceCommon/utils.cuh>
-#include <aliceVision/depthMap/cuda/deviceCommon/color.cuh>
-
-#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
+#include <aliceVision/depthMap/cuda/hostUtils.hpp>
+#include <aliceVision/depthMap/cuda/device/utils.cuh>
+#include <aliceVision/depthMap/cuda/device/color.cuh>
 
 namespace aliceVision {
 namespace depthMap {
