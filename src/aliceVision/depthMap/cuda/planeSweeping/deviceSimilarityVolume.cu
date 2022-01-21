@@ -9,6 +9,8 @@
 
 #include <aliceVision/depthMap/cuda/hostUtils.hpp>
 
+#include <map>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -65,12 +67,14 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& vol
 
 __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
                                        const CudaDeviceMemoryPitched<TSim, 3>& d_volSim,
-                                       const CudaSize<3>& volDim,
                                        const CudaSize<3>& axisT,
-                                       cudaTextureObject_t rc_tex, 
+                                       const DeviceCamera& rcDeviceCamera,
                                        const SgmParams& sgmParams,
-                                       bool invY, int filteringIndex)
+                                       bool invY, int filteringIndex, 
+                                       cudaStream_t stream)
 {
+    const CudaSize<3>& volDim = d_volSim.getSize();
+
     const size_t volDimX = volDim[axisT[0]];
     const size_t volDimY = volDim[axisT[1]];
     const size_t volDimZ = volDim[axisT[2]];
@@ -100,7 +104,7 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
     CudaDeviceMemoryPitched<TSimAcc, 2> d_bestSimInYm1(CudaSize<2>(volDimX, 1)); // best sim score along the Y axis for each Z value
 
     // Copy the first XZ plane (at Y=0) from 'd_volSim' into 'd_xzSliceForYm1'
-    volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ>>>(
+    volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ, 0, stream>>>(
         d_xzSliceForYm1->getBuffer(),
         d_xzSliceForYm1->getPitch(),
         d_volSim.getBuffer(),
@@ -109,7 +113,7 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
         volDim_, axisT_, 0); // Y=0
 
     // Set the first Z plane from 'd_volAgr' to 255
-    volume_initVolumeYSlice_kernel<TSim><<<gridVolXZ, blockVolXZ>>>(
+    volume_initVolumeYSlice_kernel<TSim><<<gridVolXZ, blockVolXZ, 0, stream>>>(
         d_volAgr.getBuffer(),
         d_volAgr.getBytesPaddedUpToDim(1),
         d_volAgr.getBytesPaddedUpToDim(0),
@@ -122,13 +126,13 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
         // For each column: compute the best score
         // Foreach x:
         //   d_zBestSimInYm1[x] = min(d_xzSliceForY[1:height])
-        volume_computeBestZInSlice_kernel<<<gridColZ, blockColZ>>>(
+        volume_computeBestZInSlice_kernel<<<gridColZ, blockColZ, 0, stream>>>(
             d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),
             d_bestSimInYm1.getBuffer(),
             volDimX, volDimZ);
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xzSliceForY'
-        volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ>>>(
+        volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ, 0, stream>>>(
             d_xzSliceForY->getBuffer(),
             d_xzSliceForY->getPitch(),
             d_volSim.getBuffer(),
@@ -136,8 +140,8 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
             d_volSim.getBytesPaddedUpToDim(0),
             volDim_, axisT_, y);
 
-        volume_agregateCostVolumeAtXinSlices_kernel<<<gridVolSlide, blockVolSlide>>>(
-            rc_tex,
+        volume_agregateCostVolumeAtXinSlices_kernel<<<gridVolSlide, blockVolSlide, 0, stream>>>(
+            rcDeviceCamera.getTextureObject(), 
             d_xzSliceForY->getBuffer(), d_xzSliceForY->getPitch(),              // inout: xzSliceForY
             d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),          // in:    xzSliceForYm1
             d_bestSimInYm1.getBuffer(),                                         // in:    bestSimInYm1
@@ -151,7 +155,44 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
 
         std::swap(d_xzSliceForYm1, d_xzSliceForY);
     }
-    // CHECK_CUDA_ERROR();
+    
+    CHECK_CUDA_ERROR();
+}
+
+__host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
+                                  const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
+                                  const DeviceCamera& rcDeviceCamera,
+                                  const SgmParams& sgmParams,
+                                  cudaStream_t stream)
+{
+    // update aggregation volume
+    int npaths = 0;
+    const auto updateAggrVolume = [&](const CudaSize<3>& axisT, bool invX)
+    {
+
+        cuda_volumeAggregatePath(volSimFiltered_dmp, 
+                                 volSim_dmp, 
+                                 axisT, 
+                                 rcDeviceCamera, 
+                                 sgmParams, 
+                                 invX, 
+                                 npaths,
+                                 stream);
+        npaths++;
+    };
+
+    // filtering is done on the last axis
+    const std::map<char, CudaSize<3>> mapAxes = {
+        {'X', {1, 0, 2}}, // XYZ -> YXZ
+        {'Y', {0, 1, 2}}, // XYZ
+    };
+
+    for(char axis : sgmParams.filteringAxes)
+    {
+        const CudaSize<3>& axisT = mapAxes.at(axis);
+        updateAggrVolume(axisT, false); // without transpose
+        updateAggrVolume(axisT, true);  // with transpose of the last axis
+    }
 }
 
 __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,

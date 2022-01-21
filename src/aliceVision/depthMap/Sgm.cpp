@@ -108,7 +108,7 @@ bool Sgm::sgmRc()
     // optimized depthmaps ... it must equals to true in normal case
     if(_sgmParams.doSgmOptimizeVolume)                      
     {
-        _cps.sgmOptimizeSimVolume(_rc, volumeFilteredSim_dmp, volumeSecBestSim_dmp, volDim, _sgmParams);
+        _cps.sgmOptimizeSimVolume(_rc, volumeFilteredSim_dmp, volumeSecBestSim_dmp, _sgmParams);
     }
     else
     {
