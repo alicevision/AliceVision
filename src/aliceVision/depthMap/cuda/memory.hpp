@@ -172,32 +172,6 @@ CudaSize<Dim> operator-(const CudaSize<Dim> &lhs, const CudaSize<Dim> &rhs) {
 }
 
 /*********************************************************************************
- * CudaROI
- *********************************************************************************/
-
-struct CudaROI
-{
-    CudaSize<3> begin;
-    CudaSize<3> end;
-
-    CudaROI() = default;
-
-    CudaROI(const CudaSize<3>& in_begin, const CudaSize<3>& in_end)
-        : begin(in_begin)
-        , end(in_end)
-    {}
-
-    CudaROI(const CudaSize<2>& in_begin, const CudaSize<2>& in_end)
-        : begin({in_begin.x(), in_begin.y(), 0})
-        , end({in_end.x(), in_end.y(), 0})
-    {}
-
-    inline int width() const { return end.x() - begin.x(); }
-    inline int height() const { return end.y() - begin.y(); }
-    inline int depth() const { return end.z() - begin.z(); }
-};
-
-/*********************************************************************************
  * CudaMemorySizeBase
  *********************************************************************************/
 
