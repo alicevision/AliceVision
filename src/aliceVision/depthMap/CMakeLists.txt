@@ -37,6 +37,7 @@ set(depthMap_cuda_common_sources
   cuda/DeviceCamera.hpp
   cuda/LRUCameraCache.hpp
   cuda/LRUCache.hpp
+  cuda/ROI.hpp
   cuda/OneTC.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
