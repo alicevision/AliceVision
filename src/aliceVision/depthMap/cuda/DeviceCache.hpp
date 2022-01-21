@@ -80,5 +80,14 @@ private:
     std::map<int, SingleDeviceCache> _cachePerDevice; // <cudaDeviceId, SingleDeviceCache>
 };
 
+/**
+  * @brief Fill the host-side camera parameters from multi-view parameters.
+  * @param[in,out] cameraParameters_h the host-side camera parameters
+  * @param[in] globalCamId the camera index in the ImagesCache / MultiViewParams
+  * @param[in] downscale the downscale to apply on gpu
+  * @param[in] mp the multi-view parameters
+  */
+void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int globalCamId, int downscale, const mvsUtils::MultiViewParams& mp);
+
 } // namespace depthMap
 } // namespace aliceVision
