@@ -6,29 +6,18 @@
 
 #pragma once
 
-#include <time.h>
-
 namespace aliceVision {
 namespace depthMap {
 
-// Round a / b to nearest higher integer value.
-inline
-unsigned int divUp(unsigned int a, unsigned int b)
+/**
+ * @brief Round a / b to nearest higher integer value.
+ * @param[in] a an integer value
+ * @param[in] b an integer value
+ * @return nearest higher integer value of round a / b.
+ */
+__host__ inline unsigned int divUp(unsigned int a, unsigned int b)
 {
   return (a % b != 0) ? (a / b + 1) : (a / b);
-}
-
-inline
-clock_t tic()
-{
-    return clock();
-}
-
-// returns the ms passed after last call to tic()
-inline
-float toc(clock_t ticClk)
-{
-    return (float)((clock() - ticClk) * 1000.0 / CLOCKS_PER_SEC);
 }
 
 } // namespace depthMap
