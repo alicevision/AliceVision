@@ -23,8 +23,8 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBe
                                          const CudaDeviceMemory<float>& depths_d,
                                          const DeviceCamera& rcDeviceCamera, 
                                          const DeviceCamera& tcDeviceCamera, 
-                                         const OneTC& cell,
                                          const SgmParams& sgmParams, 
+                                         const ROI& roi,
                                          cudaStream_t stream);
  
 extern void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
