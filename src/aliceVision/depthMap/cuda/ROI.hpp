@@ -11,7 +11,7 @@ namespace depthMap {
 
 /*
  * @struct ROI
- * @brief Small host / device struct descibing a rectangular 2d /3d region of interest.
+ * @brief Small host / device struct descibing a rectangular 2d / 3d region of interest.
  */
 struct ROI
 {
@@ -63,9 +63,9 @@ struct ROI
  */
 __host__ inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDimY, size_t volDimZ)
 {
-    return ((roi.beginX >= 0) && (roi.endX <= volDimX) && (roi.beginX < roi.endX) &&
-            (roi.beginY >= 0) && (roi.endY <= volDimY) && (roi.beginY < roi.endY) &&
-            (roi.beginZ >= 0) && (roi.endZ <= volDimZ) && (roi.beginZ < roi.endZ));
+    return ((roi.endX <= volDimX) && (roi.beginX < roi.endX) &&
+            (roi.endY <= volDimY) && (roi.beginY < roi.endY) &&
+            (roi.endZ <= volDimZ) && (roi.beginZ < roi.endZ));
 }
 
 /**
@@ -77,8 +77,8 @@ __host__ inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDi
  */
 __host__ inline bool checkImageROI(const ROI& roi, int width, int height)
 {
-    return ((roi.beginX >= 0) && (roi.endX <= width)  && (roi.beginX < roi.endX) &&
-            (roi.beginY >= 0) && (roi.endY <= height) && (roi.beginY < roi.endY) &&
+    return ((roi.endX <= width)  && (roi.beginX < roi.endX) &&
+            (roi.endY <= height) && (roi.beginY < roi.endY) &&
             (roi.beginZ == 0) && (roi.endZ == 0));
 }
 
