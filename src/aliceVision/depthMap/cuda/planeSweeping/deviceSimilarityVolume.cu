@@ -154,28 +154,32 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
     // CHECK_CUDA_ERROR();
 }
 
-__host__ void cuda_volumeRetrieveBestDepth(int rcamCacheId, 
-                                           CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
+__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
                                            CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
                                            const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
-                                           const CudaSize<3>& volDim,
                                            const CudaDeviceMemory<float>& depths_d, 
-                                           int scaleStep, 
-                                           bool interpolate)
+                                           const DeviceCamera& rcDeviceCamera,
+                                           const SgmParams& sgmParams, 
+                                           const ROI& roi, 
+                                           cudaStream_t stream)
 {
-    const int block_size = 8;
-    const dim3 block(block_size, block_size, 1);
-    const dim3 grid(divUp(volDim.x(), block_size), divUp(volDim.y(), block_size), 1);
-
-    volume_retrieveBestZ_kernel<<<grid, block>>>(
-      rcamCacheId, 
+    const int scaleStep = sgmParams.scale * sgmParams.stepXY;
+    const int blockSize = 8;
+    const dim3 block(blockSize, blockSize, 1);
+    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
+    
+    volume_retrieveBestZ_kernel<<<grid, block, 0, stream>>>(
       bestDepth_dmp.getBuffer(), bestDepth_dmp.getBytesPaddedUpToDim(0), 
       bestSim_dmp.getBuffer(), bestSim_dmp.getBytesPaddedUpToDim(0), 
       volSim_dmp.getBuffer(), volSim_dmp.getBytesPaddedUpToDim(1), volSim_dmp.getBytesPaddedUpToDim(0), 
-      int(volDim.x()), int(volDim.y()), int(volDim.z()), 
+      volSim_dmp.getSize().z(),
       depths_d.getBuffer(),
+      rcDeviceCamera.getDeviceCamId(), 
       scaleStep, 
-      interpolate);
+      sgmParams.interpolateRetrieveBestDepth,
+      roi);
+
+    CHECK_CUDA_ERROR();
 }
 
 } // namespace depthMap

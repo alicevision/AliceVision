@@ -234,40 +234,35 @@ bool PlaneSweepingCuda::sgmOptimizeSimVolume(int rc,
 void PlaneSweepingCuda::sgmRetrieveBestDepth(int rc, 
                                              DepthSimMap& bestDepth,
                                              const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
-                                             const CudaSize<3>& volDim,
                                              const StaticVector<float>& rcDepths, 
                                              const SgmParams& sgmParams)
 {
   const system::Timer timer;
+
+  const CudaSize<3>& volDim = volSim_dmp.getSize();
   
   ALICEVISION_LOG_INFO("SGM Retrieve best depth in volume (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ")");
 
   DeviceCache& deviceCache = DeviceCache::getInstance();
 
   const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, 1, _ic, _mp);
+
   const CudaSize<2> depthSimDim(volDim.x(), volDim.y());
 
   CudaDeviceMemory<float> depths_d(rcDepths.getData().data(), rcDepths.size());
   CudaDeviceMemoryPitched<float, 2> bestDepth_dmp(depthSimDim);
   CudaDeviceMemoryPitched<float, 2> bestSim_dmp(depthSimDim);
 
-  const int scaleStep = sgmParams.scale * sgmParams.stepXY;
+  const ROI roi(0, volSim_dmp.getSize().x(), 0, volSim_dmp.getSize().y(), 0, volSim_dmp.getSize().z());
 
-  cuda_volumeRetrieveBestDepth(rcDeviceCamera.getDeviceCamId(),
-                               bestDepth_dmp,
+  cuda_volumeRetrieveBestDepth(bestDepth_dmp,
                                bestSim_dmp, 
                                volSim_dmp, 
-                               volDim,
-                               depths_d,
-                               scaleStep,
-                               sgmParams.interpolateRetrieveBestDepth);
-
-  /*
-  {
-      CudaTexture<float> bestDepth_tex(bestDepth_dmp);
-      ps_medianFilter3(bestDepth_tex.textureObj, bestDepth_dmp);
-  }
-  */
+                               depths_d, 
+                               rcDeviceCamera,
+                               sgmParams,
+                               roi, 
+                               0 /*stream*/);
 
   CudaHostMemoryHeap<float, 2> bestDepth_hmh(depthSimDim);
   bestDepth_hmh.copyFrom(bestDepth_dmp);

@@ -36,14 +36,14 @@ extern void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
                                      bool invY,
                                      int filteringIndex);
 
-extern void cuda_volumeRetrieveBestDepth(int rcamCacheId, 
-                                         CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
+extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
                                          CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
                                          const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
-                                         const CudaSize<3>& volDim,
                                          const CudaDeviceMemory<float>& depths_d, 
-                                         int scaleStep, 
-                                         bool interpolate);
+                                         const DeviceCamera& rcDeviceCamera,
+                                         const SgmParams& sgmParams, 
+                                         const ROI& roi, 
+                                         cudaStream_t stream);
 
 } // namespace depthMap
 } // namespace aliceVision

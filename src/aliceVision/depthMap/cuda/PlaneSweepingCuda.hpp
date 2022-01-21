@@ -61,7 +61,6 @@ public:
     void sgmRetrieveBestDepth(int rc, 
         DepthSimMap& bestDepth, 
         const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
-        const CudaSize<3>& volDim,
         const StaticVector<float>& rcDepths, 
         const SgmParams& sgmParams);
 
