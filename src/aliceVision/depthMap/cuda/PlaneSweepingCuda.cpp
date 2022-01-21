@@ -182,10 +182,11 @@ void PlaneSweepingCuda::computeDepthSimMapVolume(int rc,
 bool PlaneSweepingCuda::sgmOptimizeSimVolume(int rc, 
                                              CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                              const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-                                             const CudaSize<3>& volDim, 
                                              const SgmParams& sgmParams)
 {
     const system::Timer timer;
+
+    const CudaSize<3>& volDim = volSim_dmp.getSize();
 
     ALICEVISION_LOG_INFO("SGM Optimizing volume:" << std::endl
                           << "\t- filtering axes: " << sgmParams.filteringAxes << std::endl
@@ -196,36 +197,11 @@ bool PlaneSweepingCuda::sgmOptimizeSimVolume(int rc,
 
     const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(rc, sgmParams.scale, _ic, _mp);
 
-    // update aggregation volume
-    int npaths = 0;
-    const auto updateAggrVolume = [&](const CudaSize<3>& axisT, bool invX) 
-    {
-        ALICEVISION_LOG_DEBUG("Update aggregate volume (npaths: " << npaths << ", invX: " << invX << ")");
-
-        cuda_volumeAggregatePath(volSimFiltered_dmp, 
-                                 volSim_dmp, 
-                                 volDim, 
-                                 axisT, 
-                                 rcDeviceCamera.getTextureObject(), 
-                                 sgmParams, 
-                                 invX, npaths);
-        npaths++;
-
-        ALICEVISION_LOG_DEBUG("Update aggregate volume done.");
-    };
-
-    // filtering is done on the last axis
-    const std::map<char, CudaSize<3>> mapAxes = {
-        {'X', {1, 0, 2}}, // XYZ -> YXZ
-        {'Y', {0, 1, 2}}, // XYZ
-    };
-
-    for(char axis : sgmParams.filteringAxes)
-    {
-        const CudaSize<3>& axisT = mapAxes.at(axis);
-        updateAggrVolume(axisT, false); // without transpose
-        updateAggrVolume(axisT, true);  // with transpose of the last axis
-    }
+    cuda_volumeOptimize(volSimFiltered_dmp, 
+                        volSim_dmp, 
+                        rcDeviceCamera, 
+                        sgmParams, 
+                        0 /*stream*/);
 
     ALICEVISION_LOG_INFO("SGM Optimizing volume done in: " << timer.elapsedMs() << " ms.");
     return true;

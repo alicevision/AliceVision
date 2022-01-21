@@ -10,7 +10,7 @@
 
 #include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCamera.hpp>
-#include <aliceVision/depthMap/cuda/OneTC.hpp>
+#include <aliceVision/depthMap/cuda/ROI.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
@@ -26,15 +26,12 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBe
                                          const SgmParams& sgmParams, 
                                          const ROI& roi,
                                          cudaStream_t stream);
- 
-extern void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
-                                     const CudaDeviceMemoryPitched<TSim, 3>& d_volSim, 
-                                     const CudaSize<3>& volDim,
-                                     const CudaSize<3>& axisT, 
-                                     cudaTextureObject_t rc_tex, 
-                                     const SgmParams& sgmParams, 
-                                     bool invY,
-                                     int filteringIndex);
+
+extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
+                                const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
+                                const DeviceCamera& rcDeviceCamera,
+                                const SgmParams& sgmParams,
+                                cudaStream_t stream);
 
 extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
                                          CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
