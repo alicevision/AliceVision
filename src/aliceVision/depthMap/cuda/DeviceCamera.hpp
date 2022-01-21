@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
@@ -46,39 +44,37 @@ public:
     inline int getWidth() const { return _width; }
     inline int getHeight() const { return _height; }
     inline int getDownscale() const { return _downscale; }
-    inline int getTextureObject() const { return _textureObject; }
     inline int getDeviceMemoryConsumption() const { return _memBytes; }
+    inline cudaTextureObject_t getTextureObject() const { return _textureObject; }
 
     /**
-     * @brief Update the DeviceCamera with a new host-side corresponding camera.
+     * @brief Update the DeviceCamera from a new host-side corresponding camera.
      * @param[in] globalCamId the camera index in the ImagesCache / MultiViewParams
      * @param[in] downscale the downscale to apply on gpu
-     * @param[in,out] imageCache the image cache to get host-side data
-     * @param[in] mp the multi-view parameters
+     * @param[in] originalWidth the image original width
+     * @param[in] originalHeight the image original height
+     * @param[in] frame_hmh the host-side image frame
+     * @param[in] cameraParameters_h the host-side camera parameters
      * @param[in] stream the CUDA stream for gpu execution
      */
     void fill(int globalCamId, 
               int downscale, 
-              mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-              const mvsUtils::MultiViewParams& mp, 
+              int originalWidth, 
+              int originalHeight, 
+              const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh,
+              const DeviceCameraParams& cameraParameters_h, 
               cudaStream_t stream);
+
 private:
 
     // private methods
 
     /**
-     * @brief Update the DeviceCamera with a new host-side corresponding camera.
-     * @param[in] mp the multi-view parameters
+     * @brief Update the DeviceCamera frame with an host-side corresponding frame.
+     * @param[in] frame_hmh the host-side corresponding frame
      * @param[in] stream the CUDA stream for gpu execution
      */
-    void fillDeviceCameraParameters(const mvsUtils::MultiViewParams& mp, cudaStream_t stream);
-
-    /**
-     * @brief Update the DeviceCamera with a new host-side corresponding camera.
-     * @param[in,out] imageCache the image cache to get host-side data
-     * @param[in] stream the CUDA stream for gpu execution
-     */
-    void fillDeviceFrameFromImageCache(mvsUtils::ImagesCache<ImageRGBAf>& ic, cudaStream_t stream);
+    void fillDeviceFrameFromHostFrame(const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh, cudaStream_t stream);
 
     // private members
 
@@ -95,15 +91,6 @@ private:
     std::unique_ptr<CudaDeviceMemoryPitched<CudaRGBA, 2>> _frame_dmp = nullptr;
     cudaTextureObject_t _textureObject;
 };
-
-/**
-  * @brief Fill the host-side camera parameters from multi-view parameters.
-  * @param[in,out] cameraParameters_h the host-side camera parameters
-  * @param[in] globalCamId the camera index in the ImagesCache / MultiViewParams
-  * @param[in] downscale the downscale to apply on gpu
-  * @param[in] mp the multi-view parameters
-  */
-void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int globalCamId, int downscale, const mvsUtils::MultiViewParams& mp);
 
 } // namespace depthMap
 } // namespace aliceVision
