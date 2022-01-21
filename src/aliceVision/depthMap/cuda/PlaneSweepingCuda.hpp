@@ -23,7 +23,6 @@
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 
 #include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/OneTC.hpp>
 #include <aliceVision/depthMap/cuda/LRUCache.hpp>
 #include <aliceVision/depthMap/cuda/normalMapping/DeviceNormalMapper.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
@@ -48,7 +47,6 @@ public:
     void computeDepthSimMapVolume(int rc,
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
-        const CudaSize<3>& volDim,
         const std::vector<int>& tCams, 
         const std::vector<Pixel>& rcDepthsTcamsLimits,
         const std::vector<float>& rcDepths,

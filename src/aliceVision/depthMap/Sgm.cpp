@@ -14,6 +14,7 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
+#include <aliceVision/depthMap/cuda/utils.hpp>
 
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
@@ -73,20 +74,14 @@ bool Sgm::sgmRc()
     const CudaSize<3> volDim(volDimX, volDimY, volDimZ);
 
     // log volumes allocation size / gpu device id
-    // this device need also to allocate: 
-    // (max_img - 1) * X * Y * dims_at_a_time * sizeof(float) of device memory.
-    {
-        int devid;
-        cudaGetDevice( &devid );
-        ALICEVISION_LOG_DEBUG("Allocating 2 volumes (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ") on GPU device " << devid << ".");
-    }
+    ALICEVISION_LOG_DEBUG("Allocating 2 volumes (x: " << volDim.x() << ", y: " << volDim.y() << ", z: " << volDim.z() << ") on GPU device " << getCudaDeviceId() << ".");
 
     CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_dmp(volDim);
     CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_dmp(volDim);
 
     checkStartingAndStoppingDepth();
 
-    _cps.computeDepthSimMapVolume(_rc, volumeBestSim_dmp, volumeSecBestSim_dmp, volDim, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
+    _cps.computeDepthSimMapVolume(_rc, volumeBestSim_dmp, volumeSecBestSim_dmp, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
 
     // particular case with only one tc
     if(_tCams.size() < 2)

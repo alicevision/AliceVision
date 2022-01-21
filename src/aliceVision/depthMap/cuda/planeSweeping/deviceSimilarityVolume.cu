@@ -31,17 +31,12 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& vol
                                            const CudaDeviceMemory<float>& depths_d,
                                            const DeviceCamera& rcDeviceCamera, 
                                            const DeviceCamera& tcDeviceCamera,
-                                           const OneTC& cell, 
-                                           const SgmParams& sgmParams, 
+                                           const SgmParams& sgmParams,
+                                           const ROI& roi,
                                            cudaStream_t stream)
 {
-    const CudaSize<3>& volDim = volBestSim_dmp.getSize();
-
-    const int startDepthIndex = cell.getDepthToStart();
-    const int nbDepthsToSearch = cell.getDepthsToSearch();
-    
     const dim3 block(32, 1, 1); // minimal default settings
-    const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), nbDepthsToSearch);
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), roi.depth());
     
     volume_slice_kernel<<<grid, block, 0, stream>>>(
         rcDeviceCamera.getTextureObject(),
@@ -49,24 +44,23 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& vol
         rcDeviceCamera.getDeviceCamId(),
         tcDeviceCamera.getDeviceCamId(),
         depths_d.getBuffer(),
-        startDepthIndex,
-        nbDepthsToSearch,
         rcDeviceCamera.getWidth(), 
         rcDeviceCamera.getHeight(), 
         tcDeviceCamera.getWidth(), 
         tcDeviceCamera.getHeight(), 
-        sgmParams.wsh,
         float(sgmParams.gammaC), 
         float(sgmParams.gammaP),
+        sgmParams.wsh,
+        sgmParams.stepXY,
         volBestSim_dmp.getBuffer(),
         volBestSim_dmp.getBytesPaddedUpToDim(1),
         volBestSim_dmp.getBytesPaddedUpToDim(0),
         volSecBestSim_dmp.getBuffer(),
         volSecBestSim_dmp.getBytesPaddedUpToDim(1),
         volSecBestSim_dmp.getBytesPaddedUpToDim(0),
-        sgmParams.stepXY,
-        volDim.x(), 
-        volDim.y());
+        roi);
+
+    CHECK_CUDA_ERROR();
 }
 
 __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,

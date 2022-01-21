@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/cuda/ROI.hpp>
 #include <aliceVision/depthMap/cuda/device/matrix.cuh>
 #include <aliceVision/depthMap/cuda/device/Patch.cuh>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
@@ -46,60 +47,52 @@ __global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p, int
     *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = 255.0f;
 }
 
-__global__ void volume_slice_kernel(cudaTextureObject_t rc_tex,
-                                    cudaTextureObject_t tc_tex,
+__global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
+                                    cudaTextureObject_t tcTex,
                                     int rcDeviceCamId,
                                     int tcDeviceCamId,
                                     const float* depths_d,
-                                    const int startDepthIndex,
-                                    const int nbDepthsToSearch,
                                     int rcWidth, int rcHeight,
                                     int tcWidth, int tcHeight,
-                                    int wsh,
-                                    const float gammaC, const float gammaP,
+                                    const float gammaC, 
+                                    const float gammaP, 
+                                    const int wsh,
+                                    const int stepXY,
                                     TSim* volume_1st, int volume1st_s, int volume1st_p,
                                     TSim* volume_2nd, int volume2nd_s, int volume2nd_p,
-                                    int volStepXY,
-                                    int volDimX, int volDimY)
+                                    const ROI roi)
 {
-    /*
-     * Note !
-     * volDimX == width  / volStepXY
-     * volDimY == height / volStepXY
-     * width and height are needed to compute transformations,
-     * volDimX and volDimY may be the number of samples, reducing memory or computation
-     */
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const int roiZ = blockIdx.z;
 
-    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
-
-    if( vx >= volDimX || vy >= volDimY ) // || vz >= volDimZ
+    if(roiX >= roi.width() || roiY >= roi.height()) // no need to check roiZ
         return;
-    // if (vz >= nbDepthsToSearch)
-    //  return;
-    assert(vz < nbDepthsToSearch);
 
-    const int x = vx * volStepXY;
-    const int y = vy * volStepXY;
+    // corresponding volume coordinates
+    const int vx = roi.beginX + roiX;
+    const int vy = roi.beginY + roiY;
+    const int vz = roi.beginZ + roiZ;
 
-    // if(x >= rcWidth || y >= rcHeight)
-    //     return;
+    // corresponding image coordinates
+    const int x = vx * stepXY;
+    const int y = vy * stepXY;
 
-    const int zIndex = startDepthIndex + vz;
-    const float fpPlaneDepth = depths_d[zIndex];
+    // corresponding plane depth
+    const float planeDepth = depths_d[vz];
 
+    // compute patch
     Patch ptcho;
-    volume_computePatch(rcDeviceCamId,
-                        tcDeviceCamId,
-                        ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
+    volume_computePatch(rcDeviceCamId, tcDeviceCamId, ptcho, planeDepth, make_int2(x, y)); // no texture use
 
-    float fsim = compNCCby3DptsYK(rc_tex, tc_tex,
+    // compute patch similarity
+    float fsim = compNCCby3DptsYK(rcTex, tcTex,
                                   rcDeviceCamId, tcDeviceCamId,
                                   ptcho, wsh,
                                   rcWidth, rcHeight,
                                   tcWidth, tcHeight,
                                   gammaC, gammaP);
+
 
     constexpr const float fminVal = -1.0f;
     constexpr const float fmaxVal = 1.0f;
@@ -124,8 +117,8 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rc_tex,
       fsim *= 254.0f;
     }
 
-    TSim* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
-    TSim* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
+    TSim* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, vz);
+    TSim* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, vz);
 
     if (fsim < *fsim_1st)
     {
