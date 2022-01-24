@@ -35,16 +35,16 @@ __device__ float depthPlaneToDepth(int deviceCamId, const float2& pix, float fpP
     return depth;
 }
 
-__global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p, int volDimX, int volDimY)
+__global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p, int volDimX, int volDimY, TSim value)
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
+    const int vz = blockIdx.z;
 
     if(vx >= volDimX || vy >= volDimY)
         return;
 
-    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = 255.0f;
+    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = value;
 }
 
 __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
