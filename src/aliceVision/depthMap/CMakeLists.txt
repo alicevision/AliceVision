@@ -31,6 +31,8 @@ set(depthMap_cuda_common_sources
   cuda/memory.hpp
   cuda/utils.hpp
   cuda/utils.cpp
+  cuda/DeviceStreamManager.cpp
+  cuda/DeviceStreamManager.hpp
   cuda/DeviceCache.cpp
   cuda/DeviceCache.hpp
   cuda/DeviceCamera.cpp
