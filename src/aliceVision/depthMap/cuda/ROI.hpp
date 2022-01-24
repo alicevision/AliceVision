@@ -77,8 +77,8 @@ __host__ inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDi
  */
 __host__ inline bool checkImageROI(const ROI& roi, int width, int height)
 {
-    return ((roi.endX <= width)  && (roi.beginX < roi.endX) &&
-            (roi.endY <= height) && (roi.beginY < roi.endY) &&
+    return ((roi.endX <= (unsigned int)(width))  && (roi.beginX < roi.endX) &&
+            (roi.endY <= (unsigned int)(height)) && (roi.beginY < roi.endY) &&
             (roi.beginZ == 0) && (roi.endZ == 0));
 }
 
