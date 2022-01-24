@@ -24,8 +24,8 @@ __host__ void cuda_volumeInitialize(CudaDeviceMemoryPitched<TSim, 3>& volume_dmp
       volume_dmp.getBuffer(),
       volume_dmp.getBytesPaddedUpToDim(1),
       volume_dmp.getBytesPaddedUpToDim(0), 
-      volDim.x(), 
-      volDim.y());
+      int(volDim.x()), 
+      int(volDim.y()));
 }
 
 __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,

@@ -9,6 +9,11 @@
 namespace aliceVision {
 namespace depthMap {
 
+/*
+ * @note TSim is the similarity type for volume in device memory.
+ * @note TSimAcc is the similarity accumulation type for volume in device memory.
+ */
+
 #ifdef TSIM_USE_FLOAT
     using TSim = float;
     using TSimAcc = float;
