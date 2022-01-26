@@ -6,16 +6,20 @@
 
 #pragma once
 
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
-#include <aliceVision/depthMap/cuda/memory.hpp>
+
+struct float2;
 
 namespace aliceVision {
 namespace depthMap {
 
 struct RefineParams;
-class PlaneSweepingCuda;
+
+template <class Type, unsigned Dim>
+class CudaDeviceMemoryPitched;
 
 /**
  * @brief Depth Map Estimation Refine
@@ -23,8 +27,8 @@ class PlaneSweepingCuda;
 class Refine
 {
 public:
-    Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
-    ~Refine();
+    Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc);
+    ~Refine() = default;
 
     bool refineRc(const DepthSimMap& sgmDepthSimMap);
 
@@ -35,7 +39,7 @@ private:
 
     const RefineParams& _refineParams;
     const mvsUtils::MultiViewParams& _mp;
-    PlaneSweepingCuda& _cps;
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
     const int _rc;            // refine R camera index
     StaticVector<int> _tCams; // refine T camera indexes, compute in the constructor

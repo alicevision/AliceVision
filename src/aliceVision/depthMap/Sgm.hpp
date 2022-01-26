@@ -6,16 +6,20 @@
 
 #pragma once
 
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
 struct SgmParams;
-class PlaneSweepingCuda;
+
+template <class Type, unsigned Dim>
+class CudaDeviceMemoryPitched;
 
 /**
  * @brief Depth Map Estimation Semi-Global Matching
@@ -23,8 +27,8 @@ class PlaneSweepingCuda;
 class Sgm
 {
 public:
-    Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc);
-    ~Sgm();
+    Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc);
+    ~Sgm() = default;
 
     bool sgmRc();
 
@@ -36,6 +40,37 @@ private:
 
     void logRcTcDepthInformation() const;
     void checkStartingAndStoppingDepth() const;
+
+    /**
+     * @brief Compute for each RcTc the best / second best similarity volumes.
+     * @param[out] out_volBestSim_dmp the best similarity volume in device memory
+     * @param[out] out_volSecBestSim_dmp the second best similarity volume in device memory
+     */
+    void computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBestSim_dmp, CudaDeviceMemoryPitched<TSim, 3>& out_volSecBestSim_dmp) const;
+
+    /**
+     * @brief Optimize the given similarity volume.
+     * @note  Filter on the 3D volume to weight voxels based on their neighborhood strongness.
+     *        So it downweights local minimums that are not supported by their neighborhood.
+     * @param[out] out_volSimOptimized_dmp the output optimized similarity volume in device memory
+     * @param[in] in_volSim_dmp the input similarity volume in device memory
+     */
+    void optimizeSimilarityVolume(CudaDeviceMemoryPitched<TSim, 3>& out_volSimOptimized_dmp, const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp) const;
+
+    /**
+     * @brief Retrieve the best depths in the given similarity volume.
+     * @note  For each pixel, choose the voxel with the minimal similarity value.
+     * @param[out] out_bestDepthSimMap the output best depth/sim map
+     * @param[in] in_volSim_dmp the input similarity volume in device memory
+     */
+    void retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp) const;
+
+    /**
+     * @brief Export volume alembic file and 9 points csv file.
+     * @param[in] in_volSim_dmp the given similarity volume in device memory
+     * @param[in] name the export filename
+     */
+    void exportVolumeInformation(const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, const std::string& name) const;
 
     void computeDepthsAndResetTCams();
 
@@ -65,7 +100,7 @@ private:
 
     const SgmParams& _sgmParams;
     const mvsUtils::MultiViewParams& _mp;
-    PlaneSweepingCuda& _cps;
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
     const int _rc;
 
     StaticVector<int> _tCams;
