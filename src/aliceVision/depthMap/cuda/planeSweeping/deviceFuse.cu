@@ -12,109 +12,140 @@
 namespace aliceVision {
 namespace depthMap {
 
-__host__ void cuda_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
-                                                        CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
-                                                        std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
-                                                        int ndepthSimMaps, const RefineParams& refineParams)
+__host__ void cuda_fuseDepthSimMapsGaussianKernelVoting(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp,
+                                                        const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapPartSgmUpscale_dmp,
+                                                        const std::vector<CudaDeviceMemoryPitched<float2, 2>>& in_depthSimMapPartPerRcTc_dmp,
+                                                        const RefineParams& refineParams,
+                                                        const ROI& roi, 
+                                                        cudaStream_t stream)
 {
     const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
     const float twoTimesSigmaPowerTwo = 2.0f * refineParams.sigma * refineParams.sigma;
 
     // setup block and grid
-    const int block_size = 16;
-    const dim3 block(block_size, block_size, 1);
-    const dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
+    const int blockSize = 16;
+    const dim3 block(blockSize, blockSize, 1);
+    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
-    CudaDeviceMemoryPitched<float2, 2> bestDepthSimMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float2, 2> bestGsvSampleMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float, 2> gsvSampleMap_dmp(CudaSize<2>(width, height));
-    std::vector<CudaDeviceMemoryPitched<float2, 2>*> depthSimMaps_dmp(ndepthSimMaps);
+    const CudaSize<2> roiSize(roi.width(), roi.height());
 
-    for(int i = 0; i < ndepthSimMaps; i++)
+    assert(roiSize == in_depthSimMapPartPerCam_dmp.front().getSize());
+
+    CudaDeviceMemoryPitched<float2, 2> bestGsvSampleMapPart_dmp(roiSize);
+    CudaDeviceMemoryPitched<float, 2> gsvSampleMapPart_dmp(roiSize);
+
+    // sliding gaussian window
+    for(int sample = -refineParams.nSamplesHalf; sample <= refineParams.nSamplesHalf; ++sample) // default sample range from -150 to 150
     {
-        depthSimMaps_dmp[i] = new CudaDeviceMemoryPitched<float2, 2>(CudaSize<2>(width, height));
-        copy((*depthSimMaps_dmp[i]), (*depthSimMaps_hmh[i]));
-    }
-
-    for(int s = -refineParams.nSamplesHalf; s <= refineParams.nSamplesHalf; s++) // (-150, 150)
-    {
-        for(int c = 1; c < ndepthSimMaps; c++) // number of T cameras
+        // compute the gaussian window sample 
+        for(int tci = 0; tci < in_depthSimMapPartPerRcTc_dmp.size(); ++tci) // number of T cameras
         {
-            fuse_computeGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
-                gsvSampleMap_dmp.getBuffer(), gsvSampleMap_dmp.getPitch(), depthSimMaps_dmp[c]->getBuffer(),
-                depthSimMaps_dmp[c]->getPitch(), depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(),
-                width, height, (float)s, c - 1, samplesPerPixSize, twoTimesSigmaPowerTwo);
+            // sum gaussian window sample score of each RcTc depth/sim map
+            fuse_computeGaussianKernelVotingSampleMap_kernel<<<grid, block, 0, stream>>>(
+                gsvSampleMapPart_dmp.getBuffer(), 
+                gsvSampleMapPart_dmp.getPitch(), 
+                in_depthSimMapPartPerRcTc_dmp[tci].getBuffer(), // tc depth/sim map 
+                in_depthSimMapPartPerRcTc_dmp[tci].getPitch(),
+                in_depthSimMapPartSgmUpscale_dmp.getBuffer(), // sgm depth/pixSize map for middle depth
+                in_depthSimMapPartSgmUpscale_dmp.getPitch(),
+                tci, // first tc cam id, (re)-initialization
+                float(sample),
+                samplesPerPixSize, 
+                twoTimesSigmaPowerTwo,
+                roi);
         }
-        fuse_updateBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
-            bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.getPitch(), gsvSampleMap_dmp.getBuffer(),
-            gsvSampleMap_dmp.getPitch(), width, height, (float)s, s + refineParams.nSamplesHalf);
+
+        // save the sample if it's the best
+        fuse_updateBestGaussianKernelVotingSampleMap_kernel<<<grid, block, 0, stream>>>(
+            bestGsvSampleMapPart_dmp.getBuffer(), 
+            bestGsvSampleMapPart_dmp.getPitch(), 
+            gsvSampleMapPart_dmp.getBuffer(),
+            gsvSampleMapPart_dmp.getPitch(), 
+            sample + refineParams.nSamplesHalf, // first sample, first initialization 
+            float(sample),                 
+            roi);
     }
 
-    fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
-        bestDepthSimMap_dmp.getBuffer(), bestDepthSimMap_dmp.getPitch(), bestGsvSampleMap_dmp.getBuffer(),
-        bestGsvSampleMap_dmp.getPitch(), depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->getPitch(), width,
-        height, samplesPerPixSize);
+    // write the output depth/sim for the best sample
+    fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel<<<grid, block, 0, stream>>>(
+        out_depthSimMapRefinedFused_dmp.getBuffer(), 
+        out_depthSimMapRefinedFused_dmp.getPitch(), 
+        bestGsvSampleMapPart_dmp.getBuffer(),
+        bestGsvSampleMapPart_dmp.getPitch(), 
+        in_depthSimMapPartSgmUpscale_dmp.getBuffer(), // sgm depth/pixSize map for middle depth
+        in_depthSimMapPartSgmUpscale_dmp.getPitch(), 
+        samplesPerPixSize,
+        roi);
 
-    copy((*out_depthSimMap_hmh), bestDepthSimMap_dmp);
-
-    for(int i = 0; i < ndepthSimMaps; i++)
-    {
-        delete depthSimMaps_dmp[i];
-    }
+    CHECK_CUDA_ERROR();
 }
 
-__host__ void cuda_optimizeDepthSimMapGradientDescent(const DeviceCamera& rcDeviceCamera,
-                                                      CudaHostMemoryHeap<float2, 2>& out_optimizedDepthSimMap_hmh,
-                                                      const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
-                                                      const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
-                                                      const CudaSize<2>& depthSimMapPartDim, 
+__host__ void cuda_optimizeDepthSimMapGradientDescent(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp,
+                                                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp,
+                                                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapRefinedFused_dmp,
+                                                      const DeviceCamera& rcDeviceCamera, 
                                                       const RefineParams& refineParams,
-                                                      int yFrom)
+                                                      const ROI& roi,
+                                                      cudaStream_t stream)
 {
-    const int partWidth = depthSimMapPartDim.x();
-    const int partHeight = depthSimMapPartDim.y();
     const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
 
-    // setup block and grid
-    const int block_size = 16;
-    const dim3 block(block_size, block_size, 1);
-    const dim3 grid(divUp(partWidth, block_size), divUp(partHeight, block_size), 1);
+    // initialize depth/sim map optimized with SGM depth/sim map
+    copy(out_depthSimMapOptimized_dmp, in_depthSimMapSgmUpscale_dmp);
+    
+    const CudaSize<2> roiSize(roi.width(), roi.height());
+    CudaDeviceMemoryPitched<float, 2> optDepthMapPart_dmp(roiSize);
+    CudaDeviceMemoryPitched<float, 2> imgVariancePart_dmp(roiSize);
 
-    const CudaDeviceMemoryPitched<float2, 2> sgmDepthPixSizeMap_dmp(sgmDepthPixSizeMap_hmh);
-    const CudaDeviceMemoryPitched<float2, 2> refinedDepthSimMap_dmp(refinedDepthSimMap_hmh);
-
-    CudaDeviceMemoryPitched<float, 2> optDepthMap_dmp(depthSimMapPartDim);
-    CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(depthSimMapPartDim);
-    copy(optDepthSimMap_dmp, sgmDepthPixSizeMap_dmp);
-
-    CudaDeviceMemoryPitched<float, 2> imgVariance_dmp(depthSimMapPartDim);
     {
+        // setup block and grid
         const dim3 lblock(32, 2, 1);
-        const dim3 lgrid(divUp(partWidth, lblock.x), divUp(partHeight, lblock.y), 1);
+        const dim3 lgrid(divUp(roi.width(), lblock.x), divUp(roi.height(), lblock.y), 1);
 
-        compute_varLofLABtoW_kernel<<<lgrid, lblock>>>(rcDeviceCamera.getTextureObject(), imgVariance_dmp.getBuffer(),
-                                                       imgVariance_dmp.getPitch(), partWidth, partHeight, yFrom);
+        compute_varLofLABtoW_kernel<<<lgrid, lblock, 0, stream>>>(
+            rcDeviceCamera.getTextureObject(), 
+            imgVariancePart_dmp.getBuffer(), 
+            imgVariancePart_dmp.getPitch(),
+            roi);
     }
-    CudaTexture<float> imgVarianceTex(imgVariance_dmp);
 
-    for(int iter = 0; iter < refineParams.nIters; ++iter) // nIters: 100 by default
+    CudaTexture<float> imgVarianceTex(imgVariancePart_dmp);
+
+    // setup block and grid
+    const int blockSize = 16;
+    const dim3 block(blockSize, blockSize, 1);
+    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
+
+    for(int iter = 0; iter < refineParams.nIters; ++iter) // default nb iterations is 100
     {
-        // Copy depths values from optDepthSimMap to optDepthMap
-        fuse_getOptDeptMapFromOptDepthSimMap_kernel<<<grid, block>>>(
-            optDepthMap_dmp.getBuffer(), optDepthMap_dmp.getPitch(), optDepthSimMap_dmp.getBuffer(),
-            optDepthSimMap_dmp.getPitch(), partWidth, partHeight);
+        // copy depths values from optDepthSimMap to optDepthMap
+        fuse_getOptDeptMapFromOptDepthSimMap_kernel<<<grid, block, 0, stream>>>(
+            optDepthMapPart_dmp.getBuffer(), 
+            optDepthMapPart_dmp.getPitch(), 
+            out_depthSimMapOptimized_dmp.getBuffer(), // initialized with SGM depth/sim map
+            out_depthSimMapOptimized_dmp.getPitch(),
+            roi);
 
-        CudaTexture<float> depthTex(optDepthMap_dmp);
+        CudaTexture<float> depthTex(optDepthMapPart_dmp);
 
-        // Adjust depth/sim by using previously computed depths
-        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
-            rcDeviceCamera.getTextureObject(), rcDeviceCamera.getDeviceCamId(), imgVarianceTex.textureObj,
-            depthTex.textureObj, optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
-            sgmDepthPixSizeMap_dmp.getBuffer(), sgmDepthPixSizeMap_dmp.getPitch(), refinedDepthSimMap_dmp.getBuffer(),
-            refinedDepthSimMap_dmp.getPitch(), partWidth, partHeight, iter, samplesPerPixSize, yFrom);
+        // adjust depth/sim by using previously computed depths
+        fuse_optimizeDepthSimMap_kernel<<<grid, block, 0, stream>>>(
+            rcDeviceCamera.getTextureObject(), 
+            rcDeviceCamera.getDeviceCamId(), 
+            imgVarianceTex.textureObj,
+            depthTex.textureObj, 
+            out_depthSimMapOptimized_dmp.getBuffer(), 
+            out_depthSimMapOptimized_dmp.getPitch(),
+            in_depthSimMapSgmUpscale_dmp.getBuffer(), 
+            in_depthSimMapSgmUpscale_dmp.getPitch(),
+            in_depthSimMapRefinedFused_dmp.getBuffer(), 
+            in_depthSimMapRefinedFused_dmp.getPitch(),
+            iter, 
+            samplesPerPixSize, 
+            roi);
     }
 
-    copy(out_optimizedDepthSimMap_hmh, optDepthSimMap_dmp);
+    CHECK_CUDA_ERROR();
 }
 
 } // namespace depthMap

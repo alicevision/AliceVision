@@ -9,6 +9,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/cuda/memory.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -55,26 +56,21 @@ private:
     void filterMaskedPixels(DepthSimMap& out_depthSimMap);
 
     /**
-     * @brief Refine the given depth/sim map with the given T camera.
-     * @param[in] tc the given T camera index
-     * @param[int,out] depthSimMap the given output refined depth/sim map
-     */
-    void refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const;
-
-    /**
      * @brief Refine and fuse the given depth/sim map.
-     * @param[in] depthSimMapSgmUpscale the given upscaled SGM depth sim/map
-     * @param[out] out_depthSimMapRefinedFused the given output refined and fused depth/sim map
+     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth sim/map in device memory
+     * @param[out] out_depthSimMapRefinedFused_dmp the given output refined and fused depth/sim map in device memory
      */
-    void refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, DepthSimMap& out_depthSimMapRefinedFused) const;
+    void refineAndFuseDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const;
 
     /**
      * @brief Optimize the given depth/sim maps.
-     * @param[in] depthSimMapSgmUpscale the given upscaled SGM depth/sim map
-     * @param[in] depthSimMapRefinedFused the given refined and fused depth/sim map
-     * @param[out] out_depthSimMapOptimized the given output optimized depth/sim map
+     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth/sim map in device memory
+     * @param[in] depthSimMapRefinedFused_dmp the given refined and fused depth/sim map in device memory
+     * @param[out] out_depthSimMapOptimized_dmp the given output optimized depth/sim map in device memory
      */
-    void optimizeDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, const DepthSimMap& depthSimMapRefinedFused, DepthSimMap& out_depthSimMapOptimized) const;
+    void optimizeDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp,
+                             const CudaDeviceMemoryPitched<float2, 2>& depthSimMapRefinedFused_dmp,
+                             CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp) const;
 };
 
 } // namespace depthMap

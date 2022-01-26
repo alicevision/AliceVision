@@ -63,23 +63,18 @@ public:
         const StaticVector<float>& rcDepths, 
         const SgmParams& sgmParams);
 
-    bool refineRcTcDepthMap(int rc, int tc, 
-                            StaticVector<float>& inout_depthMap, 
-                            StaticVector<float>& out_simMap,
-                            const RefineParams& refineParams,
-                            int xFrom, int wPart);
 
-    bool fuseDepthSimMapsGaussianKernelVoting(int wPart, int hPart, 
-                                              StaticVector<DepthSim>& out_depthSimMap,
-                                              const StaticVector<StaticVector<DepthSim>*>& dataMaps,
-                                              const RefineParams& refineParams);
+    void refineAndFuseDepthSimMap(int rc, 
+                                  CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp,
+                                  const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp,
+                                  const std::vector<int>& tCams, 
+                                  const RefineParams& refineParams);
 
-    bool optimizeDepthSimMapGradientDescent(int rc, 
-                                            StaticVector<DepthSim>& out_depthSimMapOptimized,
-                                            const StaticVector<DepthSim>& depthSimMapSgmUpscale,
-                                            const StaticVector<DepthSim>& depthSimMapRefinedFused,
-                                            const RefineParams& refineParams,
-                                            int yFrom, int hPart);
+    void optimizeDepthSimMapGradientDescent(int rc, 
+                                            CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp,
+                                            const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp,
+                                            const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapRefinedFused_dmp,
+                                            const RefineParams& refineParams);
 
     /* create object to store intermediate data for repeated use */
     DeviceNormalMapper* createNormalMapping();

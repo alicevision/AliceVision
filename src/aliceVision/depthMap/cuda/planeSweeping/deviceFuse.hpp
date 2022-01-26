@@ -9,23 +9,45 @@
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCamera.hpp>
 #include <aliceVision/depthMap/cuda/memory.hpp>
+#include <aliceVision/depthMap/cuda/ROI.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-extern void cuda_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
-                                                      CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
-                                                      std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
-                                                      int ndepthSimMaps, 
-                                                      const RefineParams& refineParams);
+/**
+ * @brief Fuse the given RcTc refined depth/sim maps. 
+ * @note Use subsampling with a sliding Gaussian to find the best depth/sim considering each RcTc depth/sim map.
+ * @param[out] out_depthSimMapRefinedFused_dmp the output fused best depth/sim map
+ * @param[in] in_depthSimMapPartSgmUpscale_dmp the upscaled SGM depth/sim map
+ * @param[in] in_depthSimMapPartPerRcTc_dmp the RcTc refined depth/sim maps
+ * @param[in] refineParams the Refine parameters
+ * @param[in] roi the 2d region of interest
+ * @param[in] stream the stream for gpu execution
+ */
+extern void cuda_fuseDepthSimMapsGaussianKernelVoting(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp,
+                                                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapPartSgmUpscale_dmp,
+                                                      const std::vector<CudaDeviceMemoryPitched<float2, 2>>& in_depthSimMapPartPerRcTc_dmp,
+                                                      const RefineParams& refineParams,
+                                                      const ROI& roi, 
+                                                      cudaStream_t stream);
 
-extern void cuda_optimizeDepthSimMapGradientDescent(const DeviceCamera& rcDeviceCamera, 
-                                                    CudaHostMemoryHeap<float2, 2>& out_optimizedDepthSimMap_hmh,
-                                                    const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
-                                                    const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
-                                                    const CudaSize<2>& depthSimMapPartDim, 
+/**
+ * @brief Optimize a depth/sim map with the refineFused depth/sim map and the SGM depth/sim map.
+ * @param[out] out_depthSimMapOptimized_dmp the output optimized depth/sim map
+ * @param[in] in_depthSimMapSgmUpscale_dmp the input upscaled SGM depth/sim map
+ * @param[in] in_depthSimMapRefinedFused_dmp the inpuyt refined and fused depth/sim map
+ * @param[in] rcDeviceCamera the R device camera
+ * @param[in] refineParams the Refine parameters
+ * @param[in] roi the 2d region of interest
+ * @param[in] stream the stream for gpu execution
+ */
+extern void cuda_optimizeDepthSimMapGradientDescent(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp,
+                                                    const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp,
+                                                    const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapRefinedFused_dmp,
+                                                    const DeviceCamera& rcDeviceCamera, 
                                                     const RefineParams& refineParams,
-                                                    int yFrom);
+                                                    const ROI& roi,
+                                                    cudaStream_t stream);
 
 } // namespace depthMap
 } // namespace aliceVision
