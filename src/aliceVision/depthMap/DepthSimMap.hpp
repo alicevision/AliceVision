@@ -95,6 +95,17 @@ public:
     DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step);
     ~DepthSimMap();
 
+    inline int getScale() const { return _scale; }
+    inline int getStep() const { return _step; }
+    inline int getRc() const { return _rc; }
+    inline int getWidth() const { return _w; }
+    inline int getHeight() const { return _h; }
+    inline const DepthSim& getDepthSim(int x, int y) const { return _dsm[y * _w + x]; }
+    inline const StaticVector<DepthSim>& getData() const { return _dsm; }
+
+    inline DepthSim& getDepthSim(int x, int y) { return _dsm[y * _w + x]; }
+    inline StaticVector<DepthSim>& getData() { return _dsm; }
+
     void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
     void initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim);
     void initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,

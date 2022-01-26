@@ -113,7 +113,7 @@ void DepthSimMap::initFromSmaller(const DepthSimMap& other)
     }
     const double ratio = double(_scale * _step) / double(other._scale * other._step);
 
-    ALICEVISION_LOG_DEBUG("DepthSimMap::initFromSmaller: ratio=" << ratio << ", otherScaleStep=" << other._scale * other._step << ", scaleStep=" << _scale * _step);
+    ALICEVISION_LOG_TRACE("initialize depth/sim map from smaller: ratio = " << ratio << ", other scale x step = " << other._scale * other._step << ", scale x step = " << _scale * _step);
     for (int y = 0; y < _h; ++y)
     {
         const double oy = (double(y) - 0.5) * ratio;
