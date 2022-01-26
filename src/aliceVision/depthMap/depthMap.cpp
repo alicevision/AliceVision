@@ -7,6 +7,7 @@
 #include "depthMap.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
@@ -16,7 +17,8 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/cuda/utils.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCache.hpp>
-#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
+#include <aliceVision/depthMap/cuda/normalMapping/DeviceNormalMapper.hpp>
+#include <aliceVision/depthMap/cuda/normalMapping/deviceNormalMap.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -81,18 +83,15 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // load images from files into RAM
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
 
-    // load stuff on GPU memory and creates multi-level images and computes gradients
-    PlaneSweepingCuda cps(ic, mp);
-
     for(const int rc : cams)
     {
-        Sgm sgm(sgmParams, mp, cps, rc);
-        Refine refine(refineParams, mp, cps, rc);
+        Sgm sgm(sgmParams, mp, ic, rc);
+        Refine refine(refineParams, mp, ic, rc);
         
         // preload sgmTcams async
         {
             const auto startTime = std::chrono::high_resolution_clock::now();
-            cps._ic.refreshImages_async(sgm.getTCams().getData());
+            ic.refreshImages_async(sgm.getTCams().getData());
             ALICEVISION_LOG_INFO("Preload T cameras done in: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
         }
 
@@ -130,9 +129,8 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
     const int wsh = 3;
 
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, EImageColorSpace::LINEAR);
-    PlaneSweepingCuda cps(ic, mp);
 
-    DeviceNormalMapper* mapping = cps.createNormalMapping();
+    DeviceNormalMapper normalMapper;
 
     for(const int rc : cams)
     {
@@ -140,19 +138,54 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
 
         if (!fs::exists(normalMapFilepath))
         {
+            const int scale = 1;
             std::vector<float> depthMap;
-            int w = 0;
-            int h = 0;
-            readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageColorSpace::NO_CONVERSION);
+            {
+                int w = 0;
+                int h = 0;
+                readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageColorSpace::NO_CONVERSION);
+            }
 
             std::vector<ColorRGBf> normalMap;
             normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
 
-            cps.computeNormalMap(mapping, depthMap, normalMap, rc, 1, gammaC, gammaP, wsh);
+            const int w = mp.getWidth(rc) / scale;
+            const int h = mp.getHeight(rc) / scale;
+
+            const system::Timer timer;
+            ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ")");
+
+            // Fill Camera Struct
+
+            fillHostCameraParameters(*(normalMapper.cameraParameters_h), rc, scale, mp);
+            normalMapper.loadCameraParameters();
+            normalMapper.allocHostMaps(w, h);
+            normalMapper.copyDepthMap(depthMap);
+
+            cuda_computeNormalMap(&normalMapper, w, h, wsh, gammaC, gammaP);
+
+            float3* normalMapPtr = normalMapper.getNormalMapHst();
+
+            constexpr bool q = (sizeof(ColorRGBf[2]) == sizeof(float3[2]));
+            if(q == true)
+            {
+                memcpy(normalMap.data(), normalMapper.getNormalMapHst(), w * h * sizeof(float3));
+            }
+            else
+            {
+                for(int i = 0; i < w * h; i++)
+                {
+                    normalMap[i].r = normalMapPtr[i].x;
+                    normalMap[i].g = normalMapPtr[i].y;
+                    normalMap[i].b = normalMapPtr[i].z;
+                }
+            }
+
             writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+
+            ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
         }
     }
-    cps.deleteNormalMapping(mapping);
 }
 
 } // namespace depthMap
