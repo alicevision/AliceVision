@@ -9,205 +9,143 @@
 
 #include <aliceVision/depthMap/cuda/hostUtils.hpp>
 
+#include <utility>
+
 namespace aliceVision {
 namespace depthMap {
 
-__host__ void cuda_refineDepthMap(const DeviceCamera& rcDeviceCamera, 
-                                  const DeviceCamera& tcDeviceCamera,
-                                  float* inout_depthMap_hmh,
-                                  float* out_simMap_hmh,
-                                  const RefineParams& refineParams, 
-                                  int xFrom, int wPart)
+__host__ extern void cuda_refineDepthMap(CudaDeviceMemoryPitched<float2, 2>& inout_rcTcDepthSimMap_dmp,
+                                         const DeviceCamera& rcDeviceCamera, 
+                                         const DeviceCamera& tcDeviceCamera,
+                                         const RefineParams& refineParams, 
+                                         const ROI& roi,
+                                         cudaStream_t stream)
 {
     // setup block and grid
     const dim3 block(16, 16, 1);
-    const dim3 grid(divUp(wPart, block.x), divUp(rcDeviceCamera.getHeight(), block.y), 1);
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), 1);
 
-    CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(wPart, rcDeviceCamera.getHeight()));
-    copy(rcDepthMap_dmp, inout_depthMap_hmh, wPart, rcDeviceCamera.getHeight());
+    const CudaSize<2>& depthSimMapSize = inout_rcTcDepthSimMap_dmp.getSize();
+    CudaDeviceMemoryPitched<float2, 2> bestDepthSimMap_dmp(depthSimMapSize);
 
-    CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(wPart, rcDeviceCamera.getHeight()));
-    CudaDeviceMemoryPitched<float, 2> bestDptMap_dmp(CudaSize<2>(wPart, rcDeviceCamera.getHeight()));
+    const int halfNSteps = ((refineParams.nDepthsToRefine - 1) / 2) + 1; // default nDepthsToRefine = 31
+    const int firstStep = 1 - halfNSteps;
 
-    const int halfNSteps = ((refineParams.nDepthsToRefine - 1) / 2) + 1; // Default ntcsteps = 31
-
-    for(int i = 0; i < halfNSteps; ++i)
+    // find best depth/sim map in depth offset from -(halfNSteps - 1) to (halfNSteps - 1), default from -15 to 15
+    for(int step = firstStep; step < halfNSteps; ++step)
     {
-        refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block, 0, stream>>>(
             rcDeviceCamera.getDeviceCamId(),
             tcDeviceCamera.getDeviceCamId(),
             rcDeviceCamera.getTextureObject(), 
             tcDeviceCamera.getTextureObject(),
-            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(), 
-            wPart, 
-            rcDeviceCamera.getHeight(), 
+            inout_rcTcDepthSimMap_dmp.getBuffer(), 
+            inout_rcTcDepthSimMap_dmp.getPitch(),
+            bestDepthSimMap_dmp.getBuffer(), 
+            bestDepthSimMap_dmp.getPitch(), 
             refineParams.wsh, 
             refineParams.gammaC, 
             refineParams.gammaP,
-            float(i), 
             refineParams.useTcOrRcPixSize, 
-            xFrom,
             rcDeviceCamera.getWidth(), 
             rcDeviceCamera.getHeight(),
             tcDeviceCamera.getWidth(), 
-            tcDeviceCamera.getHeight());
+            tcDeviceCamera.getHeight(),
+            step, 
+            firstStep,
+            roi);
     }
 
-    for(int i = 1; i < halfNSteps; ++i)
+    /* note: filter intermediate refined depth/sim map using bilateral filter or median filter does not improve quality */
+
+    // save the best sim and its direct neighbors sim for interpolation
+    CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap_dmp(depthSimMapSize);
+
+    // set best sim map into lastThreeSimsMap_dmp 
+    refine_setLastThreeSimsMap_kernel<<<grid, block, 0, stream>>>(
+        lastThreeSimsMap_dmp.getBuffer(), 
+        lastThreeSimsMap_dmp.getPitch(),
+        bestDepthSimMap_dmp.getBuffer(), 
+        bestDepthSimMap_dmp.getPitch(), 
+        1, // index 0: (best depth -1), 1: (best depth), 2: (best depth + 1)
+        roi); 
+  
     {
-        refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        // compute similarity of (best depth - 1)
+        // note: update best similarity, best depth is unchanged
+        refine_compYKNCCSimMapPatch_kernel<<<grid, block, 0, stream>>>(
             rcDeviceCamera.getDeviceCamId(),
             tcDeviceCamera.getDeviceCamId(),
             rcDeviceCamera.getTextureObject(), 
             tcDeviceCamera.getTextureObject(),
-            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(), 
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(), 
-            wPart, 
-            rcDeviceCamera.getHeight(),
-            refineParams.wsh,
+            bestDepthSimMap_dmp.getBuffer(), 
+            bestDepthSimMap_dmp.getPitch(), 
+            refineParams.wsh, 
             refineParams.gammaC, 
             refineParams.gammaP,
-            float(-i),
             refineParams.useTcOrRcPixSize, 
-            xFrom, 
             rcDeviceCamera.getWidth(), 
             rcDeviceCamera.getHeight(),
             tcDeviceCamera.getWidth(), 
-            tcDeviceCamera.getHeight());
-    }
+            tcDeviceCamera.getHeight(),
+            -1.0f, // best depth - 1
+            roi);
 
-    /*
-    // Filter intermediate refined images does not improve
-    for (int i = 0; i < 5; ++i)
-    {
-        // Filter refined depth map
-        CudaTexture<float> depthTex(bestDptMap_dmp);
-        float euclideanDelta = 1.0;
-        int radius = 3;
-        ps_bilateralFilter<float>(
-            depthTex.textureObj,
-            bestDptMap_dmp,
-            euclideanDelta,
-            radius);
-        ps_medianFilter<float>(
-            depthTex.textureObj,
-            bestDptMap_dmp,
-            radius);
-    }
-    */
-
-    CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap_dmp(CudaSize<2>(wPart, rcDeviceCamera.getHeight()));
-    CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(wPart, rcDeviceCamera.getHeight()));
-
-    {
-        // Set best sim map into lastThreeSimsMap_dmp.y
-        refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(), 
-            wPart, rcDeviceCamera.getHeight(), 1);
-        /*
-        // Compute NCC for depth-1
-        refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rc_cam.param_dev.i, 
-            tc_cam.param_dev.i,
-            rc_tex, tc_tex,
-            simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            wPart, rcHeight,
-            refineParams.wsh,
-            refineParams.gammaC,
-            refineParams.gammaP,
-            0.0f, 
-            refineParams.useTcOrRcPixSize, 
-            xFrom,
-            rcDeviceCamera.getWidth(),
-            rcDeviceCamera.getHeight(),
-            tcDeviceCamera.getWidth(),
-            tcDeviceCamera.getHeight());
-
-        // Set sim for depth-1 into lastThreeSimsMap_dmp.y
-        refine_setLastThreeSimsMap_kernel <<<grid, block>>>(
-            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-            simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-            wPart, rcHeight, 1);
-        */
+        // set similarity of (best depth - 1) into lastThreeSimsMap_dmp
+        refine_setLastThreeSimsMap_kernel<<<grid, block, 0, stream>>>(
+          lastThreeSimsMap_dmp.getBuffer(), 
+          lastThreeSimsMap_dmp.getPitch(),
+          bestDepthSimMap_dmp.getBuffer(), 
+          bestDepthSimMap_dmp.getPitch(), 
+          0, // index 0: (best depth -1), 1: (best depth), 2: (best depth + 1)
+          roi); 
     }
 
     {
-        // Compute NCC for depth-1
-        refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        // compute similarity of (best depth + 1)
+        // note: update best similarity, best depth is unchanged
+        refine_compYKNCCSimMapPatch_kernel<<<grid, block, 0, stream>>>(
             rcDeviceCamera.getDeviceCamId(),
             tcDeviceCamera.getDeviceCamId(),
             rcDeviceCamera.getTextureObject(), 
             tcDeviceCamera.getTextureObject(),
-            simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), 
-            wPart, 
-            rcDeviceCamera.getHeight(), 
-            refineParams.wsh,
+            bestDepthSimMap_dmp.getBuffer(), 
+            bestDepthSimMap_dmp.getPitch(), 
+            refineParams.wsh, 
             refineParams.gammaC, 
             refineParams.gammaP,
-            -1.0f, 
             refineParams.useTcOrRcPixSize, 
-            xFrom,
             rcDeviceCamera.getWidth(), 
             rcDeviceCamera.getHeight(),
             tcDeviceCamera.getWidth(), 
-            tcDeviceCamera.getHeight());
+            tcDeviceCamera.getHeight(),
+            +1.0f, // best depth + 1
+            roi);
 
-        // Set sim for depth-1 into lastThreeSimsMap_dmp.x
-        refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-            simMap_dmp.getBuffer(), simMap_dmp.getPitch(), 
-            wPart, rcDeviceCamera.getHeight(), 0);
+        // set sim of (best depth + 1) into lastThreeSimsMap_dmp
+        refine_setLastThreeSimsMap_kernel<<<grid, block, 0, stream>>>(
+          lastThreeSimsMap_dmp.getBuffer(), 
+          lastThreeSimsMap_dmp.getPitch(),
+          bestDepthSimMap_dmp.getBuffer(), 
+          bestDepthSimMap_dmp.getPitch(), 
+          2, // index 0: (best depth -1), 1: (best depth), 2: (best depth + 1)
+          roi); 
     }
 
-    {
-        // Compute NCC for depth+1
-        refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rcDeviceCamera.getDeviceCamId(),
-            tcDeviceCamera.getDeviceCamId(),
-            rcDeviceCamera.getTextureObject(), 
-            tcDeviceCamera.getTextureObject(),
-            simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), 
-            wPart, 
-            rcDeviceCamera.getHeight(), 
-            refineParams.wsh,
-            refineParams.gammaC, 
-            refineParams.gammaP,
-            +1.0f, 
-            refineParams.useTcOrRcPixSize, 
-            xFrom,
-            rcDeviceCamera.getWidth(), 
-            rcDeviceCamera.getHeight(),
-            tcDeviceCamera.getWidth(), 
-            tcDeviceCamera.getHeight());
+    // interpolation from the lastThreeSimsMap_dmp
+    refine_interpolateDepthFromThreeSimsMap_kernel<<<grid, block, 0, stream>>>(
+      rcDeviceCamera.getDeviceCamId(),
+      tcDeviceCamera.getDeviceCamId(),
+      lastThreeSimsMap_dmp.getBuffer(), 
+      lastThreeSimsMap_dmp.getPitch(), 
+      bestDepthSimMap_dmp.getBuffer(), 
+      bestDepthSimMap_dmp.getPitch(), 
+      refineParams.useTcOrRcPixSize,
+      roi);
 
-        // Set sim for depth+1 into lastThreeSimsMap_dmp.z
-        refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(), 
-            simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-            wPart, rcDeviceCamera.getHeight(), 2);
-    }
-
-    // Interpolation from the lastThreeSimsMap_dmp
-    refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
-        rcDeviceCamera.getDeviceCamId(),
-        tcDeviceCamera.getDeviceCamId(),
-        bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-        lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(), 
-        wPart, 
-        rcDeviceCamera.getHeight(),  
-        refineParams.useTcOrRcPixSize, 
-        xFrom);
-
-    copy(out_simMap_hmh, wPart, rcDeviceCamera.getHeight(), bestSimMap_dmp);
-    copy(inout_depthMap_hmh, wPart, rcDeviceCamera.getHeight(), bestDptMap_dmp);
+    inout_rcTcDepthSimMap_dmp.copyFrom(bestDepthSimMap_dmp);
+    
+    CHECK_CUDA_ERROR();
 }
 
 } // namespace depthMap

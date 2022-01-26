@@ -61,169 +61,212 @@ __device__ float move3DPointByTcOrRcPixStep(int rcDeviceCamId, int tcDeviceCamId
 
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rcDeviceCamId,
                                                          int tcDeviceCamId,
-                                                         cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-                                                         float* osimMap, int osimMap_p,
-                                                         float* odptMap, int odptMap_p,
-                                                         const float* depthMap, int depthMap_p, int partWidth, int height,
-                                                         int wsh, float gammaC, float gammaP,
-                                                         float tcStep,
-                                                         bool moveByTcOrRc, int xFrom,
+                                                         cudaTextureObject_t rcTex, 
+                                                         cudaTextureObject_t tcTex,
+                                                         const float2* in_sgmDepthSimMap, int in_sgmDepthSimMap_p, 
+                                                         float2* out_bestDepthSimMap, int out_bestDepthSimMap_p, 
+                                                         int wsh, 
+                                                         float gammaC, 
+                                                         float gammaP, 
+                                                         bool moveByTcOrRc,
                                                          int rcWidth, int rcHeight,
-                                                         int tcWidth, int tcHeight)
+                                                         int tcWidth, int tcHeight,
+                                                         int tcCurrentStep,
+                                                         int tcFirstStep,
+                                                         const ROI roi)
 {
-    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
+    // roi and depth/sim map part coordinates
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(tile_x >= partWidth || tile_y >= height)
+    if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    const int2 pix = make_int2(tile_x + xFrom, tile_y);
+    // corresponding texture coordinates
+    const int2 pix = make_int2(roi.beginX + roiX, roi.beginY + roiY);
 
-    float odpt = *get2DBufferAt(depthMap, depthMap_p, tile_x, tile_y);
-    float osim = 1.0f;
+    // get the output best depth/sim pointer
+    float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap, out_bestDepthSimMap_p, roiX, roiY);
 
-    float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y);
-    float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, tile_x, tile_y);
+    // initialize depth/sim from upscaled SGM value
+    float2 depthSim = *get2DBufferAt(in_sgmDepthSimMap, in_sgmDepthSimMap_p, roiX, roiY);
+    depthSim.y = 1.0f;
 
-    const float4 gcr = tex2D_float4(rc_tex, pix.x + 0.5f, pix.y + 0.5f);
-    if(odpt <= 0.0f || gcr.w == 0.0f)
+    // get the corresponding color (to check alpha)
+    const float4 gcr = tex2D_float4(rcTex, pix.x + 0.5f, pix.y + 0.5f);
+
+    // case SGM depth <= 0 or Rc alpha == 0
+    if(depthSim.x <= 0.0f || gcr.w == 0.0f) 
     {
-        *osim_ptr = osim;
-        *odpt_ptr = odpt;
+        *out_bestDepthSimPtr = depthSim;
         return;
     }
 
+    // get a 3d point from SGM result depth (middle depth)
+    float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, depthSim.x);
+
+    // move the 3d point in depth by tcStep
+    move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, p, float(tcCurrentStep), moveByTcOrRc);
+
+    // get the new depth from the point move
+    depthSim.x = size(p - constantCameraParametersArray_d[rcDeviceCamId].C);
+
+    // compute similarity at the new depth
     {
-        float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, odpt);
-        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, p, tcStep, moveByTcOrRc);
-
-        odpt = size(p - constantCameraParametersArray_d[rcDeviceCamId].C);
-
         Patch ptch;
         ptch.p = p;
         ptch.d = computePixSize(rcDeviceCamId, p);
-        // TODO: we could compute the orientation of the path from the input depth map instead of relying on the cameras orientations
+        // TODO: we could compute the orientation of the path from the input depth map instead 
+        // of relying on the cameras orientations
         computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
-        osim = compNCCby3DptsYK(rc_tex, tc_tex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        depthSim.y = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
 
-    if(tcStep == 0.0f)
+    // update output best depth/sim map 
+    if(tcCurrentStep == tcFirstStep)
     {
-        // For the first iteration, we initialize the values
-        *osim_ptr = osim;
-        *odpt_ptr = odpt;
+        // for the first iteration, we initialize the values
+        *out_bestDepthSimPtr = depthSim;
     }
     else
     {
-        // Then we update the similarity value if it's better
-        float actsim = *osim_ptr;
-        if(osim < actsim)
+        // update the similarity value if it's better
+        const float actSim = (*out_bestDepthSimPtr).y;
+        if(depthSim.y < actSim)
         {
-            *osim_ptr = osim;
-            *odpt_ptr = odpt;
+            *out_bestDepthSimPtr = depthSim;
         }
     }
 }
 
 __global__ void refine_compYKNCCSimMapPatch_kernel(int rcDeviceCamId,
                                                    int tcDeviceCamId,
-                                                   cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-                                                   float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
-                                                   int partWidth, int height, int wsh, float gammaC,
-                                                   float gammaP, float tcStep,
-                                                   bool moveByTcOrRc, int xFrom, int rcWidth, int rcHeight, int tcWidth, int tcHeight)
+                                                   cudaTextureObject_t rcTex, 
+                                                   cudaTextureObject_t tcTex,
+                                                   float2* inout_bestDepthSimMap, int inout_bestDepthSimMap_p, 
+                                                   int wsh, 
+                                                   float gammaC, 
+                                                   float gammaP, 
+                                                   bool moveByTcOrRc,
+                                                   int rcWidth, int rcHeight,
+                                                   int tcWidth, int tcHeight,
+                                                   float tcStep,
+                                                   const ROI roi)
 {
-    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
+    // roi and depth/sim map part coordinates
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(tile_x >= partWidth || tile_y >= height)
+    if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    const int2 pix = make_int2(tile_x + xFrom, tile_y);
+    // corresponding texture coordinates
+    const int2 pix = make_int2(roi.beginX + roiX, roi.beginY + roiY);
 
-    float depth = *get2DBufferAt(depthMap, depthMap_p, tile_x, tile_y);
-    float osim = 1.1f;
-
-    if(depth > 0.0f)
+    // get best depth/sim value 
+    float2 depthSim = *get2DBufferAt(inout_bestDepthSimMap, inout_bestDepthSimMap_p, roiX, roiY);
+  
+    if(depthSim.x > 0.0f) 
     {
-        float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, depth);
-        // move3DPointByTcPixStep(p, tcStep);
+        // depth > 0
+        // get a 3d point from best depth (middle depth)
+        float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, depthSim.x);
+
+        // move the 3d point in depth by tcStep
         move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, p, tcStep, moveByTcOrRc);
 
+        // compute similarity at the new depth
         Patch ptch;
         ptch.p = p;
         ptch.d = computePixSize(rcDeviceCamId, p);
         computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
-        osim = compNCCby3DptsYK(rc_tex, tc_tex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth,
-                                tcHeight, gammaC, gammaP);
+        depthSim.y  = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
-    *get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y) = osim;
+    else 
+    {
+        // depth <= 0, set bad similarity
+        depthSim.y = 1.1f;
+    }
+
+    // update output similarity, best depth is unchanged
+    *get2DBufferAt(inout_bestDepthSimMap, inout_bestDepthSimMap_p, roiX, roiY) = depthSim;
 }
 
-__global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int lastThreeSimsMap_p, float* simMap,
-                                                  int simMap_p, int width, int height, int id)
+__global__ void refine_setLastThreeSimsMap_kernel(float3* out_lastThreeSimsMap, int out_lastThreeSimsMap_p, 
+                                                  const float2* in_depthSimMap, int in_depthSimMap_p, 
+                                                  int index, 
+                                                  const ROI roi)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    // roi and depth/sim map part coordinates
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x >= width || y >= height)
+    if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    float sim = *get2DBufferAt(simMap, simMap_p, x, y);
-    float3* lastThreeSims_ptr = get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+    const float2 in_depthSim = *get2DBufferAt(in_depthSimMap, in_depthSimMap_p, roiX, roiY); 
+    float3* out_lastThreeSimsPtr = get2DBufferAt(out_lastThreeSimsMap, out_lastThreeSimsMap_p, roiX, roiY);
 
-    if(id == 0)
+    if(index == 0)
     {
-        lastThreeSims_ptr->x = sim;
+        out_lastThreeSimsPtr->x = in_depthSim.y; // in_depthSim.y is similarity
     }
-    if(id == 1)
+    else if(index == 1)
     {
-        lastThreeSims_ptr->y = sim;
+        out_lastThreeSimsPtr->y = in_depthSim.y;
     }
-    if(id == 2)
+    else if(index == 2)
     {
-        lastThreeSims_ptr->z = sim;
+        out_lastThreeSimsPtr->z = in_depthSim.y;
     }
 }
 
-__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rcDeviceCamId,
-                                                                     int tcDeviceCamId,
-                                                                     float* osimMap, int osimMap_p, float* iodepthMap,
-                                                                     int iodepthMap_p, float3* lastThreeSimsMap,
-                                                                     int lastThreeSimsMap_p, int partWidth, int height,
-                                                                     bool moveByTcOrRc, int xFrom)
+__global__ void refine_interpolateDepthFromThreeSimsMap_kernel(int rcDeviceCamId,
+                                                               int tcDeviceCamId,
+                                                               const float3* in_lastThreeSimsMap, int in_lastThreeSimsMap_p,
+                                                               float2* inout_bestDepthSimMap, int inout_bestDepthSimMap_p, 
+                                                               bool moveByTcOrRc,
+                                                               const ROI roi)
 {
-    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
+    // roi and depth/sim map part coordinates
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(tile_x >= partWidth || tile_y >= height)
+    if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    const int2 pix = make_int2(tile_x + xFrom, tile_y);
+    // corresponding texture coordinates
+    const int2 pix = make_int2(roi.beginX + roiX, roi.beginY + roiY);
 
-    float midDepth = *get2DBufferAt(iodepthMap, iodepthMap_p, tile_x, tile_y);
-    float3 sims = *get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, tile_x, tile_y);
-    float outDepth = midDepth;
-    float outSim = sims.y;
+    // get best middle depth
+    const float midDepth = get2DBufferAt(inout_bestDepthSimMap, inout_bestDepthSimMap_p, roiX, roiY)->x;
 
-    if(outDepth > 0.0f)
+    // get best similarity values
+    const float3 sims = *get2DBufferAt(in_lastThreeSimsMap, in_lastThreeSimsMap_p, roiX, roiY);
+
+    float2 out_depthSim = make_float2(midDepth, sims.y);
+
+    if(midDepth > 0.0f) // middle depth > 0
     {
-        float3 pMid = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, midDepth);
+        // get the three 3d points
+        const float3 pMid = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, midDepth);
         float3 pm1 = pMid;
         float3 pp1 = pMid;
-        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, pm1, -1.0f, moveByTcOrRc);
-        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, pp1, +1.0f, moveByTcOrRc);
+
+        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, pm1, -1.0f, moveByTcOrRc); // move the 3d point in depth by -1
+        move3DPointByTcOrRcPixStep(rcDeviceCamId, tcDeviceCamId, pp1, +1.0f, moveByTcOrRc); // move the 3d point in depth by +1
 
         float3 depths;
-        depths.x = size(pm1 - constantCameraParametersArray_d[rcDeviceCamId].C);
-        depths.y = midDepth;
-        depths.z = size(pp1 - constantCameraParametersArray_d[rcDeviceCamId].C);
+       
+        depths.x = size(pm1 - constantCameraParametersArray_d[rcDeviceCamId].C); // get the new depth from the point move
+        depths.y = midDepth; // middle depth
+        depths.z = size(pp1 - constantCameraParametersArray_d[rcDeviceCamId].C); // get the new depth from the point move
 
-        outDepth = refineDepthSubPixel(depths, sims);
+        // interpolate depth
+        out_depthSim.x = refineDepthSubPixel(depths, sims);
     }
 
-    *get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y) = outSim;
-    *get2DBufferAt(iodepthMap, iodepthMap_p, tile_x, tile_y) = outDepth;
+    *get2DBufferAt(inout_bestDepthSimMap, inout_bestDepthSimMap_p, roiX, roiY) = out_depthSim;
 }
 
 } // namespace depthMap
