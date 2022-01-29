@@ -89,6 +89,13 @@ bool Sgm::sgmRc()
 
     _cps.computeDepthSimMapVolume(_rc, volumeBestSim_dmp, volumeSecBestSim_dmp, volDim, _tCams.getData(), _depthsTcamsLimits.getData(), _depths.getData(), _sgmParams);
 
+    // particular case with only one tc
+    if(_tCams.size() < 2)
+    {
+        // the second best volume has no valid similarity values
+        volumeSecBestSim_dmp.copyFrom(volumeBestSim_dmp);
+    }
+
     if (_sgmParams.exportIntermediateResults)
     {
         CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeSecBestSim_dmp.getSize());
