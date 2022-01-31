@@ -15,8 +15,7 @@
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/memory.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCache.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/deviceRefine.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/deviceFuse.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>
 
 namespace aliceVision {
