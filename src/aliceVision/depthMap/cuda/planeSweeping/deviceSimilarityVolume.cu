@@ -16,17 +16,57 @@ namespace depthMap {
 
 __host__ void cuda_volumeInitialize(CudaDeviceMemoryPitched<TSim, 3>& volume_dmp, TSim value, cudaStream_t stream)
 {
-  const CudaSize<3>& volDim = volume_dmp.getSize();
-  const dim3 block(32, 4, 1);
-  const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), volDim.z());
+    const CudaSize<3>& volDim = volume_dmp.getSize();
+    const dim3 block(32, 4, 1);
+    const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), volDim.z());
 
-  volume_init_kernel<<<grid, block, 0, stream>>>(
-      volume_dmp.getBuffer(),
-      volume_dmp.getBytesPaddedUpToDim(1),
-      volume_dmp.getBytesPaddedUpToDim(0), 
-      int(volDim.x()), 
-      int(volDim.y()), 
-      value);
+    volume_init_kernel<TSim><<<grid, block, 0, stream>>>(
+        volume_dmp.getBuffer(),
+        volume_dmp.getBytesPaddedUpToDim(1),
+        volume_dmp.getBytesPaddedUpToDim(0), 
+        int(volDim.x()), 
+        int(volDim.y()), 
+        value);
+
+    CHECK_CUDA_ERROR();
+}
+
+__host__ void cuda_volumeInitialize(CudaDeviceMemoryPitched<TSimRefine, 3>& volume_dmp, TSimRefine value, cudaStream_t stream)
+{
+    const CudaSize<3>& volDim = volume_dmp.getSize();
+    const dim3 block(32, 4, 1);
+    const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), volDim.z());
+
+    volume_init_kernel<TSimRefine><<<grid, block, 0, stream>>>(
+        volume_dmp.getBuffer(),
+        volume_dmp.getBytesPaddedUpToDim(1),
+        volume_dmp.getBytesPaddedUpToDim(0), 
+        int(volDim.x()), 
+        int(volDim.y()), 
+        value);
+
+    CHECK_CUDA_ERROR();
+}
+
+__host__ void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volume_dmp, 
+                             const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volume_dmp, 
+                             cudaStream_t stream)
+{
+    const CudaSize<3>& volDim = inout_volume_dmp.getSize();
+    const dim3 block(32, 4, 1);
+    const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), volDim.z());
+
+    volume_add_kernel<<<grid, block, 0, stream>>>(
+        inout_volume_dmp.getBuffer(),
+        inout_volume_dmp.getBytesPaddedUpToDim(1),
+        inout_volume_dmp.getBytesPaddedUpToDim(0),
+        in_volume_dmp.getBuffer(),
+        in_volume_dmp.getBytesPaddedUpToDim(1),
+        in_volume_dmp.getBytesPaddedUpToDim(0),
+        int(volDim.x()),
+        int(volDim.y()));
+
+    CHECK_CUDA_ERROR();
 }
 
 __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
@@ -65,6 +105,42 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& vol
 
     CHECK_CUDA_ERROR();
 }
+
+extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
+                                        const CudaDeviceMemoryPitched<float2, 2>& in_midDepthSimMap_dmp,
+                                        const DeviceCamera& rcDeviceCamera, 
+                                        const DeviceCamera& tcDeviceCamera, 
+                                        const RefineParams& refineParams, 
+                                        const ROI& roi,
+                                        cudaStream_t stream)
+{
+    const dim3 block(32, 1, 1); // minimal default settings
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), roi.depth());
+
+    volume_refine_kernel<<<grid, block, 0, stream>>>(
+        rcDeviceCamera.getTextureObject(),
+        tcDeviceCamera.getTextureObject(),
+        rcDeviceCamera.getDeviceCamId(),
+        tcDeviceCamera.getDeviceCamId(),
+        rcDeviceCamera.getWidth(), 
+        rcDeviceCamera.getHeight(), 
+        tcDeviceCamera.getWidth(), 
+        tcDeviceCamera.getHeight(), 
+        int(inout_volSim_dmp.getSize().z()), 
+        refineParams.stepXY,
+        refineParams.wsh, 
+        float(refineParams.gammaC), 
+        float(refineParams.gammaP), 
+        in_midDepthSimMap_dmp.getBuffer(), 
+        in_midDepthSimMap_dmp.getBytesPaddedUpToDim(0), 
+        inout_volSim_dmp.getBuffer(), 
+        inout_volSim_dmp.getBytesPaddedUpToDim(1),
+        inout_volSim_dmp.getBytesPaddedUpToDim(0), 
+        roi);
+
+    CHECK_CUDA_ERROR();
+}
+
 
 __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
                                        const CudaDeviceMemoryPitched<TSim, 3>& d_volSim,
@@ -219,6 +295,43 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& be
       rcDeviceCamera.getDeviceCamId(), 
       scaleStep, 
       sgmParams.interpolateRetrieveBestDepth,
+      roi);
+
+    CHECK_CUDA_ERROR();
+}
+
+extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_bestDepthSimMap_dmp,
+                                       const CudaDeviceMemoryPitched<float2, 2>& in_midDepthSimMap_dmp,
+                                       const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp, 
+                                       const DeviceCamera& rcDeviceCamera, 
+                                       int nbTCams,
+                                       const RefineParams& refineParams, 
+                                       const ROI& roi, 
+                                       cudaStream_t stream)
+{
+    const int scaleStep = refineParams.scale * refineParams.stepXY;
+    const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
+    const float twoTimesSigmaPowerTwo = float(2.0 * refineParams.sigma * refineParams.sigma);
+
+    const int blockSize = 8;
+    const dim3 block(blockSize, blockSize, 1);
+    const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
+
+    volume_refineBestZ_kernel<<<grid, block, 0, stream>>>(
+      out_bestDepthSimMap_dmp.getBuffer(),
+      out_bestDepthSimMap_dmp.getBytesPaddedUpToDim(0), 
+      in_midDepthSimMap_dmp.getBuffer(), 
+      in_midDepthSimMap_dmp.getBytesPaddedUpToDim(0),
+      in_volSim_dmp.getBuffer(),
+      in_volSim_dmp.getBytesPaddedUpToDim(1), 
+      in_volSim_dmp.getBytesPaddedUpToDim(0), 
+      int(in_volSim_dmp.getSize().z()), 
+      nbTCams,
+      rcDeviceCamera.getDeviceCamId(),
+      scaleStep,
+      samplesPerPixSize,
+      twoTimesSigmaPowerTwo,
+      refineParams.nSamplesHalf, 
       roi);
 
     CHECK_CUDA_ERROR();
