@@ -93,7 +93,7 @@ bool Sgm::sgmRc()
     }
 
     if(_sgmParams.exportIntermediateResults)
-        exportVolumeInformation(volumeSecBestSim_dmp, "afterFiltering");
+        exportVolumeInformation(volumeOptimizedSim_dmp, "afterFiltering");
 
     // retrieve best depth
     retrieveBestDepth(_depthSimMap, volumeOptimizedSim_dmp);
