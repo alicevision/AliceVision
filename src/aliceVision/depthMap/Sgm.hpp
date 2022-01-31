@@ -66,7 +66,7 @@ private:
     void retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp) const;
 
     /**
-     * @brief Export volume alembic file and 9 points csv file.
+     * @brief Export volume alembic files and 9 points csv file.
      * @param[in] in_volSim_dmp the given similarity volume in device memory
      * @param[in] name the export filename
      */

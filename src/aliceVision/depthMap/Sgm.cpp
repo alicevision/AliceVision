@@ -312,12 +312,12 @@ void Sgm::retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMe
 void Sgm::exportVolumeInformation(const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, const std::string& name) const
 {
     const IndexT viewId = _mp.getViewId(_rc);
-
     CudaHostMemoryHeap<TSim, 3> volumeSim_hmh(in_volSim_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volSim_dmp);
 
-    exportSimilarityVolume(volumeSim_hmh, _depths, _mp, _rc, _sgmParams.scale, _sgmParams.stepXY, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_" + name + ".abc");
-    exportSimilaritySamplesCSV(volumeSim_hmh, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, name, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
+    exportSimilarityVolume(volumeSim_hmh, _depths, _mp, _rc, _sgmParams, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_" + name + ".abc");
+    exportSimilarityVolumeCross(volumeSim_hmh, _depths, _mp, _rc, _sgmParams, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol-cross_" + name + ".abc");
+    exportSimilaritySamplesCSV(volumeSim_hmh, _depths, _rc, name, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
 }
 
 void Sgm::computeDepthsAndResetTCams()
