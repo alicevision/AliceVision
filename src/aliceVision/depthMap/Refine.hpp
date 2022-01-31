@@ -10,6 +10,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 struct float2;
 
@@ -67,6 +68,13 @@ private:
     void refineAndFuseDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const;
 
     /**
+     * @brief Refine and fuse the given depth/sim map using volume strategy.
+     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth sim/map in device memory
+     * @param[out] out_depthSimMapRefinedFused_dmp the given output refined and fused depth/sim map in device memory
+     */
+    void refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const;
+
+    /**
      * @brief Optimize the given depth/sim maps.
      * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth/sim map in device memory
      * @param[in] depthSimMapRefinedFused_dmp the given refined and fused depth/sim map in device memory
@@ -75,6 +83,16 @@ private:
     void optimizeDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp,
                              const CudaDeviceMemoryPitched<float2, 2>& depthSimMapRefinedFused_dmp,
                              CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp) const;
+
+    /**
+     * @brief Export volume cross alembic file and 9 points csv file.
+     * @param[in] in_volSim_dmp the given similarity volume in device memory
+     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth/sim map in device memory
+     * @param[in] name the export filename
+     */
+    void exportVolumeInformation(const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp,
+                                 const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp,
+                                 const std::string& name) const;
 };
 
 } // namespace depthMap
