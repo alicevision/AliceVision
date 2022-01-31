@@ -53,6 +53,32 @@ extern void cuda_downscaleWithGaussianBlur(CudaDeviceMemoryPitched<CudaRGBA, 2>&
                                            int gaussRadius,
                                            cudaStream_t stream);
 
+/**
+ * @brief Apply a Gaussion blur to the Z axis of the given volume.
+ * @param[in,out] inout_volume_dmp the input/output volume in device memory
+ * @param[in] gaussRadius the Gaussian radius
+ * @param[in] stream the CUDA stream for gpu execution
+ */
+extern void cuda_gaussianBlurVolumeZ(CudaDeviceMemoryPitched<float, 3>& inout_volume_dmp, 
+                                     int gaussRadius, 
+                                     cudaStream_t stream);
+
+/**
+ * @brief Apply a Gaussion blur to the XYZ axis of the given volume.
+ * @param[in,out] inout_volume_dmp the input/output volume in device memory
+ * @param[in] gaussRadius the Gaussian radius
+ * @param[in] stream the CUDA stream for gpu execution
+ */
+extern void cuda_gaussianBlurVolumeXYZ(CudaDeviceMemoryPitched<float, 3>& inout_volume_dmp, 
+                                       int gaussRadius, 
+                                       cudaStream_t stream);
+
+/**
+ * @brief Apply a Median filter to the given image.
+ * @warning: use an hardcoded buffer size, so max radius value is 3.
+ */
+extern void cuda_medianFilter3(cudaTextureObject_t tex, CudaDeviceMemoryPitched<float, 2>& img);
+
 
 #ifdef ALICEVISION_TMP_WITH_BILATERALFILTER
 
@@ -178,11 +204,6 @@ __host__ void ps_bilateralFilter(
             );
 }
 #endif
-
-__host__ void ps_medianFilter3(
-    cudaTextureObject_t tex,
-    CudaDeviceMemoryPitched<float, 2>& img);
-
 
 } // namespace depthMap
 } // namespace aliceVision
