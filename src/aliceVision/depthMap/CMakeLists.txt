@@ -82,18 +82,15 @@ set(depthMap_cuda_normalMapping_sources
 
 # planeSweeping CUDA Headers
 set(depthMap_cuda_planeSweeping_headers
-  cuda/planeSweeping/deviceFuseKernels.cuh
-  cuda/planeSweeping/deviceRefineKernels.cuh
+  cuda/planeSweeping/deviceDepthSimilarityMapKernels.cuh
   cuda/planeSweeping/deviceSimilarityVolumeKernels.cuh
 )
 
 # planeSweeping CUDA Sources
 set(depthMap_cuda_planeSweeping_sources
   cuda/planeSweeping/similarity.hpp
-  cuda/planeSweeping/deviceFuse.hpp
-  cuda/planeSweeping/deviceFuse.cu
-  cuda/planeSweeping/deviceRefine.hpp
-  cuda/planeSweeping/deviceRefine.cu
+  cuda/planeSweeping/deviceDepthSimilarityMap.hpp
+  cuda/planeSweeping/deviceDepthSimilarityMap.cu
   cuda/planeSweeping/deviceSimilarityVolume.hpp
   cuda/planeSweeping/deviceSimilarityVolume.cu
 )

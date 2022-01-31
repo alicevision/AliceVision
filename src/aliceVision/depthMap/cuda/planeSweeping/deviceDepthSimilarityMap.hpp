@@ -14,6 +14,23 @@
 namespace aliceVision {
 namespace depthMap {
 
+ /**
+ * @brief Refine the given depth/sim map for the given RC / TC.
+ * @note Try to find the best similarity by shifting the SGM depth result and interpolating.
+ * @param[in,out] inout_rcTcDepthSimMap_dmp the output best depth/sim map and input SGM depth/sim map
+ * @param[in] rcDeviceCamera the R device camera
+ * @param[in] tcDeviceCamera the T device camera
+ * @param[in] refineParams the Refine parameters
+ * @param[in] roi the 2d region of interest
+ * @param[in] stream the stream for gpu execution
+ */
+extern void cuda_refineDepthMap(CudaDeviceMemoryPitched<float2, 2>& inout_rcTcDepthSimMap_dmp,
+                                const DeviceCamera& rcDeviceCamera, 
+                                const DeviceCamera& tcDeviceCamera,
+                                const RefineParams& refineParams, 
+                                const ROI& roi,
+                                cudaStream_t stream);
+
 /**
  * @brief Fuse the given RcTc refined depth/sim maps. 
  * @note Use subsampling with a sliding Gaussian to find the best depth/sim considering each RcTc depth/sim map.
