@@ -52,8 +52,8 @@ void copy(DepthSimMap& out_depthSimMap, const CudaDeviceMemoryPitched<float2, 2>
     CudaHostMemoryHeap<float2, 2> depthSimMap_hmh(in_depthSimMap_dmp.getSize());
     depthSimMap_hmh.copyFrom(in_depthSimMap_dmp);
 
-    const int width = in_depthSimMap_dmp.getSize().x();
-    const int height = in_depthSimMap_dmp.getSize().y();
+    const int width = int(in_depthSimMap_dmp.getSize().x());
+    const int height = int(in_depthSimMap_dmp.getSize().y());
 
     assert(out_depthSimMap.getWidth() == width);
     assert(out_depthSimMap.getHeight() == height);
@@ -100,9 +100,9 @@ void copyRoiPart(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapPart_dmp, co
 
     CudaHostMemoryHeap<float2, 2> depthSimMapPart_hmh({in_roiPart.width(), in_roiPart.height()});
 
-    for(int y = 0; y < in_roiPart.height(); ++y)
+    for(int y = 0; y < int(in_roiPart.height()); ++y)
     {
-        for(int x = 0; x < in_roiPart.width(); ++x)
+        for(int x = 0; x < int(in_roiPart.width()); ++x)
         {
             float2& depthSimPart_h = depthSimMapPart_hmh(x, y);
             const float2& depthSim_h = depthSimMap_hmh(int(in_roiPart.beginX) + x, int(in_roiPart.beginY) + y);
@@ -142,11 +142,11 @@ void Refine::upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMa
 
             if(_refineParams.useTcOrRcPixSize)
             {
-                depthSim.sim = _mp.getCamsMinPixelSize(p, _tCams);
+                depthSim.sim = float(_mp.getCamsMinPixelSize(p, _tCams));
             }
             else
             {
-                depthSim.sim = _mp.getCamPixelSize(p, _rc);
+                depthSim.sim = float(_mp.getCamPixelSize(p, _rc));
             }
         }
     }
@@ -327,12 +327,6 @@ void Refine::optimizeDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& in_de
     const system::Timer timer;
 
     ALICEVISION_LOG_INFO("Optimize depth/sim map (rc: " << _rc << ")");
-
-    if(_refineParams.nIters == 0)
-    {
-        out_depthSimMapOptimized_dmp.copyFrom(in_depthSimMapRefinedFused_dmp);
-        return;
-    }
 
     const ROI roi(0, out_depthSimMapOptimized_dmp.getSize().x(), 0, out_depthSimMapOptimized_dmp.getSize().y());
     
