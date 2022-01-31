@@ -25,7 +25,7 @@ struct RefineParams
   double gammaC = 15.5;
   double gammaP = 8.0;
   bool useTcOrRcPixSize = false; // only for original strategy
-  bool useRefineFuseVolumeStrategy = true;
+  bool useRefineFuseVolumeStrategy = false;
   bool doRefineFuse = true;
   bool doRefineOptimization = true;
   bool exportIntermediateResults = false;
