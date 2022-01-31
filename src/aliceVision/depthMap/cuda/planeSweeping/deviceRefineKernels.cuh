@@ -119,7 +119,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rcDeviceCamId,
         // TODO: we could compute the orientation of the path from the input depth map instead 
         // of relying on the cameras orientations
         computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
-        depthSim.y = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        depthSim.y = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, rcWidth, rcHeight, tcWidth, tcHeight, wsh, gammaC, gammaP);
     }
 
     // update output best depth/sim map 
@@ -180,7 +180,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(int rcDeviceCamId,
         ptch.p = p;
         ptch.d = computePixSize(rcDeviceCamId, p);
         computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
-        depthSim.y  = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        depthSim.y  = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, rcWidth, rcHeight, tcWidth, tcHeight, wsh, gammaC, gammaP);
     }
     else 
     {

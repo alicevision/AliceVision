@@ -264,9 +264,16 @@ wsh)
  * @return similarity value
  *         or invalid similarity (CUDART_INF_F) if uninitialized or masked
  */
-__device__ static float compNCCby3DptsYK(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex, int rcDeviceCamId,
-                                  int tcDeviceCamId, const Patch& ptch, int wsh, int rc_width, int rc_height,
-                                  int tc_width, int tc_height, const float _gammaC, const float _gammaP)
+__device__ static float compNCCby3DptsYK(cudaTextureObject_t rcTex, 
+                                         cudaTextureObject_t tcTex, 
+                                         int rcDeviceCamId,
+                                         int tcDeviceCamId, 
+                                         const Patch& ptch, 
+                                         int rcWidth, int rcHeight,
+                                         int tcWidth, int tcHeight, 
+                                         int wsh, 
+                                         float _gammaC, 
+                                         float _gammaP)
 {
     const DeviceCameraParams& rcDeviceCamParams = constantCameraParametersArray_d[rcDeviceCamId];
     const DeviceCameraParams& tcDeviceCamParams = constantCameraParametersArray_d[tcDeviceCamId];
@@ -276,16 +283,16 @@ __device__ static float compNCCby3DptsYK(cudaTextureObject_t rc_tex, cudaTexture
     const float2 tp = project3DPoint(tcDeviceCamParams.P, p);
 
     const float dd = wsh + 2.0f; // TODO FACA
-    if((rp.x < dd) || (rp.x > (float)(rc_width - 1) - dd) || (rp.y < dd) || (rp.y > (float)(rc_height - 1) - dd) ||
-       (tp.x < dd) || (tp.x > (float)(tc_width - 1) - dd) || (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
+    if((rp.x < dd) || (rp.x > float(rcWidth - 1) - dd) || (rp.y < dd) || (rp.y > float(rcHeight - 1) - dd) ||
+       (tp.x < dd) || (tp.x > float(tcWidth - 1) - dd) || (tp.y < dd) || (tp.y > float(tcHeight - 1) - dd))
     {
         return CUDART_INF_F; // uninitialized
     }
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
     // value od I(i,j) ... it is what we want
-    const float4 gcr = tex2D_float4(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
-    const float4 gct = tex2D_float4(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
+    const float4 gcr = tex2D_float4(rcTex, rp.x + 0.5f, rp.y + 0.5f);
+    const float4 gct = tex2D_float4(tcTex, tp.x + 0.5f, tp.y + 0.5f);
 
     // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
     // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
@@ -309,8 +316,8 @@ __device__ static float compNCCby3DptsYK(cudaTextureObject_t rc_tex, cudaTexture
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            const float4 gcr1 = tex2D_float4(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            const float4 gct1 = tex2D_float4(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
+            const float4 gcr1 = tex2D_float4(rcTex, rp1.x + 0.5f, rp1.y + 0.5f);
+            const float4 gct1 = tex2D_float4(tcTex, tp1.x + 0.5f, tp1.y + 0.5f);
 
             // TODO: Does it make a difference to accurately test it for each pixel of the patch?
             // if (gcr1.w == 0.0f || gct1.w == 0.0f)
