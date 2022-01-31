@@ -86,24 +86,19 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
     volume_computePatch(rcDeviceCamId, tcDeviceCamId, ptcho, planeDepth, make_int2(x, y)); // no texture use
 
     // compute patch similarity
-    float fsim = compNCCby3DptsYK(rcTex, tcTex,
-                                  rcDeviceCamId, tcDeviceCamId,
-                                  ptcho, wsh,
-                                  rcWidth, rcHeight,
-                                  tcWidth, tcHeight,
-                                  gammaC, gammaP);
-
-
-    constexpr const float fminVal = -1.0f;
-    constexpr const float fmaxVal = 1.0f;
-    constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
+    float fsim = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptcho, rcWidth, rcHeight, tcWidth, tcHeight, wsh, gammaC, gammaP);
 
     if(fsim == CUDART_INF_F) // invalid similarity
     {
-      fsim = 255.0f;
+      fsim = 255.0f; // 255 is the invalid similarity value
     }
     else // valid similarity
     {
+      // remap similarity value
+      constexpr const float fminVal = -1.0f;
+      constexpr const float fmaxVal = 1.0f;
+      constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
+
       fsim = (fsim - fminVal) * fmultiplier;
 
 #ifdef TSIM_USE_FLOAT
