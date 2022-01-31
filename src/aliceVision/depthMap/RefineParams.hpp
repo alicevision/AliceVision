@@ -24,14 +24,16 @@ struct RefineParams
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
-  bool useTcOrRcPixSize = false;
+  bool useTcOrRcPixSize = false; // only for original strategy
+  bool useRefineFuseVolumeStrategy = true;
+  bool doRefineFuse = true;
+  bool doRefineOptimization = true;
   bool exportIntermediateResults = false;
 
   // constant parameters
 
-  const int scale = 1; // should remain at 1 for now, some Refine functions do not support this parameter
-  const bool doRefineFuse = true;
-  const bool doRefineOpt = true;
+  const int scale = 1; 
+  const int stepXY = 1; // used only for volume strategy
 };
 
 } // namespace depthMap

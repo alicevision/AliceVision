@@ -312,7 +312,7 @@ bool Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
     }
 
     // optimize depth/sim map
-    if(_refineParams.doRefineOpt && _refineParams.nIters != 0)
+    if(_refineParams.doRefineOptimization && _refineParams.nIters > 0)
     {
         CudaDeviceMemoryPitched<float2, 2> optimizedDepthSimMap_dmp(depthSimMapDim);
         optimizeDepthSimMap(sgmDepthPixSizeMap_dmp, refinedDepthSimMap_dmp, optimizedDepthSimMap_dmp);
