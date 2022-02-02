@@ -348,39 +348,14 @@ void Sgm::computeDepthsAndResetTCams()
         }
     }
 
-    if(!_sgmParams.useSfmSeeds || _mp.getInputSfMData().getLandmarks().empty())
-    {
-        ALICEVISION_LOG_DEBUG("Select depth candidates without seeds. Nb observations: " << nbObsDepths);
-
-        computeDepths(minDepthAll, maxDepthAll, (_sgmParams.stepZ > 0.0f ? _sgmParams.stepZ : 1.0f), alldepths);
-
-        if(_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
-        {
-            const float scaleFactor = float(_depths.size()) / float(_sgmParams.maxDepths);
-            ALICEVISION_LOG_DEBUG("nbDepths: " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths
-                                               << ", scaleFactor: " << scaleFactor);
-            computeDepths(minDepthAll, maxDepthAll, scaleFactor, alldepths);
-        }
-        if(_sgmParams.saveDepthsToSweepTxtFile)
-        {
-            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsAll.txt";
-            FILE* f = fopen(fn.c_str(), "w");
-            for(int j = 0; j < _depths.size(); j++)
-            {
-                fprintf(f, "%f\n", _depths[j]);
-            }
-            fclose(f);
-        }
-    }
-    else
     {
         ALICEVISION_LOG_DEBUG("Select depth candidates from seeds. Nb observations: " << nbObsDepths);
         ALICEVISION_LOG_DEBUG("Depth all: [" << minDepthAll << "-" << maxDepthAll << "]");
         float minDepth = minDepthAll;
         float maxDepth = maxDepthAll;
 
-        // if we get enough information from seeds, adjust min/maxDepth
-        if(nbObsDepths > 100)
+        // if we want to use SfM seeds anf if we get enough information from these seeds, adjust min/maxDepth
+        if(_sgmParams.useSfmSeeds && !_mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 100)
         {
             minDepth = minObsDepth * (1.0f - _sgmParams.seedsRangeInflate);
             maxDepth = maxObsDepth * (1.0f + _sgmParams.seedsRangeInflate);
@@ -405,12 +380,11 @@ void Sgm::computeDepthsAndResetTCams()
         if(_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
         {
             const float scaleFactor = float(_depths.size()) / float(_sgmParams.maxDepths);
-            ALICEVISION_LOG_DEBUG("nbDepths: " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths
-                                               << ", scaleFactor: " << scaleFactor);
+            ALICEVISION_LOG_DEBUG("nbDepths: " << _depths.size() << ", maxDepths: " << _sgmParams.maxDepths << ", scaleFactor: " << scaleFactor);
             computeDepths(minDepth, maxDepth, scaleFactor, alldepths);
         }
-        ALICEVISION_LOG_DEBUG("Selected depth range: [" << minDepth << "-" << maxDepth
-                                                        << "], nb selected depths: " << _depths.size());
+
+        ALICEVISION_LOG_DEBUG("Selected depth range: [" << minDepth << "-" << maxDepth << "], nb selected depths: " << _depths.size());
 
         if(_sgmParams.saveDepthsToSweepTxtFile)
         {
