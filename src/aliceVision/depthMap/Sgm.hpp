@@ -17,6 +17,7 @@ namespace aliceVision {
 namespace depthMap {
 
 struct SgmParams;
+class SgmDepthList;
 
 template <class Type, unsigned Dim>
 class CudaDeviceMemoryPitched;
@@ -27,19 +28,23 @@ class CudaDeviceMemoryPitched;
 class Sgm
 {
 public:
-    Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc);
+    Sgm(const SgmParams& sgmParams, const SgmDepthList& sgmDepthList, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc);
     ~Sgm() = default;
 
+    /**
+     * @brief Compute for a single R camera the Semi-Global Matching depth/sim map.
+     */
     bool sgmRc();
 
-    const StaticVector<int>& getTCams() const { return _tCams; }
-    const StaticVector<float>& getDepths() const { return _depths; }
+    /**
+     * @brief Get the depth/sim map of the Semi-Global Matching result.
+     * @return the depth/sim map of the Semi-Global Matching result
+     */
     const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
 
 private:
 
-    void logRcTcDepthInformation() const;
-    void checkStartingAndStoppingDepth() const;
+    // private methods
 
     /**
      * @brief Compute for each RcTc the best / second best similarity volumes.
@@ -72,41 +77,15 @@ private:
      */
     void exportVolumeInformation(const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, const std::string& name) const;
 
-    void computeDepthsAndResetTCams();
 
-    /**
-     * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
-     *        providing meaningful 3d information.
-     */
-    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTCams(float midDepth);
+    // private members
 
-    /**
-     * @brief Fill depthsTcamsLimits member variable with index range of depths to sweep
-     */
-    void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
-
-    /**
-     * @brief Fill the list of "best" depths (_depths) for rc, from all tc cameras depths
-     */
-    void computeDepths(float minDepth, float maxDepth, float scaleFactor, const StaticVector<StaticVector<float>*>* alldepths);
-
-    void getMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth);
-
-    StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
-    StaticVector<float>* getDepthsTc(int tc, float midDepth);
-
-    bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
-    bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
-
-    const SgmParams& _sgmParams;
-    const mvsUtils::MultiViewParams& _mp;
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
-    const int _rc;
-
-    StaticVector<int> _tCams;
-    StaticVector<float> _depths;
-    StaticVector<Pixel> _depthsTcamsLimits;
-    DepthSimMap _depthSimMap;
+    const int _rc;                           // R camera index
+    const SgmParams& _sgmParams;             // Semi Global Matching parameters
+    const SgmDepthList& _sgmDepthList;       // Semi Global Matching depth list
+    const mvsUtils::MultiViewParams& _mp;    // Multi-view parameters
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;  // Image cache
+    DepthSimMap _depthSimMap;                // depth/sim map of the Semi Global Matching result
 };
 
 } // namespace depthMap
