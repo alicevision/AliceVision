@@ -6,6 +6,15 @@
 
 #pragma once
 
+// allows code sharing between NVCC and other compilers
+#if defined(__NVCC__)
+#define CUDA_HOST_DEVICE __host__ __device__
+#define CUDA_HOST __host__
+#else
+#define CUDA_HOST_DEVICE
+#define CUDA_HOST
+#endif
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -24,12 +33,12 @@ struct ROI
 
     ROI() = default;
 
-    __host__ __device__ ROI(unsigned int in_beginX, 
-                            unsigned int in_endX,
-                            unsigned int in_beginY,
-                            unsigned int in_endY,
-                            unsigned int in_beginZ, 
-                            unsigned int in_endZ)
+    CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
+                         unsigned int in_endX,
+                         unsigned int in_beginY,
+                         unsigned int in_endY,
+                         unsigned int in_beginZ,
+                         unsigned int in_endZ)
         : beginX(in_beginX)
         , beginY(in_beginY)
         , beginZ(in_beginZ)
@@ -38,19 +47,19 @@ struct ROI
         , endZ(in_endZ)
     {}
 
-    __host__ __device__ ROI(unsigned int in_beginX, 
-                            unsigned int in_endX,
-                            unsigned int in_beginY,
-                            unsigned int in_endY)
+    CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
+                         unsigned int in_endX,
+                         unsigned int in_beginY,
+                         unsigned int in_endY)
         : beginX(in_beginX)
         , beginY(in_beginY)
         , endX(in_endX)
         , endY(in_endY)
     {}
 
-    __host__ __device__ inline unsigned int width()  const { return endX - beginX; }
-    __host__ __device__ inline unsigned int height() const { return endY - beginY; }
-    __host__ __device__ inline unsigned int depth()  const { return endZ - beginZ; }
+    CUDA_HOST_DEVICE inline unsigned int width()  const { return endX - beginX; }
+    CUDA_HOST_DEVICE inline unsigned int height() const { return endY - beginY; }
+    CUDA_HOST_DEVICE inline unsigned int depth()  const { return endZ - beginZ; }
 };
 
 /**
@@ -61,7 +70,7 @@ struct ROI
  * @param[in] volDimZ the given volume depth
  * @return true if valid
  */
-__host__ inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDimY, size_t volDimZ)
+CUDA_HOST inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDimY, size_t volDimZ)
 {
     return ((roi.endX <= volDimX) && (roi.beginX < roi.endX) &&
             (roi.endY <= volDimY) && (roi.beginY < roi.endY) &&
@@ -75,7 +84,7 @@ __host__ inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDi
  * @param[in] height the given image height
  * @return true if valid
  */
-__host__ inline bool checkImageROI(const ROI& roi, int width, int height)
+CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
 {
     return ((roi.endX <= (unsigned int)(width))  && (roi.beginX < roi.endX) &&
             (roi.endY <= (unsigned int)(height)) && (roi.beginY < roi.endY) &&
