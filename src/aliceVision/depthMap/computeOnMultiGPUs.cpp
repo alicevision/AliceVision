@@ -7,7 +7,7 @@
 #include "computeOnMultiGPUs.hpp"
 
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/depthMap/cuda/utils.hpp>
+#include <aliceVision/depthMap/cuda/host/utils.hpp>
 
 namespace aliceVision {
 namespace depthMap {

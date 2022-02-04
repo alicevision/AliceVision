@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/utils.hpp>
+#include <aliceVision/depthMap/cuda/host/utils.hpp>
 
 #include <cuda_runtime.h>
 

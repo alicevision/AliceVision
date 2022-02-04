@@ -7,9 +7,9 @@
 #pragma once
 
 #include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/depthMap/cuda/DeviceCamera.hpp>
-#include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/ROI.hpp>
+#include <aliceVision/depthMap/ROI.hpp>
+#include <aliceVision/depthMap/cuda/host/DeviceCamera.hpp>
+#include <aliceVision/depthMap/cuda/host/memory.hpp>
 
 namespace aliceVision {
 namespace depthMap {

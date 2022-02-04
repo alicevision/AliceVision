@@ -12,10 +12,10 @@
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
-#include <aliceVision/depthMap/cuda/utils.hpp>
-#include <aliceVision/depthMap/cuda/ROI.hpp>
-#include <aliceVision/depthMap/cuda/memory.hpp>
-#include <aliceVision/depthMap/cuda/DeviceCache.hpp>
+#include <aliceVision/depthMap/ROI.hpp>
+#include <aliceVision/depthMap/cuda/host/utils.hpp>
+#include <aliceVision/depthMap/cuda/host/memory.hpp>
+#include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>
 
 #include <iostream>

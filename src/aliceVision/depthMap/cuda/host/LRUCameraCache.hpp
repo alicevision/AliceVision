@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/LRUCache.hpp>
+#include <aliceVision/depthMap/cuda/host/LRUCache.hpp>
 
 namespace aliceVision {
 namespace depthMap {
