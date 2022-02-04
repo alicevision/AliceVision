@@ -6,6 +6,7 @@ set(depthMap_files_headers
   Refine.hpp
   RefineParams.hpp
   Sgm.hpp
+  SgmDepthList.hpp
   SgmParams.hpp
   volumeIO.hpp
 )
@@ -17,6 +18,7 @@ set(depthMap_files_sources
   DepthSimMap.cpp
   Refine.cpp
   Sgm.cpp
+  SgmDepthList.cpp
   SgmParams.cpp
   volumeIO.cpp
 )

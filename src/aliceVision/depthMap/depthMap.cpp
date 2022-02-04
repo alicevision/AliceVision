@@ -14,6 +14,7 @@
 #include <aliceVision/depthMap/Refine.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/Sgm.hpp>
+#include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/cuda/utils.hpp>
 #include <aliceVision/depthMap/cuda/DeviceCache.hpp>
@@ -85,20 +86,32 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     for(const int rc : cams)
     {
-        Sgm sgm(sgmParams, mp, ic, rc);
-        Refine refine(refineParams, mp, ic, rc);
-        
-        // preload sgmTcams async
+        // compute the R camera depth list
+        SgmDepthList sgmDepthList(sgmParams, mp, rc);
+        sgmDepthList.computeListRc();
+
+        // log debug camera / depth information
+        sgmDepthList.logRcTcDepthInformation();
+
+        // check if starting and stopping depth are valid
+        sgmDepthList.checkStartingAndStoppingDepth();
+
+        // preload T cams async in image cache
         {
-            const auto startTime = std::chrono::high_resolution_clock::now();
-            ic.refreshImages_async(sgm.getTCams().getData());
-            ALICEVISION_LOG_INFO("Preload T cameras done in: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << " ms.");
+            const system::Timer timer;
+            ic.refreshImages_async(sgmDepthList.getTCams().getData());
+            ALICEVISION_LOG_INFO("Preload T cameras done in: " << timer.elapsedMs() << " ms.");
         }
 
+        // compute Semi-Global Matching
+        Sgm sgm(sgmParams, sgmDepthList, mp, ic, rc);
         sgm.sgmRc();
+
+        // compute Refine
+        Refine refine(refineParams, mp, ic, rc);
         
-        // rc has no tcam
-        if(refine.getTCams().empty() || sgm.getDepths().empty())
+        // R camera has no T cameras
+        if(refine.getTCams().empty() || sgmDepthList.getDepths().empty())
         {
             ALICEVISION_LOG_INFO("No T cameras for camera rc: " << rc << ", generate default depth and sim maps.");
             refine.getDepthSimMap().save(); // generate default depthSimMap
