@@ -9,10 +9,6 @@
 #include <string>
 
 namespace aliceVision {
-
-// MultiViewParams forward declaration
-namespace mvsUtils { class MultiViewParams; } 
-
 namespace depthMap {
 
 /**
@@ -53,8 +49,6 @@ struct SgmParams
   const bool interpolateRetrieveBestDepth = false;
   const bool saveDepthsToSweepTxtFile = false;
 };
-
-void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams);
 
 } // namespace depthMap
 } // namespace aliceVision

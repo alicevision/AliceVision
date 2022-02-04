@@ -21,7 +21,6 @@ set(depthMap_files_sources
   Refine.cpp
   Sgm.cpp
   SgmDepthList.cpp
-  SgmParams.cpp
   volumeIO.cpp
 )
 
