@@ -7,7 +7,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include <aliceVision/depthMap/cuda/device/device_utils.h>
+#include <aliceVision/depthMap/BufPtr.hpp>
 
 namespace aliceVision {
 namespace depthMap {

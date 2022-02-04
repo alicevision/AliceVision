@@ -7,7 +7,7 @@
 #include "deviceSimilarityVolume.hpp"
 #include "deviceSimilarityVolumeKernels.cuh"
 
-#include <aliceVision/depthMap/cuda/hostUtils.hpp>
+#include <aliceVision/depthMap/cuda/host/hostUtils.hpp>
 
 #include <map>
 

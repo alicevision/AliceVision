@@ -7,10 +7,10 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
+#include <aliceVision/depthMap/cuda/device/buffer.cuh>
 #include <aliceVision/depthMap/cuda/device/color.cuh>
 #include <aliceVision/depthMap/cuda/device/matrix.cuh>
 #include <aliceVision/depthMap/cuda/device/SimStat.cuh>
-#include <aliceVision/depthMap/cuda/device/utils.cuh>
 
 #include <math_constants.h>
 

@@ -8,7 +8,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <aliceVision/depthMap/cuda/utils.hpp>
+#include <aliceVision/depthMap/cuda/host/utils.hpp>
 #include <aliceVision/depthMap/cuda/imageProcessing/deviceGaussianFilter.hpp>
 
 #define DEVICE_MAX_DOWNSCALE  ( MAX_CONSTANT_GAUSS_SCALES - 1 ) // maximum pre-computed Gaussian scales

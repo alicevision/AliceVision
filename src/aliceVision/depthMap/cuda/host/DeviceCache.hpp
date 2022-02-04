@@ -11,8 +11,8 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 
-#include <aliceVision/depthMap/cuda/DeviceCamera.hpp>
-#include <aliceVision/depthMap/cuda/LRUCameraCache.hpp>
+#include <aliceVision/depthMap/cuda/host/DeviceCamera.hpp>
+#include <aliceVision/depthMap/cuda/host/LRUCameraCache.hpp>
 
 namespace aliceVision {
 namespace depthMap {

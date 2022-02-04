@@ -16,8 +16,8 @@
 #include <aliceVision/depthMap/Sgm.hpp>
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/cuda/utils.hpp>
-#include <aliceVision/depthMap/cuda/DeviceCache.hpp>
+#include <aliceVision/depthMap/cuda/host/utils.hpp>
+#include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/normalMapping/DeviceNormalMapper.hpp>
 #include <aliceVision/depthMap/cuda/normalMapping/deviceNormalMap.hpp>
 

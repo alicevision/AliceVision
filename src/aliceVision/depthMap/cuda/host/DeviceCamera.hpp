@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/memory.hpp>
+#include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
 namespace aliceVision {

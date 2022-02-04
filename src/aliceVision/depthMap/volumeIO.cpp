@@ -14,9 +14,8 @@
 #include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/depthMap/cuda/device/device_utils.h>
-
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/depthMap/BufPtr.hpp>
 
 #include <iostream>
 #include <sstream>
