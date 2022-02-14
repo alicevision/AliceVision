@@ -85,6 +85,7 @@ void DeviceCamera::fill(int globalCamId,
     // allocate or re-allocate the host-sided camera params
     {
         cudaFreeHost(_cameraParameters_h);
+        CHECK_CUDA_ERROR();
         cudaError_t err = cudaMallocHost(&_cameraParameters_h, sizeof(DeviceCameraParams));
         THROW_ON_CUDA_ERROR(err, "Could not allocate camera parameters in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err));
     }
