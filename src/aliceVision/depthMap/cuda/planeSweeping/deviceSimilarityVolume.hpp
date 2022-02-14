@@ -87,12 +87,14 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
  * @param[in] volSim_dmp the input similarity volume in device memory
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] sgmParams the Semi Global Matching parameters
+ * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                 const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
                                 const DeviceCamera& rcDeviceCamera,
-                                const SgmParams& sgmParams,
+                                const SgmParams& sgmParams, 
+                                const ROI& roi,
                                 cudaStream_t stream);
 
 /**

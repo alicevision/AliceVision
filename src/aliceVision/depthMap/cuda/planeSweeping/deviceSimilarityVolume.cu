@@ -148,6 +148,7 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
                                        const DeviceCamera& rcDeviceCamera,
                                        const SgmParams& sgmParams,
                                        bool invY, int filteringIndex, 
+                                       const ROI& roi,
                                        cudaStream_t stream)
 {
     const CudaSize<3>& volDim = d_volSim.getSize();
@@ -228,8 +229,9 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
             y, 
             sgmParams.p1, 
             sgmParams.p2Weighting,
-            ySign, filteringIndex);
-
+            ySign, 
+            filteringIndex,
+            roi);
         std::swap(d_xzSliceForYm1, d_xzSliceForY);
     }
     
@@ -239,7 +241,8 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& d_volAg
 __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                   const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
                                   const DeviceCamera& rcDeviceCamera,
-                                  const SgmParams& sgmParams,
+                                  const SgmParams& sgmParams, 
+                                  const ROI& roi,
                                   cudaStream_t stream)
 {
     // update aggregation volume
@@ -254,6 +257,7 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& volSimFilter
                                  sgmParams, 
                                  invX, 
                                  npaths,
+                                 roi,
                                  stream);
         npaths++;
     };
@@ -287,9 +291,13 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& be
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
     
     volume_retrieveBestZ_kernel<<<grid, block, 0, stream>>>(
-      bestDepth_dmp.getBuffer(), bestDepth_dmp.getBytesPaddedUpToDim(0), 
-      bestSim_dmp.getBuffer(), bestSim_dmp.getBytesPaddedUpToDim(0), 
-      volSim_dmp.getBuffer(), volSim_dmp.getBytesPaddedUpToDim(1), volSim_dmp.getBytesPaddedUpToDim(0), 
+      bestDepth_dmp.getBuffer(), 
+      bestDepth_dmp.getBytesPaddedUpToDim(0), 
+      bestSim_dmp.getBuffer(), 
+      bestSim_dmp.getBytesPaddedUpToDim(0), 
+      volSim_dmp.getBuffer(), 
+      volSim_dmp.getBytesPaddedUpToDim(1), 
+      volSim_dmp.getBytesPaddedUpToDim(0), 
       volSim_dmp.getSize().z(),
       depths_d.getBuffer(),
       rcDeviceCamera.getDeviceCamId(), 

@@ -287,7 +287,7 @@ __global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rcTex,
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding texture coordinates
+    // corresponding device image coordinates
     const int x = roi.beginX + roiX;
     const int y = roi.beginY + roiY;
 
@@ -368,10 +368,6 @@ __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMa
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding output depth/sim map coordinates
-    const int x = roi.beginX + roiX;
-    const int y = roi.beginY + roiY;
-
     const float2 in_bestGsvSample = *get2DBufferAt(in_bestGsvSampleMap, in_bestGsvSampleMap_p, roiX, roiY);
     const float2 in_midDepthPixSize = *get2DBufferAt(in_midDepthPixSizeMap, in_midDepthPixSizeMap_p, roiX, roiY);
     const float depthStep = in_midDepthPixSize.y / samplesPerPixSize;
@@ -379,7 +375,7 @@ __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMa
     // normalize similarity to -1,0
     // figure; t = -5.0:0.01:0.0; plot(t,sigmoid(0.0,-1.0,6.0,-0.4,t,0));
     // in_bestGsvSample.x = sigmoid(0.0f, -1.0f, 6.0f, -0.4f, in_bestGsvSample.x);
-    float2* out_depthSimPtr = get2DBufferAt(out_depthSimMap, out_depthSimMap_p, x, y);
+    float2* out_depthSimPtr = get2DBufferAt(out_depthSimMap, out_depthSimMap_p, roiX, roiY);
 
     if(in_midDepthPixSize.x <= 0.0f)
     {
@@ -402,11 +398,7 @@ __global__ void fuse_getOptDeptMapFromOptDepthSimMap_kernel(float* out_optDepthM
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding input depth/sim map coordinates
-    const int x = roi.beginX + roiX;
-    const int y = roi.beginY + roiY;
-
-    *get2DBufferAt(out_optDepthMapPart, out_optDepthMapPart_p, roiX, roiY) = get2DBufferAt(in_optDepthSimMap, in_optDepthSimMap_p, x, y)->x; // depth
+    *get2DBufferAt(out_optDepthMapPart, out_optDepthMapPart_p, roiX, roiY) = get2DBufferAt(in_optDepthSimMap, in_optDepthSimMap_p, roiX, roiY)->x; // depth
 }
 
 /**
@@ -503,22 +495,18 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
     if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
-    // corresponding image coordinates
-    const int x = roi.beginX + roiX;
-    const int y = roi.beginY + roiY;
-
     // SGM upscale depth/pixSize
-    const float2 roughDepthPixSize = *get2DBufferAt(in_roughDepthPixSizeMap, in_roughDepthPixSizeMap_p, x, y);
+    const float2 roughDepthPixSize = *get2DBufferAt(in_roughDepthPixSizeMap, in_roughDepthPixSizeMap_p, roiX, roiY);
     const float roughDepth = roughDepthPixSize.x;
     const float roughPixSize = roughDepthPixSize.y;
 
     // refinedFused depth/sim
-    const float2 fineDepthSim = *get2DBufferAt(in_fineDepthSimMap, in_fineDepthSimMap_p, x, y);
+    const float2 fineDepthSim = *get2DBufferAt(in_fineDepthSimMap, in_fineDepthSimMap_p, roiX, roiY);
     const float fineDepth = fineDepthSim.x;
     const float fineSim = fineDepthSim.y;
 
     // output optimized depth/sim
-    float2* out_optDepthSimPtr = get2DBufferAt(out_optDepthSimMap, out_optDepthSimMap_p, x, y);
+    float2* out_optDepthSimPtr = get2DBufferAt(out_optDepthSimMap, out_optDepthSimMap_p, roiX, roiY);
     float2 out_optDepthSim = (iter == 0) ? make_float2(roughDepth, fineSim) : *out_optDepthSimPtr;
     const float depthOpt = out_optDepthSim.x;
 
@@ -561,8 +549,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
         out_optDepthSim.x = depthOpt + depthOptStep;
 
-        out_optDepthSim.y = (1.0f - closeToRoughWeight) * (energyLowerThanVarianceWeight * fineSimWeight * fineSim +
-            (1.0f - energyLowerThanVarianceWeight) * (depthEnergy / 20.0f));
+        out_optDepthSim.y = (1.0f - closeToRoughWeight) * (energyLowerThanVarianceWeight * fineSimWeight * fineSim + (1.0f - energyLowerThanVarianceWeight) * (depthEnergy / 20.0f));
     }
 
     *out_optDepthSimPtr = out_optDepthSim;

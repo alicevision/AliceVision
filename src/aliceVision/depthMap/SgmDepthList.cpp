@@ -22,14 +22,12 @@
 namespace aliceVision {
 namespace depthMap {
 
-SgmDepthList::SgmDepthList(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, int rc)
+SgmDepthList::SgmDepthList(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, int rc, const ROI& roi)
     : _rc(rc)
+    , _roi(roi)
     , _mp(mp)
     , _sgmParams(sgmParams)
 {
-    const unsigned int width  = (unsigned int)(_mp.getWidth(_rc));
-    const unsigned int height = (unsigned int)(_mp.getHeight(_rc));
-    _roi = ROI(0, width, 0, height);
     _tCams = _mp.findNearestCamsFromLandmarks(_rc, _sgmParams.maxTCams);
 }
 
@@ -60,6 +58,14 @@ void SgmDepthList::computeListRc()
             minDepthAll = std::min(minDepthAll, depth);
             maxDepthAll = std::max(maxDepthAll, depth);
         }
+    }
+
+    // TODO: handle the case where no depths are found
+    if(minDepthAll == std::numeric_limits<float>::max())
+    {
+        _depths.clear();
+        _depthsTcLimits.clear();
+        return;
     }
 
     {
@@ -294,14 +300,8 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
             {
                 const Vec2& obs2d = observationPair.second.x;
 
-                const int roiBeginX = _roi.beginX * _mp.getProcessDownscale();
-                const int roiBeginY = _roi.beginY * _mp.getProcessDownscale();
-                const int roiEndX = _roi.endX * _mp.getProcessDownscale();
-                const int roiEndY = _roi.endY * _mp.getProcessDownscale();
-
-                // observation located inside the ROI 
-                if(roiBeginX <= obs2d.x() && roiEndX >= obs2d.x() &&
-                   roiBeginY <= obs2d.y() && roiEndY >= obs2d.y())
+                // if we compute depth list per tile keep only observation located inside the ROI
+                if(_sgmParams.useSameDepthListPerTile || _roi.contains(obs2d.x(), obs2d.y()))
                 {
                     const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
                     accDistanceMin(distance);
@@ -309,6 +309,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
                     midDepthPoint = midDepthPoint + point;
                     ++nbDepths;
                 }
+                
             }
         }
     }
@@ -517,10 +518,15 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
+    // ROI center 
+    const ROI sgmRoi = downscaleROI(_roi, _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY);
+    const Point2d sgmRoiCenter((sgmRoi.beginX + (sgmRoi.width() * 0.5)), sgmRoi.beginY + (sgmRoi.height() * 0.5));
+
+    // principal point of the rc camera to the tc camera
+    const Point2d principalPoint(_mp.getWidth(_rc) * 0.5f, _mp.getHeight(_rc) * 0.5f);
+    
     // reference pixel for the epipolar line
-    // was before the principal point of the rc camera to the tc camera
-    // now the ROI center 
-    const Point2d rmid((_roi.beginX + (_roi.width() * 0.5)), _roi.beginY + (_roi.height() * 0.5));
+    const Point2d rmid = (_sgmParams.useSameDepthListPerTile) ? principalPoint : sgmRoiCenter;
 
     // segment of epipolar line
     Point2d pFromTar, pToTar; 

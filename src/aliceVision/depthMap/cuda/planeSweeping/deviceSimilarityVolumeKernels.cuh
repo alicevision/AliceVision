@@ -92,13 +92,13 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
         return;
 
     // corresponding volume coordinates
-    const int vx = roi.beginX + roiX;
-    const int vy = roi.beginY + roiY;
+    const int vx = roiX;
+    const int vy = roiY;
     const int vz = roi.beginZ + roiZ;
 
-    // corresponding image coordinates
-    const int x = vx * stepXY;
-    const int y = vy * stepXY;
+    // corresponding device image coordinates
+    const int x = (roi.beginX + vx) * stepXY;
+    const int y = (roi.beginY + vy) * stepXY;
 
     // corresponding plane depth
     const float planeDepth = depths_d[vz];
@@ -170,17 +170,17 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     if(roiX >= roi.width() || roiY >= roi.height()) // no need to check roiZ
         return;
 
-    // corresponding volume coordinates
-    const int vx = roi.beginX + roiX;
-    const int vy = roi.beginY + roiY;
+    // corresponding volume and depth/sim map coordinates
+    const int vx = roiX;
+    const int vy = roiY;
     const int vz = roi.beginZ + roiZ;
 
-    // corresponding image coordinates
-    const int x = vx * stepXY;
-    const int y = vy * stepXY;
+    // corresponding device image coordinates
+    const int x = (roi.beginX + vx) * stepXY;
+    const int y = (roi.beginY + vy) * stepXY;
 
     // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, x, y)->x; // input original middle depth
+    const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
 
     // original depth invalid or masked, similarity value remain at 255
     if(originalDepth < 0.0f) 
@@ -236,18 +236,14 @@ __global__ void volume_retrieveBestZ_kernel(float* bestDepthM, int bestDepthM_s,
                                             bool interpolate, 
                                             const ROI roi)
 {
-    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(roiX >= roi.width() || roiY >= roi.height())
+    if(vx >= roi.width() || vy >= roi.height())
         return;
 
-    // corresponding volume / depth sim map coordinates
-    const int vx = roi.beginX + roiX;
-    const int vy = roi.beginY + roiY;
-
-    // corresponding image coordinates
-    const float2 pix{float(vx * scaleStep), float(vy * scaleStep)};
+    // corresponding device image coordinates
+    const float2 pix{float((roi.beginX + vx) * scaleStep), float((roi.beginY + vy) * scaleStep)};
 
     // find best depth
     float bestSim = 255.0f;
@@ -326,18 +322,18 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
         return;
 
     // corresponding volume / depth sim map coordinates
-    const int vx = roi.beginX + roiX;
-    const int vy = roi.beginY + roiY;
+    const int vx = roiX;
+    const int vy = roiY;
 
-    // corresponding image coordinates
-    const int x = vx * scaleStep;
-    const int y = vy * scaleStep;
+    // corresponding device image coordinates
+    const int x = (roi.beginX + vx) * scaleStep;
+    const int y = (roi.beginX + vy) * scaleStep;
 
     // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, x, y)->x; // input original middle depth
+    const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
 
     // corresponding output depth/sim pointer
-    float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap_d, out_bestDepthSimMap_p, x, y);
+    float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap_d, out_bestDepthSimMap_p, vx, vy);
 
     if(originalDepth < 0.0f) // original depth invalid or masked
     {
@@ -455,7 +451,7 @@ __global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice, int xzSlice_
  * @param[out] volSimT output similarity volume
  */
 __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
-            cudaTextureObject_t rc_tex,
+            cudaTextureObject_t rcTex,
             TSimAcc* xzSliceForY, int xzSliceForY_p,
             const TSimAcc* xzSliceForYm1, int xzSliceForYm1_p,
             const TSimAcc* bestSimInYm1,
@@ -464,7 +460,8 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
             const int3 axisT,
             float step,
             int y, float _P1, float _P2,
-            int ySign, int filteringIndex)
+            int ySign, int filteringIndex,
+            const ROI roi)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int z = blockIdx.y * blockDim.y + threadIdx.y;
@@ -476,6 +473,10 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
 
     if (x >= (&volDim.x)[axisT.x] || z >= volDim.z)
         return;
+
+    // find texture offset
+    const int beginX = (axisT.x == 1) ? roi.beginX : (axisT.y == 1) ? roi.beginY : roi.beginZ;
+    const int beginY = (axisT.x == 2) ? roi.beginX : (axisT.y == 2) ? roi.beginY : roi.beginZ;
 
     TSimAcc* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
     float pathCost = 255.0f;
@@ -491,14 +492,14 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         }
         else
         {
-          const int imX0 = v.x * step; // current
-          const int imY0 = v.y * step;
+          const int imX0 = (beginX + v.x) * step; // current
+          const int imY0 = (beginY + v.y) * step;
 
           const int imX1 = imX0 - ySign * step * (axisT.y == 0); // M1
           const int imY1 = imY0 - ySign * step * (axisT.y == 1);
 
-          const float4 gcr0 = tex2D_float4(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
-          const float4 gcr1 = tex2D_float4(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
+          const float4 gcr0 = tex2D_float4(rcTex, float(imX0) + 0.5f, float(imY0) + 0.5f);
+          const float4 gcr1 = tex2D_float4(rcTex, float(imX1) + 0.5f, float(imY1) + 0.5f);
           const float deltaC = Euclidean3(gcr0, gcr1);
 
           // sigmoid f(x) = i + (a - i) * (1 / ( 1 + e^(10 * (x - P2) / w)))

@@ -23,7 +23,7 @@ class SgmDepthList
 {
 public:
 
-    SgmDepthList(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, int rc);
+    SgmDepthList(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, int rc, const ROI& roi);
     ~SgmDepthList() = default;
 
     const StaticVector<int>& getTCams() const { return _tCams; }
@@ -92,14 +92,13 @@ private:
 
     // private members
 
-    const int _rc;
-    ROI _roi;
-    const SgmParams& _sgmParams;
-    const mvsUtils::MultiViewParams& _mp;
-
-    StaticVector<int> _tCams;
-    StaticVector<float> _depths;
-    StaticVector<Pixel> _depthsTcLimits;
+    const int _rc;                         // related R camera index
+    const ROI& _roi;                       // 2d region of interest of the R image without any downscale apply
+    const SgmParams& _sgmParams;           // Semi Global Matching parameters
+    const mvsUtils::MultiViewParams& _mp;  // Multi-view parameters
+    StaticVector<float> _depths;           // R camera depth list
+    StaticVector<Pixel> _depthsTcLimits;   // T camera depth limits
+    StaticVector<int> _tCams;              // T camera indexes, computed in the constructor
 };
 
 } // namespace depthMap

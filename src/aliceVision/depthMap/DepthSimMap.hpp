@@ -12,9 +12,15 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/depthMap/ROI.hpp>
+
+struct float2;
 
 namespace aliceVision {
 namespace depthMap {
+
+template <class Type, unsigned Dim>
+class CudaDeviceMemoryPitched;
 
 class DepthSim
 {
@@ -82,53 +88,171 @@ public:
     }
 };
 
-
+/*
+ * @class DepthSimMap
+ * @brief Support class to maintain a depth/similarity buffer.
+ */
 class DepthSimMap
 {
 public:
-    const mvsUtils::MultiViewParams& _mp;
-    const int _scale;
-    const int _step;
-    int _rc, _w, _h;
-    StaticVector<DepthSim> _dsm; //< depth similarity map
 
+    /**
+     * @brief DepthSimMap constructor.
+     * @param[in] rc the related R camera index
+     * @param[in] mp the multi-view parameters
+     * @param[in] scale the depth/sim map scale factor from the original R image
+     * @param[in] step the depth/sim map step factor from the original R image
+     */
     DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step);
-    ~DepthSimMap();
 
+    /**
+     * @brief DepthSimMap constructor.
+     * @param[in] rc the related R camera index
+     * @param[in] mp the multi-view parameters
+     * @param[in] scale the depth/sim map scale factor from the original R image
+     * @param[in] step the depth/sim map step factor from the original R image
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
+     */
+    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const ROI& roi);
+
+    // default destructor
+    ~DepthSimMap() = default;
+
+    // public accessors
+
+    inline int getRc() const { return _rc; }
+    inline int getWidth() const { return _width; }
+    inline int getHeight() const { return _height; }
     inline int getScale() const { return _scale; }
     inline int getStep() const { return _step; }
-    inline int getRc() const { return _rc; }
-    inline int getWidth() const { return _w; }
-    inline int getHeight() const { return _h; }
-    inline const DepthSim& getDepthSim(int x, int y) const { return _dsm[y * _w + x]; }
-    inline const StaticVector<DepthSim>& getData() const { return _dsm; }
 
-    inline DepthSim& getDepthSim(int x, int y) { return _dsm[y * _w + x]; }
+    inline const ROI& getRoi() const { return _roi; }
+    inline ROI getProcessRoi() const { return downscaleROI(_roi, _mp.getProcessDownscale()); }
+    inline ROI getDownscaledRoi() const { return downscaleROI(_roi, _mp.getProcessDownscale() * _scale * _step); }
+
+    inline const DepthSim& getDepthSim(int x, int y) const { return _dsm[y * _width + x]; }
+    inline DepthSim& getDepthSim(int x, int y) { return _dsm[y * _width + x]; }
+
+    inline const StaticVector<DepthSim>& getData() const { return _dsm; }
     inline StaticVector<DepthSim>& getData() { return _dsm; }
 
-    void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
-    void initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim);
-    void initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
-                                     int depthSimMapsScale);
+    inline Point2d getCorrespondingImagePoint(int x, int y) const
+    {
+        Point2d imagePoint;
+        imagePoint.x = _roi.beginX / double(_mp.getProcessDownscale()) + (double(x) * _scale * _step);
+        imagePoint.y = _roi.beginY / double(_mp.getProcessDownscale()) + (double(y) * _scale * _step);
+        return imagePoint;
+    }
+    
+    // public methods
 
+    /**
+     * @brief Initialize with a given smaller depth/sim map.
+     * @param[in] depthSimMap The smaller depth/sim map
+     */
     void initFromSmaller(const DepthSimMap& depthSimMap);
-    void init(const DepthSimMap& depthSimMap);
 
+    /**
+     * @brief Get the max/min depth value.
+     * @return Point2d(x = max, y = min)
+     */
     Point2d getMaxMinDepth() const;
+
+    /**
+     * @brief Get the max/min similarity value.
+     * @return Point2d(x = max, y = min)
+     */
     Point2d getMaxMinSim() const;
 
-    float getPercentileDepth(float perc) const;
+    /**
+     * @brief Get the percentile depth.
+     * @param[in] percentile the percentile
+     * @return percentile depth
+     */
+    float getPercentileDepth(float percentile) const;
+
+    /**
+     * @brief Get the depth map buffer without step computed from an interpolated subpart (based on the step).
+     * @note the output depth map buffer is downscaled with the multi-view process downscale and the internal downscale.
+     * @param[out] out_depthMap the output depth map
+     */
     void getDepthMapStep1(StaticVector<float>& out_depthMap) const;
+
+    /**
+     * @brief Get the similarity map buffer without step computed from an interpolated subpart (based on the step).
+     * @note the output similarity map buffer is downscaled with the multi-view process downscale and the internal downscale.
+     * @param[out] out_simMap the output similarity map
+     */
     void getSimMapStep1(StaticVector<float>& out_simMap) const;
+
+    /**
+     * @brief Get the depth map buffer .
+     * @note the output depth map buffer is downscaled with the multi-view process downscale and the internal downscale/step.
+     * @param[out] out_depthMap the output depth map
+     */
     void getDepthMap(StaticVector<float>& out_depthMap) const;
+
+    /**
+     * @brief Get the similarity map buffer.
+     * @note the output similarity map buffer is downscaled with the multi-view process downscale and the internal downscale/step.
+     * @param[out] out_simMap the output similarity map
+     */
     void getSimMap(StaticVector<float>& out_simMap) const;
 
-    void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
-    void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
+    /**
+     * @brief Copy depth/sim map buffer to an array in device memory. 
+     * @param[out] out_depthSimMap_dmp the output depth/sim array in device memory
+     */
+    void copyTo(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMap_dmp) const;
+ 
+    /**
+     * @brief Copy depth/sim map buffer from an array in device memory.
+     * @param[in] in_depthSimMap_dmp the input depth/sim array in device memory
+     */
+    void copyFrom(const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp);
 
+    /**
+     * @brief Copy depth/sim map buffer from two arrays in device memory.
+     * @param[in] in_depthMap_dmp the input depth array in device memory
+     * @param[in] in_simMap_dmp the input similarity array in device memory
+     */
+    void copyFrom(const CudaDeviceMemoryPitched<float, 2>& in_depthMap_dmp, const CudaDeviceMemoryPitched<float, 2>& in_simMap_dmp);
+
+    /**
+     * @brief Save the depth/sim to a single image colored from a JetColorMap
+     * @param[in] filename the output image filename
+     * @param[in] simThr the filter similarity threshold
+     */
     void saveToImage(const std::string& filename, float simThr) const;
+
+    /**
+     * @brief Save the depth map and the similarity map in two different images
+     * @param[in] customSuffix the filename custom suffix
+     * @param[in] useStep1 whether or not to use no step
+     */
     void save(const std::string& customSuffix = "", bool useStep1 = false) const;
-    void load(int fromScale);
+
+    /**
+     * @brief Load the depth map and the similarity map from multple tiled maps
+     * @param[in] tileRoiList the tile region of interest list
+     * @param[in] customSuffix the filename custom suffix
+     * @param[in] deleteTileFiles if true delete tiled maps after loading
+     */
+    void loadFromTiles(std::vector<ROI>& tileRoiList, const std::string& customSuffix = "", bool deleteTileFiles = false);
+
+private:
+
+    // private members
+
+    const mvsUtils::MultiViewParams& _mp;  // multi-view parameters
+    const int _rc;                         // related R camera index
+    const int _width;                      // depth/sim map width
+    const int _height;                     // depth/sim map height
+    const int _scale;                      // depth/sim map scale factor from the original R image
+    const int _step;                       // depth/sim map step factor from the original R image
+    const ROI _roi;                        // 2d region of interest of the original R image without any downscale apply
+    StaticVector<DepthSim> _dsm;           // depth similarity map
+
 };
 
 } // namespace depthMap
