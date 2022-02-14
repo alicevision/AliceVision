@@ -10,9 +10,12 @@
 #if defined(__NVCC__)
 #define CUDA_HOST_DEVICE __host__ __device__
 #define CUDA_HOST __host__
+#define CUDA_CEIL(f) ceil(f)
 #else
 #define CUDA_HOST_DEVICE
 #define CUDA_HOST
+#define CUDA_CEIL(f) std::ceil(f)
+#include <cmath>
 #endif
 
 namespace aliceVision {
@@ -60,6 +63,33 @@ struct ROI
     CUDA_HOST_DEVICE inline unsigned int width()  const { return endX - beginX; }
     CUDA_HOST_DEVICE inline unsigned int height() const { return endY - beginY; }
     CUDA_HOST_DEVICE inline unsigned int depth()  const { return endZ - beginZ; }
+
+
+    /**
+     * @brief Return true if the given 2d point is contained in the ROI.
+     * @param[in] x the given 2d point X coordinate
+     * @param[in] y the given 2d point Y coordinate
+     * @return true if the given 2d point is contained in the ROI
+     */
+    CUDA_HOST inline bool contains(unsigned int x, unsigned int y) const
+    {
+        return ((beginX <= x) && (endX >= x) && 
+                (beginY <= y) && (endY >= y));
+    }
+
+    /**
+     * @brief Return true if the given 3d point is contained in the ROI.
+     * @param[in] x the given 3d point X coordinate
+     * @param[in] y the given 3d point Y coordinate
+     * @param[in] z the given 3d point Z coordinate
+     * @return true if the given 3d point is contained in the ROI
+     */
+    CUDA_HOST inline bool contains(unsigned int x, unsigned int y, unsigned int z) const
+    {
+        return ((beginX <= x) && (endX >= x) && 
+                (beginY <= y) && (endY >= y) && 
+                (beginZ <= z) && (endZ >= z));
+    }
 };
 
 /**
@@ -89,6 +119,19 @@ CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
     return ((roi.endX <= (unsigned int)(width))  && (roi.beginX < roi.endX) &&
             (roi.endY <= (unsigned int)(height)) && (roi.beginY < roi.endY) &&
             (roi.beginZ == 0) && (roi.endZ == 0));
+}
+
+/**
+ * @brief Downscale the given ROI with the given downscale factor
+ * @param[in] roi the given ROI
+ * @param[in] downscale the downscale factor to apply
+ * @return the downscaled ROI
+ */
+CUDA_HOST inline ROI downscaleROI(const ROI& roi, float downscale)
+{ 
+    return ROI(CUDA_CEIL(roi.beginX / downscale), CUDA_CEIL(roi.endX / downscale),
+               CUDA_CEIL(roi.beginY / downscale), CUDA_CEIL(roi.endY / downscale),
+               CUDA_CEIL(roi.beginZ / downscale), CUDA_CEIL(roi.endZ / downscale));
 }
 
 } // namespace depthMap
