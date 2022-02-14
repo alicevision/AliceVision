@@ -29,7 +29,8 @@ class SfMData;
 
 namespace mvsUtils {
 
-enum class EFileType {
+enum class EFileType
+{
     P = 0,
     K = 1,
     iK = 2,
@@ -68,6 +69,9 @@ enum class EFileType {
     nmodMap = 41,
     D = 42,
     normalMap = 43,
+    volume = 44,
+    volumeCross = 45,
+    stats9p = 46
 };
 
 class MultiViewParams
