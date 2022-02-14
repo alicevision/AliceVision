@@ -10,14 +10,15 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/depthMap/ROI.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
 struct SgmParams;
-class SgmDepthList;
 
 template <class Type, unsigned Dim>
 class CudaDeviceMemoryPitched;
@@ -28,19 +29,36 @@ class CudaDeviceMemoryPitched;
 class Sgm
 {
 public:
-    Sgm(const SgmParams& sgmParams, const SgmDepthList& sgmDepthList, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc);
+
+    /**
+     * @brief Sgm constructor.
+     * @param[in] sgmParams the Semi Global Matching parameters
+     * @param[in] mp the multi-view parameters
+     * @param[in] ic the image cache 
+     * @param[in] rc the R camera index
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
+     */
+    Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
+
+    // default destructor
     ~Sgm() = default;
 
     /**
      * @brief Compute for a single R camera the Semi-Global Matching depth/sim map.
      */
-    bool sgmRc();
+    void sgmRc();
+
+    /**
+     * @brief Return true if no depths found for the R camera.
+     * @return true if no depths found for the R camera
+     */
+    inline bool empty() const { return _sgmDepthList.getDepths().empty(); }
 
     /**
      * @brief Get the depth/sim map of the Semi-Global Matching result.
      * @return the depth/sim map of the Semi-Global Matching result
      */
-    const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
+    inline const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
 
 private:
 
@@ -80,11 +98,11 @@ private:
 
     // private members
 
-    const int _rc;                           // R camera index
+    const int _rc;                           // related R camera index
     const SgmParams& _sgmParams;             // Semi Global Matching parameters
-    const SgmDepthList& _sgmDepthList;       // Semi Global Matching depth list
     const mvsUtils::MultiViewParams& _mp;    // Multi-view parameters
     mvsUtils::ImagesCache<ImageRGBAf>& _ic;  // Image cache
+    SgmDepthList _sgmDepthList;              // R camera Semi Global Matching depth list
     DepthSimMap _depthSimMap;                // depth/sim map of the Semi Global Matching result
 };
 

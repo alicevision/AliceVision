@@ -73,6 +73,29 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
                          << "\t- stepXY: " << sgmParams.stepXY);
 }
 
+void getRoiList(const mvsUtils::MultiViewParams& mp, int rc, unsigned int nbRoiSideX, unsigned int nbRoiSideY, std::vector<ROI>& roiList)
+{
+    const unsigned int width  = (unsigned int)(mp.getOriginalWidth(rc));
+    const unsigned int height = (unsigned int)(mp.getOriginalHeight(rc));
+    const unsigned int roiWidth  = (unsigned int)(std::ceil(float(width)  / float(nbRoiSideX)));
+    const unsigned int roiHeight = (unsigned int)(std::ceil(float(height) / float(nbRoiSideY)));
+
+    roiList.resize(nbRoiSideX * nbRoiSideY);
+
+    for(int i = 0; i < nbRoiSideX; ++i)
+    {
+        const unsigned int startX = i * roiWidth;
+
+        for(int j = 0; j < nbRoiSideY; ++j)
+        {
+            const unsigned int startY = j * roiHeight;
+            const unsigned int endX = std::min(startX + roiWidth, width);
+            const unsigned int endY = std::min(startY + roiHeight, height);
+            roiList.at(i * nbRoiSideY + j) = ROI(startX, endX, startY, endY);
+        }
+    }
+}
+
 void getSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams) 
 {
     // get SGM user parameters from MultiViewParams property_tree
@@ -129,44 +152,60 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // load images from files into RAM
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
 
+    // number of roi to process per side
+    const unsigned int nbRoiSideX = 2;
+    const unsigned int nbRoiSideY = 2;
+
     for(const int rc : cams)
     {
-        // compute the R camera depth list
-        SgmDepthList sgmDepthList(sgmParams, mp, rc);
-        sgmDepthList.computeListRc();
+        std::vector<ROI> roiList;
+        getRoiList(mp, rc, nbRoiSideX, nbRoiSideY, roiList);
 
-        // log debug camera / depth information
-        sgmDepthList.logRcTcDepthInformation();
-
-        // check if starting and stopping depth are valid
-        sgmDepthList.checkStartingAndStoppingDepth();
-
-        // preload T cams async in image cache
+        for(const ROI& roi : roiList)
         {
-            const system::Timer timer;
-            ic.refreshImages_async(sgmDepthList.getTCams().getData());
-            ALICEVISION_LOG_INFO("Preload T cameras done in: " << timer.elapsedMs() << " ms.");
+            Sgm sgm(sgmParams, mp, ic, rc, roi);
+
+            // compute Semi-Global Matching
+            sgm.sgmRc();
+
+            Refine refine(refineParams, mp, ic, rc, roi);
+
+            // R camera has no T cameras
+            if(refine.getTCams().empty() || sgm.empty())
+            {
+                ALICEVISION_LOG_INFO("No T cameras for camera rc: " << rc << ", generate default depth and sim maps.");
+                continue;
+            }
+
+            refine.refineRc(sgm.getDepthSimMap());
+
+            // write results
+            refine.getDepthSimMap().save();
         }
 
-        // compute Semi-Global Matching
-        Sgm sgm(sgmParams, sgmDepthList, mp, ic, rc);
-        sgm.sgmRc();
+        DepthSimMap finalDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
+        finalDepthSimMap.loadFromTiles(roiList);
+        finalDepthSimMap.save();
 
-        // compute Refine
-        Refine refine(refineParams, mp, ic, rc);
-        
-        // R camera has no T cameras
-        if(refine.getTCams().empty() || sgmDepthList.getDepths().empty())
+        if(sgmParams.exportIntermediateResults)
         {
-            ALICEVISION_LOG_INFO("No T cameras for camera rc: " << rc << ", generate default depth and sim maps.");
-            refine.getDepthSimMap().save(); // generate default depthSimMap
-            continue;
+            DepthSimMap sgmDepthSimMap(rc, mp, sgmParams.scale, sgmParams.stepXY);
+            sgmDepthSimMap.loadFromTiles(roiList, "_sgm");
+            sgmDepthSimMap.save("_sgm");
+
+            DepthSimMap sgmStep1DepthSimMap(rc, mp, sgmParams.scale, 1);
+            sgmStep1DepthSimMap.loadFromTiles(roiList, "_sgmStep1");
+            sgmStep1DepthSimMap.save("_sgmStep1");
         }
 
-        refine.refineRc(sgm.getDepthSimMap());
-
-        // write results
-        refine.getDepthSimMap().save();
+        if(refineParams.exportIntermediateResults)
+        {
+            DepthSimMap refineDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
+            refineDepthSimMap.loadFromTiles(roiList, "_sgmUpscaled");
+            refineDepthSimMap.save("_sgmUpscaled");
+            refineDepthSimMap.loadFromTiles(roiList, "_refinedFused");
+            refineDepthSimMap.save("_refinedFused");
+        }
     }
 
     // DeviceCache countains CUDA objects 

@@ -33,9 +33,9 @@ struct SgmParams
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
   bool exportIntermediateResults = false;
+  bool useSameDepthListPerTile = true;
 
   // constant parameters
-  
   const bool prematchinMinMaxDepthDontUseSeeds = false;
   const float prematchingMaxDepthScale = 1.5f;
   const float prematchingMinCamDist = 0.0f;

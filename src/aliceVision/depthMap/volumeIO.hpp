@@ -8,6 +8,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/depthMap/ROI.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
@@ -53,13 +54,15 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& volumeS
  * @param[in] camIndex the R cam global index
  * @param[in] sgmParams the Semi Global Matching parameters
  * @param[in] filepath the export filepath
+ * @param[in] roi the 2d region of interest
  */
 void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, 
                             const StaticVector<float>& depths, 
                             const mvsUtils::MultiViewParams& mp, 
                             int camIndex, 
                             const SgmParams& sgmParams,
-                            const std::string& filepath);
+                            const std::string& filepath,
+                            const ROI& roi);
 
 /**
  * @brief Export a cross of the given similarity volume to an Alembic file.
@@ -69,13 +72,15 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
  * @param[in] camIndex the R cam global index
  * @param[in] sgmParams the Semi Global Matching parameters
  * @param[in] filepath the export filepath
+ * @param[in] roi the 2d region of interest
  */
 void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& volumeSim, 
                                  const StaticVector<float>& depths, 
                                  const mvsUtils::MultiViewParams& mp, 
                                  int camIndex, 
                                  const SgmParams& sgmParams,
-                                 const std::string& filepath);
+                                 const std::string& filepath, 
+                                 const ROI& roi);
 
 /**
  * @brief Export a cross of the given similarity volume to an Alembic file.
@@ -104,7 +109,8 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim,
                        int camIndex, 
                        int scale, 
                        int step, 
-                       const std::string& filepath);
+                       const std::string& filepath, 
+                       const ROI& roi);
 
 } // namespace depthMap
 } // namespace aliceVision
