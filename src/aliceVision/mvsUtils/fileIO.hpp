@@ -25,17 +25,16 @@ namespace oiio = OIIO;
 namespace aliceVision {
 namespace mvsUtils {
 
-std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale = 0, const std::string& customSuffix = "", int tileBeginX = -1, int tileBeginY = -1);
 
-std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale = 0, const std::string& customSuffix = "", int tileBeginX = -1, int tileBeginY = -1);
 
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(std::istream& in);
 
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
-    imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

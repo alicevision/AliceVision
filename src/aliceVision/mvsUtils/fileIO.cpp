@@ -17,12 +17,18 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix)
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix, int tileBeginX, int tileBeginY)
 {
   std::string folder = mp._imagesFolder;
   std::string suffix;
+  std::string tileSuffix;
   std::string ext;
 
+  if(tileBeginX >= 0 && tileBeginY >= 0)
+  {
+      tileSuffix = std::string("_" + std::to_string(tileBeginX) + "_" + std::to_string(tileBeginY));
+  }
+  
   switch(fileType)
   {
       case EFileType::P:
@@ -263,19 +269,40 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "txt";
           break;
       }
+      case EFileType::volume:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_volume";
+          ext = "abc";
+          break;
+      }
+      case EFileType::volumeCross:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_volume-cross";
+          ext = "abc";
+          break;
+      }
+      case EFileType::stats9p:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_9p";
+          ext = "csv";
+          break;
+      }
   }
   if(scale > 1)
   {
       suffix += "_scale" + num2str(scale);
   }
 
-  std::string fileName = folder + std::to_string(viewId) + suffix + customSuffix + "." + ext;
+  std::string fileName = folder + std::to_string(viewId) + suffix + customSuffix + tileSuffix + "." + ext;
   return fileName;
 }
 
-std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale, const std::string& customSuffix)
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale, const std::string& customSuffix, int tileBeginX, int tileBeginY)
 {
-    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale, customSuffix);
+    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale, customSuffix, tileBeginX, tileBeginY);
 }
 
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite)
