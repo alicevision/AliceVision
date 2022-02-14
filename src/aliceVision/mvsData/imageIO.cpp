@@ -385,7 +385,8 @@ void writeImage(const std::string& path,
                 const std::vector<T>& buffer,
                 EImageQuality imageQuality,
                 OutputFileColorSpace colorspace,
-                const oiio::ParamValueList& metadata)
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& roi)
 {
     const fs::path bPath = fs::path(path);
     const std::string extension = bPath.extension().string();
@@ -409,7 +410,16 @@ void writeImage(const std::string& path,
                        << "\t- height: " << height << std::endl
                        << "\t- channels: " << nchannels);
 
-    oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
+    // display region of interest
+    const oiio::ROI displayRoi(0, width, 0, height, 0, 1, 0, nchannels);
+    
+    // create the imageSpec using the display region of interest
+    oiio::ImageSpec imageSpec(displayRoi, typeDesc);
+
+    // set the data region of interest if it's not all the display region of interest
+    if(roi != oiio::ROI::All())
+      imageSpec.set_roi(roi);
+
     imageSpec.extra_attribs = metadata; // add custom metadata
 
     imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
@@ -437,34 +447,34 @@ void writeImage(const std::string& path,
     fs::rename(tmpPath, path);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, colorspace, metadata, roi);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, colorspace, metadata, roi);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, colorspace, metadata, roi);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, colorspace, metadata, roi);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<ColorRGBf>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<ColorRGBf>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata, roi);
 }
 
-void writeImage(const std::string &path, ImageRGBf &image, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string &path, ImageRGBf &image, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata, roi);
 }
 
 } // namespace imageIO
