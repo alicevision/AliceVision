@@ -77,12 +77,12 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
                          << "\t- stepXY: " << sgmParams.stepXY);
 }
 
-void getRoiList(const mvsUtils::MultiViewParams& mp, int rc, unsigned int nbRoiSideX, unsigned int nbRoiSideY, std::vector<ROI>& roiList)
+void getRoiListFromTileSize(const mvsUtils::MultiViewParams& mp, int rc, unsigned int roiWidth, unsigned int roiHeight, std::vector<ROI>& roiList)
 {
-    const unsigned int width  = (unsigned int)(mp.getOriginalWidth(rc));
+    const unsigned int width = (unsigned int)(mp.getOriginalWidth(rc));
     const unsigned int height = (unsigned int)(mp.getOriginalHeight(rc));
-    const unsigned int roiWidth  = (unsigned int)(std::ceil(float(width)  / float(nbRoiSideX)));
-    const unsigned int roiHeight = (unsigned int)(std::ceil(float(height) / float(nbRoiSideY)));
+    const unsigned int nbRoiSideX = (unsigned int)(std::ceil(float(width) / float(roiWidth)));
+    const unsigned int nbRoiSideY = (unsigned int)(std::ceil(float(height) / float(roiHeight)));
 
     roiList.resize(nbRoiSideX * nbRoiSideY);
 
@@ -156,14 +156,10 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // load images from files into RAM
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
 
-    // number of roi to process per side
-    const unsigned int nbRoiSideX = 2;
-    const unsigned int nbRoiSideY = 2;
-
     for(const int rc : cams)
     {
         std::vector<ROI> roiList;
-        getRoiList(mp, rc, nbRoiSideX, nbRoiSideY, roiList);
+        getRoiListFromTileSize(mp, rc, 800, 800, roiList);
 
         for(const ROI& roi : roiList)
         {
