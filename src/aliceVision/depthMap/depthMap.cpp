@@ -77,24 +77,24 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
                          << "\t- stepXY: " << sgmParams.stepXY);
 }
 
-void getRoiListFromTileSize(const mvsUtils::MultiViewParams& mp, int rc, unsigned int roiWidth, unsigned int roiHeight, std::vector<ROI>& roiList)
+void getRoiListFromTileSize(std::vector<ROI>& roiList, const mvsUtils::MultiViewParams& mp, int rc, int roiWidth, int roiHeight, int roiCoverage)
 {
-    const unsigned int width = (unsigned int)(mp.getOriginalWidth(rc));
-    const unsigned int height = (unsigned int)(mp.getOriginalHeight(rc));
-    const unsigned int nbRoiSideX = (unsigned int)(std::ceil(float(width) / float(roiWidth)));
-    const unsigned int nbRoiSideY = (unsigned int)(std::ceil(float(height) / float(roiHeight)));
+    const int width  = mp.getOriginalWidth(rc);
+    const int height = mp.getOriginalHeight(rc);
+    const int nbRoiSideX = int(std::ceil(float(width)  / float(roiWidth)));
+    const int nbRoiSideY = int(std::ceil(float(height) / float(roiHeight)));
 
     roiList.resize(nbRoiSideX * nbRoiSideY);
 
     for(int i = 0; i < nbRoiSideX; ++i)
     {
-        const unsigned int startX = i * roiWidth;
+        const int startX = std::max((i * roiWidth) - roiCoverage, 0);
 
         for(int j = 0; j < nbRoiSideY; ++j)
         {
-            const unsigned int startY = j * roiHeight;
-            const unsigned int endX = std::min(startX + roiWidth, width);
-            const unsigned int endY = std::min(startY + roiHeight, height);
+            const int startY = std::max((j * roiHeight) - roiCoverage, 0);
+            const int endX = std::min(((i + 1) * roiWidth)  + roiCoverage, width);
+            const int endY = std::min(((j + 1) * roiHeight) + roiCoverage, height);
             roiList.at(i * nbRoiSideY + j) = ROI(startX, endX, startY, endY);
         }
     }
@@ -159,7 +159,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     for(const int rc : cams)
     {
         std::vector<ROI> roiList;
-        getRoiListFromTileSize(mp, rc, 800, 800, roiList);
+        getRoiListFromTileSize(roiList, mp, rc, 800, 800, 100);
 
         for(const ROI& roi : roiList)
         {
