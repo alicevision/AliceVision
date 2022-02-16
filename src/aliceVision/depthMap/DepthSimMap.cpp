@@ -482,30 +482,58 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 void DepthSimMap::loadFromTiles(std::vector<ROI>& tileRoiList, const std::string& customSuffix, bool deleteTileFiles)
 {
     const int dsmSize = _dsm.size();
+    const int downscale = _mp.getProcessDownscale() * _scale * _step;
+
     std::vector<float> depthMap(dsmSize, 0.0f);
     std::vector<float> simMap(dsmSize, 0.0f);
+    std::vector<float> blendAverageMap(dsmSize, 0.0f);
 
+    // build the average blend map (1/nb tiles)
+    for(int x = 0; x < _width; ++x)
+    {
+        for(int y = 0; y < _height; ++y)
+        {
+            int nbTiles = 0;
+            
+            for(const ROI& roi : tileRoiList)
+                if(roi.contains(x * downscale, y * downscale))
+                    ++nbTiles;
+
+            if(nbTiles != 0)
+                blendAverageMap[y * _width + x] = 1.f / float(nbTiles);
+        }
+    }
+
+    // bind buffers with OpenImageIO
     const oiio::ImageSpec spec(_width, _height, 1, oiio::TypeDesc::FLOAT);
 
     oiio::ImageBuf depthBuf(spec, depthMap.data());
     oiio::ImageBuf simBuf(spec, simMap.data());
+    oiio::ImageBuf blendAvgBuf(spec, blendAverageMap.data());
     
+    // join each roi to depth and similarity buffers
     for(const ROI& roi : tileRoiList)
     {
+        // get tile filenames
         const std::string depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, roi.beginX, roi.beginY);
         const std::string simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, roi.beginX, roi.beginY);
 
+        // open depth and similarity maps with OpenImageIO
         oiio::ImageBuf roiDepthBuf(depthMapPath);
         oiio::ImageBuf roiSimBuf(simMapPath);
 
+        // add (plus) depth and similarity maps 
         oiio::ImageBufAlgo::add(depthBuf, depthBuf, roiDepthBuf);
         oiio::ImageBufAlgo::add(simBuf, simBuf, roiSimBuf);
     }
 
+    // multiply depth and similarity buffers with the average blend map
+    oiio::ImageBufAlgo::mul(depthBuf, depthBuf, blendAvgBuf);
+    oiio::ImageBufAlgo::mul(simBuf, simBuf, blendAvgBuf);
+
+    // save depth and similarity values
     for(int i = 0; i < dsmSize; ++i)
-    {
         _dsm[i] = {depthMap[i], simMap[i]};
-    }
 }
 
 } // namespace depthMap
