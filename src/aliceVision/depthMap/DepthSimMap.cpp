@@ -29,7 +29,7 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale,
     , _step(step)
     , _roi(ROI(0, mp.getOriginalWidth(rc), 0, mp.getOriginalHeight(rc)))
     , _width(mp.getOriginalWidth(rc) / float(_mp.getProcessDownscale() * scale * step))
-    , _height(mp.getOriginalWidth(rc) / float(_mp.getProcessDownscale() * scale * step))
+    , _height(mp.getOriginalHeight(rc) / float(_mp.getProcessDownscale() * scale * step))
 {
     _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
 }
