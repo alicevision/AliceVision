@@ -73,8 +73,8 @@ struct ROI
      */
     CUDA_HOST inline bool contains(unsigned int x, unsigned int y) const
     {
-        return ((beginX <= x) && (endX >= x) && 
-                (beginY <= y) && (endY >= y));
+        return ((beginX <= x) && (endX > x) && 
+                (beginY <= y) && (endY > y));
     }
 
     /**
@@ -86,9 +86,9 @@ struct ROI
      */
     CUDA_HOST inline bool contains(unsigned int x, unsigned int y, unsigned int z) const
     {
-        return ((beginX <= x) && (endX >= x) && 
-                (beginY <= y) && (endY >= y) && 
-                (beginZ <= z) && (endZ >= z));
+        return ((beginX <= x) && (endX > x) && 
+                (beginY <= y) && (endY > y) && 
+                (beginZ <= z) && (endZ > z));
     }
 };
 
