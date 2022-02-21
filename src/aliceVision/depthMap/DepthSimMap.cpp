@@ -40,8 +40,8 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale,
     , _scale(scale)
     , _step(step)
     , _roi(roi)
-    , _width(std::ceil(roi.width() / float(_mp.getProcessDownscale() * scale * step)))
-    , _height(std::ceil(roi.height() / float(_mp.getProcessDownscale() * scale * step)))
+    , _width(downscaleRange(roi.x, float(_mp.getProcessDownscale() * scale * step)).size())
+    , _height(downscaleRange(roi.y, float(_mp.getProcessDownscale() * scale * step)).size())
 {
     _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
 }
@@ -198,8 +198,8 @@ void DepthSimMap::getDepthMapStep1(StaticVector<float>& out_depthMap) const
 {
     // dimensions of the output depth map 
     // with only process downscale and internal scale applied
-    const int out_width  = _roi.width()  / (_mp.getProcessDownscale() * _scale);
-    const int out_height = _roi.height() / (_mp.getProcessDownscale() * _scale);
+    const int out_width  = downscaleRange(_roi.x, float(_mp.getProcessDownscale() * _scale)).size();
+    const int out_height = downscaleRange(_roi.y, float(_mp.getProcessDownscale() * _scale)).size();
 
     // resize the output depth map 
     out_depthMap.resize(out_width * out_height);
@@ -226,8 +226,8 @@ void DepthSimMap::getSimMapStep1(StaticVector<float>& out_simMap) const
 {
     // dimensions of the output sim map
     // with only process downscale and internal scale applied
-    const int out_width  = _roi.width()  / (_mp.getProcessDownscale() * _scale);
-    const int out_height = _roi.height() / (_mp.getProcessDownscale() * _scale);
+    const int out_width  = downscaleRange(_roi.x, float(_mp.getProcessDownscale() * _scale)).size();
+    const int out_height = downscaleRange(_roi.y, float(_mp.getProcessDownscale() * _scale)).size();
 
     // resize the output sim map 
     out_simMap.resize(out_width * out_height);
