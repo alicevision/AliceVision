@@ -520,7 +520,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
 
     // ROI center 
     const ROI sgmRoi = downscaleROI(_roi, _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY);
-    const Point2d sgmRoiCenter((sgmRoi.beginX + (sgmRoi.width() * 0.5)), sgmRoi.beginY + (sgmRoi.height() * 0.5));
+    const Point2d sgmRoiCenter((sgmRoi.x.begin + (sgmRoi.width() * 0.5)), sgmRoi.y.begin + (sgmRoi.height() * 0.5));
 
     // principal point of the rc camera to the tc camera
     const Point2d principalPoint(_mp.getWidth(_rc) * 0.5f, _mp.getHeight(_rc) * 0.5f);

@@ -155,7 +155,7 @@ void Sgm::computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBest
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(_rc, _sgmParams.scale, _ic, _mp, 0 /*stream*/);
         const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera( tc, _sgmParams.scale, _ic, _mp, 0 /*stream*/);
 
-        const ROI tcVolumeRoi(downscaledRoi.beginX, downscaledRoi.endX, downscaledRoi.beginY, downscaledRoi.endY, firstDepth, lastDepth);
+        const ROI tcVolumeRoi(downscaledRoi.x.begin, downscaledRoi.x.end, downscaledRoi.y.begin, downscaledRoi.y.end, firstDepth, lastDepth);
 
         ALICEVISION_LOG_DEBUG("Compute similarity volume:" << std::endl
                               << "\t- rc: " << _rc << std::endl
@@ -166,8 +166,8 @@ void Sgm::computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBest
                               << "\t- tc last depth: " << lastDepth << std::endl
                               << "\t- rc width: " << rcDeviceCamera.getWidth() << std::endl
                               << "\t- rc height: " << rcDeviceCamera.getHeight() << std::endl
-                              << "\t- tile range x: [" << tcVolumeRoi.beginX << " - " << tcVolumeRoi.endX << "]" << std::endl
-                              << "\t- tile range y: [" << tcVolumeRoi.beginY << " - " << tcVolumeRoi.endY << "]" << std::endl
+                              << "\t- tile range x: [" << tcVolumeRoi.x.begin << " - " << tcVolumeRoi.x.end << "]" << std::endl
+                              << "\t- tile range y: [" << tcVolumeRoi.y.begin << " - " << tcVolumeRoi.y.end << "]" << std::endl
                               << "\t- device similarity volume size: " << out_volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB" << std::endl
                               << "\t- device unpadded similarity volume size: " << out_volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB" << std::endl);
 
@@ -231,7 +231,7 @@ void Sgm::retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMe
 
     // get the downscaled 2d region of interest
     const ROI downscaledRoi = _depthSimMap.getDownscaledRoi();
-    const ROI volumeRoi(downscaledRoi.beginX, downscaledRoi.endX, downscaledRoi.beginY, downscaledRoi.endY, 0, in_volSim_dmp.getSize().z());
+    const ROI volumeRoi(downscaledRoi.x.begin, downscaledRoi.x.end, downscaledRoi.y.begin, downscaledRoi.y.end, 0, in_volSim_dmp.getSize().z());
 
     cuda_volumeRetrieveBestDepth(bestDepth_dmp,
                                  bestSim_dmp, 
@@ -255,9 +255,9 @@ void Sgm::exportVolumeInformation(const CudaDeviceMemoryPitched<TSim, 3>& in_vol
     CudaHostMemoryHeap<TSim, 3> volumeSim_hmh(in_volSim_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volSim_dmp);
 
-    const std::string volumePath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, roi.beginX, roi.beginY);
-    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, roi.beginX, roi.beginY);
-    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", roi.beginX, roi.beginY);
+    const std::string volumePath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, roi.x.begin, roi.y.begin);
+    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, roi.x.begin, roi.y.begin);
+    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", roi.x.begin, roi.y.begin);
 
     exportSimilarityVolume(volumeSim_hmh, _sgmDepthList.getDepths(), _mp, _rc, _sgmParams, volumePath, _depthSimMap.getRoi());
     exportSimilarityVolumeCross(volumeSim_hmh, _sgmDepthList.getDepths(), _mp, _rc, _sgmParams, volumeCrossPath, _depthSimMap.getRoi());

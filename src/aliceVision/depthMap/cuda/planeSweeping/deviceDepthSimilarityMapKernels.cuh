@@ -90,7 +90,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rcDeviceCamId,
         return;
 
     // corresponding texture coordinates
-    const int2 pix = make_int2(roi.beginX + roiX, roi.beginY + roiY);
+    const int2 pix = make_int2(roi.x.begin + roiX, roi.y.begin + roiY);
 
     // get the output best depth/sim pointer
     float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap, out_bestDepthSimMap_p, roiX, roiY);
@@ -168,7 +168,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(int rcDeviceCamId,
         return;
 
     // corresponding texture coordinates
-    const int2 pix = make_int2(roi.beginX + roiX, roi.beginY + roiY);
+    const int2 pix = make_int2(roi.x.begin + roiX, roi.y.begin + roiY);
 
     // get best depth/sim value 
     float2 depthSim = *get2DBufferAt(inout_bestDepthSimMap, inout_bestDepthSimMap_p, roiX, roiY);
@@ -243,7 +243,7 @@ __global__ void refine_interpolateDepthFromThreeSimsMap_kernel(int rcDeviceCamId
         return;
 
     // corresponding texture coordinates
-    const int2 pix = make_int2(roi.beginX + roiX, roi.beginY + roiY);
+    const int2 pix = make_int2(roi.x.begin + roiX, roi.y.begin + roiY);
 
     // get best middle depth
     const float midDepth = get2DBufferAt(inout_bestDepthSimMap, inout_bestDepthSimMap_p, roiX, roiY)->x;
@@ -288,8 +288,8 @@ __global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rcTex,
         return;
 
     // corresponding device image coordinates
-    const int x = roi.beginX + roiX;
-    const int y = roi.beginY + roiY;
+    const int x = roi.x.begin + roiX;
+    const int y = roi.y.begin + roiY;
 
     const float grad = computeGradientSizeOfL(rcTex, x, y);
 
@@ -512,7 +512,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
     if (depthOpt > 0.0f)
     {
-        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rcDeviceCamId, depthTex, {roiX, roiY}, {int(roi.beginX), int(roi.beginY)}); // (smoothStep, energy)
+        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rcDeviceCamId, depthTex, {roiX, roiY}, {int(roi.x.begin), int(roi.y.begin)}); // (smoothStep, energy)
         float stepToSmoothDepth = depthSmoothStepEnergy.x;
         stepToSmoothDepth = copysignf(fminf(fabsf(stepToSmoothDepth), roughPixSize / 10.0f), stepToSmoothDepth);
         const float depthEnergy = depthSmoothStepEnergy.y; // max angle with neighbors
