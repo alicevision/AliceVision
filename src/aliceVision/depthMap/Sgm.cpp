@@ -151,11 +151,11 @@ void Sgm::computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBest
         const int firstDepth = _sgmDepthList.getDepthsTcLimits()[tci].x;
         const int lastDepth = firstDepth + _sgmDepthList.getDepthsTcLimits()[tci].y;
 
+        const Range tcDepthRange(firstDepth, lastDepth);
+
         DeviceCache& deviceCache = DeviceCache::getInstance();
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(_rc, _sgmParams.scale, _ic, _mp, 0 /*stream*/);
         const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera( tc, _sgmParams.scale, _ic, _mp, 0 /*stream*/);
-
-        const ROI tcVolumeRoi(downscaledRoi.x.begin, downscaledRoi.x.end, downscaledRoi.y.begin, downscaledRoi.y.end, firstDepth, lastDepth);
 
         ALICEVISION_LOG_DEBUG("Compute similarity volume:" << std::endl
                               << "\t- rc: " << _rc << std::endl
@@ -166,8 +166,8 @@ void Sgm::computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBest
                               << "\t- tc last depth: " << lastDepth << std::endl
                               << "\t- rc width: " << rcDeviceCamera.getWidth() << std::endl
                               << "\t- rc height: " << rcDeviceCamera.getHeight() << std::endl
-                              << "\t- tile range x: [" << tcVolumeRoi.x.begin << " - " << tcVolumeRoi.x.end << "]" << std::endl
-                              << "\t- tile range y: [" << tcVolumeRoi.y.begin << " - " << tcVolumeRoi.y.end << "]" << std::endl
+                              << "\t- tile range x: [" << downscaledRoi.x.begin << " - " << downscaledRoi.x.end << "]" << std::endl
+                              << "\t- tile range y: [" << downscaledRoi.y.begin << " - " << downscaledRoi.y.end << "]" << std::endl
                               << "\t- device similarity volume size: " << out_volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB" << std::endl
                               << "\t- device unpadded similarity volume size: " << out_volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB" << std::endl);
 
@@ -177,7 +177,8 @@ void Sgm::computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBest
                                      rcDeviceCamera, 
                                      tcDeviceCamera,
                                      _sgmParams, 
-                                     tcVolumeRoi, 
+                                     tcDepthRange,
+                                     downscaledRoi, 
                                      0 /*stream*/);
 
         ALICEVISION_LOG_DEBUG("Compute similarity volume (with rc: " << _rc << ", tc: " << tc << ") done in: " << timerPerTc.elapsedMs() << " ms.");
@@ -231,7 +232,9 @@ void Sgm::retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMe
 
     // get the downscaled 2d region of interest
     const ROI downscaledRoi = _depthSimMap.getDownscaledRoi();
-    const ROI volumeRoi(downscaledRoi.x.begin, downscaledRoi.x.end, downscaledRoi.y.begin, downscaledRoi.y.end, 0, in_volSim_dmp.getSize().z());
+
+    // get depth range
+    const Range depthRange(0, in_volSim_dmp.getSize().z());
 
     cuda_volumeRetrieveBestDepth(bestDepth_dmp,
                                  bestSim_dmp, 
@@ -239,7 +242,8 @@ void Sgm::retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMe
                                  depths_d, 
                                  rcDeviceCamera,
                                  _sgmParams,
-                                 volumeRoi, 
+                                 depthRange,
+                                 downscaledRoi, 
                                  0 /*stream*/);
 
     out_bestDepthSimMap.copyFrom(bestDepth_dmp, bestSim_dmp);

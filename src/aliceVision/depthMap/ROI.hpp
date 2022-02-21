@@ -64,26 +64,22 @@ struct Range
 
 /*
  * @struct ROI
- * @brief Small host / device struct descibing a rectangular 2d / 3d region of interest.
+ * @brief Small host / device struct descibing a rectangular 2d region of interest.
  */
 struct ROI
 {
-    Range x, y, z;
+    Range x, y;
 
     // default constructor
     ROI() = default;
 
-    CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
-                         unsigned int in_endX,
-                         unsigned int in_beginY,
-                         unsigned int in_endY,
-                         unsigned int in_beginZ,
-                         unsigned int in_endZ)
-        : x(in_beginX, in_endX)
-        , y(in_beginY, in_endY)
-        , z(in_beginZ, in_endZ)
-    {}
-
+    /**
+     * @brief ROI constructor
+     * @param[in] in_beginX the range X begin index
+     * @param[in] in_endX the range X end index
+     * @param[in] in_beginY the range Y begin index
+     * @param[in] in_endY the range Y end index
+     */
     CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
                          unsigned int in_endX,
                          unsigned int in_beginY,
@@ -92,16 +88,28 @@ struct ROI
         , y(in_beginY, in_endY)
     {}
 
-    CUDA_HOST_DEVICE ROI(const Range& rangeX, 
-                         const Range& rangeY)
-        : x(rangeX)
-        , y(rangeY)
+    /**
+     * @brief ROI constructor
+     * @param[in] in_rangeX the X index range
+     * @param[in] in_rangeY the Y index range
+     */
+    CUDA_HOST_DEVICE ROI(const Range& in_rangeX, 
+                         const Range& in_rangeY)
+        : x(in_rangeX)
+        , y(in_rangeY)
     {}
 
+    /**
+     * @brief Get the ROI width
+     * @return the X range size
+     */
     CUDA_HOST_DEVICE inline unsigned int width()  const { return x.size(); }
-    CUDA_HOST_DEVICE inline unsigned int height() const { return y.size(); }
-    CUDA_HOST_DEVICE inline unsigned int depth()  const { return z.size(); }
 
+    /**
+     * @brief Get the ROI height
+     * @return the Y range size
+     */
+    CUDA_HOST_DEVICE inline unsigned int height() const { return y.size(); }
 
     /**
      * @brief Return true if the given 2d point is contained in the ROI.
@@ -113,39 +121,10 @@ struct ROI
     {
         return (x.contains(in_x) && y.contains(in_y));
     }
-
-    /**
-     * @brief Return true if the given 3d point is contained in the ROI.
-     * @param[in] in_x the given 3d point X coordinate
-     * @param[in] in_y the given 3d point Y coordinate
-     * @param[in] in_z the given 3d point Z coordinate
-     * @return true if the given 3d point is contained in the ROI
-     */
-    CUDA_HOST inline bool contains(unsigned int in_x, unsigned int in_y, unsigned int in_z) const
-    {
-        return (x.contains(in_x) && 
-                y.contains(in_y) &&
-                z.contains(in_z));
-    }
 };
 
 /**
- * @brief check if a given 3d ROI is valid and can be contained in a given volume
- * @param[in] roi the given ROI
- * @param[in] volDimX the given volume width
- * @param[in] volDimY the given volume height
- * @param[in] volDimZ the given volume depth
- * @return true if valid
- */
-CUDA_HOST inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDimY, size_t volDimZ)
-{
-    return ((roi.x.end <= volDimX) && (roi.x.begin < roi.x.end) &&
-            (roi.y.end <= volDimY) && (roi.y.begin < roi.y.end) &&
-            (roi.z.end <= volDimZ) && (roi.z.begin < roi.z.end));
-}
-
-/**
- * @brief check if a given 2d ROI is valid and can be contained in a given image
+ * @brief check if a given ROI is valid and can be contained in a given image
  * @param[in] roi the given ROI
  * @param[in] width the given image width
  * @param[in] height the given image height
@@ -154,8 +133,7 @@ CUDA_HOST inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volD
 CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
 {
     return ((roi.x.end <= (unsigned int)(width))  && (roi.x.begin < roi.x.end) &&
-            (roi.y.end <= (unsigned int)(height)) && (roi.y.begin < roi.y.end) &&
-            (roi.z.begin == 0) && (roi.z.end == 0));
+            (roi.y.end <= (unsigned int)(height)) && (roi.y.begin < roi.y.end));
 }
 
 /**

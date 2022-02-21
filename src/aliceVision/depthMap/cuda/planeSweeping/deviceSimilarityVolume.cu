@@ -75,11 +75,12 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& vol
                                            const DeviceCamera& rcDeviceCamera, 
                                            const DeviceCamera& tcDeviceCamera,
                                            const SgmParams& sgmParams,
+                                           const Range& depthRange,
                                            const ROI& roi,
                                            cudaStream_t stream)
 {
     const dim3 block(32, 1, 1); // minimal default settings
-    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), roi.depth());
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), depthRange.size());
     
     volume_slice_kernel<<<grid, block, 0, stream>>>(
         rcDeviceCamera.getTextureObject(),
@@ -100,7 +101,8 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& vol
         volBestSim_dmp.getBytesPaddedUpToDim(0),
         volSecBestSim_dmp.getBuffer(),
         volSecBestSim_dmp.getBytesPaddedUpToDim(1),
-        volSecBestSim_dmp.getBytesPaddedUpToDim(0),
+        volSecBestSim_dmp.getBytesPaddedUpToDim(0), 
+        depthRange,
         roi);
 
     CHECK_CUDA_ERROR();
@@ -111,11 +113,12 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
                                         const DeviceCamera& rcDeviceCamera, 
                                         const DeviceCamera& tcDeviceCamera, 
                                         const RefineParams& refineParams, 
+                                        const Range& depthRange,
                                         const ROI& roi,
                                         cudaStream_t stream)
 {
     const dim3 block(32, 1, 1); // minimal default settings
-    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), roi.depth());
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), depthRange.size());
 
     volume_refine_kernel<<<grid, block, 0, stream>>>(
         rcDeviceCamera.getTextureObject(),
@@ -136,6 +139,7 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
         inout_volSim_dmp.getBuffer(), 
         inout_volSim_dmp.getBytesPaddedUpToDim(1),
         inout_volSim_dmp.getBytesPaddedUpToDim(0), 
+        depthRange,
         roi);
 
     CHECK_CUDA_ERROR();
@@ -282,6 +286,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& be
                                            const CudaDeviceMemory<float>& depths_d, 
                                            const DeviceCamera& rcDeviceCamera,
                                            const SgmParams& sgmParams, 
+                                           const Range& depthRange,
                                            const ROI& roi, 
                                            cudaStream_t stream)
 {
@@ -303,6 +308,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& be
       rcDeviceCamera.getDeviceCamId(), 
       scaleStep, 
       sgmParams.interpolateRetrieveBestDepth,
+      depthRange,
       roi);
 
     CHECK_CUDA_ERROR();
