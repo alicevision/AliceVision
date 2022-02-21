@@ -175,8 +175,8 @@ void Refine::refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2
 
     // get the downscaled region of interest
     ROI downscaledRoi = _depthSimMap.getDownscaledRoi();
-    downscaledRoi.beginZ = 0;
-    downscaledRoi.endZ = volDimZ;
+    downscaledRoi.z.begin = 0;
+    downscaledRoi.z.end = volDimZ;
 
     // allocate refine volume in device memory
     CudaDeviceMemoryPitched<TSimRefine, 3> volumeRefineSim_dmp(volDim);
@@ -214,8 +214,8 @@ void Refine::refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2
                               << "\t- tc: " << tc << " (" << tci << "/" << _tCams.size() << ")" << std::endl
                               << "\t- rc camera device id: " << rcDeviceCamera.getDeviceCamId() << std::endl
                               << "\t- tc camera device id: " << tcDeviceCamera.getDeviceCamId() << std::endl
-                              << "\t- tile range x: [" << downscaledRoi.beginX << " - " << downscaledRoi.endX << "]" << std::endl
-                              << "\t- tile range y: [" << downscaledRoi.beginY << " - " << downscaledRoi.endY << "]" << std::endl
+                              << "\t- tile range x: [" << downscaledRoi.x.begin << " - " << downscaledRoi.x.end << "]" << std::endl
+                              << "\t- tile range y: [" << downscaledRoi.y.begin << " - " << downscaledRoi.y.end << "]" << std::endl
                               << "\t- device similarity volume size: " << volumeRefineRcTcSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB" << std::endl
                               << "\t- device unpadded similarity volume size: " << volumeRefineRcTcSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB" << std::endl);
 
@@ -291,8 +291,8 @@ void Refine::exportVolumeInformation(const CudaDeviceMemoryPitched<TSimRefine, 3
     DepthSimMap depthSimMapSgmUpscale(_rc, _mp, _refineParams.scale, _refineParams.stepXY, roi);
     depthSimMapSgmUpscale.copyFrom(in_depthSimMapSgmUpscale_dmp);
 
-    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, roi.beginX, roi.beginY);
-    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _refineParams.scale, "_refine", roi.beginX, roi.beginY);
+    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, roi.x.begin, roi.y.begin);
+    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _refineParams.scale, "_refine", roi.x.begin, roi.y.begin);
 
     exportSimilarityVolumeCross(volumeSim_hmh, depthSimMapSgmUpscale, _mp, _rc, _refineParams, volumeCrossPath);
     exportSimilaritySamplesCSV(volumeSim_hmh, _rc, name, stats9Path);

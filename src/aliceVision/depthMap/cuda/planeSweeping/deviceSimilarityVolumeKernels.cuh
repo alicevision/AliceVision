@@ -94,11 +94,11 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
     // corresponding volume coordinates
     const int vx = roiX;
     const int vy = roiY;
-    const int vz = roi.beginZ + roiZ;
+    const int vz = roi.z.begin + roiZ;
 
     // corresponding device image coordinates
-    const int x = (roi.beginX + vx) * stepXY;
-    const int y = (roi.beginY + vy) * stepXY;
+    const int x = (roi.x.begin + vx) * stepXY;
+    const int y = (roi.y.begin + vy) * stepXY;
 
     // corresponding plane depth
     const float planeDepth = depths_d[vz];
@@ -173,11 +173,11 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     // corresponding volume and depth/sim map coordinates
     const int vx = roiX;
     const int vy = roiY;
-    const int vz = roi.beginZ + roiZ;
+    const int vz = roi.z.begin + roiZ;
 
     // corresponding device image coordinates
-    const int x = (roi.beginX + vx) * stepXY;
-    const int y = (roi.beginY + vy) * stepXY;
+    const int x = (roi.x.begin + vx) * stepXY;
+    const int y = (roi.y.begin + vy) * stepXY;
 
     // corresponding original plane depth
     const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
@@ -243,12 +243,12 @@ __global__ void volume_retrieveBestZ_kernel(float* bestDepthM, int bestDepthM_s,
         return;
 
     // corresponding device image coordinates
-    const float2 pix{float((roi.beginX + vx) * scaleStep), float((roi.beginY + vy) * scaleStep)};
+    const float2 pix{float((roi.x.begin + vx) * scaleStep), float((roi.y.begin + vy) * scaleStep)};
 
     // find best depth
     float bestSim = 255.0f;
     int bestZIdx = -1;
-    for(int vz = roi.beginZ; vz < roi.endZ; ++vz)
+    for(int vz = roi.z.begin; vz < roi.z.end; ++vz)
     {
       const float simAtZ = *get3DBufferAt(simVolume, simVolume_s, simVolume_p, vx, vy, vz);
       if (simAtZ < bestSim)
@@ -326,8 +326,8 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
     const int vy = roiY;
 
     // corresponding device image coordinates
-    const int x = (roi.beginX + vx) * scaleStep;
-    const int y = (roi.beginX + vy) * scaleStep;
+    const int x = (roi.x.begin + vx) * scaleStep;
+    const int y = (roi.y.begin + vy) * scaleStep;
 
     // corresponding original plane depth
     const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
@@ -475,8 +475,8 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         return;
 
     // find texture offset
-    const int beginX = (axisT.x == 1) ? roi.beginX : (axisT.y == 1) ? roi.beginY : roi.beginZ;
-    const int beginY = (axisT.x == 2) ? roi.beginX : (axisT.y == 2) ? roi.beginY : roi.beginZ;
+    const int beginX = (axisT.x == 1) ? roi.x.begin : (axisT.y == 1) ? roi.y.begin : roi.z.begin;
+    const int beginY = (axisT.x == 2) ? roi.x.begin : (axisT.y == 2) ? roi.y.begin : roi.z.begin;
 
     TSimAcc* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
     float pathCost = 255.0f;

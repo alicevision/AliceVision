@@ -22,18 +22,55 @@ namespace aliceVision {
 namespace depthMap {
 
 /*
+ * @struct Range
+ * @brief Small host / device struct descibing a 1d range.
+ */
+struct Range
+{
+    unsigned int begin = 0;
+    unsigned int end = 0;
+
+    // default constructor
+    Range() = default;
+
+    /**
+     * @brief Range constructor
+     * @param[in] in_begin the range begin index
+     * @param[in] in_end the range end index
+     */
+    CUDA_HOST_DEVICE Range(unsigned int in_begin, 
+                           unsigned int in_end)
+        : begin(in_begin)
+        , end(in_end)
+    {}
+    
+    /**
+     * @brief Return true if the given index is contained in the Range.
+     * @param[in] i the given index
+     * @return true if the given index point is contained in the Range
+     */
+    CUDA_HOST_DEVICE inline unsigned int size() const { return end - begin; }
+
+    /**
+     * @brief Return true if the given index is contained in the Range.
+     * @param[in] i the given index
+     * @return true if the given index point is contained in the Range
+     */
+    CUDA_HOST inline bool contains(unsigned int i) const
+    {
+        return ((begin <= i) && (end > i));
+    }
+};
+
+/*
  * @struct ROI
  * @brief Small host / device struct descibing a rectangular 2d / 3d region of interest.
  */
 struct ROI
 {
-    unsigned int beginX = 0;
-    unsigned int beginY = 0;
-    unsigned int beginZ = 0;
-    unsigned int endX = 0;
-    unsigned int endY = 0;
-    unsigned int endZ = 0;
+    Range x, y, z;
 
+    // default constructor
     ROI() = default;
 
     CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
@@ -42,53 +79,53 @@ struct ROI
                          unsigned int in_endY,
                          unsigned int in_beginZ,
                          unsigned int in_endZ)
-        : beginX(in_beginX)
-        , beginY(in_beginY)
-        , beginZ(in_beginZ)
-        , endX(in_endX)
-        , endY(in_endY)
-        , endZ(in_endZ)
+        : x(in_beginX, in_endX)
+        , y(in_beginY, in_endY)
+        , z(in_beginZ, in_endZ)
     {}
 
     CUDA_HOST_DEVICE ROI(unsigned int in_beginX, 
                          unsigned int in_endX,
                          unsigned int in_beginY,
                          unsigned int in_endY)
-        : beginX(in_beginX)
-        , beginY(in_beginY)
-        , endX(in_endX)
-        , endY(in_endY)
+        : x(in_beginX, in_endX)
+        , y(in_beginY, in_endY)
     {}
 
-    CUDA_HOST_DEVICE inline unsigned int width()  const { return endX - beginX; }
-    CUDA_HOST_DEVICE inline unsigned int height() const { return endY - beginY; }
-    CUDA_HOST_DEVICE inline unsigned int depth()  const { return endZ - beginZ; }
+    CUDA_HOST_DEVICE ROI(const Range& rangeX, 
+                         const Range& rangeY)
+        : x(rangeX)
+        , y(rangeY)
+    {}
+
+    CUDA_HOST_DEVICE inline unsigned int width()  const { return x.size(); }
+    CUDA_HOST_DEVICE inline unsigned int height() const { return y.size(); }
+    CUDA_HOST_DEVICE inline unsigned int depth()  const { return z.size(); }
 
 
     /**
      * @brief Return true if the given 2d point is contained in the ROI.
-     * @param[in] x the given 2d point X coordinate
-     * @param[in] y the given 2d point Y coordinate
+     * @param[in] in_x the given 2d point X coordinate
+     * @param[in] in_y the given 2d point Y coordinate
      * @return true if the given 2d point is contained in the ROI
      */
-    CUDA_HOST inline bool contains(unsigned int x, unsigned int y) const
+    CUDA_HOST inline bool contains(unsigned int in_x, unsigned int in_y) const
     {
-        return ((beginX <= x) && (endX > x) && 
-                (beginY <= y) && (endY > y));
+        return (x.contains(in_x) && y.contains(in_y));
     }
 
     /**
      * @brief Return true if the given 3d point is contained in the ROI.
-     * @param[in] x the given 3d point X coordinate
-     * @param[in] y the given 3d point Y coordinate
-     * @param[in] z the given 3d point Z coordinate
+     * @param[in] in_x the given 3d point X coordinate
+     * @param[in] in_y the given 3d point Y coordinate
+     * @param[in] in_z the given 3d point Z coordinate
      * @return true if the given 3d point is contained in the ROI
      */
-    CUDA_HOST inline bool contains(unsigned int x, unsigned int y, unsigned int z) const
+    CUDA_HOST inline bool contains(unsigned int in_x, unsigned int in_y, unsigned int in_z) const
     {
-        return ((beginX <= x) && (endX > x) && 
-                (beginY <= y) && (endY > y) && 
-                (beginZ <= z) && (endZ > z));
+        return (x.contains(in_x) && 
+                y.contains(in_y) &&
+                z.contains(in_z));
     }
 };
 
@@ -102,9 +139,9 @@ struct ROI
  */
 CUDA_HOST inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volDimY, size_t volDimZ)
 {
-    return ((roi.endX <= volDimX) && (roi.beginX < roi.endX) &&
-            (roi.endY <= volDimY) && (roi.beginY < roi.endY) &&
-            (roi.endZ <= volDimZ) && (roi.beginZ < roi.endZ));
+    return ((roi.x.end <= volDimX) && (roi.x.begin < roi.x.end) &&
+            (roi.y.end <= volDimY) && (roi.y.begin < roi.y.end) &&
+            (roi.z.end <= volDimZ) && (roi.z.begin < roi.z.end));
 }
 
 /**
@@ -116,9 +153,21 @@ CUDA_HOST inline bool checkVolumeROI(const ROI& roi, size_t volDimX, size_t volD
  */
 CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
 {
-    return ((roi.endX <= (unsigned int)(width))  && (roi.beginX < roi.endX) &&
-            (roi.endY <= (unsigned int)(height)) && (roi.beginY < roi.endY) &&
-            (roi.beginZ == 0) && (roi.endZ == 0));
+    return ((roi.x.end <= (unsigned int)(width))  && (roi.x.begin < roi.x.end) &&
+            (roi.y.end <= (unsigned int)(height)) && (roi.y.begin < roi.y.end) &&
+            (roi.z.begin == 0) && (roi.z.end == 0));
+}
+
+/**
+ * @brief Downscale the given Range with the given downscale factor
+ * @param[in] range the given Range
+ * @param[in] downscale the downscale factor to apply
+ * @return the downscaled Range
+ */
+CUDA_HOST inline Range downscaleRange(const Range& range, float downscale)
+{
+    return Range(CUDA_CEIL(range.begin / downscale), 
+                 CUDA_CEIL(range.end   / downscale));
 }
 
 /**
@@ -129,9 +178,8 @@ CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
  */
 CUDA_HOST inline ROI downscaleROI(const ROI& roi, float downscale)
 { 
-    return ROI(CUDA_CEIL(roi.beginX / downscale), CUDA_CEIL(roi.endX / downscale),
-               CUDA_CEIL(roi.beginY / downscale), CUDA_CEIL(roi.endY / downscale),
-               CUDA_CEIL(roi.beginZ / downscale), CUDA_CEIL(roi.endZ / downscale));
+    return ROI(downscaleRange(roi.x, downscale), 
+               downscaleRange(roi.y, downscale));
 }
 
 } // namespace depthMap

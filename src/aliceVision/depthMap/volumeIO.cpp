@@ -154,8 +154,8 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
     {
         for (int vx = 0; vx < volDim[0]; vx += xyStep)
         {
-            const double x = (roi.beginX / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
-            const double y = (roi.beginY * mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
+            const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
+            const double y = (roi.y.begin * mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
 
             for(int vz = 0; vz < volDim[2]; ++vz)
             {
@@ -208,8 +208,8 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
 
             for(int vx = xIdxStart; vx < xIdxStop; ++vx)
             {
-                const double x = (roi.beginX / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
-                const double y = (roi.beginY / mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
+                const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
+                const double y = (roi.y.begin / mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
                 const double planeDepth = depths[vz];
                 const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
                 const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
@@ -332,8 +332,8 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim,
     {
         for (int vx = 0; vx < volDim[0]; vx += xyStep)
         {
-            const double x = (roi.beginX / mp.getProcessDownscale()) + (vx * scale * step);
-            const double y = (roi.beginY / mp.getProcessDownscale()) + (vy * scale * step);
+            const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * scale * step);
+            const double y = (roi.y.begin / mp.getProcessDownscale()) + (vy * scale * step);
 
             for(int vz = 0; vz < nbDepths; ++vz)
             {

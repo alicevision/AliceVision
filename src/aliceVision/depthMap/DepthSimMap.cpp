@@ -463,9 +463,9 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
     if(downscaledROI.width() != imageWidth || downscaledROI.height() != imageHeight)
     {
         // tiled depth/sim map
-        imageROI = oiio::ROI(downscaledROI.beginX, downscaledROI.endX, downscaledROI.beginY, downscaledROI.endY, 0, 1, 0, 1);
-;       depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, _roi.beginX, _roi.beginY);
-        simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, _roi.beginX, _roi.beginY);
+        imageROI = oiio::ROI(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
+;       depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, _roi.x.begin, _roi.y.begin);
+        simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, _roi.x.begin, _roi.y.begin);
     }
     else
     {
@@ -515,8 +515,8 @@ void DepthSimMap::loadFromTiles(std::vector<ROI>& tileRoiList, const std::string
     for(const ROI& roi : tileRoiList)
     {
         // get tile filenames
-        const std::string depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, roi.beginX, roi.beginY);
-        const std::string simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, roi.beginX, roi.beginY);
+        const std::string depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, roi.x.begin, roi.y.begin);
+        const std::string simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, roi.x.begin, roi.y.begin);
 
         // open depth and similarity maps with OpenImageIO
         oiio::ImageBuf roiDepthBuf(depthMapPath);

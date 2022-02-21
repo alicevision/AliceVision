@@ -139,8 +139,8 @@ public:
     inline Point2d getCorrespondingImagePoint(int x, int y) const
     {
         Point2d imagePoint;
-        imagePoint.x = _roi.beginX / double(_mp.getProcessDownscale()) + (double(x) * _scale * _step);
-        imagePoint.y = _roi.beginY / double(_mp.getProcessDownscale()) + (double(y) * _scale * _step);
+        imagePoint.x = _roi.x.begin / double(_mp.getProcessDownscale()) + (double(x) * _scale * _step);
+        imagePoint.y = _roi.y.begin / double(_mp.getProcessDownscale()) + (double(y) * _scale * _step);
         return imagePoint;
     }
     
