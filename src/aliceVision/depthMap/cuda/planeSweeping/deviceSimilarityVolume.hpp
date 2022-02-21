@@ -51,7 +51,8 @@ extern void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volume_
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] tcDeviceCamera the T device camera
  * @param[in] sgmParams the Semi Global Matching parameters
- * @param[in] roi the 3d region of interest
+ * @param[in] depthRange the volume depth range to compute
+ * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp, 
@@ -60,6 +61,7 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBe
                                          const DeviceCamera& rcDeviceCamera, 
                                          const DeviceCamera& tcDeviceCamera, 
                                          const SgmParams& sgmParams, 
+                                         const Range& depthRange,
                                          const ROI& roi,
                                          cudaStream_t stream);
 
@@ -70,7 +72,8 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& volBe
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] tcDeviceCamera the T device camera
  * @param[in] refineParams the Refine parameters
- * @param[in] roi the 3d region of interest
+ * @param[in] depthRange the volume depth range to compute
+ * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
@@ -78,6 +81,7 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
                                         const DeviceCamera& rcDeviceCamera, 
                                         const DeviceCamera& tcDeviceCamera, 
                                         const RefineParams& refineParams, 
+                                        const Range& depthRange,
                                         const ROI& roi,
                                         cudaStream_t stream);
 
@@ -105,7 +109,8 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered
  * @param[in] depths_d the R camera depth list in device memory
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] sgmParams the Semi Global Matching parameters
- * @param[in] roi the 3d region of interest
+ * @param[in] depthRange the volume depth range to compute
+ * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
@@ -114,6 +119,7 @@ extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& best
                                          const CudaDeviceMemory<float>& depths_d, 
                                          const DeviceCamera& rcDeviceCamera,
                                          const SgmParams& sgmParams, 
+                                         const Range& depthRange,
                                          const ROI& roi, 
                                          cudaStream_t stream);
 
@@ -124,7 +130,8 @@ extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float, 2>& best
  * @param[in] in_volSim_dmp the similarity volume in device memory
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] refineParams the Refine parameters
- * @param[in] roi the 3d region of interest
+ * @param[in] depthRange the volume depth range to compute
+ * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_bestDepthSimMap_dmp,

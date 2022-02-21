@@ -174,9 +174,10 @@ void Refine::refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2
     const CudaSize<3> volDim(volDimX, volDimY, volDimZ);
 
     // get the downscaled region of interest
-    ROI downscaledRoi = _depthSimMap.getDownscaledRoi();
-    downscaledRoi.z.begin = 0;
-    downscaledRoi.z.end = volDimZ;
+    const ROI downscaledRoi = _depthSimMap.getDownscaledRoi();
+
+    //get the depth range
+    const Range depthRange(0, volDimZ);
 
     // allocate refine volume in device memory
     CudaDeviceMemoryPitched<TSimRefine, 3> volumeRefineSim_dmp(volDim);
@@ -224,6 +225,7 @@ void Refine::refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2
                                     rcDeviceCamera, 
                                     tcDeviceCamera,
                                     _refineParams, 
+                                    depthRange,
                                     downscaledRoi, 
                                     0 /*stream*/);
 

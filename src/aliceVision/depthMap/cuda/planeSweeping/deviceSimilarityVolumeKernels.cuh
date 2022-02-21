@@ -82,6 +82,7 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
                                     const int stepXY,
                                     TSim* volume_1st, int volume1st_s, int volume1st_p,
                                     TSim* volume_2nd, int volume2nd_s, int volume2nd_p,
+                                    const Range depthRange,
                                     const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -94,7 +95,7 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
     // corresponding volume coordinates
     const int vx = roiX;
     const int vy = roiY;
-    const int vz = roi.z.begin + roiZ;
+    const int vz = depthRange.begin + roiZ;
 
     // corresponding device image coordinates
     const int x = (roi.x.begin + vx) * stepXY;
@@ -161,6 +162,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
                                      float gammaP, 
                                      const float2* in_midDepthSimMap_d, int in_midDepthSimMap_p, 
                                      TSimRefine* inout_volSim_d, int inout_volSim_s, int inout_volSim_p, 
+                                     const Range depthRange,
                                      const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -173,7 +175,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     // corresponding volume and depth/sim map coordinates
     const int vx = roiX;
     const int vy = roiY;
-    const int vz = roi.z.begin + roiZ;
+    const int vz = depthRange.begin + roiZ;
 
     // corresponding device image coordinates
     const int x = (roi.x.begin + vx) * stepXY;
@@ -234,6 +236,7 @@ __global__ void volume_retrieveBestZ_kernel(float* bestDepthM, int bestDepthM_s,
                                             int rcDeviceCamId,
                                             int scaleStep, 
                                             bool interpolate, 
+                                            const Range depthRange,
                                             const ROI roi)
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -248,7 +251,7 @@ __global__ void volume_retrieveBestZ_kernel(float* bestDepthM, int bestDepthM_s,
     // find best depth
     float bestSim = 255.0f;
     int bestZIdx = -1;
-    for(int vz = roi.z.begin; vz < roi.z.end; ++vz)
+    for(int vz = depthRange.begin; vz < depthRange.end; ++vz)
     {
       const float simAtZ = *get3DBufferAt(simVolume, simVolume_s, simVolume_p, vx, vy, vz);
       if (simAtZ < bestSim)
@@ -475,8 +478,8 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         return;
 
     // find texture offset
-    const int beginX = (axisT.x == 1) ? roi.x.begin : (axisT.y == 1) ? roi.y.begin : roi.z.begin;
-    const int beginY = (axisT.x == 2) ? roi.x.begin : (axisT.y == 2) ? roi.y.begin : roi.z.begin;
+    const int beginX = (axisT.x == 0) ? roi.x.begin : roi.y.begin;
+    const int beginY = (axisT.x == 0) ? roi.y.begin : roi.x.begin;
 
     TSimAcc* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
     float pathCost = 255.0f;
