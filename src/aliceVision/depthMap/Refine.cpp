@@ -11,6 +11,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/depthMap/TileParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
@@ -43,12 +44,13 @@ void copyDepthOnly(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMap_dmp, cons
     out_depthSimMap_dmp.copyFrom(depthSimMap_hmh);
 }
 
-Refine::Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi)
+Refine::Refine(const RefineParams& refineParams, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi)
     : _rc(rc)
     , _mp(mp)
     , _ic(ic)
+    , _tileParams(tileParams)
     , _refineParams(refineParams)
-    , _depthSimMap(_rc, _mp, _refineParams.scale, _refineParams.stepXY, roi)
+    , _depthSimMap(_rc, _mp, _refineParams.scale, _refineParams.stepXY, tileParams, roi)
 {
     _tCams = _mp.findNearestCamsFromLandmarks(_rc, _refineParams.maxTCams);
 }
@@ -290,7 +292,7 @@ void Refine::exportVolumeInformation(const CudaDeviceMemoryPitched<TSimRefine, 3
     CudaHostMemoryHeap<TSimRefine, 3> volumeSim_hmh(in_volSim_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volSim_dmp);
 
-    DepthSimMap depthSimMapSgmUpscale(_rc, _mp, _refineParams.scale, _refineParams.stepXY, roi);
+    DepthSimMap depthSimMapSgmUpscale(_rc, _mp, _refineParams.scale, _refineParams.stepXY, _tileParams, roi);
     depthSimMapSgmUpscale.copyFrom(in_depthSimMapSgmUpscale_dmp);
 
     const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, roi.x.begin, roi.y.begin);
@@ -315,7 +317,7 @@ void Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
     // compute depth/sim map dimensions
     const CudaSize<2> depthSimMapDim(_depthSimMap.getWidth(), _depthSimMap.getHeight());
 
-    DepthSimMap depthSimMapSgmUpscale(_rc, _mp, _refineParams.scale, _refineParams.stepXY, _depthSimMap.getRoi());
+    DepthSimMap depthSimMapSgmUpscale(_rc, _mp, _refineParams.scale, _refineParams.stepXY, _tileParams, _depthSimMap.getRoi());
 
     // upscale SGM depth/sim map
     upscaleSgmDepthSimMap(sgmDepthSimMap, depthSimMapSgmUpscale);
@@ -349,7 +351,7 @@ void Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
 
         if(_refineParams.exportIntermediateResults)
         {
-            DepthSimMap depthSimMapRefinedFused(_rc, _mp, _refineParams.scale, _refineParams.stepXY, _depthSimMap.getRoi()); // depthSimMapPhoto
+            DepthSimMap depthSimMapRefinedFused(_rc, _mp, _refineParams.scale, _refineParams.stepXY, _tileParams, _depthSimMap.getRoi()); // depthSimMapPhoto
             depthSimMapRefinedFused.copyFrom(refinedDepthSimMap_dmp);
             depthSimMapRefinedFused.save("_refinedFused");
         }

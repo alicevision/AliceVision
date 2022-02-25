@@ -11,6 +11,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/depthMap/TileParams.hpp>
 #include <aliceVision/depthMap/Refine.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/Sgm.hpp>
@@ -73,25 +74,26 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
                          << "\t- stepXY: " << sgmParams.stepXY);
 }
 
-void getRoiListFromTileSize(std::vector<ROI>& roiList, const mvsUtils::MultiViewParams& mp, int rc, int roiWidth, int roiHeight, int roiCoverage)
+void getTileList(std::vector<ROI>& tileList, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, int rc)
 {
     const int width  = mp.getOriginalWidth(rc);
     const int height = mp.getOriginalHeight(rc);
-    const int nbRoiSideX = int(std::ceil(float(width)  / float(roiWidth)));
-    const int nbRoiSideY = int(std::ceil(float(height) / float(roiHeight)));
+    const int nbTileSideX = 1 + int(std::ceil(float(width  - tileParams.width)  / float(tileParams.width  - tileParams.padding)));
+    const int nbTileSideY = 1 + int(std::ceil(float(height - tileParams.height) / float(tileParams.height - tileParams.padding)));
 
-    roiList.resize(nbRoiSideX * nbRoiSideY);
+    tileList.resize(nbTileSideX * nbTileSideY);
 
-    for(int i = 0; i < nbRoiSideX; ++i)
+    for(int i = 0; i < nbTileSideX; ++i)
     {
-        const int startX = std::max((i * roiWidth) - roiCoverage, 0);
+        const int startX = i * (tileParams.width - tileParams.padding);
+        const int endX = std::min(startX + tileParams.width, width);
 
-        for(int j = 0; j < nbRoiSideY; ++j)
+        for(int j = 0; j < nbTileSideY; ++j)
         {
-            const int startY = std::max((j * roiHeight) - roiCoverage, 0);
-            const int endX = std::min(((i + 1) * roiWidth)  + roiCoverage, width);
-            const int endY = std::min(((j + 1) * roiHeight) + roiCoverage, height);
-            roiList.at(i * nbRoiSideY + j) = ROI(startX, endX, startY, endY);
+            const int startY = j * (tileParams.height - tileParams.padding);
+            const int endY = std::min(startY + tileParams.height, height);
+
+            tileList.at(i * nbTileSideY + j) = ROI(startX, endX, startY, endY);
         }
     }
 }
@@ -139,6 +141,12 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
     setCudaDeviceId(cudaDeviceId);
 
+    TileParams tileParams;
+
+    tileParams.width = 900;
+    tileParams.height = 900;
+    tileParams.padding = 100;
+
     SgmParams sgmParams;
     RefineParams refineParams;
 
@@ -154,17 +162,17 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     for(const int rc : cams)
     {
-        std::vector<ROI> roiList;
-        getRoiListFromTileSize(roiList, mp, rc, 800, 800, 100);
+        std::vector<ROI> tileList;
+        getTileList(tileList, tileParams, mp, rc);
 
-        for(const ROI& roi : roiList)
+        for(const ROI& roi : tileList)
         {
-            Sgm sgm(sgmParams, mp, ic, rc, roi);
+            Sgm sgm(sgmParams, tileParams, mp, ic, rc, roi);
 
             // compute Semi-Global Matching
             sgm.sgmRc();
 
-            Refine refine(refineParams, mp, ic, rc, roi);
+            Refine refine(refineParams, tileParams, mp, ic, rc, roi);
 
             // R camera has no T cameras
             if(refine.getTCams().empty() || sgm.empty())
@@ -180,26 +188,26 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         }
 
         DepthSimMap finalDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
-        finalDepthSimMap.loadFromTiles(roiList);
+        finalDepthSimMap.loadFromTiles(tileList);
         finalDepthSimMap.save();
 
         if(sgmParams.exportIntermediateResults)
         {
             DepthSimMap sgmDepthSimMap(rc, mp, sgmParams.scale, sgmParams.stepXY);
-            sgmDepthSimMap.loadFromTiles(roiList, "_sgm");
+            sgmDepthSimMap.loadFromTiles(tileList, "_sgm");
             sgmDepthSimMap.save("_sgm");
 
             DepthSimMap sgmStep1DepthSimMap(rc, mp, sgmParams.scale, 1);
-            sgmStep1DepthSimMap.loadFromTiles(roiList, "_sgmStep1");
+            sgmStep1DepthSimMap.loadFromTiles(tileList, "_sgmStep1");
             sgmStep1DepthSimMap.save("_sgmStep1");
         }
 
         if(refineParams.exportIntermediateResults)
         {
             DepthSimMap refineDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
-            refineDepthSimMap.loadFromTiles(roiList, "_sgmUpscaled");
+            refineDepthSimMap.loadFromTiles(tileList, "_sgmUpscaled");
             refineDepthSimMap.save("_sgmUpscaled");
-            refineDepthSimMap.loadFromTiles(roiList, "_refinedFused");
+            refineDepthSimMap.loadFromTiles(tileList, "_refinedFused");
             refineDepthSimMap.save("_refinedFused");
         }
     }

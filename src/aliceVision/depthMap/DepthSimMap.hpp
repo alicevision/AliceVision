@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/depthMap/TileParams.hpp>
 #include <aliceVision/depthMap/ROI.hpp>
 
 struct float2;
@@ -111,9 +112,10 @@ public:
      * @param[in] mp the multi-view parameters
      * @param[in] scale the depth/sim map scale factor from the original R image
      * @param[in] step the depth/sim map step factor from the original R image
+     * @param[in] tileParams tile workflow parameters
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const ROI& roi);
+    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const TileParams& tileParams, const ROI& roi);
 
     // default destructor
     ~DepthSimMap() = default;
@@ -127,7 +129,6 @@ public:
     inline int getStep() const { return _step; }
 
     inline const ROI& getRoi() const { return _roi; }
-    inline ROI getProcessRoi() const { return downscaleROI(_roi, _mp.getProcessDownscale()); }
     inline ROI getDownscaledRoi() const { return downscaleROI(_roi, _mp.getProcessDownscale() * _scale * _step); }
 
     inline const DepthSim& getDepthSim(int x, int y) const { return _dsm[y * _width + x]; }
@@ -233,14 +234,22 @@ public:
     void save(const std::string& customSuffix = "", bool useStep1 = false) const;
 
     /**
-     * @brief Load the depth map and the similarity map from multple tiled maps
+     * @brief Load the depth map and the similarity map from multple tile maps
      * @param[in] tileRoiList the tile region of interest list
      * @param[in] customSuffix the filename custom suffix
-     * @param[in] deleteTileFiles if true delete tiled maps after loading
      */
-    void loadFromTiles(std::vector<ROI>& tileRoiList, const std::string& customSuffix = "", bool deleteTileFiles = false);
+    void loadFromTiles(const std::vector<ROI>& tileRoiList, const std::string& customSuffix = "");
 
 private:
+
+    // private methods
+
+    /**
+     * @brief Add the tile depth map and the tile similarity map with border weight
+     * @param[in] roi the tile region of interest list
+     * @param[in] customSuffix the filename custom suffix
+     */
+    void loadTileWeighted(const ROI& tileRoi, const std::string& customSuffix);
 
     // private members
 
@@ -251,6 +260,7 @@ private:
     const int _scale;                      // depth/sim map scale factor from the original R image
     const int _step;                       // depth/sim map step factor from the original R image
     const ROI _roi;                        // 2d region of interest of the original R image without any downscale apply
+    const TileParams _tileParams;          // tile workflow parameters
     StaticVector<DepthSim> _dsm;           // depth similarity map
 
 };

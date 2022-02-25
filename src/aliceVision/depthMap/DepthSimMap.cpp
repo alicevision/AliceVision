@@ -34,12 +34,13 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale,
     _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
 }
 
-DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const ROI& roi) 
+DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step,const TileParams& tileParams, const ROI& roi) 
     : _mp(mp)
     , _rc(rc)
     , _scale(scale)
     , _step(step)
     , _roi(roi)
+    , _tileParams(tileParams)
     , _width(downscaleRange(roi.x, float(_mp.getProcessDownscale() * scale * step)).size())
     , _height(downscaleRange(roi.y, float(_mp.getProcessDownscale() * scale * step)).size())
 {
@@ -414,7 +415,15 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(_rc));
 
-    // downscale
+    // tile metadata
+    if((_tileParams.width > 0) && (_tileParams.height > 0) && (_tileParams.padding > 0))
+    {
+        metadata.push_back(oiio::ParamValue("AliceVision:tileWidth", int(_tileParams.width)));
+        metadata.push_back(oiio::ParamValue("AliceVision:tileHeight", int(_tileParams.height)));
+        metadata.push_back(oiio::ParamValue("AliceVision:tilePadding", int(_tileParams.padding)));    
+    }
+
+    // downscale metadata
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", downscale));
 
     double s = scaleStep;
@@ -434,24 +443,25 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
         iP = iR * iK; // replace iP
     }
 
-    // CArr & iCamArr
+    // CArr & iCamArr metadata
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, C.m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, iP.m));
 
-    // min/max depth
+    // min/max/nb depth metadata
     { 
         const Point2d maxMinDepth = getMaxMinDepth();
         metadata.push_back(oiio::ParamValue("AliceVision:minDepth", static_cast<float>(maxMinDepth.y)));
         metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", static_cast<float>(maxMinDepth.x)));
+        metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
     }
 
-    // projection matrix
+    // projection matrix metadata
     {
         std::vector<double> matrixP = _mp.getOriginalP(_rc);
         metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
-    metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
 
+    // get full image dimensions
     const ROI downscaledROI = downscaleROI(_roi, downscale);
     const int imageWidth  = _mp.getOriginalWidth(_rc)  / downscale;
     const int imageHeight = _mp.getOriginalHeight(_rc) / downscale;
@@ -474,66 +484,201 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
         simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix);
     }
 
+    // write depth/sim map
     using namespace imageIO;
     writeImage(depthMapPath, imageWidth, imageHeight, depthMap.getDataWritable(), EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata, imageROI);
     writeImage(simMapPath, imageWidth, imageHeight, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata, imageROI);
 }
 
-void DepthSimMap::loadFromTiles(std::vector<ROI>& tileRoiList, const std::string& customSuffix, bool deleteTileFiles)
+void DepthSimMap::loadFromTiles(const std::vector<ROI>& tileRoiList, const std::string& customSuffix)
 {
-    const int dsmSize = _dsm.size();
-    const int downscale = _mp.getProcessDownscale() * _scale * _step;
-
-    std::vector<float> depthMap(dsmSize, 0.0f);
-    std::vector<float> simMap(dsmSize, 0.0f);
-    std::vector<float> blendAverageMap(dsmSize, 0.0f);
-
-    // build the average blend map (1/nb tiles)
-    for(int x = 0; x < _width; ++x)
+    // initialize depth/sim map at 0
+    for(int i = 0; i < _dsm.size(); ++i)
     {
-        for(int y = 0; y < _height; ++y)
-        {
-            int nbTiles = 0;
-            
-            for(const ROI& roi : tileRoiList)
-                if(roi.contains(x * downscale, y * downscale))
-                    ++nbTiles;
-
-            if(nbTiles != 0)
-                blendAverageMap[y * _width + x] = 1.f / float(nbTiles);
-        }
+        _dsm[i] = {0, 0};
     }
 
-    // bind buffers with OpenImageIO
-    const oiio::ImageSpec spec(_width, _height, 1, oiio::TypeDesc::FLOAT);
-
-    oiio::ImageBuf depthBuf(spec, depthMap.data());
-    oiio::ImageBuf simBuf(spec, simMap.data());
-    oiio::ImageBuf blendAvgBuf(spec, blendAverageMap.data());
-    
-    // join each roi to depth and similarity buffers
+    // find and join each roi to the depth and similarity buffers
     for(const ROI& roi : tileRoiList)
     {
-        // get tile filenames
-        const std::string depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, roi.x.begin, roi.y.begin);
-        const std::string simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, roi.x.begin, roi.y.begin);
+        loadTileWeighted(roi, customSuffix);
+    }
+}
 
-        // open depth and similarity maps with OpenImageIO
-        oiio::ImageBuf roiDepthBuf(depthMapPath);
-        oiio::ImageBuf roiSimBuf(simMapPath);
+void weightTileBorder(int a, int b, int c, int d, 
+                      int currentTileWidth, 
+                      int currentTileHeight,
+                      int borderWidth, 
+                      int borderHeight,  
+                      const Point2d& lu, 
+                      std::vector<float>& in_tileDepthMap, 
+                      std::vector<float>& in_tileSimMap)
+{
+    const Point2d rd = lu + Point2d(borderWidth, borderHeight);
 
-        // add (plus) depth and similarity maps 
-        oiio::ImageBufAlgo::add(depthBuf, depthBuf, roiDepthBuf);
-        oiio::ImageBufAlgo::add(simBuf, simBuf, roiSimBuf);
+    const int endX = std::min(int(rd.x), currentTileWidth);
+    const int endY = std::min(int(rd.y), currentTileHeight);
+
+    for(int x = lu.x; x < endX; ++x)
+    {
+        for(int y = lu.y; y < endY; ++y)
+        {
+            // bilinear interpolation
+            const float ui = (rd.x - x) / borderWidth;
+            const float vi = (x - lu.x) / borderWidth;
+            const float uj = (rd.y - y) / borderHeight;
+            const float vj = (y - lu.y) / borderHeight;
+
+            const float weight = uj * (ui * a + vi * b) + vj * (ui * d + vi * c);
+
+            // apply weight to tile depth/sim map
+            in_tileDepthMap[y * currentTileWidth + x] *= weight;
+            in_tileSimMap[y * currentTileWidth + x] *= weight;
+        }
+    }
+}
+
+void DepthSimMap::loadTileWeighted(const ROI& tileRoi, const std::string& customSuffix)
+{
+    // get depth/sim map downscale factor (could be 1)
+    const int downscale = _mp.getProcessDownscale() * _scale * _step;
+
+    // get downscaled ROI
+    const ROI downscaledRoi = downscaleROI(tileRoi, downscale);
+    const int currentTileWidth = downscaledRoi.width();
+    const int currentTileHeight = downscaledRoi.height();
+
+    // get tile depth/sim map filenames
+    const std::string depthMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix, tileRoi.x.begin, tileRoi.y.begin);
+    const std::string simMapPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix, tileRoi.x.begin, tileRoi.y.begin);
+
+    // create tile depth/sim map buffers
+    std::vector<float> tileDepthMap;
+    std::vector<float> tileSimMap;
+
+    // read tile depth/sim map
+    {
+        using namespace imageIO;
+        int w, h;
+        readImage(depthMapPath, w, h, tileDepthMap, EImageColorSpace::NO_CONVERSION);
+        readImage(simMapPath, w, h, tileSimMap, EImageColorSpace::NO_CONVERSION);
     }
 
-    // multiply depth and similarity buffers with the average blend map
-    oiio::ImageBufAlgo::mul(depthBuf, depthBuf, blendAvgBuf);
-    oiio::ImageBufAlgo::mul(simBuf, simBuf, blendAvgBuf);
+    // get tile dimensions from metadata
+    TileParams tileParams;
+    {
+        // read tile metadata
+        oiio::ParamValueList metadata;
+        imageIO::readImageMetadata(depthMapPath, metadata);
 
-    // save depth and similarity values
-    for(int i = 0; i < dsmSize; ++i)
-        _dsm[i] = {depthMap[i], simMap[i]};
+        const auto tileWidthIt = metadata.find("AliceVision:tileWidth");
+        const auto tileHeightIt = metadata.find("AliceVision:tileHeight");
+        const auto tilePaddingIt = metadata.find("AliceVision:tilePadding");
+
+        if(tileWidthIt != metadata.end() && tileWidthIt->type() == oiio::TypeDesc::INT)
+            tileParams.width = tileWidthIt->get_int();
+
+        if(tileHeightIt != metadata.end() && tileHeightIt->type() == oiio::TypeDesc::INT)
+            tileParams.height = tileHeightIt->get_int();
+
+        if(tilePaddingIt != metadata.end() && tilePaddingIt->type() == oiio::TypeDesc::INT)
+            tileParams.padding = tilePaddingIt->get_int();
+    }
+
+    // invalid or no tile metadata
+    if((tileParams.width <= 0) || (tileParams.height <= 0) || (tileParams.padding <= 0))
+    {
+        ALICEVISION_THROW_ERROR("Cannot find tile information in file: " << depthMapPath);
+    }
+
+    // get tile border size
+    const int tileWidth = tileParams.width / downscale;
+    const int tileHeight = tileParams.height / downscale;
+    const int tilePadding = tileParams.padding / downscale;
+
+    // get tile position information
+    const bool firstColumn = (tileRoi.x.begin == 0);
+    const bool lastColumn = (tileRoi.x.end == _mp.getOriginalWidth(_rc));
+    const bool firstRow = (tileRoi.y.begin == 0);
+    const bool lastRow = (tileRoi.y.end == _mp.getOriginalHeight(_rc));
+
+    // weight the top left corner
+    if(!firstColumn || !firstRow)
+    {
+        const Point2d lu(0, 0);
+        const int b = (firstRow) ? 1 : 0;
+        const int d = (firstColumn) ? 1 : 0;
+        weightTileBorder(0, b, 1, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the bottom left corner
+    if(!firstColumn || !lastRow)
+    {
+        const Point2d lu(0, tileHeight - tilePadding);
+        const int a = (firstColumn) ? 1 : 0;
+        const int c = (lastRow) ? 1 : 0;
+        weightTileBorder(a, 1, c, 0, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the top right corner
+    if(!lastColumn || !firstRow)
+    {
+        const Point2d lu(tileWidth - tilePadding, 0);
+        const int a = (firstRow) ? 1 : 0;
+        const int c = (lastColumn) ? 1 : 0;
+        weightTileBorder(a, 0, c, 1, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the bottom right corner
+    if(!lastColumn || !lastRow)
+    {
+        const Point2d lu(tileWidth - tilePadding, tileHeight - tilePadding);
+        const int b = (lastColumn) ? 1 : 0;
+        const int d = (lastRow) ? 1 : 0;
+        weightTileBorder(1, b, 0, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the top border
+    if(!firstRow)
+    {
+        const Point2d lu(tilePadding, 0);
+        weightTileBorder(0, 0, 1, 1, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the bottom border
+    if(!lastRow)
+    {
+        const Point2d lu(tilePadding, tileHeight - tilePadding);
+        weightTileBorder(1, 1, 0, 0, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the left border
+    if(!firstColumn)
+    {
+        const Point2d lu(0, tilePadding);
+        weightTileBorder(0, 1, 1, 0, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // weight the right border
+    if(!lastColumn)
+    {
+        const Point2d lu(tileWidth - tilePadding, tilePadding);
+        weightTileBorder(1, 0, 0, 1, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, tileDepthMap, tileSimMap);
+    }
+
+    // add weighted tile to the depth/sim map
+    for(int x = downscaledRoi.x.begin; x < downscaledRoi.x.end; ++x)
+    {
+        for(int y = downscaledRoi.y.begin; y < downscaledRoi.y.end; ++y)
+        {
+            const int tx = x - downscaledRoi.x.begin;
+            const int ty = y - downscaledRoi.y.begin;
+
+            DepthSim& depthSim = _dsm[y * _width + x];
+            depthSim.depth += tileDepthMap[ty * currentTileWidth + tx];
+            depthSim.sim += tileSimMap[ty * currentTileWidth + tx];
+        }
+    }
 }
 
 } // namespace depthMap
