@@ -19,6 +19,7 @@ namespace aliceVision {
 namespace depthMap {
 
 struct SgmParams;
+struct TileParams;
 
 template <class Type, unsigned Dim>
 class CudaDeviceMemoryPitched;
@@ -33,12 +34,13 @@ public:
     /**
      * @brief Sgm constructor.
      * @param[in] sgmParams the Semi Global Matching parameters
+     * @param[in] tileParams tile workflow parameters
      * @param[in] mp the multi-view parameters
      * @param[in] ic the image cache 
      * @param[in] rc the R camera index
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
+    Sgm(const SgmParams& sgmParams, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
 
     // default destructor
     ~Sgm() = default;
@@ -100,6 +102,7 @@ private:
 
     const int _rc;                           // related R camera index
     const SgmParams& _sgmParams;             // Semi Global Matching parameters
+    const TileParams& _tileParams;           // tile workflow parameters
     const mvsUtils::MultiViewParams& _mp;    // Multi-view parameters
     mvsUtils::ImagesCache<ImageRGBAf>& _ic;  // Image cache
     SgmDepthList _sgmDepthList;              // R camera Semi Global Matching depth list

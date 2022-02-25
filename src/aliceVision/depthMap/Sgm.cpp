@@ -9,6 +9,7 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/depthMap/TileParams.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
@@ -22,13 +23,14 @@
 namespace aliceVision {
 namespace depthMap {
 
-Sgm::Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi)
+Sgm::Sgm(const SgmParams& sgmParams,  const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi)
     : _rc(rc)
     , _mp(mp)
     , _ic(ic)
+    , _tileParams(tileParams)
     , _sgmParams(sgmParams)
     , _sgmDepthList(sgmParams, mp, rc, roi)
-    , _depthSimMap(_rc, _mp, _sgmParams.scale, _sgmParams.stepXY, roi)
+    , _depthSimMap(_rc, _mp, _sgmParams.scale, _sgmParams.stepXY, tileParams, roi)
 {
     // compute the R camera depth list
     _sgmDepthList.computeListRc();

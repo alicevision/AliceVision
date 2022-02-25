@@ -19,6 +19,7 @@ namespace aliceVision {
 namespace depthMap {
 
 struct RefineParams;
+struct TileParams;
 
 template <class Type, unsigned Dim>
 class CudaDeviceMemoryPitched;
@@ -33,12 +34,13 @@ public:
     /**
      * @brief Refine constructor.
      * @param[in] refineParams the Refine parameters
+     * @param[in] tileParams tile workflow parameters
      * @param[in] mp the multi-view parameters
      * @param[in] ic the image cache
      * @param[in] rc the R camera index
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
+    Refine(const RefineParams& refineParams, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
 
     // default destructor
     ~Refine() = default;
@@ -112,6 +114,7 @@ private:
 
     const int _rc;                          // related R camera index
     const RefineParams& _refineParams;      // Refine parameters
+    const TileParams& _tileParams;          // tile workflow parameters
     const mvsUtils::MultiViewParams& _mp;   // Multi-view parameters
     mvsUtils::ImagesCache<ImageRGBAf>& _ic; // Image cache
     StaticVector<int> _tCams;               // T camera indexes, computed in the constructor
