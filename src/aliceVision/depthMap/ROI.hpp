@@ -10,11 +10,13 @@
 #if defined(__NVCC__)
 #define CUDA_HOST_DEVICE __host__ __device__
 #define CUDA_HOST __host__
-#define CUDA_CEIL(f) ceil(f)
+#define CUDA_CEIL(f)  ceil(f)
+#define CUDA_FLOOR(f) floor(f)
 #else
 #define CUDA_HOST_DEVICE
 #define CUDA_HOST
-#define CUDA_CEIL(f) std::ceil(f)
+#define CUDA_CEIL(f)  std::ceil(f)
+#define CUDA_FLOOR(f) std::floor(f)
 #include <cmath>
 #endif
 
@@ -144,8 +146,7 @@ CUDA_HOST inline bool checkImageROI(const ROI& roi, int width, int height)
  */
 CUDA_HOST inline Range downscaleRange(const Range& range, float downscale)
 {
-    return Range(CUDA_CEIL(range.begin / downscale), 
-                 CUDA_CEIL(range.end   / downscale));
+    return Range(CUDA_FLOOR(range.begin / downscale), CUDA_CEIL(range.end / downscale));
 }
 
 /**
