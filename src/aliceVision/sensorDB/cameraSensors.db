@@ -186,6 +186,10 @@ Apple;iPhone 7 Plus;4.89;phonearena
 Apple;iPhone 8;4.89;phonearena
 Apple;iPhone 8 Plus;4.89;imaging-resource,phonearena
 Apple;iPhone 11 Pro;5.75;usercontribution
+Apple;iPhone 12 Pro;5.75;dpreview
+Apple;iPhone 12 Pro Max;6.85;dpreview
+Apple;iPhone 13 Pro;7.76;dpreview
+Apple;iPhone 13 Pro Max;7.76;dpreview
 Apple;iPhone SE;4.89;phonearena,devicespecifications
 Apple;iPhone X;4.89;phonearena
 Apple;iPhone XR;5.60;dpreview
@@ -222,6 +226,7 @@ Asus;Asus 2016;4.69;devicespecifications
 Asus;Asus Google Nexus 7;2.46;devicespecifications
 Asus;Asus Google Nexus 7 2013;3.67;devicespecifications
 Asus;Asus PadFone Infinity 2;4.8;devicespecifications
+Asus;Asus ROG Phone 2;6.4;kimovil
 Asus;Asus Zen Pad 3s 10;5.54;usercontribution
 Asus;Asus ZenFone 2 Deluxe Special Edition;4.69;devicespecifications
 Asus;Asus ZenFone 2 Deluxe Special Edition Z3590;4.69;devicespecifications
@@ -245,6 +250,8 @@ Asus;Asus ZenFone 5 A500CG;3.67;devicespecifications
 Asus;Asus ZenFone 5 A501CG;3.67;devicespecifications
 Asus;Asus ZenFone 5 A502CG;3.67;devicespecifications
 Asus;Asus ZenFone 5 ZE620KL;3.68;devicespecifications
+Asus;Asus ZenFone 6;6.4;kimovil
+Asus;Asus ZenFone 6z;6.4;kimovil
 Asus;Asus ZenFone AR;5.49;devicespecifications
 Asus;Asus ZenFone Ares;5.49;devicespecifications
 Asus;Asus ZenFone Max;4.69;devicespecifications
@@ -425,6 +432,8 @@ Blackview;Blackview BV9500;5.22;devicespecifications
 Blackview;Blackview BV9500 Pro;5.22;devicespecifications
 Blackview;Blackview BV9600 Plus;3.67;devicespecifications
 Blackview;Blackview BV9600 Pro;3.67;devicespecifications
+Blackview;Blackview BV9800;6.4;kimovil
+Blackview;Blackview BV9800 Pro;6.4;kimovil
 Blackview;Blackview E7;3.67;devicespecifications
 Blackview;Blackview E7s;3.67;devicespecifications
 Blackview;Blackview Omega;4.69;devicespecifications
@@ -1358,6 +1367,7 @@ Cube;Cube T9;4.82;devicespecifications
 Cube;Cube Talk 9X;3.68;devicespecifications
 Cube;Cube Talk79 U55GT-C8;3.68;devicespecifications
 Cubot;Cubot A5;4.69;devicespecifications
+Cubot;Cubot C30;6.4;kimovil
 Cubot;Cubot Cheetah 2;4.69;devicespecifications
 Cubot;Cubot CheetahPhone;4.69;devicespecifications
 Cubot;Cubot Dinosaur;3.68;devicespecifications
@@ -1514,6 +1524,7 @@ Elephone;Elephone S8;6.17;devicespecifications
 Elephone;Elephone Soldier;6.17;devicespecifications
 Elephone;Elephone U;4.69;devicespecifications
 Elephone;Elephone U Pro;4.69;devicespecifications
+Elephone;Elephone U3H;6.4;kimovil
 Elephone;Elephone Vowney;5.99;devicespecifications
 Elephone;Elephone Vowney Lite;5.99;devicespecifications
 Energy sistem;Energy sistem Energy Phone Max 2+;4.69;devicespecifications
@@ -1542,9 +1553,11 @@ Essential Products;PH-1;4.731;devicespecifications
 Estar;Estar Takee 1;4.69;devicespecifications
 Eton;Eton Extreme 95;4.69;devicespecifications
 Fairphone;Fairphone 2;4.61;devicespecifications
-Fairphone;Fairphone 3;5.75;usercontribution
-Fairphone;FP3;5.75;usercontribution
+Fairphone;Fairphone 3;5.75;fairphone
+Fairphone;Fairphone 4;6.4;fairphone
 Fairphone;FP2;4.61;devicespecifications
+Fairphone;FP3;5.75;fairphone
+Fairphone;FP4;6.4;fairphone
 Firefly;Firefly Aurii Envy;4.69;devicespecifications
 Firefly;Firefly Aurii Secret;4.71;devicespecifications
 FLIR;BFS-U3-17S7C-C;14.4;edmundoptics
@@ -2189,6 +2202,7 @@ Highscreen;Highscreen Zera U;4.69;devicespecifications
 Hisense;Hisense A2 Pro;4.96;devicespecifications
 Hisense;Hisense H10;4.96;devicespecifications
 Hisense;Hisense H11;4.96;devicespecifications
+Hisense;Hisense H40;6.4;kimovil
 Hisense;Hisense H910;4.69;devicespecifications
 Hisense;Hisense Infinity H11;4.96;devicespecifications
 Hisense;Hisense K8;4.69;devicespecifications
@@ -2346,12 +2360,30 @@ Huawei;Huawei Honor 7;5.99;devicespecifications
 Huawei;Huawei Honor 8 Smart;4.69;devicespecifications
 Huawei;Huawei Honor V8;4.54;devicespecifications
 Huawei;Huawei Honor V8 Standard Edition;4.54;devicespecifications
+Huawei;Huawei Honor 20;6.4;kimovil
+Huawei;Huawei Honor 20 Pro;6.4;kimovil
+Huawei;Huawei Honor 20 Youth;6.4;kimovil
+Huawei;Huawei Honor 30i;6.4;kimovil
+Huawei;Huawei Honor Play 4T;6.4;kimovil
+Huawei;Huawei Honor Play 4T Pro;6.4;kimovil
+Huawei;Huawei Honor V20 MOSCHI;6.4;kimovil
+Huawei;Huawei Honor View 20;6.4;kimovil
 Huawei;Huawei Maimang 4;4.71;devicespecifications
 Huawei;Huawei Maimang 5;5.22;devicespecifications
-Huawei;Huawei Mate 10 Pro;5.0;imaging-resource
 Huawei;Huawei Mate 8;5.22;devicespecifications
+Huawei;Huawei Mate 10 Pro;5.0;imaging-resource
+Huawei;Huawei Mate 30 Lite;6.4;kimovil
 Huawei;Huawei Mate S;4.71;devicespecifications
 Huawei;Huawei Nexus 6P;6.25;devicespecifications
+Huawei;Huawei Nova 4;6.4;kimovil
+Huawei;Huawei Nova 5;6.4;kimovil
+Huawei;Huawei Nova 5 Pro;6.4;kimovil
+Huawei;Huawei Nova 5i Pro;6.4;kimovil
+Huawei;Huawei Nova 5T;6.4;kimovil
+Huawei;Huawei Nova 5T Pro;6.4;kimovil
+Huawei;Huawei Nova 5z;6.4;kimovil
+Huawei;Huawei Nova 6 SE;6.4;kimovil
+Huawei;Huawei Nova 7i;6.4;kimovil
 Huawei;Huawei P8;4.71;devicespecifications
 Huawei;Huawei P8Lite;4.82;devicespecifications
 Huawei;Huawei P8Lite ALE-L04;4.82;devicespecifications
@@ -2360,6 +2392,7 @@ Huawei;Huawei P9;4.54;devicespecifications
 Huawei;Huawei P9 Lite;4.69;devicespecifications
 Huawei;Huawei P9 Lite Premium;4.69;devicespecifications
 Huawei;Huawei P9 Premium Edition;4.54;devicespecifications
+Huawei;Huawei P40 Lite;6.4;kimovil
 Huawei;Huawei Y6 Pro 2017;3.54;devicespecifications
 HUAWEI;PCT-L29;6.4;devicespecifications
 I-mobile;I-mobile IQ X Pro 2;6.17;devicespecifications
@@ -3166,6 +3199,8 @@ Meitu;Meitu V4;5.9;devicespecifications
 Meitu;Meitu V4S;5.99;devicespecifications
 Meizu;Meizu Blue Charm Metal;2.95;devicespecifications
 Meizu;Meizu Blue Charm Metal Telecom;2.95;devicespecifications
+Meizu;Meizu 16S;6.4;kimovil
+Meizu;Meizu 16S Pro;6.4;kimovil
 Meizu;Meizu C9;3.67;devicespecifications
 Meizu;Meizu C9 Pro;4.69;devicespecifications
 Meizu;Meizu E3;5.64;devicespecifications,usercontribution
@@ -3365,6 +3400,7 @@ Motorola;Motorola Moto Z Force;5.99;devicespecifications
 Motorola;Motorola Moto Z Play;6.06;devicespecifications
 Motorola;Motorola Moto Z2 Force Edition;4.96;devicespecifications
 Motorola;Motorola Moto Z2 Play;3.67;devicespecifications
+Motorola;Motorola Moto Z4;6.4;kimovil
 Motorola;Motorola Nexus 6;4.69;devicespecifications
 Motorola;Motorola P30;4.74;devicespecifications
 Motorola;XT1033;3.8;usercontribution
@@ -3773,6 +3809,8 @@ Nomu;Nomu S30 Mini;3.67;devicespecifications
 Nomu;Nomu T18;3.67;devicespecifications
 Nubia;Nubia My Prague;4.69;devicespecifications
 Nubia;Nubia Prague S;4.69;devicespecifications
+Nubia;Nubia Red Magic 3;6.4;kimovil
+Nubia;Nubia Red Magic 3S;6.4;kimovil
 Nubia;Nubia Z11;5.22;devicespecifications
 Nubia;Nubia Z11 Max;5.22;devicespecifications
 Nubia;Nubia Z11 mini;5.22;devicespecifications
@@ -3781,6 +3819,7 @@ Nubia;Nubia Z17 Lite;4.71;devicespecifications
 Nubia;Nubia Z17 mini High Version;4.71;devicespecifications
 Nubia;Nubia Z17 mini Standard Edition;4.71;devicespecifications
 Nubia;Nubia Z17miniS;4.71;devicespecifications
+Nubia;Nubia Z20;6.4;kimovil
 Nubia;Nubia Z5S;4.69;devicespecifications
 Nubia;Nubia Z5S mini;4.69;devicespecifications
 Nubia;Nubia Z7;4.69;devicespecifications
@@ -4362,6 +4401,13 @@ Oneplus;Oneplus 5;5.22;devicespecifications
 Oneplus;Oneplus 5T;5.22;devicespecifications
 OnePlus;Oneplus 6;5.5;devicespecifications
 OnePlus;Oneplus 6T;5.5;devicespecifications
+OnePlus;OnePlus 7;6.4;kimovil
+OnePlus;OnePlus 7 Pro;6.4;kimovil
+OnePlus;OnePlus 7T;6.4;kimovil
+OnePlus;OnePlus 7T Pro;6.4;kimovil
+OnePlus;OnePlus 8;6.4;kimovil
+OnePlus;OnePlus 8T;6.4;kimovil
+OnePlus;OnePlus 9R;6.4;kimovil
 OnePlus;Oneplus A5000;5.22;devicespecifications
 OnePlus;Oneplus A5010;5.22;devicespecifications
 OnePlus;Oneplus A6000;5.5;devicespecifications
@@ -4369,6 +4415,7 @@ OnePlus;Oneplus A6003;5.5;devicespecifications
 OnePlus;Oneplus A6010;5.5;devicespecifications
 OnePlus;Oneplus A6013;5.5;devicespecifications
 OnePlus;OnePlus HD1913;6.4;usercontribution
+OnePlus;OnePlus Nord;6.4;kimovil
 Oneplus;Oneplus One;4.69;devicespecifications
 Oneplus;Oneplus X;4.69;devicespecifications
 Onkyo;Onkyo Granbeat;5.22;devicespecifications
@@ -4380,6 +4427,7 @@ Oppo;Oppo A37;4.54;devicespecifications
 Oppo;Oppo A37 Octa Core;4.54;devicespecifications
 Oppo;Oppo A39;4.71;devicespecifications
 Oppo;Oppo A59;4.54;devicespecifications
+Oppo;Oppo A92s;6.4;kimovil
 Oppo;Oppo F1;3.2;devicespecifications
 Oppo;Oppo F1 ICC WT20;3.2;devicespecifications
 Oppo;Oppo F1 Plus;4.69;devicespecifications
@@ -4389,6 +4437,10 @@ Oppo;Oppo F3 Plus;5.22;devicespecifications
 Oppo;Oppo Find 5;4.69;devicespecifications
 Oppo;Oppo Find 7;4.69;devicespecifications
 Oppo;Oppo Find 7a;4.69;devicespecifications
+Oppo;Oppo Find X2;6.4;kimovil
+Oppo;Oppo Find X2 Lite;6.4;kimovil
+Oppo;Oppo Find X2 Lite;6.4;kimovil
+Oppo;Oppo Find X2 Neo;6.4;kimovil
 Oppo;Oppo Mirror 3;4.54;devicespecifications
 Oppo;Oppo Mirror 5;4.57;devicespecifications
 Oppo;Oppo Mirror 5 Lite;3.2;devicespecifications
@@ -4416,6 +4468,23 @@ Oppo;Oppo R9 Plus;5.22;devicespecifications
 Oppo;Oppo R9S;5.22;devicespecifications
 Oppo;Oppo R9S Plus;5.22;devicespecifications
 Oppo;Oppo R9S Pro;5.22;devicespecifications
+Oppo;Oppo Reno;6.4;kimovil
+Oppo;Oppo Reno 10X Zoom;6.4;kimovil
+Oppo;Oppo Reno 2;6.4;kimovil
+Oppo;Oppo Reno 2 5G;6.4;kimovil
+Oppo;Oppo Reno 2Z;6.4;kimovil
+Oppo;Oppo Reno Ace;6.4;kimovil
+Oppo;Oppo Reno Ace 2;6.4;kimovil
+Oppo;Oppo Reno Z;6.4;kimovil
+Oppo;Oppo Reno4;6.4;kimovil
+Oppo;Oppo Reno4 4G;6.4;kimovil
+Oppo;Oppo Reno4 5G;6.4;kimovil
+Oppo;Oppo Reno4 Pro;6.4;kimovil
+Oppo;Oppo Reno4 Pro 4G;6.4;kimovil
+Oppo;Oppo Reno4 Pro 5G;6.4;kimovil
+Oppo;Oppo Reno4 SE;6.4;kimovil
+Oppo;Oppo Reno4 Z 5G;6.4;kimovil
+Oppo;Oppo Rеnо 3 Vitаlity Еditiоn;6.4;kimovil
 Oppo;Oppo U3;4.69;devicespecifications
 Orgtec;Orgtec Wa Phone;4.69;devicespecifications
 Oukitel;Oukitel C5 Pro;2.92;devicespecifications
@@ -5130,7 +5199,13 @@ RaspberryPi;RP_imx219;3.6736;devicespecifications
 RaspberryPi;RP_imx477;6.287;devicespecifications
 RaspberryPi;RP_OV5647;3.6288;devicespecifications
 Realme;Realme 2 Pro;5.22;devicespecifications
+Realme;Realme 5 Pro;6.4;kimovil
 Realme;Realme 7 Pro;7.4;usercontribution
+Realme;Realme Q;6.4;kimovil
+Realme;Realme X;6.4;kimovil
+Realme;Realme X50 Pro Player;6.4;kimovil
+Realme;Realme X50m;6.4;kimovil
+Realme;Realme X50t;6.4;kimovil
 RED;DRAGON-X 5K S35;25.6;usercontribution
 Red;Epic Dragon;30.7;usercontribution
 RED;GEMINI 5K S35;30.72;usercontribution
@@ -5454,6 +5529,7 @@ Samsung;Samsung Galaxy A8 SM-A530W;5.3;devicespecifications
 Samsung;Samsung Galaxy A8 SM-A800F;5.3;devicespecifications
 Samsung;Samsung Galaxy A9;4.69;devicespecifications
 Samsung;Samsung Galaxy A70;5.14;devicespecifications
+Samsung;Samsung Galaxy A80;6.4;kimovil
 Samsung;Samsung Galaxy C5;4.74;devicespecifications
 Samsung;Samsung Galaxy C7;4.74;devicespecifications
 Samsung;Samsung Galaxy Camera;6.17;dpreview,digicamdb
@@ -5530,6 +5606,7 @@ Samsung;Samsung Galaxy S7 Edge SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S8;5.75;usercontribution
 Samsung;Samsung Galaxy S9;5.75;usercontribution
+Samsung;Samsung Galaxy S10 Lite;6.4;kimovil
 Samsung;Samsung Galaxy S10 Plus;5.75;digicamdb
 Samsung;Samsung Galaxy S20 Ultra 5G Exynos;10.82;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
@@ -5905,6 +5982,7 @@ Smartisan;Smartisan M1L;5.49;devicespecifications
 Smartisan;Smartisan Nut Pro;4.71;devicespecifications
 Smartisan;Smartisan Nut Pro 2;4.96;devicespecifications
 Smartisan;Smartisan Nut Pro 2 Special Edition;4.96;devicespecifications
+Smartisan;Smartisan Nut Pro 3;6.4;kimovil
 Smartisan;Smartisan Nut Pro 32GB;4.71;devicespecifications
 Smartisan;Smartisan T1;4.69;devicespecifications
 Smartisan;Smartisan T2;4.69;devicespecifications
@@ -6865,6 +6943,8 @@ Umi;Umi Zero;4.69;devicespecifications
 Umidigi;Umidigi A1 Pro;4.69;devicespecifications
 Umidigi;Umidigi A3;3.68;devicespecifications
 Umidigi;Umidigi A3 Pro;3.68;devicespecifications
+Umidigi;Umidigi Bison;6.4;kimovil
+Umidigi;Umidigi S3 Pro;6.4;kimovil
 Umidigi;Umidigi C Note;4.69;devicespecifications
 Umidigi;Umidigi C Note 2;4.69;devicespecifications
 Umidigi;Umidigi C2;4.69;devicespecifications
@@ -6939,6 +7019,7 @@ Vivitar;Vivitar ViviCam X60;7.11;digicamdb
 Vivo;Vivo iQOO 3;6.4;;devicespecifications,usercontribution
 Vivo;Vivo iQOO 3 5G;6.4;;devicespecifications,usercontribution
 Vivo;Vivo iQOO Neo 3;6.4;;devicespecifications,usercontribution
+Vivo;Vivo S5;6.4;kimovil
 Vivo;Vivo S6;6.4;;devicespecifications,usercontribution
 Vivo;Vivo V7;4.74;devicespecifications
 Vivo;Vivo V7Plus;4.74;devicespecifications
@@ -6954,6 +7035,8 @@ Vivo;Vivo X5Max+;4.69;devicespecifications
 Vivo;Vivo X5S;4.69;devicespecifications
 Vivo;Vivo X5V;4.69;devicespecifications
 Vivo;Vivo X7 Plus;5.22;devicespecifications
+Vivo;Vivo X27;6.4;kimovil
+Vivo;Vivo X27 Pro;6.4;kimovil
 Vivo;Vivo X30 Pro AW;7.4;devicespecifications,usercontribution
 Vivo;Vivo Xplay;4.69;devicespecifications
 Vivo;Vivo Xplay 3S;4.69;devicespecifications
@@ -7007,6 +7090,8 @@ Winnovo;Winnovo K54;2.65;devicespecifications
 Winnovo;Winnovo K56;2.65;devicespecifications
 Wolder;Wolder Wiam #65;5.99;devicespecifications
 Xgody;Xgody Y20;3.68;devicespecifications
+Xiaomi,Black Shark 2 Pro;6.4;kimovil
+Xiaomi;CC9;6.4;kimovil
 Xiaomi;POCOPHONE F1;5.64;deviceranks
 Xiaomi;POCOPHONE F2 Pro;7.27;usercontribution
 Xiaomi;POCOPHONE F3;6.4;usercontribution
@@ -7028,7 +7113,12 @@ Xiaomi;Xiaomi Mi 5s Plus;4.71;devicespecifications
 Xiaomi;Xiaomi Mi 5X;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 6;4.96;devicespecifications
 Xiaomi;Xiaomi Mi 8;5.64;usercontribution,kimovil
-Xiaomi;Xiaomi Mi 9T Pro;6.4;usercontribution
+Xiaomi;Xiaomi Mi 9;6.4;kimovil
+Xiaomi;Xiaomi Mi 9 Lite;6.4;kimovil
+Xiaomi;Xiaomi Mi 9 Pro;6.4;kimovil
+Xiaomi;Xiaomi Mi 9 Pro 5G;6.4;kimovil
+Xiaomi;Xiaomi Mi 9 SE;6.4;kimovil
+Xiaomi;Xiaomi Mi 9T Pro;6.4;kimovil
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi A2;4.96;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
@@ -7064,6 +7154,8 @@ Xiaomi;Xiaomi Redmi 6 Pro;2.98;devicespecifications
 Xiaomi;Xiaomi Redmi 7;4.96;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi 7A;4.96;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi 7 Pro;5.54;usercontribution,kimovil
+Xiaomi;Xiaomi Redmi K20;6.4;kimovil
+Xiaomi;Xiaomi Redmi K20 Pro;6.4;kimovil
 Xiaomi;Xiaomi Redmi Note;4.6;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2 Prime;4.69;devicespecifications
@@ -7081,6 +7173,7 @@ Xiaomi;Xiaomi Redmi Note 5 SD636 China;4.75;devicespecifications
 Xiaomi;Xiaomi Redmi Note 5A High Edition;4.75;devicespecifications
 Xiaomi;Xiaomi Redmi Note 5A Standard Edition;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi Note 7;6.4;devicespecifications
+Xiaomi;Xiaomi Redmi Note 7 Pro;6.4;kimovil
 Xiaomi;Xiaomi Redmi Note 8;6.4;usercontribution
 Xiaomi;Xiaomi Redmi Note 8 Pro;7.44;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi Note MT6592M;4.6;devicespecifications
