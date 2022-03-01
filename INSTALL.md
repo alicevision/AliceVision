@@ -114,6 +114,13 @@ vcpkg install ^
 cd /path/to/aliceVision/
 mkdir build && cd build
 
+
+# Windows: CUDA >= 10.0 + Visual 2022 + Powershell
+cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
+
+# Windows: CUDA >= 10.0 + Visual 2022
+cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
+
 # Windows: CUDA >= 10.0 + Visual 2017
 cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T host=x64
 
