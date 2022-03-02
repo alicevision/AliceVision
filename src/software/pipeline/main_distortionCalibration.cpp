@@ -139,8 +139,8 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
             if (dist.x() < 0 || dist.x() >= source.Width()) continue;
             if (dist.y() < 0 || dist.y() >= source.Height()) continue;
 
-            result(i, j).r() = dist.x() / (float(width) - 1);
-            result(i, j).g() = (float(height) - 1.0f - dist.y()) / (float(height) - 1.0f);
+            result(i, j).r() = dist.x() / (float(w) - 1);
+            result(i, j).g() = 1.0 - (dist.y() / (float(h) - 1.0f));
             result(i, j).b() = 0.0f;
         }
     }
