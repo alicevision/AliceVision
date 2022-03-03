@@ -165,7 +165,7 @@ __host__ void cuda_fuseDepthSimMapsGaussianKernelVoting(CudaDeviceMemoryPitched<
 
     const CudaSize<2> roiSize(roi.width(), roi.height());
 
-    assert(roiSize == in_depthSimMapPartPerCam_dmp.front().getSize());
+    assert(roiSize == in_depthSimMapPartPerRcTc_dmp.front().getSize());
 
     CudaDeviceMemoryPitched<float2, 2> bestGsvSampleMapPart_dmp(roiSize);
     CudaDeviceMemoryPitched<float, 2> gsvSampleMapPart_dmp(roiSize);
@@ -254,7 +254,7 @@ __host__ void cuda_optimizeDepthSimMapGradientDescent(CudaDeviceMemoryPitched<fl
 
     for(int iter = 0; iter < refineParams.nIters; ++iter) // default nb iterations is 100
     {
-        // copy depths values from optDepthSimMap to optDepthMap
+        // copy depths values from out_depthSimMapOptimized_dmp to optDepthMapPart_dmp
         fuse_getOptDeptMapFromOptDepthSimMap_kernel<<<grid, block, 0, stream>>>(
             optDepthMapPart_dmp.getBuffer(), 
             optDepthMapPart_dmp.getPitch(), 
