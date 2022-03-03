@@ -11,19 +11,19 @@
 namespace aliceVision {
 namespace depthMap {
 
-DeviceStreamManager::DeviceStreamManager(int nbStream) 
-   : _nbStream(nbStream)
+DeviceStreamManager::DeviceStreamManager(int nbStreams) 
+   : _nbStreams(nbStreams)
 {
     assert(nbStream > 0);
 
-    _streams.resize(nbStream);
+    _streams.resize(nbStreams);
 
-    for(int i = 0; i < nbStream; ++i)
+    for(int i = 0; i < nbStreams; ++i)
     {
         cudaError_t err = cudaStreamCreate(&_streams.at(i));
         if(err != cudaSuccess)
         {
-            ALICEVISION_LOG_WARNING("DeviceStreamManager: Failed to create a CUDA stream object " << i << "/" << nbStream << ", " << cudaGetErrorString(err));
+            ALICEVISION_LOG_WARNING("DeviceStreamManager: Failed to create a CUDA stream object " << i << "/" << nbStreams << ", " << cudaGetErrorString(err));
             _streams.at(i) = 0;
         }
     }
@@ -44,7 +44,7 @@ DeviceStreamManager::~DeviceStreamManager()
 
 cudaStream_t DeviceStreamManager::getStream(int streamIndex)
 {
-    return _streams.at(streamIndex % _nbStream);
+    return _streams.at(streamIndex % _nbStreams);
 }
 
 void DeviceStreamManager::waitStream(int streamIndex)
