@@ -140,6 +140,12 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaP threshold.")
         ("refineUseTcOrRcPixSize", po::value<bool>(&refineParams.useTcOrRcPixSize)->default_value(refineParams.useTcOrRcPixSize),
             "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
+        ("refineUseVolumeStrategy", po::value<bool>(&refineParams.useRefineFuseVolumeStrategy)->default_value(refineParams.useRefineFuseVolumeStrategy),
+            "Refine: Use volume strategy instead of legacy strategy for Refine/Fuse.")
+        ("refineDoRefineFuse", po::value<bool>(&refineParams.doRefineFuse)->default_value(refineParams.doRefineFuse),
+            "Refine: Perform Refine/Fuse.")
+        ("refineDoRefineOptimization", po::value<bool>(&refineParams.doRefineOptimization)->default_value(refineParams.doRefineOptimization),
+            "Refine: Perform Refine post-process optimization.")
         ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
             "Export intermediate results from the SGM and Refine steps.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
@@ -257,6 +263,9 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.gammaC", refineParams.gammaC);
     mp.userParams.put("refine.gammaP", refineParams.gammaP);
     mp.userParams.put("refine.useTcOrRcPixSize", refineParams.useTcOrRcPixSize);
+    mp.userParams.put("refine.useRefineFuseVolumeStrategy", refineParams.useRefineFuseVolumeStrategy);
+    mp.userParams.put("refine.doRefineFuse", refineParams.doRefineFuse);
+    mp.userParams.put("refine.doRefineOptimization", refineParams.doRefineOptimization);
     mp.userParams.put("refine.exportIntermediateResults", exportIntermediateResults);
 
     std::vector<int> cams;

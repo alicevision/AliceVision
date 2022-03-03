@@ -152,6 +152,9 @@ void getRefineParams(const mvsUtils::MultiViewParams& mp, RefineParams& refinePa
     refineParams.gammaC = mp.userParams.get<double>("refine.gammaC", refineParams.gammaC);
     refineParams.gammaP = mp.userParams.get<double>("refine.gammaP", refineParams.gammaP);
     refineParams.useTcOrRcPixSize = mp.userParams.get<bool>("refine.useTcOrRcPixSize", refineParams.useTcOrRcPixSize);
+    refineParams.useRefineFuseVolumeStrategy = mp.userParams.get<bool>("refine.useRefineFuseVolumeStrategy", refineParams.useRefineFuseVolumeStrategy);
+    refineParams.doRefineFuse = mp.userParams.get<bool>("refine.doRefineFuse", refineParams.doRefineFuse);
+    refineParams.doRefineOptimization = mp.userParams.get<bool>("refine.doRefineOptimization", refineParams.doRefineOptimization);
     refineParams.exportIntermediateResults = mp.userParams.get<bool>("refine.exportIntermediateResults", refineParams.exportIntermediateResults);
 }
 
