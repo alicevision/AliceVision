@@ -8,6 +8,7 @@
 
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
+#include <memory>
 
 namespace aliceVision {
 namespace depthMap {
