@@ -112,7 +112,7 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: GammaP threshold.")
         ("sgmP1", po::value<double>(&sgmParams.p1)->default_value(sgmParams.p1),
             "Semi Global Matching: P1.")
-        ("sgmP2", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
+        ("sgmP2Weighting", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
             "Semi Global Matching: P2 Weighting.")
         ("sgmMaxDepths", po::value<int>(&sgmParams.maxDepths)->default_value(sgmParams.maxDepths),
             "Semi Global Matching: Max number of depths in the overall similarity volume.")
