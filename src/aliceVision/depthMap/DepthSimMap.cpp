@@ -416,7 +416,7 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(_rc));
 
     // tile metadata
-    if((_tileParams.width > 0) && (_tileParams.height > 0) && (_tileParams.padding > 0))
+    if((_tileParams.width > 0) && (_tileParams.height > 0) && (_tileParams.padding >= 0))
     {
         metadata.push_back(oiio::ParamValue("AliceVision:tileWidth", int(_tileParams.width)));
         metadata.push_back(oiio::ParamValue("AliceVision:tileHeight", int(_tileParams.height)));
@@ -586,7 +586,7 @@ void DepthSimMap::loadTileWeighted(const ROI& tileRoi, const std::string& custom
     }
 
     // invalid or no tile metadata
-    if((tileParams.width <= 0) || (tileParams.height <= 0) || (tileParams.padding <= 0))
+    if((tileParams.width <= 0) || (tileParams.height <= 0) || (tileParams.padding < 0))
     {
         ALICEVISION_THROW_ERROR("Cannot find tile information in file: " << depthMapPath);
     }

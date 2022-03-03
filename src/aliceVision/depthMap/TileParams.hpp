@@ -18,7 +18,7 @@ struct TileParams
 
   int width = -1;
   int height = -1;
-  int padding = -1;
+  int padding = 0;
 };
 
 } // namespace depthMap
