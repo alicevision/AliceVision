@@ -23,9 +23,9 @@ public:
 
     /**
      * @brief DeviceStreamManager constructor.
-     * @param[in] nbStream the number of gpu streams managed
+     * @param[in] nbStreams the number of gpu streams managed
      */
-    DeviceStreamManager(int nbStream);
+    DeviceStreamManager(int nbStreams);
 
     // destructor
     ~DeviceStreamManager();
@@ -35,6 +35,12 @@ public:
 
     // this class handles unique data, no copy operator
     void operator=(DeviceStreamManager const&) = delete;
+
+    /**
+     * @brief Get the number of gpu streams managed.
+     * @return number of gpu streams managed
+     */
+    inline int getNbStreams() const { return _nbStreams; }
 
     /**
      * @brief Get the stream object associated with the given index.
@@ -52,7 +58,7 @@ public:
 
 private:
 
-    const int _nbStream;
+    const int _nbStreams;
     std::vector<cudaStream_t> _streams;
 };
 
