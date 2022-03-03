@@ -9,6 +9,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 #include <aliceVision/depthMap/depthMap.hpp>
+#include <aliceVision/depthMap/TileParams.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -48,6 +49,9 @@ int aliceVision_main(int argc, char* argv[])
     float minViewAngle = 2.0f;
     float maxViewAngle = 70.0f;
 
+    // tilling parameters
+    depthMap::TileParams tileParams;
+
     // Semi Global Matching Parameters
     depthMap::SgmParams sgmParams; 
 
@@ -84,6 +88,12 @@ int aliceVision_main(int argc, char* argv[])
             "minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
             "maximum angle between two views.")
+        ("tileWidth", po::value<int>(&tileParams.width)->default_value(tileParams.width),
+            "maximum tile width.")
+        ("tileHeight", po::value<int>(&tileParams.height)->default_value(tileParams.height),
+            "maximum tile height.")
+        ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
+            "tile padding for overlapping.")
         ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),
             "Semi Global Matching: Downscale factor used to compute the similarity volume.")
         ("sgmStepXY", po::value<int>(&sgmParams.stepXY)->default_value(sgmParams.stepXY),
@@ -192,6 +202,13 @@ int aliceVision_main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
+    // check if the tile padding is correct
+    if(tileParams.padding < 0)
+    {
+        ALICEVISION_LOG_ERROR("Invalid value for tilePadding parameter. Should be at least 0.");
+        return EXIT_FAILURE;
+    }
+
     // read the input SfM scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -200,13 +217,18 @@ int aliceVision_main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    // initialization
+    // MultiViewParams initialization
     mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", false, downscale);
 
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
 
     // set params in bpt
+
+    // Tile Parameters
+    mp.userParams.put("tile.width", tileParams.width);
+    mp.userParams.put("tile.height", tileParams.height);
+    mp.userParams.put("tile.padding", tileParams.padding);
 
     // SGM Parameters
     mp.userParams.put("sgm.maxTCams", sgmParams.maxTCams);
