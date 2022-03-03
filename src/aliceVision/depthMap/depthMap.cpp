@@ -165,14 +165,17 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         std::vector<ROI> tileList;
         getTileList(tileList, tileParams, mp, rc);
 
-        for(const ROI& roi : tileList)
+        for(int i = 0; i < tileList.size(); ++i)
         {
-            Sgm sgm(sgmParams, tileParams, mp, ic, rc, roi);
+            // get correcponding ROI
+            const ROI& roi = tileList.at(i);
+
+            Sgm sgm(rc, ic, mp, sgmParams, tileParams, roi, 0 /*stream*/);
 
             // compute Semi-Global Matching
             sgm.sgmRc();
 
-            Refine refine(refineParams, tileParams, mp, ic, rc, roi);
+            Refine refine(rc, ic, mp, refineParams, tileParams, roi, 0 /*stream*/);
 
             // R camera has no T cameras
             if(refine.getTCams().empty() || sgm.empty())
@@ -181,6 +184,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
                 continue;
             }
 
+            // compute Refine
             refine.refineRc(sgm.getDepthSimMap());
 
             // write results

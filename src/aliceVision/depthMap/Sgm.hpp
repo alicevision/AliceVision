@@ -15,6 +15,8 @@
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
+#include <cuda_runtime.h>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -33,14 +35,21 @@ public:
 
     /**
      * @brief Sgm constructor.
+     * @param[in] rc the R camera index
+     * @param[in] ic the image cache 
+     * @param[in] mp the multi-view parameters
      * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] tileParams tile workflow parameters
-     * @param[in] mp the multi-view parameters
-     * @param[in] ic the image cache 
-     * @param[in] rc the R camera index
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
+     * @param[in] stream the stream for gpu execution
      */
-    Sgm(const SgmParams& sgmParams, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
+    Sgm(int rc, 
+        mvsUtils::ImagesCache<ImageRGBAf>& ic, 
+        const mvsUtils::MultiViewParams& mp, 
+        const SgmParams& sgmParams, 
+        const TileParams& tileParams, 
+        const ROI& roi, 
+        cudaStream_t stream);
 
     // default destructor
     ~Sgm() = default;
@@ -107,6 +116,7 @@ private:
     mvsUtils::ImagesCache<ImageRGBAf>& _ic;  // Image cache
     SgmDepthList _sgmDepthList;              // R camera Semi Global Matching depth list
     DepthSimMap _depthSimMap;                // depth/sim map of the Semi Global Matching result
+    cudaStream_t _stream;                    // stream for gpu execution
 };
 
 } // namespace depthMap

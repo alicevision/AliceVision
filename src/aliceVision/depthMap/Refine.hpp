@@ -13,7 +13,7 @@
 #include <aliceVision/depthMap/ROI.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
-struct float2;
+#include <cuda_runtime.h>
 
 namespace aliceVision {
 namespace depthMap {
@@ -33,14 +33,21 @@ public:
 
     /**
      * @brief Refine constructor.
+     * @param[in] rc the R camera index
+     * @param[in] ic the image cache
+     * @param[in] mp the multi-view parameters
      * @param[in] refineParams the Refine parameters
      * @param[in] tileParams tile workflow parameters
-     * @param[in] mp the multi-view parameters
-     * @param[in] ic the image cache
-     * @param[in] rc the R camera index
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
+     * @param[in] stream the stream for gpu execution
      */
-    Refine(const RefineParams& refineParams, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, mvsUtils::ImagesCache<ImageRGBAf>& ic, int rc, const ROI& roi);
+    Refine(int rc,
+           mvsUtils::ImagesCache<ImageRGBAf>& ic,
+           const mvsUtils::MultiViewParams& mp,
+           const RefineParams& refineParams, 
+           const TileParams& tileParams,   
+           const ROI& roi,
+           cudaStream_t stream);
 
     // default destructor
     ~Refine() = default;
@@ -119,6 +126,7 @@ private:
     mvsUtils::ImagesCache<ImageRGBAf>& _ic; // Image cache
     StaticVector<int> _tCams;               // T camera indexes, computed in the constructor
     DepthSimMap _depthSimMap;               // refined, fused and optimized depth map
+    cudaStream_t _stream;                   // stream for gpu execution
 };
 
 } // namespace depthMap
