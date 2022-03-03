@@ -210,7 +210,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     //       in practice this function return value between -1 and 1.
     float fsim = compNCCby3DptsYK(rcTex, tcTex, rcDeviceCamId, tcDeviceCamId, ptch, rcWidth, rcHeight, tcWidth, tcHeight, wsh, gammaC, gammaP);
 
-    if(fsim == 1 || fsim == CUDART_INF_F) // infinite or invalid similarity
+    if(fsim == 1.f || fsim == CUDART_INF_F) // infinite or invalid similarity
     {
         fsim = 0.0f; // 0 is the worst similarity value at this point
     }
