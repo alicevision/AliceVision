@@ -262,15 +262,25 @@ void Sgm::retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMe
 
 void Sgm::exportVolumeInformation(const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, const std::string& name) const
 {
+    // get tile begin indexes (default no tile)
+    int tileBeginX = -1;
+    int tileBeginY = -1;
+
+    if((_tileParams.width > 0) && (_tileParams.height > 0))
+    {
+        const ROI& roi = _depthSimMap.getRoi();
+        tileBeginX = roi.x.begin;
+        tileBeginY = roi.y.begin;
+    }
+
     const IndexT viewId = _mp.getViewId(_rc);
-    const ROI& roi = _depthSimMap.getRoi();
 
     CudaHostMemoryHeap<TSim, 3> volumeSim_hmh(in_volSim_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volSim_dmp);
 
-    const std::string volumePath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, roi.x.begin, roi.y.begin);
-    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, roi.x.begin, roi.y.begin);
-    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", roi.x.begin, roi.y.begin);
+    const std::string volumePath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", tileBeginX, tileBeginY);
 
     exportSimilarityVolume(volumeSim_hmh, _sgmDepthList.getDepths(), _mp, _rc, _sgmParams, volumePath, _depthSimMap.getRoi());
     exportSimilarityVolumeCross(volumeSim_hmh, _sgmDepthList.getDepths(), _mp, _rc, _sgmParams, volumeCrossPath, _depthSimMap.getRoi());
