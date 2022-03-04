@@ -296,14 +296,24 @@ void Refine::exportVolumeInformation(const CudaDeviceMemoryPitched<TSimRefine, 3
     const IndexT viewId = _mp.getViewId(_rc);
     const ROI& roi = _depthSimMap.getRoi();
 
+    // get tile begin indexes (default no tile)
+    int tileBeginX = -1;
+    int tileBeginY = -1;
+
+    if((_tileParams.width > 0) && (_tileParams.height > 0))
+    {
+        tileBeginX = roi.x.begin;
+        tileBeginY = roi.y.begin;
+    }
+
     CudaHostMemoryHeap<TSimRefine, 3> volumeSim_hmh(in_volSim_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volSim_dmp);
 
     DepthSimMap depthSimMapSgmUpscale(_rc, _mp, _refineParams.scale, _refineParams.stepXY, _tileParams, roi);
     depthSimMapSgmUpscale.copyFrom(in_depthSimMapSgmUpscale_dmp);
 
-    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, roi.x.begin, roi.y.begin);
-    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _refineParams.scale, "_refine", roi.x.begin, roi.y.begin);
+    const std::string volumeCrossPath = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, tileBeginX, tileBeginY);
+    const std::string stats9Path = getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::stats9p, _refineParams.scale, "_refine", tileBeginX, tileBeginY);
 
     exportSimilarityVolumeCross(volumeSim_hmh, depthSimMapSgmUpscale, _mp, _rc, _refineParams, volumeCrossPath);
     exportSimilaritySamplesCSV(volumeSim_hmh, _rc, name, stats9Path);
