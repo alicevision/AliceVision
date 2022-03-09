@@ -8,8 +8,8 @@
 
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/ROI.hpp>
 
 namespace aliceVision {
 namespace depthMap {
