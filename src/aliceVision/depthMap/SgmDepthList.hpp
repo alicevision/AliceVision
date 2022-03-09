@@ -23,7 +23,16 @@ class SgmDepthList
 {
 public:
 
-    SgmDepthList(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, int rc, const ROI& roi);
+    /**
+     * @brief SgmDepthList constructor.
+     * @param[in] rc the R camera index
+     * @param[in] mp the multi-view parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
+     */
+    SgmDepthList(int rc, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi);
+
+    // default destructor
     ~SgmDepthList() = default;
 
     const StaticVector<int>& getTCams() const { return _tCams; }

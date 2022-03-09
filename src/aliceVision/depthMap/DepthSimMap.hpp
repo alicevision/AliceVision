@@ -110,12 +110,12 @@ public:
      * @brief DepthSimMap constructor.
      * @param[in] rc the related R camera index
      * @param[in] mp the multi-view parameters
+     * @param[in] tileParams tile workflow parameters
      * @param[in] scale the depth/sim map scale factor from the original R image
      * @param[in] step the depth/sim map step factor from the original R image
-     * @param[in] tileParams tile workflow parameters
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const mvsUtils::TileParams& tileParams, const ROI& roi);
+    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, int scale, int step, const ROI& roi);
 
     // default destructor
     ~DepthSimMap() = default;

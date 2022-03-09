@@ -38,16 +38,16 @@ public:
      * @param[in] rc the R camera index
      * @param[in] ic the image cache 
      * @param[in] mp the multi-view parameters
-     * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] tileParams tile workflow parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      * @param[in] stream the stream for gpu execution
      */
     Sgm(int rc, 
         mvsUtils::ImagesCache<ImageRGBAf>& ic, 
         const mvsUtils::MultiViewParams& mp, 
-        const SgmParams& sgmParams, 
         const mvsUtils::TileParams& tileParams, 
+        const SgmParams& sgmParams, 
         const ROI& roi, 
         cudaStream_t stream);
 

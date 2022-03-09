@@ -22,7 +22,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-SgmDepthList::SgmDepthList(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, int rc, const ROI& roi)
+SgmDepthList::SgmDepthList(int rc, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi)
     : _rc(rc)
     , _roi(roi)
     , _mp(mp)
