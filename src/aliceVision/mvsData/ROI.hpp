@@ -21,7 +21,6 @@
 #endif
 
 namespace aliceVision {
-namespace depthMap {
 
 /*
  * @struct Range
@@ -161,6 +160,5 @@ CUDA_HOST inline ROI downscaleROI(const ROI& roi, float downscale)
                downscaleRange(roi.y, downscale));
 }
 
-} // namespace depthMap
 } // namespace aliceVision
 
