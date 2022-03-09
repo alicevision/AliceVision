@@ -34,7 +34,7 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale,
     _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
 }
 
-DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step,const TileParams& tileParams, const ROI& roi) 
+DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const mvsUtils::TileParams& tileParams, const ROI& roi) 
     : _mp(mp)
     , _rc(rc)
     , _scale(scale)
@@ -565,7 +565,7 @@ void DepthSimMap::loadTileWeighted(const ROI& tileRoi, const std::string& custom
     }
 
     // get tile dimensions from metadata
-    TileParams tileParams;
+    mvsUtils::TileParams tileParams;
     {
         // read tile metadata
         oiio::ParamValueList metadata;

@@ -78,7 +78,7 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
                          << "\t- stepXY: " << sgmParams.stepXY);
 }
 
-void getTileList(std::vector<ROI>& tileList, const TileParams& tileParams, const mvsUtils::MultiViewParams& mp, int rc)
+void getTileList(std::vector<ROI>& tileList, const mvsUtils::TileParams& tileParams, const mvsUtils::MultiViewParams& mp, int rc)
 {
     const int width = mp.getOriginalWidth(rc);
     const int height = mp.getOriginalHeight(rc);
@@ -109,7 +109,7 @@ void getTileList(std::vector<ROI>& tileList, const TileParams& tileParams, const
     }
 }
 
-void getTileParams(const mvsUtils::MultiViewParams& mp, TileParams& tileParams)
+void getTileParams(const mvsUtils::MultiViewParams& mp, mvsUtils::TileParams& tileParams)
 {
     // get tile user parameters from MultiViewParams property_tree
 
@@ -164,7 +164,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
     setCudaDeviceId(cudaDeviceId);
 
-    TileParams tileParams;
+    mvsUtils::TileParams tileParams;
     SgmParams sgmParams;
     RefineParams refineParams;
 

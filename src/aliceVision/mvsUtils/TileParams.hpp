@@ -7,7 +7,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace depthMap {
+namespace mvsUtils {
 
 /**
  * @brief Tile Parameters
@@ -21,5 +21,5 @@ struct TileParams
   int padding = 0;
 };
 
-} // namespace depthMap
+} // namespace mvsUtils
 } // namespace aliceVision

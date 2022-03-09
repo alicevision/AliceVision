@@ -9,8 +9,9 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
@@ -21,7 +22,6 @@ namespace aliceVision {
 namespace depthMap {
 
 struct SgmParams;
-struct TileParams;
 
 template <class Type, unsigned Dim>
 class CudaDeviceMemoryPitched;
@@ -47,7 +47,7 @@ public:
         mvsUtils::ImagesCache<ImageRGBAf>& ic, 
         const mvsUtils::MultiViewParams& mp, 
         const SgmParams& sgmParams, 
-        const TileParams& tileParams, 
+        const mvsUtils::TileParams& tileParams, 
         const ROI& roi, 
         cudaStream_t stream);
 
@@ -109,14 +109,14 @@ private:
 
     // private members
 
-    const int _rc;                           // related R camera index
-    const SgmParams& _sgmParams;             // Semi Global Matching parameters
-    const TileParams& _tileParams;           // tile workflow parameters
-    const mvsUtils::MultiViewParams& _mp;    // Multi-view parameters
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic;  // Image cache
-    SgmDepthList _sgmDepthList;              // R camera Semi Global Matching depth list
-    DepthSimMap _depthSimMap;                // depth/sim map of the Semi Global Matching result
-    cudaStream_t _stream;                    // stream for gpu execution
+    const int _rc;                            // related R camera index
+    const SgmParams& _sgmParams;              // Semi Global Matching parameters
+    const mvsUtils::TileParams& _tileParams;  // tile workflow parameters
+    const mvsUtils::MultiViewParams& _mp;     // Multi-view parameters
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;   // Image cache
+    SgmDepthList _sgmDepthList;               // R camera Semi Global Matching depth list
+    DepthSimMap _depthSimMap;                 // depth/sim map of the Semi Global Matching result
+    cudaStream_t _stream;                     // stream for gpu execution
 };
 
 } // namespace depthMap

@@ -50,7 +50,7 @@ int aliceVision_main(int argc, char* argv[])
     float maxViewAngle = 70.0f;
 
     // tilling parameters
-    depthMap::TileParams tileParams;
+    mvsUtils::TileParams tileParams;
 
     // Semi Global Matching Parameters
     depthMap::SgmParams sgmParams; 

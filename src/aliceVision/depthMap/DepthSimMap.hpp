@@ -115,7 +115,7 @@ public:
      * @param[in] tileParams tile workflow parameters
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const TileParams& tileParams, const ROI& roi);
+    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const mvsUtils::TileParams& tileParams, const ROI& roi);
 
     // default destructor
     ~DepthSimMap() = default;
@@ -253,15 +253,15 @@ private:
 
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;  // multi-view parameters
-    const int _rc;                         // related R camera index
-    const int _width;                      // depth/sim map width
-    const int _height;                     // depth/sim map height
-    const int _scale;                      // depth/sim map scale factor from the original R image
-    const int _step;                       // depth/sim map step factor from the original R image
-    const ROI _roi;                        // 2d region of interest of the original R image without any downscale apply
-    const TileParams _tileParams;          // tile workflow parameters
-    StaticVector<DepthSim> _dsm;           // depth similarity map
+    const mvsUtils::MultiViewParams& _mp;    // multi-view parameters
+    const mvsUtils::TileParams _tileParams;  // tile workflow parameters
+    const ROI _roi;                          // 2d region of interest of the original R image without any downscale apply
+    const int _rc;                           // related R camera index
+    const int _width;                        // depth/sim map width
+    const int _height;                       // depth/sim map height
+    const int _scale;                        // depth/sim map scale factor from the original R image
+    const int _step;                         // depth/sim map step factor from the original R image
+    StaticVector<DepthSim> _dsm;             // depth similarity map
 
 };
 

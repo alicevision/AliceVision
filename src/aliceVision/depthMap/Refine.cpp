@@ -11,7 +11,6 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
@@ -48,7 +47,7 @@ Refine::Refine(int rc,
                mvsUtils::ImagesCache<ImageRGBAf>& ic, 
                const mvsUtils::MultiViewParams& mp,
                const RefineParams& refineParams, 
-               const TileParams& tileParams, 
+               const mvsUtils::TileParams& tileParams, 
                const ROI& roi,
                cudaStream_t stream)
     : _rc(rc)
