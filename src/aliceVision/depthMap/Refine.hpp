@@ -36,16 +36,16 @@ public:
      * @param[in] rc the R camera index
      * @param[in] ic the image cache
      * @param[in] mp the multi-view parameters
-     * @param[in] refineParams the Refine parameters
      * @param[in] tileParams tile workflow parameters
+     * @param[in] refineParams the Refine parameters
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      * @param[in] stream the stream for gpu execution
      */
     Refine(int rc,
            mvsUtils::ImagesCache<ImageRGBAf>& ic,
            const mvsUtils::MultiViewParams& mp,
-           const RefineParams& refineParams, 
            const mvsUtils::TileParams& tileParams,   
+           const RefineParams& refineParams, 
            const ROI& roi,
            cudaStream_t stream);
 

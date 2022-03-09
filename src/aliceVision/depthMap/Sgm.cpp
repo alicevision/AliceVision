@@ -25,8 +25,8 @@ namespace depthMap {
 Sgm::Sgm(int rc, 
          mvsUtils::ImagesCache<ImageRGBAf>& ic, 
          const mvsUtils::MultiViewParams& mp, 
-         const SgmParams& sgmParams,
          const mvsUtils::TileParams& tileParams, 
+         const SgmParams& sgmParams,
          const ROI& roi, 
          cudaStream_t stream)
     : _rc(rc)
@@ -34,8 +34,8 @@ Sgm::Sgm(int rc,
     , _ic(ic)
     , _tileParams(tileParams)
     , _sgmParams(sgmParams)
-    , _sgmDepthList(sgmParams, mp, rc, roi)
-    , _depthSimMap(_rc, _mp, _sgmParams.scale, _sgmParams.stepXY, tileParams, roi)
+    , _sgmDepthList(rc, mp, sgmParams, roi)
+    , _depthSimMap(rc, mp, tileParams, _sgmParams.scale, _sgmParams.stepXY, roi)
     , _stream(stream)
 {
     // compute the R camera depth list
