@@ -13,7 +13,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ROI.hpp>
-#include <aliceVision/depthMap/TileParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
 
 
 struct float2;
