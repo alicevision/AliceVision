@@ -8,8 +8,9 @@
 
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
@@ -19,7 +20,6 @@ namespace aliceVision {
 namespace depthMap {
 
 struct RefineParams;
-struct TileParams;
 
 template <class Type, unsigned Dim>
 class CudaDeviceMemoryPitched;
@@ -45,7 +45,7 @@ public:
            mvsUtils::ImagesCache<ImageRGBAf>& ic,
            const mvsUtils::MultiViewParams& mp,
            const RefineParams& refineParams, 
-           const TileParams& tileParams,   
+           const mvsUtils::TileParams& tileParams,   
            const ROI& roi,
            cudaStream_t stream);
 
@@ -119,14 +119,14 @@ private:
 
     // private members
 
-    const int _rc;                          // related R camera index
-    const RefineParams& _refineParams;      // Refine parameters
-    const TileParams& _tileParams;          // tile workflow parameters
-    const mvsUtils::MultiViewParams& _mp;   // Multi-view parameters
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic; // Image cache
-    StaticVector<int> _tCams;               // T camera indexes, computed in the constructor
-    DepthSimMap _depthSimMap;               // refined, fused and optimized depth map
-    cudaStream_t _stream;                   // stream for gpu execution
+    const int _rc;                            // related R camera index
+    const RefineParams& _refineParams;        // Refine parameters
+    const mvsUtils::MultiViewParams& _mp;     // Multi-view parameters
+    const mvsUtils::TileParams& _tileParams;  // tile workflow parameters
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;   // Image cache
+    StaticVector<int> _tCams;                 // T camera indexes, computed in the constructor
+    DepthSimMap _depthSimMap;                 // refined, fused and optimized depth map
+    cudaStream_t _stream;                     // stream for gpu execution
 };
 
 } // namespace depthMap
