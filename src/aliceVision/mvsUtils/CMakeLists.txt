@@ -4,6 +4,7 @@ set(mvsUtils_files_headers
   fileIO.hpp
   ImagesCache.hpp
   MultiViewParams.hpp
+  ROI.hpp
 )
 
 # Sources

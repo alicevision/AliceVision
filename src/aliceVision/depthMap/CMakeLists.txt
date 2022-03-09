@@ -9,7 +9,6 @@ set(depthMap_files_headers
   Sgm.hpp
   SgmDepthList.hpp
   SgmParams.hpp
-  ROI.hpp
   TileParams.hpp
   volumeIO.hpp
 )
