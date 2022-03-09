@@ -23,18 +23,18 @@ class BufPtr
 {
 public:
 
-    CUDA_HOST_DEVICE BufPtr( T* ptr, int pitch )
+    CUDA_HOST_DEVICE BufPtr(T* ptr, size_t pitch)
         : _ptr( (unsigned char*)ptr )
         , _pitch( pitch )
     {}
 
     CUDA_HOST_DEVICE inline T* ptr()  { return (T*)(_ptr); }
-    CUDA_HOST_DEVICE inline T* row(int y) { return (T*)(_ptr + y * _pitch); }
-    CUDA_HOST_DEVICE inline T& at( int x, int y ) { return row(y)[x]; }
+    CUDA_HOST_DEVICE inline T* row(size_t y) { return (T*)(_ptr + y * _pitch); }
+    CUDA_HOST_DEVICE inline T& at(size_t x, size_t y) { return row(y)[x]; }
 
     CUDA_HOST_DEVICE inline const T* ptr() const { return (const T*)(_ptr); }
-    CUDA_HOST_DEVICE inline const T* row(int y) const { return (const T*)(_ptr + y * _pitch); }
-    CUDA_HOST_DEVICE inline const T& at(int x, int y) const { return row(y)[x]; }
+    CUDA_HOST_DEVICE inline const T* row(size_t y) const { return (const T*)(_ptr + y * _pitch); }
+    CUDA_HOST_DEVICE inline const T& at(size_t x, size_t y) const { return row(y)[x]; }
 
 private:
     BufPtr();
@@ -42,18 +42,18 @@ private:
     BufPtr& operator*=(const BufPtr&);
 
     unsigned char* const _ptr;
-    const int _pitch;
+    const size_t _pitch;
 };
 
 
 template <typename T>
-static inline T* get3DBufferAt_h(T* ptr, int spitch, int pitch, int x, int y, int z)
+static inline T* get3DBufferAt_h(T* ptr, size_t spitch, size_t pitch, size_t x, size_t y, size_t z)
 {
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
 template <typename T>
-static inline const T* get3DBufferAt_h(const T* ptr, int spitch, int pitch, int x, int y, int z)
+static inline const T* get3DBufferAt_h(const T* ptr, size_t spitch, size_t pitch, size_t x, size_t y, size_t z)
 {
     return ((const T*)(((const char*)ptr) + z * spitch + y * pitch)) + x;
 }
