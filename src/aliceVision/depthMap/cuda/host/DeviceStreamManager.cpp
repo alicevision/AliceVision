@@ -14,7 +14,7 @@ namespace depthMap {
 DeviceStreamManager::DeviceStreamManager(int nbStreams) 
    : _nbStreams(nbStreams)
 {
-    assert(nbStream > 0);
+    assert(nbStreams > 0);
 
     _streams.resize(nbStreams);
 
