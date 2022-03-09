@@ -87,14 +87,14 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& volumeS
     const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
     const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
 
-    const int sampleSize = 9;
+    const int sampleSize = 3;
 
     const int xOffset = std::floor(volDim.x() / (sampleSize + 1.0f));
     const int yOffset = std::floor(volDim.y() / (sampleSize + 1.0f));
 
     std::vector<std::vector<float>> simPerDepthsPerPts(sampleSize * sampleSize);
 
-    for(int iy = 0; iy < 1; ++iy)
+    for(int iy = 0; iy < sampleSize; ++iy)
     {
         for(int ix = 0; ix < sampleSize; ++ix)
         {
