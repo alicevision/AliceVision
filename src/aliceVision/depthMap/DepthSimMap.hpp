@@ -11,10 +11,9 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/ROI.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
-
 
 struct float2;
 

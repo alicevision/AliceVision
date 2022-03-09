@@ -15,6 +15,7 @@ set(mvsData_files_headers
   Point4d.hpp
   Pixel.hpp
   Rgb.hpp
+  ROI.hpp
   Stat3d.hpp
   StaticVector.hpp
   structures.hpp
