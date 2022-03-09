@@ -28,8 +28,8 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale,
     , _scale(scale)
     , _step(step)
     , _roi(ROI(0, mp.getOriginalWidth(rc), 0, mp.getOriginalHeight(rc)))
-    , _width(mp.getOriginalWidth(rc) / float(_mp.getProcessDownscale() * scale * step))
-    , _height(mp.getOriginalHeight(rc) / float(_mp.getProcessDownscale() * scale * step))
+    , _width(std::ceil(mp.getOriginalWidth(rc) / float(_mp.getProcessDownscale() * scale * step)))
+    , _height(std::ceil(mp.getOriginalHeight(rc) / float(_mp.getProcessDownscale() * scale * step)))
 {
     _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
 }
@@ -463,8 +463,8 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 
     // get full image dimensions
     const ROI downscaledROI = downscaleROI(_roi, downscale);
-    const int imageWidth  = _mp.getOriginalWidth(_rc)  / downscale;
-    const int imageHeight = _mp.getOriginalHeight(_rc) / downscale;
+    const int imageWidth = std::ceil(_mp.getOriginalWidth(_rc) / float(downscale));
+    const int imageHeight = std::ceil(_mp.getOriginalHeight(_rc) / float(downscale));
 
     oiio::ROI imageROI = oiio::ROI::All();
     std::string depthMapPath;
