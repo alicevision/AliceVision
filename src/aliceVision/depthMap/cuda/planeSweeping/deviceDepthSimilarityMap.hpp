@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <aliceVision/mvsUtils/ROI.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/depthMap/ROI.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCamera.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 

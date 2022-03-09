@@ -9,8 +9,8 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/ROI.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
-#include <aliceVision/depthMap/ROI.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
 #include <cuda_runtime.h>

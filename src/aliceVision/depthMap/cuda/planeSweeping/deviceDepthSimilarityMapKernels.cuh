@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/ROI.hpp>
+#include <aliceVision/mvsUtils/ROI.hpp>
 #include <aliceVision/depthMap/cuda/device/buffer.cuh>
 #include <aliceVision/depthMap/cuda/device/matrix.cuh>
 #include <aliceVision/depthMap/cuda/device/Patch.cuh>
