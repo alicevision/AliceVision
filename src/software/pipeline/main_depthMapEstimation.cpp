@@ -4,17 +4,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
-#include <aliceVision/depthMap/depthMap.hpp>
-#include <aliceVision/depthMap/TileParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
+#include <aliceVision/depthMap/depthMap.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <boost/program_options.hpp>

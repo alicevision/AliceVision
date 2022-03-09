@@ -11,7 +11,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/depthMap/TileParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>

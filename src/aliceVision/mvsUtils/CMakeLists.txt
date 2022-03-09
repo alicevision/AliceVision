@@ -5,6 +5,7 @@ set(mvsUtils_files_headers
   ImagesCache.hpp
   MultiViewParams.hpp
   ROI.hpp
+  TileParams.hpp
 )
 
 # Sources

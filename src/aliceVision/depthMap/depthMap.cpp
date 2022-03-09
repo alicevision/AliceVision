@@ -8,15 +8,15 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/depthMap/TileParams.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/depthMap/Sgm.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/Refine.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/depthMap/Sgm.hpp>
-#include <aliceVision/depthMap/SgmDepthList.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/normalMapping/DeviceNormalMapper.hpp>
