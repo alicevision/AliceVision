@@ -37,15 +37,19 @@ public:
 public:
     bool process(const image::Image<image::RGBColor> & source);
 
-    std::vector<CheckerBoard> getBoards()
+    std::vector<CheckerBoard> getBoards() const
     {
         return _boards;
     }
 
-    std::vector<CheckerBoardCorner> getCorners()
+    std::vector<CheckerBoardCorner> getCorners() const
     {
         return _corners;
     }
+
+    std::vector<CheckerBoard> & getBoards() { return _boards; }
+
+    std::vector<CheckerBoardCorner> & getCorners() { return _corners; }
 
     void drawCheckerBoard(image::Image<image::RGBColor> & img) const;
     
