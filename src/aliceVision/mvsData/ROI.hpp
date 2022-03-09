@@ -25,7 +25,7 @@ namespace depthMap {
 
 /*
  * @struct Range
- * @brief Small host / device struct descibing a 1d range.
+ * @brief Small CPU and GPU host / device struct descibing a 1d range.
  */
 struct Range
 {
@@ -66,7 +66,7 @@ struct Range
 
 /*
  * @struct ROI
- * @brief Small host / device struct descibing a rectangular 2d region of interest.
+ * @brief Small CPU and GPU host / device struct descibing a rectangular 2d region of interest.
  */
 struct ROI
 {
