@@ -219,7 +219,7 @@ void Refine::refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(_rc, _refineParams.scale, _ic, _mp, _stream);
         const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera( tc, _refineParams.scale, _ic, _mp, _stream);
 
-        ALICEVISION_LOG_DEBUG("Refine similarity volume:" << std::endl
+        ALICEVISION_LOG_INFO("Refine similarity volume:" << std::endl
                               << "\t- rc: " << _rc << std::endl
                               << "\t- tc: " << tc << " (" << tci << "/" << _tCams.size() << ")" << std::endl
                               << "\t- rc camera device id: " << rcDeviceCamera.getDeviceCamId() << std::endl
