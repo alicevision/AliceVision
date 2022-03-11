@@ -45,6 +45,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     int rangeStart = -1;
     int rangeSize = 1;
+    bool exportDebugImages = false;
 
     // Command line parameters
     po::options_description allParams(
@@ -60,7 +61,8 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
-        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
+        ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), "Export Debug Images.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -155,12 +157,12 @@ int aliceVision_main(int argc, char* argv[])
         std::string imagePath = view->getImagePath();
         ALICEVISION_LOG_INFO("Load image with path " << imagePath);
         image::Image<image::RGBColor> source;
-        image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
+        image::readImage(imagePath, source, image::EImageColorSpace::SRGB);
 
 
         //Lookup checkerboard
         calibration::CheckerDetector detect;
-        if (!detect.process(source))
+        if(!detect.process(source, exportDebugImages))
         {
             continue;
         }
@@ -169,13 +171,20 @@ int aliceVision_main(int argc, char* argv[])
         // write the json file with the tree
         std::stringstream ss;
         ss << outputFilePath << "/" << "checkers_" << viewId << ".json";
-        
-
         boost::json::value jv = boost::json::value_from(detect);
-
         std::ofstream of(ss.str());
         of << boost::json::serialize(jv);
         of.close();
+
+        if(exportDebugImages)
+        {
+            for(auto pair : detect.getDebugImages())
+            {
+                std::stringstream ss;
+                ss << outputFilePath << "/" << pair.first << "_" << viewId << ".png";
+                image::writeImage(ss.str(), pair.second, image::EImageColorSpace::SRGB);
+            }
+        }
     }
 
     return EXIT_SUCCESS;

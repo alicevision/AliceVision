@@ -35,7 +35,7 @@ public:
     };
 
 public:
-    bool process(const image::Image<image::RGBColor> & source);
+    bool process(const image::Image<image::RGBColor> & source, bool debug = false);
 
     std::vector<CheckerBoard> getBoards() const
     {
@@ -53,6 +53,11 @@ public:
 
     void drawCheckerBoard(image::Image<image::RGBColor> & img) const;
     
+    const std::map<std::string, image::Image<image::RGBColor>>& getDebugImages() const
+    { 
+        return _debugImages;
+    }
+
 private:
     bool processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale);
     bool normalizeImage(image::Image<float> & output, const image::Image<float> & input);
@@ -76,6 +81,7 @@ private:
 private:
     std::vector<CheckerBoard> _boards;
     std::vector<CheckerBoardCorner> _corners;
+    std::map<std::string, image::Image<image::RGBColor>> _debugImages;
 };
 
 }//namespace calibration

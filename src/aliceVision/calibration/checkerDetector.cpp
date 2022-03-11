@@ -21,7 +21,7 @@ namespace calibration{
 
 
 
-bool CheckerDetector::process(const image::Image<image::RGBColor> & source)
+bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool debug)
 {
     image::Image<float> grayscale;
     image::ConvertPixelType(source, &grayscale);
@@ -102,6 +102,13 @@ bool CheckerDetector::process(const image::Image<image::RGBColor> & source)
     if (!mergeCheckerboards())
     {
         return false;
+    }
+
+    if (debug)
+    {   
+        image::Image<image::RGBColor> out = source;
+        drawCheckerBoard(out);
+        _debugImages["checker"] = out;
     }
     
     return true;

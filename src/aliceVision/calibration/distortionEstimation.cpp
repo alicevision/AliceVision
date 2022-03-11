@@ -324,6 +324,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
 
     std::vector<double> errors;
 
+
     for (auto & l : lines)
     {
         const double sangle = sin(l.angle);
@@ -464,7 +465,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
 
     std::vector<double> errors;
 
-    for (PointPair pp : points)
+    for (const PointPair & pp : points)
     {
         const Vec2 cpt = cameraToEstimate->ima2cam(pp.undistortedPoint);
         const Vec2 distorted = cameraToEstimate->addDistortion(cpt);

@@ -27,7 +27,7 @@ CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<Checker
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv,
                 CheckerDetector::CheckerBoardCorner const& t)
 {
-    jv = {{"center_x", t.center.x()}, {"center_y", t.center.x()}, {"dir1_x", t.dir1.x()},
+    jv = {{"center_x", t.center.x()}, {"center_y", t.center.y()}, {"dir1_x", t.dir1.x()},
           {"dir1_y", t.dir1.y()},     {"dir2_x", t.dir2.x()},     {"dir2_y", t.dir2.y()}};
 }
 

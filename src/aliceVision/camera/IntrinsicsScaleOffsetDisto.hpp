@@ -81,6 +81,7 @@ public:
     return cam2ima(addDistortion(ima2cam(p)));
   }
 
+
   std::vector<double> getDistortionParams() const
   {
     if (!hasDistortion()) {
