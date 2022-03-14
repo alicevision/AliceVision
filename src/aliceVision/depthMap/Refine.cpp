@@ -77,14 +77,7 @@ void Refine::upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMa
             const Point2d p2d = out_depthSimMapUpscaled.getCorrespondingImagePoint(x, y);
             const Point3d p3d = _mp.CArr[_rc] + (_mp.iCamArr[_rc] * p2d).normalize() * depthSim.depth;
             
-            if(_refineParams.useTcOrRcPixSize)
-            {
-                depthSim.sim = float(_mp.getCamsMinPixelSize(p3d, _tCams));
-            }
-            else
-            {
-                depthSim.sim = float(_mp.getCamPixelSize(p3d, _rc));
-            }
+            depthSim.sim = float(_mp.getCamPixelSize(p3d, _rc));
         }
     }
 }
@@ -112,59 +105,6 @@ void Refine::filterMaskedPixels(DepthSimMap& inout_depthSimMap)
             }
         }
     }
-}
-
-void Refine::refineAndFuseDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const
-{
-    const system::Timer timer;
-
-    ALICEVISION_LOG_INFO("Refine and fuse depth/sim map (rc: " << _rc << ")");
-
-    // get the downscaled region of interest
-    const ROI downscaledRoi = _depthSimMap.getDownscaledRoi();
-
-    // get intermediate depth/sim map size
-    const CudaSize<2> depthSimMapSize(in_depthSimMapSgmUpscale_dmp.getSize());
-
-    // build the vector of refine RcTc depth/sim map
-    std::vector<CudaDeviceMemoryPitched<float2, 2>> depthSimMapPerRcTc_dmp;
-    depthSimMapPerRcTc_dmp.resize(_tCams.size());
-
-    for(int tci = 0; tci < _tCams.size(); ++tci)
-    {
-        // get Tc global id
-        const int tc = _tCams[tci];
-
-        // allocate each refine RcTc depth/sim map
-        CudaDeviceMemoryPitched<float2, 2>& rcTcDepthSimMap_dmp = depthSimMapPerRcTc_dmp.at(tci);
-        rcTcDepthSimMap_dmp.allocate(depthSimMapSize);
-
-        // initialize depth/sim map with the SGM depth map (to get middle depth)
-        copyDepthOnly(rcTcDepthSimMap_dmp, in_depthSimMapSgmUpscale_dmp, 1.0f); 
-
-        // get device cameras
-        DeviceCache& deviceCache = DeviceCache::getInstance();
-        const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(_rc, _refineParams.scale, _ic, _mp, _stream);
-        const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera( tc, _refineParams.scale, _ic, _mp, _stream);
-
-        // refine each RcTc depth/sim map
-        cuda_refineDepthMap(rcTcDepthSimMap_dmp, 
-                            rcDeviceCamera, 
-                            tcDeviceCamera, 
-                            _refineParams, 
-                            downscaledRoi, 
-                            _stream);
-    }
-
-    // fuse each refined RcTc depth/sim map
-    cuda_fuseDepthSimMapsGaussianKernelVoting(out_depthSimMapRefinedFused_dmp, 
-                                              in_depthSimMapSgmUpscale_dmp,
-                                              depthSimMapPerRcTc_dmp, 
-                                              _refineParams,
-                                              downscaledRoi, 
-                                              _stream);
-
-    ALICEVISION_LOG_INFO("Refine and fuse depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
 }
 
 void Refine::refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const
@@ -354,16 +294,8 @@ void Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
     // refine and fuse depth/sim map
     if(_refineParams.doRefineFuse)
     {
-        if(_refineParams.useRefineFuseVolumeStrategy)
-        {
-            // refine and fuse with volume strategy
-            refineAndFuseDepthSimMapVolume(sgmDepthPixSizeMap_dmp, refinedDepthSimMap_dmp);
-        }
-        else
-        {
-            // refine and fuse with original strategy based on depth/sim map
-            refineAndFuseDepthSimMap(sgmDepthPixSizeMap_dmp, refinedDepthSimMap_dmp);
-        }
+        // refine and fuse with volume strategy
+        refineAndFuseDepthSimMapVolume(sgmDepthPixSizeMap_dmp, refinedDepthSimMap_dmp);
 
         if(_refineParams.exportIntermediateResults)
         {
@@ -378,7 +310,7 @@ void Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
     }
 
     // optimize depth/sim map
-    if(_refineParams.doRefineOptimization && _refineParams.nIters > 0)
+    if(_refineParams.doRefineOptimization && _refineParams.optimizationNbIters > 0)
     {
         CudaDeviceMemoryPitched<float2, 2> optimizedDepthSimMap_dmp(depthSimMapDim);
         optimizeDepthSimMap(sgmDepthPixSizeMap_dmp, refinedDepthSimMap_dmp, optimizedDepthSimMap_dmp);
