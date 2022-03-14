@@ -10,7 +10,6 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
@@ -134,9 +133,6 @@ public:
     inline const DepthSim& getDepthSim(int x, int y) const { return _dsm[y * _width + x]; }
     inline DepthSim& getDepthSim(int x, int y) { return _dsm[y * _width + x]; }
 
-    inline const StaticVector<DepthSim>& getData() const { return _dsm; }
-    inline StaticVector<DepthSim>& getData() { return _dsm; }
-
     inline Point2d getCorrespondingImagePoint(int x, int y) const
     {
         Point2d imagePoint;
@@ -251,7 +247,7 @@ private:
     const int _height;                       // depth/sim map height
     const int _scale;                        // depth/sim map scale factor from the original R image
     const int _step;                         // depth/sim map step factor from the original R image
-    StaticVector<DepthSim> _dsm;             // depth similarity map
+    std::vector<DepthSim> _dsm;              // depth similarity map
 
 };
 
