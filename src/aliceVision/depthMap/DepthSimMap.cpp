@@ -31,7 +31,7 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale,
     , _width(std::ceil(mp.getOriginalWidth(rc) / float(_mp.getProcessDownscale() * scale * step)))
     , _height(std::ceil(mp.getOriginalHeight(rc) / float(_mp.getProcessDownscale() * scale * step)))
 {
-    _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
+    _dsm.resize(_width * _height, DepthSim(-1.0f, 1.0f));
 }
 
 DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, int scale, int step, const ROI& roi) 
@@ -44,10 +44,10 @@ DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, const mvsU
     , _width(downscaleRange(roi.x, float(_mp.getProcessDownscale() * scale * step)).size())
     , _height(downscaleRange(roi.y, float(_mp.getProcessDownscale() * scale * step)).size())
 {
-    _dsm.resize_with(_width * _height, DepthSim(-1.0f, 1.0f));
+    _dsm.resize(_width * _height, DepthSim(-1.0f, 1.0f));
 }
 
-DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, double x, double y, int width, int height)
+DepthSim getPixelValueInterpolated(const std::vector<DepthSim>& depthSimMap, double x, double y, int width, int height)
 {
 #ifdef ALICEVISION_DEPTHMAP_UPSCALE_NEAREST_NEIGHBOR
     // Nearest neighbor, no interpolation
