@@ -359,17 +359,17 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
             const int rz = (vz - ((volDimZ - 1) / 2)); // relative depth index offset
             const int zs = rz * samplesPerPixSize;     // relative sample offset
 
-            // get the averaged inversed similarity value
+            // get the inversed similarity sum value
             // best value is the HIGHEST
-            const float avgInvSim = (*get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz) / nbTCams);
+            const float invSimSum = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz);
 
-            // reverse the averaged inversed similarity value
+            // reverse the inversed similarity sum value
             // best similarity value is the LOWEST
-            const float sim = -avgInvSim;
+            const float simSum = -invSimSum;
 
             // apply gaussian
             // see: https://www.desmos.com/calculator/ribalnoawq
-            sampleSim += sim * expf(-((zs - sample) * (zs - sample)) / twoTimesSigmaPowerTwo); 
+            sampleSim += simSum * expf(-((zs - sample) * (zs - sample)) / twoTimesSigmaPowerTwo); 
         }
 
         if(sampleSim < bestSampleSim)
@@ -388,8 +388,6 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
     out_bestDepthSimPtr->x = bestDepth;
     out_bestDepthSimPtr->y = bestSampleSim;
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
 __global__ void volume_initVolumeYSlice_kernel(T* volume, int volume_s, int volume_p, const int3 volDim, const int3 axisT, int y, T cst)
