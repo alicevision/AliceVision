@@ -94,6 +94,8 @@ int aliceVision_main(int argc, char* argv[])
             "maximum tile height.")
         ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
             "tile padding for overlapping.")
+        ("tileMerge", po::value<bool>(&tileParams.mergeTiles)->default_value(tileParams.mergeTiles),
+            "Read & merge all computed tiles.")
         ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),
             "Semi Global Matching: Downscale factor used to compute the similarity volume.")
         ("sgmStepXY", po::value<int>(&sgmParams.stepXY)->default_value(sgmParams.stepXY),
@@ -235,6 +237,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("tile.width", tileParams.width);
     mp.userParams.put("tile.height", tileParams.height);
     mp.userParams.put("tile.padding", tileParams.padding);
+    mp.userParams.put("tile.mergeTiles", tileParams.mergeTiles);
 
     // SGM Parameters
     mp.userParams.put("sgm.maxTCams", sgmParams.maxTCams);

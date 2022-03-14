@@ -86,6 +86,7 @@ void getTileParams(const mvsUtils::MultiViewParams& mp, mvsUtils::TileParams& ti
     tileParams.width = mp.userParams.get<int>("tile.width", tileParams.width);
     tileParams.height = mp.userParams.get<int>("tile.height", tileParams.height);
     tileParams.padding = mp.userParams.get<int>("tile.padding", tileParams.padding);
+    tileParams.mergeTiles = mp.userParams.get<bool>("tile.mergeTiles", tileParams.mergeTiles);
 }
 
 void getSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams) 
@@ -181,7 +182,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         }
 
         // merge tiles if multiple tile
-        if(tileList.size() > 1)
+        if(tileParams.mergeTiles && tileList.size() > 1)
         {
             DepthSimMap finalDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
             finalDepthSimMap.load();
