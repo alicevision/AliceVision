@@ -13,6 +13,7 @@ set(mvsUtils_files_sources
   fileIO.cpp
   ImagesCache.cpp
   MultiViewParams.cpp
+  TileParams.cpp
 )
 
 alicevision_add_library(aliceVision_mvsUtils

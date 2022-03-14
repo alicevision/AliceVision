@@ -6,6 +6,10 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/mvsData/ROI.hpp>
+#include <vector>
+
 namespace aliceVision {
 namespace mvsUtils {
 
@@ -20,6 +24,15 @@ struct TileParams
   int height = -1; // if < 0 no tile, use the entire image
   int padding = 0;
 };
+
+ /**
+ * @brief Get tile list from tile parameters and image width/height
+ * @param[in] tileParams the tile parameters
+ * @param[in] originalWidth the image original width
+ * @param[in] originalHeight the image original height
+ * @param[out] out_tileDepthMap the output tile ROI list
+ */
+void getTileList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList);
 
 } // namespace mvsUtils
 } // namespace aliceVision

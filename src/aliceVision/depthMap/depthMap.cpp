@@ -74,37 +74,6 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
                          << "\t- stepXY: " << sgmParams.stepXY);
 }
 
-void getTileList(std::vector<ROI>& tileList, const mvsUtils::TileParams& tileParams, const mvsUtils::MultiViewParams& mp, int rc)
-{
-    const int width = mp.getOriginalWidth(rc);
-    const int height = mp.getOriginalHeight(rc);
-
-    const int tileWidth  = (tileParams.width  > 0) ? tileParams.width  : (tileParams.height > 0) ? tileParams.height : width;
-    const int tileHeight = (tileParams.height > 0) ? tileParams.height : (tileParams.width  > 0) ? tileParams.width  : height;
-
-    if(tileParams.padding >= std::min(tileWidth, tileHeight))
-        ALICEVISION_THROW_ERROR("Unable to compute tile list, tile padding size is too large.");
-
-    const int nbTileSideX = 1 + int(std::ceil(float(width  - tileWidth)  / float(tileWidth  - tileParams.padding)));
-    const int nbTileSideY = 1 + int(std::ceil(float(height - tileHeight) / float(tileHeight - tileParams.padding)));
-
-    tileList.resize(nbTileSideX * nbTileSideY);
-
-    for(int i = 0; i < nbTileSideX; ++i)
-    {
-        const int startX = i * (tileWidth - tileParams.padding);
-        const int endX = std::min(startX + tileWidth, width);
-
-        for(int j = 0; j < nbTileSideY; ++j)
-        {
-            const int startY = j * (tileHeight - tileParams.padding);
-            const int endY = std::min(startY + tileHeight, height);
-
-            tileList.at(i * nbTileSideY + j) = ROI(startX, endX, startY, endY);
-        }
-    }
-}
-
 void getTileParams(const mvsUtils::MultiViewParams& mp, mvsUtils::TileParams& tileParams)
 {
     // get tile user parameters from MultiViewParams property_tree
@@ -178,7 +147,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     for(const int rc : cams)
     {
         std::vector<ROI> tileList;
-        getTileList(tileList, tileParams, mp, rc);
+        getTileList(tileParams, mp.getOriginalWidth(rc), mp.getOriginalHeight(rc), tileList);
 
         for(int i = 0; i < tileList.size(); ++i)
         {
