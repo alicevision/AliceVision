@@ -130,8 +130,8 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: Number of samples.")
         ("refineNDepthsToRefine", po::value<int>(&refineParams.nDepthsToRefine)->default_value(refineParams.nDepthsToRefine),
             "Refine: Number of depths.")
-        ("refineNiters", po::value<int>(&refineParams.nIters)->default_value(refineParams.nIters),
-            "Refine: Number of iterations.")
+        ("refineNiters", po::value<int>(&refineParams.optimizationNbIters)->default_value(refineParams.optimizationNbIters),
+            "Refine: Number of optimization iterations.")
         ("refineWSH", po::value<int>(&refineParams.wsh)->default_value(refineParams.wsh),
             "Refine: Size of the patch used to compute the similarity.")
         ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
@@ -140,10 +140,6 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaC threshold.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold.")
-        ("refineUseTcOrRcPixSize", po::value<bool>(&refineParams.useTcOrRcPixSize)->default_value(refineParams.useTcOrRcPixSize),
-            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
-        ("refineUseVolumeStrategy", po::value<bool>(&refineParams.useRefineFuseVolumeStrategy)->default_value(refineParams.useRefineFuseVolumeStrategy),
-            "Refine: Use volume strategy instead of legacy strategy for Refine/Fuse.")
         ("refineDoRefineFuse", po::value<bool>(&refineParams.doRefineFuse)->default_value(refineParams.doRefineFuse),
             "Refine: Perform Refine/Fuse.")
         ("refineDoRefineOptimization", po::value<bool>(&refineParams.doRefineOptimization)->default_value(refineParams.doRefineOptimization),
@@ -260,13 +256,11 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.maxTCams", refineParams.maxTCams);
     mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
     mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
-    mp.userParams.put("refine.nIters", refineParams.nIters);
+    mp.userParams.put("refine.optimizationNbIters", refineParams.optimizationNbIters);
     mp.userParams.put("refine.wsh", refineParams.wsh);
     mp.userParams.put("refine.sigma", refineParams.sigma);
     mp.userParams.put("refine.gammaC", refineParams.gammaC);
     mp.userParams.put("refine.gammaP", refineParams.gammaP);
-    mp.userParams.put("refine.useTcOrRcPixSize", refineParams.useTcOrRcPixSize);
-    mp.userParams.put("refine.useRefineFuseVolumeStrategy", refineParams.useRefineFuseVolumeStrategy);
     mp.userParams.put("refine.doRefineFuse", refineParams.doRefineFuse);
     mp.userParams.put("refine.doRefineOptimization", refineParams.doRefineOptimization);
     mp.userParams.put("refine.exportIntermediateResults", exportIntermediateResults);

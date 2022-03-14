@@ -84,13 +84,6 @@ private:
     void filterMaskedPixels(DepthSimMap& inout_depthSimMap);
 
     /**
-     * @brief Refine and fuse the given depth/sim map.
-     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth sim/map in device memory
-     * @param[out] out_depthSimMapRefinedFused_dmp the given output refined and fused depth/sim map in device memory
-     */
-    void refineAndFuseDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const;
-
-    /**
      * @brief Refine and fuse the given depth/sim map using volume strategy.
      * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth sim/map in device memory
      * @param[out] out_depthSimMapRefinedFused_dmp the given output refined and fused depth/sim map in device memory

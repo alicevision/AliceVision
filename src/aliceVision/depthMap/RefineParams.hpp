@@ -20,12 +20,10 @@ struct RefineParams
   int maxTCams = 6;
   int nDepthsToRefine = 31;
   int nSamplesHalf = 150;
-  int nIters = 100;
+  int optimizationNbIters = 100;
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
-  bool useTcOrRcPixSize = false; // only for original strategy
-  bool useRefineFuseVolumeStrategy = false;
   bool doRefineFuse = true;
   bool doRefineOptimization = true;
   bool exportIntermediateResults = false;
@@ -33,7 +31,7 @@ struct RefineParams
   // constant parameters
 
   const int scale = 1; 
-  const int stepXY = 1; // used only for volume strategy
+  const int stepXY = 1;
 };
 
 } // namespace depthMap

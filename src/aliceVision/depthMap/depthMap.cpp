@@ -118,12 +118,10 @@ void getRefineParams(const mvsUtils::MultiViewParams& mp, RefineParams& refinePa
     refineParams.maxTCams = mp.userParams.get<int>("refine.maxTCams", refineParams.maxTCams);
     refineParams.nDepthsToRefine = mp.userParams.get<int>("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
     refineParams.nSamplesHalf = mp.userParams.get<int>("refine.nSamplesHalf", refineParams.nSamplesHalf);
-    refineParams.nIters = mp.userParams.get<int>("refine.nIters", refineParams.nIters);
+    refineParams.optimizationNbIters = mp.userParams.get<int>("refine.optimizationNbIters", refineParams.optimizationNbIters);
     refineParams.sigma = mp.userParams.get<double>("refine.sigma", refineParams.sigma);
     refineParams.gammaC = mp.userParams.get<double>("refine.gammaC", refineParams.gammaC);
     refineParams.gammaP = mp.userParams.get<double>("refine.gammaP", refineParams.gammaP);
-    refineParams.useTcOrRcPixSize = mp.userParams.get<bool>("refine.useTcOrRcPixSize", refineParams.useTcOrRcPixSize);
-    refineParams.useRefineFuseVolumeStrategy = mp.userParams.get<bool>("refine.useRefineFuseVolumeStrategy", refineParams.useRefineFuseVolumeStrategy);
     refineParams.doRefineFuse = mp.userParams.get<bool>("refine.doRefineFuse", refineParams.doRefineFuse);
     refineParams.doRefineOptimization = mp.userParams.get<bool>("refine.doRefineOptimization", refineParams.doRefineOptimization);
     refineParams.exportIntermediateResults = mp.userParams.get<bool>("refine.exportIntermediateResults", refineParams.exportIntermediateResults);
