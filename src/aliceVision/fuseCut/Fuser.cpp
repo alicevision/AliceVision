@@ -11,10 +11,11 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Stat3d.hpp>
-#include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -34,25 +35,7 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
 #pragma omp parallel for reduction(+:npts)
     for(int rc = 0; rc < mp.ncams; rc++)
     {
-        const std::string filename = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale);
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(filename, metadata);
-        int nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
-
-        if(nbDepthValues < 0)
-        {
-            int width, height;
-            StaticVector<float> depthMap;
-            nbDepthValues = 0;
-
-            ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values.");
-
-            imageIO::readImage(mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-            // no need to transpose for this operation
-            for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); ++i)
-                nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
-        }
-
+        const unsigned long nbDepthValues = mvsUtils::getNbDepthValuesFromDepthMap(rc, mp, scale);
         npts += nbDepthValues;
     }
     return npts;
@@ -161,12 +144,7 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
     StaticVector<float> depthMap;
     StaticVector<float> simMap;
 
-    {
-        int width, height;
-
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-    }
+    mvsUtils::readDepthSimMap(rc, _mp, depthMap.getDataWritable(), simMap.getDataWritable(), 1);
 
     std::vector<unsigned char> numOfModalsMap(w * h, 0);
 
@@ -191,10 +169,7 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
         StaticVector<float> tcdepthMap;
 
-        {
-            int width, height;
-            imageIO::readImage(getFileNameFromIndex(_mp, tc, mvsUtils::EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        }
+        mvsUtils::readDepthMap(tc, _mp, tcdepthMap.getDataWritable(), 1);
 
         if(!tcdepthMap.empty())
         {
@@ -258,15 +233,12 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     std::vector<float> simMap;
     std::vector<unsigned char> numOfModalsMap;
 
+    mvsUtils::readDepthSimMap(rc, _mp, depthMap, simMap); // scale 1
+
     {
         int width, height;
-
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1), width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1), width, height, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
         imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), width, height, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
     }
-
-    int nbDepthValues = 0;
 
     for(int i = 0; i < w * h; i++)
     {
@@ -295,31 +267,9 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
             depthMap[i] = -1.0f;
             simMap[i] = 1.0f;
         }
-
-        if(depthMap[i] > 0.0f)
-          ++nbDepthValues;
     }
 
-    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(rc));
-    metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
-    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(rc)));
-    metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, _mp.CArr[rc].m));
-    metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, _mp.iCamArr[rc].m));
-    {
-        float minDepth, maxDepth, midDepth;
-        size_t nbDepths;
-        _mp.getMinMaxMidNbDepth(rc, minDepth, maxDepth, midDepth, nbDepths);
-        metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", maxDepth));
-        metadata.push_back(oiio::ParamValue("AliceVision:minDepth", minDepth));
-    }
-    {
-      std::vector<double> matrixP = _mp.getOriginalP(rc);
-      metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
-    }
-
-    using namespace imageIO;
-    writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
-    writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
+    mvsUtils::writeDepthSimMap(rc, _mp, depthMap, simMap, 0);
 
     ALICEVISION_LOG_DEBUG(rc << " solved.");
     mvsUtils::printfElapsedTime(t1);
@@ -342,12 +292,10 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
         int rc = cams[c];
         int h = _mp.getHeight(rc) / scaleuse;
         int w = _mp.getWidth(rc) / scaleuse;
+
         StaticVector<float> rcdepthMap;
 
-        {
-            int width, height;
-            imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, rcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        }
+      mvsUtils::readDepthMap(rc, _mp, rcdepthMap.getDataWritable(), scale);
 
         for(int y = 0; y < h; y++)
         {
@@ -441,11 +389,8 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
         int w = _mp.getWidth(rc);
 
         StaticVector<float> depthMap;
-        {
-            int width, height;
 
-            imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        }
+        mvsUtils::readDepthMap(rc, _mp, depthMap.getDataWritable(), scale);
 
         for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i += stepPts)
         {
@@ -485,11 +430,8 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
         int w = _mp.getWidth(rc);
 
         StaticVector<float> depthMap;
-        {
-            int width, height;
 
-            imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        }
+        mvsUtils::readDepthMap(rc, _mp, depthMap.getDataWritable(), scale);
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
         {
@@ -760,12 +702,7 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
             StaticVector<float> depthMap;
             StaticVector<float> simMap;
 
-            {
-                int width, height;
-
-                imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-                imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-            }
+            mvsUtils::readDepthSimMap(rc, mp, depthMap.getDataWritable(), simMap.getDataWritable(), scale);
 
             if(addRandomNoise)
             {

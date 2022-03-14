@@ -177,28 +177,28 @@ public:
      * @note the output depth map buffer is downscaled with the multi-view process downscale and the internal downscale.
      * @param[out] out_depthMap the output depth map
      */
-    void getDepthMapStep1(StaticVector<float>& out_depthMap) const;
+    void getDepthMapStep1(std::vector<float>& out_depthMap) const;
 
     /**
      * @brief Get the similarity map buffer without step computed from an interpolated subpart (based on the step).
      * @note the output similarity map buffer is downscaled with the multi-view process downscale and the internal downscale.
      * @param[out] out_simMap the output similarity map
      */
-    void getSimMapStep1(StaticVector<float>& out_simMap) const;
+    void getSimMapStep1(std::vector<float>& out_simMap) const;
 
     /**
      * @brief Get the depth map buffer .
      * @note the output depth map buffer is downscaled with the multi-view process downscale and the internal downscale/step.
      * @param[out] out_depthMap the output depth map
      */
-    void getDepthMap(StaticVector<float>& out_depthMap) const;
+    void getDepthMap(std::vector<float>& out_depthMap) const;
 
     /**
      * @brief Get the similarity map buffer.
      * @note the output similarity map buffer is downscaled with the multi-view process downscale and the internal downscale/step.
      * @param[out] out_simMap the output similarity map
      */
-    void getSimMap(StaticVector<float>& out_simMap) const;
+    void getSimMap(std::vector<float>& out_simMap) const;
 
     /**
      * @brief Copy depth/sim map buffer to an array in device memory. 
@@ -234,22 +234,12 @@ public:
     void save(const std::string& customSuffix = "", bool useStep1 = false) const;
 
     /**
-     * @brief Load the depth map and the similarity map from multple tile maps
-     * @param[in] tileRoiList the tile region of interest list
+     * @brief Load the depth map and the similarity map from files
      * @param[in] customSuffix the filename custom suffix
      */
-    void loadFromTiles(const std::vector<ROI>& tileRoiList, const std::string& customSuffix = "");
+    void load(const std::string& customSuffix = "");
 
 private:
-
-    // private methods
-
-    /**
-     * @brief Add the tile depth map and the tile similarity map with border weight
-     * @param[in] roi the tile region of interest list
-     * @param[in] customSuffix the filename custom suffix
-     */
-    void loadTileWeighted(const ROI& tileRoi, const std::string& customSuffix);
 
     // private members
 
