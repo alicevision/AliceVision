@@ -10,6 +10,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/Sgm.hpp>
@@ -179,26 +180,26 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         if(tileList.size() > 1)
         {
             DepthSimMap finalDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
-            finalDepthSimMap.loadFromTiles(tileList);
+            finalDepthSimMap.load();
             finalDepthSimMap.save();
 
             if(sgmParams.exportIntermediateResults)
             {
                 DepthSimMap sgmDepthSimMap(rc, mp, sgmParams.scale, sgmParams.stepXY);
-                sgmDepthSimMap.loadFromTiles(tileList, "_sgm");
+                sgmDepthSimMap.load("_sgm");
                 sgmDepthSimMap.save("_sgm");
 
                 DepthSimMap sgmStep1DepthSimMap(rc, mp, sgmParams.scale, 1);
-                sgmStep1DepthSimMap.loadFromTiles(tileList, "_sgmStep1");
+                sgmStep1DepthSimMap.load("_sgmStep1");
                 sgmStep1DepthSimMap.save("_sgmStep1");
             }
 
             if(refineParams.exportIntermediateResults)
             {
                 DepthSimMap refineDepthSimMap(rc, mp, refineParams.scale, refineParams.stepXY);
-                refineDepthSimMap.loadFromTiles(tileList, "_sgmUpscaled");
+                refineDepthSimMap.load("_sgmUpscaled");
                 refineDepthSimMap.save("_sgmUpscaled");
-                refineDepthSimMap.loadFromTiles(tileList, "_refinedFused");
+                refineDepthSimMap.load("_refinedFused");
                 refineDepthSimMap.save("_refinedFused");
             }
         }
@@ -233,11 +234,7 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
         {
             const int scale = 1;
             std::vector<float> depthMap;
-            {
-                int w = 0;
-                int h = 0;
-                readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageColorSpace::NO_CONVERSION);
-            }
+            mvsUtils::readDepthMap(rc, mp, depthMap);
 
             std::vector<ColorRGBf> normalMap;
             normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));

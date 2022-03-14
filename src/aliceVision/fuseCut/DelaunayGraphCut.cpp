@@ -17,6 +17,7 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
 #include <aliceVision/alicevision_omp.hpp>
@@ -295,39 +296,31 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         ALICEVISION_LOG_INFO("Create visibilities (" << c << "/" << cams.size() << ")");
         std::vector<float> depthMap;
         std::vector<float> simMap;
-        int width, height;
-        {
-            const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
-            imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
-            if(depthMap.empty())
-            {
-                ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
-                continue;
-            }
-            int wTmp, hTmp;
-            const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-            // If we have a simMap in input use it,
-            // else init with a constant value.
-            if(boost::filesystem::exists(simMapFilepath))
-            {
-                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                if(wTmp != width || hTmp != height)
-                    throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath +
-                                             ", " + depthMapFilepath);
-                {
-                    std::vector<float> simMapTmp(simMap.size());
-                    imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize,
-                                             simGaussianSize);
-                    simMap.swap(simMapTmp);
-                }
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("simMap file can't be found.");
-                simMap.resize(width * height, -1);
-            }
+        const int width = mp.getWidth(c);
+        const int height = mp.getHeight(c);
 
+        // read depth map
+        mvsUtils::readDepthMap(c, mp, depthMap, 0);
+        if(depthMap.empty())
+        {
+            ALICEVISION_LOG_WARNING("Empty depth map (cam id: " << c << ")");
+            continue;
         }
+
+        // read similarity map
+        try
+        {
+            mvsUtils::readSimMap(c, mp, simMap, 0);
+            std::vector<float> simMapTmp(simMap.size());
+            imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
+            simMap.swap(simMapTmp);
+        }
+        catch(const std::exception& e)
+        {
+            ALICEVISION_LOG_WARNING("Cannot find similarity map file.");
+            simMap.resize(width * height, -1);
+        }
+        
         // Add visibility
         #pragma omp parallel for
         for(int y = 0; y < height; ++y)
@@ -948,17 +941,17 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
         for(int c = 0; c < cams.size(); c++)
         {
             std::vector<float> depthMap;
-            int width, height;
-            {
-                const std::string depthMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                if(depthMap.empty())
-                {
-                    ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
-                    continue;
-                }
-            }
+            const int width = _mp.getWidth(c);
+            const int height = _mp.getHeight(c);
 
+            mvsUtils::readDepthMap(c, _mp, depthMap, 0);
+
+            if(depthMap.empty())
+            {
+                ALICEVISION_LOG_WARNING("Empty depth map (cam id: " << c << ")");
+                continue;
+            }
+            
             int syMax = std::ceil(height / step);
             int sxMax = std::ceil(width / step);
 
@@ -1089,43 +1082,41 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             std::vector<float> depthMap;
             std::vector<float> simMap;
             std::vector<unsigned char> numOfModalsMap;
-            int width, height;
+
+            const int width = _mp.getWidth(c);
+            const int height = _mp.getHeight(c);
+
             {
-                const std::string depthMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
+                // read depth map
+                mvsUtils::readDepthMap(c, _mp, depthMap, 0);
                 if(depthMap.empty())
                 {
-                    ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
+                    ALICEVISION_LOG_WARNING("Empty depth map (cam id: " << c << ")");
                     continue;
                 }
-                int wTmp, hTmp;
-                const std::string simMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::simMap, 0);
-                // If we have a simMap in input use it,
-                // else init with a constant value.
-                if(boost::filesystem::exists(simMapFilepath))
+
+                // read similarity map
+                try
                 {
-                    imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                    if(wTmp != width || hTmp != height)
-                        throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
-                    {
-                        std::vector<float> simMapTmp(simMap.size());
-                        imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian",
-                    params.simGaussianSizeInit, params.simGaussianSizeInit); simMap.swap(simMapTmp);
-                    }
+                    mvsUtils::readSimMap(c, _mp, simMap, 0);
+                    std::vector<float> simMapTmp(simMap.size());
+                    imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit,params.simGaussianSizeInit);
+                    simMap.swap(simMapTmp);
                 }
-                else
+                catch(const std::exception& e)
                 {
-                    ALICEVISION_LOG_WARNING("simMap file can't be found.");
+                    ALICEVISION_LOG_WARNING("Cannot find similarity map file.");
                     simMap.resize(width * height, -1);
                 }
 
+                // read nmod map
+                int wTmp, hTmp;
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap, 0);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
                 if(boost::filesystem::exists(nmodMapFilepath))
                 {
-                    imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
-                                       imageIO::EImageColorSpace::NO_CONVERSION);
+                    imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
                     if(wTmp != width || hTmp != height)
                         throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
                 }
