@@ -85,15 +85,15 @@ int aliceVision_main(int argc, char* argv[])
         ("downscale", po::value<int>(&downscale)->default_value(downscale),
             "Image downscale factor.")
         ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
-            "minimum angle between two views.")
+            "Minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
-            "maximum angle between two views.")
+            "Maximum angle between two views.")
         ("tileWidth", po::value<int>(&tileParams.width)->default_value(tileParams.width),
-            "maximum tile width.")
+            "Maximum tile width.")
         ("tileHeight", po::value<int>(&tileParams.height)->default_value(tileParams.height),
-            "maximum tile height.")
+            "Maximum tile height.")
         ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
-            "tile padding for overlapping.")
+            "Tile padding for overlapping.")
         ("tileMerge", po::value<bool>(&tileParams.mergeTiles)->default_value(tileParams.mergeTiles),
             "Read & merge all computed tiles.")
         ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),
