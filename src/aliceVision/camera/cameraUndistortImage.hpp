@@ -66,19 +66,23 @@ void UndistortImage(
     
     
     #pragma omp parallel for
-    for(int j = 0; j < heightRoi; ++j)
-        for(int i = 0; i < widthRoi; ++i)
-        {       
-            const Vec2 undisto_pix(i + xOffset, j + yOffset); 
+    for (int i = 0; i < heightRoi; ++i)
+    {
+        for (int j = 0; j < widthRoi; ++j)
+        {
+            const Vec2 undisto_pix(j + xOffset, i + yOffset);
             // compute coordinates with distortion
             const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
-           
+
             // pick pixel if it is in the image domain
-            if(imageIn.Contains(disto_pix(1), disto_pix(0)))
-                image_ud(j, i) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
+                image_ud(i, j) = sampler(imageIn, disto_pix(1), disto_pix(0));
         }
+    }
   }
 }
+
+
 
 } // namespace camera
 } // namespace aliceVision

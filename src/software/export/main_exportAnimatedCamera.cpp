@@ -38,11 +38,13 @@ namespace fs = boost::filesystem;
 oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincipalPoint)
 
 {
+
     std::vector<Vec2> pointToBeChecked;
     pointToBeChecked.push_back(Vec2(0, 0));
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, 0));
     pointToBeChecked.push_back(Vec2(0, intrinsic->h() - 1));
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, intrinsic->h() - 1));
+    
     const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
     Vec2 ppCorrection(0, 0);
     if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType())
@@ -86,6 +88,7 @@ oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincip
     return rod;
 }
 
+
 oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::ROI& rod)
 {
     const int xOffset = rod.xbegin;
@@ -95,6 +98,59 @@ oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::RO
 
     ALICEVISION_LOG_DEBUG("roi:" << roi.xbegin << ";" << roi.xend << ";" << roi.ybegin << ";" << roi.yend);
     return roi;
+}
+
+/// Undistortion 2D MAP according to a given camera and its distortion model
+inline void UndistortMap(
+    const camera::IntrinsicBase* intrinsicPtr,
+    image::Image<image::RGBfColor>& stmap,
+    bool correctPrincipalPoint = false,
+    const oiio::ROI& roi = oiio::ROI())
+{
+    const Vec2 center(intrinsicPtr->w() * 0.5, intrinsicPtr->h() * 0.5);
+    Vec2 ppCorrection(0.0, 0.0);
+
+    if (correctPrincipalPoint)
+    {
+        if (camera::isPinhole(intrinsicPtr->getType()))
+        {
+            const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
+            ppCorrection = pinholePtr->getPrincipalPoint() - center;
+        }
+    }
+
+    int widthRoi = intrinsicPtr->w();
+    int heightRoi = intrinsicPtr->h();
+    int xOffset = 0;
+    int yOffset = 0;
+    if (roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    stmap.resize(widthRoi, heightRoi, true, image::RGBfColor(-1.0f, -1.0f, 0.0f));
+    const image::Sampler2d<image::SamplerLinear> sampler;
+
+#pragma omp parallel for
+    for (int i = 0; i < heightRoi; ++i)
+    {
+        for (int j = 0; j < widthRoi; ++j)
+        {
+            const Vec2 undisto_pix(j + xOffset, i + yOffset);
+
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
+
+            if (disto_pix.x() < 0 || disto_pix.x() >= intrinsicPtr->w()) continue;
+            if (disto_pix.y() < 0 || disto_pix.y() >= intrinsicPtr->h()) continue;
+
+            stmap(i, j).r() = float((disto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
+            stmap(i, j).g() = float((float(intrinsicPtr->h()) - 1.0f - disto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
+        }
+    }
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -131,7 +187,7 @@ int aliceVision_main(int argc, char** argv)
       "Export undistorted images for the animated camera(s).\n"
       "If false, animated camera(s) exported with original frame paths.")
     ("exportFullROD", po::value<bool>(&exportFullROD)->default_value(exportFullROD),
-      "Export undistorted images with the full Region of Definition (RoD). Only supported by the EXR image file format.")
+      "Export undistorted images and/or STMap with the full Region of Definition (RoD). Only supported by the EXR image file format.")
     ("exportUVMaps", po::value<bool>(&exportUVMaps)->default_value(exportUVMaps),
       "Export UV Maps in exr format to apply distort/undistort transformations in a compositing software.")
     ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
@@ -186,7 +242,7 @@ int aliceVision_main(int argc, char** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if(exportFullROD && outputFileType != image::EImageFileType::EXR)
+  if(exportFullROD && undistortedImages && outputFileType != image::EImageFileType::EXR)
   {
     ALICEVISION_LOG_ERROR("Export full RoD (Region Of Definition) is only possible in EXR file format and not in '" << outputFileType << "'.");
     return EXIT_FAILURE;
@@ -242,8 +298,8 @@ int aliceVision_main(int argc, char** argv)
 
     sfmDataExport.getViews().emplace(view.getViewId(), viewPair.second);
 
-    // Export intrinsics with at least one view with a valid pose
-    if(sfmData.isPoseAndIntrinsicDefined(&view))
+    // Export intrinsics if defined
+    if(view.getIntrinsicId() != UndefinedIndexT)
     {
         // std::map::emplace does nothing if the key already exist
         sfmDataExport.getIntrinsics().emplace(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
@@ -262,68 +318,42 @@ int aliceVision_main(int argc, char** argv)
   // export distortion map / one image per intrinsic
   if(exportUVMaps)
   {
+      oiio::ParamValueList targetMetadata;
+      targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", "float"));
       for(const auto& intrinsicPair : sfmDataExport.getIntrinsics())
       {
-          const camera::IntrinsicBase& intrinsic = *(intrinsicPair.second);
-          image::Image<image::RGBfColor> image_dist;
-          // Init image as black (no distortion)
-          image_dist.resize(int(intrinsic.w()), int(intrinsic.h()), true, image::FBLACK);
+          const auto & intrinsic = intrinsicPair.second;
+          image::Image<image::RGBfColor> stmap;
 
-          // Compute UV vertors for distortion
-          const Vec2 center(intrinsic.w() * 0.5, intrinsic.h() * 0.5);
-          Vec2 ppCorrection(0.0, 0.0);
-
-          if((camera::EINTRINSIC::VALID_PINHOLE & intrinsic.getType()) && correctPrincipalPoint)// correct principal point
+          if (intrinsic->isValid())
           {
-              const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPair.second.get());
-              ppCorrection = pinholePtr->getPrincipalPoint() - center;
-          }
-          ALICEVISION_LOG_DEBUG("ppCorrection:" + std::to_string(ppCorrection[0]) + ";" +std::to_string(ppCorrection[1]));
+              const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_stmap.exr")).string();
 
-          // UV Map: Undistort
-          {
-              // flip and normalize as UVMap
-    #pragma omp parallel for
-              for(int y = 0; y < int(intrinsic.h()); ++y)
+              // undistort the image and save it
+              if (exportFullROD)
               {
-                  for(int x = 0; x < int(intrinsic.w()); ++x)
+                  // build a ROI
+                  const IndexT key = intrinsicPair.first;
+                  oiio::ROI rod;
+                  if (roiForIntrinsic.find(key) == roiForIntrinsic.end())
                   {
-                      const Vec2 undisto_pix(x, y);
-                      // compute coordinates with distortion
-                      const Vec2 disto_pix = intrinsic.get_d_pixel(undisto_pix) + ppCorrection;
-
-                      image_dist(y, x).r() = float((disto_pix[0]) / (intrinsic.w() - 1));
-                      image_dist(y, x).g() = float((intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1));
+                      rod = computeRod(intrinsic.get(), correctPrincipalPoint);
+                      roiForIntrinsic[key] = rod;
                   }
+                  else
+                  {
+                      rod = roiForIntrinsic[key];
+                  }
+
+                  UndistortMap(intrinsic.get(), stmap, correctPrincipalPoint, rod);
+                  const oiio::ROI roi = convertRodToRoi(intrinsic.get(), rod);
+                  writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata, roi);
               }
-
-              const std::string dstImage =
-                  (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
-                                                  image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
-          }
-
-          // UV Map: Distort
-          {
-              // flip and normalize as UVMap
-    #pragma omp parallel for
-              for(int y = 0; y < int(intrinsic.h()); ++y)
+              else
               {
-                  for(int x = 0; x < int(intrinsic.w()); ++x)
-                  {
-                      const Vec2 disto_pix(x, y);
-                      // compute coordinates without distortion
-                      const Vec2 undisto_pix = intrinsic.get_ud_pixel(disto_pix) - ppCorrection;
-
-                      image_dist(y, x).r() = float((undisto_pix[0]) / (intrinsic.w() - 1));
-                      image_dist(y, x).g() = float((intrinsic.h() - 1 - undisto_pix[1]) / (intrinsic.h() - 1));
-                  }
+                  UndistortMap(intrinsic.get(), stmap, correctPrincipalPoint);
+                  image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
               }
-
-              const std::string dstImage =
-                  (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
-                                                  image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
           }
       }
   }
