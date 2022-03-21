@@ -36,9 +36,7 @@ namespace fs = boost::filesystem;
 
 
 oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincipalPoint)
-
 {
-
     std::vector<Vec2> pointToBeChecked;
     pointToBeChecked.push_back(Vec2(0, 0));
     pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, 0));
@@ -149,6 +147,59 @@ inline void UndistortMap(
 
             stmap(i, j).r() = float((disto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
             stmap(i, j).g() = float((float(intrinsicPtr->h()) - 1.0f - disto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
+        }
+    }
+}
+
+/// Distortion 2D MAP according to a given camera and its distortion model
+inline void distortMap(
+    const camera::IntrinsicBase* intrinsicPtr,
+    image::Image<image::RGBfColor>& stmap,
+    bool correctPrincipalPoint = false,
+    const oiio::ROI& roi = oiio::ROI())
+{
+    const Vec2 center(intrinsicPtr->w() * 0.5, intrinsicPtr->h() * 0.5);
+    Vec2 ppCorrection(0.0, 0.0);
+
+    if (correctPrincipalPoint)
+    {
+        if (camera::isPinhole(intrinsicPtr->getType()))
+        {
+            const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
+            ppCorrection = pinholePtr->getPrincipalPoint() - center;
+        }
+    }
+
+    int widthRoi = intrinsicPtr->w();
+    int heightRoi = intrinsicPtr->h();
+    int xOffset = 0;
+    int yOffset = 0;
+    if (roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    stmap.resize(widthRoi, heightRoi, true, image::RGBfColor(-1.0f, -1.0f, 0.0f));
+    const image::Sampler2d<image::SamplerLinear> sampler;
+
+#pragma omp parallel for
+    for (int i = 0; i < heightRoi; ++i)
+    {
+        for (int j = 0; j < widthRoi; ++j)
+        {
+            const Vec2 disto_pix(j + xOffset, i + yOffset);
+
+            // compute coordinates with distortion
+            const Vec2 undisto_pix = intrinsicPtr->get_ud_pixel(disto_pix) - ppCorrection;
+
+            if (undisto_pix.x() < 0 || undisto_pix.x() >= intrinsicPtr->w()) continue;
+            if (undisto_pix.y() < 0 || undisto_pix.y() >= intrinsicPtr->h()) continue;
+
+            stmap(i, j).r() = float((undisto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
+            stmap(i, j).g() = float((float(intrinsicPtr->h()) - 1.0f - undisto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
         }
     }
 }
@@ -327,7 +378,7 @@ int aliceVision_main(int argc, char** argv)
 
           if (intrinsic->isValid())
           {
-              const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_stmap.exr")).string();
+              const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_undistort_stmap.exr")).string();
 
               // undistort the image and save it
               if (exportFullROD)
@@ -352,6 +403,13 @@ int aliceVision_main(int argc, char** argv)
               else
               {
                   UndistortMap(intrinsic.get(), stmap, correctPrincipalPoint);
+                  image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
+              }
+
+              //Distort st map
+              {
+                  const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_distort_stmap.exr")).string();
+                  distortMap(intrinsic.get(), stmap, correctPrincipalPoint);
                   image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
               }
           }
