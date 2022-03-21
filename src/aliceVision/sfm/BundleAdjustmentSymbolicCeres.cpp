@@ -885,7 +885,6 @@ bool BundleAdjustmentSymbolicCeres::adjust(sfmData::SfMData& sfmData, ERefineOpt
   ceres::Solve(options, &problem, &summary);
 
   // print summary
-  std::cout << "symbolic" << std::endl;
   if(_ceresOptions.summary) {
     ALICEVISION_LOG_INFO(summary.FullReport());
   }

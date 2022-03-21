@@ -249,6 +249,19 @@ if(ALICEVISION_BUILD_SFM)
           Boost::boost
   )
 
+   alicevision_add_software(aliceVision_checkerboardRigCalibration
+    SOURCE main_checkerboardRigCalibration.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_dataio
+          aliceVision_calibration
+          aliceVision_system
+          aliceVision_sfmDataIO
+          aliceVision_multiview
+          aliceVision_sfm
+          Boost::program_options
+          Boost::boost
+  )
+
   alicevision_add_software(aliceVision_checkerboardDetection
     SOURCE main_checkerboardDetection.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}

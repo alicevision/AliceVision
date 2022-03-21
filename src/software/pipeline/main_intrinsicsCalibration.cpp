@@ -296,8 +296,6 @@ int aliceVision_main(int argc, char* argv[])
         //Initialize camera intrinsics
         cameraPinhole->setK(A);
 
-        sfmData::SfMData tmpSfmData;
-        tmpSfmData.getIntrinsics()[0] = cameraPinhole;
 
         //Create landmarks
         Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> indices(max_checkerboard_h, max_checkerboard_w);
@@ -308,8 +306,8 @@ int aliceVision_main(int argc, char* argv[])
             {
                 indices(i, j) = posLandmark;
 
-                sfmData::Landmark l(Vec3(squareSize* double(j), squareSize * double(i), 0.0));
-                tmpSfmData.getLandmarks()[posLandmark] = l;
+                sfmData::Landmark l(Vec3(squareSize* double(j), squareSize * double(i), 0.0), feature::EImageDescriberType::SIFT);
+                sfmData.getLandmarks()[posLandmark] = l;
                 posLandmark++;
             }
         }
@@ -337,7 +335,7 @@ int aliceVision_main(int argc, char* argv[])
             geometry::Pose3 pose(T);
             sfmData::CameraPose cp;
             cp.setTransform(pose);
-            tmpSfmData.getPoses()[pH.first] = cp;
+            sfmData.getPoses()[pH.first] = cp;
         }
 
 
@@ -350,6 +348,8 @@ int aliceVision_main(int argc, char* argv[])
             const auto& bs = detector.getBoards();
             const auto& b = bs[0];
             const auto& corners = detector.getCorners();
+
+            auto & curview = sfmData.getViews()[viewId];
 
             for (int i = 0; i < b.rows(); i++)
             {
@@ -371,11 +371,8 @@ int aliceVision_main(int argc, char* argv[])
 
                     //Add observation
                     sfmData::Observation obs(p, idxlandmark, 1.0);
-                    tmpSfmData.getLandmarks()[idxlandmark].observations[viewId] = obs;
+                    sfmData.getLandmarks()[idxlandmark].observations[viewId] = obs;
                 }
-
-                std::shared_ptr<sfmData::View> v = std::make_shared<sfmData::View>("", viewId, 0, viewId, cameraPinhole->w(), cameraPinhole->h(), UndefinedIndexT, UndefinedIndexT);
-                tmpSfmData.getViews()[viewId] = v;
             }
         }
 
@@ -387,7 +384,11 @@ int aliceVision_main(int argc, char* argv[])
         sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION | 
                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION | 
                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
-        ba.adjust(tmpSfmData, boptions);
+        if (!ba.adjust(sfmData, boptions))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return EXIT_FAILURE;
+        }
     }
 
     //Save sfmData to disk

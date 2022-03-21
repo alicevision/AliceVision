@@ -286,6 +286,15 @@ alicevision_add_software(aliceVision_utils_generateSampleScene
         ${Boost_LIBRARIES}
 )
 
+alicevision_add_software(aliceVision_utils_rigCreate
+    SOURCE main_rigCreate.cpp
+    FOLDER ${FOLDER_SOFTWARE_UTILS}
+    LINKS aliceVision_dataio
+          aliceVision_system
+          aliceVision_sfmDataIO
+          Boost::program_options
+          Boost::filesystem
+  )
 
 # Perform color chart detection
 if(ALICEVISION_HAVE_OPENCV)
