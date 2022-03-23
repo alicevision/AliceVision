@@ -6,23 +6,18 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
-#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
-#include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
+#include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
-#include <cuda_runtime.h>
+#include <vector>
+#include <string>
 
 namespace aliceVision {
 namespace depthMap {
-
-struct RefineParams;
-
-template <class Type, unsigned Dim>
-class CudaDeviceMemoryPitched;
 
 /**
  * @brief Depth Map Estimation Refine
@@ -33,93 +28,84 @@ public:
 
     /**
      * @brief Refine constructor.
-     * @param[in] rc the R camera index
-     * @param[in] ic the image cache
      * @param[in] mp the multi-view parameters
      * @param[in] tileParams tile workflow parameters
      * @param[in] refineParams the Refine parameters
-     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      * @param[in] stream the stream for gpu execution
      */
-    Refine(int rc,
-           mvsUtils::ImagesCache<ImageRGBAf>& ic,
-           const mvsUtils::MultiViewParams& mp,
+    Refine(const mvsUtils::MultiViewParams& mp,
            const mvsUtils::TileParams& tileParams,   
            const RefineParams& refineParams, 
-           const ROI& roi,
            cudaStream_t stream);
+
+    // no default constructor
+    Refine() = delete;
 
     // default destructor
     ~Refine() = default;
 
+    inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthSimMap() const { return _optimizedDepthSimMap_dmp; }
+
+    /**
+     * @brief Get memory consumpyion in device memory.
+     * @return device memory consumpyion (in MB)
+     */
+    double getDeviceMemoryConsumption() const;
+
     /**
      * @brief Refine for a single R camera the Semi-Global Matching depth/sim map.
+     * @param[in] rc the R camera index
+     * @param[in] tCams the T cameras indexes
+     * @param[in] in_sgmDepthSimMap_dmp the SGM result depth/sim map in device memory
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void refineRc(const DepthSimMap& sgmDepthSimMap);
-
-    inline const StaticVector<int>& getTCams() const { return _tCams; }
-
-    /**
-     * @brief Get the depth/sim map of the Refine result.
-     * @return the depth/sim map of the Refine result
-     */
-    inline const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
+    void refineRc(int rc, 
+                  const std::vector<int>& in_tCams,
+                  const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp,
+                  const ROI& roi);
 
 private:
 
     // private methods
 
     /**
-     * @brief Upscale the given SGM depth/sim map.
-     * @param[in] sgmDepthSimMap the given SGM depth/sim map
-     * @param[in,out] out_depthSimMapUpscaled the given output depth/sim map
-     * @note Dimensions of the given output depth/sim map are used to compute the scale factor.
-     */
-    void upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapUpscaled) const;
-
-    /**
-     * @brief Filter masked pixels (alpha < 0.1) of the given depth/sim map.
-     * @param[in,out] inout_depthSimMap the given depth/sim map
-     */
-    void filterMaskedPixels(DepthSimMap& inout_depthSimMap);
-
-    /**
      * @brief Refine and fuse the given depth/sim map using volume strategy.
-     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth sim/map in device memory
-     * @param[out] out_depthSimMapRefinedFused_dmp the given output refined and fused depth/sim map in device memory
+     * @param[in] rc the R camera index
+     * @param[in] tcams the T cameras indexes
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void refineAndFuseDepthSimMapVolume(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp, CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapRefinedFused_dmp) const;
+    void refineAndFuseDepthSimMap(int rc, const std::vector<int>& tCams, const ROI& roi);
 
     /**
-     * @brief Optimize the given depth/sim maps.
-     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth/sim map in device memory
-     * @param[in] depthSimMapRefinedFused_dmp the given refined and fused depth/sim map in device memory
-     * @param[out] out_depthSimMapOptimized_dmp the given output optimized depth/sim map in device memory
+     * @brief Optimize the refined depth/sim maps.
+     * @param[in] rc the R camera index
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void optimizeDepthSimMap(const CudaDeviceMemoryPitched<float2, 2>& depthSimMapSgmUpscale_dmp,
-                             const CudaDeviceMemoryPitched<float2, 2>& depthSimMapRefinedFused_dmp,
-                             CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp) const;
+    void optimizeDepthSimMap(int rc, const ROI& roi);
 
     /**
      * @brief Export volume cross alembic file and 9 points csv file.
-     * @param[in] in_volSim_dmp the given similarity volume in device memory
-     * @param[in] depthSimMapSgmUpscale_dmp the given upscaled SGM depth/sim map in device memory
+     * @param[in] rc the R camera index
      * @param[in] name the export filename
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void exportVolumeInformation(const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp,
-                                 const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapSgmUpscale_dmp,
-                                 const std::string& name) const;
+    void exportVolumeInformation(int rc, const std::string& name, const ROI& roi) const;
 
     // private members
 
-    const int _rc;                            // related R camera index
-    const RefineParams& _refineParams;        // Refine parameters
-    const mvsUtils::MultiViewParams& _mp;     // Multi-view parameters
-    const mvsUtils::TileParams& _tileParams;  // tile workflow parameters
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic;   // Image cache
-    StaticVector<int> _tCams;                 // T camera indexes, computed in the constructor
-    DepthSimMap _depthSimMap;                 // refined, fused and optimized depth map
-    cudaStream_t _stream;                     // stream for gpu execution
+    const mvsUtils::MultiViewParams& _mp;                          // Multi-view parameters
+    const mvsUtils::TileParams& _tileParams;                       // tile workflow parameters
+    const RefineParams& _refineParams;                             // Refine parameters
+
+    // private members in device memory
+
+    CudaDeviceMemoryPitched<float2, 2> _sgmDepthPixSizeMap_dmp;    // rc upscaled SGM depth/pixSize map
+    CudaDeviceMemoryPitched<float2, 2> _refinedDepthSimMap_dmp;    // rc refined and fused depth/sim map
+    CudaDeviceMemoryPitched<float2, 2> _optimizedDepthSimMap_dmp;  // rc optimized depth/sim map
+    CudaDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   // rc refine similarity volume
+    CudaDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         // for optimization: temporary depth map buffer
+    CudaDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         // for optimization: image variance buffer
+    cudaStream_t _stream;                                          // stream for gpu execution
 };
 
 } // namespace depthMap

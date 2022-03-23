@@ -3,7 +3,7 @@ set(depthMap_files_headers
   BufPtr.hpp
   computeOnMultiGPUs.hpp
   depthMap.hpp
-  DepthSimMap.hpp
+  depthMapUtils.hpp
   Refine.hpp
   RefineParams.hpp
   Sgm.hpp
@@ -16,7 +16,7 @@ set(depthMap_files_headers
 set(depthMap_files_sources
   computeOnMultiGPUs.cpp
   depthMap.cpp
-  DepthSimMap.cpp
+  depthMapUtils.cpp
   Refine.cpp
   Sgm.cpp
   SgmDepthList.cpp

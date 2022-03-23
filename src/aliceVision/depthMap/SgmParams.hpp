@@ -46,7 +46,6 @@ struct SgmParams
   const double seedsRangeInflate = 0.2;
   const double seedsRangePercentile = 0.999;
   const bool doSgmOptimizeVolume = true;
-  const bool interpolateRetrieveBestDepth = false;
   const bool saveDepthsToSweepTxtFile = false;
   const bool useSameDepthListPerTile = true;
 };

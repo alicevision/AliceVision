@@ -28,6 +28,16 @@ struct TileParams
 };
 
  /**
+ * @brief Get tile dimensions from tile parameters and max tile width/height
+ * @param[in] tileParams the tile parameters
+ * @param[in] maxWidth the tile maximum width, image maximum width for a single tile
+ * @param[in] maxHeight the tile maximum height, image maximum height for a single tile
+ * @param[out] tileWidth the user specified width or the input maxWidth
+ * @param[out] tileHeight the user specified height or the input maxHeight
+ */
+void getTileDimensions(const TileParams& tileParams, int maxWidth, int maxHeight, int& tileWidth, int& tileHeight);
+
+ /**
  * @brief Get tile list from tile parameters and image width/height
  * @param[in] tileParams the tile parameters
  * @param[in] originalWidth the image original width

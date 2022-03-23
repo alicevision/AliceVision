@@ -22,13 +22,15 @@
 namespace aliceVision {
 namespace depthMap {
 
-SgmDepthList::SgmDepthList(int rc, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi)
+SgmDepthList::SgmDepthList(int rc, const std::vector<int>& tCams, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi)
     : _rc(rc)
     , _roi(roi)
     , _mp(mp)
     , _sgmParams(sgmParams)
 {
-    _tCams = _mp.findNearestCamsFromLandmarks(_rc, _sgmParams.maxTCams);
+    _tCams = tCams; // copy
+    if(_tCams.size() > sgmParams.maxTCams)
+      _tCams.resize(sgmParams.maxTCams); // shrink T cameras
 }
 
 void SgmDepthList::computeListRc()
@@ -332,7 +334,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
 
 StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(float midDepth)
 {
-    StaticVector<int> tCamsNew;
+    std::vector<int> tCamsNew;
     StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>();
     alldepths->reserve(_tCams.size());
 

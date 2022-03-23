@@ -43,17 +43,28 @@ public:
     void clear();
 
     /**
-     * @brief Request an image in current gpu device cache.
+     * @brief Build the current device cache with the given maximum number of cameras.
+     * @param[in] maxNbCameras the maximum number of cameras in the current device cache
+     */
+    void buildCache(int maxNbCameras);
+
+    /**
+     * @brief Add a camera (images + parameters) in current gpu device cache.
      * @param[in] globalCamId the camera index in the ImagesCache / MultiViewParams
      * @param[in] downscale the downscale to apply on gpu
      * @param[in,out] imageCache the image cache to get host-side data
      * @param[in] mp the multi-view parameters
-     * @param[in] stream the CUDA stream for gpu execution
      */
-    const DeviceCamera& requestCamera(int globalCamId, int downscale, 
-                                      mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-                                      const mvsUtils::MultiViewParams& mp, 
-                                      cudaStream_t stream = 0);
+    void addCamera(int globalCamId, int downscale, mvsUtils::ImagesCache<ImageRGBAf>& imageCache, const mvsUtils::MultiViewParams& mp);
+
+    /**
+     * @brief Request a camera (images + parameters) in current gpu device cache.
+     * @param[in] globalCamId the camera index in the ImagesCache / MultiViewParams
+     * @param[in] downscale the downscale to apply on gpu
+     * @param[in] mp the multi-view parameters
+     * @return DeviceCamera (images + parameters)
+     */
+    const DeviceCamera& requestCamera(int globalCamId, int downscale, const mvsUtils::MultiViewParams& mp);
 
 private:
 
@@ -69,15 +80,14 @@ private:
      */
     struct SingleDeviceCache 
     {
-        SingleDeviceCache();
+        SingleDeviceCache(int maxNbCameras);
         ~SingleDeviceCache() = default;
 
-        const int maxNbCameras = 2; // TODO: should be computed
         LRUCameraCache cameraCache; // Least Recently Used device camera id cache
         std::vector<std::unique_ptr<DeviceCamera>> cameras;
     };
 
-    std::map<int, SingleDeviceCache> _cachePerDevice; // <cudaDeviceId, SingleDeviceCache>
+    std::map <int, std::unique_ptr<SingleDeviceCache>> _cachePerDevice; // <cudaDeviceId, SingleDeviceCachePtr>
 };
 
 /**

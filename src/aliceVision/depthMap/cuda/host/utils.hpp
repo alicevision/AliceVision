@@ -66,11 +66,11 @@ void logDeviceMemoryInfo();
 
 /**
  * @brief Get current CUDA device memory information.
- * @param[out] available the available memory in MB on the current CUDA device
- * @param[out] used the used memory in MB on the current CUDA device
- * @param[out] total the total memory in MB on the current CUDA device
+ * @param[out] availableMB the available memory in MB on the current CUDA device
+ * @param[out] usedMB the used memory in MB on the current CUDA device
+ * @param[out] totalMB the total memory in MB on the current CUDA device
  */
-void getDeviceMemoryInfo(double& available, double& used, double& total);
+void getDeviceMemoryInfo(double& availableMB, double& usedMB, double& totalMB);
 
 } // namespace depthMap
 } // namespace aliceVision

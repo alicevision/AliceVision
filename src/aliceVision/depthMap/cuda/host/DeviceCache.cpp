@@ -144,18 +144,22 @@ void fillHostCameraParameters(DeviceCameraParams& cameraParameters_h, int global
     initCameraMatrix(cameraParameters_h);
 }
 
-DeviceCache::SingleDeviceCache::SingleDeviceCache()
+DeviceCache::SingleDeviceCache::SingleDeviceCache(int maxNbCameras)
     : cameraCache(maxNbCameras)
 {
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
 
-    ALICEVISION_LOG_TRACE("Initialize device cache (CUDA device id: " << cudaDeviceId  << ").");
+    ALICEVISION_LOG_TRACE("Initialize device cache (device id: " << cudaDeviceId << ", cameras: " << maxNbCameras << ").");
 
     // initialize Gaussian filters in GPU constant memory
     cuda_createConstantGaussianArray(cudaDeviceId, DEVICE_MAX_DOWNSCALE); // force at compilation to build with maximum pre-computed Gaussian scales. 
 
+    if(maxNbCameras > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
+        ALICEVISION_THROW_ERROR("Cannot initialize device cache with more than " << ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS << " cameras (device id: " << cudaDeviceId << ", cameras: " << maxNbCameras << ").")
+
     // initialize cached camera containers
+    cameras.reserve(maxNbCameras);
     for(int i = 0; i < maxNbCameras; ++i)
     {
         cameras.push_back(std::make_unique<DeviceCamera>(i));
@@ -174,16 +178,25 @@ void DeviceCache::clear()
         _cachePerDevice.erase(it);
 }
 
-const DeviceCamera& DeviceCache::requestCamera(int globalCamId, int downscale, 
-                                               mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-                                               const mvsUtils::MultiViewParams& mp, 
-                                               cudaStream_t stream)
+void DeviceCache::buildCache(int maxNbCameras)
+{
+    // get the current device id
+    const int cudaDeviceId = getCudaDeviceId();
+
+    // reset the current device cache
+    _cachePerDevice[cudaDeviceId].reset(new SingleDeviceCache(maxNbCameras));
+}
+
+void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCache<ImageRGBAf>& imageCache, const mvsUtils::MultiViewParams& mp)
 {
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
 
     // get the current device cache
-    SingleDeviceCache& currentDeviceCache = _cachePerDevice[cudaDeviceId];
+    if(_cachePerDevice[cudaDeviceId] == nullptr)
+        ALICEVISION_THROW_ERROR("Cannot add camera, device cache is not initialized (cuda device id: " << cudaDeviceId <<").")
+
+    SingleDeviceCache& currentDeviceCache = *_cachePerDevice[cudaDeviceId];
 
     // find out with the LRU (Least Recently Used) strategy if the camera is already in the cache
     int deviceCamId;  
@@ -198,13 +211,12 @@ const DeviceCamera& DeviceCache::requestCamera(int globalCamId, int downscale,
     if(!isNewInsertion)
     {
         // nothing to do
-        ALICEVISION_LOG_TRACE("Request camera on device cache: Camera already on cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
-        // return the already cached device camera
-        return deviceCamera;
+        ALICEVISION_LOG_TRACE("Add camera on device cache: Camera already on cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
+        return;
     }
 
     // update the cached camera container
-    ALICEVISION_LOG_TRACE("Request camera on device cache: Add camera (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
+    ALICEVISION_LOG_TRACE("Add camera on device cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
 
     mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = imageCache.getImg_sync(globalCamId);
 
@@ -231,10 +243,39 @@ const DeviceCamera& DeviceCache::requestCamera(int globalCamId, int downscale,
     fillHostCameraParameters(cameraParameters_h, globalCamId, downscale, mp);
 
     // update device camera
-    deviceCamera.fill(globalCamId, downscale, originalFrameSize.x(), originalFrameSize.y(), frame_hmh, cameraParameters_h, stream);
+    deviceCamera.fill(globalCamId, downscale, originalFrameSize.x(), originalFrameSize.y(), frame_hmh, cameraParameters_h);
+}
 
-    // return the updated device camera
-    return deviceCamera; 
+const DeviceCamera& DeviceCache::requestCamera(int globalCamId, int downscale, const mvsUtils::MultiViewParams& mp)
+{
+    // get the current device id
+    const int cudaDeviceId = getCudaDeviceId();
+
+    // get the current device cache
+    if(_cachePerDevice[cudaDeviceId] == nullptr)
+        ALICEVISION_THROW_ERROR("Cannot add camera, device cache is not initialized (cuda device id: " << cudaDeviceId <<").")
+
+    SingleDeviceCache& currentDeviceCache = *_cachePerDevice[cudaDeviceId];
+
+    // find out with the LRU (Least Recently Used) strategy if the camera is already in the cache
+    int deviceCamId;  
+    const CameraSelection newCameraSelection(globalCamId, downscale);
+    const bool isNewInsertion = currentDeviceCache.cameraCache.insert(newCameraSelection, &deviceCamId);
+    const DeviceCamera& deviceCamera = *(currentDeviceCache.cameras.at(deviceCamId));
+
+    // get corresponding view id for logs
+    const IndexT viewId = mp.getViewId(globalCamId);
+
+    // check if the camera is already in cache
+    if(isNewInsertion)
+    {
+        ALICEVISION_THROW_ERROR("Request camera on device cache: Not found (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").")
+    }
+
+    ALICEVISION_LOG_TRACE("Request camera on device cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
+
+    // return the cached device camera
+    return deviceCamera;
 }
 
 } // namespace depthMap

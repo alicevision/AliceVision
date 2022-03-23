@@ -476,9 +476,10 @@ public:
     }
 
     // see below with copy() functions
+    void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src, cudaStream_t stream = 0 );
     void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream = 0 );
     void copyFrom( const Type* src, size_t sx, size_t sy );
-    void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
+    
 
     void copyTo( Type* dst, size_t sx, size_t sy ) const;
 
@@ -598,6 +599,11 @@ template <class Type> class CudaDeviceMemory : public CudaMemorySizeBase<Type,1>
 {
     Type* buffer = nullptr;
 public:
+
+    CudaDeviceMemory() 
+      : buffer( nullptr )
+    { }
+
     explicit CudaDeviceMemory(const size_t size)
     {
         allocate( size );
@@ -795,6 +801,53 @@ public:
  *********************************************************************************/
 
 template<class Type, unsigned Dim>
+void CudaDeviceMemoryPitched<Type, Dim>::copyFrom(const CudaDeviceMemoryPitched<Type, Dim>& src, cudaStream_t stream)
+{
+    const cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
+    cudaError_t err;
+    if(Dim == 1)
+    {
+        if( stream == 0 )
+            err = cudaMemcpy( this->getBytePtr(),
+                              src.getBytePtr(),
+                              src.getUnpaddedBytesInRow(),
+                              kind );
+        else
+            err = cudaMemcpyAsync( this->getBytePtr(),
+                                   src.getBytePtr(),
+                                   src.getUnpaddedBytesInRow(),
+                                   kind,
+                                   stream );
+
+        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
+    }
+    else if(Dim >= 2)
+    {
+        size_t number_of_rows = 1;
+        for( int i=1; i<Dim; i++ ) number_of_rows *= src.getUnitsInDim(i);
+
+        if( stream == 0 )
+            err = cudaMemcpy2D( this->getBytePtr(),
+                                this->getPitch(),
+                                src.getBytePtr(),
+                                src.getPitch(),
+                                src.getUnpaddedBytesInRow(),
+                                number_of_rows,
+                                kind );
+        else
+            err = cudaMemcpy2DAsync( this->getBytePtr(),
+                                     this->getPitch(),
+                                     src.getBytePtr(),
+                                     src.getPitch(),
+                                     src.getUnpaddedBytesInRow(),
+                                     number_of_rows,
+                                     kind,
+                                     stream );
+        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
+    }
+}
+
+template<class Type, unsigned Dim>
 void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream )
 {
     const cudaMemcpyKind kind = cudaMemcpyHostToDevice;
@@ -840,6 +893,7 @@ void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type
     }
 }
 
+
 template<class Type, unsigned Dim>
 void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const Type* src, size_t sx, size_t sy )
 {
@@ -856,34 +910,6 @@ void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const Type* src, size_t sx, s
                                        src_height,
                                        cudaMemcpyHostToDevice);
 
-        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-    }
-}
-
-template<class Type, unsigned Dim>
-void CudaDeviceMemoryPitched<Type, Dim>::copyFrom(const CudaDeviceMemoryPitched<Type, Dim>& src)
-{
-    const cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
-    if(Dim == 1)
-    {
-        cudaError_t err = cudaMemcpy(this->getBytePtr(),
-                                     src.getBytePtr(),
-                                     src.getUnpaddedBytesInRow(),
-                                     kind);
-        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
-    }
-    else if(Dim >= 2)
-    {
-        size_t number_of_rows = 1;
-        for( int i=1; i<Dim; i++ ) number_of_rows *= src.getUnitsInDim(i);
-
-        cudaError_t err = cudaMemcpy2D( this->getBytePtr(),
-                                        this->getPitch(),
-                                        src.getBytePtr(),
-                                        src.getPitch(),
-                                        src.getUnpaddedBytesInRow(),
-                                        number_of_rows,
-                                        kind);
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
 }

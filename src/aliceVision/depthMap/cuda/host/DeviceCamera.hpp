@@ -56,15 +56,13 @@ public:
      * @param[in] originalHeight the image original height
      * @param[in] frame_hmh the host-side image frame
      * @param[in] cameraParameters_h the host-side camera parameters
-     * @param[in] stream the CUDA stream for gpu execution
      */
     void fill(int globalCamId, 
               int downscale, 
               int originalWidth, 
               int originalHeight, 
               const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh,
-              const DeviceCameraParams& cameraParameters_h, 
-              cudaStream_t stream);
+              const DeviceCameraParams& cameraParameters_h);
 
 private:
 
@@ -73,9 +71,8 @@ private:
     /**
      * @brief Update the DeviceCamera frame with an host-side corresponding frame.
      * @param[in] frame_hmh the host-side corresponding frame
-     * @param[in] stream the CUDA stream for gpu execution
      */
-    void fillDeviceFrameFromHostFrame(const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh, cudaStream_t stream);
+    void fillDeviceFrameFromHostFrame(const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh);
 
     // private members
 

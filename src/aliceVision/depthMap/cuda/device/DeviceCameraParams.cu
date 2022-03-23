@@ -9,7 +9,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-__constant__ DeviceCameraParams constantCameraParametersArray_d[MAX_CONSTANT_CAMERA_PARAM_SETS];
+__constant__ DeviceCameraParams constantCameraParametersArray_d[ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS];
 
 } // namespace depthMap
 } // namespace aliceVision
