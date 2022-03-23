@@ -178,6 +178,16 @@ public:
         return _processDownscale;
     }
 
+    inline int getMaxImageOriginalWidth() const
+    {
+        return _maxImageWidth;
+    }
+
+    inline int getMaxImageOriginalHeight() const
+    {
+        return _maxImageHeight;
+    }
+
     inline int getMaxImageWidth() const
     {
         return _maxImageWidth / getProcessDownscale();

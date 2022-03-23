@@ -6,25 +6,19 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
-#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
-#include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/SgmDepthList.hpp>
+#include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
-#include <cuda_runtime.h>
+#include <vector>
+#include <string>
 
 namespace aliceVision {
 namespace depthMap {
-
-struct SgmParams;
-
-template <class Type, unsigned Dim>
-class CudaDeviceMemoryPitched;
 
 /**
  * @brief Depth Map Estimation Semi-Global Matching
@@ -35,41 +29,37 @@ public:
 
     /**
      * @brief Sgm constructor.
-     * @param[in] rc the R camera index
-     * @param[in] ic the image cache 
      * @param[in] mp the multi-view parameters
      * @param[in] tileParams tile workflow parameters
      * @param[in] sgmParams the Semi Global Matching parameters
-     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      * @param[in] stream the stream for gpu execution
      */
-    Sgm(int rc, 
-        mvsUtils::ImagesCache<ImageRGBAf>& ic, 
-        const mvsUtils::MultiViewParams& mp, 
+    Sgm(const mvsUtils::MultiViewParams& mp, 
         const mvsUtils::TileParams& tileParams, 
         const SgmParams& sgmParams, 
-        const ROI& roi, 
         cudaStream_t stream);
+
+    // no default constructor
+    Sgm() = delete;
 
     // default destructor
     ~Sgm() = default;
 
+    inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthSimMap() const { return _depthSimMap_dmp; }
+
+    /**
+     * @brief Get memory consumpyion in device memory.
+     * @return device memory consumpyion (in MB)
+     */
+    double getDeviceMemoryConsumption() const;
+
     /**
      * @brief Compute for a single R camera the Semi-Global Matching depth/sim map.
+     * @param[in] rc the R camera index
+     * @param[in] in_sgmDepthList the SGM depth list
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void sgmRc();
-
-    /**
-     * @brief Return true if no depths found for the R camera.
-     * @return true if no depths found for the R camera
-     */
-    inline bool empty() const { return _sgmDepthList.getDepths().empty(); }
-
-    /**
-     * @brief Get the depth/sim map of the Semi-Global Matching result.
-     * @return the depth/sim map of the Semi-Global Matching result
-     */
-    inline const DepthSimMap& getDepthSimMap() const { return _depthSimMap; }
+    void sgmRc(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi);
 
 private:
 
@@ -77,46 +67,63 @@ private:
 
     /**
      * @brief Compute for each RcTc the best / second best similarity volumes.
-     * @param[out] out_volBestSim_dmp the best similarity volume in device memory
-     * @param[out] out_volSecBestSim_dmp the second best similarity volume in device memory
+     * @param[in] rc the R camera index
+     * @param[in] in_sgmDepthList the SGM depth list
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void computeSimilarityVolumes(CudaDeviceMemoryPitched<TSim, 3>& out_volBestSim_dmp, CudaDeviceMemoryPitched<TSim, 3>& out_volSecBestSim_dmp) const;
+    void computeSimilarityVolumes(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi);
 
     /**
      * @brief Optimize the given similarity volume.
      * @note  Filter on the 3D volume to weight voxels based on their neighborhood strongness.
      *        So it downweights local minimums that are not supported by their neighborhood.
-     * @param[out] out_volSimOptimized_dmp the output optimized similarity volume in device memory
-     * @param[in] in_volSim_dmp the input similarity volume in device memory
+     * @param[in] rc the R camera index
+     * @param[in] in_sgmDepthList the SGM depth list
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void optimizeSimilarityVolume(CudaDeviceMemoryPitched<TSim, 3>& out_volSimOptimized_dmp, const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp) const;
+    void optimizeSimilarityVolume(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi);
 
     /**
      * @brief Retrieve the best depths in the given similarity volume.
      * @note  For each pixel, choose the voxel with the minimal similarity value.
-     * @param[out] out_bestDepthSimMap the output best depth/sim map
-     * @param[in] in_volSim_dmp the input similarity volume in device memory
+     * @param[in] rc the R camera index
+     * @param[in] in_sgmDepthList the SGM depth list
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void retrieveBestDepth(DepthSimMap& out_bestDepthSimMap, const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp) const;
+    void retrieveBestDepth(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi);
 
     /**
      * @brief Export volume alembic files and 9 points csv file.
-     * @param[in] in_volSim_dmp the given similarity volume in device memory
+     * @param[in] rc the R camera index
+     * @param[in] in_volume_dmp the input volume
+     * @param[in] in_sgmDepthList the SGM depth list
      * @param[in] name the export filename
+     * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    void exportVolumeInformation(const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, const std::string& name) const;
+    void exportVolumeInformation(int rc, 
+                                 const CudaDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
+                                 const SgmDepthList& in_sgmDepthList, 
+                                 const std::string& name, 
+                                 const ROI& roi) const;
 
 
-    // private members
+    // private members 
 
-    const int _rc;                            // related R camera index
-    const SgmParams& _sgmParams;              // Semi Global Matching parameters
-    const mvsUtils::TileParams& _tileParams;  // tile workflow parameters
-    const mvsUtils::MultiViewParams& _mp;     // Multi-view parameters
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic;   // Image cache
-    SgmDepthList _sgmDepthList;               // R camera Semi Global Matching depth list
-    DepthSimMap _depthSimMap;                 // depth/sim map of the Semi Global Matching result
-    cudaStream_t _stream;                     // stream for gpu execution
+    const mvsUtils::MultiViewParams& _mp;                      // Multi-view parameters
+    const mvsUtils::TileParams& _tileParams;                   // tile workflow parameters
+    const SgmParams& _sgmParams;                               // Semi Global Matching parameters
+
+    // private members in device memory
+
+    CudaHostMemoryHeap<float, 2> _depths_hmh;                  // rc depth data host memory
+    CudaDeviceMemoryPitched<float, 2> _depths_dmp;             // rc depth data device memory
+    CudaDeviceMemoryPitched<float2, 2> _depthSimMap_dmp;       // rc result depth/sim map
+    CudaDeviceMemoryPitched<TSim, 3> _volumeBestSim_dmp;       // rc best similarity volume
+    CudaDeviceMemoryPitched<TSim, 3> _volumeSecBestSim_dmp;    // rc second best similarity volume
+    CudaDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccA_dmp;  // for optimization: volume accumulation slice A
+    CudaDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccB_dmp;  // for optimization: volume accumulation slice B
+    CudaDeviceMemoryPitched<TSimAcc, 2> _volumeAxisAcc_dmp;    // for optimization: volume accumulation axis
+    cudaStream_t _stream;                                      // stream for gpu execution
 };
 
 } // namespace depthMap

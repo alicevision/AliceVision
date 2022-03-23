@@ -1,0 +1,79 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2022 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
+
+#include <aliceVision/mvsData/ROI.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/depthMap/cuda/host/memory.hpp>
+
+#include <vector>
+#include <string>
+
+namespace aliceVision {
+namespace depthMap {
+
+/**
+ * @brief Copy an image from device memory to host memory and write on disk.
+ * @note  This function can be useful for code analysis and debugging. 
+ * @param[in] in_img_dmp the image in device memory
+ * @param[in] path the path of the output image on disk
+ */
+void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
+
+/**
+ * @brief Copy a depth/similarity map from device memory to host memory.
+ * @param[out] out_depthMap the output depth vector
+ * @param[out] out_simMap the output similarity vector
+ * @param[in] in_depthSimMap_dmp the depth/similarity map in device memory
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] downscale the depth/similarity map downscale factor
+ */
+void copyDepthSimMap(std::vector<float>& out_depthMap, 
+                     std::vector<float>& out_simMap, 
+                     const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
+                     const ROI& roi, 
+                     int downscale);
+
+
+/**
+ * @brief Write a depth/similarity map on disk from device memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] in_depthSimMap_dmp the depth/similarity map in device memory
+ * @param[in] scale the depth/similarity map downscale factor
+ * @param[in] step the depth/similarity map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void writeDepthSimMap(int rc,
+                      const mvsUtils::MultiViewParams& mp,
+                      const mvsUtils::TileParams& tileParams,
+                      const ROI& roi, 
+                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
+                      int scale,
+                      int step,
+                      const std::string& customSuffix = "");
+
+/**
+ * @brief Merge depth/similarity map tiles on disk.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] scale the depth/similarity map downscale factor
+ * @param[in] step the depth/similarity map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void mergeDepthSimMapTiles(int rc,
+                           const mvsUtils::MultiViewParams& mp,
+                           int scale,
+                           int step,
+                           const std::string& customSuffix = "");
+
+} // namespace depthMap
+} // namespace aliceVision
+

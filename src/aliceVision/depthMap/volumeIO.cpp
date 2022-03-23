@@ -24,15 +24,15 @@
 namespace aliceVision {
 namespace depthMap {
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, 
-                                const StaticVector<float>& depths, 
+void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh, 
+                                const std::vector<float>& in_depths,
                                 int camIndex, 
                                 const std::string& name, 
                                 const std::string& filepath)
 {
-    const auto volDim = volumeSim.getSize();
-    const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     const int sampleSize = 3;
 
@@ -50,9 +50,9 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
 
             std::vector<float>& pDepths = ptsDepths.at(iy * sampleSize + ix);
 
-            for (int iz = 0; iz < volDim[2]; ++iz)
+            for(int iz = 0; iz < in_depths.size(); ++iz)
             {
-                float simValue = *get3DBufferAt_h<TSim>(volumeSim.getBuffer(), spitch, pitch, x, y, iz);
+                float simValue = *get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz);
                 pDepths.push_back(simValue);
             }
         }
@@ -78,14 +78,14 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
         file << ss.str();
 }
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& volumeSim,
+void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
                                 int camIndex,  
                                 const std::string& name, 
                                 const std::string& filepath)
 {
-    const auto volDim = volumeSim.getSize();
-    const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     const int sampleSize = 3;
 
@@ -106,7 +106,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& volumeS
 
             for(int iz = 0; iz < volDim.z(); ++iz)
             {
-                float sim = float(*get3DBufferAt_h<TSimRefine>(volumeSim.getBuffer(), spitch, pitch, x, y, iz));
+                float sim = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz));
                 simPerDepths.push_back(sim);
             }
         }
@@ -131,8 +131,8 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& volumeS
     if(file.is_open())
         file << ss.str();
 }
-void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, 
-                            const StaticVector<float>& depths, 
+void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh, 
+                            const std::vector<float>& in_depths,
                             const mvsUtils::MultiViewParams& mp, 
                             int camIndex, 
                             const SgmParams& sgmParams, 
@@ -144,9 +144,9 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
 
     IndexT landmarkId;
 
-    const auto volDim = volumeSim.getSize();
-    const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     ALICEVISION_LOG_DEBUG("DepthMap exportSimilarityVolume: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ", xyStep=" << xyStep << ".");
 
@@ -157,16 +157,16 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
             const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
             const double y = (roi.y.begin * mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
 
-            for(int vz = 0; vz < volDim[2]; ++vz)
+            for(int vz = 0; vz < in_depths.size(); ++vz)
             {
-                const double planeDepth = depths[vz];
+                const double planeDepth = in_depths[vz];
                 const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
                 const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
                 const Point3d v = (mp.iCamArr[camIndex] * Point2d(x,y)).normalize();
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
                 const float maxValue = 80.f;
-                float simValue = *get3DBufferAt_h<TSim>(volumeSim.getBuffer(), spitch, pitch, vx, vy, vz);
+                float simValue = *get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
                 if (simValue > maxValue)
                     continue;
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
@@ -180,8 +180,8 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
     sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& volumeSim, 
-                                 const StaticVector<float>& depths,
+void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh, 
+                                 const std::vector<float>& in_depths,
                                  const mvsUtils::MultiViewParams& mp, 
                                  int camIndex, 
                                  const SgmParams& sgmParams,
@@ -192,13 +192,13 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
 
     IndexT landmarkId;
 
-    const auto volDim = volumeSim.getSize();
-    const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     ALICEVISION_LOG_DEBUG("Export similarity volume cross: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ".");
 
-    for(int vz = 0; vz < volDim[2]; ++vz)
+    for(int vz = 0; vz < in_depths.size(); ++vz)
     {
         for(int vy = 0; vy < volDim[1]; ++vy)
         {
@@ -210,14 +210,14 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
             {
                 const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
                 const double y = (roi.y.begin / mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
-                const double planeDepth = depths[vz];
+                const double planeDepth = in_depths[vz];
                 const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
                 const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
                 const Point3d v = (mp.iCamArr[camIndex] * Point2d(x,y)).normalize();
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
                 const float maxValue = 80.f;
-                float simValue = *get3DBufferAt_h<TSim>(volumeSim.getBuffer(), spitch, pitch, vx, vy, vz);
+                float simValue = *get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
 
                 if(simValue > maxValue)
                     continue;
@@ -233,22 +233,26 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& volumeSim,
     sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& volumeSim, 
-                                 const DepthSimMap& depthSimMapSgmUpscale,
+void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh, 
+                                 const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                  const mvsUtils::MultiViewParams& mp, 
                                  int camIndex, 
                                  const RefineParams& refineParams,
-                                 const std::string& filepath)
+                                 const std::string& filepath, 
+                                 const ROI& roi)
 {
     sfmData::SfMData pointCloud;
 
-    const auto volDim = volumeSim.getSize();
-    const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    const size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    const auto volDim = in_volumeSim_hmh.getSize();
+    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     ALICEVISION_LOG_DEBUG("Export similarity volume cross (rc:  " << camIndex << ", x: "<< volDim[0] << ", y: " << volDim[1] << ", z: " << volDim[2] << ").");
 
     IndexT landmarkId = 0;
+
+    const int roiOffsetX = roi.x.begin / double(mp.getProcessDownscale());
+    const int roiOffsetY = roi.y.begin / double(mp.getProcessDownscale());
 
     for(int vy = 0; vy < volDim[1]; ++vy)
     {
@@ -258,9 +262,11 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& volume
 
         for(int vx = xIdxStart; vx < xIdxStop; ++vx)
         {
-            const Point2d pix = depthSimMapSgmUpscale.getCorrespondingImagePoint(vx, vy);
+            const int x = roiOffsetX + (double(vx) * refineParams.scale * refineParams.stepXY);
+            const int y = roiOffsetY + (double(vy) * refineParams.scale * refineParams.stepXY);
+            const Point2d pix(x, y);
 
-            const double orignalDepth = double(depthSimMapSgmUpscale.getDepthSim(vx, vy).depth);
+            const double orignalDepth = in_depthSimMapSgmUpscale_hmh(vx, vy).x;
 
             if(orignalDepth < 0.0f) // original depth invalid or masked
                 continue;
@@ -270,7 +276,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& volume
 
             for(int vz = 0; vz < volDim[2]; ++vz)
             {
-                const float simValue = float(*get3DBufferAt_h<TSimRefine>(volumeSim.getBuffer(), spitch, pitch, vx, vy, vz));
+                const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
 
                 const float maxValue = 10.f; // sum of similarity between 0 and 1
                 if(simValue > maxValue)
@@ -305,8 +311,8 @@ inline rgb float4_to_rgb(const float4& v)
     return { float_to_uchar(v.x), float_to_uchar(v.y), float_to_uchar(v.z) };
 }
 
-void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, 
-                       const std::vector<float>& depths, 
+void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh, 
+                       const std::vector<float>& in_depths,
                        int startDepth, 
                        int nbDepths, 
                        const mvsUtils::MultiViewParams& mp, 
@@ -321,9 +327,9 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim,
 
     IndexT landmarkId;
 
-    auto volDim = volumeSim.getSize();
-    size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
-    size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+    auto volDim = in_volumeSim_hmh.getSize();
+    size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
+    size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     ALICEVISION_LOG_DEBUG("DepthMap exportColorVolume: " << volDim[0] << " x " << volDim[1] << " x " << nbDepths << ", volDim[2]=" << volDim[2] << ", xyStep=" << xyStep << ".");
 
@@ -337,13 +343,13 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim,
 
             for(int vz = 0; vz < nbDepths; ++vz)
             {
-                const double planeDepth = depths[startDepth + vz];
+                const double planeDepth = in_depths[startDepth + vz];
                 const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
                 const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
                 const Point3d v = (mp.iCamArr[camIndex] * Point2d(x, y)).normalize();
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
-                float4 colorValue = *get3DBufferAt_h<float4>(volumeSim.getBuffer(), spitch, pitch, vx, vy, vz);
+                float4 colorValue = *get3DBufferAt_h<float4>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
                 const rgb c = float4_to_rgb(colorValue); // TODO: convert Lab color into sRGB color
                 pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
 

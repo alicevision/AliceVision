@@ -89,26 +89,29 @@ void logDeviceMemoryInfo()
 
     cudaMemGetInfo(&iavail, &itotal);
 
-    const double avail = double(iavail) / (1024.0 * 1024.0);
-    const double total = double(itotal) / (1024.0 * 1024.0);
-    const double used = double(itotal - iavail) / (1024.0 * 1024.0);
+    const double availableMB = double(iavail) / (1024.0 * 1024.0);
+    const double totalMB = double(itotal) / (1024.0 * 1024.0);
+    const double usedMB = double(itotal - iavail) / (1024.0 * 1024.0);
 
     int cudaDeviceId;
     cudaGetDevice(&cudaDeviceId);
 
-    ALICEVISION_LOG_DEBUG("CUDA device " << cudaDeviceId << " memory (used: " << used << " MB, available: " << avail << " MB, total: " << total << " MB).");
+    ALICEVISION_LOG_INFO("Device memory (device id: "<< cudaDeviceId <<"):" << std::endl
+                      << "\t- used: " << usedMB << " MB" << std::endl
+                      << "\t- available: " << availableMB << " MB" << std::endl
+                      << "\t- total: " << totalMB << " MB");
 }
 
-void getDeviceMemoryInfo(double& available, double& used, double& total)
+void getDeviceMemoryInfo(double& availableMB, double& usedMB, double& totalMB)
 {
     size_t iavail;
     size_t itotal;
 
     cudaMemGetInfo(&iavail, &itotal);
 
-    available = double(iavail) / (1024.0 * 1024.0);
-    total = double(itotal) / (1024.0 * 1024.0);
-    used = double(itotal - iavail) / (1024.0 * 1024.0);
+    availableMB = double(iavail) / (1024.0 * 1024.0);
+    totalMB = double(itotal) / (1024.0 * 1024.0);
+    usedMB = double(itotal - iavail) / (1024.0 * 1024.0);
 }
 
 } // namespace depthMap

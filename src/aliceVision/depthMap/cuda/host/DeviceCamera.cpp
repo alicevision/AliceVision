@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void buildFrameCudaTexture(CudaDeviceMemoryPitched<CudaRGBA, 2>* frame_dmp, cudaTextureObject_t* textureObject)
+void buildFrameCudaTexture(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, cudaTextureObject_t* textureObject)
 {
     cudaTextureDesc texDesc;
     memset(&texDesc, 0, sizeof(cudaTextureDesc));
@@ -39,10 +39,10 @@ void buildFrameCudaTexture(CudaDeviceMemoryPitched<CudaRGBA, 2>* frame_dmp, cuda
     cudaResourceDesc resDesc;
     resDesc.resType = cudaResourceTypePitch2D;
     resDesc.res.pitch2D.desc = cudaCreateChannelDesc<CudaRGBA>();
-    resDesc.res.pitch2D.devPtr = frame_dmp->getBuffer();
-    resDesc.res.pitch2D.width = frame_dmp->getSize()[0];
-    resDesc.res.pitch2D.height = frame_dmp->getSize()[1];
-    resDesc.res.pitch2D.pitchInBytes = frame_dmp->getPitch();
+    resDesc.res.pitch2D.devPtr = frame_dmp.getBuffer();
+    resDesc.res.pitch2D.width = frame_dmp.getSize()[0];
+    resDesc.res.pitch2D.height = frame_dmp.getSize()[1];
+    resDesc.res.pitch2D.pitchInBytes = frame_dmp.getPitch();
 
     cudaError_t err = cudaCreateTextureObject(textureObject, &resDesc, &texDesc, 0);
     THROW_ON_CUDA_ERROR(err, "Failed to bind texture object to camera frame array");
@@ -71,8 +71,7 @@ void DeviceCamera::fill(int globalCamId,
                         int originalWidth, 
                         int originalHeight, 
                         const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh,
-                        const DeviceCameraParams& cameraParameters_h, 
-                        cudaStream_t stream)
+                        const DeviceCameraParams& cameraParameters_h)
 {
     // update members
     _globalCamId = globalCamId;
@@ -84,7 +83,8 @@ void DeviceCamera::fill(int globalCamId,
 
     // allocate or re-allocate the host-sided camera params
     {
-        cudaFreeHost(_cameraParameters_h);
+        if(_cameraParameters_h != nullptr)
+          cudaFreeHost(_cameraParameters_h);
         CHECK_CUDA_ERROR();
         cudaError_t err = cudaMallocHost(&_cameraParameters_h, sizeof(DeviceCameraParams));
         THROW_ON_CUDA_ERROR(err, "Could not allocate camera parameters in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err));
@@ -98,19 +98,20 @@ void DeviceCamera::fill(int globalCamId,
         cudaMemcpyKind kind = cudaMemcpyHostToDevice;
         cudaError_t err;
 
-        if(stream == 0)
-        {
-            err = cudaMemcpyToSymbol(constantCameraParametersArray_d, _cameraParameters_h, sizeof(DeviceCameraParams),
-                                     _deviceCamId * sizeof(DeviceCameraParams), kind);
-        }
-        else
-        {
-            err = cudaMemcpyToSymbolAsync(constantCameraParametersArray_d, _cameraParameters_h, sizeof(DeviceCameraParams),
-                                          _deviceCamId * sizeof(DeviceCameraParams), kind, stream);
-        }
+        err = cudaMemcpyToSymbol(constantCameraParametersArray_d, _cameraParameters_h, sizeof(DeviceCameraParams), _deviceCamId * sizeof(DeviceCameraParams), kind);
+
+        //if(stream != 0)
+        //{
+        //    err = cudaMemcpyToSymbolAsync(constantCameraParametersArray_d, _cameraParameters_h, sizeof(DeviceCameraParams),
+        //                                  _deviceCamId * sizeof(DeviceCameraParams), kind, stream);
+        //}
 
         THROW_ON_CUDA_ERROR(err, "Failed to copy DeviceCameraParams from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err));
     }
+
+    // destroy previsous texture object
+    if(_frame_dmp != nullptr)
+        cudaDestroyTextureObject(_textureObject);
 
     // allocate or re-allocate device frame if needed
     const CudaSize<2> deviceFrameSize(_width, _height);
@@ -120,17 +121,13 @@ void DeviceCamera::fill(int globalCamId,
         // allocate or re-allocate the device-sided data buffer with the new size
         _frame_dmp.reset(new CudaDeviceMemoryPitched<CudaRGBA, 2>(deviceFrameSize));
         _memBytes = _frame_dmp->getBytesPadded();
-
-        // re-build the associated CUDA texture object
-        cudaDestroyTextureObject(_textureObject);
-        buildFrameCudaTexture(_frame_dmp.get(), &_textureObject);
     }
 
     // update device frame
-    fillDeviceFrameFromHostFrame(frame_hmh, stream);
+    fillDeviceFrameFromHostFrame(frame_hmh);
 }
 
-void DeviceCamera::fillDeviceFrameFromHostFrame(const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh, cudaStream_t stream)
+void DeviceCamera::fillDeviceFrameFromHostFrame(const CudaHostMemoryHeap<CudaRGBA, 2>& frame_hmh)
 {
     if(_downscale <= 1)
     {
@@ -139,29 +136,40 @@ void DeviceCamera::fillDeviceFrameFromHostFrame(const CudaHostMemoryHeap<CudaRGB
         assert(_originalWidth == _width);
 
         // copy texture's data from host to device
-        _frame_dmp->copyFrom(frame_hmh, stream);
+        _frame_dmp->copyFrom(frame_hmh);
     }
     else
     {
-        // allocate the full size device-sided data buffer and build the texture object
-        CudaDeviceMemoryPitched<CudaRGBA, 2>* deviceFrameToDownscale = new CudaDeviceMemoryPitched<CudaRGBA, 2>(frame_hmh.getSize());
+        // allocate the full size device-sided data buffer
+        CudaDeviceMemoryPitched<CudaRGBA, 2> deviceFrameToDownscale(frame_hmh.getSize());
         cudaTextureObject_t textureObjectToDownscale;
-        buildFrameCudaTexture(deviceFrameToDownscale, &textureObjectToDownscale);
 
         // copy the full size host-sided data buffer onto the device-sided data buffer
-        deviceFrameToDownscale->copyFrom(frame_hmh, stream);
+        deviceFrameToDownscale.copyFrom(frame_hmh);
+
+        // build the full size device-sided data buffer texture object
+        buildFrameCudaTexture(deviceFrameToDownscale, &textureObjectToDownscale);
 
         // downscale with gaussian blur the initial texture 
         const int gaussianFilterRadius = _downscale;
-        cuda_downscaleWithGaussianBlur(*_frame_dmp, textureObjectToDownscale, _downscale, _width, _height, gaussianFilterRadius, stream);
+        cuda_downscaleWithGaussianBlur(*_frame_dmp, textureObjectToDownscale, _downscale, _width, _height, gaussianFilterRadius, 0 /*stream*/);
 
-        // delete full size data buffer on the GPU.
-        delete deviceFrameToDownscale;
+        // wait for kernel completion
+        cudaDeviceSynchronize(); 
+
+        // delete full size texture object on the GPU.
+        // full size device frame will be deleted at the end of the scope
         cudaDestroyTextureObject(textureObjectToDownscale);
     }
 
     // in-place color conversion into CIELAB
-    cuda_rgb2lab(*_frame_dmp, _width, _height, stream);
+    cuda_rgb2lab(*_frame_dmp, _width, _height, 0 /*stream*/);
+
+    // wait for kernel completion
+    cudaDeviceSynchronize();
+
+    // re-build the frame associated CUDA texture object
+    buildFrameCudaTexture(*_frame_dmp.get(), &_textureObject);
 }
 
 } // namespace depthMap

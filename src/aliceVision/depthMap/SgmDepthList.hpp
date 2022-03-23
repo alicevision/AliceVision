@@ -26,16 +26,21 @@ public:
     /**
      * @brief SgmDepthList constructor.
      * @param[in] rc the R camera index
+     * @param[in] tCams the T cameras indexes
      * @param[in] mp the multi-view parameters
      * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] roi the 2d region of interest of the R image without any downscale apply
      */
-    SgmDepthList(int rc, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi);
+    SgmDepthList(int rc, 
+                 const std::vector<int>& tCams, 
+                 const mvsUtils::MultiViewParams& mp, 
+                 const SgmParams& sgmParams,
+                 const ROI& roi);
 
     // default destructor
     ~SgmDepthList() = default;
 
-    const StaticVector<int>& getTCams() const { return _tCams; }
+    const std::vector<int>& getTCams() const { return _tCams; }
     const StaticVector<float>& getDepths() const { return _depths; }
     const StaticVector<Pixel>& getDepthsTcLimits() const { return _depthsTcLimits; }
 
@@ -107,7 +112,7 @@ private:
     const mvsUtils::MultiViewParams& _mp;  // Multi-view parameters
     StaticVector<float> _depths;           // R camera depth list
     StaticVector<Pixel> _depthsTcLimits;   // T camera depth limits
-    StaticVector<int> _tCams;              // T camera indexes, computed in the constructor
+    std::vector<int> _tCams;               // T camera indexes, computed in the constructor
 };
 
 } // namespace depthMap
