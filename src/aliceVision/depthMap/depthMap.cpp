@@ -193,7 +193,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // get maximum number of stream
     const int nbSimultaneousTile = getNbSimultaneousTile(mp, tileParams, sgmParams, refineParams, tiles.size());
-    DeviceStreamManager deviceStreamManager(std::min(nbSimultaneousTile, 1 /*max streams*/));
+    DeviceStreamManager deviceStreamManager(nbSimultaneousTile);
 
     // compute max T cameras
     const int maxTCams = std::max(sgmParams.maxTCams, refineParams.maxTCams);
