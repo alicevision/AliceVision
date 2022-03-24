@@ -8,7 +8,6 @@
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
@@ -79,7 +78,6 @@ double Refine::getDeviceMemoryConsumption() const
 
 void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const ROI& roi)
 {
-    const system::Timer timer;
     const IndexT viewId = _mp.getViewId(rc);
 
     ALICEVISION_LOG_INFO("Refine depth/sim map of view id: " << viewId << ", rc: " << rc << " (" << (rc + 1) << " / " << _mp.ncams << ")");
@@ -132,13 +130,11 @@ void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const const Cuda
         _optimizedDepthSimMap_dmp.copyFrom(_refinedDepthSimMap_dmp, _stream);
     }
 
-    ALICEVISION_LOG_INFO("Refine depth/sim map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("Refine depth/sim map (rc: " << rc << ") done.");
 }
 
 void Refine::refineAndFuseDepthSimMap(int rc, const std::vector<int>& tCams, const ROI& roi)
 {
-    const system::Timer timer;
-
     ALICEVISION_LOG_INFO("Refine and fuse depth/sim map volume (rc: " << rc << ")");
 
     // downscale the region of interest
@@ -161,8 +157,6 @@ void Refine::refineAndFuseDepthSimMap(int rc, const std::vector<int>& tCams, con
     // sum the inverted / filtered similarity value, best value is the HIGHEST
     for(int tci = 0; tci < tCams.size(); ++tci)
     {
-        const system::Timer timerPerTc;
-
         const int tc = tCams[tci];
 
         // get T device camera from cache
@@ -184,8 +178,6 @@ void Refine::refineAndFuseDepthSimMap(int rc, const std::vector<int>& tCams, con
                                     depthRange,
                                     downscaledRoi, 
                                     _stream);
-
-        ALICEVISION_LOG_DEBUG("Refine similarity volume (with rc: " << rc << ", tc: " << tc << ") done in: " << timerPerTc.elapsedMs() << " ms.");
     }
 
     if(_refineParams.exportIntermediateResults)
@@ -201,13 +193,11 @@ void Refine::refineAndFuseDepthSimMap(int rc, const std::vector<int>& tCams, con
                                 downscaledRoi, 
                                 _stream);
     
-    ALICEVISION_LOG_INFO("Refine and fuse depth/sim map volume (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("Refine and fuse depth/sim map volume (rc: " << rc << ") done.");
 }
 
 void Refine::optimizeDepthSimMap(int rc, const ROI& roi)
 {
-    const system::Timer timer;
-
     ALICEVISION_LOG_INFO("Optimize depth/sim map (rc: " << rc << ")");
 
     // downscale the region of interest
@@ -227,7 +217,7 @@ void Refine::optimizeDepthSimMap(int rc, const ROI& roi)
                                             downscaledRoi,
                                             _stream);
 
-    ALICEVISION_LOG_INFO("Optimize depth/sim map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("Optimize depth/sim map (rc: " << rc << ") done.");
 }
 
 void Refine::exportVolumeInformation(int rc, const std::string& name, const ROI& roi) const
