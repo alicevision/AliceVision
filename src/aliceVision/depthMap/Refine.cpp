@@ -76,7 +76,7 @@ double Refine::getDeviceMemoryConsumption() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
-void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const ROI& roi)
+void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const ROI& roi)
 {
     const IndexT viewId = _mp.getViewId(rc);
 
