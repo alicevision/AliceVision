@@ -26,7 +26,20 @@ namespace depthMap {
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
 
 /**
- * @brief Copy a depth/similarity map from device memory to host memory.
+ * @brief Copy a depth/similarity map from host memory to 2 vectors.
+ * @param[out] out_depthMap the output depth vector
+ * @param[out] out_simMap the output similarity vector
+ * @param[in] in_depthSimMap_hmh the depth/similarity map in host memory
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] downscale the depth/similarity map downscale factor
+ */
+void copyDepthSimMap(std::vector<float>& out_depthMap, 
+                     std::vector<float>& out_simMap, 
+                     const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
+                     const ROI& roi, 
+                     int downscale);
+/**
+ * @brief Copy a depth/similarity map from device memory to 2 vectors.
  * @param[out] out_depthMap the output depth vector
  * @param[out] out_simMap the output similarity vector
  * @param[in] in_depthSimMap_dmp the depth/similarity map in device memory
@@ -39,6 +52,25 @@ void copyDepthSimMap(std::vector<float>& out_depthMap,
                      const ROI& roi, 
                      int downscale);
 
+/**
+ * @brief Write a depth/similarity map on disk from host memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] in_depthSimMap_hmh the depth/similarity map in host memory
+ * @param[in] scale the depth/similarity map downscale factor
+ * @param[in] step the depth/similarity map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void writeDepthSimMap(int rc,
+                      const mvsUtils::MultiViewParams& mp,
+                      const mvsUtils::TileParams& tileParams,
+                      const ROI& roi, 
+                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
+                      int scale,
+                      int step,
+                      const std::string& customSuffix = "");
 
 /**
  * @brief Write a depth/similarity map on disk from device memory.

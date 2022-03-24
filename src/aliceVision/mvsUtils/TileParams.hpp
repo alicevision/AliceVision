@@ -44,7 +44,7 @@ void getTileDimensions(const TileParams& tileParams, int maxWidth, int maxHeight
  * @param[in] originalHeight the image original height
  * @param[out] out_tileDepthMap the output tile ROI list
  */
-void getTileList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList);
+void getTileRoiList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList);
 
 } // namespace mvsUtils
 } // namespace aliceVision
