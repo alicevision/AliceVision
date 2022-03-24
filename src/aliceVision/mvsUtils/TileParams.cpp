@@ -20,7 +20,7 @@ void getTileDimensions(const TileParams& tileParams, int maxWidth, int maxHeight
       ALICEVISION_THROW_ERROR("Unable to compute tile dimensions, tile padding size is too large.");
 }
 
-void getTileList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList)
+void getTileRoiList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList)
 {
     int tileWidth;
     int tileHeight;

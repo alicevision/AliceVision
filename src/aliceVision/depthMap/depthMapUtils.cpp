@@ -42,9 +42,8 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
     imageIO::writeImage(path, int(imgSize.x()), int(imgSize.y()), img, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
 }
 
-void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_simMap, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const ROI& roi, int downscale)
+void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_simMap, const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh, const ROI& roi, int downscale)
 {
-    const CudaSize<2>& depthMapSize = in_depthSimMap_dmp.getSize();
     const ROI downscaledROI = downscaleROI(roi, downscale);
     const size_t vectorSize = downscaledROI.width() * downscaledROI.height();
 
@@ -52,21 +51,45 @@ void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_s
     out_depthMap.resize(vectorSize);
     out_simMap.resize(vectorSize);
 
-    // copy depth/sim maps from device pitched memory to host memory
-    CudaHostMemoryHeap<float2, 2> depthSimMap_hmh(depthMapSize);
-    depthSimMap_hmh.copyFrom(in_depthSimMap_dmp);
-
     // copy image from host memory to output vectors
     for(size_t x = 0; x < downscaledROI.width(); ++x)
     {
         for(size_t y = 0; y < downscaledROI.height(); ++y)
         {
             const size_t index = y * downscaledROI.width() + x;
-            const float2& depthSim = depthSimMap_hmh(x, y);
+            const float2& depthSim = in_depthSimMap_hmh(x, y);
             out_depthMap[index] = depthSim.x;
             out_simMap[index] = depthSim.y;
         }
     }
+}
+
+void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_simMap, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const ROI& roi, int downscale)
+{
+    // copy depth/sim maps from device pitched memory to host memory
+    CudaHostMemoryHeap<float2, 2> depthSimMap_hmh(in_depthSimMap_dmp.getSize());
+    depthSimMap_hmh.copyFrom(in_depthSimMap_dmp);
+
+    copyDepthSimMap(out_depthMap, out_simMap, depthSimMap_hmh, roi, downscale);
+}
+
+void writeDepthSimMap(int rc,
+                      const mvsUtils::MultiViewParams& mp,
+                      const mvsUtils::TileParams& tileParams,
+                      const ROI& roi, 
+                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
+                      int scale,
+                      int step,
+                      const std::string& customSuffix)
+{
+    const int downscale = mp.getProcessDownscale() * scale * step;
+
+    std::vector<float> depthMap;
+    std::vector<float> simMap;
+
+    copyDepthSimMap(depthMap, simMap, in_depthSimMap_hmh, roi, downscale);
+
+    mvsUtils::writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }
 
 void writeDepthSimMap(int rc,

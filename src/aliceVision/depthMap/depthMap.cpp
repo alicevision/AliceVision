@@ -104,7 +104,17 @@ int getNbSimultaneousTile(const mvsUtils::MultiViewParams& mp,
     }
 
     const int nbAllowedSimultaneousRc = std::min(int(deviceMemoryMB / rcCostMB), (ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams));
-    const int out_nbAllowedSimultaneousTile = nbAllowedSimultaneousRc * nbTilesPerCamera;
+
+    int out_nbAllowedSimultaneousTile;
+    if(nbAllowedSimultaneousRc < 1) // an R camera cannot be computed simultaneously
+    {
+        const double camerasCostMB = (cameraFrameCostMB + maxTCams * cameraFrameCostMB);
+        out_nbAllowedSimultaneousTile = std::floor((deviceMemoryMB - camerasCostMB) / (sgmTileCostMB + refineTileCostMB));
+    }
+    else
+    {
+        out_nbAllowedSimultaneousTile = nbAllowedSimultaneousRc * nbTilesPerCamera;
+    }
 
     ALICEVISION_LOG_INFO("Device memory cost / stream management:" << std::endl
                          << "\t- device memory available for computation: " << deviceMemoryMB << " MB" << std::endl
@@ -114,6 +124,9 @@ int getNbSimultaneousTile(const mvsUtils::MultiViewParams& mp,
                          << "\t- maximum device memory cost for a R camera computation: " << rcCostMB << " MB" << std::endl
                          << "\t- # allowed simultaneous R camera computation: " << nbAllowedSimultaneousRc << std::endl
                          << "\t- # allowed simultaneous tile computation: " << out_nbAllowedSimultaneousTile);
+
+    if(out_nbAllowedSimultaneousTile < 1 || rcCamParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
+        ALICEVISION_THROW_ERROR("Not enough GPU memory to compute a single tile.")
 
     return out_nbAllowedSimultaneousTile;
 }
@@ -188,66 +201,87 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
 
     // compute tile ROI list
-    std::vector<ROI> tiles;
-    getTileList(tileParams, mp.getMaxImageOriginalWidth(), mp.getMaxImageOriginalHeight(), tiles);
+    std::vector<ROI> tileRoiList;
+    getTileRoiList(tileParams, mp.getMaxImageOriginalWidth(), mp.getMaxImageOriginalHeight(), tileRoiList);
 
     // get maximum number of stream
-    const int nbSimultaneousTile = getNbSimultaneousTile(mp, tileParams, sgmParams, refineParams, tiles.size());
+    const int nbSimultaneousTile = getNbSimultaneousTile(mp, tileParams, sgmParams, refineParams, tileRoiList.size());
     DeviceStreamManager deviceStreamManager(nbSimultaneousTile);
 
     // compute max T cameras
     const int maxTCams = std::max(sgmParams.maxTCams, refineParams.maxTCams);
 
     // build device cache
-    const int maxSimultaneousRc = std::ceil(nbSimultaneousTile / float(tiles.size()));
+    const int maxSimultaneousRc = std::ceil(nbSimultaneousTile / float(tileRoiList.size()));
     const int maxSimultaneousCameras = (maxSimultaneousRc * (1 + maxTCams)) * 2; // refine + sgm downscaled images
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
     deviceCache.buildCache(maxSimultaneousCameras);               
     
-    // allocate Sgm and Refine structures per tile in device memory
-    std::vector<Sgm> sgmPerTile;
-    std::vector<Refine> refinePerTile;
+    // build tile list
+    struct Tile
+    {
+        int rc;
+        std::vector<int> tCams;
+        ROI roi;
+    };
+    std::vector<Tile> tiles;
 
-    sgmPerTile.reserve(nbSimultaneousTile);
-    refinePerTile.reserve(nbSimultaneousTile);
+    tiles.reserve(cams.size() * tileRoiList.size());
+
+    for(int rc : cams)
+    {
+        // compute T cameras list per R camera
+        const std::vector<int> tCams = mp.findNearestCamsFromLandmarks(rc, maxTCams).getDataWritable();
+
+        for(const ROI& roi : tileRoiList)
+        {
+            Tile t;
+            t.rc = rc;
+            t.tCams = tCams;
+            t.roi = roi;
+            tiles.push_back(t);
+        }
+    }
+
+    // allocate Sgm / Refine and final depth/similarity map per stream in device memory
+    std::vector<Sgm> sgmPerStream;
+    std::vector<Refine> refinePerStream;
+    std::vector<CudaHostMemoryHeap<float2, 2>> depthSimMapPerStream;
+
+    sgmPerStream.reserve(nbSimultaneousTile);
+    refinePerStream.reserve(nbSimultaneousTile);
+    depthSimMapPerStream.resize(nbSimultaneousTile);
 
     for(int i = 0; i < nbSimultaneousTile; ++i)
     {
-        sgmPerTile.emplace_back(mp, tileParams, sgmParams, deviceStreamManager.getStream(i));
-        refinePerTile.emplace_back(mp, tileParams, refineParams, deviceStreamManager.getStream(i));
+        sgmPerStream.emplace_back(mp, tileParams, sgmParams, deviceStreamManager.getStream(i));
+        refinePerStream.emplace_back(mp, tileParams, refineParams, deviceStreamManager.getStream(i));
+        depthSimMapPerStream.at(i).allocate(refinePerStream.at(i).getDeviceDepthSimMap().getSize());
     }
 
     // log device memory information
     logDeviceMemoryInfo();
-    
-    // compute T cameras list per R camera
-    std::vector<std::vector<int>> tcsPerRc(cams.size()); // <rci, tc ids>
-    for(int rci = 0; rci < cams.size(); ++rci)
-    {
-        const int rc = cams.at(rci);
-        tcsPerRc.at(rci) = mp.findNearestCamsFromLandmarks(rc, maxTCams).getDataWritable();
-    }
 
     // compute number of batches
-    const int nbBatches = std::ceil(cams.size() / float(maxSimultaneousRc));
+    const int nbBatches = std::ceil(tiles.size() / float(nbSimultaneousTile));
 
     // compute each batch of R cameras
     for(int b = 0; b < nbBatches; ++b)
     {
-        // find first/last batch R cameras 
-        const int firstRci = b * maxSimultaneousRc;
-        const int lastRci = std::min((b + 1) * maxSimultaneousRc, int(cams.size()));
+        // find first/last tile to compute
+        const int firstTileIndex = b * nbSimultaneousTile;
+        const int lastTileIndex = std::min((b + 1) * nbSimultaneousTile, int(tiles.size()));
         
-        // load R and corresponding T cameras in device cache  
-        for(int rci = firstRci; rci < lastRci; ++rci)
+        // load tile R and corresponding T cameras in device cache  
+        for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
-            const int rc = cams.at(rci);
-            
-            deviceCache.addCamera(rc, sgmParams.scale, ic, mp);
-            deviceCache.addCamera(rc, refineParams.scale, ic, mp);
+            const Tile& tile = tiles.at(i);
 
-            for(const int tc : tcsPerRc.at(rci))
+            deviceCache.addCamera(tile.rc, sgmParams.scale, ic, mp);
+            deviceCache.addCamera(tile.rc, refineParams.scale, ic, mp);
+
+            for(const int tc : tile.tCams)
             {
                 deviceCache.addCamera(tc, sgmParams.scale, ic, mp);
                 deviceCache.addCamera(tc, refineParams.scale, ic, mp);
@@ -257,83 +291,70 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         // wait for camera loading in device cache
         cudaDeviceSynchronize();
 
-        // compute R cameras
-        for(int rci = firstRci; rci < lastRci; ++rci)
+        // compute each batch tile
+        for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
-            const int rc = cams.at(rci);
-            const std::vector<int>& tCams = tcsPerRc.at(rci);
+            const Tile& tile = tiles.at(i);
+            const int streamIndex = (i - firstTileIndex);
 
-            if(tCams.empty()) // no T camera found
+            if(tile.tCams.empty()) // no T camera found
                 continue;
 
-            // compute each R camera tile with streams
-            for(int t = 0; t < tiles.size(); ++t)
-            {
-                // get batch tile index
-                const int tileIdx = (rci - firstRci) * tiles.size() + t;
+            // build SGM depth list
+            SgmDepthList sgmDepthList(tile.rc, tile.tCams, mp, sgmParams, tile.roi);
 
-                // get tile 2d region of interest
-                const ROI& roi = tiles.at(t);
+            // compute the R camera depth list
+            sgmDepthList.computeListRc();
+            if(sgmDepthList.getDepths().empty()) // no depth found
+                continue;
 
-                // build SGM depth list
-                SgmDepthList sgmDepthList(rc, tCams, mp, sgmParams, roi);
+            // log debug camera / depth information
+            sgmDepthList.logRcTcDepthInformation();
 
-                // compute the R camera depth list
-                sgmDepthList.computeListRc();
-                if(sgmDepthList.getDepths().empty()) // no depth found
-                    continue;
+            // check if starting and stopping depth are valid
+            sgmDepthList.checkStartingAndStoppingDepth();
 
-                // log debug camera / depth information
-                sgmDepthList.logRcTcDepthInformation();
+            // compute Semi-Global Matching
+            Sgm& sgm = sgmPerStream.at(streamIndex);
+            sgm.sgmRc(tile.rc, sgmDepthList, tile.roi);
 
-                // check if starting and stopping depth are valid
-                sgmDepthList.checkStartingAndStoppingDepth();
-
-                // compute Semi-Global Matching
-                Sgm& sgm = sgmPerTile.at(tileIdx);
-                sgm.sgmRc(rc, sgmDepthList, roi);
-
-                // compute Refine
-                Refine& refine = refinePerTile.at(tileIdx);
-                refine.refineRc(rc, tCams, sgm.getDeviceDepthSimMap(), roi);
-            }
+            // compute Refine
+            Refine& refine = refinePerStream.at(streamIndex);
+            refine.refineRc(tile.rc, tile.tCams, sgm.getDeviceDepthSimMap(), tile.roi);
+            
+            // copy depth/similarity map from device to host
+            depthSimMapPerStream.at(streamIndex).copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
         }
 
-        // wait for R cameras batch computation
+        // wait for tiles batch computation
         cudaDeviceSynchronize();
         
-        // write R cameras depth/sim map
-        for(int rci = firstRci; rci < lastRci; ++rci)
+        // write tiles depth/sim map
+        for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
-            const int rc = cams.at(rci);
+           const Tile& tile = tiles.at(i);
+           const int streamIndex = (i - firstTileIndex);
+           writeDepthSimMap(tile.rc, mp, tileParams, tile.roi, depthSimMapPerStream.at(streamIndex), refineParams.scale, refineParams.stepXY);
+        }
+    }
 
-            for(int t = 0; t < tiles.size(); ++t)
+    // merge tiles if needed and desired
+    if(tileParams.mergeTiles && tiles.size() > cams.size())
+    {
+        // merge tiles if needed and desired
+        for(int rc : cams)
+        {
+            mergeDepthSimMapTiles(rc, mp, refineParams.scale, refineParams.stepXY);
+
+            if(sgmParams.exportIntermediateResults)
             {
-                // get batch tile index
-                const int tileIdx = (rci - firstRci) * tiles.size() + t;
-
-                // get tile 2d region of interest
-                const ROI& roi = tiles.at(t);
-
-                // write refine final depth/sim
-                writeDepthSimMap(rc, mp, tileParams, roi, refinePerTile.at(tileIdx).getDeviceDepthSimMap(), refineParams.scale, refineParams.stepXY);
+                mergeDepthSimMapTiles(rc, mp, sgmParams.scale, sgmParams.stepXY, "_sgm");
             }
 
-            // merge tiles if needed and desired
-            if(tileParams.mergeTiles && tiles.size() > 1)
+            if(refineParams.exportIntermediateResults)
             {
-                mergeDepthSimMapTiles(rc, mp, refineParams.scale, refineParams.stepXY);
-
-                if(sgmParams.exportIntermediateResults)
-                {
-                    mergeDepthSimMapTiles(rc, mp, sgmParams.scale, sgmParams.stepXY, "_sgm");
-                }
-
-                if(refineParams.exportIntermediateResults)
-                {
-                    mergeDepthSimMapTiles(rc, mp, refineParams.scale, refineParams.stepXY, "_sgmUpscaled");
-                    mergeDepthSimMapTiles(rc, mp, refineParams.scale, refineParams.stepXY, "_refinedFused");
-                }
+                mergeDepthSimMapTiles(rc, mp, refineParams.scale, refineParams.stepXY, "_sgmUpscaled");
+                mergeDepthSimMapTiles(rc, mp, refineParams.scale, refineParams.stepXY, "_refinedFused");
             }
         }
     }
@@ -341,8 +362,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // some objects countains CUDA objects
     // this objects should be destroyed before the end of the program (i.e. the end of the CUDA context)
     DeviceCache::getInstance().clear();
-    sgmPerTile.clear();
-    refinePerTile.clear();
+    sgmPerStream.clear();
+    refinePerStream.clear();
 }
 
 void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
