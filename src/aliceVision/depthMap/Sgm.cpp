@@ -6,10 +6,7 @@
 
 #include "Sgm.hpp"
 
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
-
 #include <aliceVision/depthMap/depthMapUtils.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
@@ -88,7 +85,6 @@ double Sgm::getDeviceMemoryConsumption() const
 
 void Sgm::sgmRc(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
 {
-    const system::Timer timer;
     const IndexT viewId = _mp.getViewId(rc);
 
     ALICEVISION_LOG_INFO("SGM depth/sim map of view id: " << viewId << ", rc: " << rc << " (" << (rc + 1) << " / " << _mp.ncams << ")");
@@ -134,13 +130,11 @@ void Sgm::sgmRc(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
         writeDepthSimMap(rc, _mp, _tileParams, roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "_sgm");
     }
 
-    ALICEVISION_LOG_INFO("SGM depth/sim map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("SGM depth/sim map (rc: " << rc << ") done.");
 }
 
 void Sgm::computeSimilarityVolumes(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
 {
-    const system::Timer timer;
-
     ALICEVISION_LOG_INFO("SGM Compute similarity volume (rc: " << rc << ")");
 
     // downscale the region of interest
@@ -159,8 +153,6 @@ void Sgm::computeSimilarityVolumes(int rc, const SgmDepthList& in_sgmDepthList, 
     // compute similarity volume per Rc Tc
     for(int tci = 0; tci < in_sgmDepthList.getTCams().size(); ++tci)
     {
-        const system::Timer timerPerTc;
-
         const int tc = in_sgmDepthList.getTCams()[tci];
 
         const int firstDepth = in_sgmDepthList.getDepthsTcLimits()[tci].x;
@@ -190,16 +182,12 @@ void Sgm::computeSimilarityVolumes(int rc, const SgmDepthList& in_sgmDepthList, 
                                      tcDepthRange,
                                      downscaledRoi, 
                                      _stream);
-
-        ALICEVISION_LOG_DEBUG("Compute similarity volume (with rc: " << rc << ", tc: " << tc << ") done in: " << timerPerTc.elapsedMs() << " ms.");
     }
-    ALICEVISION_LOG_INFO("SGM Compute similarity volume (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("SGM Compute similarity volume (rc: " << rc << ") done.");
 }
 
 void Sgm::optimizeSimilarityVolume(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
 {
-    const system::Timer timer;
-
     ALICEVISION_LOG_INFO("SGM Optimizing volume (rc: " << rc << ", filtering axes: " << _sgmParams.filteringAxes << ")");
 
     // downscale the region of interest
@@ -220,13 +208,11 @@ void Sgm::optimizeSimilarityVolume(int rc, const SgmDepthList& in_sgmDepthList, 
                         downscaledRoi,
                         _stream);
 
-    ALICEVISION_LOG_INFO("SGM Optimizing volume done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("SGM Optimizing volume done.");
 }
 
 void Sgm::retrieveBestDepth(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
 {
-    const system::Timer timer;
-  
     ALICEVISION_LOG_INFO("SGM Retrieve best depth in volume (rc: " << rc << ")");
 
     // downscale the region of interest
@@ -248,7 +234,7 @@ void Sgm::retrieveBestDepth(int rc, const SgmDepthList& in_sgmDepthList, const R
                                  downscaledRoi, 
                                  _stream);
 
-    ALICEVISION_LOG_INFO("SGM Retrieve best depth in volume done in: " << timer.elapsedMs() << " ms.");
+    ALICEVISION_LOG_INFO("SGM Retrieve best depth in volume done.");
 }
 
 void Sgm::exportVolumeInformation(int rc, 
