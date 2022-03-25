@@ -76,6 +76,24 @@ double Refine::getDeviceMemoryConsumption() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
+double Refine::getDeviceMemoryConsumptionUnpadded() const
+{
+    size_t bytes = 0;
+
+    bytes += _sgmDepthPixSizeMap_dmp.getBytesUnpadded();
+    bytes += _refinedDepthSimMap_dmp.getBytesUnpadded();
+    bytes += _optimizedDepthSimMap_dmp.getBytesUnpadded();
+    bytes += _volumeRefineSim_dmp.getBytesUnpadded();
+
+    if(_refineParams.doRefineOptimization)
+    {
+        bytes += _optImgVariance_dmp.getBytesUnpadded();
+        bytes += _optTmpDepthMap_dmp.getBytesUnpadded();
+    }
+
+    return (double(bytes) / (1024.0 * 1024.0));
+}
+
 void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const ROI& roi)
 {
     const IndexT viewId = _mp.getViewId(rc);

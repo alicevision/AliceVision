@@ -83,6 +83,25 @@ double Sgm::getDeviceMemoryConsumption() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
+double Sgm::getDeviceMemoryConsumptionUnpadded() const
+{
+    size_t bytes = 0;
+
+    bytes += _depths_dmp.getBytesUnpadded();
+    bytes += _depthSimMap_dmp.getBytesUnpadded();
+    bytes += _volumeBestSim_dmp.getBytesUnpadded();
+    bytes += _volumeSecBestSim_dmp.getBytesUnpadded();
+
+    if(_sgmParams.doSgmOptimizeVolume)
+    {
+        bytes += _volumeSliceAccA_dmp.getBytesUnpadded();
+        bytes += _volumeSliceAccB_dmp.getBytesUnpadded();
+        bytes += _volumeAxisAcc_dmp.getBytesUnpadded();
+    }
+
+    return (double(bytes) / (1024.0 * 1024.0));
+}
+
 void Sgm::sgmRc(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
 {
     const IndexT viewId = _mp.getViewId(rc);

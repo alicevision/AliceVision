@@ -87,9 +87,26 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp,
     const int maxTCams = std::max(sgmParams.maxTCams, refineParams.maxTCams);
 
     const double cameraFrameCostMB = (((maxImageSize / sgmParams.scale) + (maxImageSize / refineParams.scale)) * 16.0) / (1024.0 * 1024.0); // SGM + Refine float4 RGBA
-    const double sgmTileCostMB = Sgm(mp, tileParams, sgmParams, 0 /*stream*/).getDeviceMemoryConsumption();
-    const double refineTileCostMB = Refine(mp, tileParams, refineParams, 0 /*stream*/).getDeviceMemoryConsumption();
+
+    double sgmTileCostMB;
+    double sgmTileCostUnpaddedMB;
+    {
+      Sgm sgm(mp, tileParams, sgmParams, 0 /*stream*/);
+      sgmTileCostMB = sgm.getDeviceMemoryConsumption();
+      sgmTileCostUnpaddedMB = sgm.getDeviceMemoryConsumptionUnpadded();
+    }
+
+    double refineTileCostMB;
+    double refineTileCostUnpaddedMB;
+    {
+      Refine refine(mp, tileParams, refineParams, 0 /*stream*/);
+      refineTileCostMB = refine.getDeviceMemoryConsumption();
+      refineTileCostUnpaddedMB = refine.getDeviceMemoryConsumptionUnpadded();
+    }
+
     const double tileCostMB = sgmTileCostMB + refineTileCostMB;
+    const double tileCostUnpaddedMB = sgmTileCostUnpaddedMB + refineTileCostUnpaddedMB;
+
     const double rcCamsCost = cameraFrameCostMB + maxTCams * cameraFrameCostMB;
     const double rcCostMB = rcCamsCost + nbTilesPerCamera * tileCostMB;
     const int rcCamParams = (1 + maxTCams) * 2; // number of camera parameters in device constant memory
@@ -116,9 +133,12 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Device memory cost / stream management:" << std::endl
                          << "\t- device memory available for computation: " << deviceMemoryMB << " MB" << std::endl
                          << "\t- device memory cost for a single camera: " << cameraFrameCostMB << " MB" << std::endl
-                         << "\t- device memory cost for a Sgm tile: " << sgmTileCostMB << " MB" << std::endl
-                         << "\t- device memory cost for a Refine tile: " << refineTileCostMB << " MB" << std::endl
-                         << "\t- device memory cost for a tile: " << tileCostMB << " MB" << std::endl
+                         << "\t- device memory cost for a tile: " << tileCostMB << " MB"
+                            << " (Sgm tile: " << sgmTileCostMB << " MB" << ", Refine tile: " << refineTileCostMB << " MB)" << std::endl
+
+                         << "\t- theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB"
+                            << " (Sgm tile: " << sgmTileCostUnpaddedMB << " MB" << ", Refine tile: " << refineTileCostUnpaddedMB << " MB)" << std::endl
+
                          << "\t- maximum device memory cost for a R camera computation: " << rcCostMB << " MB" << std::endl
                          << "\t- # tiles per R camera computation: " << nbTilesPerCamera << std::endl
                          << "\t- # allowed simultaneous R camera computation: " << ((nbRemainingTiles < 1) ? nbAllowedSimultaneousRc : (nbAllowedSimultaneousRc + 1)) << std::endl

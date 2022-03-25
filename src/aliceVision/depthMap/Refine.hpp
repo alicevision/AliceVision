@@ -51,6 +51,7 @@ public:
      * @return device memory consumpyion (in MB)
      */
     double getDeviceMemoryConsumption() const;
+    double getDeviceMemoryConsumptionUnpadded() const;
 
     /**
      * @brief Refine for a single R camera the Semi-Global Matching depth/sim map.
