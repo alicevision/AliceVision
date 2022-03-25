@@ -42,6 +42,21 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
     imageIO::writeImage(path, int(imgSize.x()), int(imgSize.y()), img, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
 }
 
+void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth, float sim)
+{
+  const CudaSize<2>& depthSimMapSize = inout_depthSimMap_hmh.getSize();
+
+  for(size_t x = 0; x < depthSimMapSize.x(); ++x)
+  {
+      for(size_t y = 0; y < depthSimMapSize.y(); ++y)
+      {
+          float2& depthSim_hmh = inout_depthSimMap_hmh(x, y);
+          depthSim_hmh.x = depth;
+          depthSim_hmh.y = sim;
+      }
+  }
+}
+
 void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_simMap, const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh, const ROI& roi, int downscale)
 {
     const ROI downscaledROI = downscaleROI(roi, downscale);

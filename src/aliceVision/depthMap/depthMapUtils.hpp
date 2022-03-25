@@ -26,6 +26,14 @@ namespace depthMap {
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
 
 /**
+ * @brief Reset a depth/similarity map in host memory to the given default depth and similarity.
+ * @param[in,out] inout_depthSimMap_hmh the depth/similarity map in host memory
+ * @param[in] depth the depth reset value
+ * @param[in] sim the sim reset value
+ */
+void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
+
+/**
  * @brief Copy a depth/similarity map from host memory to 2 vectors.
  * @param[out] out_depthMap the output depth vector
  * @param[out] out_simMap the output similarity vector
