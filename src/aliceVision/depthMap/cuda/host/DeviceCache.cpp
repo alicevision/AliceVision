@@ -225,6 +225,7 @@ void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCach
     CudaHostMemoryHeap<CudaRGBA, 2> frame_hmh(originalFrameSize);
 
     // copy data for cached image "globalCamId" into an host-side data buffer
+    #pragma omp parallel for
     for(int y = 0; y < originalFrameSize.y(); ++y)
     {
         for(int x = 0; x < originalFrameSize.x(); ++x)
