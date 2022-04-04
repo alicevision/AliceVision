@@ -41,7 +41,7 @@ public:
    * @param[out] camera response function
    */
   void process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-               const std::vector< std::vector<float> > &times,
+               const std::vector< std::vector<double> > &times,
                std::size_t channelQuantization,
                rgbCurve &response);
 

@@ -372,15 +372,15 @@ public:
    * @brief Get the median Camera Exposure Setting
    * @return
    */
-  float getMedianCameraExposureSetting() const
+  ExposureSetting getMedianCameraExposureSetting() const
   {
-    std::vector<float> cameraExposureList;
+    std::vector<ExposureSetting> cameraExposureList;
     cameraExposureList.reserve(views.size());
 
     for(const auto& view : views)
     {
-        float ce = view.second->getCameraExposureSetting();
-        if(ce != -1.0f)
+        const ExposureSetting ce = view.second->getCameraExposureSetting();
+        if(ce.isPartiallyDefined())
         {
             auto find = std::find(std::begin(cameraExposureList), std::end(cameraExposureList), ce);
             if(find == std::end(cameraExposureList))
@@ -389,7 +389,7 @@ public:
     }
 
     std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size()/2, cameraExposureList.end());
-    float ceMedian = cameraExposureList[cameraExposureList.size()/2];
+    const ExposureSetting& ceMedian = cameraExposureList[cameraExposureList.size()/2];
 
     return ceMedian;
   }

@@ -46,7 +46,7 @@ public:
    */
   void process(
       const std::vector<std::vector<ImageSample>>& ldrSamples,
-      std::vector<std::vector<float>>& cameraExposures,
+      std::vector<std::vector<double>>& cameraExposures,
       const std::size_t channelQuantization,
       bool refineExposures,
       rgbCurve &response);

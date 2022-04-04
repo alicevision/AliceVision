@@ -270,7 +270,7 @@ int aliceVision_main(int argc, char** argv)
 
         std::vector<image::Image<image::RGBfColor>> images(group.size());
         std::shared_ptr<sfmData::View> targetView = targetViews[g];
-        std::vector<float> exposures(group.size(), 0.0f);
+        std::vector<sfmData::ExposureSetting> exposuresSetting(group.size());
 
         // Load all images of the group
         for(std::size_t i = 0; i < group.size(); ++i)
@@ -283,20 +283,25 @@ int aliceVision_main(int argc, char** argv)
             options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
             image::readImage(filepath, images[i], options);
 
-            exposures[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
+            exposuresSetting[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
         }
+        if(!sfmData::hasComparableExposures(exposuresSetting))
+        {
+            ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
+        }
+        std::vector<double> exposures = getExposures(exposuresSetting);
 
         // Merge HDR images
         image::Image<image::RGBfColor> HDRimage;
         if(images.size() > 1)
         {
             hdr::hdrMerge merge;
-            float targetCameraExposure = targetView->getCameraExposureSetting();
+            sfmData::ExposureSetting targetCameraSetting = targetView->getCameraExposureSetting();
             ALICEVISION_LOG_INFO("[" << g - rangeStart << "/" << rangeSize << "] Merge " << group.size() << " LDR images " << g << "/" << groupedViews.size());
-            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure);
+            merge.process(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure());
             if(highlightCorrectionFactor > 0.0f)
             {
-                merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
+                merge.postProcessHighlight(images, exposures, fusionWeight, response, HDRimage, targetCameraSetting.getExposure(), highlightCorrectionFactor, highlightTargetLux);
             }
         }
         else if(images.size() == 1)

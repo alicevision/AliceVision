@@ -25,14 +25,14 @@ public:
    * @param response
    */
   void process(const std::vector< image::Image<image::RGBfColor> > &images,
-                const std::vector<float> &times,
+                const std::vector<double> &times,
                 const rgbCurve &weight,
                 const rgbCurve &response,
                 image::Image<image::RGBfColor> &radiance,
                 float targetCameraExposure);
 
   void postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
-      const std::vector<float> &times,
+      const std::vector<double> &times,
       const rgbCurve &weight,
       const rgbCurve &response,
       image::Image<image::RGBfColor> &radiance,

@@ -21,7 +21,7 @@ GrossbergCalibrate::GrossbergCalibrate(unsigned int dimension)
     _dimension = dimension;
 }
 
-void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples, const std::vector<std::vector<float>>& times, std::size_t channelQuantization, rgbCurve& response)
+void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples, const std::vector<std::vector<double>>& times, std::size_t channelQuantization, rgbCurve& response)
 {
     const double step = 1.0 / double(channelQuantization - 1);
 

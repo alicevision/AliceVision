@@ -714,10 +714,10 @@ int aliceVision_main(int argc, char * argv[])
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
             {
-                const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
-                const float cameraExposure = view.getCameraExposureSetting();
-                const float ev = std::log2(1.0 / cameraExposure);
-                const float exposureCompensation = medianCameraExposure / cameraExposure;
+                const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
+                const double cameraExposure = view.getCameraExposureSetting().getExposure();
+                const double ev = std::log2(1.0 / cameraExposure);
+                const float exposureCompensation = float(medianCameraExposure / cameraExposure);
 
                 ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
 
