@@ -4,11 +4,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 #pragma once
+
+// SFMData
+#include <aliceVision/sfmData/SfMData.hpp>
+
 #include <string>
 #include <vector>
 
 void normalIntegration(const std::string& inputPath, bool perspective, const std::string& outputFodler);
 
+void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, bool perspective, const std::string& outputFodler);
 
 void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K);
 
