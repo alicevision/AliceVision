@@ -31,3 +31,5 @@ void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RG
 void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix);
 
 void writePSResults(const std::string& outputPath, const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, const aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo);
+
+void writePSResults(const std::string& outputPath, const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, const aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo, const aliceVision::IndexT& poseId);

@@ -99,9 +99,15 @@ int aliceVision_main(int argc, char **argv)
     }
     else
     {
-      std::cout << "This case is not available for now" << std::endl;
+      aliceVision::sfmData::SfMData sfmData;
+      if(!aliceVision::sfmDataIO::Load(sfmData, inputPath, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS|aliceVision::sfmDataIO::INTRINSICS)))
+      {
+          ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
+          return EXIT_FAILURE;
+      }
 
-      return 0;
+      photometricStereo(sfmData, pathToLightData, outputPath, HS_order, normalsIm, albedoIm);
+
     }
 
     return 0;

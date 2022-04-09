@@ -255,3 +255,17 @@ void writePSResults(const std::string& outputPath, const aliceVision::image::Ima
     metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
     aliceVision::image::writeImage(outputPath + "/albedo.exr", albedo, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
 }
+
+void writePSResults(const std::string& outputPath, const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, const aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo, const aliceVision::IndexT& poseId)
+{
+    int pictCols = normals.Width();
+    int pictRows = normals.Height();
+
+    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
+    convertNormalMap2png(normals, normalsImPNG);
+    aliceVision::image::writeImage(outputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
+
+    oiio::ParamValueList metadata;
+    metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+    aliceVision::image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.exr", albedo, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
+}

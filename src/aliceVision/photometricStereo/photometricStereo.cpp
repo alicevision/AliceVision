@@ -14,7 +14,6 @@
 #include "photometricDataIO.hpp"
 #include "photometricStereo.hpp"
 
-void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 
 void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
@@ -40,9 +39,10 @@ void photometricStereo(const std::string& inputPath, const std::string& dataFold
     photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
+
 }
 
-void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -53,10 +53,15 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
     std::vector<std::string> imageList;
 
     std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewsPerPoseId;
+
     for(auto& viewIt: sfmData.getViews())
     {
         viewsPerPoseId[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
     }
+
+    Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity(); // Convertion matrix
+    std::vector<std::array<float, 3>> intList; // Light intensities
+    aliceVision::image::Image<float> mask;
 
     for(auto& posesIt: viewsPerPoseId)
     {
@@ -64,26 +69,25 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
         std::vector<aliceVision::IndexT>& viewIds = posesIt.second;
         for(auto& viewId: viewIds)
         {
-            ALICEVISION_LOG_INFO("  - " << sfmData.getView(viewId).getImagePath());
-            imageList.push_back(sfmData.getView(viewId).getImagePath());
+            const fs::path imagePath = fs::path(sfmData.getView(viewId).getImagePath());
+            if(!boost::algorithm::icontains(imagePath.stem().string(), "ambiant"))
+            {
+                ALICEVISION_LOG_INFO("  - " << imagePath.string());
+                imageList.push_back(imagePath.string());
+            }
         }
+
+        Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
+
+        loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
+        photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
+        writePSResults(outputPath, normals, albedo, posesIt.first);
     }
-
-    Eigen::MatrixXf convertionMatrix = Eigen::MatrixXf::Zero(3,3); // Convertion matrix
-    std::vector<std::array<float, 3>> intList; // Light intensities
-
-    Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
-
-    aliceVision::image::Image<float> mask;
-    loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
-
-    photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
 
 }
 
 void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, const aliceVision::image::Image<float>& mask, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
-
     std::vector<int> indexes;
     getIndMask(mask, indexes);
     size_t maskSize = indexes.size();
@@ -113,7 +117,6 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
     }
     applyMask(allPictures, indexes, imMat);
-
 
     Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(),pictRows*pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
@@ -147,6 +150,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
         int currentIdx = indexes.at(i); // index in picture
         normalsVect.block(0,currentIdx, normalsVect.rows(), 1) = n_pixel;
+
         albedoVect.block(0,currentIdx, 3, 1) = rho_pixel;
     }
 
