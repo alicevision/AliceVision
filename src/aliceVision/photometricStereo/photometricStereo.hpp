@@ -12,7 +12,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo);
+void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo);
 
 void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo);
 

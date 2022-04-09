@@ -95,7 +95,7 @@ int aliceVision_main(int argc, char **argv)
     
     if(boost::filesystem::is_directory(inputPath))
     {
-        photometricStereo(inputPath, pathToLightData, HS_order, normalsIm, albedoIm);
+        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, normalsIm, albedoIm);
     }
     else
     {
@@ -104,14 +104,5 @@ int aliceVision_main(int argc, char **argv)
       return 0;
     }
 
-    int pictCols = normalsIm.Width();
-    int pictRows = normalsIm.Height();
-    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG(pictCols,pictRows);
-    convertNormalMap2png(normalsIm, normalsImPNG);
-    aliceVision::image::writeImage(outputPath + "/normals.png", normalsImPNG, aliceVision::image::EImageColorSpace::NO_CONVERSION);
-
-    oiio::ParamValueList metadata;
-    metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-    aliceVision::image::writeImage(outputPath + "/albedo.exr", albedoIm, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
     return 0;
 }

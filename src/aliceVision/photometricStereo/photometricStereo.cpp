@@ -15,6 +15,8 @@
 #include "photometricStereo.hpp"
 
 void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+
+void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -37,6 +39,7 @@ void photometricStereo(const std::string& inputPath, const std::string& dataFold
 
     photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
 
+    writePSResults(outputPath, normals, albedo);
 }
 
 void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& dataFolderPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)

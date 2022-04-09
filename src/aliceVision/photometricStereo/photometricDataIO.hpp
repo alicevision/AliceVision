@@ -29,3 +29,5 @@ void normals2picture(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::I
 void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm, aliceVision::image::Image<aliceVision::image::RGBColor>& normalsImPNG);
 
 void readMatrix(const std::string& fileName, Eigen::MatrixXf& matrix);
+
+void writePSResults(const std::string& outputPath, const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, const aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo);
