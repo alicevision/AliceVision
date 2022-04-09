@@ -12,12 +12,125 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/eigen.hpp>
 
+#include "photometricDataIO.hpp"
 #include "normalIntegration.hpp"
 
 using namespace aliceVision;
 
-void normal2PQ(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, Eigen::Matrix3f K){
+void normalIntegration(const std::string& inputPath, bool perspective, const std::string& outputFodler)
+{
 
+    std::string normalMapPath = inputPath + "/normals.png";
+    std::string pathToK = inputPath + "/K.txt";
+
+
+    aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
+    aliceVision::image::ImageReadOptions options;
+    options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
+    aliceVision::image::readImage(normalMapPath, normalsImPNG, options);
+
+    Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
+    readMatrix(pathToK, K);
+
+    int nbCols = normalsImPNG.cols();
+    int nbRows = normalsImPNG.rows();
+
+    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            if(normalsImPNG(i,j)(0) != 0 || normalsImPNG(i,j)(1) != 0 || normalsImPNG(i,j)(2) !=0)
+            {
+                for (int ch = 0; ch < 3; ++ch)
+                {
+                    if(ch ==0)
+                    {
+                        normalsImPNG2(i,j)(ch) = normalsImPNG(i,j)(ch)/127.5 - 1;
+                    }
+                    else
+                    {
+                        normalsImPNG2(i,j)(ch) = - (normalsImPNG(i,j)(ch)/127.5 - 1);
+                    }
+                }
+            }
+            else
+            {
+                normalsImPNG2(i,j)(0) = 0;
+                normalsImPNG2(i,j)(1) = 0;
+                normalsImPNG2(i,j)(2) = -1;
+            }
+        }
+    }
+
+    aliceVision::image::Image<float> depth;
+    normalIntegration(normalsImPNG2, depth, perspective, K);
+
+    std::string pathToDM = outputFodler + "output.exr";
+
+    oiio::ParamValueList metadata;
+    metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
+    aliceVision::image::writeImage(pathToDM, depth, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
+
+}
+void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K)
+{
+
+    int nbCols = normals.cols();
+    int nbRows = normals.rows();
+
+    Eigen::MatrixXf p(nbRows, nbCols);
+    Eigen::MatrixXf q(nbRows, nbCols);
+
+    Eigen::MatrixXf f(nbRows, nbCols);
+
+    // Prepare normal integration :
+    normal2PQ(normals, p, q, perspective, K);
+    getDivergenceField(p, q, f);
+    setBoundaryConditions(p, q, f);
+
+    // Convert f to OpenCV matrix :
+    cv::Mat f_openCV(nbRows, nbCols, CV_32FC1);
+    cv::eigen2cv(f, f_openCV);
+
+    // Cosine transform of f :
+    cv::Mat fcos(nbRows, nbCols, CV_32FC1);
+    cv::dct(f_openCV, fcos);
+
+    //Cosine transform of z :
+    cv::Mat z_bar_bar(nbRows, nbCols, CV_32FC1);
+
+    for (int j = 0; j < nbCols; j++)
+    {
+        for (int i = 0; i < nbRows; i++)
+        {
+            double denom = 4*(pow(sin(0.5*M_PI*j/nbCols),2) + pow(sin(0.5*M_PI*i/nbRows),2));
+            denom = std::max(denom,0.0001);
+            z_bar_bar.at<float>(i,j) = fcos.at<float>(i,j)/denom;
+        }
+     }
+
+    // Inverse cosine transform :
+    cv::Mat z(nbRows, nbCols, CV_32FC1);
+    cv::idct(z_bar_bar, z);
+
+    aliceVision::image::Image<float> currentDepth(nbCols, nbRows);
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            if(perspective)
+            {
+                currentDepth(i,j) = std::exp(z.at<float>(i,j));
+            } else {
+                currentDepth(i,j) = z.at<float>(i,j);
+            }
+        }
+    }
+
+void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K){
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsZ(p.cols(), p.rows());

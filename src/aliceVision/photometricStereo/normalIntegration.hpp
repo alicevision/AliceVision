@@ -7,7 +7,12 @@
 #include <string>
 #include <vector>
 
-void normal2PQ(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXd& p, Eigen::MatrixXd& q, bool perspective, Eigen::Matrix3f K);
+void normalIntegration(const std::string& inputPath, bool perspective, const std::string& outputFodler);
+
+
+void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K);
+
+void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K);
 
 void getDivergenceField(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eigen::MatrixXf& f);
 
