@@ -23,6 +23,7 @@ void getDivergenceField(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eige
 
 void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, Eigen::MatrixXf& f);
 
+void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& initDepth, size_t viewID, const Eigen::Matrix3f& K);
 
 void convertZtoDistance(const aliceVision::image::Image<float>& zMap, aliceVision::image::Image<float>& distanceMap, const Eigen::Matrix3f& K);
 

@@ -153,6 +153,9 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         // Main fonction
         aliceVision::image::Image<float> depth;
         normalIntegration(normalsImPNG2, depth, perspective, K);
+
+        adjustScale(sfmData, depth, viewId, K);
+
         std::string pathToDM = outputFodler + "/" + std::to_string(poseIt.first) + "_depthMap.exr";
 
         // Create pose for metadata
@@ -161,7 +164,6 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
         Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
-
         oiio::ParamValueList metadata;
         metadata.attribute("AliceypeDesc::DOUBLE, oiio::TypeDesVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
         metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, P.data()));
@@ -169,6 +171,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 
     }
 }
+
 
 void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K)
 {
@@ -232,6 +235,7 @@ void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfC
 }
 
 void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K){
+
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsZ(p.cols(), p.rows());
@@ -345,12 +349,40 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     f(nbRows-1,0) = f(nbRows-1,0)-sqrt(2)*b(nbRows-1,0);
 }
 
+void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& initDepth, size_t viewID, const Eigen::Matrix3f& K)
 {
 
+    const aliceVision::sfmData::Landmarks& landmarks = sfmData.getLandmarks();
+    const aliceVision::sfmData::LandmarksPerView landmarksPerView = aliceVision::sfmData::getLandmarksPerViews(sfmData);
+    const aliceVision::sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
 
+    size_t numberOf3dPoints = visibleLandmarks.size();
 
+    Eigen::VectorXf knownDepths(numberOf3dPoints);
+    Eigen::VectorXf estimatedDepths(numberOf3dPoints);
 
+    const aliceVision::sfmData::CameraPose& currentPose = sfmData.getPose(sfmData.getView(viewID));
+    const geometry::Pose3& pose = currentPose.getTransform();
 
+    for (int i = 0; i < numberOf3dPoints; ++i)
+    {
+        size_t currentLandmarkIndex = visibleLandmarks.at(i);
+        const aliceVision::sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
+        knownDepths(i) = pose.depth(currentLandmark.X);
+
+        aliceVision::sfmData::Observation observationInCurrentPicture = currentLandmark.observations.at(viewID);
+
+        int rowInd = observationInCurrentPicture.x(1);
+        int colInd = observationInCurrentPicture.x(0);
+
+        estimatedDepths(i) = initDepth(rowInd, colInd);
+    }
+
+    float num = estimatedDepths.transpose()*knownDepths;
+    float denom = estimatedDepths.transpose()*estimatedDepths;
+    float scale = num/denom;
+    initDepth *= scale;
+}
 
 void convertZtoDistance(const aliceVision::image::Image<float>& zMap, aliceVision::image::Image<float>& distanceMap, const Eigen::Matrix3f& K)
 {
