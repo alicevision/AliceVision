@@ -130,6 +130,11 @@ void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfC
         }
     }
 
+    // AliceVision uses distance-to-origin convention
+    convertZtoDistance(currentDepth, depth, K);
+
+}
+
 void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K){
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
@@ -244,56 +249,48 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     f(nbRows-1,0) = f(nbRows-1,0)-sqrt(2)*b(nbRows-1,0);
 }
 
-void normalIntegration(aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K)
 {
-    int nbCols = normals.cols();
-    int nbRows = normals.rows();
 
-    Eigen::MatrixXf p(nbRows, nbCols);
-    Eigen::MatrixXf q(nbRows, nbCols);
 
-    Eigen::MatrixXf f(nbRows, nbCols);
 
-    // Prepare normal integration :
-    normal2PQ(normals, p, q, perspective, K);
-    getDivergenceField(p, q, f);
-    setBoundaryConditions(p, q, f);
 
-    // Convert f to OpenCV matrix :
-    cv::Mat f_openCV(nbRows, nbCols, CV_32FC1);
-    cv::eigen2cv(f, f_openCV);
 
-    // Cosine transform of f :
-    cv::Mat fcos(nbRows, nbCols, CV_32FC1);
-    cv::dct(f_openCV, fcos);
 
-    //Cosine transform of z :
-    cv::Mat z_bar_bar(nbRows, nbCols, CV_32FC1);
+void convertZtoDistance(const aliceVision::image::Image<float>& zMap, aliceVision::image::Image<float>& distanceMap, const Eigen::Matrix3f& K)
+{
+    int nbRows = zMap.rows();
+    int nbCols = zMap.cols();
 
-    for (int j = 0; j < nbCols; j++)
+    float f = K(0,0);
+    float u0 = K(0,2);
+    float v0 = K(1,2);
+
+    for (int v = 0; v < nbRows; ++v)
     {
-        for (int i = 0; i < nbRows; i++)
+        for (int u = 0; u < nbCols; ++u)
         {
-            double denom = 4*(pow(sin(0.5*M_PI*j/nbCols),2) + pow(sin(0.5*M_PI*i/nbRows),2));
-            denom = std::max(denom,0.00001);
-            z_bar_bar.at<float>(i,j) = fcos.at<float>(i,j)/denom;
-        }
-	}
-
-    // Inverse cosine transform :
-    cv::Mat z(nbRows, nbCols, CV_32FC1);
-    cv::idct(z_bar_bar, z);
-
-    for (int j = 0; j < nbCols; ++j)
-    {
-        for (int i = 0; i < nbRows; ++i)
-        {
-            if(perspective)
-            {
-                depth(i,j) = std::exp(z.at<float>(i,j));
-            } else {
-                depth(i,j) = z.at<float>(i,j);
-            }
+            float L = pow((u - u0),2) + pow((v - v0),2) + pow(f,2);
+            distanceMap(v,u) = zMap(v,u) * L/f;
         }
     }
 }
+
+void convertDistanceToZ(const aliceVision::image::Image<float>& distanceMap, aliceVision::image::Image<float>& zMap, const Eigen::Matrix3f& K)
+{
+    int nbRows = zMap.rows();
+    int nbCols = zMap.cols();
+
+    float f = K(0,0);
+    float u0 = K(0,2);
+    float v0 = K(1,2);
+
+    for (int v = 0; v < nbRows; ++v)
+    {
+        for (int u = 0; u < nbCols; ++u)
+        {
+            float L = pow((u - u0),2) + pow((v - v0),2) + pow(f,2);
+            zMap(v,u) = distanceMap(v,u)*L;
+        }
+    }
+}
+
