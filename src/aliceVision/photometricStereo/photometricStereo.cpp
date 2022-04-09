@@ -28,7 +28,7 @@ void photometricStereo(const std::string& inputPath, const std::string& dataFold
     std::string pictureFolder = inputPath + "/PS_Pictures/";
     getPicturesNames(pictureFolder, imageList);
 
-    Eigen::MatrixXf convertionMatrix = Eigen::MatrixXf::Zero(3,3); // Convertion matrix
+    Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity(); // Convertion matrix
 
     std::vector<std::array<float, 3>> intList; // Light intensities
 
@@ -40,6 +40,7 @@ void photometricStereo(const std::string& inputPath, const std::string& dataFold
     photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
+
 
 }
 
