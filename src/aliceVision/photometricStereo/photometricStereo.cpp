@@ -14,6 +14,7 @@
 #include "photometricDataIO.hpp"
 #include "photometricStereo.hpp"
 
+namespace fs = boost::filesystem;
 
 void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
