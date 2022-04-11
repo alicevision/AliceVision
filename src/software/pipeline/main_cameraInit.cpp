@@ -303,7 +303,7 @@ int aliceVision_main(int argc, char **argv)
 
   if(defaultFocalLength > 0 && defaultFieldOfView > 0)
   {
-    ALICEVISION_LOG_ERROR("Cannot combine --defaultFocalLengthPix --defaultFieldOfView options");
+    ALICEVISION_LOG_ERROR("Cannot combine --defaultFocalLength --defaultFieldOfView options");
     return EXIT_FAILURE;
   }
 
