@@ -458,19 +458,29 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       if(userProps.getPropertyHeader("mvg_metadata"))
       {
         getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_metadata", sampleFrame, rawMetadata);
-        assert(rawMetadata.size() % 2 == 0);
+        if(rawMetadata.size() % 2 != 0)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'metadata' property is supposed to be key/values. Number of values is " + std::to_string(rawMetadata.size()) + ".");
+        }
       }
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
         getAbcArrayProp_uint(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
-        assert(sensorSize_pix.size() == 2);
+        if(sensorSize_pix.size() != 2)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'sensorSizePix' property is supposed to be 2 values. Number of values is " + std::to_string(sensorSize_pix.size()) + ".");
+        }
       }
       if(userProps.getPropertyHeader("mvg_sensorSizeMm"))
       {
         getAbcArrayProp<Alembic::Abc::IDoubleArrayProperty>(userProps, "mvg_sensorSizeMm", sampleFrame, sensorSize_mm);
-        assert(sensorSize_mm.size() == 2);
+        if(sensorSize_mm.size() != 2)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'sensorSizeMm' property is supposed to be 2 values. Number of values is " + std::to_string(sensorSize_mm.size()) + ".");
+        }
       }
-      else {
+      else
+      {
         sensorSize_mm = {24.0, 36.0};
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
@@ -481,6 +491,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       {
         mvg_intrinsicInitializationMode = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicInitializationMode", sampleFrame);
       }
+      // For compatibility with versions < 1.2 (value was in pixels)
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
       {
         initialFocalLengthPix(0) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
@@ -535,6 +546,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
     if (intrinsicScale)
     {
+      // fy_pix = fx_pix * fy/fx
       initialFocalLengthPix(1) = initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0];
       intrinsicScale->setInitialScale(initialFocalLengthPix);
       intrinsicScale->setRatioLocked(lockRatio);
