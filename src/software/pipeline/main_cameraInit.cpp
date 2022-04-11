@@ -307,9 +307,9 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (defaultFocalRatio < 0.0)
+  if (defaultFocalRatio <= 0.0)
   {
-      ALICEVISION_LOG_ERROR("Focal Ratio can't be a negative value");
+      ALICEVISION_LOG_ERROR("Focal Ratio needs to be a positive value: " << defaultFocalRatio);
       return EXIT_FAILURE;
   }
 
