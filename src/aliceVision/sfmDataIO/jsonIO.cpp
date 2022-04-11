@@ -143,7 +143,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.put("fisheyeCircleRadius", intrinsicEquidistant->getCircleRadius());
   }
 
-  intrinsicTree.put("locked", static_cast<int>(intrinsic->isLocked())); // convert bool to integer to avoid using "true/false" in exported file instead of "1/0".
+  intrinsicTree.put("locked", intrinsic->isLocked());
 
   parentTree.push_back(std::make_pair(name, intrinsicTree));
 }
