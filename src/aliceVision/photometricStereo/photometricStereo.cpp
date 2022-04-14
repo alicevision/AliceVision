@@ -35,7 +35,13 @@ void photometricStereo(const std::string& inputPath, const std::string& dataFold
     Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
 
     aliceVision::image::Image<float> mask;
-    loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
+    //loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
+
+    std::string jsonName = dataFolderPath + "/lights.json";
+    buildLigtMatFromJSON(jsonName, imageList, lightMat, intList);
+
+    std::string maskName = dataFolderPath + "/mask.png";
+    loadMask(maskName, mask);
 
     photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
 
@@ -79,9 +85,13 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
             }
         }
 
+        std::string jsonName = dataFolderPath + "/lights.json";
         Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
+        buildLigtMatFromJSON(jsonName, imageList, lightMat, intList);
 
-        loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
+        std::string maskName = dataFolderPath + "/mask.png";
+        loadMask(maskName, mask);
+
         photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
         writePSResults(outputPath, normals, albedo, posesIt.first);
     }

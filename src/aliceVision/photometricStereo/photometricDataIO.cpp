@@ -1,10 +1,19 @@
 #include <aliceVision/image/io.hpp>
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
 
 #include "photometricDataIO.hpp"
+
+namespace bpt = boost::property_tree;
+namespace fs = boost::filesystem;
 
 void loadLightIntensities(const std::string& intFileName, std::vector<std::array<float, 3>>& intList)
 {
@@ -32,7 +41,6 @@ void loadLightIntensities(const std::string& intFileName, std::vector<std::array
         intFile.close();
     }
 }
-
 
 void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& convertionMatrix, Eigen::MatrixXf& lightMat)
 {
@@ -103,7 +111,44 @@ void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat)
         }
         dirFile.close();
     }
+}
 
+void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList)
+{
+    // main tree
+    bpt::ptree fileTree;
+
+    // read the json file and initialize the tree
+    bpt::read_json(fileName, fileTree);
+
+    int lineNumber = 0;
+    for(auto& currentImPath: imageList)
+    {
+        int cpt = 0;
+        for(auto& lightsName: fileTree.get_child("lights"))
+        {
+           fs::path imagePathFS = fs::path(currentImPath);
+           if(boost::algorithm::icontains(imagePathFS.stem().string(), lightsName.first))
+           {
+               std::array<float, 3> currentIntensities;
+               for(auto& intensities: lightsName.second.get_child("intensities"))
+               {
+                   currentIntensities[cpt] = intensities.second.get_value<float>();
+                   ++cpt;
+               }
+               intList.push_back(currentIntensities);
+
+               cpt = 0;
+
+               for(auto& direction: lightsName.second.get_child("direction"))
+               {
+                   lightMat(lineNumber,cpt)  = direction.second.get_value<float>();
+                   ++cpt;
+               }
+               ++lineNumber;
+           }
+        }
+    }
 }
 
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask)

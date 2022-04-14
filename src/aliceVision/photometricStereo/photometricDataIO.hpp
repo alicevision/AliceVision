@@ -14,6 +14,8 @@ void loadLightDirections(const std::string& dirFileName, const Eigen::MatrixXf& 
 
 void loadLightHS(const std::string& dirFileName, Eigen::MatrixXf& lightMat);
 
+void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::string>& imageList, Eigen::MatrixXf& lightMat, std::vector<std::array<float, 3>>& intList);
+
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask);
 
 void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& indexes);
