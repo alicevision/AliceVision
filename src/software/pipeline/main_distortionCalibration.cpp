@@ -35,6 +35,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
     std::vector<calibration::CheckerDetector::CheckerBoardCorner> corners = detect.getCorners();
     std::vector<calibration::CheckerDetector::CheckerBoard> boards = detect.getBoards();
 
+    int boardIdx = 0;
     for (auto& b : boards)
     {
         // Create horizontal lines
@@ -46,6 +47,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
             line.dist = 1;
             line.horizontal = true;
             line.index = i;
+            line.board = boardIdx;
 
             for (int j = 0; j < b.cols(); j++)
             {
@@ -69,6 +71,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
             line.dist = 1;
             line.horizontal = false;
             line.index = j;
+            line.board = boardIdx;
 
             for (int i = 0; i < b.rows(); i++)
             {
@@ -82,9 +85,101 @@ bool retrieveLines(std::vector<calibration::LineWithPoints>& lineWithPoints, con
             //Check we don't have a too small line which won't be easy to estimate
             if (line.points.size() < 10) continue;
 
-            
             lineWithPoints.push_back(line);
         }
+
+        // Create diagonal 1 lines
+        for (int i = 0; i < b.rows(); i++)
+        {
+            calibration::LineWithPoints line;
+            line.angle = M_PI_4;
+            line.dist = 1;
+            line.horizontal = false;
+            line.index = i;
+            line.board = boardIdx;
+
+            for (int j = 0; j < b.cols(); j++)
+            {
+                if (i + j >= b.rows())
+                {
+                    break;
+                }
+
+                const IndexT idx = b(i + j, j);
+                if (idx == UndefinedIndexT) continue;
+
+                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
+                line.points.push_back(p.center);
+            }
+
+            //Check we don't have a too small line which won't be easy to estimate
+            if (line.points.size() < 10) continue;
+
+            lineWithPoints.push_back(line);
+        }
+
+        // Create diagonal 2 lines
+        for (int j = 0; j < b.cols(); j++)
+        {
+            calibration::LineWithPoints line;
+            line.angle = M_PI_4;
+            line.dist = 1;
+            line.horizontal = false;
+            line.index = j;
+            line.board = boardIdx;
+
+            for (int i = 0; i < b.rows(); i++)
+            {
+                if (i + j >= b.cols())
+                {
+                    break;
+                }
+
+                const IndexT idx = b(i, i + j);
+                if (idx == UndefinedIndexT) continue;
+
+                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
+                line.points.push_back(p.center);
+            }
+
+            //Check we don't have a too small line which won't be easy to estimate
+            if (line.points.size() < 10) continue;
+
+            lineWithPoints.push_back(line);
+        }
+
+        // Create diagonal 3 lines
+        for (int j = 0; j < b.cols(); j++)
+        {
+            calibration::LineWithPoints line;
+            line.angle = M_PI_4;
+            line.dist = 1;
+            line.horizontal = false;
+            line.index = j;
+            line.board = boardIdx;
+
+            for (int i = 0; i < b.rows(); i++)
+            {
+                if (i + j >= b.cols())
+                {
+                    break;
+                }
+
+                const IndexT idx = b(b.rows() - 1 - i, i + j);
+                if (idx == UndefinedIndexT) continue;
+
+                const calibration::CheckerDetector::CheckerBoardCorner& p = corners[idx];
+                line.points.push_back(p.center);
+            }
+
+            //Check we don't have a too small line which won't be easy to estimate
+            if (line.points.size() < 10) continue;
+
+            lineWithPoints.push_back(line);
+        }
+
+
+        boardIdx++;
     }
 
     if (lineWithPoints.size() < 2)
@@ -102,7 +197,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -110,7 +205,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -118,7 +213,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -134,7 +229,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -142,7 +237,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -150,7 +245,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -160,7 +255,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
     locksDistortions[0] = false;
     locksDistortions[1] = false;
     locksDistortions[2] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -176,7 +271,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -184,7 +279,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -192,7 +287,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -205,7 +300,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[3] = false;
     locksDistortions[4] = false;
     locksDistortions[5] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -234,7 +329,13 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     const double k1 = simpleCamera->getDistortionParams()[0];
     camera->setDistortionParams({ k1,k1,k1,k1 });
 
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    /*if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return false;
+    }*/
+
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -258,7 +359,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -266,7 +367,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -274,7 +375,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -286,7 +387,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[2] = false;
     locksDistortions[3] = false;
     locksDistortions[4] = true;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -298,7 +399,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[2] = false;
     locksDistortions[3] = false;
     locksDistortions[4] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;

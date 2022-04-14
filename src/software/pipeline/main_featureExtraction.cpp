@@ -34,6 +34,7 @@
 #include <functional>
 #include <memory>
 #include <limits>
+#include <iomanip>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

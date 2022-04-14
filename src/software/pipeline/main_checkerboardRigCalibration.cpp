@@ -92,6 +92,7 @@ int aliceVision_main(int argc, char* argv[])
     std::map<int, std::vector<std::shared_ptr<sfmData::View>>> mapGroupViews;
     for (auto& pv : sfmData.getViews())
     {
+        pv.second->setIndependantPose(false);
         mapGroupViews[pv.second->getFrameId()].push_back(pv.second);
     }
 

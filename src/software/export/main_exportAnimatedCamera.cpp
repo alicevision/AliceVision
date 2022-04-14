@@ -101,7 +101,7 @@ oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::RO
 /// Undistortion 2D MAP according to a given camera and its distortion model
 inline void UndistortMap(
     const camera::IntrinsicBase* intrinsicPtr,
-    image::Image<image::RGBfColor>& stmap,
+    image::Image<image::RGBAfColor>& stmap,
     bool correctPrincipalPoint = false,
     const oiio::ROI& roi = oiio::ROI())
 {
@@ -129,7 +129,7 @@ inline void UndistortMap(
         yOffset = roi.ybegin;
     }
 
-    stmap.resize(widthRoi, heightRoi, true, image::RGBfColor(-1.0f, -1.0f, 0.0f));
+    stmap.resize(widthRoi, heightRoi, true, image::RGBAfColor(0.0f));
     const image::Sampler2d<image::SamplerLinear> sampler;
 
 #pragma omp parallel for
@@ -154,7 +154,7 @@ inline void UndistortMap(
 /// Distortion 2D MAP according to a given camera and its distortion model
 inline void distortMap(
     const camera::IntrinsicBase* intrinsicPtr,
-    image::Image<image::RGBfColor>& stmap,
+    image::Image<image::RGBAfColor>& stmap,
     bool correctPrincipalPoint = false,
     const oiio::ROI& roi = oiio::ROI())
 {
@@ -182,26 +182,43 @@ inline void distortMap(
         yOffset = roi.ybegin;
     }
 
-    stmap.resize(widthRoi, heightRoi, true, image::RGBfColor(-1.0f, -1.0f, 0.0f));
+    widthRoi = 1920;
+    heightRoi = 1080;
+
+    stmap.resize(widthRoi, heightRoi, true, image::RGBAfColor(0.0f));
     const image::Sampler2d<image::SamplerLinear> sampler;
 
-#pragma omp parallel for
+    float minx = 1.0;
+    float miny = 1.0;
+    float maxx = 0.0;
+    float maxy = 0.0;
+//#pragma omp parallel for
     for (int i = 0; i < heightRoi; ++i)
     {
         for (int j = 0; j < widthRoi; ++j)
         {
-            const Vec2 disto_pix(j + xOffset, i + yOffset);
+            const Vec2 disto_pix((j + xOffset) * 3.86979, (i + yOffset) * 3.86979);
 
             // compute coordinates with distortion
             const Vec2 undisto_pix = intrinsicPtr->get_ud_pixel(disto_pix) - ppCorrection;
 
-            if (undisto_pix.x() < 0 || undisto_pix.x() >= intrinsicPtr->w()) continue;
-            if (undisto_pix.y() < 0 || undisto_pix.y() >= intrinsicPtr->h()) continue;
+            //if (undisto_pix.x() < 0 || undisto_pix.x() >= intrinsicPtr->w()) continue;
+            //if (undisto_pix.y() < 0 || undisto_pix.y() >= intrinsicPtr->h()) continue;
 
-            stmap(i, j).r() = float((undisto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
-            stmap(i, j).g() = float((float(intrinsicPtr->h()) - 1.0f - undisto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
+            stmap(i, j).b() = float((undisto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
+            stmap(i, j).a() = float((float(intrinsicPtr->h()) - 1.0f - undisto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
+
+            stmap(i, j).r() = stmap(i, j).b();
+            stmap(i, j).g() = stmap(i, j).a();
+
+            minx = std::min(minx, stmap(i, j).b());
+            miny = std::min(miny, stmap(i, j).a());
+            maxx = std::max(maxx, stmap(i, j).b());
+            maxy = std::max(maxy, stmap(i, j).a());
         }
     }
+
+    std::cout << std::min(minx, miny) << " " << std::max(maxx, maxy) << std::endl;
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -374,7 +391,7 @@ int aliceVision_main(int argc, char** argv)
       for(const auto& intrinsicPair : sfmDataExport.getIntrinsics())
       {
           const auto & intrinsic = intrinsicPair.second;
-          image::Image<image::RGBfColor> stmap;
+          image::Image<image::RGBAfColor> stmap;
 
           if (intrinsic->isValid())
           {

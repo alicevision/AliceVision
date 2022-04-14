@@ -126,6 +126,62 @@ private:
     Vec2 _pt;
 };
 
+class CostSquare : public ceres::CostFunction
+{
+public:
+    CostSquare()
+    {
+        set_num_residuals(1);
+
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+        mutable_parameter_block_sizes()->push_back(1);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_dist1 = parameters[0];
+        const double* parameter_dist2 = parameters[1];
+        const double* parameter_common = parameters[2];
+
+        double dist1 = *parameter_dist1;
+        double dist2 = *parameter_dist2;
+        double distc = *parameter_common;
+
+        double w = 1000.0;
+
+        residuals[0] = w * ((dist2 - dist1) - distc);
+
+        if (jacobians == nullptr)
+        {
+            return true;
+        }
+
+        if (jacobians[0] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
+
+            J(0, 0) = -w;
+        }
+
+        if (jacobians[1] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[1]);
+
+            J(0, 0) = w;
+        }
+
+        if (jacobians[2] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[2]);
+
+            J(0, 0) = -w;
+        }
+
+        return true;
+    }
+};
+
 
 class CostPoint : public ceres::CostFunction
 {
@@ -209,7 +265,7 @@ private:
 };
 
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions, bool forceSquare)
 {
     if (!cameraToEstimate)
     {
@@ -235,6 +291,9 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     double * scale = &params[0];
     double * center = &params[2];
     double * distortionParameters = &params[4];
+
+    double common_dist = 1.0;
+    problem.AddParameterBlock(&common_dist, 1);
 
     problem.AddParameterBlock(scale, 2);
     if (lockScale)
@@ -304,6 +363,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         }
     }
 
+  
     ceres::Solver::Options options;
     options.use_inner_iterations = true;
     options.max_num_iterations = 10000; 
@@ -325,10 +385,13 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     std::vector<double> errors;
 
 
+
+
     for (auto & l : lines)
     {
         const double sangle = sin(l.angle);
         const double cangle = cos(l.angle);
+
 
         for(const Vec2& pt : l.points)
         {
@@ -355,7 +418,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     return true;
 }
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions, bool forceSquare)
 {
     if (!cameraToEstimate)
     {

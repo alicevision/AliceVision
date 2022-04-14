@@ -16,6 +16,7 @@
 #include <tuple>
 #include <cassert>
 #include <cstdlib>
+#include <iomanip>
 
 namespace fs = boost::filesystem;
 

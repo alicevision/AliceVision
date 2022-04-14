@@ -146,6 +146,10 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     //Calibrate each intrinsic independently
+    Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> indices;
+    size_t global_max_checkerboard_w = 0;
+    size_t global_max_checkerboard_h = 0;
+    bool first = true;
     for (auto& pi : sfmData.getIntrinsics())
     {
         IndexT intrinsicId = pi.first;
@@ -247,7 +251,7 @@ int aliceVision_main(int argc, char* argv[])
             homographies[pv.first] = H;
         }
         
-
+       
         
         //Now we use algorithm from Zhang, A flexible new technique for camera calibration
         Eigen::MatrixXd V(homographies.size() * 2, 6);
@@ -296,21 +300,36 @@ int aliceVision_main(int argc, char* argv[])
         //Initialize camera intrinsics
         cameraPinhole->setK(A);
 
-
-        //Create landmarks
-        Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic> indices(max_checkerboard_h, max_checkerboard_w);
-        IndexT posLandmark = 0;
-        for (int i = 0; i < max_checkerboard_h; i++)
+        if (first)
         {
-            for (int j = 0; j < max_checkerboard_w; j++)
+            //Create landmarks
+            indices = Eigen::Matrix<IndexT, Eigen::Dynamic, Eigen::Dynamic>(max_checkerboard_h, max_checkerboard_w);
+            IndexT posLandmark = 0;
+            for (int i = 0; i < max_checkerboard_h; i++)
             {
-                indices(i, j) = posLandmark;
+                for (int j = 0; j < max_checkerboard_w; j++)
+                {
+                    indices(i, j) = posLandmark;
 
-                sfmData::Landmark l(Vec3(squareSize* double(j), squareSize * double(i), 0.0), feature::EImageDescriberType::SIFT);
-                sfmData.getLandmarks()[posLandmark] = l;
-                posLandmark++;
+                    sfmData::Landmark l(Vec3(squareSize * double(j), squareSize * double(i), 0.0), feature::EImageDescriberType::SIFT);
+                    sfmData.getLandmarks()[posLandmark] = l;
+                    posLandmark++;
+                }
+            }
+
+            global_max_checkerboard_w = max_checkerboard_w;
+            global_max_checkerboard_h = max_checkerboard_h;
+            first = false;
+        }
+        else
+        {
+            if (global_max_checkerboard_h != max_checkerboard_h || global_max_checkerboard_w != max_checkerboard_w)
+            {
+                ALICEVISION_LOG_ERROR("Inconsistent checkerboard size");
+                return EXIT_FAILURE;
             }
         }
+        
 
         //Initialize poses for each view using linear method
         Eigen::Matrix3d Ainv = A.inverse();

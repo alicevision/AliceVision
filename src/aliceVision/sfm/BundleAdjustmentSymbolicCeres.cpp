@@ -717,6 +717,7 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
       bool withRig = (view.isPartOfRig() && !view.isPoseIndependant());
       double * rigBlockPtr = nullptr;
       if (withRig) {
+     
         rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
       }
       else {
