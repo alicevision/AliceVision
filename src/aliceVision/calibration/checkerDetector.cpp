@@ -1176,6 +1176,56 @@ bool CheckerDetector::mergeCheckerboards()
     using CheckerBoardWithScore = std::pair<CheckerBoard, double>;
     std::vector<CheckerBoardWithScore> checkers;
 
+    //Remove empty borders
+    for (auto & b : _boards)
+    {
+        int miny = b.rows();
+        int maxy = 0;
+        int minx = b.cols();
+        int maxx = 0;
+
+        for (int i = 0; i < b.rows(); i++)
+        {
+            bool empty = true;
+            for (int j = 0; j < b.cols(); j++)
+            {
+                if (b(i, j) != UndefinedIndexT)
+                {
+                    empty = false;
+                }
+            }
+
+            if (!empty)
+            {
+                miny = std::min(miny, i);
+                maxy = std::max(maxy, i);
+            }
+        }
+
+        for (int j = 0; j < b.cols(); j++)
+        {
+            bool empty = true;
+            for (int i = 0; i < b.rows(); i++)
+            {
+                if (b(i, j) != UndefinedIndexT)
+                {
+                    empty = false;
+                }
+            }
+
+            if (!empty)
+            {
+                minx = std::min(minx, j);
+                maxx = std::max(maxx, j);
+            }
+        }
+
+        int width = maxx - minx + 1;
+        int height = maxy - miny + 1;
+
+        b = b.block(miny, minx, height, width);
+    }
+
     if (_boards.size() <= 1) 
     {
         return true;

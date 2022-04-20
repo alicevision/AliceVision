@@ -137,7 +137,7 @@ inline void UndistortMap(
     {
         for (int j = 0; j < widthRoi; ++j)
         {
-            const Vec2 undisto_pix(j + xOffset, i + yOffset);
+            const Vec2 undisto_pix((j + xOffset), (i + yOffset));
 
             // compute coordinates with distortion
             const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
@@ -182,8 +182,6 @@ inline void distortMap(
         yOffset = roi.ybegin;
     }
 
-    widthRoi = 1920;
-    heightRoi = 1080;
 
     stmap.resize(widthRoi, heightRoi, true, image::RGBAfColor(0.0f));
     const image::Sampler2d<image::SamplerLinear> sampler;
@@ -192,12 +190,15 @@ inline void distortMap(
     float miny = 1.0;
     float maxx = 0.0;
     float maxy = 0.0;
-//#pragma omp parallel for
+
+    
+    
+    #pragma omp parallel for
     for (int i = 0; i < heightRoi; ++i)
     {
         for (int j = 0; j < widthRoi; ++j)
         {
-            const Vec2 disto_pix((j + xOffset) * 3.86979, (i + yOffset) * 3.86979);
+            const Vec2 disto_pix((j + xOffset), (i + yOffset));
 
             // compute coordinates with distortion
             const Vec2 undisto_pix = intrinsicPtr->get_ud_pixel(disto_pix) - ppCorrection;
@@ -207,18 +208,10 @@ inline void distortMap(
 
             stmap(i, j).b() = float((undisto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
             stmap(i, j).a() = float((float(intrinsicPtr->h()) - 1.0f - undisto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
-
             stmap(i, j).r() = stmap(i, j).b();
             stmap(i, j).g() = stmap(i, j).a();
-
-            minx = std::min(minx, stmap(i, j).b());
-            miny = std::min(miny, stmap(i, j).a());
-            maxx = std::max(maxx, stmap(i, j).b());
-            maxy = std::max(maxy, stmap(i, j).a());
         }
     }
-
-    std::cout << std::min(minx, miny) << " " << std::max(maxx, maxy) << std::endl;
 }
 
 int aliceVision_main(int argc, char** argv)

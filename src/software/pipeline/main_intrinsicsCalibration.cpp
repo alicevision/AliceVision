@@ -60,7 +60,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string checkerBoardsPath;
     std::string sfmOutputDataFilepath;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    const double squareSize = 0.02;
+    double squareSize = 0.1;
 
     // Command line parameters
     po::options_description allParams(
@@ -70,9 +70,9 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-        ("checkerboards", po::value<std::string>(&checkerBoardsPath)->required(), "Checkerboards json files directory.")
+        ("checkerboards,c", po::value<std::string>(&checkerBoardsPath)->required(), "Checkerboards json files directory.")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
-        ;
+        ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize), "Checkerboard square width in mm");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
