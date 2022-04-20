@@ -1177,11 +1177,13 @@ bool CheckerDetector::mergeCheckerboards()
     std::vector<CheckerBoardWithScore> checkers;
 
     //Remove empty borders
-    for (auto & b : _boards)
+    for (int id = 0; id < _boards.size(); id++)
     {
-        int miny = b.rows();
+        auto b = _boards[id];
+
+        int miny = b.rows() - 1;
         int maxy = 0;
-        int minx = b.cols();
+        int minx = b.cols() - 1;
         int maxx = 0;
 
         for (int i = 0; i < b.rows(); i++)
@@ -1223,8 +1225,9 @@ bool CheckerDetector::mergeCheckerboards()
         int width = maxx - minx + 1;
         int height = maxy - miny + 1;
 
-        b = b.block(miny, minx, height, width);
+        _boards[id] = b.block(miny, minx, height, width);
     }
+    
 
     if (_boards.size() <= 1) 
     {
@@ -1235,7 +1238,10 @@ bool CheckerDetector::mergeCheckerboards()
     {
         CheckerBoardWithScore cbws;
         cbws.first = b;
+
+        std::cout << b.rows() << " " << b.cols() << std::endl;
         cbws.second = computeEnergy(b, _corners);
+        std::cout << "----" << std::endl;
         checkers.push_back(cbws);
     }
 
