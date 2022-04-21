@@ -159,20 +159,20 @@ private:
 };
 
 void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-                                    std::vector<std::vector<float>>& cameraExposures,
+                                    std::vector<std::vector<double>> &cameraExposures,
                                     const std::size_t channelQuantization,
                                     bool refineExposures, rgbCurve& response)
 {
-    std::map<std::pair<float, float>, double> exposureParameters;
-    for(std::vector<float>& group : cameraExposures)
+    std::map<std::pair<double, double>, double> exposureParameters;
+    for(std::vector<double>& group : cameraExposures)
     {
         for(int index = 0; index < group.size() - 1; index++)
         {
-            std::pair<float, float> exposurePair;
+            std::pair<double, double> exposurePair;
             exposurePair.first = group[index];
             exposurePair.second = group[index + 1];
-            exposureParameters[exposurePair] = double(exposurePair.second) / double(exposurePair.first);
-        } 
+            exposureParameters[exposurePair] = exposurePair.second / exposurePair.first;
+        }
     }
 
     std::array<double, 3> laguerreParam = {0.0, 0.0, 0.0};
@@ -195,7 +195,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>&
 
             for (int bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++) {
                 
-                std::pair<float, float> exposurePair;
+                std::pair<double, double> exposurePair;
                 exposurePair.first = sample.descriptions[bracketPos].exposure;
                 exposurePair.second = sample.descriptions[bracketPos + 1].exposure;
 
@@ -258,17 +258,17 @@ void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>&
     {
         for(size_t idGroup = 0; idGroup < cameraExposures.size(); idGroup++) 
         {   
-            std::vector<float> & group = cameraExposures[idGroup];
+            std::vector<double> & group = cameraExposures[idGroup];
             
             //Copy !
-            std::vector<float> res = cameraExposures[idGroup];
+            std::vector<double> res = cameraExposures[idGroup];
         
             for(int index = 0; index < group.size() - 1; index++)
             {
-                std::pair<float, float> exposurePair;
+                std::pair<double, double> exposurePair;
                 exposurePair.first = group[index];
                 exposurePair.second = group[index + 1];
-                double value = exposureParameters[exposurePair];
+                const double value = exposureParameters[exposurePair];
                 res[index + 1] = (res[res.size() - 1] * value);
             }
 
