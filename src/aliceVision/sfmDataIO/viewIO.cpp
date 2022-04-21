@@ -122,7 +122,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
-  double focalLength;
+  double focalLength{-1.0};
   bool hasFocalLengthInput = false;
 
   if (sensorWidth < 0)
