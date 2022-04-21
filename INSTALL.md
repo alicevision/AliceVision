@@ -61,8 +61,8 @@ AliceVision also depends on some embedded libraries:
 
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
-[Vcpkg](https://github.com/Microsoft/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
-AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/Microsoft/vcpkg/blob/master/README.md#quick-start) to setup vcpkg.
+[Vcpkg](https://github.com/alicevision/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
+AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
 
 **Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
 
@@ -427,4 +427,3 @@ To retrieve the generated files:
 # Create an instance of the image, copy the files and remove the temporary docker instance.
 CID=$(docker create alicevision:centos7-cuda9.2) && docker cp ${CID}:/opt/AliceVision_install . && docker cp ${CID}:/opt/AliceVision_bundle . && docker rm ${CID}
 ```
-
