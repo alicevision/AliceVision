@@ -1,0 +1,534 @@
+ocio_profile_version: 2
+
+#
+# Note: this is not intended to be a complete production-ready config, its purpose is to
+# introduce many of the new features in OCIO v2.
+#
+
+description: A config to demo the new features in OCIO v2.
+name:        OCIOv2-demo_2021-02-03
+
+#
+# This config does not require any external files.
+#
+search_path:
+
+#
+# Defining the environment (even if empty) in the config can be a performance boost.
+#
+environment: {}
+
+#
+# The family separator is the character used to seprate colorspace family attributes into 
+# tokens or levels for hierarchical menus.  (The "/" character is also the default.)
+#
+family_separator: /
+
+#
+# Roles
+#
+roles:
+  #
+  # Please define the two interchange roles.  This will allow OCIO to convert pixels that are in
+  # a color space from another config (that also implements these roles) into a color space in
+  # this config.
+  #
+  aces_interchange: ACES2065-1
+  cie_xyz_d65_interchange: CIE-XYZ D65
+  #
+  # (As this is just a demo, not all the usual roles have been defined.)
+  #
+  color_timing: ACEScct
+  compositing_log: ACEScct
+  data: Raw
+  default: sRGB
+  scene_linear: ACEScg
+
+#
+# The File Rules allow you to configure default behavior for applications importing image files.
+#
+file_rules:
+    #
+    # The first rule says to assign the colorspace Raw to files with a .tx extension.
+    # The colorspace Raw, defined below, essentially means no color processing is applied.
+    #
+  - !<Rule> {name: tx, colorspace: Raw, pattern: "*", extension: tx}
+    #
+    # The next rule assigns the colorspace "ARRI LogC" to any files that contain "LogC" in the path.
+    #
+  - !<Rule> {name: LogC, colorspace: ARRI LogC, pattern: "*LogC*", extension: "*"}
+    #
+    # The next rule assigns the colorspace "sRGB" to any file that ends with .TIF or .TIFF.
+    #
+  - !<Rule> {name: TIFF, colorspace: sRGB, regex: ".*\\.TIF?F$"}
+    #
+    # The next rule uses the OCIO v1 method of searching the path for all colorspaces in the config.
+    #
+  - !<Rule> {name: ColorSpaceNamePathSearch}
+    #
+    # The rules are ordered, highest priority first.  OCIO takes the path to a file and applies
+    # the rules one-by-one until there is a match.  The last rule, "Default", always matches.
+    # In this case the colorspace is assigned to the colorspace used by the "default" role.
+    #
+  - !<Rule> {name: Default, colorspace: default}
+
+#
+# The Viewing Rules allow applications to determine an appropriate default view for a given color
+# space.  This becomes important for applications that need to display images in a variety of color
+# spaces.  For example, an ACES Output Transform might be the ideal view for scene-linear or log
+# encoded color spaces but not be appropriate for video color spaces.  In OCIO v2, there is a new
+# getView function that takes a display and a color space as arguments.  OCIO uses the viewing rules
+# (if present) to filter the list of views to those that are appropriate for the given color space.
+# The rules shown here mostly use the new "encoding" property of color spaces but it is also possible
+# for a rule to list color spaces directly.  Any views that do not use a rule are always returned.
+# The active_views list may be used to also sort the filtered views (or do further filtering).
+#
+viewing_rules:
+  #
+  # The first rule means the view will only be used with colorspaces that have an encoding set 
+  # to "scene-linear".
+  #
+  - !<Rule> {name: scene-linear, encodings: scene-linear}
+  #
+  # The next rule is similar but is targeted at colorspaces that have an encoding of "data".
+  #
+  - !<Rule> {name: data, encodings: data}
+  #
+  # The next rule targets colorspaces that have an encoding of either "log" or "scene-linear".
+  #
+  - !<Rule> {name: log-or-linear, encodings: [ log, scene-linear ]}
+  #
+  # The next rule targets colorspaces that have an encoding of either "sdr-video" or "hdr-video".
+  #
+  - !<Rule> {name: video, encodings: [ sdr-video, hdr-video ]}
+  #
+  # The next rule is not used below but is an example of how a rule could target specific colorspaces.
+  #
+  - !<Rule> {name: film-log, colorspaces: Log film scan (ADX10)}
+
+
+#
+# The Shared Views allow you to define a view that will be reused for multiple displays.
+# This can make the config easier to read and maintain.
+#
+shared_views:
+    #
+    # The first two shared views, "Log" and "Raw" have no actual dependence on the display, so they
+    # simply specify the colorspace that will be used to apply the view.
+    #
+    # Note that if the application implements support for viewing rules, the Log view will only be
+    # used with scene-linear colorspaces (it is typically of no value for colorspaces that are already
+    # logarithmic or that are video or data), and the Raw view will only be used with data colorspaces.
+    # (Simply removing the rule from the Raw view would make it be offered with all colorspaces, which 
+    # might be preferred in some scenarios.)
+    #
+  - !<View> {name: Log, colorspace: ACEScct, rule: scene-linear}
+  - !<View> {name: Raw, colorspace: Raw, rule: data}
+    #
+    # The next shared views use a view_transform and display_colorspace rather than a simple colorspace
+    # because the view does depend on the display.  By setting display_colorspace to "<USE_DISPLAY_NAME>",
+    # the display_colorspace will be replaced by the display colorspace below that has the same name as
+    # the display.  For example, when used with display "sRGB", the display_colorspace is set to "sRGB".
+    #
+  - !<View> 
+    name: ACES 1.0 SDR-video
+    view_transform: ACES 1.0 SDR-video
+    display_colorspace: <USE_DISPLAY_NAME>
+    rule: log-or-linear
+    #
+    # Note that YAML syntax allows views to be split onto multiple lines to make them easier to read.
+    #
+    # The ordering within the shared_views section is not significant.  It is the order they appear
+    # below that determines the menu order (although active_views may be used to re-order them).
+    #
+  - !<View> 
+    name: Un-tone-mapped
+    view_transform: Un-tone-mapped
+    display_colorspace: <USE_DISPLAY_NAME>
+    rule: log-or-linear
+    #
+    # The "Un-tone-mapped" and "Video" views are functionally equivalent but the viewing rules allow
+    # different names to be used based on the colorspace being viewed.  For example, when viewing
+    # video images, it's nicer to have a view called "Video" rather than "Un-tone-mapped" (the latter
+    # really only makes sense in the context of scene-referred images).
+    #
+  - !<View> 
+    name: Video
+    view_transform: Un-tone-mapped
+    display_colorspace: <USE_DISPLAY_NAME>
+    rule: video
+
+
+#
+# Displays
+#
+displays:
+  # 
+  # The first displays simply reference the shared views defined above.  The ordering of the views
+  # determines the menu order (unless active_views is used to re-order them).
+  #
+  sRGB:
+    - !<Views> [ ACES 1.0 SDR-video, Un-tone-mapped, Log, Video, Raw ]
+  Rec.1886 / Rec.709 video:
+    - !<Views> [ ACES 1.0 SDR-video, Un-tone-mapped, Log, Video, Raw ]
+  #
+  # The next display uses a (non-shared) view as well as shared views.
+  #
+  Rec.2100-PQ:
+    - !<View> 
+      name: ACES 1.1 HDR-video (1000 nits)
+      view_transform: ACES 1.1 HDR-video (1000 nits & Rec.2020 lim)
+      display_colorspace: Rec.2100-PQ
+      rule: log-or-linear
+    - !<Views> [ Un-tone-mapped, Log, Video, Raw ]
+
+
+#
+# A Virtual Display allows an application to ask OCIO to instantiate a new display from an ICC
+# monitor profile.  The ICC monitor profile essentially becomes a new display colorspace and a
+# new display is added for users, named after the ICC profile.  The new display will inherit the 
+# views from the virtual display.
+#
+virtual_display:
+  - !<Views> [ ACES 1.0 SDR-video, Un-tone-mapped, Log, Raw ]
+
+
+#
+# The default view transform is the one that will be used if ColorSpaceTransform needs to convert
+# between a colorspace and a display colorspace.  (In other words, one that uses the scene-referred
+# reference space and one that uses the display-referred reference space.)
+#
+default_view_transform: Un-tone-mapped
+
+#
+# This section of the config defines the View Transforms.  A View Transform is a transform that
+# converts between the scene-referred reference space and the display-referred reference space
+# (which is new in OCIO v2).  The View Transform is sometimes referred to by other names in
+# various color science documents.  For example, in ACES it is called a "rendering" and in the
+# ITU standards for HDR television it is called an Opto-Optical Transfer Function (OOTF).  It
+# is also commonly referred to as a "tone-map".  This is typically where the S-shape curve that
+# avoids clipped highlights is applied, along with other adjustments necessary to adopt the
+# latest color science best-practices.
+#
+view_transforms:
+    # 
+    # This first view transform is simply a matrix to convert from the scene-referred reference space,
+    # which is ACES2065-1 in this config, to the display-referred reference space, which is CIE XYZ
+    # with a D65 adaptive whitepoint in this config.  Rather than put the matrix coefficients in the
+    # config, it is easier to reference one of the existing BuiltinTransforms.  A BuiltinTransform is
+    # another new OCIO v2 feature, it is essentially a well-known transform that OCIO knows how to
+    # construct at runtime.
+    #
+  - !<ViewTransform>
+    name: Un-tone-mapped
+    description: |
+      Convert the scene colorimetry directly to display-referred with no tone-mapping.
+      This is often described as a "linear workflow." It is intended only for diagnostic purposes.
+    from_scene_reference: !<BuiltinTransform> {style: "UTILITY - ACES-AP0_to_CIE-XYZ-D65_BFD"}
+    #
+    # The next view transform implements the bulk of the ACES Output Transform for SDR video.  In ACES,
+    # the transform from scene-referred colorimetry to display-referred colorimetry is identical for
+    # a set of Output Transforms (e.g., sRGB and Rec.709).  Only the final conversion from display
+    # colorimetry to display code values differs.  That last part is implemented in OCIO as a display
+    # colorspace.  The BuiltinTransform here applies the RRT and first half of the ODT.  There are 
+    # Builtins available in OCIO for all of the ACES Output Transforms (though for brevity only two
+    # of them are included in this demo config).
+    #
+  - !<ViewTransform>
+    name: ACES 1.0 SDR-video
+    description: |
+      ACES Output Transform for SDR displays in a video viewing environment. ACES neutrals are at D65.
+    from_scene_reference: !<BuiltinTransform> {style: "ACES-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO_1.0"}
+    # 
+    # The next view transform is very similar, implementing the bulk of the ACES Output Transform for
+    # 1000 nit HDR video. The output transform is completed via the addition of an HDR display colorspace
+    # defined below.
+    #
+  - !<ViewTransform>
+    name: ACES 1.1 HDR-video (1000 nits & Rec.2020 lim)
+    description: |
+      ACES Output Transform for 1000 nit HDR displays. ACES neutrals are at D65. Gamut limit uses Rec.2020 primaries.
+    from_scene_reference: !<BuiltinTransform> {style: "ACES-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - HDR-VIDEO-1000nit-15nit-REC2020lim_1.1"}
+
+#
+# Looks
+#
+looks:
+
+  - !<Look>
+    name: ACES-LMT - Blue light artifact fix
+    description: |
+      LMT for desaturating blue hues to reduce clipping artifacts
+    process_space: ACES2065-1
+    transform: !<BuiltinTransform> {style: "ACES-LMT - BLUE_LIGHT_ARTIFACT_FIX"}
+
+
+#
+# The inactive colorspace list is another new OCIO v2 feature.  It allows you to include colorspaces
+# in the config but hide them from user menus.  In this case, we want this colorspace in the config
+# for use in the cie_xyz_d65_interchange role above, but we don't want users to be able to select it.
+# Note that you may override the inactive list via an environment variable.
+#
+inactive_colorspaces: [ CIE-XYZ D65 ]
+
+#
+# The Display Colorspaces are another new OCIO v2 feature.  These are like traditional colorspaces
+# but are defined in relation to a display-referred reference space rather than a scene-referred space.
+# One of the benefits of this is that a ColorSpaceTransform may now convert between a pair of display
+# colorspaces (e.g., from Rec.709 to sRGB) without needing to invert a tone-map all the way back to
+# the scene-referred reference space.
+#
+display_colorspaces:
+    #
+    # The display-referred reference space for this config is CIE XYZ tristimulus values (colorimetry)
+    # with an adaptive white point of D65.  As with the scene-referred reference space, no transforms
+    # are defined for it.
+    #
+    # This colorspace does not need to be exposed to users so it is in the inactive_colorspaces list
+    # above.  Also, it does not have any categories, which also means it would not be exposed to users
+    # in applications that support categories.
+    #
+  - !<ColorSpace>
+    name: CIE-XYZ D65
+    family: 
+    description: |
+      Display connection space, CIE XYZ with D65 adaptive white point
+    encoding: display-linear
+    isdata: false
+    categories: 
+    #
+    # The next display colorspace is for sRGB.  It simply applies a matrix and a gamma to convert from
+    # the desired display colorimetry (in CIE XYZ space) to display code values that may be sent to a
+    # monitor.  Note that display colorspaces use the YAML keys "from_display_reference" and
+    # "to_display_reference" to specify their transforms.
+    #
+  - !<ColorSpace>
+    name: sRGB
+    family: Displays/SDR
+    description: |
+      sRGB monitor (piecewise EOTF)
+    isdata: false
+    categories: [ file-io, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: sdr-video
+    from_display_reference: !<GroupTransform>
+      children:
+        - !<MatrixTransform> {matrix: [ 3.240969941905, -1.537383177570, -0.498610760293, 0, -0.969243636281, 1.875967501508, 0.041555057407, 0, 0.055630079697, -0.203976958889, 1.056971514243, 0, 0, 0, 0, 1 ]}
+        - !<ExponentWithLinearTransform> {gamma: 2.4, offset: 0.055, direction: inverse}
+        - !<RangeTransform> {min_in_value: 0., min_out_value: 0., max_in_value: 1., max_out_value: 1.}
+    #
+    # For the purposes of the demo, the preceding and following colorspaces are implemented
+    # explicitly, but they could also have been implemented using BuiltinTransforms as:
+    # - !<BuiltinTransform> {style: "DISPLAY - CIE-XYZ-D65_to_sRGB"}
+    # - !<BuiltinTransform> {style: "DISPLAY - CIE-XYZ-D65_to_REC.1886-REC.709"}
+    #
+  - !<ColorSpace>
+    name: Rec.1886 / Rec.709 video
+    aliases: [ rec709 ]
+    family: Displays/SDR
+    description: |
+      Rec.709 HD broadcast monitor with Rec.1886 EOTF (gamma 2.4)
+    isdata: false
+    categories: [ file-io, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: sdr-video
+    from_display_reference: !<GroupTransform>
+      children:
+        - !<MatrixTransform> {matrix: [ 3.240969941905, -1.537383177570, -0.498610760293, 0, -0.969243636281, 1.875967501508, 0.041555057407, 0, 0.055630079697, -0.203976958889, 1.056971514243, 0, 0, 0, 0, 1 ]}
+        - !<ExponentTransform> {value: 2.4, direction: inverse}
+        - !<RangeTransform> {min_in_value: 0., min_out_value: 0., max_in_value: 1., max_out_value: 1.}
+    #
+    # This next colorspace requires the PQ curve, which would require an external LUT file so the
+    # BuiltinTransform is used in this case.  Note that the Builtin display transforms do not clamp, 
+    # so it is followed by a RangeTransform which clamps to [0,1]. 
+    #
+  - !<ColorSpace>
+    name: Rec.2100-PQ
+    family: Displays/HDR
+    description: |
+      Rec.2100-PQ monitor with Rec.2020 primaries and ST-2084 EOTF
+    isdata: false
+    categories: [ file-io, advanced-3d, basic-2d, advanced-2d ]
+    encoding: hdr-video
+    from_display_reference: !<GroupTransform>
+      children:
+        - !<BuiltinTransform> {style: "DISPLAY - CIE-XYZ-D65_to_REC.2100-PQ"}
+        - !<RangeTransform> {min_in_value: 0., min_out_value: 0., max_in_value: 1., max_out_value: 1.}
+
+
+# 
+# The next config section is the traditional section for colorspaces that are defined relative to a
+# scene-referred connection space.  This section may be placed either before or after the display
+# colorspaces, based on which you prefer appear first in colorspace menus.
+#
+colorspaces:
+    #
+    # Note that colorspaces may have some new attributes in OCIO v2 including categories and encoding.
+    # The categories are intended to indicate which colorspace menus in an application should include
+    # a given colorspace.  The categories may come both from the application and from the end-user.
+    # Application-defined categories such as "file-io" or "working-space" indicate which menus in the
+    # application the colorspaces will appear in.  The application categories are intended to be 
+    # combined with the encodings.  So for example, an application might filter by "working-space" as
+    # a category and "scene-linear" as an encoding to get all the scene-linear working space options
+    # to display in a certain menu.  User-defined categories such as "basic-3d" or "advanced-2d" 
+    # indicate what type or artist should see those colorspaces.  OCIO uses the intersection of the 
+    # application categories (combined with the encoding) along with the user categories to filter
+    # the list of colorspaces.  Note that the user categories are intended to be set via an environment
+    # variable based on the type of artist using the application.  OCIO does not yet provide an official 
+    # list of categories, so it will be up to application developers and config authors to determine
+    # what strings to use.  OCIO does however provide a specific list of allowed encoding strings.
+    #
+  - !<ColorSpace>
+    name: ACEScg
+    family: ACES
+    description: |
+      ACEScg working space
+    isdata: false
+    categories: [ file-io, working-space, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: scene-linear
+    to_scene_reference: !<MatrixTransform> {matrix: [ 0.695452241357, 0.140678696470, 0.163869062172, 0, 0.044794563372, 0.859671118456, 0.095534318172, 0, -0.005525882558, 0.004025210306, 1.001500672252, 0, 0, 0, 0, 1 ]}
+    #
+    # OCIO v2 introduces an "aliases" property that may be used to define synonyms for the canonical
+    # colorspace name.  This may be used to define short names that are easier to embed in file paths
+    # or to handle backwards compatibility when the name of a colorspace evolves over time.
+    #
+  - !<ColorSpace>
+    name: ACES2065-1
+    aliases: [ aces ]
+    family: ACES
+    description: |
+      The Academy Color Encoding System reference color space
+    isdata: false
+    categories: [ file-io, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: scene-linear
+    # 
+    # Note that this section of the config uses "to_scene_reference" and "from_scene_reference" to
+    # specify the transforms, but "to_reference" and "from_reference" are also allowed for backwards
+    # compatibility with OCIO v1.
+    #
+  - !<ColorSpace>
+    name: scene-linear Rec.709-sRGB
+    family: Linear
+    description: |
+      Scene-linear Rec.709 or sRGB primaries
+    isdata: false
+    categories: [ file-io, basic-3d, advanced-3d, advanced-2d ]
+    encoding: scene-linear
+    to_scene_reference: !<MatrixTransform> {matrix: [ 0.439632981919, 0.382988698152, 0.177378319929, 0, 0.089776442959, 0.813439428749, 0.096784128292, 0, 0.017541170383, 0.111546553302, 0.870912276314, 0, 0, 0, 0, 1 ]}
+    # 
+    # Note that in OCIO v2 it is not necessary to include most keys if they have their default values.
+    # This also applies to properties such as the interpolation method for FileTransforms.
+    #
+  - !<ColorSpace>
+    name: Raw
+    family: Data
+    description: |
+      Raw (no color processing)
+    isdata: true
+    categories: [ file-io, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: data
+    #
+    # The ACEScct transform could be implemented as a Builtin using style: "ACEScct_to_ACES2065-1",
+    # but the implementation here is an opportunity to demo the new LogCameraTransform, which may
+    # be used to implement most of the camera-log type transforms (and is used internally by the
+    # ACEScct BuiltinTransform implementation).
+    #
+  - !<ColorSpace>
+    name: ACEScct
+    family: ACES
+    description: |
+      ACES camera log working space
+    isdata: false
+    categories: [ file-io, working-space, advanced-3d, basic-2d, advanced-2d ]
+    encoding: log
+    to_scene_reference: !<GroupTransform>
+      children:
+        - !<LogCameraTransform>
+          log_side_slope:  0.05707762557077626
+          log_side_offset: 0.55479452054794520
+          lin_side_slope:  1.
+          lin_side_offset: 0.
+          lin_side_break:  0.0078125
+          base: 2
+          direction: inverse
+        - !<MatrixTransform> {matrix: [ 0.695452241357, 0.140678696470, 0.163869062172, 0, 0.044794563372, 0.859671118456, 0.095534318172, 0, -0.005525882558, 0.004025210306, 1.001500672252, 0, 0, 0, 0, 1 ]}
+    #
+    # The remaining colorspaces use the BuiltinTransforms for simplicity and readability.
+    #
+  - !<ColorSpace>
+    name: ACEScc
+    family: ACES
+    description: |
+      ACES log working space
+    isdata: false
+    categories: [ file-io, advanced-2d ]
+    encoding: log
+    to_scene_reference: !<BuiltinTransform> {style: "ACEScc_to_ACES2065-1"}
+
+  - !<ColorSpace>
+    name: ARRI LogC
+    family: Cameras/ARRI
+    description: |
+      Alexa-v3-LogC-EI800 (SUP v3 color science)
+    isdata: false
+    categories: [ file-io, advanced-3d, basic-2d, advanced-2d ]
+    encoding: log
+    to_scene_reference: !<BuiltinTransform> {style: "ARRI_ALEXA-LOGC-EI800-AWG_to_ACES2065-1"}
+
+  - !<ColorSpace>
+    name: RED Log3G10 / REDWideGamutRGB
+    family: Cameras/RED
+    description: |
+      RED Log3G10 / REDWideGamutRGB
+    isdata: false
+    categories: [ file-io, basic-2d, advanced-2d ]
+    encoding: log
+    to_scene_reference: !<BuiltinTransform> {style: "RED_LOG3G10-RWG_to_ACES2065-1"}
+
+  - !<ColorSpace>
+    name: Sony SLog3 / SGamut3
+    family: Cameras/Sony
+    description: |
+      Sony SLog3 / SGamut3
+    isdata: false
+    categories: [ file-io, basic-2d, advanced-2d ]
+    encoding: log
+    to_scene_reference: !<BuiltinTransform> {style: "SONY_SLOG3-SGAMUT3_to_ACES2065-1"}
+
+  - !<ColorSpace>
+    name: Log film scan (ADX10)
+    aliases: [ ADX10 ]
+    family: ACES
+    description: |
+      ADX10 Academy Density Exchange (10-bit printing density)
+    isdata: false
+    categories: [ file-io, advanced-2d ]
+    encoding: log
+    to_scene_reference: !<BuiltinTransform> {style: "ADX10_to_ACES2065-1"}
+
+
+#
+# Sometimes it is helpful to include one or more transforms in a config that are essentially
+# stand-alone transforms that do not have a fixed relationship to a reference space or a
+# process space.  An example would be a "utility curve" transform where the intent is to
+# simply apply a LUT1D without any conversion to a reference space.  In these cases, a
+# named_transforms section may be added to the config with one or more named transforms.
+#
+# Note that named transforms do not show up in color space menus by default, so the 
+# application developer must implement support to make them available to users.
+#
+# This feature may be used to emulate older methods of color management that ignored the 
+# RGB primaries and simply applied one-dimensional transformations.  However, config authors 
+# are encouraged to implement transforms as normal OCIO color spaces wherever possible.
+#
+named_transforms:
+
+  - !<NamedTransform>
+    name: Utility Curve -- Cineon Log to Lin
+    description: |
+      Traditional Cineon-style log-to-lin with RefWhite=695, RefBlack=95, Gamma=0.6
+    transform: !<LogAffineTransform>
+      log_side_slope:  0.293255131965
+      log_side_offset: 0.669599217986
+      lin_side_slope:  0.989202248377
+      lin_side_offset: 0.010797751623
+      base: 10
+      direction: inverse

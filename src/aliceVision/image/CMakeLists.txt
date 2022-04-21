@@ -1,4 +1,5 @@
 add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_definitions(-DCONFIG_OCIO_PATH="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/aliceVision/config.ocio")
 
 # Headers
 set(image_files_headers
@@ -40,6 +41,9 @@ alicevision_add_library(aliceVision_image
   PRIVATE_INCLUDE_DIRS
     ${OPENEXR_INCLUDE_DIR}
 )
+
+# Install config.ocio
+install(FILES config.ocio DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
 
 # Unit tests
 alicevision_add_test(image_test.cpp      NAME "image"            LINKS aliceVision_image)

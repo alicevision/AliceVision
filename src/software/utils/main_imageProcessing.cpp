@@ -22,7 +22,7 @@
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
-
+#include <OpenImageIO/color.h>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -177,6 +177,7 @@ inline std::ostream& operator<<(std::ostream& os, const NoiseFilterParams& nfPar
 }
 
 enum class EImageFormat { RGBA, RGB, Grayscale };
+//enum class EColorSpace { sRGB, Linear, ACES, ACEScg };
 
 inline std::string EImageFormat_enumToString(EImageFormat imageFormat)
 {
@@ -218,6 +219,7 @@ struct ProcessingParams
     bool keepImageFilename = false;
     bool exposureCompensation = false;
     EImageFormat outputFormat = EImageFormat::RGBA;
+    //image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     float scaleFactor = 1.0f;
     float contrast = 1.0f;
     int medianFilter = 0;
@@ -406,8 +408,8 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 }
 
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
-               const std::vector<std::string>& metadataFolders,
-               const EImageFormat outputFormat, const image::EStorageDataType storageDataType)
+               const std::vector<std::string>& metadataFolders, const EImageFormat outputFormat,
+               const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
 {
     // Read metadata path
     std::string metadataFilePath;
@@ -465,18 +467,21 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     {
         image::Image<float> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+        //image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
     }
     else if(outputFormat == EImageFormat::RGB)
     {
         image::Image<image::RGBfColor> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+        //image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
     }
     else 
     {
         // Already in RGBAf
-        image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+        //image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(outputPath, image, outputColorSpace, metadata);
     }
 }
 
@@ -488,8 +493,10 @@ int aliceVision_main(int argc, char * argv[])
     std::vector<std::string> metadataFolders;
     std::string outputPath;
     EImageFormat outputFormat = EImageFormat::RGBA;
+    image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
+    std::string configOCIOPath;
 
     ProcessingParams pParams;
 
@@ -506,12 +513,15 @@ int aliceVision_main(int argc, char * argv[])
         "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
          "Output folder.")
+        ("ocio", po::value<std::string>(&configOCIOPath)->required(),
+         "OpenColorIO configuration file.")
         ;
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("metadataFolders", po::value<std::vector<std::string>>(&metadataFolders)->multitoken(),
         "Use images metadata from specific folder(s) instead of those specified in the input images.")
+
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
 
@@ -564,13 +574,17 @@ int aliceVision_main(int argc, char * argv[])
 
         ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
          "Output image format (rgba, rgb, grayscale)")
-    
+
+        ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
+         ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
         ;
+
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -729,7 +743,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, metadataFolders, outputFormat, storageDataType);
+            saveImage(image, viewPath, outputfilePath, metadataFolders, outputFormat, outputColorSpace, storageDataType);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -824,7 +838,7 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, metadataFolders, outputFormat, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, metadataFolders, outputFormat, outputColorSpace, storageDataType);
         }
     }
 
