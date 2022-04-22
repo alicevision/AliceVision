@@ -10,6 +10,7 @@
 #include <aliceVision/sfmDataIO/sceneSample.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/preprocessor/stringize.hpp>
 
 #include <sstream>
 
@@ -30,7 +31,6 @@ BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_0)
     fs::path pathSource(__FILE__);
     fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.0.abc";
 
-    //TODO when we will have files to compare
     sfmData::SfMData sfmDataLoad;
     BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
 
@@ -45,9 +45,86 @@ BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_0)
     fs::path pathSource(__FILE__);
     fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.0.json";
 
-    //TODO when we will have files to compare
     sfmData::SfMData sfmDataLoad;
     BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
 
     BOOST_CHECK(sfmData == sfmDataLoad);
 }
+
+BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_1) {
+
+    sfmData::SfMData sfmData;
+    generateSampleScene(sfmData);
+
+    fs::path pathSource(__FILE__);
+    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.1.abc";
+
+    sfmData::SfMData sfmDataLoad;
+    BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
+
+    BOOST_CHECK(sfmData == sfmDataLoad); 
+}
+
+BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_1) {
+
+    sfmData::SfMData sfmData;
+    generateSampleScene(sfmData);
+
+    fs::path pathSource(__FILE__);
+    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.1.json";
+
+    sfmData::SfMData sfmDataLoad;
+    BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
+
+    BOOST_CHECK(sfmData == sfmDataLoad); 
+}
+
+BOOST_AUTO_TEST_CASE(Compatibility_abc_1_2_2) {
+
+    sfmData::SfMData sfmData;
+    generateSampleScene(sfmData);
+
+    fs::path pathSource(__FILE__);
+    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.2.abc";
+
+    sfmData::SfMData sfmDataLoad;
+    BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
+
+    BOOST_CHECK(sfmData == sfmDataLoad); 
+}
+
+BOOST_AUTO_TEST_CASE(Compatibility_json_1_2_2) {
+
+    sfmData::SfMData sfmData;
+    generateSampleScene(sfmData);
+
+    fs::path pathSource(__FILE__);
+    fs::path toLoad = pathSource.parent_path() / "compatibilityData" / "scene_v1.2.2.json";
+
+    sfmData::SfMData sfmDataLoad;
+    BOOST_CHECK(sfmDataIO::Load(sfmDataLoad, toLoad.string(), ESfMData::ALL));
+
+    BOOST_CHECK(sfmData == sfmDataLoad); 
+}
+
+/*
+BOOST_AUTO_TEST_CASE(Compatibility_generate_files_current_version)
+{
+    sfmData::SfMData sfmData;
+    generateSampleScene(sfmData);
+
+    fs::path pathSource(__FILE__);
+    {
+        fs::path outputPath =
+            pathSource.parent_path() / "compatibilityData" /
+            "scene_v" BOOST_PP_STRINGIZE(ALICEVISION_SFMDATAIO_VERSION_MAJOR) "." BOOST_PP_STRINGIZE(ALICEVISION_SFMDATAIO_VERSION_MINOR) "." BOOST_PP_STRINGIZE(ALICEVISION_SFMDATAIO_VERSION_REVISION) ".json";
+        BOOST_CHECK(sfmDataIO::Save(sfmData, outputPath.string(), ESfMData::ALL));
+    }
+    {
+        fs::path outputPath =
+            pathSource.parent_path() / "compatibilityData" /
+            "scene_v" BOOST_PP_STRINGIZE(ALICEVISION_SFMDATAIO_VERSION_MAJOR) "." BOOST_PP_STRINGIZE(ALICEVISION_SFMDATAIO_VERSION_MINOR) "." BOOST_PP_STRINGIZE(ALICEVISION_SFMDATAIO_VERSION_REVISION) ".abc";
+        BOOST_CHECK(sfmDataIO::Save(sfmData, outputPath.string(), ESfMData::ALL));
+    }
+}
+*/

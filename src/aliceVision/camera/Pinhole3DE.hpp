@@ -21,8 +21,8 @@ class Pinhole3DERadial4 : public Pinhole
 {
   public:
 
-  explicit Pinhole3DERadial4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double c2 = 0.0, double c4 = 0.0, double u1 = 0.0, double v1 = 0.0, double u2 = 0.0, double v2 = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new Distortion3DERadial4(c2, c4, u1, v1, u2, v2)))
+  explicit Pinhole3DERadial4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double c2 = 0.0, double c4 = 0.0, double u1 = 0.0, double v1 = 0.0, double u2 = 0.0, double v2 = 0.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new Distortion3DERadial4(c2, c4, u1, v1, u2, v2)))
   {
   }
 
@@ -39,8 +39,8 @@ class Pinhole3DEAnamorphic4 : public Pinhole
 {
   public:
 
-  explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double cxx = 0.0, double cxy = 0.0, double cyx = 0.0, double cyy = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new Distortion3DEAnamorphic4(cxx, cxy, cyx, cyy)))
+  explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double cxx = 0.0, double cxy = 0.0, double cyx = 0.0, double cyy = 0.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new Distortion3DEAnamorphic4(cxx, cxy, cyx, cyy)))
   {
   }
 
@@ -57,8 +57,8 @@ class Pinhole3DEClassicLD : public Pinhole
 {
   public:
 
-  explicit Pinhole3DEClassicLD(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double ppx = 0, double ppy = 0, double delta = 0.0, double epsilon = 1.0, double mux = 0.0, double muy = 0.0, double q = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, ppx, ppy, std::shared_ptr<Distortion>(new Distortion3DEClassicLD(delta, epsilon, mux, muy, q)))
+  explicit Pinhole3DEClassicLD(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double delta = 0.0, double epsilon = 1.0, double mux = 0.0, double muy = 0.0, double q = 0.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new Distortion3DEClassicLD(delta, epsilon, mux, muy, q)))
   {
   }
 

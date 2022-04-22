@@ -39,7 +39,7 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description logParams("Log parameters");
     logParams.add_options()("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-                            "verbosity level (fatal,  error, warning, info, debug, trace).");
+                            "verbosity level (fatal, error, warning, info, debug, trace).");
 
     allParams.add(requiredParams).add(logParams);
 
