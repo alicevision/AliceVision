@@ -20,7 +20,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: alicevision/alicevision-deps:ci-2021-08-05-centos7-cuda10.2
+      image: alicevision/alicevision-deps:ci-2021-10-28-centos7-cuda10.2
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -104,7 +104,7 @@ jobs:
       tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      COMMIT_ID: 261c458af6e3eed5d099144aff95d2b5035f656b
+      COMMIT_ID: 7678fa940527fa675b3a1eabf3fb77814d0f81e7
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -116,7 +116,7 @@ jobs:
         # git clone https://github.com/microsoft/vcpkg.git --branch 2021.05.12 https://github.com/DanielDelaporus/vcpkg.git --branch alembic-fix-build-types
         run: |
           cd ..
-          git clone https://github.com/microsoft/vcpkg.git
+          git clone https://github.com/fabiencastan/vcpkg.git
           cd vcpkg
           git checkout ${{ env.COMMIT_ID }}
           cd ${{ github.workspace }}
@@ -175,6 +175,7 @@ jobs:
                           assimp
           # without "cuda" for now
           vcpkgTriplet: x64-windows-release
+          # doNotCache: true
           # Ensure the vcpkg artifacts are cached, they are generated in the 'CMAKE_BINARY_DIR/vcpkg_installed' directory.
           additionalCachedPaths: ${{ env.buildDir }}/vcpkg_installed
 
