@@ -397,8 +397,8 @@ int aliceVision_main(int argc, char* argv[])
 
         //Compute non linear refinement
         sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
-        /*options.summary = true;
-        options.nbThreads = 1;*/
+        options.summary = true;
+        //options.nbThreads = 1;
         sfm::BundleAdjustmentSymbolicCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION | 
                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION | 

@@ -1238,10 +1238,7 @@ bool CheckerDetector::mergeCheckerboards()
     {
         CheckerBoardWithScore cbws;
         cbws.first = b;
-
-        std::cout << b.rows() << " " << b.cols() << std::endl;
         cbws.second = computeEnergy(b, _corners);
-        std::cout << "----" << std::endl;
         checkers.push_back(cbws);
     }
 

@@ -98,7 +98,7 @@ int aliceVision_main(int argc, char* argv[])
 
     bool first = true;
 
-    sfmData.getRigs().begin()->second.getSubPose(0).status = sfmData::ERigSubPoseStatus::ESTIMATED;
+    sfmData.getRigs().begin()->second.getSubPose(0).status = sfmData::ERigSubPoseStatus::CONSTANT;
     sfmData.getRigs().begin()->second.getSubPose(1).status = sfmData::ERigSubPoseStatus::ESTIMATED;
     
     for (auto& pg : mapGroupViews)
@@ -109,7 +109,7 @@ int aliceVision_main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        int posesId[] = {UndefinedIndexT, UndefinedIndexT};
+        IndexT posesId[] = {UndefinedIndexT, UndefinedIndexT};
         
         posesId[pg.second[0]->getSubPoseId()] = pg.second[0]->getPoseId();
         posesId[pg.second[1]->getSubPoseId()] = pg.second[1]->getPoseId();
@@ -122,9 +122,17 @@ int aliceVision_main(int argc, char* argv[])
             auto c1To = p1.getTransform().getHomogeneous();
             auto c2To = p2.getTransform().getHomogeneous();
             Eigen::Matrix4d c2Tc1 = c2To * c1To.inverse();
+
+            sfmData.getRigs().begin()->second.getSubPose(0).pose = geometry::Pose3();
             sfmData.getRigs().begin()->second.getSubPose(1).pose = geometry::Pose3(c2Tc1.block<3, 4>(0, 0));
             first = false;
         }
+
+        sfmData::CameraPose p2 = sfmData.getPoses()[posesId[1]];
+            auto c1To = p1.getTransform().getHomogeneous();
+            auto c2To = p2.getTransform().getHomogeneous();
+            Eigen::Matrix4d c2Tc1 = c2To * c1To.inverse();
+            std::cout << c2Tc1 << std::endl;
         
         //Both views share the same pose
         sfmData.getPoses()[posesId[1]] = sfmData.getPoses()[posesId[0]];
