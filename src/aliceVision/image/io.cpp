@@ -537,10 +537,9 @@ void writeImage(const std::string& path,
           throw std::runtime_error("OCIO config file not defined.");
       }
 
-      //oiio::ColorConfig colorConfig("C:/LocalDev/imgConvertOIIO/install/config.ocio");
       oiio::ColorConfig colorConfig(configOCIOFilePath);
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",
-                                       (imageColorSpace != EImageColorSpace::ACES) ? "ACES" : "ACEScg", true, "", "",
+                                       (imageColorSpace != EImageColorSpace::ACES) ? "aces" : "ACEScg", true, "", "",
                                        &colorConfig);
       outBuf = &colorspaceBuf;
   }

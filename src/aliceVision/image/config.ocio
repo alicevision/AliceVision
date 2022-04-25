@@ -5,8 +5,8 @@ ocio_profile_version: 2
 # introduce many of the new features in OCIO v2.
 #
 
-description: A config to demo the new features in OCIO v2.
-name:        OCIOv2-demo_2021-02-03
+description: A config to convert color space in AliceVision.
+name:        OCIOv2-AliceVision
 
 #
 # This config does not require any external files.
@@ -42,7 +42,7 @@ roles:
   compositing_log: ACEScct
   data: Raw
   default: sRGB
-  scene_linear: ACEScg
+  scene_linear: scene-linear Rec.709-sRGB
 
 #
 # The File Rules allow you to configure default behavior for applications importing image files.
