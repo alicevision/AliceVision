@@ -427,3 +427,9 @@ To retrieve the generated files:
 # Create an instance of the image, copy the files and remove the temporary docker instance.
 CID=$(docker create alicevision:centos7-cuda9.2) && docker cp ${CID}:/opt/AliceVision_install . && docker cp ${CID}:/opt/AliceVision_bundle . && docker rm ${CID}
 ```
+
+Environment variable
+--------------------
+
+Whatever the way AliceVision has been installed, before using it, an environment variable named ALICEVISION_ROOT must be created and set with the local installation directory. 
+
