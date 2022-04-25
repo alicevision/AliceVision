@@ -1,5 +1,4 @@
 add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_definitions(-DCONFIG_OCIO_PATH="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/aliceVision/config.ocio")
 
 # Headers
 set(image_files_headers

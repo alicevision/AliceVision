@@ -170,13 +170,13 @@ int aliceVision_main(int argc, char **argv)
       "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
     ("imageFolder", po::value<std::string>(&imageFolder)->default_value(imageFolder),
       "Input images folder [if specified, --input cannot be used].")
-    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
-      "Camera sensor width database path.")
     ("output,o", po::value<std::string>(&outputFilePath)->default_value("cameraInit.sfm"),
       "Output file path for the new SfMData file");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
+      "Camera sensor width database path.")
     ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
       "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
@@ -315,13 +315,21 @@ int aliceVision_main(int argc, char **argv)
 
   // check sensor database
   std::vector<sensorDB::Datasheet> sensorDatabase;
-  if(!sensorDatabasePath.empty())
+  if (sensorDatabasePath.empty())
   {
-    if(!sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
-    {
+      char const* val = getenv("ALICEVISION_ROOT");
+      if (val == NULL)
+      {
+          throw std::runtime_error("ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
+      }
+      sensorDatabasePath = std::string(val);
+      sensorDatabasePath.append("/share/aliceVision/cameraSensors.db");
+  }
+
+  if(!sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
+  {
       ALICEVISION_LOG_ERROR("Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
-    }
   }
 
   camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);

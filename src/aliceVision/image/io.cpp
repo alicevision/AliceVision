@@ -519,11 +519,6 @@ void writeImage(const std::string& path,
   const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
-  std::string configOCIOFilePath = "";
-#ifdef CONFIG_OCIO_PATH
-  configOCIOFilePath = CONFIG_OCIO_PATH;
-#endif
-
   oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
   if(imageColorSpace == EImageColorSpace::SRGB)
   {
@@ -532,10 +527,13 @@ void writeImage(const std::string& path,
   }
   else if(imageColorSpace != EImageColorSpace::LINEAR) // ACES or ACEScg
   {
-      if (configOCIOFilePath.empty())
+      char const* val = getenv("ALICEVISION_ROOT");
+      if (val == NULL)
       {
-          throw std::runtime_error("OCIO config file not defined.");
+          throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
       }
+      std::string configOCIOFilePath = std::string(val);
+      configOCIOFilePath.append("/share/aliceVision/config.ocio");
 
       oiio::ColorConfig colorConfig(configOCIOFilePath);
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",

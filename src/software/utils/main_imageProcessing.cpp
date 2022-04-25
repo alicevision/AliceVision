@@ -496,7 +496,6 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
-    std::string configOCIOPath;
 
     ProcessingParams pParams;
 
@@ -513,8 +512,6 @@ int aliceVision_main(int argc, char * argv[])
         "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
          "Output folder.")
-        ("ocio", po::value<std::string>(&configOCIOPath)->required(),
-         "OpenColorIO configuration file.")
         ;
 
     po::options_description optionalParams("Optional parameters");
