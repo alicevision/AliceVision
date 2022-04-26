@@ -41,8 +41,7 @@ std::string EImageColorSpace_informations()
 
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
 {
-    std::string type = dataType;
-    std::transform(type.begin(), type.end(), type.begin(), ::tolower); // tolower
+    const std::string type = boost::to_lower_copy(dataType);
 
     if(type == "auto")
         return EImageColorSpace::AUTO;
@@ -105,8 +104,7 @@ std::string EImageFileType_informations()
 
 EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
 {
-  std::string type = imageFileType;
-  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+  const std::string type = boost::to_lower_copy(imageFileType);
 
   if(type == "jpg" || type == "jpeg") return EImageFileType::JPEG;
   if(type == "png")                   return EImageFileType::PNG;

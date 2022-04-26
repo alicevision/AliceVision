@@ -177,7 +177,6 @@ inline std::ostream& operator<<(std::ostream& os, const NoiseFilterParams& nfPar
 }
 
 enum class EImageFormat { RGBA, RGB, Grayscale };
-//enum class EColorSpace { sRGB, Linear, ACES, ACEScg };
 
 inline std::string EImageFormat_enumToString(EImageFormat imageFormat)
 {
@@ -219,7 +218,6 @@ struct ProcessingParams
     bool keepImageFilename = false;
     bool exposureCompensation = false;
     EImageFormat outputFormat = EImageFormat::RGBA;
-    //image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     float scaleFactor = 1.0f;
     float contrast = 1.0f;
     int medianFilter = 0;
@@ -467,20 +465,17 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     {
         image::Image<float> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        //image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
         image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
     }
     else if(outputFormat == EImageFormat::RGB)
     {
         image::Image<image::RGBfColor> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        //image::writeImage(outputPath, outputImage, image::EImageColorSpace::AUTO, metadata);
         image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
     }
     else 
     {
         // Already in RGBAf
-        //image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
         image::writeImage(outputPath, image, outputColorSpace, metadata);
     }
 }
