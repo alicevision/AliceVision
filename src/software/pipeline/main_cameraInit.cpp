@@ -578,6 +578,13 @@ int aliceVision_main(int argc, char **argv)
       }
     }
 
+    if (sensorWidth < 0)
+    {
+      ALICEVISION_LOG_WARNING("Sensor size is unknown");
+      ALICEVISION_LOG_WARNING("Use default sensor size (36 mm)");
+      sensorWidth = 36.0;
+    }
+
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(
         view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, 
