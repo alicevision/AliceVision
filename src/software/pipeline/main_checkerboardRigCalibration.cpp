@@ -127,12 +127,6 @@ int aliceVision_main(int argc, char* argv[])
             sfmData.getRigs().begin()->second.getSubPose(1).pose = geometry::Pose3(c2Tc1.block<3, 4>(0, 0));
             first = false;
         }
-
-        sfmData::CameraPose p2 = sfmData.getPoses()[posesId[1]];
-            auto c1To = p1.getTransform().getHomogeneous();
-            auto c2To = p2.getTransform().getHomogeneous();
-            Eigen::Matrix4d c2Tc1 = c2To * c1To.inverse();
-            std::cout << c2Tc1 << std::endl;
         
         //Both views share the same pose
         sfmData.getPoses()[posesId[1]] = sfmData.getPoses()[posesId[0]];
