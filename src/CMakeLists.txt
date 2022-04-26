@@ -262,7 +262,9 @@ else()
 endif()
 
 # Disable BOOST autolink
-add_definitions(-DBOOST_ALL_NO_LIB)
+if(WIN32)
+  add_definitions(-DBOOST_ALL_NO_LIB)
+endif()
 
 #To be removed later, a bug to make things work with current vcpkg
 #https://github.com/microsoft/vcpkg/issues/22495
