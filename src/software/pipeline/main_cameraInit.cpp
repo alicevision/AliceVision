@@ -320,7 +320,7 @@ int aliceVision_main(int argc, char **argv)
       char const* val = getenv("ALICEVISION_ROOT");
       if (val == NULL)
       {
-          throw std::runtime_error("ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
+          ALICEVISION_LOG_WARNING("ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
       }
       sensorDatabasePath = std::string(val);
       sensorDatabasePath.append("/share/aliceVision/cameraSensors.db");
