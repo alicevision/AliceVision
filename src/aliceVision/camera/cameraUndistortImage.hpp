@@ -66,17 +66,19 @@ void UndistortImage(
     
     
     #pragma omp parallel for
-    for (int i = 0; i < heightRoi; ++i)
+    for (int y = 0; y < heightRoi; ++y)
     {
-        for (int j = 0; j < widthRoi; ++j)
+        for (int x = 0; x < widthRoi; ++x)
         {
-            const Vec2 undisto_pix(j + xOffset, i + yOffset);
+            const Vec2 undisto_pix(x + xOffset, y + yOffset);
             // compute coordinates with distortion
             const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
 
             // pick pixel if it is in the image domain
             if (imageIn.Contains(disto_pix(1), disto_pix(0)))
-                image_ud(i, j) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            {
+                image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            }
         }
     }
   }

@@ -262,13 +262,13 @@ else()
 endif()
 
 # Disable BOOST autolink
-if(WIN32)
-  add_definitions(-DBOOST_ALL_NO_LIB)
-endif()
+add_definitions(-DBOOST_ALL_NO_LIB)
 
 #To be removed later, a bug to make things work with current vcpkg
 #https://github.com/microsoft/vcpkg/issues/22495
-add_definitions(-DBOOST_USE_WINAPI_VERSION=BOOST_WINAPI_VERSION_WIN7)
+if(WIN32)
+  add_definitions(-DBOOST_USE_WINAPI_VERSION=BOOST_WINAPI_VERSION_WIN7)
+endif()
 
 if(BUILD_SHARED_LIBS)
   # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
