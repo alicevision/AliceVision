@@ -326,7 +326,7 @@ int aliceVision_main(int argc, char **argv)
       sensorDatabasePath.append("/share/aliceVision/cameraSensors.db");
   }
 
-  if(!sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
+  if(!sensorDatabasePath.empty() && !sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
   {
       ALICEVISION_LOG_ERROR("Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
