@@ -27,6 +27,7 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
     AV_INSTALL=/opt/AliceVision_install \
+    AV_BUNDLE=/opt/AliceVision_bundle \
     PATH="${PATH}:${AV_BUNDLE}" \
     VERBOSE=1
 
@@ -52,8 +53,8 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_EXAMPLES:BOOL=OFF \
         "${AV_DEV}" && \
-   make install -j"$(nproc)" && \
-   rm -rf "${AV_BUILD}" "${AV_DEV}" && \
-   echo "export ALICEVISION_SENSOR_DB=${AV_INSTALL}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh
-
-ENV ALICEVISION_ROOT=${AV_INSTALL}
+    make install -j"$(nproc)" && \
+    make bundle && \
+    rm -rf "${AV_BUILD}" "${AV_DEV}" && \
+    echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
+    echo "export ALICEVISION_ROOT=${AV_BUNDLE}" >> /etc/profile.d/alicevision.sh
