@@ -523,7 +523,7 @@ void writeImage(const std::string& path,
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
       outBuf = &colorspaceBuf;
   }
-  else if(imageColorSpace != EImageColorSpace::LINEAR) // ACES or ACEScg
+  else if((imageColorSpace != EImageColorSpace::LINEAR) && (imageColorSpace != EImageColorSpace::NO_CONVERSION)) // ACES or ACEScg
   {
       char const* val = getenv("ALICEVISION_ROOT");
       if (val == NULL)
