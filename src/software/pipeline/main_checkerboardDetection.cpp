@@ -159,6 +159,30 @@ int aliceVision_main(int argc, char* argv[])
         image::Image<image::RGBColor> source;
         image::readImage(imagePath, source, image::EImageColorSpace::SRGB);
 
+        double pixelRatio = view->getDoubleMetadata({"PixelAspectRatio"});
+        if (pixelRatio < 0.0)
+        {
+            pixelRatio = 1.0;
+        }
+
+        if (pixelRatio != 1.0)
+        {
+            // if pixel are not squared, convert the image for easier lines extraction
+            const double w = source.Width();
+            const double h = source.Height();
+            const double nw = w;
+            const double nh = h / pixelRatio;
+            image::Image<image::RGBColor> resizedInput(nw, nh);
+
+            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
+            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::UCHAR);
+
+            const oiio::ImageBuf inBuf(imageSpecOrigin, source.data());
+            oiio::ImageBuf outBuf(imageSpecResized, resizedInput.data());
+
+            oiio::ImageBufAlgo::resize(outBuf, inBuf);
+            source.swap(resizedInput);
+        }
 
         //Lookup checkerboard
         calibration::CheckerDetector detect;
@@ -166,7 +190,16 @@ int aliceVision_main(int argc, char* argv[])
         {
             continue;
         }
-         
+
+        //Restore aspect ratio for corners coordinates
+        if (pixelRatio != 1.0)
+        {
+            std::vector<calibration::CheckerDetector::CheckerBoardCorner> & cs = detect.getCorners();
+            for (auto &c : cs)
+            {
+                c.center(1) *= pixelRatio;
+            }
+        }
         
         // write the json file with the tree
         std::stringstream ss;

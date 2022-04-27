@@ -339,8 +339,15 @@ int aliceVision_main(int argc, char* argv[])
             Eigen::Matrix<double, 3, 4> T;
             Eigen::Matrix3d M;
 
-            Eigen::Vector3d L = Ainv * H.col(1);
-            double tlambda = 1.0 / L.norm();
+            
+            double tlambda = 1.0 / (Ainv * H.col(1)).norm();
+
+            T.col(3) = tlambda * Ainv * H.col(2);
+            if (T(2, 3) < 0.0)
+            {
+                tlambda *= -1.0;
+            }
+            T.col(3) = tlambda * Ainv * H.col(2);
 
             M.col(0) = tlambda * Ainv * H.col(0);
             M.col(1) = tlambda * Ainv * H.col(1);
@@ -349,7 +356,7 @@ int aliceVision_main(int argc, char* argv[])
             Eigen::JacobiSVD<Eigen::Matrix3d> svd(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
             T.block<3, 3>(0, 0) = svd.matrixU() * svd.matrixV().transpose();
 
-            T.col(3) = tlambda * Ainv * H.col(2);
+            
 
             geometry::Pose3 pose(T);
             sfmData::CameraPose cp;
