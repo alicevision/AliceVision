@@ -107,6 +107,10 @@ endif()
 set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
 set(ALICEVISION_HAVE_ALEMBIC @ALICEVISION_HAVE_ALEMBIC@)
 
+if(ALICEVISION_HAVE_ALEMBIC)
+  find_dependency(Alembic)
+endif()
+
 message(STATUS "Found AliceVision version: ${@exportedProjectName@_VERSION}")
 
 include("${CMAKE_CURRENT_LIST_DIR}/@targetsExportName@.cmake")

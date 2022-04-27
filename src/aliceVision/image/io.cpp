@@ -12,6 +12,7 @@
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
+#include <OpenImageIO/color.h>
 
 #include <aliceVision/half.hpp>
 
@@ -23,11 +24,74 @@
 #include <iostream>
 #include <cmath>
 
-
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace image {
+
+std::string EImageColorSpace_informations()
+{
+    return EImageColorSpace_enumToString(EImageColorSpace::AUTO) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::LINEAR) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::ACES) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
+}
+
+EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
+{
+    const std::string type = boost::to_lower_copy(dataType);
+
+    if(type == "auto")
+        return EImageColorSpace::AUTO;
+    if(type == "linear")
+        return EImageColorSpace::LINEAR;
+    if(type == "srgb")
+        return EImageColorSpace::SRGB;
+    if(type == "aces")
+        return EImageColorSpace::ACES;
+    if(type == "acescg")
+        return EImageColorSpace::ACEScg;
+    if(type == "no_conversion")
+        return EImageColorSpace::NO_CONVERSION;
+
+    throw std::out_of_range("Invalid EImageColorSpace: " + dataType);
+}
+
+std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
+{
+    switch(dataType)
+    {
+        case EImageColorSpace::AUTO:
+            return "auto";
+        case EImageColorSpace::LINEAR:
+            return "linear";
+        case EImageColorSpace::SRGB:
+            return "srgb";
+        case EImageColorSpace::ACES:
+            return "aces";
+        case EImageColorSpace::ACEScg:
+            return "acescg";
+        case EImageColorSpace::NO_CONVERSION:
+            return "no_conversion";
+    }
+    throw std::out_of_range("Invalid EImageColorSpace enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType)
+{
+    return os << EImageColorSpace_enumToString(dataType);
+}
+
+std::istream& operator>>(std::istream& in, EImageColorSpace& dataType)
+{
+    std::string token;
+    in >> token;
+    dataType = EImageColorSpace_stringToEnum(token);
+    return in;
+}
+
 
 std::string EImageFileType_informations()
 {
@@ -40,8 +104,7 @@ std::string EImageFileType_informations()
 
 EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
 {
-  std::string type = imageFileType;
-  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+  const std::string type = boost::to_lower_copy(imageFileType);
 
   if(type == "jpg" || type == "jpeg") return EImageFileType::JPEG;
   if(type == "png")                   return EImageFileType::PNG;
@@ -457,8 +520,24 @@ void writeImage(const std::string& path,
   oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
   if(imageColorSpace == EImageColorSpace::SRGB)
   {
-    oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
-    outBuf = &colorspaceBuf;
+      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
+      outBuf = &colorspaceBuf;
+  }
+  else if((imageColorSpace != EImageColorSpace::LINEAR) && (imageColorSpace != EImageColorSpace::NO_CONVERSION)) // ACES or ACEScg
+  {
+      char const* val = getenv("ALICEVISION_ROOT");
+      if (val == NULL)
+      {
+          throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
+      }
+      std::string configOCIOFilePath = std::string(val);
+      configOCIOFilePath.append("/share/aliceVision/config.ocio");
+
+      oiio::ColorConfig colorConfig(configOCIOFilePath);
+      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",
+                                       (imageColorSpace != EImageColorSpace::ACES) ? "aces" : "ACEScg", true, "", "",
+                                       &colorConfig);
+      outBuf = &colorspaceBuf;
   }
 
   oiio::ImageBuf formatBuf;  // buffer for image format modification

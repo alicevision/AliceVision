@@ -41,6 +41,9 @@ alicevision_add_library(aliceVision_image
     ${OPENEXR_INCLUDE_DIR}
 )
 
+# Install config.ocio
+install(FILES config.ocio DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision)
+
 # Unit tests
 alicevision_add_test(image_test.cpp      NAME "image"            LINKS aliceVision_image)
 alicevision_add_test(io_test.cpp         NAME "image_io"         LINKS aliceVision_image)
