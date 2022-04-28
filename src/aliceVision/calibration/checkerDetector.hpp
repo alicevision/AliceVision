@@ -19,11 +19,18 @@ public:
         double score;
     };
 
+    struct IntermediateCorner
+    {
+        Vec2 center;
+        double scale;
+    };
+
     struct CheckerBoardCorner
     {
         Vec2 center;
         Vec2 dir1;
         Vec2 dir2;
+        double scale;
     };
 
     enum Direction
@@ -65,7 +72,7 @@ private:
     bool extractCorners(std::vector<Vec2> & raw_corners, const image::Image<float> & hessianResponse);
     bool refineCorners(std::vector<Vec2> & refined_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input);
     bool pruneCorners(std::vector<Vec2> & pruned_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input);
-    bool fitCorners(std::vector<CheckerBoardCorner> & refined_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input);
+    bool fitCorners(std::vector<CheckerBoardCorner> & refined_corners, const std::vector<IntermediateCorner> & raw_corners, const image::Image<float> & input);
     void getMinMax(float &min, float &max, const image::Image<float> & input);
     bool buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refined_corners, const image::Image<float> & input);
     IndexT findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refined_corners);

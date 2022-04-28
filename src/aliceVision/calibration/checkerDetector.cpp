@@ -28,7 +28,7 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
 
     const double scales[] = {1.0, 0.75, 0.5, 0.25};
 
-    std::vector<Vec2> allCorners;
+    std::vector<IntermediateCorner> allCorners;
     for (double scale : scales)
     {
         std::vector<Vec2> corners;
@@ -42,9 +42,9 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
         {
             double distmin = 5.0;
 
-            for (Vec2 oc : allCorners)
+            for (const IntermediateCorner & oc : allCorners)
             {
-                double dist = (oc - c).norm();
+                double dist = (oc.center - c).norm();
                 
                 if (dist < distmin)
                 {
@@ -58,7 +58,10 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
                 continue;
             } 
 
-            allCorners.push_back(c);
+            IntermediateCorner sc;
+            sc.center = c;
+            sc.scale = scale;
+            allCorners.push_back(sc);
         }
     }
 
@@ -381,7 +384,7 @@ bool CheckerDetector::refineCorners(std::vector<Vec2> & refined_corners, const s
     return true;
 }
 
-bool CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refined_corners, const std::vector<Vec2> & raw_corners, const image::Image<float> & input)
+bool CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refined_corners, const std::vector<IntermediateCorner> & raw_corners, const image::Image<float> & input)
 {
     //Build kernel
     const int radius = 4;
@@ -413,8 +416,9 @@ bool CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refined_corne
 
     const image::Sampler2d<image::SamplerLinear> sampler;
 
-    for (Vec2 corner : raw_corners)
+    for (const IntermediateCorner & sc : raw_corners)
     {
+        Vec2 corner = sc.center;
         bool isValid = true;
 
         const double cx = corner(0);
@@ -462,7 +466,7 @@ bool CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refined_corne
             const double a5 = x(4);
             const double a6 = x(5);
 
-            const double determinantH = 4.0 * a1 * a3 - 2.0 * a2;
+            const double determinantH = 4.0 * a1 * a3 - a2 * a2;
             if (std::abs(determinantH) < 1e-6)
             {
                 isValid = false;
@@ -508,6 +512,7 @@ bool CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refined_corne
         {
             CheckerBoardCorner c;
             c.center = corner;
+            c.scale = sc.scale;
             refined_corners.push_back(c);
         }
     }

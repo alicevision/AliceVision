@@ -20,6 +20,7 @@ CheckerDetector::CheckerBoardCorner tag_invoke(boost::json::value_to_tag<Checker
     ret.dir1.y() = boost::json::value_to<double>(obj.at("dir1_y"));
     ret.dir2.x() = boost::json::value_to<double>(obj.at("dir2_x"));
     ret.dir2.y() = boost::json::value_to<double>(obj.at("dir2_y"));
+    ret.scale = boost::json::value_to<double>(obj.at("scale"));
 
     return ret;
 }
@@ -28,7 +29,8 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv,
                 CheckerDetector::CheckerBoardCorner const& t)
 {
     jv = {{"center_x", t.center.x()}, {"center_y", t.center.y()}, {"dir1_x", t.dir1.x()},
-          {"dir1_y", t.dir1.y()},     {"dir2_x", t.dir2.x()},     {"dir2_y", t.dir2.y()}};
+          {"dir1_y", t.dir1.y()},     {"dir2_x", t.dir2.x()},     {"dir2_y", t.dir2.y()},
+          {"scale", t.scale}};
 }
 
 CheckerDetector tag_invoke(boost::json::value_to_tag<CheckerDetector>, boost::json::value const& jv)
