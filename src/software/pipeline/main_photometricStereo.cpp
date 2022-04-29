@@ -7,7 +7,6 @@
 
 // Photometric Stereo
 #include <aliceVision/photometricStereo/photometricDataIO.hpp>
-#include <aliceVision/photometricStereo/normalIntegration.hpp>
 #include <aliceVision/photometricStereo/photometricStereo.hpp>
 
 
