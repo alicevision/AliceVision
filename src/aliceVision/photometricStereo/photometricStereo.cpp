@@ -107,9 +107,9 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     const int pictRows = mask.rows();
     const int pictCols = mask.cols();
 
-    Eigen::MatrixXf currentPicture(3,pictRows*pictCols);
-    Eigen::MatrixXf allPictures(3*imageList.size(), pictRows*pictCols);
+    // Eigen::MatrixXf allPictures(3*imageList.size(), pictRows*pictCols);
     Eigen::MatrixXf imMat(3*imageList.size(), maskSize);
+    Eigen::MatrixXf imMat_gray(imageList.size(), maskSize);
 
     std::string picturePath;
     std::string pictureName;
@@ -123,48 +123,52 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         aliceVision::image::ImageReadOptions options;
         options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
         aliceVision::image::readImage(picturePath, imageFloat, options);
-        intensityScaling(intList.at(i), imageFloat);
-        image2PsMatrix(imageFloat, currentPicture);
 
-        allPictures.block(3*i,0,3,allPictures.cols()) << currentPicture;
+        intensityScaling(intList.at(i), imageFloat);
+
+        Eigen::MatrixXf currentPicture(3,maskSize);
+        image2PsMatrix(imageFloat, mask, currentPicture);
+
+        imMat.block(3*i,0,3,maskSize) = currentPicture;
+        imMat_gray.block(i,0,1,maskSize) = currentPicture.block(0,0,1,maskSize) * 0.2126 + currentPicture.block(1,0,1,maskSize) * 0.7152 + currentPicture.block(2,0,1,maskSize) * 0.0722;
     }
-    applyMask(allPictures, indexes, imMat);
+
+    imMat = imMat/imMat.maxCoeff();
+    imMat_gray = imMat_gray/imMat_gray.maxCoeff();
 
     Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(),pictRows*pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
 
-    // Pixelwise normal and albedo evaluation :
-    for (size_t i = 0; i < maskSize; ++i)
+    Eigen::MatrixXf M_channel(3, maskSize);
+
+    // Channelwise albedo estimation :
+    for (size_t ch = 0; ch < 3; ++ch)
     {
         // Create I matrix for current pixel :
-        Eigen::MatrixXf allPixelValues = imMat.col(i);
-
-        Eigen::Map<Eigen::MatrixXf> IPixel_transposed(allPixelValues.data(), 3, imageList.size());
-        Eigen::MatrixXf IPixel(imageList.size(),3);
-        IPixel = IPixel_transposed.transpose();
-
-        // M_0 = pinv(S)*I :
-        Eigen::MatrixXf M_0 = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(IPixel);
-
-        // SVD(M_0) :
-        Eigen::JacobiSVD<Eigen::MatrixXf> svd(M_0, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-        Eigen::MatrixXf U = svd.matrixU();
-        Eigen::MatrixXf V = svd.matrixV();
-        Eigen::MatrixXf n_pixel = U.col(0);
-        Eigen::MatrixXf rho_pixel = V.col(0);
-
-        if (n_pixel(2) > 0)
+        Eigen::MatrixXf pixelValues_channel(imageList.size(), maskSize);
+        for (size_t i = 0; i < imageList.size(); ++i)
         {
-            n_pixel = -n_pixel;
-            rho_pixel = -rho_pixel;
+            pixelValues_channel.block(i, 0, 1, maskSize) = imMat.block(ch + 3*i, 0, 1, maskSize);
         }
 
-        int currentIdx = indexes.at(i); // index in picture
-        normalsVect.block(0,currentIdx, normalsVect.rows(), 1) = n_pixel;
+        M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
 
-        albedoVect.block(0,currentIdx, 3, 1) = rho_pixel;
+        for (size_t i = 0; i < maskSize; ++i)
+        {
+            int currentIdx = indexes.at(i); // index in picture
+            albedoVect(ch, currentIdx) = M_channel.col(i).norm();
+        }
     }
+
+    // Normal estimation :
+    M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
+    for (size_t i = 0; i < maskSize; ++i)
+    {
+        int currentIdx = indexes.at(i); // index in picture
+        normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
+    }
+
+    albedoVect = albedoVect/albedoVect.maxCoeff();
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
     normals2picture(normalsVect, normalsIm);
@@ -221,7 +225,7 @@ void getPicturesNames(const std::string& folderPath, std::vector<std::string>& i
       }
     }
 
-    std::sort(imageList.begin(),imageList.end(),compareFunction);//sort the vector
+    std::sort(imageList.begin(),imageList.end(),compareFunction); //sort the vector
 }
 
 bool compareFunction (std::string a, std::string b) {return a<b;}
