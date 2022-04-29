@@ -193,19 +193,23 @@ void intensityScaling(std::array<float, 3> const& intensities, aliceVision::imag
     }
 }
 
-void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, Eigen::MatrixXf& imageOut)
+void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, const aliceVision::image::Image<float>& mask, Eigen::MatrixXf& imageOut)
 {
     int nbRows = imageIn.rows();
     int nbCols = imageIn.cols();
+    int index = 0;
 
     for (int j = 0; j < nbCols; ++j)
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            int index = j*nbRows + i;
-            for(int ch = 0; ch < 3; ++ch)
+            if (mask(i,j) > 0)
             {
-                imageOut(ch, index) = imageIn(i,j)(ch);
+                for(int ch = 0; ch < 3; ++ch)
+                {
+                    imageOut(ch, index) = imageIn(i,j)(ch);
+                }
+                ++index;
             }
         }
     }
