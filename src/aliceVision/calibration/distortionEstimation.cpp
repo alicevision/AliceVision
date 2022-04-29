@@ -58,11 +58,10 @@ public:
 
 
         //Estimate measure
-        const Vec2 cpt = _camera->ima2cam(_pt);
-        const Vec2 distorted = _camera->addDistortion(cpt);
-        const Vec2 ipt = _camera->cam2ima(distorted);
+        const Vec2 cpt = _camera->ima2cam_forced(_pt);
+        const Vec2 ipt = _camera->toPixels(cpt);
 
-        const double w1 = std::max(0.4, std::max(std::abs(distorted.x()), std::abs(distorted.y())));
+        const double w1 = std::max(0.4, std::max(std::abs(cpt.x()), std::abs(cpt.y())));
         const double w = w1 * w1;
 
         residuals[0] = w * (cangle * ipt.x() + sangle * ipt.y() - distanceToLine);
@@ -93,7 +92,7 @@ public:
             Jline(0, 0) = cangle;
             Jline(0, 1) = sangle;
 
-            J = w * Jline * (_camera->getDerivativeIma2CamWrtScale(distorted) + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtScale(_pt));
+            J = w * Jline * (_camera->getDerivativeToPixelsWrtScale(cpt) + _camera->getDerivativeToPixelsWrtPt(cpt) * _camera->getDerivativeIma2CamWrtScale(_pt));
         }
 
         if(jacobians[3] != nullptr)
@@ -104,7 +103,7 @@ public:
             Jline(0, 0) = cangle;
             Jline(0, 1) = sangle;
 
-            J = w * Jline * (_camera->getDerivativeCam2ImaWrtPrincipalPoint() + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint());
+            J = w * Jline * (_camera->getDerivativeToPixelsWrtPrincipalPt(cpt) + _camera->getDerivativeToPixelsWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPt());
         }
 
         if(jacobians[4] != nullptr)
@@ -115,7 +114,7 @@ public:
             Jline(0, 0) = cangle;
             Jline(0, 1) = sangle;
 
-            J = w * Jline * _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtDisto(cpt);
+            J = w * Jline * _camera->getDerivativeToPixelsWrtDisto(cpt);
         }
 
         return true;
@@ -125,63 +124,6 @@ private:
     std::shared_ptr<camera::Pinhole> _camera;
     Vec2 _pt;
 };
-
-class CostSquare : public ceres::CostFunction
-{
-public:
-    CostSquare()
-    {
-        set_num_residuals(1);
-
-        mutable_parameter_block_sizes()->push_back(1);
-        mutable_parameter_block_sizes()->push_back(1);
-        mutable_parameter_block_sizes()->push_back(1);
-    }
-
-    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
-    {
-        const double* parameter_dist1 = parameters[0];
-        const double* parameter_dist2 = parameters[1];
-        const double* parameter_common = parameters[2];
-
-        double dist1 = *parameter_dist1;
-        double dist2 = *parameter_dist2;
-        double distc = *parameter_common;
-
-        double w = 1000.0;
-
-        residuals[0] = w * ((dist2 - dist1) - distc);
-
-        if (jacobians == nullptr)
-        {
-            return true;
-        }
-
-        if (jacobians[0] != nullptr)
-        {
-            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[0]);
-
-            J(0, 0) = -w;
-        }
-
-        if (jacobians[1] != nullptr)
-        {
-            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[1]);
-
-            J(0, 0) = w;
-        }
-
-        if (jacobians[2] != nullptr)
-        {
-            Eigen::Map<Eigen::Matrix<double, 1, 1, Eigen::RowMajor>> J(jacobians[2]);
-
-            J(0, 0) = -w;
-        }
-
-        return true;
-    }
-};
-
 
 class CostPoint : public ceres::CostFunction
 {
@@ -218,11 +160,10 @@ public:
         _camera->setDistortionParams(cameraDistortionParams);
 
         //Estimate measure
-        const Vec2 cpt = _camera->ima2cam(_ptUndistorted);
-        const Vec2 distorted = _camera->addDistortion(cpt);
-        const Vec2 ipt = _camera->cam2ima(distorted);
+        const Vec2 cpt = _camera->ima2cam_forced(_ptUndistorted);
+        const Vec2 ipt = _camera->toPixels(cpt);
 
-        const double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
+        const double w1 = std::max(std::abs(cpt.x()), std::abs(cpt.y()));
         const double w = w1 * w1;
 
         residuals[0] = w * (ipt.x() - _ptDistorted.x());
@@ -237,7 +178,7 @@ public:
         {
             Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[0]);
             
-            J = w * (_camera->getDerivativeIma2CamWrtScale(distorted) + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtScale(_ptUndistorted));
+            J = w * (_camera->getDerivativeToPixelsWrtScale(cpt) + _camera->getDerivativeToPixelsWrtPt(cpt) * _camera->getDerivativeIma2CamWrtScale(_ptUndistorted));
         }
 
         if(jacobians[1] != nullptr)
@@ -245,14 +186,14 @@ public:
             Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[1]);
 
 
-            J = w * (_camera->getDerivativeCam2ImaWrtPrincipalPoint() + _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPoint());
+            J = w * (_camera->getDerivativeToPixelsWrtPrincipalPt(cpt) + _camera->getDerivativeToPixelsWrtPt(cpt) * _camera->getDerivativeIma2CamWrtPrincipalPt());
         }
 
         if(jacobians[2] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, distortionSize);
 
-            J = w * _camera->getDerivativeCam2ImaWrtPoint() * _camera->getDerivativeAddDistoWrtDisto(cpt);
+            J = w * _camera->getDerivativeToPixelsWrtDisto(cpt);
         }
 
         return true;
@@ -265,7 +206,7 @@ private:
 };
 
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions, bool forceSquare)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
 {
     if (!cameraToEstimate)
     {
@@ -395,9 +336,8 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
 
         for(const Vec2& pt : l.points)
         {
-            const Vec2 cpt = cameraToEstimate->ima2cam(pt);
-            const Vec2 distorted = cameraToEstimate->addDistortion(cpt);
-            const Vec2 ipt = cameraToEstimate->cam2ima(distorted);
+            const Vec2 cpt = cameraToEstimate->ima2cam_forced(pt);
+            const Vec2 ipt = cameraToEstimate->toPixels(cpt);
 
             const double res = (cangle * ipt.x() + sangle * ipt.y() - l.dist);
 
@@ -418,7 +358,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     return true;
 }
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions, bool forceSquare)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
 {
     if (!cameraToEstimate)
     {
@@ -530,9 +470,8 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
 
     for (const PointPair & pp : points)
     {
-        const Vec2 cpt = cameraToEstimate->ima2cam(pp.undistortedPoint);
-        const Vec2 distorted = cameraToEstimate->addDistortion(cpt);
-        const Vec2 ipt = cameraToEstimate->cam2ima(distorted);
+        const Vec2 cpt = cameraToEstimate->ima2cam_forced(pp.undistortedPoint);
+        const Vec2 ipt = cameraToEstimate->toPixels(cpt);
 
         const double res = (ipt - pp.distortedPoint).norm();
 

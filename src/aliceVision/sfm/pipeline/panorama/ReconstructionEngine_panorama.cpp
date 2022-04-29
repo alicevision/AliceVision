@@ -592,9 +592,9 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                   const feature::PointFeature& feat_J = feats_J[match._j];
 
                   const Vec3 bearingVector_I =
-                      cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(feat_I.coords().cast<double>())));
+                      cam_I->toUnitSphere(cam_I->toMeters(feat_I.coords().cast<double>()));
                   const Vec3 bearingVector_J =
-                      cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(feat_J.coords().cast<double>())));
+                      cam_J->toUnitSphere(cam_J->toMeters(feat_J.coords().cast<double>()));
 
                   if(useSpherical)
                   {

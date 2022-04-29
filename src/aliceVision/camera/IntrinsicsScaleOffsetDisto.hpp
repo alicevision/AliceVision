@@ -74,13 +74,13 @@ public:
   /// Return the un-distorted pixel (with removed distortion)
   Vec2 get_ud_pixel(const Vec2& p) const override
   {
-    return cam2ima(removeDistortion(ima2cam(p)));
+    return cam2ima(toMeters(p));
   }
 
   /// Return the distorted pixel (with added distortion)
   Vec2 get_d_pixel(const Vec2& p) const override
   {
-    return cam2ima(addDistortion(ima2cam(p)));
+    return toPixels(ima2cam(p));
   }
 
   Vec2 toUnitless(const Vec2& p) const 
@@ -97,6 +97,21 @@ public:
       return p;
   }
 
+  Eigen::Matrix<double, 2, 2> getDerivativeToUnitlessWrtPt(const Vec2 &p) const
+  {
+    double hw = 0.5 * double(_w);
+    double hh = 0.5 * double(_h);
+    double diag = sqrt(hw * hw + hh * hh); 
+
+    Eigen::Matrix<double, 2, 2> ret;
+    ret(0, 0) = 1.0 / diag;
+    ret(0, 1) = 0;
+    ret(0, 1) = 0;
+    ret(1, 1) = 1.0 / diag;
+
+    return ret;
+  }
+
   Vec2 fromUnitless(const Vec2& p) const
   {
       Vec2 pt;
@@ -109,6 +124,21 @@ public:
       pt.y() = p.y() * diag;
 
       return p;
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeFromUnitlessWrtPt(const Vec2 &p) const
+  {
+    double hw = 0.5 * double(_w);
+    double hh = 0.5 * double(_h);
+    double diag = sqrt(hw * hw + hh * hh); 
+
+    Eigen::Matrix<double, 2, 2> ret;
+    ret(0, 0) = diag;
+    ret(0, 1) = 0;
+    ret(0, 1) = 0;
+    ret(1, 1) = diag;
+
+    return ret;
   }
 
   Vec2 toPixels(const Vec2 & p) const 
@@ -127,12 +157,13 @@ public:
 
       return pixels;
   }
+  
 
-  Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtPoint(const Vec2 & p) const
+  Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtPt(const Vec2 & p) const
   { 
       if (!_useUnitlessDistortion)
       {
-        return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(p);
+        return getDerivativeCam2ImaWrtPt() * getDerivativeAddDistoWrtPt(p);
       }
       else 
       {
@@ -146,15 +177,7 @@ public:
         const Vec2 distorted = addDistortion(unitLess);
         const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
 
-        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
-        d_from_unitless(0, 0) = diag;
-        d_from_unitless(1, 1) = diag;
-
-        Eigen::Matrix2d d_to_unitless = Eigen::Matrix2d::Identity();
-        d_to_unitless(0, 0) = 1.0 / diag;
-        d_to_unitless(1, 1) = 1.0 / diag;
-
-        return d_from_unitless * getDerivativeAddDistoWrtPt(unitLess) * d_to_unitless * getDerivativeCam2ImaWrtPoint();
+        return getDerivativeFromUnitlessWrtPt(distorted) * getDerivativeAddDistoWrtPt(unitLess) * getDerivativeToUnitlessWrtPt(pixCenteredDisto) * getDerivativeCam2ImaWrtPt();
       }
   }
 
@@ -176,15 +199,29 @@ public:
         const Vec2 distorted = addDistortion(unitLess);
         const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
 
-        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
-        d_from_unitless(0, 0) = diag;
-        d_from_unitless(1, 1) = diag;
+        return getDerivativeFromUnitlessWrtPt(distorted) * getDerivativeAddDistoWrtPt(unitLess) * getDerivativeToUnitlessWrtPt(pixCenteredDisto) * getDerivativeCam2ImaWrtScale(p);
+      }
+  }
 
-        Eigen::Matrix2d d_to_unitless = Eigen::Matrix2d::Identity();
-        d_to_unitless(0, 0) = 1.0 / diag;
-        d_to_unitless(1, 1) = 1.0 / diag;
+  Eigen::Matrix<double, 2, 2> getDerivativeToPixelsWrtPrincipalPt(const Vec2& p) const
+  {
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeCam2ImaWrtPrincipalPt();
+      }
+      else 
+      {
+        double hw = 0.5 * double(_w);
+        double hh = 0.5 * double(_h);
+        double diag = sqrt(hw * hw + hh * hh);
 
-        return d_from_unitless * getDerivativeAddDistoWrtPt(unitLess) * d_to_unitless * getDerivativeCam2ImaWrtScale(p);
+        const Vec2 pixCentered = cam2imaCentered(p);
+        const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
+        const Vec2 unitLess = toUnitless(pixCenteredDisto);
+        const Vec2 distorted = addDistortion(unitLess);
+        const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
+
+        return Eigen::Matrix2d::Identity();
       }
   }
 
@@ -192,7 +229,7 @@ public:
   {
       if (!_useUnitlessDistortion)
       {
-        return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(p);
+        return getDerivativeCam2ImaWrtPt() * getDerivativeAddDistoWrtDisto(p);
       }
       else 
       {
@@ -204,11 +241,7 @@ public:
         const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
         const Vec2 unitLess = toUnitless(pixCenteredDisto);
 
-        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
-        d_from_unitless(0, 0) = diag;
-        d_from_unitless(1, 1) = diag;
-
-        return d_from_unitless * getDerivativeAddDistoWrtDisto(unitLess);
+        return getDerivativeFromUnitlessWrtPt(pixCenteredDisto) * getDerivativeAddDistoWrtDisto(unitLess);
       }
   }
 
@@ -216,7 +249,7 @@ public:
   { 
       if (!_useUnitlessDistortion)
       {
-        return getDerivativeCam2ImaWrtPrincipalPoint();
+        return getDerivativeCam2ImaWrtPrincipalPt();
       }
       else 
       {
@@ -242,17 +275,80 @@ public:
         const Vec2 distorted = addDistortion(unitLess);
         const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
 
-        Eigen::Matrix2d d_from_unitless = Eigen::Matrix2d::Identity();
-        d_from_unitless(0, 0) = diag;
-        d_from_unitless(1, 1) = diag;
-
-        Eigen::Matrix2d d_to_unitless = Eigen::Matrix2d::Identity();
-        d_to_unitless(0, 0) = 1.0 / double(diag);
-        d_to_unitless(1, 1) = 1.0 / double(diag);
-
-        return d_from_unitless * getDerivativeAddDistoWrtPt(unitLess) * d_to_unitless;
+        return getDerivativeFromUnitlessWrtPt(distorted) * getDerivativeAddDistoWrtPt(unitLess) * getDerivativeToUnitlessWrtPt(pixCenteredDisto);
       }
   }
+
+  Vec2 toMeters(const Vec2 & p) const 
+  { 
+      if(!_useUnitlessDistortion)
+      {
+          return ima2cam(removeDistortion(p));
+      }
+
+      const Vec2 unitless = toUnitless(p - getPrincipalPoint());
+      const Vec2 undistorted = removeDistortion(unitless);
+      const Vec2 centered = fromUnitless(undistorted);
+      const Vec2 centered2 = centered - _distortionOffset;
+      const Vec2 meters = ima2camCentered(centered2);
+
+      return meters;
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeToMetersWrtPt(const Vec2 & p) const
+  { 
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeIma2CamWrtPt() * getDerivativeRemoveDistoWrtPt(p);
+      }
+      else 
+      {
+        const Vec2 unitless = toUnitless(p - getPrincipalPoint());
+        const Vec2 undistorted = removeDistortion(unitless);
+        const Vec2 centered = fromUnitless(undistorted);
+        const Vec2 centered2 = centered - _distortionOffset;
+        const Vec2 meters = ima2camCentered(centered2);
+
+        return getDerivativeIma2CamWrtPt() * getDerivativeFromUnitlessWrtPt(undistorted) * getDerivativeRemoveDistoWrtPt(unitless) * getDerivativeToUnitlessWrtPt(p);
+      }
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeToMetersWrtPrincipalPoint(const Vec2 & p) const
+  { 
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeIma2CamWrtPrincipalPt();
+      }
+      else 
+      {
+        const Vec2 unitless = toUnitless(p - getPrincipalPoint());
+        const Vec2 undistorted = removeDistortion(unitless);
+        const Vec2 centered = fromUnitless(undistorted);
+        const Vec2 centered2 = centered - _distortionOffset;
+        const Vec2 meters = ima2camCentered(centered2);
+
+        return getDerivativeIma2CamWrtPt() * getDerivativeFromUnitlessWrtPt(undistorted) * getDerivativeRemoveDistoWrtPt(unitless) * getDerivativeToUnitlessWrtPt(p);
+      }
+  }
+
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeToMetersWrtDisto(const Vec2 & p) const
+  {
+      if (!_useUnitlessDistortion)
+      {
+        return getDerivativeIma2CamWrtPt() * getDerivativeRemoveDistoWrtDisto(p);
+      }
+      else 
+      {
+        const Vec2 unitless = toUnitless(p - getPrincipalPoint());
+        const Vec2 undistorted = removeDistortion(unitless);
+        const Vec2 centered = fromUnitless(undistorted);
+        const Vec2 centered2 = centered - _distortionOffset;
+        const Vec2 meters = ima2camCentered(centered2);
+
+        return getDerivativeIma2CamWrtPt() * getDerivativeFromUnitlessWrtPt(undistorted) * getDerivativeRemoveDistoWrtDisto(unitless);
+      }
+  }
+  
   
   std::vector<double> getDistortionParams() const
   {

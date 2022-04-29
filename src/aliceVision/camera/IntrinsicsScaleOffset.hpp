@@ -74,17 +74,6 @@ public:
     return ret;
   }
 
-  // Transform a point from the camera plane to the image plane
-  Vec2 cam2ima(const Vec2& p) const override
-  {
-    return p.cwiseProduct(_scale) + getPrincipalPoint();
-  }
-
-  // Transform a point from the camera plane to the image plane
-  Vec2 cam2imaCentered(const Vec2& p) const 
-  { 
-      return p.cwiseProduct(_scale); 
-  }
 
   virtual Eigen::Matrix2d getDerivativeCam2ImaWrtScale(const Vec2& p) const
   {
@@ -96,7 +85,7 @@ public:
     return M;
   }
 
-  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPt() const
   {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -106,24 +95,12 @@ public:
     return M;
   }
 
-  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPoint() const
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPt() const
   {
     return Eigen::Matrix2d::Identity();
   }
 
-  // Transform a point from the image plane to the camera plane
-  Vec2 ima2cam(const Vec2& p) const override
-  {
-    Vec2 np;
-
-    Vec2 pp = getPrincipalPoint();
-
-    np(0) = (p(0) - pp(0)) / _scale(0);
-    np(1) = (p(1) - pp(1)) / _scale(1);
-
-    return np;
-  }
-
+  
   virtual Eigen::Matrix<double, 2, 2> getDerivativeIma2CamWrtScale(const Vec2& p) const
   {
       Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
@@ -136,7 +113,7 @@ public:
       return M;
   }
 
-  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const
+  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPt() const
   {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -146,7 +123,7 @@ public:
     return M;
   }
 
-  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const
+  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPt() const
   {
     Eigen::Matrix2d M = Eigen::Matrix2d::Zero();
 
@@ -261,6 +238,44 @@ public:
   bool isRatioLocked() const
   {
     return _ratioLocked;
+  }
+
+
+protected:
+  // Transform a point from the camera plane to the image plane
+  Vec2 cam2ima(const Vec2& p) const override
+  {
+    return p.cwiseProduct(_scale) + getPrincipalPoint();
+  }
+
+  // Transform a point from the image plane to the camera plane
+  Vec2 ima2cam(const Vec2& p) const override
+  {
+    Vec2 np;
+
+    Vec2 pp = getPrincipalPoint();
+
+    np(0) = (p(0) - pp(0)) / _scale(0);
+    np(1) = (p(1) - pp(1)) / _scale(1);
+
+    return np;
+  }
+
+  // Transform a point from the camera plane to the image plane
+  Vec2 cam2imaCentered(const Vec2& p) const 
+  { 
+      return p.cwiseProduct(_scale); 
+  }
+
+  // Transform a point from the image plane to the camera plane
+  Vec2 ima2camCentered(const Vec2& p) const 
+  { 
+      Vec2 ret;
+
+      ret(0) /= _scale(0);
+      ret(1) /= _scale(1);
+
+      return ret;
   }
 
 protected:

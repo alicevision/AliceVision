@@ -124,7 +124,7 @@ public:
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_X * d_X_d_R;
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_X * d_X_d_R;
   }
 
   Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4& pt) const override
@@ -145,10 +145,10 @@ public:
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
-  Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
+  Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPt(const geometry::Pose3& pose, const Vec4 & pt) const override
   {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -168,7 +168,7 @@ public:
     d_P_d_X(1, 3) = 0;
     
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_X * d_X_d_P;
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_X * d_X_d_P;
   }
 
   Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt) const
@@ -179,7 +179,7 @@ public:
     return getDerivativeToPixelsWrtDisto(P);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt) const
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPt(const geometry::Pose3& pose, const Vec4 & pt) const
   {
       const Vec4 X = pose.getHomogeneous() * pt; // apply pose
       const Vec2 P = X.head<2>() / X(2);
@@ -202,7 +202,7 @@ public:
     Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
 
     ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
-    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPt(pose, pt3D);
 
     if (hasDistortion()) {
 
@@ -219,7 +219,7 @@ public:
     return pt.homogeneous().normalized();
   }
 
-  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPt(const Vec2 & pt)
   {
     double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
     double norm = sqrt(norm2);
@@ -268,10 +268,10 @@ public:
 
     const Vec2 proj = ray.head(2) / ray(2);
 
-    const Vec2 p1 = removeDistortion(ima2cam(Vec2(0,0)));
-    const Vec2 p2 = removeDistortion(ima2cam(Vec2(_w,0)));
-    const Vec2 p3 = removeDistortion(ima2cam(Vec2(_w,_h)));
-    const Vec2 p4 = removeDistortion(ima2cam(Vec2(0,_h)));
+    const Vec2 p1 = toMeters(Vec2(0,0));
+    const Vec2 p2 = toMeters(Vec2(_w,0));
+    const Vec2 p3 = toMeters(Vec2(_w,_h));
+    const Vec2 p4 = toMeters(Vec2(0,_h));
 
     double xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
     double ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));

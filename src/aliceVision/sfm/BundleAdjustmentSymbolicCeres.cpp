@@ -252,7 +252,7 @@ public:
       Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
 
 
-      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
+      J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPt(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
     }
 
     return true;

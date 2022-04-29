@@ -89,7 +89,7 @@ void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerVie
             iterPt != iterFeatPerDesc.second.end(); ++iterPt)
           {
             const Vec2 pt = iterPt->coords().cast<double>();
-            const Vec3 bearingVector = cam->toUnitSphere(cam->removeDistortion(cam->ima2cam(pt)));
+            const Vec3 bearingVector = cam->toUnitSphere(cam->toMeters(pt));
             iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
           }
         }

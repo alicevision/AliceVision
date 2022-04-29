@@ -391,9 +391,7 @@ int aliceVision_main(int argc, char* argv[])
 
                     Vec2 p = corners[idxcorner].center;
 
-                    const Vec2 cpt = cameraPinhole->ima2cam(p);
-                    const Vec2 distorted = cameraPinhole->removeDistortion(cpt);
-                    const Vec2 ipt = cameraPinhole->cam2ima(distorted);
+                    const Vec2 ipt = cameraPinhole->get_ud_pixel(p);
 
                     //Add observation
                     sfmData::Observation obs(p, idxlandmark, 1.0);

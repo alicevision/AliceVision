@@ -742,7 +742,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
       // get normalized feature
       const feature::PointFeature & pt = normalizedFeaturesPerView.getFeatures(viewIndex)[featIndex];
-      const Vec2 pt_unnormalized (cam->cam2ima(pt.coords().cast<double>()));
+      const Vec2 pt_unnormalized (cam->toPixels(pt.coords().cast<double>()));
       obs[viewIndex] = Observation(pt_unnormalized, featIndex);
     }
   }

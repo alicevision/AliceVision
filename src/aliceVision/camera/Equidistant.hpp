@@ -141,7 +141,7 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
   }
 
   Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(const geometry::Pose3& pose, const Vec4 & pt) const override
@@ -190,10 +190,10 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_T.block<3, 16>(0, 0);
   }
 
-  Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4 & pt) const override
+  Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPt(const geometry::Pose3& pose, const Vec4 & pt) const override
   {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -240,7 +240,7 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
   }
 
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec4 & pt) const
@@ -299,10 +299,10 @@ public:
     d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);
     d_fov_d_scale(0, 1) = 0.0;
 
-    return getDerivativeToPixelsWrtPoint(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
+    return getDerivativeToPixelsWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec4 & pt) const
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPt(const geometry::Pose3& pose, const Vec4 & pt) const
   {
     Eigen::Matrix4d T = pose.getHomogeneous();
     const Vec4 X = T * pt; // apply pose
@@ -331,7 +331,7 @@ public:
     Eigen::Matrix<double, 2, Eigen::Dynamic> ret(2, getParams().size());
 
     ret.block<2, 2>(0, 0) = getDerivativeProjectWrtScale(pose, pt3D);
-    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPoint(pose, pt3D);
+    ret.block<2, 2>(0, 2) = getDerivativeProjectWrtPrincipalPt(pose, pt3D);
 
     if (hasDistortion()) {
 
@@ -360,7 +360,7 @@ public:
     return ret;
   }
 
-  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPt(const Vec2 & pt)
   {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
@@ -422,29 +422,17 @@ public:
     return value / _scale(0);
   }
 
-  // Transform a point from the camera plane to the image plane
-  Vec2 cam2ima(const Vec2& p) const override
-  {
-    return _circleRadius * p  + getPrincipalPoint();
-  }
-
-  Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const override
+  Eigen::Matrix2d getDerivativeCam2ImaWrtPt() const override
   {
     return Eigen::Matrix2d::Identity() * _circleRadius;
   }
 
-  // Transform a point from the image plane to the camera plane
-  Vec2 ima2cam(const Vec2& p) const override
-  {
-    return (p - getPrincipalPoint()) / _circleRadius;
-  }
-
-  Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const override
+  Eigen::Matrix2d getDerivativeIma2CamWrtPt() const override
   {
     return Eigen::Matrix2d::Identity() * (1.0 / _circleRadius);
   }
 
-  Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const override
+  Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPt() const override
   {
     return Eigen::Matrix2d::Identity() * (-1.0 / _circleRadius);
   }
@@ -497,6 +485,19 @@ public:
   void setCircleCenterY(double y)
   {
     _circleCenter(1) = y;
+  }
+
+protected:
+  // Transform a point from the camera plane to the image plane
+  Vec2 cam2ima(const Vec2& p) const override
+  {
+    return _circleRadius * p  + getPrincipalPoint();
+  }
+
+  // Transform a point from the image plane to the camera plane
+  Vec2 ima2cam(const Vec2& p) const override
+  {
+    return (p - getPrincipalPoint()) / _circleRadius;
   }
 
 protected:

@@ -34,9 +34,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_classicld)
     for (int j = 0; j < 1000; j+=10)
     {
       const Vec2 pt(j, i);
-      const Vec2 cpt = cam.ima2cam(pt);
-      const Vec2 upt = cam.addDistortion(cpt);
-      const Vec2 distortedPoint = cam.cam2ima(upt);
+      const Vec2 distortedPoint = cam.get_d_pixel(pt);
 
       calibration::PointPair pp;
       pp.distortedPoint = distortedPoint;
@@ -55,9 +53,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_classicld)
 
   for (const calibration::PointPair & pair : pts)
   {
-    const Vec2 cpt = estimatedCam->ima2cam(pair.distortedPoint);
-    const Vec2 upt = estimatedCam->removeDistortion(cpt);
-    const Vec2 undistortedPoint = estimatedCam->cam2ima(upt);
+    const Vec2 undistortedPoint = estimatedCam->get_ud_pixel(pair.distortedPoint);
 
     const double residual = (undistortedPoint - pair.undistortedPoint).norm();
 
@@ -84,9 +80,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_radial4)
     for (int j = 0; j < 1000; j+=10)
     {
       const Vec2 pt(j, i);
-      const Vec2 cpt = cam.ima2cam(pt);
-      const Vec2 upt = cam.addDistortion(cpt);
-      const Vec2 distortedPoint = cam.cam2ima(upt);
+      const Vec2 distortedPoint = cam.get_d_pixel(pt);
 
       calibration::PointPair pp;
       pp.distortedPoint = distortedPoint;
@@ -105,9 +99,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_radial4)
 
   for (const calibration::PointPair & pair : pts)
   {
-    const Vec2 cpt = estimatedCam->ima2cam(pair.distortedPoint);
-    const Vec2 upt = estimatedCam->removeDistortion(cpt);
-    const Vec2 undistortedPoint = estimatedCam->cam2ima(upt);
+    const Vec2 undistortedPoint = estimatedCam->get_ud_pixel(pair.distortedPoint);
 
     const double residual = (undistortedPoint - pair.undistortedPoint).norm();
 
@@ -142,9 +134,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
     for (int j = 0; j < 1000; j+=10)
     {
       const Vec2 pt(j, i);
-      const Vec2 cpt = cam.ima2cam(pt);
-      const Vec2 upt = cam.removeDistortion(cpt);
-      const Vec2 distortedPoint = cam.cam2ima(upt);
+      const Vec2 distortedPoint = cam.get_ud_pixel(pt);
 
       calibration::PointPair pp;
       pp.distortedPoint = distortedPoint;
@@ -167,9 +157,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
     for (int i = 0; i < 1000; i+=10)
     {
       const Vec2 pt(j, i);
-      const Vec2 cpt = cam.ima2cam(pt);
-      const Vec2 upt = cam.removeDistortion(cpt);
-      const Vec2 distortedPoint = cam.cam2ima(upt);
+      const Vec2 distortedPoint = cam.get_ud_pixel(pt);
 
       line.points.push_back(distortedPoint);
     }
@@ -197,9 +185,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_classicld)
 
   for (const calibration::PointPair & pair : pts)
   {
-    const Vec2 cpt = estimatedCam->ima2cam(pair.distortedPoint);
-    const Vec2 upt = estimatedCam->addDistortion(cpt);
-    const Vec2 undistortedPoint = estimatedCam->cam2ima(upt);
+    const Vec2 undistortedPoint = estimatedCam->get_d_pixel(pair.distortedPoint);
 
     const double residual = (undistortedPoint - pair.undistortedPoint).norm();
 
@@ -233,9 +219,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_radial4)
     for (int j = 0; j < 1000; j+=10)
     {
       const Vec2 pt(j, i);
-      const Vec2 cpt = cam.ima2cam(pt);
-      const Vec2 upt = cam.removeDistortion(cpt);
-      const Vec2 distortedPoint = cam.cam2ima(upt);
+      const Vec2 distortedPoint = cam.get_ud_pixel(pt);
 
       calibration::PointPair pp;
       pp.distortedPoint = distortedPoint;
@@ -258,9 +242,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_radial4)
     for (int i = 0; i < 1000; i+=10)
     {
       const Vec2 pt(j, i);
-      const Vec2 cpt = cam.ima2cam(pt);
-      const Vec2 upt = cam.removeDistortion(cpt);
-      const Vec2 distortedPoint = cam.cam2ima(upt);
+      const Vec2 distortedPoint = cam.get_ud_pixel(pt);
 
       line.points.push_back(distortedPoint);
     }
@@ -288,9 +270,7 @@ BOOST_AUTO_TEST_CASE(distortionCalibration_calibrate_lines_radial4)
 
   for (const calibration::PointPair & pair : pts)
   {
-    const Vec2 cpt = estimatedCam->ima2cam(pair.distortedPoint);
-    const Vec2 upt = estimatedCam->addDistortion(cpt);
-    const Vec2 undistortedPoint = estimatedCam->cam2ima(upt);
+    const Vec2 undistortedPoint = estimatedCam->get_d_pixel(pair.distortedPoint);
 
     const double residual = (undistortedPoint - pair.undistortedPoint).norm();
 

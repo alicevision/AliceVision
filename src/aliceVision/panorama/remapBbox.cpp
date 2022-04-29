@@ -225,8 +225,7 @@ bool computeCoarseBB_Pinhole(BoundingBox& coarse_bbox, const std::pair<int, int>
     float max_radius = 0.0;
     for(int i = 0; i < 4; i++)
     {
-
-        Vec2 ptmeter = intrinsics.ima2cam(pts[i]);
+        Vec2 ptmeter = intrinsics.ima2cam_forced(pts[i]);
         float radius = ptmeter.norm();
         max_radius = std::max(max_radius, radius);
     }

@@ -199,7 +199,7 @@ public:
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The projection jacobian  wrt point
    */
-  virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
+  virtual Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPt(const geometry::Pose3& pose, const Vec4& pt3D) const = 0;
 
   /**
    * @brief get derivative of a projection of a 3D point into the camera plane
@@ -361,20 +361,6 @@ public:
   virtual bool importFromParams(const std::vector<double>& params, const Version & inputVersion) = 0;
 
   /**
-   * @brief Transform a point from the camera plane to the image plane
-   * @param[in] p A point from the camera plane
-   * @return Image plane point
-   */
-  virtual Vec2 cam2ima(const Vec2& p) const = 0;
-
-  /**
-   * @brief Transform a point from the image plane to the camera plane
-   * @param[in] p A point from the image plane
-   * @return Camera plane point
-   */
-  virtual Vec2 ima2cam(const Vec2& p) const = 0;
-
-  /**
    * @brief Camera model handle a distortion field
    * @return True if the camera model handle a distortion field
    */
@@ -494,11 +480,60 @@ public:
   }
 
   /**
-   * @brief transform a given point (in pixels) to unit sphere in meters
+   * @brief transform a given point (in meters) to unit sphere in meters
    * @param pt the input point
    * @return a point on the unit sphere
    */
   virtual Vec3 toUnitSphere(const Vec2 & pt) const = 0;
+  
+  /**
+   * @brief Transform a point from the camera plane (including distortion and other image formation)  to the image plane
+   * @param[in] p A point from the camera plane
+   * @return Image plane point
+   */
+  virtual Vec2 toPixels(const Vec2& p) const = 0;
+
+  /**
+   * @brief Transform a point from the image plane (including distortion and other image formation) to the camera plane
+   * @param[in] p A point from the image plane
+   * @return Camera plane point
+   */
+  virtual Vec2 toMeters(const Vec2& p) const = 0;
+
+  /**
+   * @brief Transform a point from the image plane to the camera plane
+   * @param[in] p A point from the image plane
+   * @return Camera plane point
+   */
+  virtual Vec2 ima2cam_forced(const Vec2& p) const
+  {
+    return ima2cam(p);
+  }
+
+  /**
+   * @brief Transform a point from the image plane to the camera plane
+   * @param[in] p A point from the image plane
+   * @return Camera plane point
+   */
+  virtual Vec2 cam2ima_forced(const Vec2& p) const
+  {
+    return cam2ima(p);
+  }
+
+protected:
+  /**
+   * @brief Transform a point from the camera plane to the image plane
+   * @param[in] p A point from the camera plane
+   * @return Image plane point
+   */
+  virtual Vec2 cam2ima(const Vec2& p) const = 0;
+
+  /**
+   * @brief Transform a point from the image plane to the camera plane
+   * @param[in] p A point from the image plane
+   * @return Camera plane point
+   */
+  virtual Vec2 ima2cam(const Vec2& p) const = 0;
 
 protected:
 
@@ -529,7 +564,7 @@ inline Vec3 applyIntrinsicExtrinsic(const geometry::Pose3& pose,
   // X = R.t() * K.inv() * x + C // Camera world point
   // getting the ray:
   // ray = X - C = R.t() * K.inv() * x
-  return (pose.rotation().transpose() * intrinsic->toUnitSphere(intrinsic->removeDistortion(intrinsic->ima2cam(x)))).normalized();
+  return (pose.rotation().transpose() * intrinsic->toUnitSphere(intrinsic->toMeters(x))).normalized();
 }
 
 /**
