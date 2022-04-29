@@ -5,9 +5,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-// Photometric Stereo
-#include <aliceVision/photometricStereo/photometricDataIO.hpp>
-#include <aliceVision/photometricStereo/photometricStereo.hpp>
+// Lighting calibration
+#include <aliceVision/lightingEstimation/lightingCalibration.hpp>
 
 // Command line parameters
 #include <aliceVision/system/main.hpp>
@@ -19,13 +18,13 @@
 #include <boost/filesystem.hpp>
 
 // Eigen
-#include <Eigen/Dense>
-#include <Eigen/Core>
+//#include <Eigen/Dense>
+//#include <Eigen/Core>
 
 //OpenCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/eigen.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+// #include <opencv2/core/core.hpp>
+// #include <opencv2/core/eigen.hpp>
+// #include <opencv2/imgproc/imgproc.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -46,17 +45,18 @@ int aliceVision_main(int argc, char **argv)
     namespace fs = boost::filesystem;
 
     std::string inputPath;
-    std::string outputPath;
-    std::string pathToLightData;
-    size_t HS_order;
+    std::string outputPath;  
+    Eigen::Vector2f sphereCenterOffset(0, 0);
+    double sphereRadius = 1.0;
 
-    po::options_description allParams("AliceVision photometricStereo");
+    po::options_description allParams("AliceVision lighting calibration");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures")
-    ("pathToLighFile,l", po::value<std::string>(&pathToLightData)->default_value("path/test"), "Path to light json file")
-    ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
-    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path");
+    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
+    ("x", po::value<float>(&sphereCenterOffset(0))->required(), "Sphere's center offset X (pixels).")
+    ("y", po::value<float>(&sphereCenterOffset(1))->required(), "Sphere's center offset Y (pixels).")
+    ("sphereRadius,r", po::value<double>(&sphereRadius)->required(), "Sphere's radius (pixels).")
+    ("outputPath,o", po::value<std::string>(&outputPath)->required(), "Path to JSON output file");
 
     allParams.add(requiredParams);
 
@@ -87,24 +87,28 @@ int aliceVision_main(int argc, char **argv)
 
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
-
-    aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm;
-    aliceVision::image::Image<aliceVision::image::RGBfColor> albedoIm;
     
     if(boost::filesystem::is_directory(inputPath))
     {
-        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, normalsIm, albedoIm);
+        std::cout << "Directory input : WIP" << std::endl;
+    //    lightCalibration(inputPath, outputFile);
     }
     else
     {
-      aliceVision::sfmData::SfMData sfmData;
-      if(!aliceVision::sfmDataIO::Load(sfmData, inputPath, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS|aliceVision::sfmDataIO::INTRINSICS)))
-      {
-          ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
-          return EXIT_FAILURE;
-      }
+        std::cout << "SfMData input : WIP" << std::endl;
+        aliceVision::sfmData::SfMData sfmData;
+        if(!aliceVision::sfmDataIO::Load(sfmData, inputPath, aliceVision::sfmDataIO::ESfMData(aliceVision::sfmDataIO::VIEWS|aliceVision::sfmDataIO::INTRINSICS)))
+        {
+            ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read");
+            return EXIT_FAILURE;
+        }
 
-      photometricStereo(sfmData, pathToLightData, outputPath, HS_order, normalsIm, albedoIm);
+        std::array<float, 3> sphereParam;
+        sphereParam[0] = sphereCenterOffset(0);
+        sphereParam[1] = sphereCenterOffset(1);
+        sphereParam[2] = sphereRadius;
+
+        lightCalibration(sfmData, sphereParam, outputPath);
     }
 
     return 0;

@@ -546,6 +546,16 @@ alicevision_add_software(aliceVision_normalIntegration
         Boost::program_options
 )
 
+alicevision_add_software(aliceVision_lightingCalibration
+  SOURCE main_lightingCalibration.cpp
+  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+  LINKS aliceVision_lightingEstimation
+        aliceVision_system
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+)
+
 if(ALICEVISION_BUILD_HDR)
 
 alicevision_add_software(aliceVision_LdrToHdrSampling

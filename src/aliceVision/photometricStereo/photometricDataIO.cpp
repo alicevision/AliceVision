@@ -131,7 +131,7 @@ void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::st
            if(boost::algorithm::icontains(imagePathFS.stem().string(), lightsName.first))
            {
                std::array<float, 3> currentIntensities;
-               for(auto& intensities: lightsName.second.get_child("intensities"))
+               for(auto& intensities: lightsName.second.get_child("intensity"))
                {
                    currentIntensities[cpt] = intensities.second.get_value<float>();
                    ++cpt;
