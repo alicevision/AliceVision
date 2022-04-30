@@ -14,6 +14,7 @@
 #include <aliceVision/stl/hash.hpp>
 #include <aliceVision/version.hpp>
 
+#include <iostream>
 #include <vector>
 
 namespace aliceVision {

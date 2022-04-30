@@ -231,7 +231,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     std::vector<double> params = cameraToEstimate->getParams();
     double * scale = &params[0];
     double * center = &params[2];
-    double * distortionParameters = &params[4];
+    double * distortionParameters = &params[6];
 
     double common_dist = 1.0;
     problem.AddParameterBlock(&common_dist, 1);
@@ -383,7 +383,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     std::vector<double> params = cameraToEstimate->getParams();
     double * scale = &params[0];
     double * center = &params[2];
-    double * distortionParameters = &params[4];
+    double * distortionParameters = &params[6];
 
     problem.AddParameterBlock(scale, 2);
     if (lockScale)

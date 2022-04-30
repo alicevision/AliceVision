@@ -223,6 +223,12 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     camObj.getSchema().set(camSample);
   }
 
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  if (intrinsicDisto)
+  {
+      OBoolProperty(userProps, "mvg_useUnitlessDistortion").set(intrinsicDisto->useUnitlessDistortion());
+  }
+
   std::shared_ptr<camera::EquiDistant> intrinsicEquiCasted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
   if(intrinsicEquiCasted)
   {

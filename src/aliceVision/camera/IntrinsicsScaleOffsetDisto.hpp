@@ -166,11 +166,7 @@ public:
         return getDerivativeCam2ImaWrtPt() * getDerivativeAddDistoWrtPt(p);
       }
       else 
-      {
-        double hw = 0.5 * double(_w);
-        double hh = 0.5 * double(_h);
-        double diag = sqrt(hw * hw + hh * hh);
-        
+      {        
         const Vec2 pixCentered = cam2imaCentered(p);
         const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
         const Vec2 unitLess = toUnitless(pixCenteredDisto);
@@ -189,10 +185,6 @@ public:
       }
       else 
       {
-        double hw = 0.5 * double(_w);
-        double hh = 0.5 * double(_h);
-        double diag = sqrt(hw * hw + hh * hh);
-
         const Vec2 pixCentered = cam2imaCentered(p);
         const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
         const Vec2 unitLess = toUnitless(pixCenteredDisto);
@@ -211,10 +203,6 @@ public:
       }
       else 
       {
-        double hw = 0.5 * double(_w);
-        double hh = 0.5 * double(_h);
-        double diag = sqrt(hw * hw + hh * hh);
-
         const Vec2 pixCentered = cam2imaCentered(p);
         const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
         const Vec2 unitLess = toUnitless(pixCenteredDisto);
@@ -233,15 +221,13 @@ public:
       }
       else 
       {
-        double hw = 0.5 * double(_w);
-        double hh = 0.5 * double(_h);
-        double diag = sqrt(hw * hw + hh * hh);
-
         const Vec2 pixCentered = cam2imaCentered(p);
         const Vec2 pixCenteredDisto = pixCentered + _distortionOffset;
         const Vec2 unitLess = toUnitless(pixCenteredDisto);
+        const Vec2 distorted = addDistortion(unitLess);
+        const Vec2 pixels = fromUnitless(distorted) + getPrincipalPoint();
 
-        return getDerivativeFromUnitlessWrtPt(pixCenteredDisto) * getDerivativeAddDistoWrtDisto(unitLess);
+        return getDerivativeFromUnitlessWrtPt(distorted) * getDerivativeAddDistoWrtDisto(unitLess);
       }
   }
 
@@ -283,7 +269,7 @@ public:
   { 
       if(!_useUnitlessDistortion)
       {
-          return ima2cam(removeDistortion(p));
+          return removeDistortion(ima2cam(p));
       }
 
       const Vec2 unitless = toUnitless(p - getPrincipalPoint());
@@ -400,21 +386,31 @@ public:
       return false;
     }
 
-    std::vector<double> localParams(updatedParams.size() + 2);
 
-    localParams[0] = updatedParams[0];
-    localParams[1] = updatedParams[1];
-    localParams[2] = updatedParams[2];
-    localParams[3] = updatedParams[3];
-    localParams[4] = 0.0;
-    localParams[5] = 0.0;
-
-    for (int i = 4; i <= updatedParams.size(); i++)
+    if (inputVersion < Version(1, 2, 6))
     {
-      localParams[i + 2] = updatedParams[i];
+        std::vector<double> localParams(updatedParams.size() + 2);
+
+        localParams[0] = updatedParams[0];
+        localParams[1] = updatedParams[1];
+        localParams[2] = updatedParams[2];
+        localParams[3] = updatedParams[3];
+        localParams[4] = 0.0;
+        localParams[5] = 0.0;
+
+        for (int i = 4; i <= updatedParams.size(); i++)
+        {
+            localParams[i + 2] = updatedParams[i];
+        }
+
+        updatedParams = localParams;
+    }
+    else
+    {
+        updatedParams = params;
     }
 
-    updatedParams = localParams;
+    
 
     return true;
   }
@@ -528,7 +524,7 @@ public:
 protected:
   std::shared_ptr<Distortion> _pDistortion;
   Vec2 _distortionOffset{0.0, 0.0};
-  bool _useUnitlessDistortion{true};
+  bool _useUnitlessDistortion{false};
 };
 
 } // namespace camera

@@ -123,8 +123,10 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
   if (intrinsicScaleOffsetDisto)
   {
-    bpt::ptree distParamsTree;
+    saveMatrix("distortionOffset", intrinsicScaleOffsetDisto->getDistortionOffset(), intrinsicTree);
+    intrinsicTree.put("useUnitlessDistortion", intrinsicScaleOffsetDisto->useUnitlessDistortion());
 
+    bpt::ptree distParamsTree;
     for(double param : intrinsicScaleOffsetDisto->getDistortionParams())
     {
       bpt::ptree paramTree;
@@ -236,6 +238,13 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
   if (intrinsicWithDistoEnabled != nullptr)
   {
+      Vec2 distOffset;
+      loadMatrix("distortionOffset", distOffset, intrinsicTree);
+
+      intrinsicWithDistoEnabled->setDistortionOffset(distOffset);
+      intrinsicWithDistoEnabled->useUnitlessDistortion(intrinsicTree.get<bool>("useUnitlessDistortion"));
+
+
     std::vector<double> distortionParams;
     for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
       distortionParams.emplace_back(paramNode.second.get_value<double>());

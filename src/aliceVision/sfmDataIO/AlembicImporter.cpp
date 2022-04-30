@@ -403,6 +403,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   bool poseLocked = false;
   bool poseIndependant = true;
   bool lockRatio = true;
+  bool useUnitlessDistortion = false;
 
   if(userProps)
   {
@@ -454,6 +455,10 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseIndependant"))
       {
         poseIndependant = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseIndependant", sampleFrame);
+      }
+      if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_useUnitlessDistortion"))
+      {
+         useUnitlessDistortion = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_useUnitlessDistortion", sampleFrame);
       }
       if(userProps.getPropertyHeader("mvg_metadata"))
       {
@@ -540,7 +545,12 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setHeight(sensorSize_pix.at(1));
     intrinsic->setSensorWidth(sensorSize_mm.at(0));
     intrinsic->setSensorHeight(sensorSize_mm.at(1));
-    intrinsic->importFromParams(mvg_intrinsicParams, abcVersion);
+
+    if (!intrinsic->importFromParams(mvg_intrinsicParams, abcVersion))
+    {
+        return false;
+    }
+
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
@@ -558,6 +568,12 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       casted->setCircleCenterX(fisheyeCenterX);
       casted->setCircleCenterY(fisheyeCenterY);
       casted->setCircleRadius(fisheyeRadius);
+    }
+
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+    if (intrinsicDisto)
+    {
+        intrinsicDisto->useUnitlessDistortion(useUnitlessDistortion);
     }
 
     if(intrinsicLocked)

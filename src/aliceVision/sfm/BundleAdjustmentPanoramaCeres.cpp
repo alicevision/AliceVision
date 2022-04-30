@@ -87,7 +87,7 @@ public:
 
     _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
     _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
-    _intrinsic->setDistortionParams({parameter_intrinsics[4], parameter_intrinsics[5], parameter_intrinsics[6]});
+    _intrinsic->setDistortionParams({parameter_intrinsics[6], parameter_intrinsics[7], parameter_intrinsics[8]});
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
@@ -126,6 +126,7 @@ public:
 
       J.block<2, 2>(0, 0) = Jscale;
       J.block<2, 2>(0, 2) = Jpp;
+      J.block<2, 2>(0, 4).fill(0);
       J.block<2, 3>(0, 6) = Jdisto;
     }
 
@@ -211,6 +212,7 @@ public:
 
       J.block<2, 2>(0, 0) = Jscale;
       J.block<2, 2>(0, 2) = Jpp;
+      J.block<2, 2>(0, 4).fill(0);
       J.block(0, 6, 2, disto_size) = Jdisto;
     }
 
@@ -545,7 +547,7 @@ void BundleAdjustmentPanoramaCeres::addIntrinsicsToProblem(const sfmData::SfMDat
 
     // lens distortion
     if(!refineIntrinsicsDistortion) {
-      for(std::size_t i = 4; i < intrinsicBlock.size(); ++i) {
+      for(std::size_t i = 6; i < intrinsicBlock.size(); ++i) {
         constantIntrinisc.push_back(i);
       }
     }
