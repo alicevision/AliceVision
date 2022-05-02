@@ -27,6 +27,7 @@ jobs:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
+      ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
     steps:
       - uses: actions/checkout@v1
 
@@ -106,6 +107,7 @@ jobs:
       # tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
+      ALICEVISION_ROOT: '${{ github.workspace }}/install'
       COMMIT_ID: 8e8a3d7c1a6f7f587b486663b1e814911e6f2342
     steps:
       - name: Checkout

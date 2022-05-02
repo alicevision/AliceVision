@@ -172,7 +172,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         const double exposure = times[idBracket];
 
         image::ImageReadOptions options;
-        options.outputColorSpace = colorspace;
+        options.workingColorSpace = colorspace;
         options.applyWhiteBalance = applyWhiteBalance;
 
         // Load image

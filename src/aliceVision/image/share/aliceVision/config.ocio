@@ -64,7 +64,7 @@ file_rules:
     #
     # The next rule uses the OCIO v1 method of searching the path for all colorspaces in the config.
     #
-  - !<Rule> {name: ColorSpaceNamePathSearch}
+#  - !<Rule> {name: ColorSpaceNamePathSearch}
     #
     # The rules are ordered, highest priority first.  OCIO takes the path to a file and applies
     # the rules one-by-one until there is a match.  The last rule, "Default", always matches.

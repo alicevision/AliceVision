@@ -286,7 +286,7 @@ int aliceVision_main(int argc, char* argv[])
         image::Image<image::RGBfColor> originalImage;
 
         image::ImageReadOptions options;
-        options.outputColorSpace = image::EImageColorSpace::LINEAR;
+        options.workingColorSpace = image::EImageColorSpace::LINEAR;
         options.applyWhiteBalance = v.second->getApplyWhiteBalance();
         
 

@@ -19,6 +19,7 @@
 using namespace aliceVision;
 using namespace aliceVision::image;
 
+
 BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
 {
   Image<unsigned char> image;

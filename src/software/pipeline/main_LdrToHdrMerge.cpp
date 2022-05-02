@@ -280,7 +280,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Load " << filepath);
 
             image::ImageReadOptions options;
-            options.outputColorSpace = image::EImageColorSpace::SRGB;
+            options.workingColorSpace = image::EImageColorSpace::SRGB;
             options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
             image::readImage(filepath, images[i], options);
 
