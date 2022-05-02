@@ -265,7 +265,7 @@ private:
 };
 
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions, bool forceSquare)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
 {
     if (!cameraToEstimate)
     {
@@ -418,7 +418,7 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     return true;
 }
 
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions, bool forceSquare)
+bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions)
 {
     if (!cameraToEstimate)
     {

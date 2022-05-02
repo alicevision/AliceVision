@@ -114,9 +114,9 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.put("initialFocalLength", initialFocalLengthMM);
     intrinsicTree.put("focalLength", focalLengthMM);
     intrinsicTree.put("pixelRatio", pixelRatio);
-    intrinsicTree.put("pixelRatioLock", intrinsicScaleOffset->isRatioLocked());
-    intrinsicTree.put("scaleLock", intrinsicScaleOffset->isScaleLocked());
-    intrinsicTree.put("offsetLock", intrinsicScaleOffset->isPrincipalPointLocked());
+    intrinsicTree.put("pixelRatioLocked", intrinsicScaleOffset->isRatioLocked());
+    intrinsicTree.put("scaleLocked", intrinsicScaleOffset->isScaleLocked());
+    intrinsicTree.put("offsetLocked", intrinsicScaleOffset->isPrincipalPointLocked());
 
     saveMatrix("principalPoint", intrinsicScaleOffset->getPrincipalPointOffset(), intrinsicTree);
   }
@@ -124,7 +124,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
   if (intrinsicScaleOffsetDisto)
   {
-    intrinsicTree.put("distortionLock", intrinsicScaleOffsetDisto->getLockDistortion());
+    intrinsicTree.put("distortionLocked", intrinsicScaleOffsetDisto->getLockDistortion());
     
     bpt::ptree distParamsTree;
 

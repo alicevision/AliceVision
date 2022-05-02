@@ -197,7 +197,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -205,7 +205,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -213,7 +213,7 @@ bool estimateDistortionK1(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -229,7 +229,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -237,7 +237,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -245,7 +245,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -255,7 +255,7 @@ bool estimateDistortionK3(std::shared_ptr<camera::Pinhole>& camera, calibration:
     locksDistortions[0] = false;
     locksDistortions[1] = false;
     locksDistortions[2] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -271,7 +271,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -279,7 +279,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -287,7 +287,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -300,7 +300,7 @@ bool estimateDistortion3DER4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[3] = false;
     locksDistortions[4] = false;
     locksDistortions[5] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -329,13 +329,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     const double k1 = simpleCamera->getDistortionParams()[0];
     camera->setDistortionParams({ k1,k1,k1,k1 });
 
-    /*if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
-    {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }*/
-
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -359,7 +353,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -367,7 +361,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax distortion 1st order
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -375,7 +369,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
 
     //Relax offcenter
     locksDistortions[0] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -387,7 +381,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[2] = false;
     locksDistortions[3] = false;
     locksDistortions[4] = true;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, false))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -399,7 +393,7 @@ bool estimateDistortion3DELD(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[2] = false;
     locksDistortions[3] = false;
     locksDistortions[4] = false;
-    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
