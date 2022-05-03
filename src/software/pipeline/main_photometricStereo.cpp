@@ -54,7 +54,7 @@ int aliceVision_main(int argc, char **argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures")
-    ("pathToLighFile,l", po::value<std::string>(&pathToLightData)->default_value("path/test"), "Path to light json file")
+    ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value(""), "Path to light file (JSON). If empty, expects txt files in picture folder")
     ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
     ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path");
 
@@ -87,6 +87,15 @@ int aliceVision_main(int argc, char **argv)
 
     ALICEVISION_COUT("Program called with the following parameters:");
     ALICEVISION_COUT(vm);
+
+    // If the path to light data is empty, set it to inputPath :
+    std::string fileExtension = fs::extension(pathToLightData);
+
+    if(!fileExtension.compare("json") && boost::filesystem::is_directory(inputPath))
+    {
+        std::cout << "Warning : path to light data has been set to inputpath folder" << std::endl;
+        pathToLightData = inputPath;
+    }
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm;
     aliceVision::image::Image<aliceVision::image::RGBfColor> albedoIm;
