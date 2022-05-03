@@ -94,36 +94,9 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
               break;
             }
         }
-
-        // PNG to real normal map
+        // Float normal map
         aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
-
-        for (int j = 0; j < nbCols; ++j)
-        {
-            for (int i = 0; i < nbRows; ++i)
-            {
-                if(normalsImPNG(i,j)(0) != 0 || normalsImPNG(i,j)(1) != 0 || normalsImPNG(i,j)(2) !=0)
-                {
-                    for (int ch = 0; ch < 3; ++ch)
-                    {
-                        if(ch ==0)
-                        {
-                            normalsImPNG2(i,j)(ch) = normalsImPNG(i,j)(ch)/127.5 - 1;
-                        }
-                        else
-                        {
-                            normalsImPNG2(i,j)(ch) = - (normalsImPNG(i,j)(ch)/127.5 - 1);
-                        }
-                    }
-                }
-                else
-                {
-                    normalsImPNG2(i,j)(0) = 0;
-                    normalsImPNG2(i,j)(1) = 0;
-                    normalsImPNG2(i,j)(2) = -1;
-                }
-            }
-        }
+        loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
 
         // Main fonction
         aliceVision::image::Image<float> depth;
