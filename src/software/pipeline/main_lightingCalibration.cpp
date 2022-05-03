@@ -45,7 +45,7 @@ int aliceVision_main(int argc, char **argv)
     namespace fs = boost::filesystem;
 
     std::string inputPath;
-    std::string outputPath;  
+    std::string ouputJSON;
     Eigen::Vector2f sphereCenterOffset(0, 0);
     double sphereRadius = 1.0;
 
@@ -53,10 +53,10 @@ int aliceVision_main(int argc, char **argv)
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input. Could be SfMData file or folder with pictures")
+    ("outputFile, j", po::value<std::string>(&ouputJSON)->required(), "Path to JSON output file")
     ("x", po::value<float>(&sphereCenterOffset(0))->required(), "Sphere's center offset X (pixels).")
     ("y", po::value<float>(&sphereCenterOffset(1))->required(), "Sphere's center offset Y (pixels).")
-    ("sphereRadius,r", po::value<double>(&sphereRadius)->required(), "Sphere's radius (pixels).")
-    ("outputPath,o", po::value<std::string>(&outputPath)->required(), "Path to JSON output file");
+    ("sphereRadius,r", po::value<double>(&sphereRadius)->required(), "Sphere's radius (pixels).");
 
     allParams.add(requiredParams);
 
@@ -108,7 +108,7 @@ int aliceVision_main(int argc, char **argv)
         sphereParam[1] = sphereCenterOffset(1);
         sphereParam[2] = sphereRadius;
 
-        lightCalibration(sfmData, sphereParam, outputPath);
+        lightCalibration(sfmData, sphereParam, ouputJSON);
     }
 
     return 0;

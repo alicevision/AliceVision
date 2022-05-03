@@ -16,7 +16,7 @@
 
 namespace fs = boost::filesystem;
 
-void photometricStereo(const std::string& inputPath, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -28,29 +28,30 @@ void photometricStereo(const std::string& inputPath, const std::string& dataFold
     std::string pictureFolder = inputPath + "/PS_Pictures/";
     getPicturesNames(pictureFolder, imageList);
 
-    Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity(); // Convertion matrix
-
     std::vector<std::array<float, 3>> intList; // Light intensities
-
     Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
 
+    if(fs::is_directory(lightData))
+    {
+        loadPSData(lightData, HS_order, intList, lightMat);
+    }
+    else
+    {
+        buildLigtMatFromJSON(lightData, imageList, lightMat, intList);
+    }
+
+
     aliceVision::image::Image<float> mask;
-    //loadPSData(dataFolderPath, HS_order, intList, lightMat, convertionMatrix, mask);
-
-    std::string jsonName = dataFolderPath + "/lights.json";
-    buildLigtMatFromJSON(jsonName, imageList, lightMat, intList);
-
-    std::string maskName = dataFolderPath + "/mask.png";
+    fs::path lightDataPath = fs::path(lightData);
+    std::string maskName = lightDataPath.remove_filename().string() + "/mask.png";
     loadMask(maskName, mask);
 
     photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
-
-
 }
 
-void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& dataFolderPath, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& lightData, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -59,17 +60,12 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
     }
 
     std::vector<std::string> imageList;
-
     std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewsPerPoseId;
 
     for(auto& viewIt: sfmData.getViews())
     {
         viewsPerPoseId[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
     }
-
-    Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity(); // Convertion matrix
-    std::vector<std::array<float, 3>> intList; // Light intensities
-    aliceVision::image::Image<float> mask;
 
     for(auto& posesIt: viewsPerPoseId)
     {
@@ -85,17 +81,28 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
             }
         }
 
-        std::string jsonName = dataFolderPath + "/lights.json";
+        std::vector<std::array<float, 3>> intList; // Light intensities
         Eigen::MatrixXf lightMat(imageList.size(), dim); //Light directions
-        buildLigtMatFromJSON(jsonName, imageList, lightMat, intList);
 
-        std::string maskName = dataFolderPath + "/mask.png";
+
+        if(fs::is_directory(lightData))
+        {
+            loadPSData(lightData, HS_order, intList, lightMat);
+        }
+        else
+        {
+            buildLigtMatFromJSON(lightData, imageList, lightMat, intList);
+        }
+
+
+        aliceVision::image::Image<float> mask;
+        fs::path lightDataPath = fs::path(lightData);
+        std::string maskName = lightDataPath.remove_filename().string() + "/mask.png";
         loadMask(maskName, mask);
 
         photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
         writePSResults(outputPath, normals, albedo, posesIt.first);
     }
-
 }
 
 void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, const aliceVision::image::Image<float>& mask, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
@@ -179,20 +186,23 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     albedo = albedoIm;
 }
 
-void loadPSData(const std::string& folderPath, const size_t& HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat, Eigen::MatrixXf& convertionMatrix, aliceVision::image::Image<float>& mask)
+void loadPSData(const std::string& folderPath, const size_t& HS_order, std::vector<std::array<float, 3>>& intList, Eigen::MatrixXf& lightMat)
 {
     std::string intFileName;
     std::string pathToCM;
     std::string dirFileName;
-    std::string maskName;
 
     // Light instensities :
     intFileName = folderPath + "/light_intensities.txt";
     loadLightIntensities(intFileName, intList);
 
     // Convertion matrix :
+    Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity();
     pathToCM = folderPath + "/convertionMatrix.txt";
-    readMatrix(pathToCM, convertionMatrix);
+    if(fs::exists(pathToCM))
+    {
+        readMatrix(pathToCM, convertionMatrix);
+    }
 
     // Light directions :
     if(HS_order == 0)
@@ -203,10 +213,6 @@ void loadPSData(const std::string& folderPath, const size_t& HS_order, std::vect
         dirFileName = folderPath + "/light_directions_HS.txt";
         loadLightHS(dirFileName, lightMat);
     }
-    
-    // Mask :
-    maskName = folderPath + "/mask.png";
-    loadMask(maskName, mask);
 }
 
 void getPicturesNames(const std::string& folderPath, std::vector<std::string>& imageList)

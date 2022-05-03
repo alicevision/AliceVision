@@ -57,8 +57,7 @@ void lightCalibration(const aliceVision::sfmData::SfMData& sfmData, const std::a
                 imageList.push_back(imagePath.string());
         }
     }
-    std::string jsonName = outputPath + "/lights.json";
-    lightCalibration(imageList, sphereParam, jsonName);
+    lightCalibration(imageList, sphereParam, outputPath);
 }
 
 void lightCalibration(const std::vector<std::string>& imageList, const std::array<float, 3>& sphereParam, const std::string& jsonName)
@@ -102,8 +101,6 @@ void lightCalibration(const std::vector<std::string>& imageList, const std::arra
 
         lightMat.row(i) = lightingDirection;
     }
-
-    std::cout << lightMat << std::endl;
 
     // Write in JSON file :
     writeJSON(jsonName, imageList, lightMat, intList);
