@@ -28,3 +28,5 @@ void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::imag
 void convertZtoDistance(const aliceVision::image::Image<float>& zMap, aliceVision::image::Image<float>& distanceMap, const Eigen::Matrix3f& K);
 
 void convertDistanceToZ(const aliceVision::image::Image<float>& distanceMap, aliceVision::image::Image<float>& zMap, const Eigen::Matrix3f& K);
+
+void loadNormalMap(aliceVision::image::Image<aliceVision::image::RGBColor> inputNormals, const aliceVision::image::Image<float>& normalsMask, aliceVision::image::Image<aliceVision::image::RGBfColor>& outputNormals);

@@ -38,33 +38,8 @@ void normalIntegration(const std::string& inputPath, bool perspective, const std
     int nbRows = normalsImPNG.rows();
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
+    loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
 
-    for (int j = 0; j < nbCols; ++j)
-    {
-        for (int i = 0; i < nbRows; ++i)
-        {
-            if(normalsImPNG(i,j)(0) != 0 || normalsImPNG(i,j)(1) != 0 || normalsImPNG(i,j)(2) !=0)
-            {
-                for (int ch = 0; ch < 3; ++ch)
-                {
-                    if(ch ==0)
-                    {
-                        normalsImPNG2(i,j)(ch) = normalsImPNG(i,j)(ch)/127.5 - 1;
-                    }
-                    else
-                    {
-                        normalsImPNG2(i,j)(ch) = - (normalsImPNG(i,j)(ch)/127.5 - 1);
-                    }
-                }
-            }
-            else
-            {
-                normalsImPNG2(i,j)(0) = 0;
-                normalsImPNG2(i,j)(1) = 0;
-                normalsImPNG2(i,j)(2) = -1;
-            }
-        }
-    }
 
     aliceVision::image::Image<float> depth;
     normalIntegration(normalsImPNG2, depth, perspective, K);
@@ -422,3 +397,38 @@ void convertDistanceToZ(const aliceVision::image::Image<float>& distanceMap, ali
     }
 }
 
+
+void loadNormalMap(aliceVision::image::Image<aliceVision::image::RGBColor> inputNormals, const aliceVision::image::Image<float>& normalsMask, aliceVision::image::Image<aliceVision::image::RGBfColor>& outputNormals)
+{
+    int nbCols = inputNormals.cols();
+    int nbRows = inputNormals.rows();
+
+    bool hasMask = !((normalsMask.rows() == 1) && (normalsMask.cols() == 1));
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            if((normalsMask(i,j) > 0) || !hasMask)
+            {
+                for (int ch = 0; ch < 3; ++ch)
+                {
+                    if(ch ==0)
+                    {
+                        outputNormals(i,j)(ch) = inputNormals(i,j)(ch)/127.5 - 1;
+                    }
+                    else
+                    {
+                        outputNormals(i,j)(ch) = - (inputNormals(i,j)(ch)/127.5 - 1);
+                    }
+                }
+            }
+            else
+            {
+                outputNormals(i,j)(0) = 0;
+                outputNormals(i,j)(1) = 0;
+                outputNormals(i,j)(2) = -1;
+            }
+        }
+    }
+}
