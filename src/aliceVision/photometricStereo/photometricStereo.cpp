@@ -1,5 +1,6 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/image/io.cpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -217,18 +218,26 @@ void loadPSData(const std::string& folderPath, const size_t& HS_order, std::vect
 
 void getPicturesNames(const std::string& folderPath, std::vector<std::string>& imageList)
 {
-    boost::filesystem::directory_iterator endItr;
-    for(boost::filesystem::directory_iterator itr(folderPath); itr != endItr; ++itr)
-    {
-      std::string currentFilePath = itr->path().string();
-      
-      std::string fileExtension = boost::filesystem::extension(currentFilePath);
-      std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
+    const std::vector<std::string>& extensions = aliceVision::image::getSupportedExtensions();
 
-      if(fileExtension == ".png")
-      {
-        imageList.push_back(currentFilePath);
-      }
+    fs::directory_iterator endItr;
+    for(fs::directory_iterator itr(folderPath); itr != endItr; ++itr)
+    {
+        fs::path currentFilePath = itr->path();
+      
+        std::string fileExtension = fs::extension(currentFilePath.string());
+        std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
+
+        if(!boost::algorithm::icontains(currentFilePath.stem().string(), "mask") && !boost::algorithm::icontains(currentFilePath.stem().string(), "ambiant"))
+        {
+            for(const std::string& extension: extensions)
+            {
+                if(fileExtension == extension)
+                {
+                    imageList.push_back(currentFilePath.string());
+                }
+            }
+        }
     }
 
     std::sort(imageList.begin(),imageList.end(),compareFunction); //sort the vector
