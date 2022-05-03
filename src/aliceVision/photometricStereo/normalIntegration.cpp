@@ -2,6 +2,9 @@
 #include <aliceVision/sfmData/Landmark.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -25,7 +28,6 @@ void normalIntegration(const std::string& inputPath, bool perspective, const std
     std::string normalMapPath = inputPath + "/normals.png";
     std::string pathToK = inputPath + "/K.txt";
 
-
     aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
     aliceVision::image::ImageReadOptions options;
     options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
@@ -34,27 +36,32 @@ void normalIntegration(const std::string& inputPath, bool perspective, const std
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     readMatrix(pathToK, K);
 
+    aliceVision::image::Image<float> normalsMask;
+    std::string maskName = inputPath + "/mask.png";
+    loadMask(maskName, normalsMask);
+
     int nbCols = normalsImPNG.cols();
     int nbRows = normalsImPNG.rows();
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
     loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
 
+    aliceVision::image::Image<float> depthMap(nbCols, nbRows);
+    aliceVision::image::Image<float> distanceMap(nbCols, nbRows);
+    DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
 
-    aliceVision::image::Image<float> depth;
-    normalIntegration(normalsImPNG2, depth, perspective, K);
+    // AliceVision uses distance-to-origin convention
+    convertZtoDistance(depthMap, distanceMap, K);
 
-    std::string pathToDM = outputFodler + "output.exr";
+    std::string pathToDM = outputFodler + "/output.exr";
 
     oiio::ParamValueList metadata;
     metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-    aliceVision::image::writeImage(pathToDM, depth, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
-
+    aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
 }
 
 void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, bool perspective, const std::string& outputFodler)
 {
-
     aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
     aliceVision::image::ImageReadOptions options;
     options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
@@ -121,7 +128,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 }
 
 
-void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K)
+void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& normalsMask)
 {
 
     int nbCols = normals.cols();
@@ -133,7 +140,7 @@ void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfC
     Eigen::MatrixXf f(nbRows, nbCols);
 
     // Prepare normal integration :
-    normal2PQ(normals, p, q, perspective, K);
+    normal2PQ(normals, p, q, perspective, K, normalsMask);
     getDivergenceField(p, q, f);
     setBoundaryConditions(p, q, f);
 
@@ -162,31 +169,32 @@ void normalIntegration(const aliceVision::image::Image<aliceVision::image::RGBfC
     cv::Mat z(nbRows, nbCols, CV_32FC1);
     cv::idct(z_bar_bar, z);
 
-    aliceVision::image::Image<float> currentDepth(nbCols, nbRows);
-
     for (int j = 0; j < nbCols; ++j)
     {
         for (int i = 0; i < nbRows; ++i)
         {
             if(perspective)
             {
-                currentDepth(i,j) = std::exp(z.at<float>(i,j));
+                depth(i,j) = std::exp(z.at<float>(i,j));
             } else {
-                currentDepth(i,j) = z.at<float>(i,j);
+                depth(i,j) = z.at<float>(i,j);
             }
         }
     }
+}
 
     // AliceVision uses distance-to-origin convention
     convertZtoDistance(currentDepth, depth, K);
 
 }
 
-void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K){
+void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& normalsMask){
 
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsY(p.cols(), p.rows());
 	aliceVision::image::Image<float> normalsZ(p.cols(), p.rows());
+
+    bool hasMask = !((normalsMask.rows() == 1) && (normalsMask.cols() == 1));
 
     for (size_t j = 0; j < p.cols(); ++j)
     {
@@ -212,7 +220,7 @@ void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& n
 
                 float denom = u*normalsX(i,j) + v*normalsY(i,j) + f*normalsZ(i,j);
 
-                if (denom == 0)
+                if ((denom == 0) || (hasMask && (normalsMask(i,j) == 0)))
                 {
                     p(i,j) = 0;
                     q(i,j) = 0;
@@ -227,7 +235,7 @@ void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& n
         {
             for (size_t i = 0; i < p.rows(); ++i)
             {
-                if (normalsZ(i,j) == 0)
+                if ((normalsZ(i,j) == 0) || (hasMask && (normalsMask(i,j) == 0)))
                 {
                     p(i,j) = 0;
                     q(i,j) = 0;

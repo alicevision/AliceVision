@@ -108,19 +108,43 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
 
 void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, const aliceVision::image::Image<float>& mask, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
-    std::vector<int> indexes;
-    getIndMask(mask, indexes);
-    size_t maskSize = indexes.size();
+    size_t maskSize;
+    int pictRows;
+    int pictCols;
 
-    const int pictRows = mask.rows();
-    const int pictCols = mask.cols();
-
-    // Eigen::MatrixXf allPictures(3*imageList.size(), pictRows*pictCols);
-    Eigen::MatrixXf imMat(3*imageList.size(), maskSize);
-    Eigen::MatrixXf imMat_gray(imageList.size(), maskSize);
+    bool hasMask = !((mask.rows() == 1) && (mask.cols() == 1));
 
     std::string picturePath;
     std::string pictureName;
+
+    std::vector<int> indexes;
+
+    if(hasMask)
+    {
+        getIndMask(mask, indexes);
+        maskSize = indexes.size();
+
+        pictRows = mask.rows();
+        pictCols = mask.cols();
+
+    }
+    else
+    {
+        picturePath = imageList.at(0);
+
+        aliceVision::image::Image<aliceVision::image::RGBfColor> imageFloat;
+        aliceVision::image::ImageReadOptions options;
+        options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
+        aliceVision::image::readImage(picturePath, imageFloat, options);
+
+        pictRows = imageFloat.rows();
+        pictCols = imageFloat.cols();
+
+        maskSize = pictRows*pictCols;
+    }
+
+    Eigen::MatrixXf imMat(3*imageList.size(), maskSize);
+    Eigen::MatrixXf imMat_gray(imageList.size(), maskSize);
 
     // Read pictures :
     for (size_t i = 0; i < imageList.size(); ++i)
@@ -170,9 +194,17 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
     // Normal estimation :
     M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
+    int currentIdx;
     for (size_t i = 0; i < maskSize; ++i)
     {
-        int currentIdx = indexes.at(i); // index in picture
+        if(hasMask)
+        {
+            currentIdx = indexes.at(i); // index in picture
+        }
+        else
+        {
+            currentIdx = i;
+        }
         normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
     }
 

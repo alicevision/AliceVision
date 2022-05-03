@@ -153,9 +153,20 @@ void buildLigtMatFromJSON(const std::string& fileName, const std::vector<std::st
 
 void loadMask(std::string const& maskName, aliceVision::image::Image<float>& mask)
 {
-    aliceVision::image::ImageReadOptions options;
-    options.outputColorSpace = aliceVision::image::EImageColorSpace::SRGB;
-    aliceVision::image::readImage(maskName, mask, options);
+    if(fs::exists(maskName))
+    {
+        aliceVision::image::ImageReadOptions options;
+        options.outputColorSpace = aliceVision::image::EImageColorSpace::SRGB;
+        aliceVision::image::readImage(maskName, mask, options);
+    }
+    else
+    {
+        std::cout << "Can not open mask.png. Every pixel will be used !" << std::endl;
+        Eigen::MatrixXf mask_aux(1,1);
+        mask_aux(0,0) = 1;
+        mask = mask_aux;
+    }
+
 }
 
 void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& indexes)
@@ -199,11 +210,13 @@ void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColo
     int nbCols = imageIn.cols();
     int index = 0;
 
+    bool hasMask = !((mask.rows() == 1) && (mask.cols() == 1));
+
     for (int j = 0; j < nbCols; ++j)
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if (mask(i,j) > 0)
+            if ((!hasMask) || mask(i,j) > 0)
             {
                 for(int ch = 0; ch < 3; ++ch)
                 {

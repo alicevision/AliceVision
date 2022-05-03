@@ -45,7 +45,7 @@ int aliceVision_main(int argc, char **argv)
     namespace po = boost::program_options;
     namespace fs = boost::filesystem;
 
-    bool isPerspective;
+    bool isPerspective(true);
     std::string outputFolder;
     std::string pathToK;
     std::string inputPath;
@@ -54,11 +54,9 @@ int aliceVision_main(int argc, char **argv)
     po::options_description allParams("AliceVision normal integration");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input : a folder containing the normal and albedo map")
+    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input : a folder containing the normal map and the mask")
     ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to SfmData file")
-    ("pathToK,k", po::value<std::string>(&pathToK)->default_value(""), "pathToK.")
-    ("isPerspective,c", po::value<bool>(&isPerspective)->default_value(false), "isPerspective")
-    ("outputFolder,o", po::value<std::string>(&outputFolder)->required(), "outputFolder.");
+    ("outputPath,o", po::value<std::string>(&outputFolder)->required(), "outputFolder.");
 
     allParams.add(requiredParams);
 
@@ -102,7 +100,6 @@ int aliceVision_main(int argc, char **argv)
           ALICEVISION_LOG_ERROR("The input file '" + sfmDataFile + "' cannot be read");
           return EXIT_FAILURE;
       }
-
       normalIntegration(sfmData, inputPath, isPerspective, outputFolder);
     }
 
