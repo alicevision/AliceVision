@@ -240,7 +240,7 @@ void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskI
     }
 }
 
-void normals2picture(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm)
+void reshapeInImage(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm)
 {
     int nbRows = normalsIm.rows();
     int nbCols = normalsIm.cols();
@@ -329,5 +329,5 @@ void writePSResults(const std::string& outputPath, const aliceVision::image::Ima
 
     oiio::ParamValueList metadata;
     metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
-    aliceVision::image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.exr", albedo, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
+    aliceVision::image::writeImage(outputPath + "/" + std::to_string(poseId) + "_albedo.png", albedo, aliceVision::image::EImageColorSpace::SRGB);//, aliceVision::image::EImageColorSpace::NO_CONVERSION);//, metadata);
 }
