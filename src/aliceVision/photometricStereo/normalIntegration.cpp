@@ -257,8 +257,6 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
     }
 }
 
-    // AliceVision uses distance-to-origin convention
-    convertZtoDistance(currentDepth, depth, K);
 
 }
 
