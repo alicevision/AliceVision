@@ -379,9 +379,8 @@ void setBoundaryConditions(const Eigen::MatrixXf& p, const Eigen::MatrixXf& q, E
     f(nbRows-1,0) = f(nbRows-1,0)-sqrt(2)*b(nbRows-1,0);
 }
 
-void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& initDepth, size_t viewID, const Eigen::Matrix3f& K)
+void adjustScale(const aliceVision::sfmData::SfMData& sfmData, aliceVision::image::Image<float>& initDepth, size_t viewID)
 {
-
     const aliceVision::sfmData::Landmarks& landmarks = sfmData.getLandmarks();
     const aliceVision::sfmData::LandmarksPerView landmarksPerView = aliceVision::sfmData::getLandmarksPerViews(sfmData);
     const aliceVision::sfmData::LandmarkIdSet& visibleLandmarks = landmarksPerView.at(viewID);
