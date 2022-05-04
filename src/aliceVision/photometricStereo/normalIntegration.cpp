@@ -68,6 +68,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 
     Eigen::MatrixXf K = Eigen::MatrixXf::Zero(3,3);
     IndexT viewId;
+    IndexT poseId;
     IndexT intrinsicId;
 
     if(sfmData.getPoses().size() > 0)
@@ -83,7 +84,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
             // Find one view associated with the pose
             for(auto& viewIt: sfmData.getViews())
             {
-                const IndexT poseId = viewIt.second->getPoseId();
+                poseId = viewIt.second->getPoseId();
                 if (poseId == poseIt.first)
                 {
                   viewId = viewIt.first;
@@ -164,15 +165,29 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
     }
     else
     {
-        auto poseIt = sfmData.getViews().begin()->second->getPoseId();
+        // All views are associated to the same pose :
+        viewId = sfmData.getViews().begin()->first;
+        poseId = sfmData.getViews().begin()->second->getPoseId();
+        intrinsicId = sfmData.getViews().begin()->second->getIntrinsicId();
+
         // Read associated normal map :
-        aliceVision::image::readImage(inputPath + "/" + std::to_string(poseIt) + "_normals.png", normalsImPNG, options);
+        aliceVision::image::readImage(inputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, options);
 
         int nbCols = normalsImPNG.cols();
         int nbRows = normalsImPNG.rows();
 
-        std::string pathToK = inputPath + "/K.txt";
-        readMatrix(pathToK, K);
+        // Get intrinsics associated with this view :
+        const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
+        const float x_p = (nbCols)/2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
+        const float y_p = (nbRows)/2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+
+        // Create K matrix :
+        K(0,0) = focalPx;
+        K(1,1) = focalPx;
+        K(0,2) = x_p;
+        K(1,2) = y_p;
+        K(2,2) = 1;
+
 
         aliceVision::image::Image<float> normalsMask(nbCols, nbRows);
         std::string maskName = inputPath + "/mask.png";
