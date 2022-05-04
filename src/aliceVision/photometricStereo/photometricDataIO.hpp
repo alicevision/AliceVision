@@ -26,7 +26,7 @@ void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColo
 
 void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskIndexes, Eigen::MatrixXf& maskedMatrix);
 
-void normals2picture(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm);
+void reshapeInImage(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm);
 
 void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm, aliceVision::image::Image<aliceVision::image::RGBColor>& normalsImPNG);
 
