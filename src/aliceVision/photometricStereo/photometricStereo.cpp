@@ -211,11 +211,11 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
     albedoVect = albedoVect/albedoVect.maxCoeff();
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
-    normals2picture(normalsVect, normalsIm);
+    reshapeInImage(normalsVect, normalsIm);
     normals = normalsIm;
 
     aliceVision::image::Image<aliceVision::image::RGBfColor> albedoIm(pictCols,pictRows);
-    normals2picture(albedoVect, albedoIm);
+    reshapeInImage(albedoVect, albedoIm);
     albedo = albedoIm;
 }
 
