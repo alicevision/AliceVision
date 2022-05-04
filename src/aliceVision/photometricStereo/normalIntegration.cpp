@@ -168,7 +168,6 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         // All views are associated to the same pose :
         viewId = sfmData.getViews().begin()->first;
         poseId = sfmData.getViews().begin()->second->getPoseId();
-        intrinsicId = sfmData.getViews().begin()->second->getIntrinsicId();
 
         // Read associated normal map :
         aliceVision::image::readImage(inputPath + "/" + std::to_string(poseId) + "_normals.png", normalsImPNG, options);
@@ -176,18 +175,30 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         int nbCols = normalsImPNG.cols();
         int nbRows = normalsImPNG.rows();
 
-        // Get intrinsics associated with this view :
-        const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
-        const float x_p = (nbCols)/2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
-        const float y_p = (nbRows)/2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
+        if(perspective)
+        {
+            intrinsicId = sfmData.getViews().begin()->second->getIntrinsicId();
+            // Get intrinsics associated with this view :
+            const float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParams().at(0);
+            const float x_p = (nbCols)/2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(2);
+            const float y_p = (nbRows)/2 + sfmData.getIntrinsics().at(intrinsicId)->getParams().at(3);
 
-        // Create K matrix :
-        K(0,0) = focalPx;
-        K(1,1) = focalPx;
-        K(0,2) = x_p;
-        K(1,2) = y_p;
-        K(2,2) = 1;
-
+            // Create K matrix :
+            K(0,0) = focalPx;
+            K(1,1) = focalPx;
+            K(0,2) = x_p;
+            K(1,2) = y_p;
+            K(2,2) = 1;
+        }
+        else
+        {
+            // Create K matrix :
+            K(0,0) = 1000;
+            K(1,1) = 1000;
+            K(0,2) = nbCols/2;
+            K(1,2) = nbRows/2;
+            K(2,2) = 1;
+        }
 
         aliceVision::image::Image<float> normalsMask(nbCols, nbRows);
         std::string maskName = inputPath + "/mask.png";
@@ -208,7 +219,7 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         // AliceVision uses distance-to-origin convention
         convertZtoDistance(depthMap, distanceMap, K);
 
-        std::string pathToDM = outputFodler + "/" + std::to_string(poseIt) + "_depthMap.exr";
+        std::string pathToDM = outputFodler + "/" + std::to_string(poseId) + "_depthMap.exr";
         oiio::ParamValueList metadata;
         metadata.attribute("AliceVision:storageDataType", aliceVision::image::EStorageDataType_enumToString(aliceVision::image::EStorageDataType::Float));
 
