@@ -258,8 +258,6 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
 }
 
 
-}
-
 void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, Eigen::MatrixXf& p, Eigen::MatrixXf& q, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& normalsMask){
 
 	aliceVision::image::Image<float> normalsX(p.cols(), p.rows());
