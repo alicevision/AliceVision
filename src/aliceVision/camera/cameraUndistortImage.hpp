@@ -25,6 +25,59 @@ namespace camera {
 template <typename T>
 void UndistortImage(
   const image::Image<T>& imageIn,
+  const camera::IntrinsicBase * intrinsicSource,
+  const camera::IntrinsicBase * intrinsicOutput,
+  image::Image<T>& image_ud,
+  T fillcolor,
+  const oiio::ROI & roi = oiio::ROI())
+{
+  if (!intrinsicSource->hasDistortion()) // no distortion, perform a direct copy
+  {
+    image_ud = imageIn;
+  }
+  else // There is distortion
+  {
+    const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
+      
+    int widthRoi = imageIn.Width();
+    int heightRoi = imageIn.Height();
+    int xOffset = 0;
+    int yOffset = 0;
+    if(roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    image_ud.resize(widthRoi, heightRoi, true, fillcolor);
+    const image::Sampler2d<image::SamplerLinear> sampler;
+    
+    #pragma omp parallel for
+    for (int y = 0; y < heightRoi; ++y)
+    {
+        for (int x = 0; x < widthRoi; ++x)
+        {
+            const Vec2 undisto_pix(x + xOffset, y + yOffset);
+
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(intrinsicOutput->ima2cam(undisto_pix)));
+
+            // pick pixel if it is in the image domain
+            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
+            {
+                image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            }
+        }
+    }
+  }
+}
+
+/// Undistort an image according a given camera and its distortion model
+template <typename T>
+void UndistortImage(
+  const image::Image<T>& imageIn,
   const camera::IntrinsicBase* intrinsicPtr,
   image::Image<T>& image_ud,
   T fillcolor,

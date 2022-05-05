@@ -13,10 +13,13 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/camera/camera.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
+
+
 
 #include <cstdlib>
 #include <limits>
@@ -35,54 +38,37 @@ namespace fs = boost::filesystem;
 
 
 
-oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincipalPoint)
+oiio::ROI computeRod(const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSource, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicOutput)
 {
     std::vector<Vec2> pointToBeChecked;
     pointToBeChecked.push_back(Vec2(0, 0));
-    pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, 0));
-    pointToBeChecked.push_back(Vec2(0, intrinsic->h() - 1));
-    pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, intrinsic->h() - 1));
+    pointToBeChecked.push_back(Vec2(intrinsicSource->w() - 1, 0));
+    pointToBeChecked.push_back(Vec2(0, intrinsicSource->h() - 1));
+    pointToBeChecked.push_back(Vec2(intrinsicSource->w() - 1, intrinsicSource->h() - 1));
     
-    const Vec2 center(intrinsic->w() * 0.5, intrinsic->h() * 0.5);
-    Vec2 ppCorrection(0, 0);
-    if(camera::EINTRINSIC::VALID_PINHOLE & intrinsic->getType())
-    {
-        const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsic);
-        ppCorrection = pinholePtr->getPrincipalPoint() - center;
-    }
-    const Vec2 opticalCenter = center + ppCorrection;
+    const Vec2 opticalCenter = intrinsicSource->getPrincipalPoint();
     pointToBeChecked.push_back(Vec2(opticalCenter[0], 0));
-    pointToBeChecked.push_back(Vec2(opticalCenter[0], intrinsic->h() - 1));
+    pointToBeChecked.push_back(Vec2(opticalCenter[0], intrinsicSource->h() - 1));
     pointToBeChecked.push_back(Vec2(0, opticalCenter[1]));
-    pointToBeChecked.push_back(Vec2(intrinsic->w() - 1, opticalCenter[1]));
+    pointToBeChecked.push_back(Vec2(intrinsicSource->w() - 1, opticalCenter[1]));
 
     std::vector<Vec2> maxDistortionVector;
     for(const Vec2& n: pointToBeChecked)
     {
       // Undistort pixel without principal point correction
-      const Vec2 n_undist = intrinsic->get_ud_pixel(n);
+      Vec2 n_undist = intrinsicOutput->cam2ima(intrinsicSource->removeDistortion(intrinsicSource->ima2cam(n)));
       maxDistortionVector.push_back(n_undist);
     }
 
-    std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
-              [](Vec2 a, Vec2 b) { return a[0] > b[0]; });
+    std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector), [](Vec2 a, Vec2 b) { return a[0] > b[0]; });
     const int xRoiMax = std::round(maxDistortionVector.front()[0]);
     const int xRoiMin = std::round(maxDistortionVector.back()[0]);
-    std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector),
-              [](Vec2 a, Vec2 b) { return a[1] > b[1]; });
+    std::sort(std::begin(maxDistortionVector), std::end(maxDistortionVector), [](Vec2 a, Vec2 b) { return a[1] > b[1]; });
     const int yRoiMax = std::round(maxDistortionVector.front()[1]);
     const int yRoiMin = std::round(maxDistortionVector.back()[1]);
 
-    oiio::ROI rod(xRoiMin, xRoiMax + 1,
-                  yRoiMin, yRoiMax + 1);
+    oiio::ROI rod(xRoiMin, xRoiMax + 1,yRoiMin, yRoiMax + 1);
 
-    if(correctPrincipalPoint)
-    {
-      rod.xbegin -= ppCorrection(0);
-      rod.xend -= ppCorrection(0);
-      rod.ybegin -= ppCorrection(1);
-      rod.yend -= ppCorrection(1);
-    }
     return rod;
 }
 
@@ -91,34 +77,17 @@ oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::RO
 {
     const int xOffset = rod.xbegin;
     const int yOffset = rod.ybegin; // (intrinsic->h() - rod.yend);
-    const oiio::ROI roi(-xOffset, intrinsic->w() - xOffset,
-                        -yOffset, intrinsic->h() - yOffset);
+    const oiio::ROI roi(-xOffset, intrinsic->w() - xOffset, -yOffset, intrinsic->h() - yOffset);
 
     ALICEVISION_LOG_DEBUG("roi:" << roi.xbegin << ";" << roi.xend << ";" << roi.ybegin << ";" << roi.yend);
     return roi;
 }
 
 /// Undistortion 2D MAP according to a given camera and its distortion model
-inline void UndistortMap(
-    const camera::IntrinsicBase* intrinsicPtr,
-    image::Image<image::RGBAfColor>& stmap,
-    bool correctPrincipalPoint = false,
-    const oiio::ROI& roi = oiio::ROI())
+inline void UndistortMap(image::Image<image::RGBAfColor>& stmap, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSource, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicOutput, const oiio::ROI& roi = oiio::ROI())
 {
-    const Vec2 center(intrinsicPtr->w() * 0.5, intrinsicPtr->h() * 0.5);
-    Vec2 ppCorrection(0.0, 0.0);
-
-    if (correctPrincipalPoint)
-    {
-        if (camera::isPinhole(intrinsicPtr->getType()))
-        {
-            const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
-            ppCorrection = pinholePtr->getPrincipalPoint() - center;
-        }
-    }
-
-    int widthRoi = intrinsicPtr->w();
-    int heightRoi = intrinsicPtr->h();
+    int widthRoi = intrinsicOutput->w();
+    int heightRoi = intrinsicOutput->h();
     int xOffset = 0;
     int yOffset = 0;
     if (roi.defined())
@@ -140,38 +109,22 @@ inline void UndistortMap(
             const Vec2 undisto_pix((j + xOffset), (i + yOffset));
 
             // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
+            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(intrinsicOutput->ima2cam(undisto_pix)));
 
-            if (disto_pix.x() < 0 || disto_pix.x() >= intrinsicPtr->w()) continue;
-            if (disto_pix.y() < 0 || disto_pix.y() >= intrinsicPtr->h()) continue;
+            if (disto_pix.x() < 0 || disto_pix.x() >= intrinsicSource->w()) continue;
+            if (disto_pix.y() < 0 || disto_pix.y() >= intrinsicSource->h()) continue;
 
-            stmap(i, j).r() = float((disto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
-            stmap(i, j).g() = float((float(intrinsicPtr->h()) - 1.0f - disto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
+            stmap(i, j).r() = float((disto_pix[0]) / (float(intrinsicSource->w()) - 1.0f));
+            stmap(i, j).g() = float((float(intrinsicSource->h()) - 1.0f - disto_pix[1]) / (float(intrinsicSource->h()) - 1.0f));
         }
     }
 }
 
 /// Distortion 2D MAP according to a given camera and its distortion model
-inline void distortMap(
-    const camera::IntrinsicBase* intrinsicPtr,
-    image::Image<image::RGBAfColor>& stmap,
-    bool correctPrincipalPoint = false,
-    const oiio::ROI& roi = oiio::ROI())
+inline void distortMap(image::Image<image::RGBAfColor>& stmap, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSource, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicOutput, const oiio::ROI& roi = oiio::ROI())
 {
-    const Vec2 center(intrinsicPtr->w() * 0.5, intrinsicPtr->h() * 0.5);
-    Vec2 ppCorrection(0.0, 0.0);
-
-    if (correctPrincipalPoint)
-    {
-        if (camera::isPinhole(intrinsicPtr->getType()))
-        {
-            const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
-            ppCorrection = pinholePtr->getPrincipalPoint() - center;
-        }
-    }
-
-    int widthRoi = intrinsicPtr->w();
-    int heightRoi = intrinsicPtr->h();
+    int widthRoi = intrinsicSource->w();
+    int heightRoi = intrinsicSource->h();
     int xOffset = 0;
     int yOffset = 0;
     if (roi.defined())
@@ -182,16 +135,8 @@ inline void distortMap(
         yOffset = roi.ybegin;
     }
 
-
     stmap.resize(widthRoi, heightRoi, true, image::RGBAfColor(0.0f));
     const image::Sampler2d<image::SamplerLinear> sampler;
-
-    float minx = 1.0;
-    float miny = 1.0;
-    float maxx = 0.0;
-    float maxy = 0.0;
-
-    
     
     #pragma omp parallel for
     for (int i = 0; i < heightRoi; ++i)
@@ -200,14 +145,10 @@ inline void distortMap(
         {
             const Vec2 disto_pix((j + xOffset), (i + yOffset));
 
-            // compute coordinates with distortion
-            const Vec2 undisto_pix = intrinsicPtr->get_ud_pixel(disto_pix) - ppCorrection;
+            const Vec2 undisto_pix = intrinsicOutput->cam2ima(intrinsicSource->removeDistortion(intrinsicSource->ima2cam(disto_pix)));
 
-            //if (undisto_pix.x() < 0 || undisto_pix.x() >= intrinsicPtr->w()) continue;
-            //if (undisto_pix.y() < 0 || undisto_pix.y() >= intrinsicPtr->h()) continue;
-
-            stmap(i, j).b() = float((undisto_pix[0]) / (float(intrinsicPtr->w()) - 1.0f));
-            stmap(i, j).a() = float((float(intrinsicPtr->h()) - 1.0f - undisto_pix[1]) / (float(intrinsicPtr->h()) - 1.0f));
+            stmap(i, j).b() = float((undisto_pix[0]) / (float(intrinsicOutput->w()) - 1.0f));
+            stmap(i, j).a() = float((float(intrinsicOutput->h()) - 1.0f - undisto_pix[1]) / (float(intrinsicOutput->h()) - 1.0f));
             stmap(i, j).r() = stmap(i, j).b();
             stmap(i, j).g() = stmap(i, j).a();
         }
@@ -227,6 +168,8 @@ int aliceVision_main(int argc, char** argv)
   bool exportUVMaps = false;
   bool exportFullROD = false;
   bool correctPrincipalPoint = true;
+  bool correctPixelRatio = true;
+
   std::map<IndexT, oiio::ROI> roiForIntrinsic;
   std::string viewFilter;
   std::string sfmDataFilterFilepath;
@@ -253,6 +196,8 @@ int aliceVision_main(int argc, char** argv)
       "Export UV Maps in exr format to apply distort/undistort transformations in a compositing software.")
     ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
       "apply an offset to correct the position of the principal point")
+    ("correctPixelRatio", po::value<bool>(&correctPixelRatio)->default_value(correctPixelRatio),
+      "apply a scale such that the output pixels are square")
     ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
       "Select the cameras to export using an expression based on the image filepath. Export all cameras if empty.")
     ("sfmDataFilter", po::value<std::string>(&sfmDataFilterFilepath)->default_value(sfmDataFilterFilepath),
@@ -376,6 +321,9 @@ int aliceVision_main(int argc, char** argv)
   std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;
   std::map<std::string, std::vector<std::pair<std::size_t, IndexT>> > dslrViewPerKey;
 
+
+
+
   // export distortion map / one image per intrinsic
   if(exportUVMaps)
   {
@@ -384,10 +332,30 @@ int aliceVision_main(int argc, char** argv)
       for(const auto& intrinsicPair : sfmDataExport.getIntrinsics())
       {
           const auto & intrinsic = intrinsicPair.second;
+          
           image::Image<image::RGBAfColor> stmap;
-
           if (intrinsic->isValid())
           {
+              std::shared_ptr<camera::IntrinsicsScaleOffset> iso_source = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+              if (iso_source == nullptr)
+              {
+                continue;
+              }
+
+              std::shared_ptr<camera::IntrinsicBase> intrinsic_output(intrinsic->clone());
+              std::shared_ptr<camera::IntrinsicsScaleOffset> iso_output = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic_output);
+              if (correctPrincipalPoint)
+              {
+                iso_output->setOffset({0, 0});
+              }
+
+              if (correctPixelRatio)
+              {
+                Vec2 scale = iso_output->getScale();
+                scale(1) = scale(0);
+                iso_output->setScale(scale);
+              }
+
               const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_undistort_stmap.exr")).string();
 
               // undistort the image and save it
@@ -398,7 +366,7 @@ int aliceVision_main(int argc, char** argv)
                   oiio::ROI rod;
                   if (roiForIntrinsic.find(key) == roiForIntrinsic.end())
                   {
-                      rod = computeRod(intrinsic.get(), correctPrincipalPoint);
+                      rod = computeRod(iso_source, iso_output);
                       roiForIntrinsic[key] = rod;
                   }
                   else
@@ -406,20 +374,20 @@ int aliceVision_main(int argc, char** argv)
                       rod = roiForIntrinsic[key];
                   }
 
-                  UndistortMap(intrinsic.get(), stmap, correctPrincipalPoint, rod);
-                  const oiio::ROI roi = convertRodToRoi(intrinsic.get(), rod);
+                  UndistortMap(stmap, iso_source, iso_output, rod);
+                  const oiio::ROI roi = convertRodToRoi(intrinsic_output.get(), rod);
                   writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata, roi);
               }
               else
               {
-                  UndistortMap(intrinsic.get(), stmap, correctPrincipalPoint);
+                  UndistortMap(stmap, iso_source, iso_output);
                   image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
               }
 
               //Distort st map
               {
                   const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_distort_stmap.exr")).string();
-                  distortMap(intrinsic.get(), stmap, correctPrincipalPoint);
+                  distortMap(stmap, iso_source, iso_output);
                   image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
               }
           }
@@ -444,23 +412,44 @@ int aliceVision_main(int argc, char** argv)
     {
       sfmData::Intrinsics::const_iterator iterIntrinsic = sfmDataExport.getIntrinsics().find(view.getIntrinsicId());
       const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
-      const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
+      const std::shared_ptr<camera::IntrinsicBase> intrinsic = iterIntrinsic->second;
 
       image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
       oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
 
-      if(cam->isValid() && cam->hasDistortion())
+      if(intrinsic->isValid() && intrinsic->hasDistortion())
       {
+        std::shared_ptr<camera::IntrinsicsScaleOffset> iso_source = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+        if (iso_source == nullptr)
+        {
+          continue;
+        }
+
+        std::shared_ptr<camera::IntrinsicBase> intrinsic_output(intrinsic->clone());
+        std::shared_ptr<camera::IntrinsicsScaleOffset> iso_output = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic_output);
+
+        if (correctPrincipalPoint)
+        {
+          iso_output->setOffset({0, 0});
+        }
+
+        if (correctPixelRatio)
+        {
+          Vec2 scale = iso_output->getScale();
+          scale(1) = scale(0);
+          iso_output->setScale(scale);
+        }
+        
         // undistort the image and save it
         if(exportFullROD)
         {
             // build a ROI
             const IndexT key = view.getIntrinsicId();
             oiio::ROI rod;
-            const camera::IntrinsicBase &intrinsic = (*cam);
+            
             if(roiForIntrinsic.find(key) == roiForIntrinsic.end())
             {
-                rod = computeRod(cam, correctPrincipalPoint);
+                rod = computeRod(iso_source, iso_output);
                 roiForIntrinsic[key] = rod;
             }
             else
@@ -470,13 +459,14 @@ int aliceVision_main(int argc, char** argv)
 
             ALICEVISION_LOG_DEBUG("rod:" + std::to_string(rod.xbegin) + ";" + std::to_string(rod.xend) + ";" +
                                   std::to_string(rod.ybegin) + ";" + std::to_string(rod.yend));
-            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint, rod);
-            const oiio::ROI roi = convertRodToRoi(cam, rod);
+
+            camera::UndistortImage(image, (camera::IntrinsicBase*)iso_source.get(), (camera::IntrinsicBase*)iso_output.get(), image_ud, image::FBLACK, rod);
+            const oiio::ROI roi = convertRodToRoi(intrinsic_output.get(), rod);
             writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
         }
         else
         {
-            camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint);
+            camera::UndistortImage(image, (camera::IntrinsicBase*)iso_source.get(), (camera::IntrinsicBase*)iso_output.get(), image_ud, image::FBLACK);
             image::writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, metadata);
         }
       }
