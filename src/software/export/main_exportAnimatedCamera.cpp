@@ -349,6 +349,12 @@ int aliceVision_main(int argc, char** argv)
                 iso_output->setOffset({0, 0});
               }
 
+              std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod_output = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic_output);
+              if (isod_output)
+              {
+                isod_output->eraseDistortion();
+              }
+
               if (correctPixelRatio)
               {
                 Vec2 scale = iso_output->getScale();
@@ -438,6 +444,12 @@ int aliceVision_main(int argc, char** argv)
           Vec2 scale = iso_output->getScale();
           scale(1) = scale(0);
           iso_output->setScale(scale);
+        }
+
+        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod_output = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic_output);
+        if (isod_output)
+        {
+          isod_output->eraseDistortion();
         }
         
         // undistort the image and save it
