@@ -50,6 +50,16 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
         _localSize += 2;
       }
     }
+    else
+    {
+        if (_lockFocalRatio)
+        {
+        }
+        else
+        {
+            _localSize += 1;
+        }
+    }
 
     if (!_lockCenter)
     {
@@ -88,6 +98,18 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
         x_plus_delta[1] = x[1] + delta[posDelta];
         ++posDelta;
       }
+    }
+    else
+    {
+        if (_lockFocalRatio)
+        {
+        }
+        else
+        {
+            x_plus_delta[0] = x[0];
+            x_plus_delta[1] = x[1] + delta[posDelta];
+            ++posDelta;
+        }
     }
 
     if (!_lockCenter)
@@ -133,6 +155,18 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
         J(1, posDelta) = 1.0;
         ++posDelta;
       }
+    }
+    else
+    {
+        if (_lockFocalRatio)
+        {
+        }
+        else
+        {
+            J(0, posDelta) = 0.0;
+            J(1, posDelta) = 1.0;
+            ++posDelta;
+        }
     }
 
     if (!_lockCenter)
@@ -657,6 +691,9 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     {
       lockDistortion = true;
     }
+
+    lockFocal = true;
+    lockRatio = false;
 
     IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
     problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);

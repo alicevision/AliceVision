@@ -31,155 +31,190 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
 class IntrinsicsParameterization : public ceres::LocalParameterization {
- public:
-  explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
-  : _globalSize(parametersSize),
-    _focalRatio(focalRatio),
-    _lockFocal(lockFocal),
-    _lockFocalRatio(lockFocalRatio),
-    _lockCenter(lockCenter),
-    _lockDistortion(lockDistortion)
-  {
-    _distortionSize = _globalSize - 4;
-    _localSize = 0;
-
-    if (!_lockFocal)
+public:
+    explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+        : _globalSize(parametersSize),
+        _focalRatio(focalRatio),
+        _lockFocal(lockFocal),
+        _lockFocalRatio(lockFocalRatio),
+        _lockCenter(lockCenter),
+        _lockDistortion(lockDistortion)
     {
-      if (_lockFocalRatio)
-      {
-        _localSize += 1;
-      }
-      else
-      {
-        _localSize += 2;
-      }
+        _distortionSize = _globalSize - 4;
+        _localSize = 0;
+
+        if (!_lockFocal)
+        {
+            if (_lockFocalRatio)
+            {
+                _localSize += 1;
+            }
+            else
+            {
+                _localSize += 2;
+            }
+        }
+        else
+        {
+            if (_lockFocalRatio)
+            {
+            }
+            else
+            {
+                _localSize += 1;
+            }
+        }
+
+        if (!_lockCenter)
+        {
+            _localSize += 2;
+        }
+
+        if (!_lockDistortion)
+        {
+            _localSize += _distortionSize;
+        }
     }
 
-    if (!_lockCenter)
+    virtual ~IntrinsicsParameterization() = default;
+
+
+    bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
     {
-      _localSize += 2;
+        for (int i = 0; i < _globalSize; i++)
+        {
+            x_plus_delta[i] = x[i];
+        }
+
+        size_t posDelta = 0;
+        if (!_lockFocal)
+        {
+            if (_lockFocalRatio)
+            {
+                x_plus_delta[0] = x[0] + delta[posDelta];
+                x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
+                ++posDelta;
+            }
+            else
+            {
+                x_plus_delta[0] = x[0] + delta[posDelta];
+                ++posDelta;
+                x_plus_delta[1] = x[1] + delta[posDelta];
+                ++posDelta;
+            }
+        }
+        else
+        {
+            if (_lockFocalRatio)
+            {
+            }
+            else
+            {
+                x_plus_delta[0] = x[0];
+                x_plus_delta[1] = x[1] + delta[posDelta];
+                ++posDelta;
+            }
+        }
+
+        if (!_lockCenter)
+        {
+            x_plus_delta[2] = x[2] + delta[posDelta];
+            ++posDelta;
+
+            x_plus_delta[3] = x[3] + delta[posDelta];
+            ++posDelta;
+        }
+
+        if (!_lockDistortion)
+        {
+            for (int i = 0; i < _distortionSize; i++)
+            {
+                x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
+                ++posDelta;
+            }
+        }
+
+        return true;
     }
 
-    if (!_lockDistortion)
+    bool ComputeJacobian(const double* x, double* jacobian) const override
     {
-      _localSize += _distortionSize;
-    }
-  }
+        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
 
-  virtual ~IntrinsicsParameterization() = default;
+        J.fill(0);
 
+        size_t posDelta = 0;
+        if (!_lockFocal)
+        {
+            if (_lockFocalRatio)
+            {
+                J(0, posDelta) = 1.0;
+                J(1, posDelta) = _focalRatio;
+                ++posDelta;
+            }
+            else
+            {
+                J(0, posDelta) = 1.0;
+                ++posDelta;
+                J(1, posDelta) = 1.0;
+                ++posDelta;
+            }
+        }
+        else
+        {
+            if (_lockFocalRatio)
+            {
+            }
+            else
+            {
+                J(0, posDelta) = 0.0;
+                J(1, posDelta) = 1.0;
+                ++posDelta;
+            }
+        }
 
-  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
-  {
-    for (int i = 0; i < _globalSize; i++)
-    {
-      x_plus_delta[i] = x[i];
-    }
-    
-    size_t posDelta = 0;
-    if (!_lockFocal)
-    {
-      if (_lockFocalRatio)
-      {
-        x_plus_delta[0] = x[0] + delta[posDelta]; 
-        x_plus_delta[1] = x[1] + _focalRatio * delta[posDelta];
-        posDelta++;
-      }
-      else
-      {
-        x_plus_delta[0] = x[0] + delta[posDelta];
-        posDelta++;
-        x_plus_delta[1] = x[1] + delta[posDelta];
-        posDelta++;
-      }
-    }
+        if (!_lockCenter)
+        {
+            J(2, posDelta) = 1.0;
+            ++posDelta;
 
-    if (!_lockCenter)
-    {
-      x_plus_delta[2] = x[2] + delta[posDelta]; 
-      posDelta++;
+            J(3, posDelta) = 1.0;
+            ++posDelta;
+        }
 
-      x_plus_delta[3] = x[3] + delta[posDelta];
-      posDelta++;
-    }
+        if (!_lockDistortion)
+        {
+            for (int i = 0; i < _distortionSize; i++)
+            {
+                J(4 + i, posDelta) = 1.0;
+                ++posDelta;
+            }
+        }
 
-    if (!_lockDistortion)
-    {
-      for (int i = 0; i < _distortionSize; i++)
-      {
-        x_plus_delta[4 + i] = x[4 + i] + delta[posDelta];
-        posDelta++;
-      }
-    }
-
-    return true;
-  }
-
-  bool ComputeJacobian(const double* x, double* jacobian) const override
-  {    
-    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
-
-    J.fill(0);
-
-    size_t posDelta = 0;
-    if (!_lockFocal)
-    {
-      if (_lockFocalRatio)
-      {
-        J(0, posDelta) = 1.0;
-        J(1, posDelta) = _focalRatio;
-        posDelta++;
-      }
-      else
-      {
-        J(0, posDelta) = 1.0;
-        posDelta++;
-        J(1, posDelta) = 1.0;
-        posDelta++;
-      }
+        return true;
     }
 
-    if (!_lockCenter)
+    int GlobalSize() const override
     {
-      J(2, posDelta) = 1.0;
-      posDelta++;
-
-      J(3, posDelta) = 1.0;
-      posDelta++;
+        return _globalSize;
     }
 
-    if (!_lockDistortion)
+    int LocalSize() const override
     {
-      for (int i = 0; i < _distortionSize; i++)
-      {
-        J(4 + i, posDelta) = 1.0;
-        posDelta++;
-      }
+        return _localSize;
     }
 
-    return true;
-  }
-
-  int GlobalSize() const override 
-  {
-    return _globalSize;
-  }
-
-  int LocalSize() const override 
-  { 
-    return _localSize; 
-  }
-
- private:
-  size_t _distortionSize;
-  size_t _globalSize;
-  size_t _localSize;
-  double _focalRatio;
-  bool _lockFocal;
-  bool _lockFocalRatio;
-  bool _lockCenter;
-  bool _lockDistortion;
+private:
+    size_t _distortionSize;
+    size_t _globalSize;
+    size_t _localSize;
+    double _focalRatio;
+    bool _lockFocal;
+    bool _lockFocalRatio;
+    bool _lockCenter;
+    bool _lockDistortion;
 };
+
 
 /**
  * @brief Create the appropriate cost functor according the provided input camera intrinsic model
