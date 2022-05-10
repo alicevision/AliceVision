@@ -4,6 +4,27 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+//This application is meant to detect a checkerboard or a set of checkerboards in a set of images.
+//For application reasons, we are interested in detecting checkerboards which may be :
+// - heavily distorted
+// - with large blur 
+// - partially occluded (Even in the center of the checkerboard)
+// - Without any information on its size (with lower bounds)
+//
+//The checkerboard returned is a matrix of corners id or UndefinedIndexT.
+//
+//A corner describe :
+// - Its center
+// - Its two principal directions
+// - a scale of detection : the smaller the scale, the "worst" the corner is.
+//
+//The checkerboard order is the same than the corners coordinates order:
+// - if a checkerboard item is at the right of another checkerboard item, 
+//   it means its associated corner is at the right of the other corner in the image
+//
+// - if a checkerboard item is at the bottom of another checkerboard item,
+//   it means its associated corner is at the bottom of the other corner in the image
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 

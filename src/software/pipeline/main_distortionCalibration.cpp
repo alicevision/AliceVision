@@ -4,6 +4,20 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// This application tries to estimate the distortion of a set of images.
+// It is assumed that for each image we have a result of the checkerboard detector.
+
+// The constraint for this calibration is that we may not know :
+// - the checkerboard size 
+// - the squares sizes 
+// - the checkerboard relative poses
+
+// We may only have only one image per distortion to estimate.
+
+// The idea is is to calibrate distortion parameters without estimating the pose or the intrinsics.
+// This algorithms groups the corners by lines and minimize a distance between corners and lines using distortion.
+
+
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>

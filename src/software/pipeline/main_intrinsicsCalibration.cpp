@@ -4,6 +4,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+
+// This application tries to estimate the intrinsics and extrinsics of a set of images.
+// It is assumed that for each image we have a result of the checkerboard detector.
+// It is assumed that the distortion is at least approximately known or calibrated.
+// It is assumed that we have several views with different poses orientation of the same checkerboard.
+// It is assumed we know the square size of the checkerboard.
+
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>

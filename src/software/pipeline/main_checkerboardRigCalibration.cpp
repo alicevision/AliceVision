@@ -15,6 +15,9 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
 
+// This application tries to estimate the rig extrinsics
+// It is assumed that for each image we have a result of the checkerboard detector.
+// It is assumed that for each image we have estimated its intrinsics and extrinsics using the required application.
 
 
 // These constants define the current software version.
