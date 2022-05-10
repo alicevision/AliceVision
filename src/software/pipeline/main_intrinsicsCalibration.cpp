@@ -263,12 +263,14 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     }
 
     //Compute non linear refinement
-    sfm::BundleAdjustmentCeres::CeresOptions options;
+    sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
     options.summary = true;
-    sfm::BundleAdjustmentCeres ba(options);
+    sfm::BundleAdjustmentSymbolicCeres ba(options);
     sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-        sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION;
-        /*sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION  | sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS */;
+        sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+        sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL | 
+        sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
+        
     if (!ba.adjust(sfmData, boptions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
@@ -290,10 +292,6 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
             Vec2 est = intrinsic->project(pose.getTransform(), refpt, true);
             Vec2 measure = pobs.second.x;
-
-            Vec2 esttest = intrinsic->project(pose.getTransform(), Vec4({0, 0, 0, 1}), true);
-            std::cout << viewId  << " " << esttest.transpose() << std::endl;
-            std::cout << viewId << " " << (pose.getTransform().getHomogeneous() * Vec4({ 0, 0, 0, 1 })).transpose() << std::endl;
         }
     }
 
