@@ -45,6 +45,11 @@ public:
       return _pDistortion == other._pDistortion;
   }
 
+  void setDistortionObject(std::shared_ptr<Distortion> object)
+  {
+      _pDistortion = object;
+  }
+
   bool hasDistortion() const override
   {
     return _pDistortion != nullptr;
