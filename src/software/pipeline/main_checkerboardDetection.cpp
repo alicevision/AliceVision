@@ -46,6 +46,7 @@ int aliceVision_main(int argc, char* argv[])
     int rangeStart = -1;
     int rangeSize = 1;
     bool exportDebugImages = false;
+    bool doubleSize = false;
 
     // Command line parameters
     po::options_description allParams(
@@ -62,7 +63,8 @@ int aliceVision_main(int argc, char* argv[])
     optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
-        ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), "Export Debug Images.");
+        ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), "Export Debug Images.")
+        ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), "Double image size prior to processing.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -165,13 +167,15 @@ int aliceVision_main(int argc, char* argv[])
             pixelRatio = 1.0;
         }
 
-        if (pixelRatio != 1.0)
+        if (pixelRatio != 1.0 || doubleSize)
         {
             // if pixel are not squared, convert the image for easier lines extraction
             const double w = source.Width();
             const double h = source.Height();
-            const double nw = w;
-            const double nh = h / pixelRatio;
+            
+            const double nw = w * ((doubleSize) ? 2.0 : 1.0);
+            const double nh = h * ((doubleSize) ? 2.0 : 1.0) / pixelRatio;
+
             image::Image<image::RGBColor> resizedInput(nw, nh);
 
             const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
@@ -192,12 +196,18 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         //Restore aspect ratio for corners coordinates
-        if (pixelRatio != 1.0)
+        if (pixelRatio != 1.0 || doubleSize)
         {
             std::vector<calibration::CheckerDetector::CheckerBoardCorner> & cs = detect.getCorners();
             for (auto &c : cs)
             {
                 c.center(1) *= pixelRatio;
+
+                if (doubleSize)
+                {
+                    c.center(0) /= 2.0;
+                    c.center(1) /= 2.0;
+                }
             }
         }
         
