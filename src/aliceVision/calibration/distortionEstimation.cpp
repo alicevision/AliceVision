@@ -223,7 +223,7 @@ public:
         const Vec2 ipt = _camera->cam2ima(distorted);
 
         const double w1 = std::max(std::abs(distorted.x()), std::abs(distorted.y()));
-        const double w = w1 * w1;
+        const double w = 1.0;//w1 * w1;
 
         residuals[0] = w * (ipt.x() - _ptDistorted.x());
         residuals[1] = w * (ipt.y() - _ptDistorted.y());
