@@ -203,6 +203,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     static const std::initializer_list<camera::EINTRINSIC> intrinsicsPriorities = {
         camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3,
         camera::EINTRINSIC::PINHOLE_CAMERA_3DECLASSICLD,
+        camera::EINTRINSIC::PINHOLE_CAMERA_3DEANAMORPHIC4,
         camera::EINTRINSIC::PINHOLE_CAMERA_BROWN,
         camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL1,
         camera::EINTRINSIC::PINHOLE_CAMERA_FISHEYE,

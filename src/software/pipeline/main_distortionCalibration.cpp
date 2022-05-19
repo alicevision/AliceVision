@@ -363,6 +363,30 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[1] = false;
     locksDistortions[2] = false;
     locksDistortions[3] = false;
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return false;
+    }
+
+    //Relax offcenter
+    locksDistortions[4] = false;
+    locksDistortions[5] = false;
+    locksDistortions[6] = false;
+    locksDistortions[7] = false;
+    locksDistortions[8] = false;
+    locksDistortions[9] = false;
+    if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
+    {
+        ALICEVISION_LOG_ERROR("Failed to calibrate");
+        return false;
+    }
+
+    //Relax offcenter
+    locksDistortions[0] = false;
+    locksDistortions[1] = false;
+    locksDistortions[2] = false;
+    locksDistortions[3] = false;
     locksDistortions[4] = false;
     locksDistortions[5] = false;
     locksDistortions[6] = false;
@@ -573,7 +597,7 @@ int aliceVision_main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicId);
-
+        
 
         //Transform checkerboards to line With points
         std::vector<calibration::LineWithPoints> allLinesWithPoints;
