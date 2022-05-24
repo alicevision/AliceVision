@@ -1134,6 +1134,16 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img) cons
         image::DrawLine(c.center.x(), c.center.y() + 2.0, c.center.x(), c.center.y()- 2.0, image::RGBColor(255,255,0), &img);
     }
 
+    std::vector<image::RGBColor> colors;
+    colors.push_back(image::RGBColor(255,0,0));
+    colors.push_back(image::RGBColor(255,255,0));
+    colors.push_back(image::RGBColor(255,255,255));
+    colors.push_back(image::RGBColor(0,255,0));
+    colors.push_back(image::RGBColor(0,255,255));
+    colors.push_back(image::RGBColor(0,0,255));
+    colors.push_back(image::RGBColor(255,0,255));
+
+    int idx = 0;
     for (auto board : _boards)
     {
         for (int i = 0; i < board.rows(); i++)
@@ -1151,7 +1161,7 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img) cons
                 const CheckerBoardCorner & c1 = _corners[p1];
                 const CheckerBoardCorner & c2 = _corners[p2];
 
-                image::DrawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), image::RGBColor(255,0,0), 5, &img);
+                image::DrawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), colors[idx], 5, &img);
             }
         }
 
@@ -1170,9 +1180,12 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor> & img) cons
                 const CheckerBoardCorner & c1 = _corners[p1];
                 const CheckerBoardCorner & c2 = _corners[p2];
 
-                image::DrawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), image::RGBColor(255,0,0), 5, &img);
+                image::DrawLineThickness(c1.center.x(), c1.center.y(), c2.center.x(), c2.center.y(), colors[idx], 5, &img);
             }
         }
+
+        idx++;
+        if (idx >= _boards.size()) idx = 0;
     }
 }
 
