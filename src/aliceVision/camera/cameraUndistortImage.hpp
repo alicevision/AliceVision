@@ -39,8 +39,8 @@ void UndistortImage(
   {
     const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
       
-    int widthRoi = imageIn.Width();
-    int heightRoi = imageIn.Height();
+    int widthRoi = intrinsicOutput->w();
+    int heightRoi = intrinsicOutput->h();
     int xOffset = 0;
     int yOffset = 0;
     if(roi.defined())
