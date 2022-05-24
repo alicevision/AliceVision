@@ -528,7 +528,7 @@ public:
     d_squizzed_d_disto(0, 11) = xd;
     d_squizzed_d_disto(0, 12) = 0;
     d_squizzed_d_disto(1, 11) = 0;
-    d_squizzed_d_disto(1, 12) = yd;
+    d_squizzed_d_disto(1, 12) = 0;
 
     //double xd = xr + xxx * cx_xx + xyy * cx_yy + xxxxx * cx_xxxx + xxxyy * cx_xxyy + xyyyy * cx_yyyy);
     //double yd = yr + xxy * cy_xx + yyy * cy_yy + xxxxy * cy_xxxx + xxyyy * cy_xxyy + yyyyy * cy_yyyy);
