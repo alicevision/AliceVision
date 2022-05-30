@@ -42,7 +42,7 @@ public:
     };
 
 public:
-    bool process(const image::Image<image::RGBColor> & source, bool debug = false);
+    bool process(const image::Image<image::RGBColor> & source, bool useNestedGrids = false, bool debug = false);
 
     std::vector<CheckerBoard> getBoards() const
     {
@@ -81,8 +81,10 @@ private:
     bool getCandidates(std::vector<NewPoint> & candidates, Eigen::Matrix<IndexT, -1, -1> & board);
     bool growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners);
     bool growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners);
+    void sortCheckerBoards(const Vec2& center);
     
     bool mergeCheckerboards();
+    bool removeWeirdsCheckerboards();
 
     
 private:

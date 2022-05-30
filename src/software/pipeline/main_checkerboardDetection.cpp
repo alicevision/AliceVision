@@ -68,6 +68,7 @@ int aliceVision_main(int argc, char* argv[])
     int rangeSize = 1;
     bool exportDebugImages = false;
     bool doubleSize = false;
+    bool useNestedGrids = false;
 
     // Command line parameters
     po::options_description allParams(
@@ -85,7 +86,8 @@ int aliceVision_main(int argc, char* argv[])
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
         ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), "Export Debug Images.")
-        ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), "Double image size prior to processing.");
+        ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), "Double image size prior to processing.")
+        ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), "This image is a nested calibration grid (fully centered).");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -211,7 +213,7 @@ int aliceVision_main(int argc, char* argv[])
 
         //Lookup checkerboard
         calibration::CheckerDetector detect;
-        if(!detect.process(source, exportDebugImages))
+        if(!detect.process(source, useNestedGrids, exportDebugImages))
         {
             continue;
         }

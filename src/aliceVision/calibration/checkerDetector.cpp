@@ -21,10 +21,12 @@ namespace calibration{
 
 
 
-bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool debug)
+bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool useNestedGrids, bool debug)
 {
     image::Image<float> grayscale;
     image::ConvertPixelType(source, &grayscale);
+
+    const Vec2 center(grayscale.Width() / 2, grayscale.Height() / 2);
 
     const double scales[] = {1.0, 0.75, 0.5, 0.25};
 
@@ -107,6 +109,18 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
         return false;
     }
 
+    if (!removeWeirdsCheckerboards())
+    {
+        return false;
+    }
+
+
+    //Sort checkerboards by distance to center
+    if (useNestedGrids)
+    {
+        sortCheckerBoards(center);
+    }
+
     if (debug)
     {   
         image::Image<image::RGBColor> out = source;
@@ -116,6 +130,8 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
     
     return true;
 }
+
+
 
 bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale) 
 {       
@@ -1366,6 +1382,11 @@ bool CheckerDetector::mergeCheckerboards()
 
                         newBoard(ry, rx) = curval;
                     }
+
+                    if (hasConflict)
+                    {
+                        break;
+                    }
                 }
 
                 if (hasConflict)
@@ -1374,7 +1395,10 @@ bool CheckerDetector::mergeCheckerboards()
                 }
 
                 const double newEnergy = computeEnergy(newBoard, _corners);
-                if (newEnergy < checkers[idRef].second)
+
+                //Add a small constant to avoid equality problem (if equality, merge !)
+                
+                if (newEnergy < (checkers[idRef].second + 1e-6))
                 {
                     hadMerged = true;
 
@@ -1394,14 +1418,218 @@ bool CheckerDetector::mergeCheckerboards()
     }
     while (hadMerged);
 
+    //Remove overlapping
+    std::vector<IndexT> toKeep;
+    for (int idRef = 0; idRef < checkers.size(); idRef++)
+    {
+        const CheckerBoard baseBoard = checkers[idRef].first;
+
+        
+        std::set<IndexT> usedCorners;
+        for (int i = 0; i < baseBoard.rows(); i++)
+        {
+            for (int j = 0; j < baseBoard.cols(); j++)
+            {
+                const IndexT curval = baseBoard(i, j);
+                if (curval == UndefinedIndexT) continue;
+
+                usedCorners.insert(curval);
+            }
+        }
+
+        bool keep = true;
+        for (int idCur = 0; idCur < checkers.size(); idCur++)
+        {
+            if (idCur == idRef) continue;
+
+            const CheckerBoard& currentBoard = checkers[idCur].first;
+
+            size_t count_similar = 0;
+            for (int i = 0; i < currentBoard.rows(); i++)
+            {
+                for (int j = 0; j < currentBoard.cols(); j++)
+                {
+                    const IndexT curval = currentBoard(i, j);
+                    if (curval == UndefinedIndexT) continue;
+
+                    if (usedCorners.find(curval) != usedCorners.end())
+                    {
+                        count_similar++;
+                    }
+                }
+            }
+
+            //If the other checker contains almost all the corners of this checkerboard and has a better score ...
+            double ratio = double(count_similar) / double(usedCorners.size());
+            if (ratio > 0.8)
+            {
+                if (checkers[idRef].second > checkers[idCur].second)
+                {
+                    keep = false;
+                    break;
+                }
+            }
+        }
+
+        if (keep)
+        {
+            toKeep.push_back(idRef);
+        }
+    }
+
     //Copy result
     _boards.clear();
-    for (auto b : checkers)
+    for (auto id : toKeep)
     {
-        _boards.push_back(b.first);
+        _boards.push_back(checkers[id].first);
     }
 
     return true;
+}
+
+bool CheckerDetector::removeWeirdsCheckerboards()
+{
+    std::vector<CheckerBoard> filtered_boards;
+
+    for (auto b : _boards)
+    {
+        bool isWeird = false;
+
+        for (int i = 0; i < b.rows(); i++)
+        {
+            Vec2 sum {0, 0};
+            int count = 0;
+
+            std::vector<Vec2> dirs;
+
+            for (int j = 0; j < b.cols() - 1; j++)
+            {
+                IndexT c1 = b(i, j);
+                IndexT c2 = b(i, j + 1);
+
+                if (c1 == UndefinedIndexT || c2 == UndefinedIndexT) continue;
+
+                Vec2 dir = (_corners[c2].center - _corners[c1].center).normalized();
+                
+                dirs.push_back(dir);
+            }
+
+            for (Vec2 ref : dirs)
+            {
+                for (Vec2 cur : dirs)
+                {
+                    double angle = acos(ref.dot(cur));
+                    if (std::abs(angle) > M_PI_4)
+                    {
+                        isWeird = true;
+                        break;
+                    }
+                }
+
+                if (isWeird) break;
+            }
+
+            if (isWeird) break;
+        }
+
+        if (isWeird)
+        {
+            continue;
+        }
+
+        for (int j = 0; j < b.cols(); j++)
+        {
+            Vec2 sum{ 0, 0 };
+            int count = 0;
+
+            std::vector<Vec2> dirs;
+
+            for (int i = 0; i < b.rows() - 1; i++)
+            {
+                IndexT c1 = b(i, j);
+                IndexT c2 = b(i + 1, j);
+
+                if (c1 == UndefinedIndexT || c2 == UndefinedIndexT) continue;
+
+                Vec2 dir = (_corners[c2].center - _corners[c1].center).normalized();
+                dirs.push_back(dir);
+            }
+
+
+            for (Vec2 ref : dirs)
+            {
+                for (Vec2 cur : dirs)
+                {
+                    double angle = acos(ref.dot(cur));                    
+                    if (std::abs(angle) > M_PI_4)
+                    {
+                        isWeird = true;
+                        break;
+                    }
+                }
+
+                if (isWeird) break;
+            }
+
+            if (isWeird) break;
+        }
+
+        if (!isWeird)
+        {
+            filtered_boards.push_back(b);
+        }
+    }
+
+    _boards = filtered_boards;
+
+    return true;
+}
+
+void CheckerDetector::sortCheckerBoards(const Vec2 & center)
+{
+    const std::vector<CheckerBoardCorner> & corners = _corners;
+
+    //Sort bvoards by their minimal distance to image center
+    std::sort(_boards.begin(), _boards.end(),
+        [corners, center](const calibration::CheckerDetector::CheckerBoard& first, const calibration::CheckerDetector::CheckerBoard& second)
+        {
+            double mindist_first = std::numeric_limits<double>::max();
+            for (int i = 0; i < first.rows(); i++)
+            {
+                for (int j = 0; j < first.cols(); j++)
+                {
+                    IndexT cid = first(i, j);
+                    if (cid == UndefinedIndexT)
+                    {
+                        continue;
+                    }
+
+                    const calibration::CheckerDetector::CheckerBoardCorner& c = corners[cid];
+                    double dist = (c.center - center).norm();
+                    mindist_first = std::min(dist, mindist_first);
+                }
+            }
+
+            double mindist_second = std::numeric_limits<double>::max();
+            for (int i = 0; i < second.rows(); i++)
+            {
+                for (int j = 0; j < second.cols(); j++)
+                {
+                    IndexT cid = second(i, j);
+                    if (cid == UndefinedIndexT)
+                    {
+                        continue;
+                    }
+
+                    const calibration::CheckerDetector::CheckerBoardCorner& c = corners[cid];
+                    double dist = (c.center - center).norm();
+                    mindist_second = std::min(dist, mindist_second);
+                }
+            }
+
+            return (mindist_first < mindist_second);
+        }
+    );
 }
 
 
