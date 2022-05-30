@@ -294,6 +294,49 @@ private:
   bool _withRig;
 };
 
+class CostDistance : public ceres::CostFunction {
+public:
+    CostDistance(const double distance) : _distance(distance)
+    {
+        set_num_residuals(1);
+
+        mutable_parameter_block_sizes()->push_back(16);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_pose = parameters[0];
+        const Eigen::Map<const SE3::Matrix> cTo(parameter_pose);
+
+        Eigen::Vector4d none({ 0,0,0,1 });
+        Eigen::Vector4d t = cTo * none;
+        double dot = t.transpose() * t;
+
+        residuals[0] = dot - (_distance * _distance);
+
+        if (jacobians == nullptr) {
+            return true;
+        }
+
+        if (jacobians[0] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, 1, 16, Eigen::RowMajor>> J(jacobians[0]);
+
+            Eigen::Matrix<double, 1, 4> d_dot_d_t;
+            d_dot_d_t(0) = 2.0 * t(0);
+            d_dot_d_t(1) = 2.0 * t(1);
+            d_dot_d_t(2) = 2.0 * t(2);
+            d_dot_d_t(3) = 0.0;
+
+            J = d_dot_d_t * getJacobian_AB_wrt_A<4, 4, 1>(cTo, none) * getJacobian_AB_wrt_A<4, 4, 4>(Eigen::Matrix4d::Identity(), cTo);
+        }
+
+        return true;
+    }
+
+private:
+    double _distance;
+};
+
 void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation)
 {
   const Mat3& R = cameraPose.getTransform().rotation();
@@ -327,6 +370,9 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
   {
     ALICEVISION_THROW_ERROR("BundleAdjustmentSymbolicCeres: Constant extrinsics not supported at this time");
   }
+
+
+  //problem.AddResidualBlock(new CostDistance(72.0), nullptr, poseBlockPtr);
 
   _statistics.addState(EParameter::POSE, EParameterState::REFINED);
 }
@@ -503,6 +549,7 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
+  //solverOptions.max_num_iterations = 1000;
 
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
@@ -691,9 +738,6 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     {
       lockDistortion = true;
     }
-
-    lockFocal = true;
-    lockRatio = false;
 
     IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
     problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
