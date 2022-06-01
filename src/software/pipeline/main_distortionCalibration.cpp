@@ -618,6 +618,11 @@ int aliceVision_main(int argc, char* argv[])
         }
 
 
+        /*double hw = cameraPinhole->w() * 0.5;
+        double hh = cameraPinhole->h()*0.5;
+        double diag = sqrt(hw * hw + hh * hh);
+        cameraPinhole->setScale({ diag, diag });*/
+
         calibration::Statistics statistics;
 
         // Estimate distortion
@@ -669,6 +674,26 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Result quality of calibration: ");
         ALICEVISION_LOG_INFO("Mean of error (stddev): " << statistics.mean << "(" << statistics.stddev << ")");
         ALICEVISION_LOG_INFO("Median of error: " << statistics.median);
+
+        /*cameraPinhole->setOffset(Vec2(0.0, 0.0));
+        std::vector<double> params = cameraPinhole->getDistortionParams();
+
+        params[0] = 0.3586297;
+        params[1] = 1.1555935;
+        params[2] = 0.2750545;
+        params[3] = -0.0049528;
+        params[4] = 0.7786578;
+        params[5] = -2.9526940;
+        params[6] = -0.1748726;
+        params[7] = 4.5985139;
+        params[8] = 0.2424328;
+        params[9] = -0.8874111;
+        params[10] = 0.02440429 / 180.0 * M_PI;
+        params[11] = 1.0020279;
+        params[12] = 1.0027351;
+        
+
+        cameraPinhole->setDistortionParams(params);*/
 
         //Now, the distortion is estimated, but we have the inverted problem : how to dedistort, we need to inverse the solution
         std::vector<calibration::PointPair> points;

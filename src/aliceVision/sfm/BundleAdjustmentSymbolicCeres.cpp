@@ -337,7 +337,7 @@ private:
     double _distance;
 };
 
-void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation)
+void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation, bool constraintPosition)
 {
   const Mat3& R = cameraPose.getTransform().rotation();
   const Vec3& t = cameraPose.getTransform().translation();
@@ -372,7 +372,10 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
   }
 
 
-  //problem.AddResidualBlock(new CostDistance(72.0), nullptr, poseBlockPtr);
+  if (_distance > 0.0 && constraintPosition)
+  {
+      problem.AddResidualBlock(new CostDistance(_distance), nullptr, poseBlockPtr);
+  }
 
   _statistics.addState(EParameter::POSE, EParameterState::REFINED);
 }
@@ -549,7 +552,7 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
-  //solverOptions.max_num_iterations = 1000;
+  solverOptions.max_num_iterations = 1000;
 
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
@@ -582,7 +585,7 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
     const bool isConstant = (getPoseState(poseId) == EParameterState::CONSTANT);
 
-    addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation);
+    addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation, (poseId == 0)?true:false);
   }
 
   // setup sub-poses data
@@ -601,13 +604,13 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
       const bool isConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
 
-      addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId], problem, refineTranslation, refineRotation);
+      addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId], problem, refineTranslation, refineRotation, false);
     }
   }
 
 
   //Add default rig pose
-  addPose(sfmData::CameraPose(), true, _rigNull, problem, refineTranslation, refineRotation);
+  addPose(sfmData::CameraPose(), true, _rigNull, problem, refineTranslation, refineRotation, false);
 }
 
 void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)

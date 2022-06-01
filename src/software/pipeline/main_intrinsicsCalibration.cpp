@@ -64,7 +64,7 @@ Eigen::Matrix<double, 1, 6> computeV(const Eigen::Matrix3d& H, int i, int j)
     return v;
 }
 
-bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration::CheckerDetector>& boardsAllImages, const double squareSize, const bool useSimplePinhole)
+bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration::CheckerDetector>& boardsAllImages, const double squareSize, const double distance, const bool useSimplePinhole)
 {
     if (boardsAllImages.size() != 1)
     {
@@ -154,11 +154,11 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     std::vector<geometry::Pose3> initial_poses;
     double localSquareSize = 0.25;
 
-    size_t more_points = 0;
-    size_t id_more_points = 0;
 
     for (int idx = 0; idx < boards.size(); idx++)
     {   
+        //if (idx == 0) continue;
+
         const calibration::CheckerDetector::CheckerBoard& board = boards[idx];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
 
@@ -184,7 +184,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             }
         }
 
-        if (count_points < 10)
+        if (count_points < 30)
         {
             continue;
         }
@@ -223,6 +223,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 {
                     nobs = corners[cid].center;
                 }
+
                 sfmData::Observation obs(nobs, pos, 1.0 / scale);
                 l.observations[idx] = obs;
                 sfmData.getLandmarks()[pos] = l;
@@ -231,14 +232,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 points.push_back(curpt);
             }
         }
-
-        std::cout << "--->" << count_points << std::endl;
-        if (count_points > more_points)
-        {
-            more_points = count_points;
-            id_more_points  = idx;
-        }
-        
+            
 
         //Create matrices for ransac
         Eigen::MatrixXd Mref(3, refpts.size());
@@ -294,18 +288,14 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         newView->setViewId(idx);
         newView->setPoseId(idx);
         sfmData.getViews()[idx] = newView;
-
-        localSquareSize *= 2.0;
+            
+        if (idx < 2) localSquareSize *= 2.0;
     }
 
     if (useSimplePinhole)
     {
-        Vec2 scale = pinhole->getScale();
-        scale[1] = scale[0];
-        pinhole->setScale(scale);
         pinhole->setOffset(Vec2(0,0));
         pinhole->setDistortionObject(std::shared_ptr<camera::Distortion>(nullptr));
-        pinhole->setRatioLocked(true);
     }
 
     //Compute non linear refinement
@@ -317,10 +307,47 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL | 
         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
         
+    ba.setDistance(distance);
     if (!ba.adjust(sfmData, boptions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
+    }
+
+    if (useSimplePinhole)
+    {
+        pinhole->setRatioLocked(true);
+        Vec2 scale = pinhole->getScale();
+        
+
+        for (auto& l : sfmData.getLandmarks())
+        {
+            for (auto& o : l.second.observations)
+            {
+                double y = (o.second.x[1] - pinhole->getPrincipalPoint()[1]) / scale(1);
+                double ny = y * scale(0) + pinhole->getPrincipalPoint()[1];
+                o.second.x[1] = ny;
+            }
+        }
+
+        scale(1) = scale(0);
+        pinhole->setScale(scale);
+        
+        //Compute non linear refinement
+        sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
+        options.summary = true;
+        sfm::BundleAdjustmentSymbolicCeres ba(options);
+        sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
+
+        ba.setDistance(distance);
+        if (!ba.adjust(sfmData, boptions))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return false;
+        }
     }
 
     sfmData::Views & vs = sfmData.getViews();
@@ -624,6 +651,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilepath;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     double squareSize = 0.1;
+    double distance = 1.0;
     bool useBetaFeatureInnerGrids = true;
     bool useSimplePinhole = false;
     // Command line parameters
@@ -637,6 +665,7 @@ int aliceVision_main(int argc, char* argv[])
         ("checkerboards,c", po::value<std::string>(&checkerBoardsPath)->required(), "Checkerboards json files directory.")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
         ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize), "Checkerboard square width in mm")
+        ("distance,d", po::value<double>(&distance)->default_value(distance), "Distance to grid mm")
         ("useSimplePinhole,u", po::value<bool>(&useSimplePinhole)->default_value(useSimplePinhole), "use simple pinhole result, undistort observations");
 
     po::options_description logParams("Log parameters");
@@ -713,7 +742,7 @@ int aliceVision_main(int argc, char* argv[])
 
     if (useBetaFeatureInnerGrids)
     {
-        if (!process_innerGrids(sfmData, boardsAllImages, squareSize, useSimplePinhole))
+        if (!process_innerGrids(sfmData, boardsAllImages, squareSize, distance, useSimplePinhole))
         {
             return EXIT_FAILURE;
         }

@@ -168,9 +168,14 @@ public:
     return (_localGraph != nullptr);
   }
 
+  void setDistance(double dist)
+  {
+      _distance = dist;
+  }
+
 private:
 
-  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation);
+  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation, bool constraintPosition);
 
   /**
    * @brief Clear structures for a new problem
@@ -254,6 +259,8 @@ private:
     return (_localGraph != nullptr ? _localGraph->getIntrinsicState(intrinsicId) : BundleAdjustment::EParameterState::REFINED);
   }
 
+
+
   /**
    * @brief Return the BundleAdjustment::EParameterState for a specific landmark.
    * @param[in] landmarkId The landmark id
@@ -301,6 +308,8 @@ private:
   /// hinted order for ceres to eliminate blocks when solving.
   /// note: this ceres parameter is built internally and must be reset on each call to the solver.
   ceres::ParameterBlockOrdering _linearSolverOrdering;
+
+  double _distance = -1.0;
 };
 
 } // namespace sfm
