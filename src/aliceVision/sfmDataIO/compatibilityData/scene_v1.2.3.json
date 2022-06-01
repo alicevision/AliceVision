@@ -502,16 +502,16 @@
             "serialNumber": "",
             "type": "pinhole",
             "initializationMode": "none",
-            "initialFocalLength": "-0.0087976539589442824",
+            "initialFocalLength": "-1",
             "focalLength": "8.7976539589442808",
             "pixelRatio": "0.5",
-            "pixelRatioLock": "true",
+            "pixelRatioLocked": "true",
             "principalPoint": [
                 "-26",
                 "16"
             ],
             "distortionParams": "",
-            "locked": "0"
+            "locked": "false"
         },
         {
             "intrinsicId": "1",
@@ -522,10 +522,10 @@
             "serialNumber": "",
             "type": "radial3",
             "initializationMode": "none",
-            "initialFocalLength": "-0.0087976539589442824",
+            "initialFocalLength": "-1",
             "focalLength": "8.7976539589442808",
             "pixelRatio": "0.5",
-            "pixelRatioLock": "true",
+            "pixelRatioLocked": "true",
             "principalPoint": [
                 "-26",
                 "16"
@@ -535,7 +535,7 @@
                 "0.050000000000000003",
                 "-0.001"
             ],
-            "locked": "0"
+            "locked": "false"
         }
     ],
     "poses": [
