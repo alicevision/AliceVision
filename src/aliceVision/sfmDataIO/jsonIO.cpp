@@ -108,7 +108,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   if (intrinsicScaleOffset)
   {
     
-    const double initialFocalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getInitialScale().x() / double(intrinsic->w());
+    const double initialFocalLengthMM = (intrinsicScaleOffset->getInitialScale().x() > 0) ? intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getInitialScale().x() / double(intrinsic->w()): -1;
     const double focalLengthMM = intrinsicScaleOffset->sensorWidth() * intrinsicScaleOffset->getScale().x() / double(intrinsic->w());
     const double pixelRatio = (intrinsicScaleOffset->getScale().x()) / intrinsicScaleOffset->getScale().y();
 
@@ -216,7 +216,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
     {
       Vec2 initialFocalLengthPx;
       initialFocalLengthPx(0) = intrinsicTree.get<double>("pxInitialFocalLength");
-      initialFocalLengthPx(1) = initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0);
+      initialFocalLengthPx(1) = (initialFocalLengthPx(0) > 0)?initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0):-1;
       intrinsicWithScale->setInitialScale(initialFocalLengthPx);
     }
     else 
@@ -225,7 +225,7 @@ void loadIntrinsic(const Version & version, IndexT& intrinsicId, std::shared_ptr
       
       Vec2 initialFocalLengthPx;
       initialFocalLengthPx(0) = (initialFocalLengthMM / sensorWidth) * double(width);
-      initialFocalLengthPx(1) = initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0);
+      initialFocalLengthPx(1) = (initialFocalLengthPx(0) > 0)?initialFocalLengthPx(0) * pxFocalLength(1) / pxFocalLength(0):-1;
 
       intrinsicWithScale->setInitialScale(initialFocalLengthPx);
       intrinsicWithScale->setRatioLocked(intrinsicTree.get<bool>("pixelRatioLocked"));

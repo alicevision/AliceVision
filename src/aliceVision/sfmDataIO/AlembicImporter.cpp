@@ -560,7 +560,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     if (intrinsicScale)
     {
       // fy_pix = fx_pix * fy/fx
-      initialFocalLengthPix(1) = initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0];
+      initialFocalLengthPix(1) = (initialFocalLengthPix(0) > 0)? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
       intrinsicScale->setInitialScale(initialFocalLengthPix);
       intrinsicScale->setRatioLocked(lockRatio);
     }

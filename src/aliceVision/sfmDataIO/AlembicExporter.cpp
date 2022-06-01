@@ -211,7 +211,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     std::vector<::uint32_t> sensorSize_pix = {intrinsicCasted->w(), intrinsicCasted->h()};
     std::vector<double> sensorSize_mm = {sensorWidth, sensorHeight};
 
-    double initialFocalLength = intrinsicCasted->getInitialScale().x() * sensorWidth / double(intrinsicCasted->w());
+    double initialFocalLength = (intrinsicCasted->getInitialScale().x() > 0)?(intrinsicCasted->getInitialScale().x() * sensorWidth / double(intrinsicCasted->w())):-1;
 
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
     ODoubleArrayProperty(userProps, "mvg_sensorSizeMm").set(sensorSize_mm);
