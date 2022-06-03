@@ -109,6 +109,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   {
     OBoolProperty(userProps, "mvg_poseLocked").set(pose->isLocked());
 
+    // Convert from computer vision convention to computer graphics (opengl-like)
     Eigen::Matrix4d M = Eigen::Matrix4d::Identity();
     M(1, 1) = -1;
     M(2, 2) = -1;
@@ -408,6 +409,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
   {
     const Vec3& pt = landmark.second.X;
     const image::RGBColor& color = landmark.second.rgb;
+    // convert position from computer vision convention to computer graphics (opengl-like)
     positions.emplace_back(pt[0], -pt[1], -pt[2]);
     colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
     descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
