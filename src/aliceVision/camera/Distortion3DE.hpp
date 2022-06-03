@@ -8,6 +8,8 @@
 #pragma once
 
 #include <aliceVision/camera/Distortion.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 
 namespace aliceVision {
 namespace camera {
@@ -240,21 +242,17 @@ public:
 
   Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override
   {
-    std::cout << "invalid class for getDerivativeRemoveDistoWrtPt" << std::endl;
-    return Eigen::MatrixXd();
+    ALICEVISION_THROW_ERROR("Invalid class for getDerivativeRemoveDistoWrtPt");
   }
 
   Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override
   {
-    
-    std::cout << "invalid class for getDerivativeRemoveDistoWrtDisto" << std::endl;
-    return Eigen::MatrixXd();
+    ALICEVISION_THROW_ERROR("Invalid class for getDerivativeRemoveDistoWrtDisto");
   }
 
   double getUndistortedRadius(double r) const override
   {
-    std::cout << "invalid class for getUndistortedRadius" << std::endl;
-    return 0.0;
+    ALICEVISION_THROW_ERROR("Invalid class for getUndistortedRadius");
   }
 
   ~Distortion3DERadial4() override = default;
@@ -385,21 +383,17 @@ public:
 
   Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override
   {
-    std::cout << "invalid class for getDerivativeRemoveDistoWrtPt" << std::endl;
-    return Eigen::MatrixXd();
+    ALICEVISION_THROW_ERROR("Invalid class for getDerivativeRemoveDistoWrtPt");
   }
 
   Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override
   {
-    
-    std::cout << "invalid class for getDerivativeRemoveDistoWrtDisto" << std::endl;
-    return Eigen::MatrixXd();
+    ALICEVISION_THROW_ERROR("Invalid class for getDerivativeRemoveDistoWrtDisto");
   }
 
   double getUndistortedRadius(double r) const override
   {
-    std::cout << "invalid class for getUndistortedRadius" << std::endl;
-    return 0.0;
+    ALICEVISION_THROW_ERROR("Invalid class for getUndistortedRadius");
   }
 
   ~Distortion3DEAnamorphic4() override = default;
@@ -647,21 +641,17 @@ public:
 
   Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override
   {
-    std::cout << "invalid class for getDerivativeRemoveDistoWrtPt" << std::endl;
-    return Eigen::MatrixXd();
+    ALICEVISION_THROW_ERROR("Invalid class for getDerivativeRemoveDistoWrtPt");
   }
 
   Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override
   {
-    
-    std::cout << "invalid class for getDerivativeRemoveDistoWrtDisto" << std::endl;
-    return Eigen::MatrixXd();
+    ALICEVISION_THROW_ERROR("Invalid class for getDerivativeRemoveDistoWrtDisto");
   }
 
   double getUndistortedRadius(double r) const override
   {
-    std::cout << "invalid class for getUndistortedRadius" << std::endl;
-    return 0.0;
+    ALICEVISION_THROW_ERROR("Invalid class for getUndistortedRadius");
   }
 
   ~Distortion3DEClassicLD() override = default;
