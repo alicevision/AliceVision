@@ -519,6 +519,7 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     Vec3 meanCameraCenter = Vec3::Zero(3, 1);
     // Compute mean of the rotation X component
     Eigen::Vector3d meanRx = Eigen::Vector3d::Zero();
+    Eigen::Vector3d meanRy = Eigen::Vector3d::Zero();
 
     std::size_t validPoses = 0;
     for(auto& viewIt : sfmData.getViews())
@@ -533,11 +534,16 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
 
             // Rotation of image
             Mat3 R_image = Eigen::AngleAxisd(-degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            
             Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
+            Eigen::Vector3d oriented_Y = R_image * Eigen::Vector3d::UnitY();
 
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
+            const Eigen::Vector3d rY = p.rotation().transpose() * oriented_Y;
 
             meanRx += rX;
+            meanRy += rY;
+
             meanCameraCenter += p.center();
             ++validPoses;
         }
@@ -546,7 +552,9 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     {
         return;
     }
+
     meanRx /= validPoses;
+    meanRy /= validPoses;
     meanCameraCenter /= validPoses;
 
     double rms = 0.0;
@@ -599,9 +607,9 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
     // We assume that the X axis of all or majority of the cameras are on a plane.
     // The covariance is a flat ellipsoid and the min axis is our candidate Y axis.
     Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
+    const Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
 
-    const Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();
-    const double d = nullestSpace.dot(referenceAxis);
+    const double d = nullestSpace.dot(meanRy);
     const bool inverseDirection = (d < 0.0);
     // We have an ambiguity on the Y direction, so if our Y axis is not aligned with the Y axis of the scene
     // we inverse the axis.
