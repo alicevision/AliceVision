@@ -206,6 +206,7 @@ bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData:
     }
     else
     {
+      // convert from computer graphics convention (opengl-like) to computer vision
       landmark = sfmData::Landmark(Vec3(pos_i.x, -pos_i.y, -pos_i.z), feature::EImageDescriberType::UNKNOWN);
     }
 
@@ -616,7 +617,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       }
     }
     
-
+    // convert from computer graphics convention (opengl-like) to computer vision
     Mat4 M = Mat4::Identity();
     M(1, 1) = -1.0;
     M(2, 2) = -1.0;
