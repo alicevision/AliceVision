@@ -739,26 +739,36 @@ bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::Sf
 
   if((flagsPart & ESfMData::EXTRINSICS) && isReconstructed)
   {
-    Mat3 matR;
-    matR(0,0) = mat[0][0];
-    matR(0,1) = mat[0][1];
-    matR(0,2) = mat[0][2];
-    matR(1,0) = mat[1][0];
-    matR(1,1) = mat[1][1];
-    matR(1,2) = mat[1][2];
-    matR(2,0) = mat[2][0];
-    matR(2,1) = mat[2][1];
-    matR(2,2) = mat[2][2];
+      Mat4 T = Mat4::Identity();
+      for (int i = 0; i < 4; i++)
+      {
+          for (int j = 0; j < 4; j++)
+          {
+              T(i, j) = mat[j][i];
+          }
+      }
 
-    Vec3 matT;
-    matT(0) = mat[3][0];
-    matT(1) = mat[3][1];
-    matT(2) = mat[3][2];
 
-    Pose3 pose(matR, matT);
+      Mat4 M = Mat4::Identity();
+      M(1, 1) = -1.0;
+      M(2, 2) = -1.0;
 
-    if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
-      sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+      Mat4 T2;
+      if (abcVersion < Version(1, 2, 3))
+      {
+          T2 = T.inverse();
+      }
+      else
+      {
+          T2 = (M * T * M).inverse();
+      }
+
+      Pose3 pose(T2.block<3, 4>(0, 0));
+
+      if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
+      {
+          sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+      }
   }
 
   if((rigId != UndefinedIndexT) && sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
