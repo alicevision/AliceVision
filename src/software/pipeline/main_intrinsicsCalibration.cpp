@@ -155,11 +155,12 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     double localSquareSize = 0.25;
 
 
-    for (int idx = 0; idx < boards.size(); idx++)
+    size_t idx_checkerboard_valid = 0;
+    for (int idx_checkerboard = 0; idx_checkerboard < boards.size(); idx_checkerboard++)
     {   
         //if (idx == 0) continue;
 
-        const calibration::CheckerDetector::CheckerBoard& board = boards[idx];
+        const calibration::CheckerDetector::CheckerBoard& board = boards[idx_checkerboard];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
 
         //Build a list of points (meter to undistorted pixels)
@@ -225,7 +226,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 }
 
                 sfmData::Observation obs(nobs, pos, 1.0 / scale);
-                l.observations[idx] = obs;
+                l.observations[idx_checkerboard_valid] = obs;
                 sfmData.getLandmarks()[pos] = l;
 
                 refpts.push_back(refpt);
@@ -280,16 +281,18 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
         //Create pose
         sfmData::CameraPose newPose(geometry::Pose3(R, -R.transpose() * t));
-        sfmData.getPoses()[idx] = newPose;
+        sfmData.getPoses()[idx_checkerboard_valid] = newPose;
 
 
         //Create new fake view
         std::shared_ptr<sfmData::View> newView = std::make_shared<sfmData::View>(*view);
-        newView->setViewId(idx);
-        newView->setPoseId(idx);
-        sfmData.getViews()[idx] = newView;
+        newView->setViewId(idx_checkerboard_valid);
+        newView->setPoseId(idx_checkerboard_valid);
+        sfmData.getViews()[idx_checkerboard_valid] = newView;
             
-        if (idx < 2) localSquareSize *= 2.0;
+        if (idx_checkerboard_valid < 2) localSquareSize *= 2.0;
+
+        idx_checkerboard_valid++;
     }
 
     if (useSimplePinhole)
@@ -304,7 +307,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     sfm::BundleAdjustmentSymbolicCeres ba(options);
     sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-        sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL | 
+        /*sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |*/
         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
         
     ba.setDistance(distance);
@@ -339,7 +342,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         sfm::BundleAdjustmentSymbolicCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
             sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |
+            /*sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |*/
             sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
 
         ba.setDistance(distance);

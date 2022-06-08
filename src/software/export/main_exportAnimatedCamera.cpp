@@ -155,6 +155,45 @@ inline void distortMap(image::Image<image::RGBAfColor>& stmap, const std::shared
     }
 }
 
+/// Distortion 2D MAP according to a given camera and its distortion model
+inline void distortMapChecker(image::Image<image::RGBAfColor>& checker, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicSource, const std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicOutput, const oiio::ROI& roi = oiio::ROI())
+{
+    int widthRoi = intrinsicSource->w();
+    int heightRoi = intrinsicSource->h();
+    int xOffset = 0;
+    int yOffset = 0;
+    if (roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    checker.resize(widthRoi, heightRoi, true, image::RGBAfColor(1.0f));
+    const image::Sampler2d<image::SamplerLinear> sampler;
+
+#pragma omp parallel for
+    for (int i = 0; i < heightRoi; ++i)
+    {
+        for (int j = 0; j < widthRoi; ++j)
+        {
+            const Vec2 undisto_pix((j + xOffset), (i + yOffset));
+
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(intrinsicOutput->ima2cam(undisto_pix)));
+
+            if (disto_pix(0) < 0 || disto_pix(1) < 0) continue;
+            if (disto_pix(0) >= widthRoi || disto_pix(1) >= heightRoi) continue;
+
+            if (std::abs(i % 50) < 5 || std::abs(j % 50) < 5)
+            {
+                checker(disto_pix(1), disto_pix(0)) = image::RGBAfColor(0.0f);
+            }
+        }
+    }
+}
+
 int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
@@ -394,6 +433,13 @@ int aliceVision_main(int argc, char** argv)
               {
                   const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_distort_stmap.exr")).string();
                   distortMap(stmap, iso_source, iso_output);
+                  image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
+              }
+
+              //Distort st map checker
+              {
+                  const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_distort_stmap_checker.exr")).string();
+                  distortMapChecker(stmap, iso_source, iso_output);
                   image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
               }
           }

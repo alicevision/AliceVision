@@ -395,7 +395,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[9] = false;
     locksDistortions[10] = false;
     locksDistortions[11] = false;
-    locksDistortions[12] = false;
+    locksDistortions[12] = true;
     if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
