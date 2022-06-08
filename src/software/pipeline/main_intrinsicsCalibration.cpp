@@ -154,12 +154,10 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     std::vector<geometry::Pose3> initial_poses;
     double localSquareSize = 0.25;
 
-
+    double previous_area = 0.0;
     size_t idx_checkerboard_valid = 0;
     for (int idx_checkerboard = 0; idx_checkerboard < boards.size(); idx_checkerboard++)
     {   
-        //if (idx == 0) continue;
-
         const calibration::CheckerDetector::CheckerBoard& board = boards[idx_checkerboard];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
 
@@ -189,6 +187,58 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         {
             continue;
         }
+
+        double mean_squares = 0.0;
+        int count_squares = 0;
+
+        for (int i = 0; i < board.rows() - 1; i++)
+        {
+            for (int j = 0; j < board.cols() - 1; j++)
+            {
+         
+                if (board(i, j) == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                if (board(i, j + 1) == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                if (board(i + 1, j) == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                if (board(i + 1, j + 1) == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                Vec2 pt11 = corners[board(i, j)].center;
+                Vec2 pt12 = corners[board(i, j + 1)].center;
+                Vec2 pt21 = corners[board(i + 1, j)].center;
+                Vec2 pt22 = corners[board(i + 1, j + 1)].center;
+
+                double area = 0.5 * std::abs(((pt11.x() * pt12.y() + pt12.x() * pt21.y() + pt21.x() * pt22.y() + pt22.x() * pt11.y()) - (pt12.x() * pt11.y() + pt21.x() * pt12.y() + pt22.x() * pt21.y() + pt11.x() * pt22.y())));
+                mean_squares += area;
+                count_squares++;
+            }
+        }
+
+        double mean_area = mean_squares / double(count_squares);
+        if (idx_checkerboard_valid > 0)
+        {
+            if (mean_area / previous_area > 1.3)
+            {
+                localSquareSize *= 2.0;
+            }
+        }
+
+        previous_area = mean_area;
+
+        std::cout << "Use square size of " << localSquareSize << std::endl;
 
         for (int i = 0; i < board.rows(); i++)
         {
@@ -289,8 +339,6 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         newView->setViewId(idx_checkerboard_valid);
         newView->setPoseId(idx_checkerboard_valid);
         sfmData.getViews()[idx_checkerboard_valid] = newView;
-            
-        if (idx_checkerboard_valid < 2) localSquareSize *= 2.0;
 
         idx_checkerboard_valid++;
     }
