@@ -533,16 +533,18 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             const geometry::Pose3& p = camPose.getTransform();
 
             // Rotation of image
-            Mat3 R_image = Eigen::AngleAxisd(-degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
             
             Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
             Eigen::Vector3d oriented_Y = R_image * Eigen::Vector3d::UnitY();
 
+            //The X direction is in the "viewed" image
+            //If we use the raw X, it will be in the image without the orientation 
+            //We need to use this orientation to make sure the X spans the horizontal plane.
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
-            const Eigen::Vector3d rY = p.rotation().transpose() * oriented_Y;
 
             meanRx += rX;
-            meanRy += rY;
+            meanRy += oriented_Y;
 
             meanCameraCenter += p.center();
             ++validPoses;
@@ -570,18 +572,13 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
             const sfmData::CameraPose camPose = sfmData.getPose(view);
             const geometry::Pose3& p = camPose.getTransform();
 
-            Mat3 R_image = Eigen::AngleAxisd(-degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
             Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
 
             const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
             C += (rX - meanRx) * (rX - meanRx).transpose();
-
-            const Vec3 camToCenter = p.center() - meanCameraCenter;
-            rms += camToCenter.transpose() * camToCenter; // squared dist to the mean of camera centers
         }
     }
-    rms /= validPoses;
-    rms = std::sqrt(rms);
 
     Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
     
@@ -618,14 +615,11 @@ void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
         nullestSpace = -nullestSpace;
     }
 
+
     // Compute the rotation which rotates nullestSpace onto unitY
     out_R = Matrix3d(Quaterniond().setFromTwoVectors(nullestSpace, referenceAxis));
-
-    if(std::abs(rms) > 0.0001)
-        out_S = 1.0 / rms;
-    else
-        out_S = 1.0;
-    out_t = -out_S * out_R * meanCameraCenter;
+    out_S = 1.0;
+    out_t = -out_R * meanCameraCenter;
 }
 
 void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
