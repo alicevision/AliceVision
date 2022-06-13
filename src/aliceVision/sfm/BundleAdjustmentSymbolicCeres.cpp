@@ -294,6 +294,87 @@ private:
   bool _withRig;
 };
 
+class CostIntrinsics : public ceres::CostFunction {
+public:
+    CostIntrinsics(const std::shared_ptr<camera::IntrinsicBase>& intrinsics_1, const std::shared_ptr<camera::IntrinsicBase>& intrinsics_2) : _intrinsics_1(intrinsics_1), _intrinsics_2(intrinsics_2)
+    {
+        set_num_residuals(1);
+
+        mutable_parameter_block_sizes()->push_back(intrinsics_1->getParams().size());
+        mutable_parameter_block_sizes()->push_back(intrinsics_2->getParams().size());
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_intrinsics_1 = parameters[0];
+        const double* parameter_intrinsics_2 = parameters[1];
+
+
+        /*Update intrinsics object with estimated parameters*/
+        {
+            size_t params_size = _intrinsics_1->getParams().size();
+            std::vector<double> params;
+            for (size_t param_id = 0; param_id < params_size; param_id++) {
+                params.push_back(parameter_intrinsics_1[param_id]);
+            }
+            _intrinsics_1->updateFromParams(params);
+        }
+        {
+            size_t params_size = _intrinsics_2->getParams().size();
+            std::vector<double> params;
+            for (size_t param_id = 0; param_id < params_size; param_id++) {
+                params.push_back(parameter_intrinsics_2[param_id]);
+            }
+            _intrinsics_2->updateFromParams(params);
+        }
+
+        size_t params_size = _intrinsics_1->getParams().size();
+        std::shared_ptr<IntrinsicsScaleOffsetDisto> camdist_1 = std::dynamic_pointer_cast<IntrinsicsScaleOffsetDisto>(_intrinsics_1);
+        std::shared_ptr<IntrinsicsScaleOffsetDisto> camdist_2 = std::dynamic_pointer_cast<IntrinsicsScaleOffsetDisto>(_intrinsics_2);
+        
+        std::vector<double> d1 = camdist_1->getDistortionParams();
+        std::vector<double> d2 = camdist_2->getDistortionParams();
+
+        double norm = 0.0;
+        for (int i = 0; i < d1.size() - 2; i++)
+        {
+            norm += (d1[i] - d2[i]) * (d1[i] - d2[i]);
+        }
+
+        residuals[0] = norm * 10000.0;
+
+        if (jacobians == nullptr) {
+            return true;
+        }       
+
+        if (jacobians[0] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 1, params_size);
+
+            J.fill(0);
+            for (int i = 0; i < d1.size() - 2; i++)
+            {
+                J(0, i + 4) = 2.0 * (d1[i] - d2[i]) * 10000.0;
+            }
+        }
+
+        if (jacobians[1] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 1, params_size);
+
+            J.fill(0);
+            for (int i = 0; i < d1.size() - 2; i++)
+            {
+                J(0, i + 4) = -2.0 * (d1[i] - d2[i]) * 10000.0;
+            }
+        }
+
+        return true;
+    }
+
+private:
+    const std::shared_ptr<camera::IntrinsicBase> _intrinsics_1;
+    const std::shared_ptr<camera::IntrinsicBase> _intrinsics_2;
+};
+
 class CostDistance : public ceres::CostFunction {
 public:
     CostDistance(const double distance) : _distance(distance)
@@ -372,9 +453,9 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
   }
 
 
-  if (_distance > 0.0 && constraintPosition)
+  if (cameraPose.getDistance() > 0.0 && constraintPosition)
   {
-      problem.AddResidualBlock(new CostDistance(_distance), nullptr, poseBlockPtr);
+      problem.AddResidualBlock(new CostDistance(cameraPose.getDistance()), nullptr, poseBlockPtr);
   }
 
   _statistics.addState(EParameter::POSE, EParameterState::REFINED);
@@ -552,7 +633,7 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
-  solverOptions.max_num_iterations = 1000;
+  solverOptions.max_num_iterations = 100;
 
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
@@ -585,7 +666,7 @@ void BundleAdjustmentSymbolicCeres::addExtrinsicsToProblem(const sfmData::SfMDat
 
     const bool isConstant = (getPoseState(poseId) == EParameterState::CONSTANT);
 
-    addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation, (poseId == 0)?true:false);
+    addPose(pose, isConstant, _posesBlocks[poseId], problem, refineTranslation, refineRotation, true);
   }
 
   // setup sub-poses data
@@ -757,6 +838,22 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
   // note: set it to NULL if you don't want use a lossFunction.
   ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
 
+  for (auto i1 : sfmData.getIntrinsics())
+  {
+      for (auto i2 : sfmData.getIntrinsics())
+      {
+          if (i1.first == i2.first)
+          {
+              continue;
+          }
+
+          double* intrinsicBlockPtr_1 = _intrinsicsBlocks.at(i1.first).data();
+          double* intrinsicBlockPtr_2 = _intrinsicsBlocks.at(i2.first).data();
+
+          problem.AddResidualBlock(new CostIntrinsics(i1.second, i2.second), nullptr, intrinsicBlockPtr_1, intrinsicBlockPtr_2);
+      }
+  }
+
   // build the residual blocks corresponding to the track observations
   for(const auto& landmarkPair: sfmData.getLandmarks())
   {
@@ -779,6 +876,9 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
 
     // add landmark parameter to the all parameters blocks pointers list
     _allParametersBlocks.push_back(landmarkBlockPtr);
+
+
+    
 
     // iterate over 2D observation associated to the 3D landmark
     for(const auto& observationPair: landmark.observations)

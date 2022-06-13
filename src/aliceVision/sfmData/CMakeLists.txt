@@ -5,6 +5,7 @@ set(sfmData_files_headers
   Landmark.hpp
   View.hpp
   Rig.hpp
+  Constraint.hpp
   uid.hpp
   colorize.hpp
 )

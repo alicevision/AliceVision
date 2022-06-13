@@ -58,7 +58,7 @@ public:
 
     std::vector<CheckerBoardCorner> & getCorners() { return _corners; }
 
-    void drawCheckerBoard(image::Image<image::RGBColor> & img) const;
+    void drawCheckerBoard(image::Image<image::RGBColor> & img, bool nestedCheckers = false) const;
     
     const std::map<std::string, image::Image<image::RGBColor>>& getDebugImages() const
     { 
@@ -78,10 +78,14 @@ private:
     IndexT findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refined_corners);
     bool getSeedCheckerboard(Eigen::Matrix<IndexT, -1, -1> & board, IndexT seed, const std::vector<CheckerBoardCorner> & refined_corners);
     double computeEnergy(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners);
-    bool getCandidates(std::vector<NewPoint> & candidates, Eigen::Matrix<IndexT, -1, -1> & board);
+    bool getCandidates(std::vector<NewPoint> & candidates, Eigen::Matrix<IndexT, -1, -1> & board, bool inside);
     bool growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners);
-    bool growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners);
-    void sortCheckerBoards(const Vec2& center);
+    bool growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refined_corners, bool nested_final_step);
+    void sortCheckerBoardsForDistanceToCenter(const Vec2& center);
+    void filterNestedCheckerBoards(const size_t& height, const size_t& width);
+    void buildNestedConnectors();
+    void groupNestedCheckerboards();
+    bool groupNestedCheckerboardsPair(const IndexT & other, int scale);
     
     bool mergeCheckerboards();
     bool removeWeirdsCheckerboards();

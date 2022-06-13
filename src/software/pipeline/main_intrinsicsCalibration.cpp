@@ -66,100 +66,78 @@ Eigen::Matrix<double, 1, 6> computeV(const Eigen::Matrix3d& H, int i, int j)
 
 bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration::CheckerDetector>& boardsAllImages, const double squareSize, const double distance, const bool useSimplePinhole)
 {
-    if (boardsAllImages.size() != 1)
-    {
-        ALICEVISION_LOG_ERROR("Only works with one view");
-        return false;
-    }
-
     sfmData.getLandmarks() = sfmData::Landmarks();
     sfmData.getPoses() = sfmData::Poses();
 
-    IndexT viewId = boardsAllImages.begin()->first;
-    std::shared_ptr<sfmData::View> view = sfmData.getViews()[viewId];
 
-    IndexT intrinsicId = view->getIntrinsicId();
-    if (sfmData.getIntrinsics().find(intrinsicId) == sfmData.getIntrinsics().end())
+    //Sort views by focus distance
+    std::map<int, std::shared_ptr<sfmData::View>> sorted_views;
+    for (auto v : sfmData.getViews())
     {
-        ALICEVISION_LOG_ERROR("Intrinsic not found");
-        return false;
-    }
-
-    std::shared_ptr<camera::IntrinsicBase> camera = sfmData.getIntrinsics()[intrinsicId];
-    std::shared_ptr<camera::Pinhole> pinhole = std::dynamic_pointer_cast<camera::Pinhole>(camera);
-    if (pinhole == nullptr)
-    {
-        ALICEVISION_LOG_ERROR("Intrinsic is not a pinhole");
-        return false;
-    }
-
-    int h = view->getHeight();
-    int w = view->getWidth();
-
-    const Vec2 center = { 0.5 * w, 0.5 * h };
-
-    const calibration::CheckerDetector& detector = boardsAllImages.begin()->second;
-    std::vector<calibration::CheckerDetector::CheckerBoard> boards = detector.getBoards();
-    if (boards.size() < 1)
-    {
-        ALICEVISION_LOG_ERROR("First view has no checkerboards");
-        return false;
-    }
-
-    const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
-
-
-    //Sort bvoards by their minimal distance to image center
-    std::sort(boards.begin(), boards.end(), 
-        [corners, center](const calibration::CheckerDetector::CheckerBoard& first, const calibration::CheckerDetector::CheckerBoard& second)
+        std::string path = v.second->getImagePath();
+        
         {
-            double mindist_first = std::numeric_limits<double>::max();
-            for (int i = 0; i < first.rows(); i++)
+            const std::regex base_regex("_([0-9]+)ft_");
+            std::smatch base_match;
+            if (std::regex_search(path, base_match, base_regex))
             {
-                for (int j = 0; j < first.cols(); j++)
+                if (base_match.size() == 2)
                 {
-                    IndexT cid = first(i, j);
-                    if (cid == UndefinedIndexT)
-                    {
-                        continue;
-                    }
-
-                    const calibration::CheckerDetector::CheckerBoardCorner& c = corners[cid];
-                    double dist = (c.center - center).norm(); 
-                    mindist_first = std::min(dist, mindist_first);
+                    sorted_views[std::stol(base_match[1])] = v.second;
                 }
             }
-
-            double mindist_second = std::numeric_limits<double>::max();
-            for (int i = 0; i < second.rows(); i++)
-            {
-                for (int j = 0; j < second.cols(); j++)
-                {
-                    IndexT cid = second(i, j);
-                    if (cid == UndefinedIndexT)
-                    {
-                        continue;
-                    }
-
-                    const calibration::CheckerDetector::CheckerBoardCorner& c = corners[cid];
-                    double dist = (c.center - center).norm();
-                    mindist_second = std::min(dist, mindist_second);
-                }
-            }
-
-            return (mindist_first < mindist_second);
         }
-    );
-    
-    std::vector<geometry::Pose3> initial_poses;
-    double localSquareSize = 0.25;
 
-    double previous_area = 0.0;
-    size_t idx_checkerboard_valid = 0;
-    for (int idx_checkerboard = 0; idx_checkerboard < boards.size(); idx_checkerboard++)
-    {   
-        const calibration::CheckerDetector::CheckerBoard& board = boards[idx_checkerboard];
+        {
+            const std::regex base_regex("_(inf)_");
+            std::smatch base_match;
+            if (std::regex_search(path, base_match, base_regex))
+            {
+                if (base_match.size() == 2)
+                {
+                    sorted_views[std::numeric_limits<int>::max()] = v.second;
+                }
+            }
+        }
+    }
+
+    double distances[] = { 47.0, 72.0, 72.0, 72.0, 72.0 };
+
+    int pos_view = 0;
+    for (auto p_views : sorted_views)
+    {
+        std::shared_ptr<sfmData::View> view = p_views.second;
+        const IndexT viewId = view->getViewId();
+        const double localSquareSize = 0.25;
+        const calibration::CheckerDetector& detector = boardsAllImages[viewId];
+
+        std::vector<calibration::CheckerDetector::CheckerBoard> boards = detector.getBoards();
+        if (boards.size() != 1)
+        {
+            ALICEVISION_LOG_ERROR("View should have only 1 checkerboard");
+            return false;
+        }
+
+        const calibration::CheckerDetector::CheckerBoard& board = boards[0];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
+
+        //Get intrinsics
+        IndexT intrinsicId = view->getIntrinsicId();
+        if (sfmData.getIntrinsics().find(intrinsicId) == sfmData.getIntrinsics().end())
+        {
+            ALICEVISION_LOG_ERROR("Intrinsic not found");
+            return false;
+        }
+
+        std::shared_ptr<camera::IntrinsicBase> camera = sfmData.getIntrinsics()[intrinsicId];
+        std::shared_ptr<camera::Pinhole> pinhole = std::dynamic_pointer_cast<camera::Pinhole>(camera);
+        if (pinhole == nullptr)
+        {
+            ALICEVISION_LOG_ERROR("Intrinsic is not a pinhole");
+            return false;
+        }
+
+        pinhole->setOffset({ 0, 0 });
 
         //Build a list of points (meter to undistorted pixels)
         std::vector<Eigen::Vector3d> refpts;
@@ -167,78 +145,6 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
         double cx = board.cols() / 2;
         double cy = board.rows() / 2;
-
-        size_t count_points = 0;
-        for (int i = 0; i < board.rows(); i++)
-        {
-            for (int j = 0; j < board.cols(); j++)
-            {
-                IndexT cid = board(i, j);
-                if (board(i, j) == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                count_points++;
-            }
-        }
-
-        if (count_points < 30)
-        {
-            continue;
-        }
-
-        double mean_squares = 0.0;
-        int count_squares = 0;
-
-        for (int i = 0; i < board.rows() - 1; i++)
-        {
-            for (int j = 0; j < board.cols() - 1; j++)
-            {
-         
-                if (board(i, j) == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                if (board(i, j + 1) == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                if (board(i + 1, j) == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                if (board(i + 1, j + 1) == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                Vec2 pt11 = corners[board(i, j)].center;
-                Vec2 pt12 = corners[board(i, j + 1)].center;
-                Vec2 pt21 = corners[board(i + 1, j)].center;
-                Vec2 pt22 = corners[board(i + 1, j + 1)].center;
-
-                double area = 0.5 * std::abs(((pt11.x() * pt12.y() + pt12.x() * pt21.y() + pt21.x() * pt22.y() + pt22.x() * pt11.y()) - (pt12.x() * pt11.y() + pt21.x() * pt12.y() + pt22.x() * pt21.y() + pt11.x() * pt22.y())));
-                mean_squares += area;
-                count_squares++;
-            }
-        }
-
-        double mean_area = mean_squares / double(count_squares);
-        if (idx_checkerboard_valid > 0)
-        {
-            if (mean_area / previous_area > 1.3)
-            {
-                localSquareSize *= 2.0;
-            }
-        }
-
-        previous_area = mean_area;
-
-        std::cout << "Use square size of " << localSquareSize << std::endl;
 
         for (int i = 0; i < board.rows(); i++)
         {
@@ -270,20 +176,19 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
                 //Add observation
                 Vec2 nobs = curpt;
-                if (!useSimplePinhole) 
+                if (!useSimplePinhole)
                 {
                     nobs = corners[cid].center;
                 }
 
                 sfmData::Observation obs(nobs, pos, 1.0 / scale);
-                l.observations[idx_checkerboard_valid] = obs;
+                l.observations[viewId] = obs;
                 sfmData.getLandmarks()[pos] = l;
 
                 refpts.push_back(refpt);
                 points.push_back(curpt);
             }
         }
-            
 
         //Create matrices for ransac
         Eigen::MatrixXd Mref(3, refpts.size());
@@ -320,33 +225,18 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             return false;
         }
 
-
-
         // setup a default camera model from the found projection matrix
         Mat3 K, R;
         Vec3 t;
         Eigen::Matrix<double, 3, 4> P = model.getMatrix();
         KRt_from_P(P, &K, &R, &t);
 
-
         //Create pose
         sfmData::CameraPose newPose(geometry::Pose3(R, -R.transpose() * t));
-        sfmData.getPoses()[idx_checkerboard_valid] = newPose;
-
-
-        //Create new fake view
-        std::shared_ptr<sfmData::View> newView = std::make_shared<sfmData::View>(*view);
-        newView->setViewId(idx_checkerboard_valid);
-        newView->setPoseId(idx_checkerboard_valid);
-        sfmData.getViews()[idx_checkerboard_valid] = newView;
-
-        idx_checkerboard_valid++;
-    }
-
-    if (useSimplePinhole)
-    {
-        pinhole->setOffset(Vec2(0,0));
-        pinhole->setDistortionObject(std::shared_ptr<camera::Distortion>(nullptr));
+        newPose.setDistance(distances[pos_view]);
+        sfmData.getPoses()[viewId] = newPose;
+        view->setPoseId(viewId);
+        pos_view++;
     }
 
     //Compute non linear refinement
@@ -357,58 +247,39 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
         /*sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |*/
         sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
-        
-    ba.setDistance(distance);
+
+    //ba.setDistance(distance);
     if (!ba.adjust(sfmData, boptions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
 
-    if (useSimplePinhole)
+
+    double mean = 0.0;
+    size_t count = 0;
+    for (const auto & l : sfmData.getLandmarks())
     {
-        pinhole->setRatioLocked(true);
-        Vec2 scale = pinhole->getScale();
-        
-
-        for (auto& l : sfmData.getLandmarks())
+        for (const auto & o : l.second.observations)
         {
-            for (auto& o : l.second.observations)
-            {
-                double y = (o.second.x[1] - pinhole->getPrincipalPoint()[1]) / scale(1);
-                double ny = y * scale(0) + pinhole->getPrincipalPoint()[1];
-                o.second.x[1] = ny;
-            }
-        }
+            IndexT viewId = o.first;
+            std::shared_ptr<sfmData::View> view = sfmData.getViews()[viewId];
+            IndexT intrinsicId = view->getIntrinsicId();
+            IndexT poseId = view->getPoseId();
 
-        scale(1) = scale(0);
-        pinhole->setScale(scale);
-        
-        //Compute non linear refinement
-        sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
-        options.summary = true;
-        sfm::BundleAdjustmentSymbolicCeres ba(options);
-        sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-            /*sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |*/
-            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
+            std::shared_ptr<camera::IntrinsicBase> camera = sfmData.getIntrinsics()[intrinsicId];
+            sfmData::CameraPose pose = sfmData.getPoses()[poseId];
 
-        ba.setDistance(distance);
-        if (!ba.adjust(sfmData, boptions))
-        {
-            ALICEVISION_LOG_ERROR("Failed to calibrate");
-            return false;
+            Vec2 pt = camera->project(pose.getTransform(), l.second.X.homogeneous(), true);
+            double dist = (o.second.x - pt).norm();
+
+
+            mean += dist;
+            count++;
         }
     }
 
-    sfmData::Views & vs = sfmData.getViews();
-    vs.clear();
-    vs[viewId] = view;
-
-    sfmData::Poses& ps = sfmData.getPoses();
-    sfmData::CameraPose cp = ps[0];
-    ps.clear();
-    ps[viewId] = cp; 
+    std::cout << mean / double(count) << std::endl;
 
     return true;
 }

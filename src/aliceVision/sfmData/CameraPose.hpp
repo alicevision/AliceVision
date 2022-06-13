@@ -82,11 +82,25 @@ public:
     _locked  = false;
   }
 
+  double getDistance() const
+  {
+      return _distance;
+  }
+
+  void setDistance(double distance)
+  {
+      _distance = distance;
+  }
+
 private:
   /// camera 3d transformation
   geometry::Pose3 _transform;
+
+
   /// camera lock
   bool _locked = false;
+
+  double _distance = -1.0;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
