@@ -40,7 +40,7 @@ public:
    * @param[out] camera response function
    */
   bool process(const std::vector<std::vector<ImageSample>> & ldrSamples,
-               const std::vector<std::vector<float>> &times,
+               const std::vector<std::vector<double>> &times,
                std::size_t channelQuantization,
                const rgbCurve &weight,
                float lambda,

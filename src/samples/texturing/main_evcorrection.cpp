@@ -108,13 +108,13 @@ int main(int argc, char **argv)
  
     } 
  
-    float cameraExposureMedian = sfm_data.getMedianCameraExposureSetting(); 
+    const double cameraExposureMedian = sfm_data.getMedianCameraExposureSetting().getExposure();
     ALICEVISION_LOG_INFO("  EV Median :" << cameraExposureMedian); 
  
     for(int i = 0; i < sfm_data.views.size(); ++i) 
     { 
-        sfmData::View view = *(sfm_data.views[i]);
-        float evComp = cameraExposureMedian / view.getCameraExposureSetting();
+        const sfmData::View& view = *(sfm_data.views[i]);
+        const float evComp = float(cameraExposureMedian / view.getCameraExposureSetting().getExposure());
  
         image::Image<image::RGBfColor> img; 
         image::readImage(view.getImagePath(), img, image::EImageColorSpace::LINEAR); 

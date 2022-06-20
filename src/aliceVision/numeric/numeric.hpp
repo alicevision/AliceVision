@@ -141,6 +141,17 @@ inline T clamp(const T & val, const T& min, const T & max)
   //(val < min) ? val : ((val>max) ? val : max);
 }
 
+inline bool isSimilar(double a, double b)
+{
+    const double diff = a - b;
+    return std::abs(diff) < 1e-8;
+}
+inline bool isSimilar(float a, float b)
+{
+    const float diff = a - b;
+    return std::abs(diff) < 1e-8f;
+}
+
 
 /**
  * @brief Create a minimal skew matrix from a 2d vector.

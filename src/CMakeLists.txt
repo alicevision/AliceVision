@@ -261,8 +261,15 @@ else()
   message(SEND_ERROR "${Boost_ERROR_REASON}")
 endif()
 
-# Disable BOOST autolink
-add_definitions(-DBOOST_ALL_NO_LIB)
+
+if(WIN32)
+  # Disable BOOST autolink
+  add_definitions(-DBOOST_ALL_NO_LIB)
+
+  #To be removed later, a bug to make things work with current vcpkg
+  #https://github.com/microsoft/vcpkg/issues/22495
+  add_definitions(-DBOOST_USE_WINAPI_VERSION=BOOST_WINAPI_VERSION_WIN7)
+endif()
 
 if(BUILD_SHARED_LIBS)
   # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
@@ -281,20 +288,17 @@ endif()
 
 
 # ==============================================================================
-# OpenEXR
+# OpenEXR >= 2.5
 # ==============================================================================
-find_package(OpenEXR)
-if(TARGET OpenEXR::IlmImf)
-  message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
-else()
-  # fallback for old openexr versions (<2.5)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/openexr)
-  find_package(OpenEXR REQUIRED)
-  if(OPENEXR_FOUND)
-    message(STATUS "OpenEXR found (without config). (Version ${OPENEXR_VERSION})")
+find_package(OpenEXR REQUIRED)
+if(TARGET OpenEXR::OpenEXR OR TARGET IlmBase::Half)
+  if(OpenEXR_VERSION VERSION_GREATER_EQUAL 2.5)
+    message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
   else()
-    message(SEND_ERROR "Failed to find OpenEXR.")
+    message(SEND_ERROR "OpenEXR: Version found is ${OpenEXR_VERSION}, the minimal version required is 2.5.")
   endif()
+else()
+  message(SEND_ERROR "Failed to find OpenEXR.")
 endif()
 
 # ==============================================================================

@@ -14,6 +14,12 @@ public:
 
     virtual Distortion* clone() const = 0;
 
+    // not virtual as child classes do not hold any data
+    bool operator==(const Distortion& other) const
+    {
+        return _distortionParams == other._distortionParams;
+    }
+
     std::vector<double>& getParameters()
     {
         return _distortionParams;

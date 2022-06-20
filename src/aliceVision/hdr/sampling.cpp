@@ -145,11 +145,11 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
     }
 }
 
-bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace, bool applyWhiteBalance, const Sampling::Params params)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace, bool applyWhiteBalance, const Sampling::Params params)
 {
     const int radiusp1 = params.radius + 1;
     const int diameter = (params.radius * 2) + 1;
-    const float area = float(diameter * diameter);
+    const double area = double(diameter * diameter);
 
     std::vector<std::pair<int, int>> vec_blocks;
     const auto step = params.blockSize - diameter;
@@ -168,7 +168,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
     image::Image<ImageSample> samples(imageWidth, imageHeight, true);
     for (unsigned int idBracket = 0; idBracket < imagePaths.size(); ++idBracket)
     {
-        const float exposure = times[idBracket];
+        const double exposure = times[idBracket];
 
         image::ImageReadOptions options;
         options.outputColorSpace = colorspace;

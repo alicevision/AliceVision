@@ -24,6 +24,7 @@ alicevision_add_library(aliceVision_mvsUtils
     aliceVision_numeric
     aliceVision_multiview
     aliceVision_mvsData
+    OpenImageIO::OpenImageIO_Util
   PRIVATE_LINKS
     aliceVision_system
     Boost::filesystem

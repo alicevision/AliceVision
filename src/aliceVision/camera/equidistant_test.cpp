@@ -29,13 +29,13 @@ BOOST_AUTO_TEST_CASE(cameraEquidistant_disto_undisto_Radial)
   const int w = 1000;
   const int h = 800;
   const double focal = 800.0;
-  const double ppx = w * 0.5;
-  const double ppy = h * 0.5;
+  const double offsetX = 0.0;
+  const double offsetY = 0.0;
   const double radius = 0.0; // defined automatically
   const double k1 = 0.3;
   const double k2 = 0.2;
   const double k3 = 0.1;
-  const EquiDistantRadialK3 cam(w, h, focal, ppx, ppy, radius, k1, k2, k3);
+  const EquiDistantRadialK3 cam(w, h, focal, offsetX, offsetY, radius, k1, k2, k3);
 
   const double epsilon = 1e-4;
   for (int i = 0; i < 10; ++i)

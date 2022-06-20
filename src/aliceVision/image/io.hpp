@@ -29,8 +29,17 @@ enum class EImageColorSpace
   AUTO,
   LINEAR,
   SRGB,
+  ACES,
+  ACEScg,
   NO_CONVERSION
 };
+
+std::string EImageColorSpace_informations();
+EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType);
+std::string EImageColorSpace_enumToString(const EImageColorSpace dataType);
+std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType);
+std::istream& operator>>(std::istream& in, EImageColorSpace& dataType);
+
 
 /**
  * @brief Available image file type for pipeline output
