@@ -1843,6 +1843,8 @@ void CheckerDetector::buildNestedConnectors()
         auto & board_original = _boards[idx_board];
         double minE = computeEnergy(board_original, _corners);
     
+
+        
         Eigen::Matrix<IndexT, -1, -1> board_up = board_original;
         if (growIterationUp(board_up, _corners, true))
         {
@@ -1889,7 +1891,7 @@ void CheckerDetector::buildNestedConnectors()
     }
 }
 
-bool CheckerDetector::groupNestedCheckerboardsPair(const IndexT& other, int scale)
+bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i & ref_center, const IndexT& other, int scale)
 {
     const CheckerBoard ref_board = _boards[0];
     CheckerBoard cur_board = _boards[other];
@@ -2006,6 +2008,9 @@ bool CheckerDetector::groupNestedCheckerboardsPair(const IndexT& other, int scal
     CheckerBoard output(height_output, width_output);
     output.fill(UndefinedIndexT);
 
+    ref_center.x() += ref_board_left;
+    ref_center.y() += ref_board_top;
+
     for (int i = 0; i < ref_board.rows(); i++)
     {
         for (int j = 0; j < ref_board.cols(); j++)
@@ -2047,6 +2052,14 @@ void CheckerDetector::groupNestedCheckerboards()
 {
     int current_scale = 1;
     bool change = true;
+
+    if (_boards.size() == 0)
+    {
+        return;
+    }
+
+    Vec2i center = { _boards[0].cols() / 2, _boards[0].rows() / 2 };
+
     while (change)
     {
         change = false;
@@ -2054,7 +2067,7 @@ void CheckerDetector::groupNestedCheckerboards()
         //Try to find another checkerboard with the same level
         for (int idx_compare = 1; idx_compare < _boards.size(); idx_compare++)
         {
-            if (groupNestedCheckerboardsPair(idx_compare, current_scale))
+            if (groupNestedCheckerboardsPair(center, idx_compare, current_scale))
             {
                 change = true;
                 break;
@@ -2071,13 +2084,25 @@ void CheckerDetector::groupNestedCheckerboards()
         //Try to find another checkerboard with the next level
         for (int idx_compare = 1; idx_compare < _boards.size(); idx_compare++)
         {
-            if (groupNestedCheckerboardsPair(idx_compare, current_scale))
+            if (groupNestedCheckerboardsPair(center, idx_compare, current_scale))
             {
                 change = true;
                 break;
             }
         }
     }
+
+
+    int max_x = std::max(center.x(), int(_boards[0].cols() - 1 - center.x()));
+    int max_y = std::max(center.y(), int(_boards[0].rows() - 1 - center.y()));
+    
+    Vec2i newcenter = { max_x, max_y};
+    Vec2i update = newcenter - center;
+
+    CheckerBoard newboard(max_y * 2 + 1, max_x * 2 + 1);
+    newboard.fill(UndefinedIndexT);
+    newboard.block(update.y(), update.x(), _boards[0].rows(), _boards[0].cols()) = _boards[0];
+    _boards[0] = newboard;
 }
 
 

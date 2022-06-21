@@ -85,7 +85,7 @@ private:
     void filterNestedCheckerBoards(const size_t& height, const size_t& width);
     void buildNestedConnectors();
     void groupNestedCheckerboards();
-    bool groupNestedCheckerboardsPair(const IndexT & other, int scale);
+    bool groupNestedCheckerboardsPair(Vec2i& ref_center, const IndexT & other, int scale);
     
     bool mergeCheckerboards();
     bool removeWeirdsCheckerboards();
