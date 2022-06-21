@@ -122,6 +122,11 @@ void Sgm::sgmRc(int rc, const SgmDepthList& in_sgmDepthList, const ROI& roi)
     // compute best sim and second best sim volumes
     computeSimilarityVolumes(rc, in_sgmDepthList, roi);
 
+    // particular case with only one tc
+    // the second best volume has no valid similarity values
+    if(in_sgmDepthList.getTCams().size() < 2)
+      _volumeSecBestSim_dmp.copyFrom(_volumeBestSim_dmp, _stream);
+
     if(_sgmParams.exportIntermediateResults)
         exportVolumeInformation(rc, _volumeSecBestSim_dmp, in_sgmDepthList, "beforeFiltering", roi);
 
