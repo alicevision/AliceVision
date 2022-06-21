@@ -188,7 +188,7 @@ inline void distortMapChecker(image::Image<image::RGBAfColor>& checker, const st
 
             if (std::abs(i % 50) < 5 || std::abs(j % 50) < 5)
             {
-                checker(disto_pix(1), disto_pix(0)) = image::RGBAfColor(0.0f);
+                checker(disto_pix(1), disto_pix(0)) = image::RGBAfColor((double(i) / (50.0*255.0)) * 5.0, (double(i) / (50.0*255.0)) * 5.0, 0.0);
             }
         }
     }

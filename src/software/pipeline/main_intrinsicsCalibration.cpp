@@ -77,11 +77,11 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         std::string path = v.second->getImagePath();
         
         {
-            const std::regex base_regex("_([0-9]+)ft_");
+            const std::regex base_regex("_([0-9]+)(FT|ft)_");
             std::smatch base_match;
             if (std::regex_search(path, base_match, base_regex))
             {
-                if (base_match.size() == 2)
+                if (base_match.size() >= 2)
                 {
                     sorted_views[std::stol(base_match[1])] = v.second;
                 }
@@ -89,7 +89,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         }
 
         {
-            const std::regex base_regex("_(inf)_");
+            const std::regex base_regex("_(INF|inf)_");
             std::smatch base_match;
             if (std::regex_search(path, base_match, base_regex))
             {
@@ -101,15 +101,24 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         }
     }
 
-    double distances[] = { 47.0, 72.0, 72.0, 72.0, 72.0 };
+    //double distances[] = { 44.3, 72.0, 96.0, 96.0, 96.0, 96.0 };
+    //double distances[] = { 44.3, 72.0, 72.0, 72.0, 72.0 };
+    //double distances[] = { -1, -1, -1, -1, -1 };
+    //double distances[] = { 42.1, 93.3, 144.0, 144.0, 144.0 };
+    double distances[] = { distance };
+
+    std::shared_ptr<camera::IntrinsicBase> refpinhole;
 
     int pos_view = 0;
     for (auto p_views : sorted_views)
     {
         std::shared_ptr<sfmData::View> view = p_views.second;
         const IndexT viewId = view->getViewId();
+        //const double localSquareSize = 0.00635;
         const double localSquareSize = 0.25;
         const calibration::CheckerDetector& detector = boardsAllImages[viewId];
+
+        std::cout << view->getImagePath() << std::endl;
 
         std::vector<calibration::CheckerDetector::CheckerBoard> boards = detector.getBoards();
         if (boards.size() != 1)
@@ -120,6 +129,29 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
         const calibration::CheckerDetector::CheckerBoard& board = boards[0];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
+
+        Vec2i center = { board.cols() / 2, board.rows() / 2 };
+        std::cout << "*********" << std::endl;
+        for (int i = 0; i < board.rows(); i++)
+        {
+            IndexT cid = board(i, int(center.x()));
+            if (cid != UndefinedIndexT)
+            {
+                std::cout << corners[cid].center.transpose() << std::endl;
+            }
+        }
+
+        std::cout << "*********" << std::endl;
+        for (int i = 0; i < board.cols(); i++)
+        {
+            IndexT cid = board(int(center.y()), i);
+            if (cid != UndefinedIndexT)
+            {
+                std::cout << corners[cid].center.transpose() << std::endl;
+            }
+        }
+
+        
 
         //Get intrinsics
         IndexT intrinsicId = view->getIntrinsicId();
@@ -137,7 +169,12 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             return false;
         }
 
-        pinhole->setOffset({ 0, 0 });
+        refpinhole = pinhole;
+
+        //if (useSimplePinhole)
+        {
+            pinhole->setOffset({ 0, 0 });
+        }
 
         //Build a list of points (meter to undistorted pixels)
         std::vector<Eigen::Vector3d> refpts;
@@ -171,7 +208,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 curpt = pinhole->get_ud_pixel(curpt);
 
                 Eigen::Vector2d campt = pinhole->removeDistortion(pinhole->ima2cam(corners[cid].center));
-                const double scale = std::max(0.4, std::max(std::abs(campt.x()), std::abs(campt.y())));
+                const double scale = campt.norm() * campt.norm();
 
 
                 //Add observation
@@ -181,7 +218,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                     nobs = corners[cid].center;
                 }
 
-                sfmData::Observation obs(nobs, pos, 1.0 / scale);
+                sfmData::Observation obs(nobs, pos, 1.0 / (scale * scale));
                 l.observations[viewId] = obs;
                 sfmData.getLandmarks()[pos] = l;
 
@@ -237,6 +274,11 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         sfmData.getPoses()[viewId] = newPose;
         view->setPoseId(viewId);
         pos_view++;
+
+        if (useSimplePinhole)
+        {
+            pinhole->setDistortionObject(nullptr);
+        }
     }
 
     //Compute non linear refinement
@@ -256,7 +298,12 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     }
 
 
-    double mean = 0.0;
+    std::map<IndexT, std::pair<double, int>> means;
+    for (auto& v : sfmData.getViews())
+    {
+        means[v.first] = std::make_pair(0.0, 0);
+    }
+
     size_t count = 0;
     for (const auto & l : sfmData.getLandmarks())
     {
@@ -273,13 +320,29 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             Vec2 pt = camera->project(pose.getTransform(), l.second.X.homogeneous(), true);
             double dist = (o.second.x - pt).norm();
 
-
-            mean += dist;
-            count++;
+            if ((o.second.x.x() < 200 || o.second.x.x() > (camera->w() - 200)) || (o.second.x.y() < 400 || o.second.x.y() > (camera->h() - 400)))
+            {
+                means[o.first].first += dist;
+                means[o.first].second++;
+            }           
         }
     }
 
-    std::cout << mean / double(count) << std::endl;
+
+    for (auto& v : sfmData.getViews())
+    {
+        std::cout << v.second->getImagePath() << std::endl;
+        std::cout <<  means[v.first].first / double(means[v.first].second) << " (" << means[v.first].second << ") " << std::endl;
+    }
+
+
+    
+    std::cout << refpinhole->w() << " " << refpinhole->h() << std::endl;
+
+    std::cout << refpinhole->get_ud_pixel(Vec2(0, 0)) << std::endl;
+    std::cout << refpinhole->get_ud_pixel(Vec2(refpinhole->w(), 0)) << std::endl;
+    std::cout << refpinhole->get_ud_pixel(Vec2(refpinhole->w(), refpinhole->h())) << std::endl;
+    std::cout << refpinhole->get_ud_pixel(Vec2(0, refpinhole->h())) << std::endl;
 
     return true;
 }

@@ -339,9 +339,10 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     params[10] = 0.0;
     params[11] = 1.0;
     params[12] = 1.0;
+    params[13] = 1.0;
     camera->setDistortionParams(params);
 
-    std::vector<bool> locksDistortions = { true, true, true, true, true, true, true, true, true, true, true, true, true };
+    std::vector<bool> locksDistortions = { true, true, true, true, true, true, true, true, true, true, true, true, true, true};
 
     //Everything locked except lines parameters
     locksDistortions[0] = true;
@@ -396,6 +397,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Pinhole>& camera, calibrati
     locksDistortions[10] = false;
     locksDistortions[11] = false;
     locksDistortions[12] = true;
+    locksDistortions[13] = true;
     if (!calibration::estimate(camera, statistics, items, true, false, locksDistortions, true))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
@@ -618,10 +620,11 @@ int aliceVision_main(int argc, char* argv[])
         }
 
 
-        /*double hw = cameraPinhole->w() * 0.5;
-        double hh = cameraPinhole->h()*0.5;
+        double hw = cameraPinhole->w() * 0.5;
+        double hh = cameraPinhole->h() * 0.5;
         double diag = sqrt(hw * hw + hh * hh);
-        cameraPinhole->setScale({ diag, diag });*/
+        Vec2 scale = cameraPinhole->getScale();
+        cameraPinhole->setScale({ diag, diag });
 
         calibration::Statistics statistics;
 
@@ -694,6 +697,7 @@ int aliceVision_main(int argc, char* argv[])
         
 
         cameraPinhole->setDistortionParams(params);*/
+        cameraPinhole->setScale(scale);
 
         //Now, the distortion is estimated, but we have the inverted problem : how to dedistort, we need to inverse the solution
         std::vector<calibration::PointPair> points;

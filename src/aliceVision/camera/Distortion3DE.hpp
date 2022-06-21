@@ -271,15 +271,15 @@ public:
    */
   Distortion3DEAnamorphic4()
   {
-    _distortionParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0};
+    _distortionParams = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
   }
 
   /**
    * @brief Constructor with the three coefficients
    */
-  explicit Distortion3DEAnamorphic4(double cx02, double cy02, double cx22, double cy22, double cx04, double cy04, double cx24, double cy24, double cx44, double cy44, double phi, double sqx, double sqy)
+  explicit Distortion3DEAnamorphic4(double cx02, double cy02, double cx22, double cy22, double cx04, double cy04, double cx24, double cy24, double cx44, double cy44, double phi, double sqx, double sqy, double ps)
   {
-    _distortionParams = {cx02, cy02, cx22, cy22, cx04, cy04, cx24, cy24, cx44, cy44, phi, sqx, sqy};
+    _distortionParams = {cx02, cy02, cx22, cy22, cx04, cy04, cx24, cy24, cx44, cy44, phi, sqx, sqy, ps};
   }
 
   Distortion3DEAnamorphic4* clone() const override { return new Distortion3DEAnamorphic4(*this); }
@@ -300,6 +300,7 @@ public:
     const double phi = _distortionParams[10];
     const double sqx = _distortionParams[11];
     const double sqy = _distortionParams[12];
+    const double ps = _distortionParams[13];
 
     const double cphi = cos(phi);
     const double sphi = sin(phi);
@@ -316,8 +317,8 @@ public:
     const double cy_xxxx = 2 * cy04 - 6 * cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
-    double x = p.x();
-    double y = p.y();
+    double x = p.x() * ps;
+    double y = p.y() * ps;
 
     //First rotate axis
     double xr = cphi * x + sphi * y;
@@ -360,6 +361,7 @@ public:
     const double phi = _distortionParams[10];
     const double sqx = _distortionParams[11];
     const double sqy = _distortionParams[12];
+    const double ps = _distortionParams[13];
 
     const double cphi = cos(phi);
     const double sphi = sin(phi);
@@ -376,8 +378,8 @@ public:
     const double cy_xxxx = 2 * cy04 - 6 * cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
-    double x = p.x();
-    double y = p.y();
+    double x = p.x() * ps;
+    double y = p.y() * ps;
 
     //First rotate axis
     double xr = cphi * x + sphi * y;
@@ -432,7 +434,7 @@ public:
     d_r_d_p(1, 1) = cphi;
 
 
-    return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p;
+    return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p * ps;
   }
 
   Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override
@@ -450,6 +452,7 @@ public:
     const double phi = _distortionParams[10];
     const double sqx = _distortionParams[11];
     const double sqy = _distortionParams[12];
+    const double ps = _distortionParams[13];
 
     const double cphi = cos(phi);
     const double sphi = sin(phi);
@@ -465,8 +468,8 @@ public:
     const double cy_xxxx = 2 * cy04 - 6 * cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
-    double x = p.x();
-    double y = p.y();
+    double x = p.x() * ps;
+    double y = p.y() * ps;
 
     //First rotate axis
     double xr = cphi * x + sphi * y;
@@ -508,7 +511,7 @@ public:
     np.x() = cphi * squizzed_x - sphi * squizzed_y;
     np.y() = sphi * squizzed_x + cphi * squizzed_y;
 
-    Eigen::Matrix<double, 2, 13> d_np_d_disto = Eigen::Matrix<double, 2, 13>::Zero();
+    Eigen::Matrix<double, 2, 14> d_np_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
     d_np_d_disto(0, 10) = (squizzed_x * -sphi) + (squizzed_y * -cphi);
     d_np_d_disto(1, 10) = (squizzed_x * cphi) + (squizzed_y * -sphi);
 
@@ -524,7 +527,7 @@ public:
     d_squizzed_d_d(1, 0) = 0;
     d_squizzed_d_d(1, 1) = sqy;
 
-    Eigen::Matrix<double, 2, 13> d_squizzed_d_disto = Eigen::Matrix<double, 2, 13>::Zero();
+    Eigen::Matrix<double, 2, 14> d_squizzed_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
     d_squizzed_d_disto(0, 11) = xd;
     d_squizzed_d_disto(0, 12) = 0;
     d_squizzed_d_disto(1, 11) = 0;
@@ -563,11 +566,11 @@ public:
     d_d_d_distop(1, 8) = xxyyy;
     d_d_d_distop(1, 9) = yyyyy;
 
-    Eigen::Matrix<double, 2, 13> d_r_d_disto = Eigen::Matrix<double, 2, 13>::Zero();
+    Eigen::Matrix<double, 2, 14> d_r_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
     d_r_d_disto(0, 10) = (x * -sphi) + (y * -cphi);
     d_r_d_disto(1, 10) = (x * cphi) + (y * -sphi);
 
-    Eigen::Matrix<double, 10, 13> d_distop_d_disto = Eigen::Matrix<double, 10, 13>::Zero();
+    Eigen::Matrix<double, 10, 14> d_distop_d_disto = Eigen::Matrix<double, 10, 14>::Zero();
     d_distop_d_disto(0, 0) = 1.0;
     d_distop_d_disto(0, 2) = 1.0;
     d_distop_d_disto(1, 0) = 1.0;
@@ -594,7 +597,17 @@ public:
     d_distop_d_disto(9, 7) = -1.0;
     d_distop_d_disto(9, 9) = 1.0; 
 
-    return d_np_d_disto + (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_disto);
+    Eigen::Matrix2d d_r_d_p;
+    d_r_d_p(0, 0) = cphi;
+    d_r_d_p(0, 1) = sphi;
+    d_r_d_p(1, 0) = -sphi;
+    d_r_d_p(1, 1) = cphi;
+
+    Eigen::Matrix<double, 2, 14> d_p_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
+    d_p_d_disto(0, 13) = p.x();
+    d_p_d_disto(1, 13) = p.y();
+
+    return d_np_d_disto + (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p * d_p_d_disto);
   }
 
 

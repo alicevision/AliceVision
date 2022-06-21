@@ -9,6 +9,7 @@ set(camera_files_headers
 	DistortionFisheye.hpp
 	DistortionFisheye1.hpp
 	DistortionRadial.hpp
+	Undistortion.hpp
 	Equidistant.hpp
 	EquidistantRadial.hpp
 	IntrinsicBase.hpp

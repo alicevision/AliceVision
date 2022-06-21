@@ -336,7 +336,7 @@ public:
         std::vector<double> d2 = camdist_2->getDistortionParams();
 
         double norm = 0.0;
-        for (int i = 0; i < d1.size() - 2; i++)
+        for (int i = 0; i < d1.size(); i++)
         {
             norm += (d1[i] - d2[i]) * (d1[i] - d2[i]);
         }
@@ -351,7 +351,7 @@ public:
             Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 1, params_size);
 
             J.fill(0);
-            for (int i = 0; i < d1.size() - 2; i++)
+            for (int i = 0; i < d1.size(); i++)
             {
                 J(0, i + 4) = 2.0 * (d1[i] - d2[i]) * 10000.0;
             }
@@ -361,7 +361,7 @@ public:
             Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 1, params_size);
 
             J.fill(0);
-            for (int i = 0; i < d1.size() - 2; i++)
+            for (int i = 0; i < d1.size(); i++)
             {
                 J(0, i + 4) = -2.0 * (d1[i] - d2[i]) * 10000.0;
             }
@@ -633,7 +633,7 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
-  solverOptions.max_num_iterations = 100;
+  solverOptions.max_num_iterations = 10000;
 
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
@@ -837,22 +837,6 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
   // set a LossFunction to be less penalized by false measurements.
   // note: set it to NULL if you don't want use a lossFunction.
   ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
-
-  for (auto i1 : sfmData.getIntrinsics())
-  {
-      for (auto i2 : sfmData.getIntrinsics())
-      {
-          if (i1.first == i2.first)
-          {
-              continue;
-          }
-
-          double* intrinsicBlockPtr_1 = _intrinsicsBlocks.at(i1.first).data();
-          double* intrinsicBlockPtr_2 = _intrinsicsBlocks.at(i2.first).data();
-
-          problem.AddResidualBlock(new CostIntrinsics(i1.second, i2.second), nullptr, intrinsicBlockPtr_1, intrinsicBlockPtr_2);
-      }
-  }
 
   // build the residual blocks corresponding to the track observations
   for(const auto& landmarkPair: sfmData.getLandmarks())
