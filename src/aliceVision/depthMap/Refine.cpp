@@ -29,10 +29,10 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
     , _stream(stream)
 {
     // get tile maximum dimensions
-    const int downscale = _mp.getProcessDownscale() * _refineParams.scale * _refineParams.stepXY;
+    const int downscale = _refineParams.scale * _refineParams.stepXY;
     int maxTileWidth;
     int maxTileHeight;
-    mvsUtils::getTileDimensions(tileParams, mp.getMaxImageOriginalWidth(), mp.getMaxImageOriginalHeight(), maxTileWidth, maxTileHeight);
+    mvsUtils::getTileDimensions(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxTileWidth, maxTileHeight);
     maxTileWidth  = std::ceil(maxTileWidth  / float(downscale));
     maxTileHeight = std::ceil(maxTileHeight / float(downscale));
 
@@ -107,7 +107,7 @@ void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const CudaDevice
     // compute upscaled SGM depth/pixSize map
     {
         // downscale the region of interest
-        const ROI downscaledRoi = downscaleROI(roi, _mp.getProcessDownscale() * _refineParams.scale * _refineParams.stepXY);
+        const ROI downscaledRoi = downscaleROI(roi, _refineParams.scale * _refineParams.stepXY);
 
         // get R device camera from cache
         DeviceCache& deviceCache = DeviceCache::getInstance();
@@ -156,7 +156,7 @@ void Refine::refineAndFuseDepthSimMap(int rc, const std::vector<int>& tCams, con
     ALICEVISION_LOG_INFO("Refine and fuse depth/sim map volume (rc: " << rc << ")");
 
     // downscale the region of interest
-    const ROI downscaledRoi = downscaleROI(roi, _mp.getProcessDownscale() * _refineParams.scale * _refineParams.stepXY);
+    const ROI downscaledRoi = downscaleROI(roi, _refineParams.scale * _refineParams.stepXY);
 
     // get the depth range
     const Range depthRange(0, _volumeRefineSim_dmp.getSize().z());
@@ -219,7 +219,7 @@ void Refine::optimizeDepthSimMap(int rc, const ROI& roi)
     ALICEVISION_LOG_INFO("Optimize depth/sim map (rc: " << rc << ")");
 
     // downscale the region of interest
-    const ROI downscaledRoi = downscaleROI(roi, _mp.getProcessDownscale() * _refineParams.scale * _refineParams.stepXY);
+    const ROI downscaledRoi = downscaleROI(roi, _refineParams.scale * _refineParams.stepXY);
     
     // get R device camera from cache
     DeviceCache& deviceCache = DeviceCache::getInstance();

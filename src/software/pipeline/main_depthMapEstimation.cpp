@@ -89,11 +89,11 @@ int aliceVision_main(int argc, char* argv[])
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
             "Maximum angle between two views.")
         ("tileWidth", po::value<int>(&tileParams.width)->default_value(tileParams.width),
-            "Maximum tile width.")
+            "Maximum tile buffer width.")
         ("tileHeight", po::value<int>(&tileParams.height)->default_value(tileParams.height),
-            "Maximum tile height.")
+            "Maximum tile buffer height.")
         ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
-            "Tile padding for overlapping.")
+            "Tile buffer padding for overlapping.")
         ("tileMerge", po::value<bool>(&tileParams.mergeTiles)->default_value(tileParams.mergeTiles),
             "Read & merge all computed tiles.")
         ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),

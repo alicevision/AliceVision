@@ -221,7 +221,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // compute tile ROI list
     std::vector<ROI> tileRoiList;
-    getTileRoiList(tileParams, mp.getMaxImageOriginalWidth(), mp.getMaxImageOriginalHeight(), tileRoiList);
+    getTileRoiList(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
     const int nbTilesPerCamera = tileRoiList.size();
 
     // get maximum number of stream (simultaneous tiles)
@@ -321,8 +321,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
             const Tile& tile = tiles.at(i);
-            const int streamIndex = (i - firstTileIndex) % nbStreams;
             const int simultaneousTileIndex = (i - firstTileIndex);
+            const int streamIndex = simultaneousTileIndex % nbStreams;
 
             // get tile result depth/similarity map in host memory
             CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapPerSimultaneousTile.at(simultaneousTileIndex);
