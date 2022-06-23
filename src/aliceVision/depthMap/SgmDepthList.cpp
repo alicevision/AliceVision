@@ -22,15 +22,105 @@
 namespace aliceVision {
 namespace depthMap {
 
+
+std::vector<int> findTileNearestCams(int rc,
+                                     const std::vector<int>& tCams,
+                                     const mvsUtils::MultiViewParams& mp,
+                                     int nbNearestCams,
+                                     const ROI& roi)
+{
+  std::vector<int> out;
+
+  const float minViewAngle = 1.0;
+  const double maxViewAngle = 180.0;
+
+  std::map<int, int> tcScore;
+
+  for(int i = 0; i < tCams.size(); ++i)
+    tcScore[tCams[i]] = 0;
+
+  const sfmData::SfMData& sfmData = mp.getInputSfMData();
+
+  const IndexT viewId = mp.getViewId(rc);
+  const sfmData::View& view = *(sfmData.getViews().at(viewId));
+  const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+  const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+
+  const ROI fullsizeRoi = upscaleROI(roi, mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
+
+  for(const auto& landmarkPair : sfmData.getLandmarks())
+  {
+    const auto& observations = landmarkPair.second.observations;
+
+    auto viewObsIt = observations.find(viewId);
+
+    // has landmark observation for the R camera
+    if(viewObsIt == observations.end())
+      continue;
+
+    // landmark R camera observation is in the image full-size ROI
+    if(!fullsizeRoi.contains(viewObsIt->second.x.x(), viewObsIt->second.x.y()))
+      continue;
+
+    for(const auto& observationPair : observations)
+    {
+      const IndexT otherViewId = observationPair.first;
+
+      // other view should not be the R camera
+      if(otherViewId == viewId)
+       continue;
+
+      const int tc = mp.getIndexFromViewId(otherViewId);
+
+      // other view should be a T camera
+      if(tcScore.find(tc) == tcScore.end())
+        continue;
+
+      const sfmData::View& otherView = *(sfmData.getViews().at(otherViewId));
+      const geometry::Pose3 otherPose = sfmData.getPose(otherView).getTransform();
+      const camera::IntrinsicBase* otherIntrinsicPtr = sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
+
+      const double angle = camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+
+      if(angle < minViewAngle || angle > maxViewAngle)
+        continue;
+
+      ++tcScore[tc];
+    }
+  }
+
+  std::vector<SortedId> ids;
+  ids.reserve(tcScore.size());
+
+  for(const auto& tcScorePair : tcScore)
+    ids.push_back(SortedId(tcScorePair.first, tcScorePair.second));
+
+  qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
+
+  // ensure the ideal number of target cameras is not superior to the actual number of cameras
+  const int maxTc = std::min(std::min(mp.getNbCameras(), nbNearestCams), static_cast<int>(ids.size()));
+  out.reserve(maxTc);
+
+  for(int i = 0; i < maxTc; ++i)
+    out.push_back(ids[i].id);
+
+  return out;
+}
+
+
 SgmDepthList::SgmDepthList(int rc, const std::vector<int>& tCams, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi)
     : _rc(rc)
     , _roi(roi)
     , _mp(mp)
     , _sgmParams(sgmParams)
 {
-    _tCams = tCams; // copy
-    if(_tCams.size() > sgmParams.maxTCams)
-      _tCams.resize(sgmParams.maxTCams); // shrink T cameras
+    // get sgm T cameras from global T cameras
+    std::vector<int> sgmTCams = tCams;
+    if(sgmTCams.size() > sgmParams.maxTCams)
+      sgmTCams.resize(sgmParams.maxTCams); // shrink T cameras
+
+    // find nearest T cameras per tile
+    _tCams = findTileNearestCams(rc, sgmTCams, mp, sgmParams.maxTCamsPerTile, roi);
 }
 
 void SgmDepthList::computeListRc()

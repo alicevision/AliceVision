@@ -172,10 +172,11 @@ void getSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams)
     sgmParams.stepXY = mp.userParams.get<int>("sgm.stepXY", sgmParams.stepXY);
     sgmParams.stepZ = mp.userParams.get<int>("sgm.stepZ", sgmParams.stepZ);
     sgmParams.wsh = mp.userParams.get<int>("sgm.wsh", sgmParams.wsh);
-    sgmParams.maxTCams = mp.userParams.get<int>("sgm.maxTCams", sgmParams.maxTCams);
     sgmParams.maxDepths = mp.userParams.get<int>("sgm.maxDepths", sgmParams.maxDepths);
     sgmParams.maxDepthsPerTc = mp.userParams.get<int>("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
     sgmParams.maxSideXY = mp.userParams.get<int>("sgm.maxSideXY", sgmParams.maxSideXY);
+    sgmParams.maxTCams = mp.userParams.get<int>("sgm.maxTCams", sgmParams.maxTCams);
+    sgmParams.maxTCamsPerTile = mp.userParams.get<int>("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     sgmParams.gammaC = mp.userParams.get<double>("sgm.gammaC", sgmParams.gammaC);
     sgmParams.gammaP = mp.userParams.get<double>("sgm.gammaP", sgmParams.gammaP);
     sgmParams.p1 = mp.userParams.get<double>("sgm.p1", sgmParams.p1);

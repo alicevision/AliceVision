@@ -106,6 +106,8 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
         ("sgmMaxTCams", po::value<int>(&sgmParams.maxTCams)->default_value(sgmParams.maxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
+        ("sgmMaxTCamsPerTile", po::value<int>(&sgmParams.maxTCamsPerTile)->default_value(sgmParams.maxTCamsPerTile),
+            "Semi Global Matching: Number of neighbour cameras per tile.")
         ("sgmWSH", po::value<int>(&sgmParams.wsh)->default_value(sgmParams.wsh),
             "Semi Global Matching: Size of the patch used to compute the similarity.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
@@ -236,7 +238,6 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("tile.mergeTiles", tileParams.mergeTiles);
 
     // SGM Parameters
-    mp.userParams.put("sgm.maxTCams", sgmParams.maxTCams);
     mp.userParams.put("sgm.wsh", sgmParams.wsh);
     mp.userParams.put("sgm.gammaC", sgmParams.gammaC);
     mp.userParams.put("sgm.gammaP", sgmParams.gammaP);
@@ -246,6 +247,8 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.stepXY", sgmParams.stepXY);
     mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
     mp.userParams.put("sgm.maxSideXY", sgmParams.maxSideXY);
+    mp.userParams.put("sgm.maxTCams", sgmParams.maxTCams);
+    mp.userParams.put("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
     mp.userParams.put("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
