@@ -20,6 +20,7 @@
 #include <iterator>
 #include <iomanip>
 #include <map>
+#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
