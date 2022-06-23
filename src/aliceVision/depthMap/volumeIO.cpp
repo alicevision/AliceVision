@@ -154,8 +154,8 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
     {
         for (int vx = 0; vx < volDim[0]; vx += xyStep)
         {
-            const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
-            const double y = (roi.y.begin * mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
+            const double x = roi.x.begin + (vx * sgmParams.scale * sgmParams.stepXY);
+            const double y = roi.y.begin + (vy * sgmParams.scale * sgmParams.stepXY);
 
             for(int vz = 0; vz < in_depths.size(); ++vz)
             {
@@ -208,8 +208,8 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
 
             for(int vx = xIdxStart; vx < xIdxStop; ++vx)
             {
-                const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * sgmParams.scale * sgmParams.stepXY);
-                const double y = (roi.y.begin / mp.getProcessDownscale()) + (vy * sgmParams.scale * sgmParams.stepXY);
+                const double x = roi.x.begin + (vx * sgmParams.scale * sgmParams.stepXY);
+                const double y = roi.y.begin + (vy * sgmParams.scale * sgmParams.stepXY);
                 const double planeDepth = in_depths[vz];
                 const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
                 const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
@@ -251,9 +251,6 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
 
     IndexT landmarkId = 0;
 
-    const int roiOffsetX = roi.x.begin / double(mp.getProcessDownscale());
-    const int roiOffsetY = roi.y.begin / double(mp.getProcessDownscale());
-
     for(int vy = 0; vy < volDim[1]; ++vy)
     {
         const bool vyCenter = ((vy*2) == volDim[1]);
@@ -262,8 +259,8 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
 
         for(int vx = xIdxStart; vx < xIdxStop; ++vx)
         {
-            const int x = roiOffsetX + (double(vx) * refineParams.scale * refineParams.stepXY);
-            const int y = roiOffsetY + (double(vy) * refineParams.scale * refineParams.stepXY);
+            const int x = roi.x.begin + (double(vx) * refineParams.scale * refineParams.stepXY);
+            const int y = roi.y.begin + (double(vy) * refineParams.scale * refineParams.stepXY);
             const Point2d pix(x, y);
 
             const double orignalDepth = in_depthSimMapSgmUpscale_hmh(vx, vy).x;
@@ -338,8 +335,8 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh,
     {
         for (int vx = 0; vx < volDim[0]; vx += xyStep)
         {
-            const double x = (roi.x.begin / mp.getProcessDownscale()) + (vx * scale * step);
-            const double y = (roi.y.begin / mp.getProcessDownscale()) + (vy * scale * step);
+            const double x = roi.x.begin + (vx * scale * step);
+            const double y = roi.y.begin + (vy * scale * step);
 
             for(int vz = 0; vz < nbDepths; ++vz)
             {

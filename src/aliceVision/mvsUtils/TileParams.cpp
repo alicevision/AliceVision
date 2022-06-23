@@ -13,24 +13,24 @@ namespace mvsUtils {
 
 void getTileDimensions(const TileParams& tileParams, int maxWidth, int maxHeight, int& tileWidth, int& tileHeight) 
 {
-    tileWidth  = (tileParams.width  > 0) ? tileParams.width  : (tileParams.height > 0) ? tileParams.height : maxWidth;
-    tileHeight = (tileParams.height > 0) ? tileParams.height : (tileParams.width > 0)  ? tileParams.width  : maxHeight;
+    tileWidth  = (tileParams.width  > 0) ? tileParams.width  : ((tileParams.height > 0) ? tileParams.height : maxWidth);
+    tileHeight = (tileParams.height > 0) ? tileParams.height : ((tileParams.width  > 0) ? tileParams.width  : maxHeight);
 
     if(tileParams.padding >= std::min(tileWidth, tileHeight))
       ALICEVISION_THROW_ERROR("Unable to compute tile dimensions, tile padding size is too large.");
 }
 
-void getTileRoiList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList)
+void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, std::vector<ROI>& out_tileList)
 {
     int tileWidth;
     int tileHeight;
 
     // compute tile dimensions
-    getTileDimensions(tileParams, originalWidth, originalHeight, tileWidth, tileHeight);
+    getTileDimensions(tileParams, imageWidth, imageHeight, tileWidth, tileHeight);
 
     // compute nb of tiles per side
-    const int nbTileSideX = 1 + int(std::ceil(float(originalWidth  - tileWidth)  / float(tileWidth  - tileParams.padding)));
-    const int nbTileSideY = 1 + int(std::ceil(float(originalHeight - tileHeight) / float(tileHeight - tileParams.padding)));
+    const int nbTileSideX = 1 + int(std::ceil(float(imageWidth  - tileWidth)  / float(tileWidth  - tileParams.padding)));
+    const int nbTileSideY = 1 + int(std::ceil(float(imageHeight - tileHeight) / float(tileHeight - tileParams.padding)));
 
     out_tileList.resize(nbTileSideX * nbTileSideY);
 
@@ -38,12 +38,12 @@ void getTileRoiList(const TileParams& tileParams, int originalWidth, int origina
     for(int i = 0; i < nbTileSideX; ++i)
     {
         const int startX = i * (tileWidth - tileParams.padding);
-        const int endX = std::min(startX + tileWidth, originalWidth);
+        const int endX = std::min(startX + tileWidth, imageWidth);
 
         for(int j = 0; j < nbTileSideY; ++j)
         {
             const int startY = j * (tileHeight - tileParams.padding);
-            const int endY = std::min(startY + tileHeight, originalHeight);
+            const int endY = std::min(startY + tileHeight, imageHeight);
 
             out_tileList.at(i * nbTileSideY + j) = ROI(startX, endX, startY, endY);
         }

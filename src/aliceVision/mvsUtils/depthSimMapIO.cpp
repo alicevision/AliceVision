@@ -102,9 +102,9 @@ void readTileMapWeighted(int rc,
 
     // get tile position information
     const bool firstColumn = (roi.x.begin == 0);
-    const bool lastColumn = (roi.x.end == mp.getOriginalWidth(rc));
+    const bool lastColumn = (roi.x.end == mp.getWidth(rc));
     const bool firstRow = (roi.y.begin == 0);
-    const bool lastRow = (roi.y.end == mp.getOriginalHeight(rc));
+    const bool lastRow = (roi.y.end == mp.getHeight(rc));
 
     // weight the top left corner
     if(!firstColumn || !firstRow)
@@ -171,7 +171,7 @@ void readTileMapWeighted(int rc,
     }
 
     // add weighted tile to the depth/sim map
-    const int mapWidth = std::ceil(mp.getOriginalWidth(rc) / float(downscale));
+    const int mapWidth = std::ceil(mp.getWidth(rc) / float(downscale));
 
     for(int x = downscaledRoi.x.begin; x < downscaledRoi.x.end; ++x)
     {
@@ -193,9 +193,9 @@ void readMapFromTiles(int rc,
                       int step, 
                       const std::string& customSuffix)
 {
-    const int downscale = mp.getProcessDownscale() * std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
-    const int width = std::ceil(mp.getOriginalWidth(rc) / float(downscale));
-    const int height = std::ceil(mp.getOriginalHeight(rc) / float(downscale));
+    const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
+    const int width = std::ceil(mp.getWidth(rc) / float(scaleStep));
+    const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
 
     out_map.resize(width * height, 0.f);
 
@@ -209,12 +209,12 @@ void readMapFromTiles(int rc,
     getTileParamsFromMetadata(mapFirstTilePath, tileParams);
 
     std::vector<ROI> tileList;
-    getTileRoiList(tileParams, mp.getOriginalWidth(rc), mp.getOriginalHeight(rc), tileList);
+    getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
 
     for(const ROI& roi : tileList)
     {
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
-        readTileMapWeighted(rc, mp, tileParams, roi, mapTilePath, downscale, out_map);
+        readTileMapWeighted(rc, mp, tileParams, roi, mapTilePath, scaleStep, out_map);
     }
 }
 
@@ -229,7 +229,6 @@ void writeDepthSimMap(int rc,
                       const std::string& customSuffix)
 {
     const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
-    const int downscale = mp.getDownscaleFactor(rc) * scaleStep;
     const int nbDepthValues = std::count_if(depthMap.begin(), depthMap.end(), [](float v) { return v > 0.0f; });
 
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp.getMetadata(rc));
@@ -243,7 +242,7 @@ void writeDepthSimMap(int rc,
     }
 
     // downscale metadata
-    metadata.push_back(oiio::ParamValue("AliceVision:downscale", downscale));
+    metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp.getDownscaleFactor(rc) * scaleStep));
 
     double s = scaleStep;
     Point3d C = mp.CArr[rc];
@@ -292,9 +291,9 @@ void writeDepthSimMap(int rc,
     }
 
     // get full image dimensions
-    const ROI downscaledROI = downscaleROI(roi, downscale);
-    const int imageWidth = std::ceil(mp.getOriginalWidth(rc) / float(downscale));
-    const int imageHeight = std::ceil(mp.getOriginalHeight(rc) / float(downscale));
+    const ROI downscaledROI = downscaleROI(roi, scaleStep);
+    const int imageWidth = std::ceil(mp.getWidth(rc) / float(scaleStep));
+    const int imageHeight = std::ceil(mp.getHeight(rc) / float(scaleStep));
 
     oiio::ROI imageROI = oiio::ROI::All();
     std::string depthMapPath;
@@ -331,7 +330,7 @@ void writeDepthSimMap(int rc,
                       const std::string& customSuffix)
 {
     const TileParams tileParams; // default tile parameters, no tiles
-    const ROI roi = ROI(0, mp.getOriginalWidth(rc), 0, mp.getOriginalHeight(rc)); // full roi
+    const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // full roi
     writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }
 
@@ -344,7 +343,7 @@ void writeDepthMap(int rc,
                    const std::string& customSuffix)
 {
     const TileParams tileParams;  // default tile parameters, no tiles
-    const ROI roi = ROI(0, mp.getOriginalWidth(rc), 0, mp.getOriginalHeight(rc)); // full roi
+    const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // full roi
     std::vector<float> simMap(0); // empty simMap, write only depth map
     writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }
@@ -439,7 +438,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
         getTileParamsFromMetadata(depthMapFirstTilePath, tileParams);
 
         std::vector<ROI> tileList;
-        getTileRoiList(tileParams, mp.getOriginalWidth(rc), mp.getOriginalHeight(rc), tileList);
+        getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
 
         for(const ROI& roi : tileList)
         {

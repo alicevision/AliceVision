@@ -279,6 +279,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
     accumulator_set<float, stats<tag::tail_quantile<right>>> accDistanceMax(tag::tail<right>::cache_size = cacheSize);
 
     const IndexT viewId = _mp.getViewId(_rc);
+    const ROI fullsizeRoi = upscaleROI(_roi, _mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
 
     OrientedPoint cameraPlane;
     cameraPlane.p = _mp.CArr[_rc];
@@ -302,8 +303,8 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
             {
                 const Vec2& obs2d = observationPair.second.x;
 
-                // if we compute depth list per tile keep only observation located inside the ROI
-                if(_sgmParams.useSameDepthListPerTile || _roi.contains(obs2d.x(), obs2d.y()))
+                // if we compute depth list per tile keep only observation located inside the image full-size ROI
+                if(_sgmParams.useSameDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
                 {
                     const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
                     accDistanceMin(distance);
@@ -311,15 +312,17 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
                     midDepthPoint = midDepthPoint + point;
                     ++nbDepths;
                 }
-                
             }
         }
     }
 
-    min = quantile(accDistanceMin, quantile_probability = 1.0 - _sgmParams.seedsRangePercentile);
-    max = quantile(accDistanceMax, quantile_probability = _sgmParams.seedsRangePercentile);
-    midDepthPoint = midDepthPoint / static_cast<float>(nbDepths);
-    mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
+    if(nbDepths > 0)
+    {
+      min = quantile(accDistanceMin, quantile_probability = 1.0 - _sgmParams.seedsRangePercentile);
+      max = quantile(accDistanceMax, quantile_probability = _sgmParams.seedsRangePercentile);
+      midDepthPoint = midDepthPoint / static_cast<float>(nbDepths);
+      mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
+    }
 
     ALICEVISION_LOG_DEBUG("Compute min/max/mid/nb observation depth from SfM for R camera:" << std::endl
                           << "\t- rc: " << _rc << std::endl
@@ -521,7 +524,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     rcplane.n = rcplane.n.normalize();
 
     // ROI center 
-    const ROI sgmRoi = downscaleROI(_roi, _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY);
+    const ROI sgmRoi = downscaleROI(_roi, _sgmParams.scale * _sgmParams.stepXY);
     const Point2d sgmRoiCenter((sgmRoi.x.begin + (sgmRoi.width() * 0.5)), sgmRoi.y.begin + (sgmRoi.height() * 0.5));
 
     // principal point of the rc camera to the tc camera

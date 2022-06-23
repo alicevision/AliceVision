@@ -29,10 +29,10 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     , _stream(stream)
 {
     // get tile maximum dimensions
-    const int downscale = _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY;
+    const int downscale = _sgmParams.scale * _sgmParams.stepXY;
     int maxTileWidth;
     int maxTileHeight;
-    mvsUtils::getTileDimensions(tileParams, mp.getMaxImageOriginalWidth(), mp.getMaxImageOriginalHeight(), maxTileWidth, maxTileHeight);
+    mvsUtils::getTileDimensions(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxTileWidth, maxTileHeight);
     maxTileWidth  = std::ceil(maxTileWidth  / float(downscale));
     maxTileHeight = std::ceil(maxTileHeight / float(downscale));
 
@@ -162,7 +162,7 @@ void Sgm::computeSimilarityVolumes(int rc, const SgmDepthList& in_sgmDepthList, 
     ALICEVISION_LOG_INFO("SGM Compute similarity volume (rc: " << rc << ")");
 
     // downscale the region of interest
-    const ROI downscaledRoi = downscaleROI(roi, _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY);
+    const ROI downscaledRoi = downscaleROI(roi, _sgmParams.scale * _sgmParams.stepXY);
 
     // initialize the two similarity volumes at 255
     cuda_volumeInitialize(_volumeBestSim_dmp, 255.f, _stream);
@@ -215,7 +215,7 @@ void Sgm::optimizeSimilarityVolume(int rc, const SgmDepthList& in_sgmDepthList, 
     ALICEVISION_LOG_INFO("SGM Optimizing volume (rc: " << rc << ", filtering axes: " << _sgmParams.filteringAxes << ")");
 
     // downscale the region of interest
-    const ROI downscaledRoi = downscaleROI(roi, _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY);
+    const ROI downscaledRoi = downscaleROI(roi, _sgmParams.scale * _sgmParams.stepXY);
 
     // get R device camera from cache
     DeviceCache& deviceCache = DeviceCache::getInstance();
@@ -240,7 +240,7 @@ void Sgm::retrieveBestDepth(int rc, const SgmDepthList& in_sgmDepthList, const R
     ALICEVISION_LOG_INFO("SGM Retrieve best depth in volume (rc: " << rc << ")");
 
     // downscale the region of interest
-    const ROI downscaledRoi = downscaleROI(roi, _mp.getProcessDownscale() * _sgmParams.scale * _sgmParams.stepXY);
+    const ROI downscaledRoi = downscaleROI(roi, _sgmParams.scale * _sgmParams.stepXY);
 
     // get depth range
     const Range depthRange(0, in_sgmDepthList.getDepths().size()); 

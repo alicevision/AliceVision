@@ -97,12 +97,12 @@ void writeDepthSimMap(int rc,
                       int step,
                       const std::string& customSuffix)
 {
-    const int downscale = mp.getProcessDownscale() * scale * step;
+    const int scaleStep = scale * step;
 
     std::vector<float> depthMap;
     std::vector<float> simMap;
 
-    copyDepthSimMap(depthMap, simMap, in_depthSimMap_hmh, roi, downscale);
+    copyDepthSimMap(depthMap, simMap, in_depthSimMap_hmh, roi, scaleStep);
 
     mvsUtils::writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }
@@ -116,12 +116,12 @@ void writeDepthSimMap(int rc,
                       int step,
                       const std::string& customSuffix)
 {
-    const int downscale = mp.getProcessDownscale() * scale * step;
+    const int scaleStep = scale * step;
 
     std::vector<float> depthMap;
     std::vector<float> simMap;
 
-    copyDepthSimMap(depthMap, simMap, in_depthSimMap_dmp, roi, downscale);
+    copyDepthSimMap(depthMap, simMap, in_depthSimMap_dmp, roi, scaleStep);
 
     mvsUtils::writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }

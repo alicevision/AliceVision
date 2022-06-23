@@ -15,14 +15,16 @@ namespace mvsUtils {
 
 /**
  * @brief Tile Parameters
+ *
+ * Tile size is in the coordinate system of the original input image (without any downscale applied).
  */
 struct TileParams
 {
   // user parameters
 
-  int width = -1;  // if < 0 no tile, use the entire image
-  int height = -1; // if < 0 no tile, use the entire image
-  int padding = 0;
+  int width = 2048;  // if < 0 no tile, use the entire image
+  int height = 512;  // if < 0 no tile, use the entire image
+  int padding = 128;
 
   bool mergeTiles = false;
 };
@@ -40,11 +42,11 @@ void getTileDimensions(const TileParams& tileParams, int maxWidth, int maxHeight
  /**
  * @brief Get tile list from tile parameters and image width/height
  * @param[in] tileParams the tile parameters
- * @param[in] originalWidth the image original width
- * @param[in] originalHeight the image original height
+ * @param[in] imageWidth the image width
+ * @param[in] imageHeight the image height
  * @param[out] out_tileDepthMap the output tile ROI list
  */
-void getTileRoiList(const TileParams& tileParams, int originalWidth, int originalHeight, std::vector<ROI>& out_tileList);
+void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, std::vector<ROI>& out_tileList);
 
 } // namespace mvsUtils
 } // namespace aliceVision
