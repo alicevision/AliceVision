@@ -256,7 +256,6 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.maxSideXY", sgmParams.maxSideXY);
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
-    mp.userParams.put("sgm.chooseTCamsPerTile", sgmParams.chooseTCamsPerTile);
     mp.userParams.put("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
     mp.userParams.put("sgm.exportIntermediateResults", exportIntermediateResults);
 
