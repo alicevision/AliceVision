@@ -25,8 +25,6 @@ struct TileParams
   int width = 2048;  // if < 0 no tile, use the entire image
   int height = 512;  // if < 0 no tile, use the entire image
   int padding = 128;
-
-  bool mergeTiles = false;
 };
 
  /**
