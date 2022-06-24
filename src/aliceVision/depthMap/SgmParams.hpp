@@ -32,7 +32,6 @@ struct SgmParams
   double p2Weighting = 100.0;
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
-  bool chooseTCamsPerTile = true;
   bool chooseDepthListPerTile = false;
   bool exportIntermediateResults = false;
 

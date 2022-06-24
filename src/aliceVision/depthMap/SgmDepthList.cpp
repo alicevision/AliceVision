@@ -24,21 +24,11 @@ namespace depthMap {
 
 SgmDepthList::SgmDepthList(int rc, const std::vector<int>& tCams, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi)
     : _rc(rc)
+    , _tCams(tCams)
     , _roi(roi)
     , _mp(mp)
     , _sgmParams(sgmParams)
-{
-    if(sgmParams.chooseTCamsPerTile)
-    {
-      // find nearest T cameras per tile
-      _tCams = mp.findTileNearestCams(rc, sgmParams.maxTCamsPerTile, tCams, roi);
-    }
-    else
-    {
-      // use previously selected T cameras from the entire image
-      _tCams = tCams;
-    }
-}
+{}
 
 void SgmDepthList::computeListRc()
 {

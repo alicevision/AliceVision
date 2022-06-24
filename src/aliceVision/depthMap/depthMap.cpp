@@ -166,7 +166,6 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.p2Weighting = mp.userParams.get<double>("sgm.p2Weighting", sgmParams.p2Weighting);
     sgmParams.filteringAxes = mp.userParams.get<std::string>("sgm.filteringAxes", sgmParams.filteringAxes);
     sgmParams.useSfmSeeds = mp.userParams.get<bool>("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
-    sgmParams.chooseTCamsPerTile = mp.userParams.get<bool>("sgm.chooseTCamsPerTile", sgmParams.chooseTCamsPerTile);
     sgmParams.chooseDepthListPerTile = mp.userParams.get<bool>("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
     sgmParams.exportIntermediateResults = mp.userParams.get<bool>("sgm.exportIntermediateResults", sgmParams.exportIntermediateResults);
 
@@ -229,7 +228,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     struct Tile
     {
         int rc;
-        std::vector<int> tCams;
+        std::vector<int> sgmTCams;
+        std::vector<int> refineTCams;
         ROI roi;
     };
     std::vector<Tile> tiles;
@@ -245,7 +245,20 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         {
             Tile t;
             t.rc = rc;
-            t.tCams = tCams;
+
+            if(depthMapParams.chooseTCamsPerTile)
+            {
+              // find nearest T cameras per tile
+              t.sgmTCams = mp.findTileNearestCams(rc, depthMapParams.sgmParams.maxTCamsPerTile, tCams, roi);
+              t.refineTCams = mp.findTileNearestCams(rc, depthMapParams.refineParams.maxTCamsPerTile, tCams, roi);
+            }
+            else
+            {
+              // use previously selected T cameras from the entire image
+              t.sgmTCams = tCams;
+              t.refineTCams = tCams;
+            }
+
             t.roi = roi;
             tiles.push_back(t);
         }
@@ -293,11 +306,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             deviceCache.addCamera(tile.rc, depthMapParams.sgmParams.scale, ic, mp);
             deviceCache.addCamera(tile.rc, depthMapParams.refineParams.scale, ic, mp);
 
-            for(const int tc : tile.tCams)
-            {
+            for(const int tc : tile.sgmTCams)
                 deviceCache.addCamera(tc, depthMapParams.sgmParams.scale, ic, mp);
+
+            for(const int tc : tile.refineTCams)
                 deviceCache.addCamera(tc, depthMapParams.refineParams.scale, ic, mp);
-            }
         }
 
         // wait for camera loading in device cache
@@ -314,14 +327,14 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapPerSimultaneousTile.at(simultaneousTileIndex);
 
             // check T cameras
-            if(tile.tCams.empty()) // no T camera found
+            if(tile.sgmTCams.empty() || tile.refineTCams.empty()) // no T camera found
             {
                 resetDepthSimMap(tileDepthSimMap_hmh);
                 continue;
             }
 
             // build SGM depth list
-            SgmDepthList sgmDepthList(tile.rc, tile.tCams, mp, depthMapParams.sgmParams, tile.roi);
+            SgmDepthList sgmDepthList(tile.rc, tile.sgmTCams, mp, depthMapParams.sgmParams, tile.roi);
 
             // compute the R camera depth list
             sgmDepthList.computeListRc();
@@ -345,7 +358,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
             // compute Refine
             Refine& refine = refinePerStream.at(streamIndex);
-            refine.refineRc(tile.rc, tile.tCams, sgm.getDeviceDepthSimMap(), tile.roi);
+            refine.refineRc(tile.rc, tile.refineTCams, sgm.getDeviceDepthSimMap(), tile.roi);
             
             // copy depth/similarity map from device to host
             tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
