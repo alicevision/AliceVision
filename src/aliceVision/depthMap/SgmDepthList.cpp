@@ -23,6 +23,18 @@ namespace aliceVision {
 namespace depthMap {
 
 
+float plateauFunction(int a, int b, int c, int d, int x)
+{
+  if(x > a && x <= b)
+    return ((x - a) / (b - a));
+  if(x > b && x <= c)
+    return 1.0f;
+  if(x > c && x <= d)
+    return 1.0f - ((x - c) / (d - c));
+  return 0.f;
+}
+
+
 std::vector<int> findTileNearestCams(int rc,
                                      const std::vector<int>& tCams,
                                      const mvsUtils::MultiViewParams& mp,
@@ -30,14 +42,10 @@ std::vector<int> findTileNearestCams(int rc,
                                      const ROI& roi)
 {
   std::vector<int> out;
-
-  const float minViewAngle = 1.0;
-  const double maxViewAngle = 180.0;
-
-  std::map<int, int> tcScore;
+  std::map<int, float> tcScore;
 
   for(int i = 0; i < tCams.size(); ++i)
-    tcScore[tCams[i]] = 0;
+    tcScore[tCams[i]] = 0.0f;
 
   const sfmData::SfMData& sfmData = mp.getInputSfMData();
 
@@ -82,10 +90,7 @@ std::vector<int> findTileNearestCams(int rc,
 
       const double angle = camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
 
-      if(angle < minViewAngle || angle > maxViewAngle)
-        continue;
-
-      ++tcScore[tc];
+      tcScore[tc] += plateauFunction(1,10,50,150, angle);
     }
   }
 
