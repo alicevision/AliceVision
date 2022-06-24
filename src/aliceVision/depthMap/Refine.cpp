@@ -100,10 +100,6 @@ void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const CudaDevice
 
     ALICEVISION_LOG_INFO("Refine depth/sim map of view id: " << viewId << ", rc: " << rc << " (" << (rc + 1) << " / " << _mp.ncams << ")");
 
-    std::vector<int> tCams = in_tCams;
-    if(tCams.size() > _refineParams.maxTCams)
-      tCams.resize(_refineParams.maxTCams); // shrink T cameras
-
     // compute upscaled SGM depth/pixSize map
     {
         // downscale the region of interest
@@ -127,7 +123,7 @@ void Refine::refineRc(int rc, const std::vector<int>& in_tCams, const CudaDevice
     if(_refineParams.doRefineFuse)
     {
         // refine and fuse with volume strategy
-        refineAndFuseDepthSimMap(rc, tCams, roi);
+        refineAndFuseDepthSimMap(rc, in_tCams, roi);
 
     }
     else

@@ -114,13 +114,15 @@ SgmDepthList::SgmDepthList(int rc, const std::vector<int>& tCams, const mvsUtils
     , _mp(mp)
     , _sgmParams(sgmParams)
 {
-    // get sgm T cameras from global T cameras
-    std::vector<int> sgmTCams = tCams;
-    if(sgmTCams.size() > sgmParams.maxTCams)
-      sgmTCams.resize(sgmParams.maxTCams); // shrink T cameras
-
-    // find nearest T cameras per tile
-    _tCams = findTileNearestCams(rc, sgmTCams, mp, sgmParams.maxTCamsPerTile, roi);
+    if(sgmParams.chooseTCamsPerTile)
+    {
+      // find nearest T cameras per tile
+      _tCams = findTileNearestCams(rc, tCams, mp, sgmParams.maxTCamsPerTile, roi);
+    }
+    else
+    {
+      _tCams = tCams;
+    }
 }
 
 void SgmDepthList::computeListRc()
@@ -394,7 +396,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
                 const Vec2& obs2d = observationPair.second.x;
 
                 // if we compute depth list per tile keep only observation located inside the image full-size ROI
-                if(_sgmParams.useSameDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+                if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
                 {
                     const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
                     accDistanceMin(distance);
@@ -621,7 +623,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     const Point2d principalPoint(_mp.getWidth(_rc) * 0.5f, _mp.getHeight(_rc) * 0.5f);
     
     // reference pixel for the epipolar line
-    const Point2d rmid = (_sgmParams.useSameDepthListPerTile) ? principalPoint : sgmRoiCenter;
+    const Point2d rmid = (!_sgmParams.chooseDepthListPerTile) ? principalPoint : sgmRoiCenter;
 
     // segment of epipolar line
     Point2d pFromTar, pToTar; 
