@@ -19,6 +19,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
+#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -28,7 +29,8 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
-
+#include <algorithm>
+#include <iterator>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -131,6 +133,13 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     return in;
 }
 
+std::list<std::string>::iterator findColorProfile(const std::pair<std::string, std::string>& p, std::list<std::string>& fileList)
+{
+    return std::find_if(fileList.begin(), fileList.end(), [p](const std::string& s)
+        {
+            return (s.find(p.first) != std::string::npos) && (s.find(p.second) != std::string::npos);
+        });
+}
 
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
@@ -147,6 +156,7 @@ int aliceVision_main(int argc, char **argv)
   // user optional parameters
   std::string defaultCameraModelName;
   std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
+  std::string colorProfileDatabaseDirPath;
 
   double defaultFocalLength = -1.0;
   double defaultFieldOfView = -1.0;
@@ -160,6 +170,7 @@ int aliceVision_main(int argc, char **argv)
 
   bool allowSingleView = false;
   bool useInternalWhiteBalance = true;
+  bool errorOnMissingColorProfile = true;
 
 
   po::options_description requiredParams("Required parameters");
@@ -174,6 +185,8 @@ int aliceVision_main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
+      "Camera sensor width database path.")
+    ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
       "Camera sensor width database path.")
     ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
       "Focal length in mm. (or '-1' to unset)")
@@ -203,6 +216,8 @@ int aliceVision_main(int argc, char **argv)
       "Regex used to catch number used as viewId in filename.")
     ("useInternalWhiteBalance", po::value<bool>(&useInternalWhiteBalance)->default_value(useInternalWhiteBalance),
       "Apply the white balance included in the image metadata (Only for raw images)")
+    ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
+      "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
@@ -302,6 +317,27 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
+  std::list<std::string> colorProfileList;
+  if (!colorProfileDatabaseDirPath.empty() && !fs::is_directory(colorProfileDatabaseDirPath))
+  {
+      ALICEVISION_LOG_ERROR("The specified database for color profiles does not exist.");
+      return EXIT_FAILURE;
+  }
+  else if (!colorProfileDatabaseDirPath.empty())
+  {
+      fs::path targetDir(colorProfileDatabaseDirPath);
+      fs::directory_iterator it(targetDir), eod;
+
+      BOOST_FOREACH(fs::path const& p, std::make_pair(it, eod))
+      {
+          if (fs::is_regular_file(p))
+          {
+              std::cout << p.filename() << " ; " << p.generic_string() << std::endl;
+              colorProfileList.emplace_back(p.generic_string());
+          }
+      }
+  }
+
   camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);
 
   // use current time as seed for random generator for intrinsic Id without metadata
@@ -364,6 +400,7 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
+  bool allColorProfilesFound = true;
 
   #pragma omp parallel for
   for(int i = 0; i < sfmData.getViews().size(); ++i)
@@ -437,6 +474,34 @@ int aliceVision_main(int argc, char **argv)
     const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
     camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
+
+
+    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImagePath()));
+
+    std::string imgFormat = in->format_name();
+
+    // check if a color profile is available for the image
+    if (!colorProfileDatabaseDirPath.empty() && (imgFormat.compare("raw") == 0))
+    {
+        bool colorProfileFound = false;
+        if (hasCameraMetadata)
+        {
+            std::pair<std::string, std::string> pairMakeModel = std::pair<std::string, std::string>(make, model);
+            std::list<std::string>::iterator it = findColorProfile(pairMakeModel, colorProfileList);
+
+            colorProfileFound = (it != colorProfileList.end());
+
+            if (colorProfileFound)
+            {
+                view.addMetadata("AliceVision:colorProfileFileName", *it);
+            }
+        }
+
+        #pragma omp critical
+        {
+            allColorProfilesFound &= colorProfileFound;
+        }
+    }
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -690,6 +755,19 @@ int aliceVision_main(int argc, char **argv)
 
       sfmData.getRigs().emplace(rigId, sfmData::Rig(nbSubPose));
     }
+  }
+
+  if (!allColorProfilesFound)
+  {
+      if (errorOnMissingColorProfile)
+      {
+          ALICEVISION_LOG_ERROR("Can't find color profile for at least one input image.");
+          return EXIT_FAILURE;
+      }
+      else
+      {
+          ALICEVISION_LOG_WARNING("Can't find color profile for at least one input image.");
+      }
   }
 
   // Update poseId for detected multi-exposure or multi-lighting images (multiple shots with the same camera pose)

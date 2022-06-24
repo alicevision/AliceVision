@@ -549,14 +549,19 @@ public:
    */
   Vec3 getGpsPositionWGS84FromMetadata() const;
 
-  const bool getApplyWhiteBalance() const 
+  const bool getApplyWhiteBalance() const
   {
-    if (getIntMetadata({"AliceVision:useWhiteBalance"}) == 0)
-    {
-      return false;
-    }
-    
-    return true;
+      if (getIntMetadata({ "AliceVision:useWhiteBalance" }) == 0)
+      {
+          return false;
+      }
+
+      return true;
+  }
+
+  const std::string& getColorProfileFileName() const
+  {
+      return getMetadata({ "AliceVision:colorProfileFileName" });
   }
 
   const bool hasMetadataDateTimeOriginal() const

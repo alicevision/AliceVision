@@ -39,6 +39,26 @@ enum class EImageFileType
 };
 
 /**
+ * @brief aggregate for multiple image reading options
+ */
+struct ImageReadOptions
+{  
+  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true, const std::string& colorProfile="", const oiio::ROI& roi = oiio::ROI()) :
+  workingColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance), colorProfileFileName(colorProfile), subROI(roi)
+  {
+  }
+
+  EImageColorSpace workingColorSpace;
+  bool applyWhiteBalance;
+  std::string colorProfileFileName;
+
+  //ROI for this image.
+  //If the image contains an roi, this is the roi INSIDE the roi.
+  oiio::ROI subROI;
+};
+
+
+/**
  * @brief get informations about each image file type
  * @return String
  */
