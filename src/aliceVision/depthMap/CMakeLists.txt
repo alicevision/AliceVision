@@ -4,6 +4,7 @@ set(depthMap_files_headers
   computeOnMultiGPUs.hpp
   depthMap.hpp
   depthMapUtils.hpp
+  DepthMapParams.hpp
   Refine.hpp
   RefineParams.hpp
   Sgm.hpp

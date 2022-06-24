@@ -17,10 +17,10 @@ struct RefineParams
   // user parameters
 
   int wsh = 3;
-  int maxTCams = 6;
   int nDepthsToRefine = 31;
   int nSamplesHalf = 150;
   int optimizationNbIters = 100;
+  int maxTCamsPerTile = 4;
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
