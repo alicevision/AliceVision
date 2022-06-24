@@ -628,6 +628,90 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
   return out;
 }
 
+std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams, const std::vector<int>& tCams, const ROI& roi) const
+{
+  auto plateauFunction = [](int a, int b, int c, int d, int x)
+  {
+    if(x > a && x <= b)
+      return (float(x - a) / float(b - a));
+    if(x > b && x <= c)
+      return 1.0f;
+    if(x > c && x <= d)
+      return 1.0f - (float(x - c) / float(d - c));
+    return 0.f;
+  };
+
+  std::vector<int> out;
+  std::map<int, float> tcScore;
+
+  for(std::size_t i = 0; i < tCams.size(); ++i)
+    tcScore[tCams[i]] = 0.0f;
+
+  const sfmData::SfMData& sfmData = getInputSfMData();
+
+  const IndexT viewId = getViewId(rc);
+  const sfmData::View& view = *(sfmData.getViews().at(viewId));
+  const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+  const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+
+  const ROI fullsizeRoi = upscaleROI(roi, getProcessDownscale()); // landmark observations are in the full-size image coordinate system
+
+  for(const auto& landmarkPair : sfmData.getLandmarks())
+  {
+    const auto& observations = landmarkPair.second.observations;
+
+    auto viewObsIt = observations.find(viewId);
+
+    // has landmark observation for the R camera
+    if(viewObsIt == observations.end())
+      continue;
+
+    // landmark R camera observation is in the image full-size ROI
+    if(!fullsizeRoi.contains(viewObsIt->second.x.x(), viewObsIt->second.x.y()))
+      continue;
+
+    for(const auto& observationPair : observations)
+    {
+      const IndexT otherViewId = observationPair.first;
+
+      // other view should not be the R camera
+      if(otherViewId == viewId)
+       continue;
+
+      const int tc = getIndexFromViewId(otherViewId);
+
+      // other view should be a T camera
+      if(tcScore.find(tc) == tcScore.end())
+        continue;
+
+      const sfmData::View& otherView = *(sfmData.getViews().at(otherViewId));
+      const geometry::Pose3 otherPose = sfmData.getPose(otherView).getTransform();
+      const camera::IntrinsicBase* otherIntrinsicPtr = sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
+
+      const double angle = camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+
+      tcScore[tc] += plateauFunction(1,10,50,150, angle);
+    }
+  }
+
+  std::vector<SortedId> ids;
+  ids.reserve(tcScore.size());
+
+  for(const auto& tcScorePair : tcScore)
+    ids.push_back(SortedId(tcScorePair.first, tcScorePair.second));
+
+  qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
+
+  // ensure the ideal number of target cameras is not superior to the actual number of cameras
+  const int maxTc = std::min(std::min(getNbCameras(), nbNearestCams), static_cast<int>(ids.size()));
+  out.reserve(maxTc);
+
+  for(int i = 0; i < maxTc; ++i)
+    out.push_back(ids[i].id);
+
+  return out;
+}
+
 StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName) const
 {
     StaticVector<Point2d>* minMaxDepths = loadArrayFromFile<Point2d>(minMaxDepthsFileName);
