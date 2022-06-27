@@ -276,7 +276,9 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
     accumulator_set<float, stats<tag::tail_quantile<right>>> accDistanceMax(tag::tail<right>::cache_size = cacheSize);
 
     const IndexT viewId = _mp.getViewId(_rc);
+
     const ROI fullsizeRoi = upscaleROI(_roi, _mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
+    const ROI selectionRoi = inflateROI(_roi, 2.f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
 
     OrientedPoint cameraPlane;
     cameraPlane.p = _mp.CArr[_rc];
@@ -300,8 +302,8 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
             {
                 const Vec2& obs2d = observationPair.second.x;
 
-                // if we compute depth list per tile keep only observation located inside the image full-size ROI
-                if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+                // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
+                if(!_sgmParams.chooseDepthListPerTile || selectionRoi.contains(obs2d.x(), obs2d.y()))
                 {
                     const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
                     accDistanceMin(distance);
