@@ -523,27 +523,26 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     rcplane.n = rcplane.n.normalize();
 
     // ROI center 
-    const ROI sgmRoi = downscaleROI(_roi, _sgmParams.scale * _sgmParams.stepXY);
-    const Point2d sgmRoiCenter((sgmRoi.x.begin + (sgmRoi.width() * 0.5)), sgmRoi.y.begin + (sgmRoi.height() * 0.5));
+    const Point2d roiCenter((_roi.x.begin + (_roi.width() * 0.5)), _roi.y.begin + (_roi.height() * 0.5));
 
     // principal point of the rc camera to the tc camera
-    const Point2d principalPoint(_mp.getWidth(_rc) * 0.5f, _mp.getHeight(_rc) * 0.5f);
+    const Point2d principalPoint(_mp.getWidth(_rc) * 0.5, _mp.getHeight(_rc) * 0.5);
     
     // reference pixel for the epipolar line
-    const Point2d rmid = (!_sgmParams.chooseDepthListPerTile) ? principalPoint : sgmRoiCenter;
+    const Point2d rMid = (!_sgmParams.chooseDepthListPerTile) ? principalPoint : roiCenter;
 
     // segment of epipolar line
     Point2d pFromTar, pToTar; 
 
-    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, _rc, tc, _mp);
+    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rMid, _rc, tc, _mp);
 
     int allDepths = static_cast<int>((pToTar - pFromTar).size());
     const int allDepthsFound = allDepths; // for debug log
 
-    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0f, (float)_sgmParams.scale);
+    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0, (double)_sgmParams.scale);
 
-    Point2d cg = Point2d(0.0f, 0.0f);
-    Point3d cg3 = Point3d(0.0f, 0.0f, 0.0f);
+    Point2d cg = Point2d(0.0, 0.0);
+    Point3d cg3 = Point3d(0.0, 0.0, 0.0);
     int ncg = 0;
 
     // navigate through all pixels of the epilolar segment
@@ -553,7 +552,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     {
         Point2d tpix = pFromTar + pixelVect * (float)i;
         Point3d p;
-        if(triangulateMatch(p, rmid, tpix, _rc, tc, _mp)) // triangulate principal point from rc with tpix
+        if(triangulateMatch(p, rMid, tpix, _rc, tc, _mp)) // triangulate principal point from rc with tpix
         {
             float depth = orientedPointPlaneDistance(
                 p, rcplane.p,
@@ -586,7 +585,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     float direction = 1.0f;
     {
         Point3d p;
-        if(!triangulateMatch(p, rmid, midpoint, _rc, tc, _mp))
+        if(!triangulateMatch(p, rMid, midpoint, _rc, tc, _mp))
         {
             StaticVector<float>* out = new StaticVector<float>();
             return out;
@@ -594,7 +593,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        if(!triangulateMatch(p, rmid, midpoint + pixelVect, _rc, tc, _mp))
+        if(!triangulateMatch(p, rMid, midpoint + pixelVect, _rc, tc, _mp))
         {
             StaticVector<float>* out = new StaticVector<float>();
             return out;
@@ -620,12 +619,12 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     {
         tpix = tpix + pixelVect * direction;
 
-        Point3d refvect = _mp.iCamArr[_rc] * rmid;
+        Point3d refvect = _mp.iCamArr[_rc] * rMid;
         Point3d tarvect = _mp.iCamArr[tc] * tpix;
         float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
-        ok = triangulateMatch(p, rmid, tpix, _rc, tc, _mp);
+        ok = triangulateMatch(p, rMid, tpix, _rc, tc, _mp);
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
         if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth > depthOld) &&
@@ -659,12 +658,12 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     // compute depths for all pixels from the middle point to the other side of the epipolar line
     while((out2->size() < _sgmParams.rcTcDepthsHalfLimit) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
     {
-        const Point3d refvect = _mp.iCamArr[_rc] * rmid;
+        const Point3d refvect = _mp.iCamArr[_rc] * rMid;
         const Point3d tarvect = _mp.iCamArr[tc] * tpix;
         const float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
-        ok = triangulateMatch(p, rmid, tpix, _rc, tc, _mp);
+        ok = triangulateMatch(p, rMid, tpix, _rc, tc, _mp);
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
         if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth < depthOld) &&
