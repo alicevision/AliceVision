@@ -160,6 +160,19 @@ CUDA_HOST inline Range upscaleRange(const Range& range, float upscale)
 }
 
 /**
+ * @brief Inflate the given Range with the given factor
+ * @param[in] range the given Range
+ * @param[in] factor the inflate factor to apply
+ * @return the inflated Range
+ */
+CUDA_HOST inline Range inflateRange(const Range& range, float factor)
+{
+    const float midRange = range.begin + (range.size() * 0.5f);
+    const float inflateSize = range.size() * factor * 0.5f;
+    return Range(CUDA_FLOOR(midRange - inflateSize), CUDA_CEIL(midRange + inflateSize));
+}
+
+/**
  * @brief Downscale the given ROI with the given downscale factor
  * @param[in] roi the given ROI
  * @param[in] downscale the downscale factor to apply
@@ -181,6 +194,18 @@ CUDA_HOST inline ROI upscaleROI(const ROI& roi, float upscale)
 {
     return ROI(upscaleRange(roi.x, upscale),
                upscaleRange(roi.y, upscale));
+}
+
+/**
+ * @brief Inflate the given ROI with the given factor
+ * @param[in] roi the given ROI
+ * @param[in] factor the inflate factor to apply
+ * @return the Inflated ROI
+ */
+CUDA_HOST inline ROI inflateROI(const ROI& roi, float factor)
+{
+    return ROI(inflateRange(roi.x, factor),
+               inflateRange(roi.y, factor));
 }
 
 } // namespace aliceVision
