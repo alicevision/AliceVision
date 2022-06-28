@@ -41,14 +41,6 @@ public:
           return false;
       const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
 
-      if(_pUndistortion != nullptr && other._pUndistortion != nullptr)
-          return (*_pUndistortion) == (*other._pUndistortion);
-      
-      if (!(_pUndistortion == other._pUndistortion))
-      {
-        return false;
-      }
-
       if(_pDistortion != nullptr && other._pDistortion != nullptr)
           return (*_pDistortion) == (*other._pDistortion);
       return _pDistortion == other._pDistortion;
@@ -59,21 +51,10 @@ public:
       _pDistortion = object;
   }
 
-   void setUndistortionObject(std::shared_ptr<Undistortion> object)
-  {
-      _pUndistortion = object;
-  }
-
   bool hasDistortion() const override
   {
     return _pDistortion != nullptr;
   }
-
-  bool hasUndistortion() const
-  {
-    return _pUndistortion != nullptr;
-  }
-
 
   Vec2 addDistortion(const Vec2& p) const override
   {
@@ -231,16 +212,10 @@ public:
       return _pDistortion;
   }
 
-  std::shared_ptr<Undistortion> getUndistortion() const
-  {
-      return _pUndistortion;
-  }
-
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
   std::shared_ptr<Distortion> _pDistortion;
-  std::shared_ptr<Undistortion> _pUndistortion;
 };
 
 } // namespace camera

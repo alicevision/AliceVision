@@ -13,6 +13,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/image/io.hpp>
 
@@ -27,6 +28,7 @@ void UndistortImage(
   const image::Image<T>& imageIn,
   const camera::IntrinsicBase * intrinsicSource,
   const camera::IntrinsicBase * intrinsicOutput,
+  const camera::Undistortion * undistortionOutput,
   image::Image<T>& image_ud,
   T fillcolor,
   const oiio::ROI & roi = oiio::ROI())
@@ -62,7 +64,7 @@ void UndistortImage(
             const Vec2 undisto_pix(x + xOffset, y + yOffset);
 
             // compute coordinates with distortion
-            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(intrinsicOutput->ima2cam(undisto_pix)));
+            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(intrinsicOutput->ima2cam((undistortionOutput)?undistortionOutput->inverse(undisto_pix):undisto_pix)));
 
             // pick pixel if it is in the image domain
             if (imageIn.Contains(disto_pix(1), disto_pix(0)))

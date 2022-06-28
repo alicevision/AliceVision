@@ -109,6 +109,7 @@ public:
     REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS = 16,          //< refine the optical offset from the center
     REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA = 32,  //< refine the optical offset only if we have a minimum number of cameras
     REFINE_INTRINSICS_DISTORTION = 64,                    //< refine the distortion parameters
+    REFINE_INTRINSICS_UNDISTORTION = 128,                    //< refine the undistortion parameters
     /// Refine all intrinsics parameters
     REFINE_INTRINSICS_ALL = REFINE_INTRINSICS_FOCAL | REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA | REFINE_INTRINSICS_DISTORTION,
     /// Refine all parameters

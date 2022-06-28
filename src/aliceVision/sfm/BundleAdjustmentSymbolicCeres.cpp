@@ -26,9 +26,9 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-class IntrinsicsParameterization : public ceres::LocalParameterization {
+class IntrinsicsSymbolicParameterization : public ceres::LocalParameterization {
  public:
-  explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+  explicit IntrinsicsSymbolicParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
   : _globalSize(parametersSize),
     _focalRatio(focalRatio),
     _lockFocal(lockFocal),
@@ -72,10 +72,10 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     }
   }
 
-  virtual ~IntrinsicsParameterization() = default;
+  virtual ~IntrinsicsSymbolicParameterization() = default;
 
 
-  bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
+  virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
   {
     for (int i = 0; i < _globalSize; i++)
     {
@@ -133,7 +133,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  bool ComputeJacobian(const double* x, double* jacobian) const override
+  virtual bool ComputeJacobian(const double* x, double* jacobian) const override
   {    
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
 
@@ -214,7 +214,7 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
 
 class CostProjection : public ceres::CostFunction {
 public:
-  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig)
+  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, const std::shared_ptr<camera::Undistortion> & undistortion, bool withRig) : _measured(measured), _intrinsics(intrinsics), _undistortion(undistortion), _withRig(withRig)
   {
     set_num_residuals(2);
 
@@ -222,6 +222,12 @@ public:
     mutable_parameter_block_sizes()->push_back(16);
     mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
     mutable_parameter_block_sizes()->push_back(3);    
+
+    if (undistortion)
+    {
+        mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(undistortion->getParameters().size());
+    }
   }
 
   bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override
@@ -243,16 +249,37 @@ public:
     }
     _intrinsics->updateFromParams(params);
 
+    if (_undistortion)
+    {
+        const double* parameter_undistortionOffset = parameters[4];
+        const double* parameter_undistortionParams = parameters[5];
+
+        _undistortion->setOffset({ parameter_undistortionOffset[0], parameter_undistortionOffset[1] });
+
+        size_t params_size = _undistortion->getParameters().size();
+        std::vector<double> paramsUndist;
+        for (size_t param_id = 0; param_id < params_size; param_id++) {
+            paramsUndist.push_back(parameter_undistortionParams[param_id]);
+        }
+
+        _undistortion->setParameters(paramsUndist);
+    }
+
     const SE3::Matrix T = cTr * rTo;
     const geometry::Pose3 T_pose3(T.block<3, 4>(0, 0));
 
     const Vec4 pth = pt.homogeneous();
-
     const Vec2 pt_est = _intrinsics->project(T_pose3, pth, true);
     const double scale = (_measured.scale > 1e-12) ? _measured.scale : 1.0;
 
-    residuals[0] = (pt_est(0) - _measured.x(0)) / scale;
-    residuals[1] = (pt_est(1) - _measured.x(1)) / scale;
+    Vec2 measured_undistorted = _measured.x;
+    if (_undistortion)
+    {
+        measured_undistorted = _undistortion->undistort(_measured.x);
+    }
+
+    residuals[0] = (pt_est(0) - measured_undistorted(0)) / scale;
+    residuals[1] = (pt_est(1) - measured_undistorted(1)) / scale;
 
     if (jacobians == nullptr) {
       return true;
@@ -285,94 +312,32 @@ public:
       J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
     }
 
+    if (_undistortion)
+    {
+        size_t undistortion_params_size = _undistortion->getParameters().size();
+
+        if (jacobians[4] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[4]);
+
+            J = -d_res_d_pt_est * _undistortion->getDerivativeUndistortWrtOffset(_measured.x);
+            J.fill(0);
+        }
+
+        if (jacobians[5] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[5], 2, undistortion_params_size);
+
+            J = -d_res_d_pt_est * _undistortion->getDerivativeUndistortWrtParameters(_measured.x);
+        }
+    }
+
     return true;
   }
 
 private:
   const sfmData::Observation & _measured;
   const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
+  std::shared_ptr<camera::Undistortion> _undistortion;
   bool _withRig;
-};
-
-class CostIntrinsics : public ceres::CostFunction {
-public:
-    CostIntrinsics(const std::shared_ptr<camera::IntrinsicBase>& intrinsics_1, const std::shared_ptr<camera::IntrinsicBase>& intrinsics_2) : _intrinsics_1(intrinsics_1), _intrinsics_2(intrinsics_2)
-    {
-        set_num_residuals(1);
-
-        mutable_parameter_block_sizes()->push_back(intrinsics_1->getParams().size());
-        mutable_parameter_block_sizes()->push_back(intrinsics_2->getParams().size());
-    }
-
-    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
-    {
-        const double* parameter_intrinsics_1 = parameters[0];
-        const double* parameter_intrinsics_2 = parameters[1];
-
-
-        /*Update intrinsics object with estimated parameters*/
-        {
-            size_t params_size = _intrinsics_1->getParams().size();
-            std::vector<double> params;
-            for (size_t param_id = 0; param_id < params_size; param_id++) {
-                params.push_back(parameter_intrinsics_1[param_id]);
-            }
-            _intrinsics_1->updateFromParams(params);
-        }
-        {
-            size_t params_size = _intrinsics_2->getParams().size();
-            std::vector<double> params;
-            for (size_t param_id = 0; param_id < params_size; param_id++) {
-                params.push_back(parameter_intrinsics_2[param_id]);
-            }
-            _intrinsics_2->updateFromParams(params);
-        }
-
-        size_t params_size = _intrinsics_1->getParams().size();
-        std::shared_ptr<IntrinsicsScaleOffsetDisto> camdist_1 = std::dynamic_pointer_cast<IntrinsicsScaleOffsetDisto>(_intrinsics_1);
-        std::shared_ptr<IntrinsicsScaleOffsetDisto> camdist_2 = std::dynamic_pointer_cast<IntrinsicsScaleOffsetDisto>(_intrinsics_2);
-        
-        std::vector<double> d1 = camdist_1->getDistortionParams();
-        std::vector<double> d2 = camdist_2->getDistortionParams();
-
-        double norm = 0.0;
-        for (int i = 0; i < d1.size(); i++)
-        {
-            norm += (d1[i] - d2[i]) * (d1[i] - d2[i]);
-        }
-
-        residuals[0] = norm * 10000.0;
-
-        if (jacobians == nullptr) {
-            return true;
-        }       
-
-        if (jacobians[0] != nullptr) {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 1, params_size);
-
-            J.fill(0);
-            for (int i = 0; i < d1.size(); i++)
-            {
-                J(0, i + 4) = 2.0 * (d1[i] - d2[i]) * 10000.0;
-            }
-        }
-
-        if (jacobians[1] != nullptr) {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 1, params_size);
-
-            J.fill(0);
-            for (int i = 0; i < d1.size(); i++)
-            {
-                J(0, i + 4) = -2.0 * (d1[i] - d2[i]) * 10000.0;
-            }
-        }
-
-        return true;
-    }
-
-private:
-    const std::shared_ptr<camera::IntrinsicBase> _intrinsics_1;
-    const std::shared_ptr<camera::IntrinsicBase> _intrinsics_2;
 };
 
 class CostDistance : public ceres::CostFunction {
@@ -632,8 +597,8 @@ void BundleAdjustmentSymbolicCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
-  solverOptions.num_threads = _ceresOptions.nbThreads;
-  solverOptions.max_num_iterations = 10000;
+  solverOptions.num_threads = 1;// _ceresOptions.nbThreads;
+  solverOptions.max_num_iterations = 1000;
 
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
@@ -699,6 +664,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
   const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
   const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
   const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
+  const bool refineIntrinsicsUndistortion = refineOptions & REFINE_INTRINSICS_UNDISTORTION;
   const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
   const bool fixFocalRatio = true;
 
@@ -823,11 +789,40 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       lockDistortion = true;
     }
 
-    IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
-    problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
+    IntrinsicsSymbolicParameterization* subsetParameterization = new IntrinsicsSymbolicParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
+    problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);    
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }
+}
+
+void BundleAdjustmentSymbolicCeres::addUndistortionsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)
+{
+    const bool refineIntrinsicsUndistortion = refineOptions & REFINE_INTRINSICS_UNDISTORTION;
+
+    for (auto p : sfmData.getUndistortions())
+    {
+        std::shared_ptr<camera::Undistortion> undistortionObject = p.second;
+
+        _undistortionOffsetBlocks[p.first] = undistortionObject->getOffset();
+        _undistortionParametersBlocks[p.first] = undistortionObject->getParameters();
+
+
+        Vec2& undistOffset = _undistortionOffsetBlocks[p.first];
+        std::vector<double>& undistParameters = _undistortionParametersBlocks[p.first];
+
+        problem.AddParameterBlock(undistOffset.data(), 2);
+        problem.AddParameterBlock(undistParameters.data(), undistParameters.size());
+
+        if (!refineIntrinsicsUndistortion)
+        {
+            problem.SetParameterBlockConstant(undistOffset.data());
+            problem.SetParameterBlockConstant(undistParameters.data());
+        }
+
+        _allParametersBlocks.push_back(undistOffset.data());
+        _allParametersBlocks.push_back(undistParameters.data());
+    }
 }
 
 void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
@@ -870,6 +865,13 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
       const sfmData::View& view = sfmData.getView(observationPair.first);
       const sfmData::Observation& observation = observationPair.second;
       const std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+      
+      std::shared_ptr<camera::Undistortion> undistortion;
+      IndexT undistortionId = view.getUndistortionId();
+      if (undistortionId != UndefinedIndexT)
+      {
+          undistortion = sfmData.getUndistortions().at(undistortionId);
+      }
 
       // each residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
@@ -900,8 +902,26 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
         _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
       }
 
-      ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, withRig);
-      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr, rigBlockPtr, intrinsicBlockPtr, landmarkBlockPtr);
+      ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, undistortion, withRig);
+
+      std::vector<double*> params;
+      params.push_back(poseBlockPtr);
+      params.push_back(rigBlockPtr);
+      params.push_back(intrinsicBlockPtr);
+      params.push_back(landmarkBlockPtr);
+
+
+      if (_undistortionParametersBlocks.find(view.getUndistortionId()) != _undistortionParametersBlocks.end())
+      {
+          double* undistortionParameterBlockPtr = _undistortionParametersBlocks.at(view.getUndistortionId()).data();
+          double* undistortionOffsetBlockPtr = _undistortionOffsetBlocks.at(view.getUndistortionId()).data();
+          params.push_back(undistortionOffsetBlockPtr);
+          params.push_back(undistortionParameterBlockPtr);
+      }
+      
+
+
+      problem.AddResidualBlock(costFunction, lossFunction, params);
 
       if(!refineStructure || getLandmarkState(landmarkId) == EParameterState::CONSTANT)
       {
@@ -935,6 +955,9 @@ void BundleAdjustmentSymbolicCeres::createProblem(const sfmData::SfMData& sfmDat
   // add SfM intrinsics to the Ceres problem
   addIntrinsicsToProblem(sfmData, refineOptions, problem);
 
+  // add SfM undistortions to the Ceres problem
+  addUndistortionsToProblem(sfmData, refineOptions, problem);
+
   // add SfM landmarks to the Ceres problem
   addLandmarksToProblem(sfmData, refineOptions, problem);
 }
@@ -943,8 +966,9 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
 {
   const bool refinePoses = (refineOptions & REFINE_ROTATION) || (refineOptions & REFINE_TRANSLATION);
   const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
-  const bool refineIntrinsics = (refineOptions & REFINE_INTRINSICS_FOCAL) || (refineOptions & REFINE_INTRINSICS_DISTORTION) || refineIntrinsicsOpticalCenter;
+  const bool refineIntrinsics = (refineOptions & REFINE_INTRINSICS_FOCAL) || (refineOptions & REFINE_INTRINSICS_DISTORTION) || refineIntrinsicsOpticalCenter || (refineOptions & REFINE_INTRINSICS_UNDISTORTION);
   const bool refineStructure = refineOptions & REFINE_STRUCTURE;
+  const bool refineUndistortion = refineOptions & REFINE_INTRINSICS_UNDISTORTION;
 
   // update camera poses with refined data
   if(refinePoses)
@@ -981,17 +1005,44 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
   }
 
   // update camera intrinsics with refined data
-  if(refineIntrinsics)
+  if (refineIntrinsics)
   {
-    for(const auto& intrinsicBlockPair: _intrinsicsBlocks)
+      for (const auto& intrinsicBlockPair : _intrinsicsBlocks)
+      {
+          const IndexT intrinsicId = intrinsicBlockPair.first;
+
+          // do not update a camera pose set as Ignored or Constant in the Local strategy
+          if (getIntrinsicState(intrinsicId) != EParameterState::REFINED)
+          {
+              continue;
+          }
+
+          sfmData.getIntrinsics().at(intrinsicId)->updateFromParams(intrinsicBlockPair.second);
+      }
+  }
+
+  if (refineUndistortion)
+  {
+    for (const auto& undistoBlockPair : _undistortionOffsetBlocks)
     {
-      const IndexT intrinsicId = intrinsicBlockPair.first;
+        const IndexT undistortionId = undistoBlockPair.first;
 
-      // do not update a camera pose set as Ignored or Constant in the Local strategy
-      if(getIntrinsicState(intrinsicId) != EParameterState::REFINED)
-        continue;
+        std::shared_ptr<camera::Undistortion> undistortionObject = sfmData.getUndistortions().at(undistortionId);
+        if (undistortionObject)
+        {
+            undistortionObject->setOffset(undistoBlockPair.second);
+        }
+    }
 
-      sfmData.getIntrinsics().at(intrinsicId)->updateFromParams(intrinsicBlockPair.second);
+    for (const auto& undistoBlockPair : _undistortionParametersBlocks)
+    {
+        const IndexT undistortionId = undistoBlockPair.first;
+
+        std::shared_ptr<camera::Undistortion> undistortionObject = sfmData.getUndistortions().at(undistortionId);
+        if (undistortionObject)
+        {
+            undistortionObject->setParameters(undistoBlockPair.second);
+        }
     }
   }
 

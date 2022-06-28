@@ -69,7 +69,6 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     sfmData.getLandmarks() = sfmData::Landmarks();
     sfmData.getPoses() = sfmData::Poses();
 
-
     //Sort views by focus distance
     std::map<int, std::shared_ptr<sfmData::View>> sorted_views;
     for (auto v : sfmData.getViews())
@@ -101,11 +100,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         }
     }
 
-    //double distances[] = { 44.3, 72.0, 96.0, 96.0, 96.0, 96.0 };
-    //double distances[] = { 44.3, 72.0, 72.0, 72.0, 72.0 };
-    //double distances[] = { -1, -1, -1, -1, -1 };
-    //double distances[] = { 42.1, 93.3, 144.0, 144.0, 144.0 };
-    double distances[] = { distance };
+    double distances[] = { -1, 72.0, 72.0, 72.0, 72.0 };
 
     std::shared_ptr<camera::IntrinsicBase> refpinhole;
 
@@ -114,11 +109,8 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     {
         std::shared_ptr<sfmData::View> view = p_views.second;
         const IndexT viewId = view->getViewId();
-        //const double localSquareSize = 0.00635;
         const double localSquareSize = 0.25;
         const calibration::CheckerDetector& detector = boardsAllImages[viewId];
-
-        std::cout << view->getImagePath() << std::endl;
 
         std::vector<calibration::CheckerDetector::CheckerBoard> boards = detector.getBoards();
         if (boards.size() != 1)
@@ -130,28 +122,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         const calibration::CheckerDetector::CheckerBoard& board = boards[0];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
 
-        Vec2i center = { board.cols() / 2, board.rows() / 2 };
-        std::cout << "*********" << std::endl;
-        for (int i = 0; i < board.rows(); i++)
-        {
-            IndexT cid = board(i, int(center.x()));
-            if (cid != UndefinedIndexT)
-            {
-                std::cout << corners[cid].center.transpose() << std::endl;
-            }
-        }
-
-        std::cout << "*********" << std::endl;
-        for (int i = 0; i < board.cols(); i++)
-        {
-            IndexT cid = board(int(center.y()), i);
-            if (cid != UndefinedIndexT)
-            {
-                std::cout << corners[cid].center.transpose() << std::endl;
-            }
-        }
-
-        
+     
 
         //Get intrinsics
         IndexT intrinsicId = view->getIntrinsicId();
@@ -169,8 +140,14 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             return false;
         }
 
-        refpinhole = pinhole;
+        IndexT undistortionId = view->getUndistortionId();
+        std::shared_ptr<camera::Undistortion> undistObject;
+        if (undistortionId != UndefinedIndexT)
+        {
+            undistObject = sfmData.getUndistortions()[undistortionId];
+        }
 
+        refpinhole = pinhole;
         //if (useSimplePinhole)
         {
             pinhole->setOffset({ 0, 0 });
@@ -205,9 +182,13 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 //Undistort image prior to compute everything
                 Eigen::Vector2d curpt;
                 curpt = corners[cid].center;
-                curpt = pinhole->get_ud_pixel(curpt);
 
-                Eigen::Vector2d campt = pinhole->removeDistortion(pinhole->ima2cam(corners[cid].center));
+                if (undistObject)
+                {
+                    curpt = undistObject->undistort(curpt);
+                }
+
+                Eigen::Vector2d campt = pinhole->ima2cam(curpt);
                 const double scale = campt.norm() * campt.norm();
 
 
@@ -226,7 +207,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 points.push_back(curpt);
             }
         }
-
+        
         //Create matrices for ransac
         Eigen::MatrixXd Mref(3, refpts.size());
         for (int idx = 0; idx < refpts.size(); idx++)
@@ -282,21 +263,21 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
     }
 
     //Compute non linear refinement
-    sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
-    options.summary = true;
-    sfm::BundleAdjustmentSymbolicCeres ba(options);
-    sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-        sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-        /*sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |*/
-        sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
-
-    //ba.setDistance(distance);
-    if (!ba.adjust(sfmData, boptions))
     {
-        ALICEVISION_LOG_ERROR("Failed to calibrate");
-        return false;
-    }
+        sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
+        options.summary = true;
+        sfm::BundleAdjustmentSymbolicCeres ba(options);
+        sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_UNDISTORTION;
 
+        if (!ba.adjust(sfmData, boptions))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return false;
+        }
+    }
 
     std::map<IndexT, std::pair<double, int>> means;
     for (auto& v : sfmData.getViews())
@@ -313,14 +294,26 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             std::shared_ptr<sfmData::View> view = sfmData.getViews()[viewId];
             IndexT intrinsicId = view->getIntrinsicId();
             IndexT poseId = view->getPoseId();
+            IndexT undistortionId = view->getUndistortionId();
 
             std::shared_ptr<camera::IntrinsicBase> camera = sfmData.getIntrinsics()[intrinsicId];
             sfmData::CameraPose pose = sfmData.getPoses()[poseId];
 
-            Vec2 pt = camera->project(pose.getTransform(), l.second.X.homogeneous(), true);
-            double dist = (o.second.x - pt).norm();
+            Vec2 measure = o.second.x;
+            
+            if (undistortionId != UndefinedIndexT)
+            {
+                std::shared_ptr<camera::Undistortion> undistortionObject = sfmData.getUndistortions()[undistortionId];
+                if (undistortionObject)
+                {
+                    measure = undistortionObject->undistort(o.second.x);
+                }
+            }
 
-            if ((o.second.x.x() < 200 || o.second.x.x() > (camera->w() - 200)) || (o.second.x.y() < 400 || o.second.x.y() > (camera->h() - 400)))
+            Vec2 pt = camera->project(pose.getTransform(), l.second.X.homogeneous(), true);
+            double dist = (measure - pt).norm();
+
+            //if ((o.second.x.x() < 200 || o.second.x.x() > (camera->w() - 200)) || (o.second.x.y() < 400 || o.second.x.y() > (camera->h() - 400)))
             {
                 means[o.first].first += dist;
                 means[o.first].second++;
@@ -334,15 +327,8 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         std::cout << v.second->getImagePath() << std::endl;
         std::cout <<  means[v.first].first / double(means[v.first].second) << " (" << means[v.first].second << ") " << std::endl;
     }
-
-
     
     std::cout << refpinhole->w() << " " << refpinhole->h() << std::endl;
-
-    std::cout << refpinhole->get_ud_pixel(Vec2(0, 0)) << std::endl;
-    std::cout << refpinhole->get_ud_pixel(Vec2(refpinhole->w(), 0)) << std::endl;
-    std::cout << refpinhole->get_ud_pixel(Vec2(refpinhole->w(), refpinhole->h())) << std::endl;
-    std::cout << refpinhole->get_ud_pixel(Vec2(0, refpinhole->h())) << std::endl;
 
     return true;
 }
