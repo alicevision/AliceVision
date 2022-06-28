@@ -229,6 +229,21 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // check if the downscaled tile parameters are correct
+    {
+      const float downscaledTileWidth = tileParams.width / float(downscale);
+      const float downscaledTileHeight = tileParams.height / float(downscale);
+      const float downscaledTilePadding = tileParams.padding / float(downscale);
+
+      if((downscaledTileWidth   - int(downscaledTileWidth))   > 0 ||
+         (downscaledTileHeight  - int(downscaledTileHeight))  > 0 ||
+         (downscaledTilePadding - int(downscaledTilePadding)) > 0)
+      {
+        ALICEVISION_LOG_ERROR("Tile dimensions (width/height/padding) must be able to be downscaled to integer values.");
+        return EXIT_FAILURE;
+      }
+    }
+
     // read the input SfM scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
