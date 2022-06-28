@@ -30,11 +30,8 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
 {
     // get tile maximum dimensions
     const int downscale = _refineParams.scale * _refineParams.stepXY;
-    int maxTileWidth;
-    int maxTileHeight;
-    mvsUtils::getTileDimensions(tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxTileWidth, maxTileHeight);
-    maxTileWidth  = std::ceil(maxTileWidth  / float(downscale));
-    maxTileHeight = std::ceil(maxTileHeight / float(downscale));
+    const int maxTileWidth  = std::ceil(tileParams.width  / float(downscale));
+    const int maxTileHeight = std::ceil(tileParams.height / float(downscale));
 
     // compute depth/sim map maximum dimensions
     const CudaSize<2> depthSimMapDim(maxTileWidth, maxTileHeight);
@@ -236,8 +233,6 @@ void Refine::optimizeDepthSimMap(int rc, const ROI& roi)
 
 void Refine::exportVolumeInformation(int rc, const std::string& name, const ROI& roi) const
 {
-    const IndexT viewId = _mp.getViewId(rc);
-
     // get tile begin indexes (default no tile)
     int tileBeginX = -1;
     int tileBeginY = -1;

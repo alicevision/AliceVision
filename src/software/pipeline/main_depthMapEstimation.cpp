@@ -234,6 +234,21 @@ int aliceVision_main(int argc, char* argv[])
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
 
+    // set undefined tile dimensions
+    tileParams.width  = (tileParams.width  > 0) ? tileParams.width  : ((tileParams.height > 0) ? tileParams.height : mp.getMaxImageWidth());
+    tileParams.height = (tileParams.height > 0) ? tileParams.height : ((tileParams.width  > 0) ? tileParams.width  : mp.getMaxImageHeight());
+
+    // check tile passing
+    if(tileParams.padding >= std::min(tileParams.width, tileParams.height))
+    {
+      ALICEVISION_LOG_ERROR("Unable to compute tile dimensions, tile padding size is too large.");
+      return EXIT_FAILURE;
+    }
+
+    // check if tile size > max image size
+    if(tileParams.width > mp.getMaxImageWidth() || tileParams.height > mp.getMaxImageHeight())
+      ALICEVISION_LOG_WARNING("Tile size "  << tileParams.width << "x" << tileParams.height << " is larger than " << mp.getMaxImageWidth() << "x" << mp.getMaxImageHeight() <<  ", the maximum image size.");
+
     // set params in bpt
 
     // Tile Parameters

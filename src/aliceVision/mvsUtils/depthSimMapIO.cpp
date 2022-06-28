@@ -206,7 +206,7 @@ void readMapFromTiles(int rc,
     getTileParamsFromMetadata(mapFirstTilePath, tileParams);
 
     std::vector<ROI> tileList;
-    getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
+    getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
 
     for(const ROI& roi : tileList)
     {
@@ -435,7 +435,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
         getTileParamsFromMetadata(depthMapFirstTilePath, tileParams);
 
         std::vector<ROI> tileList;
-        getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
+        getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
 
         for(const ROI& roi : tileList)
         {
