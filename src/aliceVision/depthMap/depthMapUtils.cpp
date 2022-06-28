@@ -9,7 +9,13 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/depthSimMapIO.hpp>
+
+#include <assimp/Importer.hpp>
+#include <assimp/Exporter.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 namespace aliceVision {
 namespace depthMap {
@@ -137,6 +143,119 @@ void mergeDepthSimMapTiles(int rc,
 
     mvsUtils::readDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix);  // read and merge tiles
     mvsUtils::writeDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix); // write the merged depth/sim maps
+}
+
+void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp, const std::vector<ROI>& tileRoiList)
+{
+  const std::string filepath = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::tilePattern, 1);
+
+  const int nbRoiCornerVertices = 6;                 // 6 vertices per ROI corner
+  const int nbRoiCornerFaces = 4;                    // 4 faces per ROI corner
+  const int nbRoiVertices = nbRoiCornerVertices * 4; // 24 vertices per ROI
+  const int nbRoiFaces = nbRoiCornerFaces *4;        // 16 faces per ROI
+
+  std::vector<Point3d> vertices(nbRoiVertices * tileRoiList.size());
+  std::vector<std::tuple<int,int,int>> faces(nbRoiFaces * tileRoiList.size());
+
+  const double cornerPixSize = tileRoiList.front().x.size() / 4;  // corner bevel size in image pixel
+  const double firstDepth = 0.0;                                  // corner mesh first depth
+  const double lastDepth = 100.0;                                 // corner mesh last depth
+
+  // 2 points offset from corner (to draw a bevel)
+  const std::vector<std::pair<Point2d, Point2d>> roiCornerOffsets = {
+    {{ cornerPixSize, 0.0},{0.0,  cornerPixSize}},  // corner (roi.x.begin, roi.y.begin)
+    {{ cornerPixSize, 0.0},{0.0, -cornerPixSize}},  // corner (roi.x.begin, roi.y.end  )
+    {{-cornerPixSize, 0.0},{0.0,  cornerPixSize}},  // corner (roi.x.end,   roi.y.begin)
+    {{-cornerPixSize, 0.0},{0.0, -cornerPixSize}}   // corner (roi.x.end,   roi.y.end  )
+  };
+
+  // build vertices and faces for each ROI
+  for(std::size_t ri = 0; ri < tileRoiList.size(); ++ri)
+  {
+      const ROI& roi = tileRoiList.at(ri);
+
+      const std::vector<Point2d> roiCorners = {
+        {double(roi.x.begin), double(roi.y.begin)},
+        {double(roi.x.begin), double(roi.y.end)  },
+        {double(roi.x.end),   double(roi.y.begin)},
+        {double(roi.x.end),   double(roi.y.end)  }
+      };
+
+      // build vertices and faces for each ROI corner
+      for(std::size_t ci = 0; ci < roiCorners.size(); ++ci)
+      {
+        const std::size_t vStartIdx = ri * nbRoiVertices + ci * nbRoiCornerVertices;
+        const std::size_t fStartIdx = ri * nbRoiFaces + ci * nbRoiCornerFaces;
+
+        const auto& corner = roiCorners.at(ci); // corner 2d point
+        const auto& cornerOffsets = roiCornerOffsets.at(ci);
+
+        const Point2d cornerX = corner + cornerOffsets.first;  // corner 2d point X offsetted
+        const Point2d cornerY = corner + cornerOffsets.second; // corner 2d point Y offsetted
+
+        vertices[vStartIdx    ] = mp.CArr[rc] + (mp.iCamArr[rc] * corner ).normalize() * firstDepth;
+        vertices[vStartIdx + 1] = mp.CArr[rc] + (mp.iCamArr[rc] * corner ).normalize() * lastDepth;
+        vertices[vStartIdx + 2] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerX).normalize() * firstDepth;
+        vertices[vStartIdx + 3] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerX).normalize() * lastDepth;
+        vertices[vStartIdx + 4] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerY).normalize() * firstDepth;
+        vertices[vStartIdx + 5] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerY).normalize() * lastDepth;
+
+        faces[fStartIdx    ] = {vStartIdx    , vStartIdx + 1, vStartIdx + 2};
+        faces[fStartIdx + 1] = {vStartIdx + 1, vStartIdx + 2, vStartIdx + 3};
+        faces[fStartIdx + 2] = {vStartIdx    , vStartIdx + 1, vStartIdx + 4};
+        faces[fStartIdx + 3] = {vStartIdx + 1, vStartIdx + 4, vStartIdx + 5};
+      }
+  }
+
+  aiScene scene;
+
+  scene.mRootNode = new aiNode;
+
+  scene.mMeshes = new aiMesh*[1];
+  scene.mNumMeshes = 1;
+  scene.mRootNode->mMeshes = new unsigned int[1];
+  scene.mRootNode->mNumMeshes = 1;
+
+  scene.mMaterials = new aiMaterial*[1];
+  scene.mNumMaterials = 1;
+  scene.mMaterials[0] = new aiMaterial;
+
+  scene.mRootNode->mMeshes[0] = 0;
+  scene.mMeshes[0] = new aiMesh;
+  aiMesh* aimesh = scene.mMeshes[0];
+  aimesh->mMaterialIndex = 0;
+
+  aimesh->mNumVertices = vertices.size();
+  aimesh->mVertices = new aiVector3D[vertices.size()];
+
+  for(std::size_t i = 0; i < vertices.size(); ++i)
+  {
+      const auto& vertex = vertices[i];
+      aimesh->mVertices[i].x = vertex.x;
+      aimesh->mVertices[i].y = vertex.y;
+      aimesh->mVertices[i].z = vertex.z;
+  }
+
+  aimesh->mNumFaces = faces.size();
+  aimesh->mFaces = new aiFace[faces.size()];
+
+  for(std::size_t i = 0; i < faces.size(); ++i)
+  {
+      const auto& face = faces[i];
+      aimesh->mFaces[i].mNumIndices = 3;
+      aimesh->mFaces[i].mIndices = new unsigned int[3];
+      aimesh->mFaces[i].mIndices[0] = std::get<0>(face);
+      aimesh->mFaces[i].mIndices[1] = std::get<1>(face);
+      aimesh->mFaces[i].mIndices[2] = std::get<2>(face);
+  }
+
+  const std::string formatId = "objnomtl";
+  const unsigned int pPreprocessing = 0u;
+
+  Assimp::Exporter exporter;
+  exporter.Export(&scene, formatId, filepath, pPreprocessing);
+
+  ALICEVISION_LOG_INFO("Save debug tiles pattern obj (rc: " << rc << ", view id: " << mp.getViewId(rc) << ") done.");
 }
 
 } // namespace depthMap

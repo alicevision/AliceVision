@@ -290,6 +290,13 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
           ext = "csv";
           break;
       }
+      case EFileType::tilePattern:
+      {
+          folder = mp.getDepthMapsFolder();
+          suffix = "_tilePattern";
+          ext = "obj";
+          break;
+      }
   }
   if(scale > 1)
   {

@@ -266,6 +266,9 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             t.roi = roi;
             tiles.push_back(t);
         }
+
+        if(depthMapParams.sgmParams.exportIntermediateResults || depthMapParams.refineParams.exportIntermediateResults)
+            exportDepthSimMapTilePatternObj(rc, mp, tileRoiList);
     }
 
     // allocate Sgm and Refine per stream in device memory
