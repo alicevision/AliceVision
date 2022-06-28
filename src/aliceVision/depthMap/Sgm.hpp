@@ -45,6 +45,7 @@ public:
     // default destructor
     ~Sgm() = default;
 
+    // final depth/similarity map getter
     inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthSimMap() const { return _depthSimMap_dmp; }
 
     /**
@@ -52,6 +53,11 @@ public:
      * @return device memory consumpyion (in MB)
      */
     double getDeviceMemoryConsumption() const;
+
+    /**
+     * @brief Get unpadded memory consumpyion in device memory.
+     * @return unpadded device memory consumpyion (in MB)
+     */
     double getDeviceMemoryConsumptionUnpadded() const;
 
     /**
