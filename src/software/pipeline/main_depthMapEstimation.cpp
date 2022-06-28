@@ -213,6 +213,15 @@ int aliceVision_main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
+    // check min/max view angle
+    if(minViewAngle < 0.f || minViewAngle > 360.f ||
+       maxViewAngle < 0.f || maxViewAngle > 360.f ||
+       minViewAngle > maxViewAngle)
+    {
+      ALICEVISION_LOG_ERROR("Invalid value for minViewAngle/maxViewAngle parameter(s). Should be between 0 and 360.");
+      return EXIT_FAILURE;
+    }
+
     // check if the tile padding is correct
     if(tileParams.padding < 0)
     {
@@ -231,6 +240,7 @@ int aliceVision_main(int argc, char* argv[])
     // MultiViewParams initialization
     mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", false, downscale);
 
+    // set MultiViewParams min/max view angle
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
 
