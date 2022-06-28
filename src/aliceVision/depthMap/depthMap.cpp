@@ -125,10 +125,8 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
     ALICEVISION_LOG_INFO("Device memory cost / stream management:" << std::endl
                          << "\t- device memory available for computation: " << deviceMemoryMB << " MB" << std::endl
                          << "\t- device memory cost for a single camera: " << cameraFrameCostMB << " MB" << std::endl
-                         << "\t- device memory cost for a tile: " << tileCostMB << " MB"
-                            << " (Sgm tile: " << sgmTileCostMB << " MB" << ", Refine tile: " << refineTileCostMB << " MB)" << std::endl
-                         << "\t- theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB"
-                            << " (Sgm tile: " << sgmTileCostUnpaddedMB << " MB" << ", Refine tile: " << refineTileCostUnpaddedMB << " MB)" << std::endl
+                         << "\t- device memory cost for a tile: " << tileCostMB << " MB" << " (Sgm: " << sgmTileCostMB << " MB" << ", Refine: " << refineTileCostMB << " MB)" << std::endl
+                         << "\t- theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB" << " (Sgm: " << sgmTileCostUnpaddedMB << " MB" << ", Refine: " << refineTileCostUnpaddedMB << " MB)" << std::endl
                          << "\t- maximum device memory cost for a R camera computation: " << rcCostMB << " MB" << std::endl
                          << "\t- # tiles per R camera computation: " << nbTilesPerCamera << std::endl
                          << "\t- # allowed simultaneous R camera computation: " << ((nbRemainingTiles < 1) ? nbAllowedSimultaneousRc : (nbAllowedSimultaneousRc + 1)) << std::endl
@@ -217,12 +215,12 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     DeviceStreamManager deviceStreamManager(nbStreams);
 
     // build device cache
-    const int nbSimultaneousRc = std::ceil(nbStreams / float(nbTilesPerCamera));
-    const int nbSimultaneousTiles = nbSimultaneousRc * nbTilesPerCamera;
-    const int nbSimultaneousCameras = (nbSimultaneousRc * (1 + depthMapParams.maxTCams)) * 2; // refine + sgm downscaled images
+    const int nbRcPerBatch = std::ceil(nbStreams / float(nbTilesPerCamera));            // number of R cameras in the same batch
+    const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;                        // number of tiles in the same batch
+    const int nbCamerasPerBatch = (nbRcPerBatch * (1 + depthMapParams.maxTCams)) * 2;   // number of cameras (refine + sgm downscaled images) in the same batch
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
-    deviceCache.buildCache(nbSimultaneousCameras);
+    deviceCache.buildCache(nbCamerasPerBatch);
     
     // build tile list
     struct Tile
@@ -281,25 +279,24 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     }
 
     // allocate final deth/similarity map per tile in host memory
-    std::vector<CudaHostMemoryHeap<float2, 2>> depthSimMapPerSimultaneousTile;
+    std::vector<CudaHostMemoryHeap<float2, 2>> depthSimMapPerBatchTile;
+    depthSimMapPerBatchTile.resize(nbTilesPerBatch);
 
-    depthSimMapPerSimultaneousTile.resize(nbSimultaneousTiles);
-
-    for(int i = 0; i < nbSimultaneousTiles; ++i)
-        depthSimMapPerSimultaneousTile.at(i).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
+    for(int i = 0; i < nbTilesPerBatch; ++i)
+        depthSimMapPerBatchTile.at(i).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
 
     // log device memory information
     logDeviceMemoryInfo();
 
     // compute number of batches
-    const int nbBatches = std::ceil(tiles.size() / float(nbSimultaneousTiles));
+    const int nbBatches = std::ceil(tiles.size() / float(nbTilesPerBatch));
 
     // compute each batch of R cameras
     for(int b = 0; b < nbBatches; ++b)
     {
         // find first/last tile to compute
-        const int firstTileIndex = b * nbSimultaneousTiles;
-        const int lastTileIndex = std::min((b + 1) * nbSimultaneousTiles, int(tiles.size()));
+        const int firstTileIndex = b * nbTilesPerBatch;
+        const int lastTileIndex = std::min((b + 1) * nbTilesPerBatch, int(tiles.size()));
         
         // load tile R and corresponding T cameras in device cache  
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
@@ -323,11 +320,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
             const Tile& tile = tiles.at(i);
-            const int simultaneousTileIndex = (i - firstTileIndex);
-            const int streamIndex = simultaneousTileIndex % nbStreams;
+            const int batchTileIndex = (i - firstTileIndex);
+            const int streamIndex = batchTileIndex % nbStreams;
 
             // get tile result depth/similarity map in host memory
-            CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapPerSimultaneousTile.at(simultaneousTileIndex);
+            CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapPerBatchTile.at(batchTileIndex);
 
             // check T cameras
             if(tile.sgmTCams.empty() || tile.refineTCams.empty()) // no T camera found
@@ -374,8 +371,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
            const Tile& tile = tiles.at(i);
-           const int simultaneousTileIndex = (i - firstTileIndex);
-           writeDepthSimMap(tile.rc, mp, depthMapParams.tileParams, tile.roi, depthSimMapPerSimultaneousTile.at(simultaneousTileIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
+           const int batchTileIndex = (i - firstTileIndex);
+           writeDepthSimMap(tile.rc, mp, depthMapParams.tileParams, tile.roi, depthSimMapPerBatchTile.at(batchTileIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
         }
     }
 
