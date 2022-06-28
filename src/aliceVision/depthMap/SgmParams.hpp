@@ -18,8 +18,8 @@ struct SgmParams
 {
   // user parameters
 
-  int scale = -1;
-  int stepXY = -1;
+  int scale = 2;
+  int stepXY = 2;
   int stepZ = -1;
   int wsh = 4;
   int maxSideXY = 700;
