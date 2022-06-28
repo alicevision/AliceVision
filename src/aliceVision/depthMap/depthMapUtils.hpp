@@ -114,6 +114,14 @@ void mergeDepthSimMapTiles(int rc,
                            int step,
                            const std::string& customSuffix = "");
 
+/**
+ * @brief Build and write a debug OBJ file with all tiles areas
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileRoiList tile region-of-interest list
+ */
+void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp, const std::vector<ROI>& tileRoiList);
+
 } // namespace depthMap
 } // namespace aliceVision
 
