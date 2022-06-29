@@ -22,8 +22,8 @@ struct TileParams
 {
   // user parameters
 
-  int width = 2048;  // if < 0 no tile, use the entire image
-  int height = 512;  // if < 0 no tile, use the entire image
+  int width  = 1024;
+  int height = 1024;
   int padding = 128;
 };
 
