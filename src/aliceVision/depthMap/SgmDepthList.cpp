@@ -22,30 +22,26 @@
 namespace aliceVision {
 namespace depthMap {
 
-SgmDepthList::SgmDepthList(int rc, const std::vector<int>& tCams, const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const ROI& roi)
-    : _rc(rc)
-    , _tCams(tCams)
-    , _roi(roi)
-    , _mp(mp)
-    , _sgmParams(sgmParams)
+SgmDepthList::SgmDepthList(Tile& tile)
+    : _tile(tile)
 {}
 
-void SgmDepthList::computeListRc()
+void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams)
 {
-    ALICEVISION_LOG_DEBUG("Compute SGM depths list (rc: " << _rc << ")");
+    ALICEVISION_LOG_DEBUG(_tile << "Compute SGM depths list.");
 
     // compute min/max/mid/nb depth from SfM
     std::size_t nbObsDepths;
     float minObsDepth, maxObsDepth, midObsDepth;
-    getMinMaxMidNbDepthFromSfM(minObsDepth, maxObsDepth, midObsDepth, nbObsDepths);
+    getMinMaxMidNbDepthFromSfM(mp, sgmParams, minObsDepth, maxObsDepth, midObsDepth, nbObsDepths);
 
     StaticVector<StaticVector<float>*>* alldepths;
 
     // all depths from the principal ray provided by target cameras
     if(nbObsDepths < 20)
-        alldepths = computeAllDepthsAndResetTcs(-1);
+        alldepths = computeAllDepthsAndResetTcs(mp, sgmParams, -1);
     else
-        alldepths = computeAllDepthsAndResetTcs(midObsDepth);
+        alldepths = computeAllDepthsAndResetTcs(mp, sgmParams, midObsDepth);
 
     float minDepthAll = std::numeric_limits<float>::max();
     float maxDepthAll = 0.0f;
@@ -68,19 +64,18 @@ void SgmDepthList::computeListRc()
     }
 
     {
-        ALICEVISION_LOG_DEBUG("Depth candidates from seeds for R camera:" << std::endl
-                              << "\t- rc: " << _rc << std::endl
-                              << "\t- nb observations: " << nbObsDepths <<  std::endl
-                              << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]");
+        ALICEVISION_LOG_DEBUG(_tile << "Depth candidates from seeds for R camera:" << std::endl
+                                    << "\t- nb observations: " << nbObsDepths <<  std::endl
+                                    << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]");
 
         float minDepth = minDepthAll;
         float maxDepth = maxDepthAll;
 
         // if we want to use SfM seeds anf if we get enough information from these seeds, adjust min/maxDepth
-        if(_sgmParams.useSfmSeeds && !_mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 100)
+        if(sgmParams.useSfmSeeds && !mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 100)
         {
-            minDepth = minObsDepth * (1.0f - _sgmParams.seedsRangeInflate);
-            maxDepth = maxObsDepth * (1.0f + _sgmParams.seedsRangeInflate);
+            minDepth = minObsDepth * (1.0f - sgmParams.seedsRangeInflate);
+            maxDepth = maxObsDepth * (1.0f + sgmParams.seedsRangeInflate);
 
             if(maxDepthAll < minDepth || minDepthAll > maxDepth)
             {
@@ -96,25 +91,24 @@ void SgmDepthList::computeListRc()
         }
 
         // build the list of "best" depths for rc, from all tc cameras depths
-        computeDepths(minDepth, maxDepth, (_sgmParams.stepZ > 0.0f ? _sgmParams.stepZ : 1.0f), alldepths);
+        computeDepths(minDepth, maxDepth, (sgmParams.stepZ > 0.0f ? sgmParams.stepZ : 1.0f), alldepths);
 
         // filter out depths if computeDepths gave too many values
-        if(_sgmParams.maxDepths > 0 && _depths.size() > _sgmParams.maxDepths)
+        if(sgmParams.maxDepths > 0 && _depths.size() > sgmParams.maxDepths)
         {
-            const float scaleFactor = float(_depths.size()) / float(_sgmParams.maxDepths);
+            const float scaleFactor = float(_depths.size()) / float(sgmParams.maxDepths);
 
-            ALICEVISION_LOG_DEBUG("Too many values in R camera depth list, filter out with scale factor:" << std::endl
-                                  << "\t- rc: " << _rc  << std::endl
-                                  << "\t- nb depths: " << _depths.size() << std::endl
-                                  << "\t- max depths: " << _sgmParams.maxDepths << std::endl
-                                  << "\t- scale factor to apply: " << scaleFactor);
+            ALICEVISION_LOG_DEBUG(_tile << "Too many values in R camera depth list, filter out with scale factor:" << std::endl
+                                        << "\t- nb depths: " << _depths.size() << std::endl
+                                        << "\t- max depths: " << sgmParams.maxDepths << std::endl
+                                        << "\t- scale factor to apply: " << scaleFactor);
 
             computeDepths(minDepth, maxDepth, scaleFactor, alldepths);
         }
 
-        if(_sgmParams.saveDepthsToSweepTxtFile)
+        if(sgmParams.saveDepthsToSweepTxtFile)
         {
-            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsAll.txt";
+            const std::string fn = mp.getDepthMapsFolder() + std::to_string(mp.getViewId(_tile.rc)) + "depthsAll.txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < _depths.size(); j++)
             {
@@ -123,17 +117,16 @@ void SgmDepthList::computeListRc()
             fclose(f);
         }
 
-        ALICEVISION_LOG_DEBUG("Final depth range for R camera:" << std::endl
-                              << "\t- rc: " << _rc << std::endl
-                              << "\t- nb selected depths: " << _depths.size() << std::endl
-                              << "\t- selected depth range: [" << minDepth << "-"<< maxDepth << "]");
+        ALICEVISION_LOG_DEBUG(_tile << "Final depth range for R camera:" << std::endl
+                                    << "\t- nb selected depths: " << _depths.size() << std::endl
+                                    << "\t- selected depth range: [" << minDepth << "-"<< maxDepth << "]");
     }
 
     // update depth tc limits
-    _depthsTcLimits.resize(_tCams.size());
+    _depthsTcLimits.resize(_tile.sgmTCams.size());
 
     // fill depthsTcamsLimits member variable with index range of depths to sweep
-    for(int c = 0; c < _tCams.size(); c++)
+    for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
     {
         const float d1 = (*(*alldepths)[c])[0];
         const float d2 = (*(*alldepths)[c])[(*alldepths)[c]->size() - 1];
@@ -148,15 +141,15 @@ void SgmDepthList::computeListRc()
             id2 = _depths.size() - 1;
 
         // clamp to keep only the closest depths if we have too much inputs (> _sgmParams.maxDepthsPerTc)
-        id2 = std::min(id1 + _sgmParams.maxDepthsPerTc - 1, id2);
+        id2 = std::min(id1 + sgmParams.maxDepthsPerTc - 1, id2);
         _depthsTcLimits[c] = Pixel(id1, id2 - id1 + 1);
     }
 
-    if(_sgmParams.saveDepthsToSweepTxtFile)
+    if(sgmParams.saveDepthsToSweepTxtFile)
     {
         // export depthsTcLimits txt file
         {
-            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depthsTcLimits.txt";
+            const std::string fn = mp.getDepthMapsFolder() + std::to_string(mp.getViewId(_tile.rc)) + "depthsTcLimits.txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < _depthsTcLimits.size(); j++)
             {
@@ -169,7 +162,7 @@ void SgmDepthList::computeListRc()
 
         // export rc depth txt file
         {
-            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depths.txt";
+            const std::string fn = mp.getDepthMapsFolder() + std::to_string(mp.getViewId(_tile.rc)) + "depths.txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < _depths.size(); j++)
             {
@@ -182,7 +175,7 @@ void SgmDepthList::computeListRc()
         {
             for(int i = 0; i < alldepths->size(); i++)
             {
-                const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "depths" +
+                const std::string fn = mp.getDepthMapsFolder() + std::to_string(mp.getViewId(_tile.rc)) + "depths" +
                                        mvsUtils::num2str(i) + ".txt";
                 FILE* f = fopen(fn.c_str(), "w");
                 for(int j = 0; j < (*alldepths)[i]->size(); j++)
@@ -197,18 +190,18 @@ void SgmDepthList::computeListRc()
         // export rc depth txt file
         {
             OrientedPoint rcplane;
-            rcplane.p = _mp.CArr[_rc];
-            rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
+            rcplane.p = mp.CArr[_tile.rc];
+            rcplane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
             rcplane.n = rcplane.n.normalize();
 
-            const std::string fn = _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_rc)) + "rcDepths.txt";
+            const std::string fn = mp.getDepthMapsFolder() + std::to_string(mp.getViewId(_tile.rc)) + "rcDepths.txt";
             FILE* f = fopen(fn.c_str(), "w");
             float depth = minDepthAll;
             while(depth < maxDepthAll)
             {
                 fprintf(f, "%f\n", depth);
                 const Point3d p = rcplane.p + rcplane.n * depth;
-                depth = depth + _mp.getCamPixelSize(p, _rc);
+                depth = depth + mp.getCamPixelSize(p, _tile.rc);
             }
             fclose(f);
         }
@@ -217,28 +210,28 @@ void SgmDepthList::computeListRc()
     deleteArrayOfArrays<float>(&alldepths);
 }
 
-void SgmDepthList::logRcTcDepthInformation() const
+void SgmDepthList::logRcTcDepthInformation(const mvsUtils::MultiViewParams& mp) const
 {
     std::ostringstream ostr;
     ostr << "Camera / Depth information: " << std::endl
-         << "\t- R camera:" << std::endl  
-         << "\t   - id: " << _rc << std::endl
-         << "\t   - view id: " << _mp.getViewId(_rc) << std::endl
+         << "\t- R camera:" << std::endl
+         << "\t   - id: " << _tile.rc << std::endl
+         << "\t   - view id: " << mp.getViewId(_tile.rc) << std::endl
          << "\t   - depth planes: " << _depths.size() << std::endl
-         << "\t   - depths range: [" << _depths[0] << "-" << _depths[_depths.size() - 1] << "]" << std::endl 
+         << "\t   - depths range: [" << _depths[0] << "-" << _depths[_depths.size() - 1] << "]" << std::endl
          << "\t- T cameras:" << std::endl;
 
-    for(int c = 0; c < _tCams.size(); c++)
+    for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
     {
-        ostr << "\t   - T camera (" << (c+1) << "/" << _tCams.size() << "):" << std::endl
-             << "\t      - id: " << _tCams[c] << std::endl
-             << "\t      - view id: " << _mp.getViewId(_tCams[c]) << std::endl
+        ostr << "\t   - T camera (" << (c+1) << "/" << _tile.sgmTCams.size() << "):" << std::endl
+             << "\t      - id: " << _tile.sgmTCams.at(c) << std::endl
+             << "\t      - view id: " << mp.getViewId(_tile.sgmTCams.at(c)) << std::endl
              << "\t      - depth planes: " << _depthsTcLimits[c].y << std::endl
              << "\t      - depths range: [" << _depths[_depthsTcLimits[c].x] << "-" << _depths[_depthsTcLimits[c].x + _depthsTcLimits[c].y - 1] << "]" << std::endl
              << "\t      - depth indexes range: [" << _depthsTcLimits[c].x << "-" << _depthsTcLimits[c].x + _depthsTcLimits[c].y << "]" << std::endl;
     }
 
-    ALICEVISION_LOG_INFO(ostr.str());
+    ALICEVISION_LOG_INFO(_tile << ostr.str());
 }
 
 void SgmDepthList::checkStartingAndStoppingDepth() const
@@ -267,7 +260,12 @@ void SgmDepthList::checkStartingAndStoppingDepth() const
     assert(_depths.size() >= stoppingDepth);
 }
 
-void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid, std::size_t& nbDepths) const
+void SgmDepthList::getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& mp,
+                                              const SgmParams& sgmParams,
+                                              float& out_min,
+                                              float& out_max,
+                                              float& out_mid,
+                                              std::size_t& out_nbDepths) const
 {
     using namespace boost::accumulators;
 
@@ -275,21 +273,21 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
     accumulator_set<float, stats<tag::tail_quantile<left>>> accDistanceMin(tag::tail<left>::cache_size = cacheSize);
     accumulator_set<float, stats<tag::tail_quantile<right>>> accDistanceMax(tag::tail<right>::cache_size = cacheSize);
 
-    const IndexT viewId = _mp.getViewId(_rc);
+    const IndexT viewId = mp.getViewId(_tile.rc);
 
-    const ROI fullsizeRoi = upscaleROI(_roi, _mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
-    const ROI selectionRoi = inflateROI(_roi, 2.f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
+    const ROI fullsizeRoi = upscaleROI(_tile.roi, mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
+    const ROI selectionRoi = inflateROI(fullsizeRoi, 2.f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
 
     OrientedPoint cameraPlane;
-    cameraPlane.p = _mp.CArr[_rc];
-    cameraPlane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
+    cameraPlane.p = mp.CArr[_tile.rc];
+    cameraPlane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
     cameraPlane.n = cameraPlane.n.normalize();
 
     Point3d midDepthPoint = Point3d();
-    nbDepths = 0;
+    out_nbDepths = 0;
 
     // for each landmark
-    for(const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
+    for(const auto& landmarkPair : mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
@@ -303,47 +301,48 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid
                 const Vec2& obs2d = observationPair.second.x;
 
                 // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
-                if(!_sgmParams.chooseDepthListPerTile || selectionRoi.contains(obs2d.x(), obs2d.y()))
+                if(!sgmParams.chooseDepthListPerTile || selectionRoi.contains(obs2d.x(), obs2d.y()))
                 {
                     const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
                     accDistanceMin(distance);
                     accDistanceMax(distance);
                     midDepthPoint = midDepthPoint + point;
-                    ++nbDepths;
+                    ++out_nbDepths;
                 }
             }
         }
     }
 
-    if(nbDepths > 0)
+    if(out_nbDepths > 0)
     {
-      min = quantile(accDistanceMin, quantile_probability = 1.0 - _sgmParams.seedsRangePercentile);
-      max = quantile(accDistanceMax, quantile_probability = _sgmParams.seedsRangePercentile);
-      midDepthPoint = midDepthPoint / static_cast<float>(nbDepths);
-      mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
+      out_min = quantile(accDistanceMin, quantile_probability = 1.0 - sgmParams.seedsRangePercentile);
+      out_max = quantile(accDistanceMax, quantile_probability = sgmParams.seedsRangePercentile);
+      midDepthPoint = midDepthPoint / static_cast<float>(out_nbDepths);
+      out_mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
     }
 
-    ALICEVISION_LOG_DEBUG("Compute min/max/mid/nb observation depth from SfM for R camera:" << std::endl
-                          << "\t- rc: " << _rc << std::endl
-                          << "\t- view id: " << viewId << std::endl
-                          << "\t- min depth: " << min << std::endl
-                          << "\t- max depth: " << max << std::endl
-                          << "\t- mid depth: " << mid << std::endl
-                          << "\t- nb depth: " << nbDepths << std::endl
-                          << "\t- percentile: " << _sgmParams.seedsRangePercentile);
+    ALICEVISION_LOG_DEBUG(_tile << "Compute min/max/mid/nb observation depth from SfM for R camera:" << std::endl
+                                << "\t- view id: " << viewId << std::endl
+                                << "\t- min depth: " << out_min << std::endl
+                                << "\t- max depth: " << out_max << std::endl
+                                << "\t- mid depth: " << out_mid << std::endl
+                                << "\t- nb depth: " << out_nbDepths << std::endl
+                                << "\t- percentile: " << sgmParams.seedsRangePercentile);
 }
 
 
-StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(float midDepth)
+StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(const mvsUtils::MultiViewParams& mp,
+                                                                              const SgmParams& sgmParams,
+                                                                              float midDepth)
 {
     std::vector<int> tCamsNew;
     StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>();
-    alldepths->reserve(_tCams.size());
+    alldepths->reserve(_tile.sgmTCams.size());
 
-    for(int c = 0; c < _tCams.size(); c++)
+    for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
     {
         // depths of all meaningful points on the principal ray of the reference camera regarding the target camera tc
-        StaticVector<float>* tcdepths = getDepthsTc(_tCams[c], midDepth);
+        StaticVector<float>* tcdepths = getDepthsTc(mp, sgmParams, _tile.sgmTCams.at(c), midDepth);
         if(sizeOfStaticVector<float>(tcdepths) < 50)
         {
             // fallback if we don't have enough valid samples over the epipolar line
@@ -353,8 +352,8 @@ StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(fl
                 tcdepths = nullptr;
             }
             float avMinDist, avMidDist, avMaxDist;
-            getPreMatchingMinMaxDepths(avMinDist, avMidDist, avMaxDist);
-            tcdepths = getDepthsByPixelSize(avMinDist, avMidDist, avMaxDist);
+            getPreMatchingMinMaxDepths(mp, sgmParams, avMinDist, avMidDist, avMaxDist);
+            tcdepths = getDepthsByPixelSize(mp, sgmParams, avMinDist, avMidDist, avMaxDist);
 
             if(sizeOfStaticVector<float>(tcdepths) < 50)
             {
@@ -369,11 +368,11 @@ StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(fl
         if(tcdepths != nullptr)
         {
             alldepths->push_back(tcdepths);
-            tCamsNew.push_back(_tCams[c]);
+            tCamsNew.push_back(_tile.sgmTCams.at(c));
         }
     }
 
-    _tCams = tCamsNew;
+    _tile.sgmTCams = tCamsNew; // update SGM T camera list
 
     return alldepths;
 }
@@ -417,39 +416,47 @@ void SgmDepthList::computeDepths(float minDepth, float maxDepth, float scaleFact
     }
 }
 
-void SgmDepthList::getPreMatchingMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth)
+void SgmDepthList::getPreMatchingMinMaxDepths(const mvsUtils::MultiViewParams& mp,
+                                              const SgmParams& sgmParams,
+                                              float& out_minDepth,
+                                              float& out_midDepth,
+                                              float& out_maxDepth)
 {
-    if(_sgmParams.prematchinMinMaxDepthDontUseSeeds)
+    if(sgmParams.prematchinMinMaxDepthDontUseSeeds)
     {
-        minDepth = 0.0f;
-        maxDepth = 0.0f;
-        for(int c = 0; c < _tCams.size(); ++c)
+        out_minDepth = 0.0f;
+        out_maxDepth = 0.0f;
+        for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
         {
-            const int tc = _tCams[c];
-            minDepth += (_mp.CArr[_rc] - _mp.CArr[tc]).size() * _sgmParams.prematchingMinCamDist;
-            maxDepth += (_mp.CArr[_rc] - _mp.CArr[tc]).size() * _sgmParams.prematchingMaxCamDist;
+            const int tc = _tile.sgmTCams.at(c);
+            out_minDepth += (mp.CArr[_tile.rc] - mp.CArr[tc]).size() * sgmParams.prematchingMinCamDist;
+            out_maxDepth += (mp.CArr[_tile.rc] - mp.CArr[tc]).size() * sgmParams.prematchingMaxCamDist;
         }
-        minDepth /= static_cast<float>(_tCams.size());
-        maxDepth /= static_cast<float>(_tCams.size());
-        midDepth = (minDepth + maxDepth) / 2.0f;
+        out_minDepth /= static_cast<float>(_tile.sgmTCams.size());
+        out_maxDepth /= static_cast<float>(_tile.sgmTCams.size());
+        out_midDepth = (out_minDepth + out_maxDepth) / 2.0f;
     }
     else
     {
         std::size_t nbDepths;
-        getMinMaxMidNbDepthFromSfM(minDepth, maxDepth, midDepth, nbDepths);
-        maxDepth = maxDepth * _sgmParams.prematchingMaxDepthScale;
+        getMinMaxMidNbDepthFromSfM(mp, sgmParams, out_minDepth, out_maxDepth, out_midDepth, nbDepths);
+        out_maxDepth = out_maxDepth * sgmParams.prematchingMaxDepthScale;
     }
 }
 
-StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth)
+StaticVector<float>* SgmDepthList::getDepthsByPixelSize(const mvsUtils::MultiViewParams& mp,
+                                                        const SgmParams& sgmParams,
+                                                        float minDepth,
+                                                        float midDepth,
+                                                        float maxDepth)
 {
     const int maxDepthsHalf = 1024;
 
-    const float d = float(_sgmParams.scale) * float(_sgmParams.rcDepthsCompStep);
+    const float d = float(sgmParams.scale) * float(sgmParams.rcDepthsCompStep);
 
     OrientedPoint rcplane;
-    rcplane.p = _mp.CArr[_rc];
-    rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
+    rcplane.p = mp.CArr[_tile.rc];
+    rcplane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
     int ndepthsMidMax = 0;
@@ -457,7 +464,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float mi
     while((maxdepth < maxDepth) && (ndepthsMidMax < maxDepthsHalf))
     {
         Point3d p = rcplane.p + rcplane.n * maxdepth;
-        float pixSize = _mp.getCamPixelSize(p, _rc, d);
+        float pixSize = mp.getCamPixelSize(p, _tile.rc, d);
         maxdepth += pixSize;
         ndepthsMidMax++;
     }
@@ -467,7 +474,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float mi
     while((mindepth > minDepth) && (ndepthsMidMin < maxDepthsHalf * 2 - ndepthsMidMax))
     {
         Point3d p = rcplane.p + rcplane.n * mindepth;
-        float pixSize = _mp.getCamPixelSize(p, _rc, d);
+        float pixSize = mp.getCamPixelSize(p, _tile.rc, d);
         mindepth -= pixSize;
         ndepthsMidMin++;
     }
@@ -479,7 +486,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float mi
     while((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
     {
         Point3d p = rcplane.p + rcplane.n * depth;
-        pixSize = _mp.getCamPixelSize(p, _rc, d);
+        pixSize = mp.getCamPixelSize(p, _tile.rc, d);
         depth += pixSize;
         ndepths++;
     }
@@ -495,7 +502,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float mi
     {
         out->push_back(depth);
         Point3d p = rcplane.p + rcplane.n * depth;
-        pixSize = _mp.getCamPixelSize(p, _rc, d);
+        pixSize = mp.getCamPixelSize(p, _tile.rc, d);
         depth += pixSize;
         ndepths++;
     }
@@ -507,7 +514,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float mi
         {
             for(int j = 0; j <= i + 1; j++)
             {
-                ALICEVISION_LOG_TRACE("getDepthsByPixelSize: check if it is asc: " << (*out)[j]);
+                ALICEVISION_LOG_TRACE(_tile << "getDepthsByPixelSize: check if it is asc: " << (*out)[j]);
             }
             throw std::runtime_error("getDepthsByPixelSize not asc.");
         }
@@ -515,31 +522,34 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(float minDepth, float mi
     return out;
 }
 
-StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
+StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& mp,
+                                               const SgmParams& sgmParams,
+                                               int tc,
+                                               float midDepth)
 {
     OrientedPoint rcplane;
-    rcplane.p = _mp.CArr[_rc];
-    rcplane.n = _mp.iRArr[_rc] * Point3d(0.0, 0.0, 1.0);
+    rcplane.p = mp.CArr[_tile.rc];
+    rcplane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
     rcplane.n = rcplane.n.normalize();
 
     // ROI center 
-    const Point2d roiCenter((_roi.x.begin + (_roi.width() * 0.5)), _roi.y.begin + (_roi.height() * 0.5));
+    const Point2d roiCenter((_tile.roi.x.begin + (_tile.roi.width() * 0.5)), _tile.roi.y.begin + (_tile.roi.height() * 0.5));
 
     // principal point of the rc camera to the tc camera
-    const Point2d principalPoint(_mp.getWidth(_rc) * 0.5, _mp.getHeight(_rc) * 0.5);
+    const Point2d principalPoint(mp.getWidth(_tile.rc) * 0.5, mp.getHeight(_tile.rc) * 0.5);
     
     // reference pixel for the epipolar line
-    const Point2d rMid = (!_sgmParams.chooseDepthListPerTile) ? principalPoint : roiCenter;
+    const Point2d rMid = (!sgmParams.chooseDepthListPerTile) ? principalPoint : roiCenter;
 
     // segment of epipolar line
     Point2d pFromTar, pToTar; 
 
-    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rMid, _rc, tc, _mp);
+    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rMid, _tile.rc, tc, mp);
 
     int allDepths = static_cast<int>((pToTar - pFromTar).size());
     const int allDepthsFound = allDepths; // for debug log
 
-    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0, (double)_sgmParams.scale);
+    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0, (double)sgmParams.scale);
 
     Point2d cg = Point2d(0.0, 0.0);
     Point3d cg3 = Point3d(0.0, 0.0, 0.0);
@@ -552,13 +562,13 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     {
         Point2d tpix = pFromTar + pixelVect * (float)i;
         Point3d p;
-        if(triangulateMatch(p, rMid, tpix, _rc, tc, _mp)) // triangulate principal point from rc with tpix
+        if(triangulateMatch(p, rMid, tpix, _tile.rc, tc, mp)) // triangulate principal point from rc with tpix
         {
             float depth = orientedPointPlaneDistance(
                 p, rcplane.p,
                 rcplane.n); // todo: can compute the distance to the camera (as it's the principal point it's the same)
-            if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) &&
-               checkPair(p, _rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
+            if(mp.isPixelInImage(tpix, tc) && (depth > 0.0f) &&
+               checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()))
             {
                 cg = cg + tpix;
                 cg3 = cg3 + p;
@@ -578,14 +588,14 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     if(midDepth > 0.0f)
     {
         Point3d midPt = rcplane.p + rcplane.n * midDepth;
-        _mp.getPixelFor3DPoint(&midpoint, midPt, tc);
+        mp.getPixelFor3DPoint(&midpoint, midPt, tc);
     }
 
     // compute the direction
     float direction = 1.0f;
     {
         Point3d p;
-        if(!triangulateMatch(p, rMid, midpoint, _rc, tc, _mp))
+        if(!triangulateMatch(p, rMid, midpoint, _tile.rc, tc, mp))
         {
             StaticVector<float>* out = new StaticVector<float>();
             return out;
@@ -593,7 +603,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        if(!triangulateMatch(p, rMid, midpoint + pixelVect, _rc, tc, _mp))
+        if(!triangulateMatch(p, rMid, midpoint + pixelVect, _tile.rc, tc, mp))
         {
             StaticVector<float>* out = new StaticVector<float>();
             return out;
@@ -607,7 +617,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     }
 
     StaticVector<float>* out1 = new StaticVector<float>();
-    out1->reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
+    out1->reserve(2 * sgmParams.rcTcDepthsHalfLimit);
 
     Point2d tpix = midpoint;
     float depthOld = -1.0f;
@@ -615,25 +625,25 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     bool ok = true;
 
     // compute depths for all pixels from the middle point to on one side of the epipolar line
-    while((out1->size() < _sgmParams.rcTcDepthsHalfLimit) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
+    while((out1->size() < sgmParams.rcTcDepthsHalfLimit) && (mp.isPixelInImage(tpix, tc) == true) && (ok == true))
     {
         tpix = tpix + pixelVect * direction;
 
-        Point3d refvect = _mp.iCamArr[_rc] * rMid;
-        Point3d tarvect = _mp.iCamArr[tc] * tpix;
+        Point3d refvect = mp.iCamArr[_tile.rc] * rMid;
+        Point3d tarvect = mp.iCamArr[tc] * tpix;
         float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
-        ok = triangulateMatch(p, rMid, tpix, _rc, tc, _mp);
+        ok = triangulateMatch(p, rMid, tpix, _tile.rc, tc, mp);
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
-        if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth > depthOld) &&
-           checkPair(p, _rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()) &&
+        if(mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth > depthOld) &&
+           checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()) &&
            (rptpang >
-            _mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
+            mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
            &&
            (rptpang <
-            _mp.getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
+            mp.getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
         {
             out1->push_back(depth);
             // if ((tpix.x!=tpixold.x)||(tpix.y!=tpixold.y)||(depthOld>=depth))
@@ -650,29 +660,26 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
     }
 
     StaticVector<float>* out2 = new StaticVector<float>();
-    out2->reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
+    out2->reserve(2 * sgmParams.rcTcDepthsHalfLimit);
     tpix = midpoint;
     istep = 0;
     ok = true;
 
     // compute depths for all pixels from the middle point to the other side of the epipolar line
-    while((out2->size() < _sgmParams.rcTcDepthsHalfLimit) && (_mp.isPixelInImage(tpix, tc) == true) && (ok == true))
+    while((out2->size() < sgmParams.rcTcDepthsHalfLimit) && (mp.isPixelInImage(tpix, tc) == true) && (ok == true))
     {
-        const Point3d refvect = _mp.iCamArr[_rc] * rMid;
-        const Point3d tarvect = _mp.iCamArr[tc] * tpix;
+        const Point3d refvect = mp.iCamArr[_tile.rc] * rMid;
+        const Point3d tarvect = mp.iCamArr[tc] * tpix;
         const float rptpang = angleBetwV1andV2(refvect, tarvect);
 
         Point3d p;
-        ok = triangulateMatch(p, rMid, tpix, _rc, tc, _mp);
+        ok = triangulateMatch(p, rMid, tpix, _tile.rc, tc, mp);
 
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
-        if(_mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth < depthOld) &&
-           checkPair(p, _rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()) &&
-           (rptpang >
-            _mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
-           &&
-           (rptpang <
-            _mp.getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
+        if(mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth < depthOld) &&
+           checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()) &&
+           (rptpang > mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
+           && (rptpang < mp.getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
         {
             out2->push_back(depth);
             // printf("%f %f\n",tpix.x,tpix.y);
@@ -688,7 +695,7 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
 
     // printf("out2\n");
     StaticVector<float>* out = new StaticVector<float>();
-    out->reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
+    out->reserve(2 * sgmParams.rcTcDepthsHalfLimit);
     for(int i = out2->size() - 1; i >= 0; i--)
     {
         out->push_back((*out2)[i]);
@@ -725,9 +732,9 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
 
             for(int j = 0; j <= i + 1; j++)
             {
-                ALICEVISION_LOG_TRACE("getDepthsRcTc: check if it is asc: " << (*out)[j]);
+                ALICEVISION_LOG_TRACE(_tile << "getDepthsRcTc: check if it is asc: " << (*out)[j]);
             }
-            ALICEVISION_LOG_WARNING("getDepthsRcTc: not asc");
+            ALICEVISION_LOG_WARNING(_tile << "getDepthsRcTc: not asc.");
 
             if(out->size() > 1)
             {
@@ -736,12 +743,12 @@ StaticVector<float>* SgmDepthList::getDepthsTc(int tc, float midDepth)
         }
     }
 
-    ALICEVISION_LOG_DEBUG("Find depths over the epipolar line segment between R and T cameras:" << std::endl
-                          << "\t- rc: " << _rc << std::endl
-                          << "\t- tc: " << tc << std::endl
-                          << "\t- all depths found: " << allDepthsFound << std::endl
-                          << "\t- correct depths found: " << allDepths << std::endl
-                          << "\t- depths to use: " << out->size());
+    ALICEVISION_LOG_DEBUG(_tile << "Find depths over the epipolar line segment between R and T cameras:" << std::endl
+                                << "\t- rc: " << _tile.rc << std::endl
+                                << "\t- tc: " << tc << std::endl
+                                << "\t- all depths found: " << allDepthsFound << std::endl
+                                << "\t- correct depths found: " << allDepths << std::endl
+                                << "\t- depths to use: " << out->size());
     return out;
 }
 
