@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <cuda_runtime.h>
 
@@ -568,6 +569,9 @@ public:
 
             buffer = (Type*)pitchDevPtr.ptr;
             this->setPitch( pitchDevPtr.pitch );
+
+            ALICEVISION_LOG_DEBUG("GPU 3D allocation: " << this->getUnitsInDim(0) << "x" << this->getUnitsInDim(1) << "x" << this->getUnitsInDim(2) << ", type size=" << sizeof(Type) << ", pitch=" << pitchDevPtr.pitch);
+            ALICEVISION_LOG_DEBUG("                 : " << this->getBytesUnpadded() << ", padded=" << this->getBytesPadded() << ", wasted=" << this->getBytesPadded() - this->getBytesUnpadded() << ", wasted ratio=" << ((this->getBytesPadded() - this->getBytesUnpadded()) / double(this->getBytesUnpadded())) * 100.0 << "%");
         }
         else
         {
