@@ -104,7 +104,8 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
     const double tileCostUnpaddedMB = sgmTileCostUnpaddedMB + refineTileCostUnpaddedMB;
 
     const double rcCamsCost = cameraFrameCostMB + depthMapParams.maxTCams * cameraFrameCostMB;
-    const double rcCostMB = rcCamsCost + nbTilesPerCamera * tileCostMB;
+    const double rcMinCostMB = rcCamsCost + tileCostMB;
+    const double rcMaxCostMB = rcCamsCost + nbTilesPerCamera * tileCostMB;
     const int rcCamParams = (1 + depthMapParams.maxTCams) * 2; // number of camera parameters in device constant memory
 
     double deviceMemoryMB;
@@ -114,27 +115,35 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
         deviceMemoryMB = availableMB * 0.8; // available memory margin
     }
 
-    int nbAllowedSimultaneousRc = deviceMemoryMB / rcCostMB;
-    int nbRemainingTiles = std::floor((deviceMemoryMB - (nbAllowedSimultaneousRc * rcCostMB) - rcCamsCost) / tileCostMB);
+    int nbAllowedSimultaneousRc = int(deviceMemoryMB / rcMaxCostMB);
+    int nbRemainingTiles = 0;
+
+    {
+        const double remainingMemoryMB = deviceMemoryMB - (nbAllowedSimultaneousRc * rcMaxCostMB);
+        nbRemainingTiles = int(std::max(0.0, remainingMemoryMB - rcCamsCost) / tileCostMB);
+    }
 
     // check that we do not need more constant camera parameters than the ones in device constant memory
     if(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS < (nbAllowedSimultaneousRc * rcCamParams))
     {
-      nbAllowedSimultaneousRc = std::floor(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams);
+      nbAllowedSimultaneousRc = int(ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS / rcCamParams);
       nbRemainingTiles = 0;
     }
 
     const int out_nbAllowedStreams = nbAllowedSimultaneousRc * nbTilesPerCamera + nbRemainingTiles;
 
-    ALICEVISION_LOG_INFO("Device memory cost / stream management:" << std::endl
-                         << "\t- device memory available for computation: " << deviceMemoryMB << " MB" << std::endl
-                         << "\t- device memory cost for a single camera: " << cameraFrameCostMB << " MB" << std::endl
-                         << "\t- device memory cost for a tile: " << tileCostMB << " MB" << " (Sgm: " << sgmTileCostMB << " MB" << ", Refine: " << refineTileCostMB << " MB)" << std::endl
-                         << "\t- theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB" << " (Sgm: " << sgmTileCostUnpaddedMB << " MB" << ", Refine: " << refineTileCostUnpaddedMB << " MB)" << std::endl
-                         << "\t- maximum device memory cost for a R camera computation: " << rcCostMB << " MB" << std::endl
-                         << "\t- # tiles per R camera computation: " << nbTilesPerCamera << std::endl
-                         << "\t- # allowed simultaneous R camera computation: " << ((nbRemainingTiles < 1) ? nbAllowedSimultaneousRc : (nbAllowedSimultaneousRc + 1)) << std::endl
-                         << "\t- # allowed streams: " << out_nbAllowedStreams);
+    ALICEVISION_LOG_INFO("Device memory:" << std::endl
+                         << "\t- available: " << deviceMemoryMB << " MB" << std::endl
+                         << "\t- requirement per tile: " << rcMinCostMB << " MB" << std::endl
+                         << "\t- # computation buffers per tile: " << tileCostMB << " MB" << " (Sgm: " << sgmTileCostMB << " MB" << ", Refine: " << refineTileCostMB << " MB)" << std::endl
+                         << "\t- # input images (R + " << depthMapParams.maxTCams << " Ts): " << rcCamsCost << " MB (single multi-res image size: " << cameraFrameCostMB << " MB)");
+
+    ALICEVISION_LOG_DEBUG( "Theoretical device memory cost for a tile without padding: " << tileCostUnpaddedMB << " MB" << " (Sgm: " << sgmTileCostUnpaddedMB << " MB" << ", Refine: " << refineTileCostUnpaddedMB << " MB)");
+
+    ALICEVISION_LOG_INFO("Parallelization:" << std::endl
+                         << "\t- # tiles per image: " << nbTilesPerCamera << std::endl
+                         << "\t- # simultaneous depth maps computation: " << ((nbRemainingTiles < 1) ? nbAllowedSimultaneousRc : (nbAllowedSimultaneousRc + 1)) << std::endl
+                         << "\t- # streams: " << out_nbAllowedStreams);
 
     if(out_nbAllowedStreams < 1 || rcCamParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
         ALICEVISION_THROW_ERROR("Not enough GPU memory to compute a single tile.")
