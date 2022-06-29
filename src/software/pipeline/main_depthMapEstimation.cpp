@@ -260,8 +260,12 @@ int aliceVision_main(int argc, char* argv[])
     mp.setMaxViewAngle(maxViewAngle);
 
     // set undefined tile dimensions
-    tileParams.width  = (tileParams.width  > 0) ? tileParams.width  : ((tileParams.height > 0) ? tileParams.height : mp.getMaxImageWidth());
-    tileParams.height = (tileParams.height > 0) ? tileParams.height : ((tileParams.width  > 0) ? tileParams.width  : mp.getMaxImageHeight());
+    {
+      const int tileWidth  = (tileParams.width  > 0) ? tileParams.width  : ((tileParams.height > 0) ? tileParams.height : mp.getMaxImageWidth());
+      const int tileHeight = (tileParams.height > 0) ? tileParams.height : ((tileParams.width  > 0) ? tileParams.width  : mp.getMaxImageHeight());
+      tileParams.width  = tileWidth;
+      tileParams.height = tileHeight;
+    }
 
     // check tile passing
     if(tileParams.padding >= std::min(tileParams.width, tileParams.height))
