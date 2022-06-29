@@ -14,7 +14,7 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief DepthMap Parameters
+ * @brief Depth Map Parameters
  */
 struct DepthMapParams
 {
