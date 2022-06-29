@@ -10,6 +10,7 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/depthMap/Tile.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -25,34 +26,31 @@ public:
 
     /**
      * @brief SgmDepthList constructor.
-     * @param[in] rc the R camera index
-     * @param[in] tCams the T cameras indexes
-     * @param[in] mp the multi-view parameters
-     * @param[in] sgmParams the Semi Global Matching parameters
-     * @param[in] roi the 2d region of interest of the R image without any downscale apply
+     * @param[in,out] tile The given tile for SGM depth list computation
      */
-    SgmDepthList(int rc, 
-                 const std::vector<int>& tCams, 
-                 const mvsUtils::MultiViewParams& mp, 
-                 const SgmParams& sgmParams,
-                 const ROI& roi);
+    SgmDepthList(Tile& tile);
 
     // default destructor
     ~SgmDepthList() = default;
 
-    const std::vector<int>& getTCams() const { return _tCams; }
-    const StaticVector<float>& getDepths() const { return _depths; }
-    const StaticVector<Pixel>& getDepthsTcLimits() const { return _depthsTcLimits; }
+    // final R camera depth list getter
+    inline const StaticVector<float>& getDepths() const { return _depths; }
+
+    // final T camera depth limits getter
+    inline const StaticVector<Pixel>& getDepthsTcLimits() const { return _depthsTcLimits; }
 
     /**
      * @brief Compute R camera depth list / depth limits from T cameras
+     * @param[in] mp the multi-view parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
      */
-    void computeListRc();
+    void computeListRc(const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams);
 
     /**
-     * @brief Log depth information 
+     * @brief Log depth informationinformation
+     * @param[in] mp the multi-view parameters
      */
-    void logRcTcDepthInformation() const;
+    void logRcTcDepthInformation(const mvsUtils::MultiViewParams& mp) const;
 
     /**
      * @brief check the starting and stopping depth
@@ -65,21 +63,32 @@ private:
 
     /**
      * @brief Compute min/max/mid/nb depth observation for R camera from SfM 
-     * @param[out] min The minimum depth observation
-     * @param[out] max The maximum depth observation
-     * @param[out] mid The middle depth observation
-     * @param[out] nbDepths The number of depth observation
+     * @param[in] mp the multi-view parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
+     * @param[out] out_min The minimum depth observation
+     * @param[out] out_max The maximum depth observation
+     * @param[out] out_mid The middle depth observation
+     * @param[out] out_nbDepths The number of depth observation
      */
-    void getMinMaxMidNbDepthFromSfM(float& min, float& max, float& mid, std::size_t& nbDepths) const;
+    void getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& mp,
+                                    const SgmParams& sgmParams,
+                                    float& out_min,
+                                    float& out_max,
+                                    float& out_mid,
+                                    std::size_t& out_nbDepths) const;
 
     /**
      * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
      *        providing meaningful 3d information.
-     * 
+     *
+     * @param[in] mp the multi-view parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] midDepth The middle depth observation
      * @return all depths array
      */
-    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTcs(float midDepth);
+    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTcs(const mvsUtils::MultiViewParams& mp,
+                                                                    const SgmParams& sgmParams,
+                                                                    float midDepth);
 
     /**
      * @brief Fill the list of "best" depths (_depths) for rc, from all tc cameras depths
@@ -92,27 +101,37 @@ private:
 
     /**
      * @brief Compute pre-matching min/max/mid depth for R camera
-     * @param[out] minDepth The minimum depth 
-     * @param[out] midDepth The middle depth 
-     * @param[out] maxDepth The maximum depth 
+     * @param[in] mp the multi-view parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
+     * @param[out] out_minDepth The minimum depth
+     * @param[out] out_midDepth The middle depth
+     * @param[out] out_maxDepth The maximum depth
      */
-    void getPreMatchingMinMaxDepths(float& minDepth, float& midDepth, float& maxDepth);
+    void getPreMatchingMinMaxDepths(const mvsUtils::MultiViewParams& mp,
+                                    const SgmParams& sgmParams,
+                                    float& out_minDepth,
+                                    float& out_midDepth,
+                                    float& out_maxDepth);
 
-    StaticVector<float>* getDepthsByPixelSize(float minDepth, float midDepth, float maxDepth);
-    StaticVector<float>* getDepthsTc(int tc, float midDepth);
+    StaticVector<float>* getDepthsByPixelSize(const mvsUtils::MultiViewParams& mp,
+                                              const SgmParams& sgmParams,
+                                              float minDepth,
+                                              float midDepth,
+                                              float maxDepth);
+
+    StaticVector<float>* getDepthsTc(const mvsUtils::MultiViewParams& mp,
+                                     const SgmParams& sgmParams,
+                                     int tc,
+                                     float midDepth);
 
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
 
     // private members
 
-    const int _rc;                         // related R camera index
-    const ROI& _roi;                       // 2d region of interest of the R image without any downscale apply
-    const SgmParams& _sgmParams;           // Semi Global Matching parameters
-    const mvsUtils::MultiViewParams& _mp;  // Multi-view parameters
-    StaticVector<float> _depths;           // R camera depth list
-    StaticVector<Pixel> _depthsTcLimits;   // T camera depth limits
-    std::vector<int> _tCams;               // T camera indexes, computed in the constructor
+    Tile& _tile;                           //< related tile
+    StaticVector<float> _depths;           //< R camera depth list
+    StaticVector<Pixel> _depthsTcLimits;   //< T camera depth limits
 };
 
 } // namespace depthMap
