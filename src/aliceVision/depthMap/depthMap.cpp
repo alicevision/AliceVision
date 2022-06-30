@@ -232,6 +232,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     deviceCache.buildCache(nbCamerasPerBatch);
     
     // build tile list
+    // order by R camera
     std::vector<Tile> tiles;
     tiles.reserve(cams.size() * tileRoiList.size());
 
@@ -282,12 +283,18 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         refinePerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.refineParams, deviceStreamManager.getStream(i));
     }
 
-    // allocate final deth/similarity map per tile in host memory
-    std::vector<CudaHostMemoryHeap<float2, 2>> depthSimMapPerBatchTile;
-    depthSimMapPerBatchTile.resize(nbTilesPerBatch);
+    // allocate final deth/similarity map tile list in host memory
+    std::vector<std::vector<CudaHostMemoryHeap<float2, 2>>> depthSimMapTilePerCam(nbRcPerBatch);
 
-    for(int i = 0; i < nbTilesPerBatch; ++i)
-        depthSimMapPerBatchTile.at(i).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
+    for(int i = 0; i < nbRcPerBatch; ++i)
+    {
+        auto& depthSimMapTiles = depthSimMapTilePerCam.at(i);
+        depthSimMapTiles.resize(nbTilesPerCamera);
+
+        for(int j = 0; j < nbTilesPerCamera; ++j)
+          depthSimMapTiles.at(j).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
+    }
+
 
     // log device memory information
     logDeviceMemoryInfo();
@@ -324,11 +331,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         for(int i = firstTileIndex; i < lastTileIndex; ++i)
         {
             Tile& tile = tiles.at(i);
-            const int batchTileIndex = (i - firstTileIndex);
-            const int streamIndex = batchTileIndex % nbStreams;
+            const int batchCamIndex = tile.rc % nbRcPerBatch;
+            const int streamIndex = tile.id % nbStreams;
 
             // get tile result depth/similarity map in host memory
-            CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapPerBatchTile.at(batchTileIndex);
+            CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapTilePerCam.at(batchCamIndex).at(tile.id);
 
             // check T cameras
             if(tile.sgmTCams.empty() || tile.refineTCams.empty()) // no T camera found
@@ -371,23 +378,28 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         // wait for tiles batch computation
         cudaDeviceSynchronize();
         
-        // write tiles depth/sim map
-        for(int i = firstTileIndex; i < lastTileIndex; ++i)
+        // find first and last tile R camera
+        const int firstRc = tiles.at(firstTileIndex).rc;
+        int lastRc = tiles.at(lastTileIndex - 1).rc;
+
+        // check if last tile depth map is finished
+        if(lastTileIndex < tiles.size() && (tiles.at(lastTileIndex).rc == lastRc))
+          --lastRc;
+
+        // write depth/sim map result
+        for(int c = firstRc; c <= lastRc; ++c)
         {
-           const Tile& tile = tiles.at(i);
-           const int batchTileIndex = (i - firstTileIndex);
-           writeDepthSimMap(tile.rc, mp, depthMapParams.tileParams, tile.roi, depthSimMapPerBatchTile.at(batchTileIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
+          const int batchCamIndex = c % nbRcPerBatch;
+          writeDepthSimMapFromTileList(c, mp, depthMapParams.tileParams, tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
         }
     }
 
-    // merge tiles if needed and desired
+    // merge intermediate results tiles if needed and desired
     if(depthMapParams.mergeTiles && tiles.size() > cams.size())
     {
         // merge tiles if needed and desired
         for(int rc : cams)
         {
-            mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
-
             if(depthMapParams.sgmParams.exportIntermediateResults)
             {
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");

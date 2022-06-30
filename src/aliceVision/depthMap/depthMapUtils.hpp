@@ -9,6 +9,7 @@
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/depthMap/Tile.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 
 #include <vector>
@@ -41,8 +42,8 @@ void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, floa
  * @param[in] roi the 2d region of interest without any downscale apply
  * @param[in] downscale the depth/similarity map downscale factor
  */
-void copyDepthSimMap(std::vector<float>& out_depthMap, 
-                     std::vector<float>& out_simMap, 
+void copyDepthSimMap(std::vector<float>& out_depthMap,
+                     std::vector<float>& out_simMap,
                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
                      const ROI& roi, 
                      int downscale);
@@ -99,6 +100,26 @@ void writeDepthSimMap(int rc,
                       int scale,
                       int step,
                       const std::string& customSuffix = "");
+
+/**
+ * @brief Write a depth/similarity map on disk from a tile list in host memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] tileRoiList the 2d region of interest of each tile
+ * @param[in] in_depthSimMapTiles_hmh the depth/similarity map tile list in host memory
+ * @param[in] scale the depth/similarity map downscale factor
+ * @param[in] step the depth/similarity map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void writeDepthSimMapFromTileList(int rc,
+                                  const mvsUtils::MultiViewParams& mp,
+                                  const mvsUtils::TileParams& tileParams,
+                                  const std::vector<ROI>& tileRoiList,
+                                  const std::vector<CudaHostMemoryHeap<float2, 2>>& in_depthSimMapTiles_hmh,
+                                  int scale,
+                                  int step,
+                                  const std::string& customSuffix = "");
 
 /**
  * @brief Merge depth/similarity map tiles on disk.

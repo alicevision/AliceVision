@@ -132,6 +132,43 @@ void writeDepthSimMap(int rc,
     mvsUtils::writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }
 
+void writeDepthSimMapFromTileList(int rc,
+                                  const mvsUtils::MultiViewParams& mp,
+                                  const mvsUtils::TileParams& tileParams,
+                                  const std::vector<ROI>& tileRoiList,
+                                  const std::vector<CudaHostMemoryHeap<float2, 2>>& in_depthSimMapTiles_hmh,
+                                  int scale,
+                                  int step,
+                                  const std::string& customSuffix)
+{
+  const int scaleStep = scale * step;
+
+  const int width  = std::ceil(mp.getWidth(rc)  / float(scaleStep));
+  const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
+  const int bufferSize = width * height;
+
+  std::vector<float> depthMap(bufferSize, 0.f); // map should be initialize, additive process
+  std::vector<float> simMap(bufferSize, 0.f);   // map should be initialize, additive process
+
+  for(size_t i = 0; i < tileRoiList.size(); ++i)
+  {
+    const ROI& roi = tileRoiList.at(i);
+
+    std::vector<float> tileDepthMap;
+    std::vector<float> tileSimMap;
+
+    // copy tile depth/sim map from host memory
+    copyDepthSimMap(tileDepthMap, tileSimMap, in_depthSimMapTiles_hmh.at(i), roi, scaleStep);
+
+    // add tile maps to the full-size maps with weighting
+    addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileDepthMap, depthMap);
+    addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileSimMap, simMap);
+  }
+
+  // write full-size maps on disk
+  mvsUtils::writeDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix);
+}
+
 void mergeDepthSimMapTiles(int rc,
                            const mvsUtils::MultiViewParams& mp,
                            int scale,
