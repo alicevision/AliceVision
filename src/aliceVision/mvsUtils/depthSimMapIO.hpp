@@ -17,6 +17,24 @@ namespace aliceVision {
 namespace mvsUtils {
 
 /**
+ * @brief Add a tile to a full map with weighting
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] downscale the depth/sim map downscale factor
+ * @param[in] in_tileMap the tile map buffer to add
+ * @param[in,out] inout_map the full output map
+ */
+void addTileMapWeighted(int rc,
+                         const MultiViewParams& mp,
+                         const TileParams& tileParams,
+                         const ROI& roi,
+                         int downscale,
+                         std::vector<float>& in_tileMap,
+                         std::vector<float>& inout_map);
+
+/**
  * @brief Write the depth map and the similarity map
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters

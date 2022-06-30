@@ -73,27 +73,18 @@ void weightTileBorder(int a, int b, int c, int d,
     }
 }
 
-void readTileMapWeighted(int rc,
+void addTileMapWeighted(int rc,
                          const MultiViewParams& mp, 
                          const TileParams& tileParams,
                          const ROI& roi, 
-                         const std::string& tilePath,
                          int downscale,
+                         std::vector<float>& in_tileMap,
                          std::vector<float>& inout_map)
 {
     // get downscaled ROI
     const ROI downscaledRoi = downscaleROI(roi, downscale);
     const int currentTileWidth = downscaledRoi.width();
     const int currentTileHeight = downscaledRoi.height();
-
-    std::vector<float> tileMap(currentTileWidth * currentTileHeight);
-
-    // read tile depth/sim map
-    {
-        using namespace imageIO;
-        int w, h;
-        readImage(tilePath, w, h, tileMap, EImageColorSpace::NO_CONVERSION);
-    }
 
     // get tile border size
     const int tileWidth = tileParams.width / downscale;
@@ -112,7 +103,7 @@ void readTileMapWeighted(int rc,
         const Point2d lu(0, 0);
         const int b = (firstRow) ? 1 : 0;
         const int d = (firstColumn) ? 1 : 0;
-        weightTileBorder(0, b, 1, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileMap);
+        weightTileBorder(0, b, 1, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom left corner
@@ -121,7 +112,7 @@ void readTileMapWeighted(int rc,
         const Point2d lu(0, tileHeight - tilePadding);
         const int a = (firstColumn) ? 1 : 0;
         const int c = (lastRow) ? 1 : 0;
-        weightTileBorder(a, 1, c, 0, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileMap);
+        weightTileBorder(a, 1, c, 0, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the top right corner
@@ -130,7 +121,7 @@ void readTileMapWeighted(int rc,
         const Point2d lu(tileWidth - tilePadding, 0);
         const int a = (firstRow) ? 1 : 0;
         const int c = (lastColumn) ? 1 : 0;
-        weightTileBorder(a, 0, c, 1, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileMap);
+        weightTileBorder(a, 0, c, 1, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom right corner
@@ -139,35 +130,35 @@ void readTileMapWeighted(int rc,
         const Point2d lu(tileWidth - tilePadding, tileHeight - tilePadding);
         const int b = (lastColumn) ? 1 : 0;
         const int d = (lastRow) ? 1 : 0;
-        weightTileBorder(1, b, 0, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, tileMap);
+        weightTileBorder(1, b, 0, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the top border
     if(!firstRow)
     {
         const Point2d lu(tilePadding, 0);
-        weightTileBorder(0, 0, 1, 1, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, tileMap);
+        weightTileBorder(0, 0, 1, 1, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom border
     if(!lastRow)
     {
         const Point2d lu(tilePadding, tileHeight - tilePadding);
-        weightTileBorder(1, 1, 0, 0, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, tileMap);
+        weightTileBorder(1, 1, 0, 0, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the left border
     if(!firstColumn)
     {
         const Point2d lu(0, tilePadding);
-        weightTileBorder(0, 1, 1, 0, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, tileMap);
+        weightTileBorder(0, 1, 1, 0, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
     }
 
     // weight the right border
     if(!lastColumn)
     {
         const Point2d lu(tileWidth - tilePadding, tilePadding);
-        weightTileBorder(1, 0, 0, 1, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, tileMap);
+        weightTileBorder(1, 0, 0, 1, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
     }
 
     // add weighted tile to the depth/sim map
@@ -180,7 +171,7 @@ void readTileMapWeighted(int rc,
             const int tx = x - downscaledRoi.x.begin;
             const int ty = y - downscaledRoi.y.begin;
 
-            inout_map[y * mapWidth + x] += tileMap[ty * currentTileWidth + tx];
+            inout_map[y * mapWidth + x] += in_tileMap[ty * currentTileWidth + tx];
         }
     }
 }
@@ -213,8 +204,17 @@ void readMapFromTiles(int rc,
 
     for(const ROI& roi : tileList)
     {
+        using namespace imageIO;
+
+        // read tile map
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
-        readTileMapWeighted(rc, mp, tileParams, roi, mapTilePath, scaleStep, out_map);
+        int w, h;
+
+        std::vector<float> tileMap;
+        readImage(mapTilePath, w, h, tileMap, EImageColorSpace::NO_CONVERSION);
+
+        // add tile to the full map
+        addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
     }
 }
 
