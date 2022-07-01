@@ -95,8 +95,6 @@ int aliceVision_main(int argc, char* argv[])
             "Maximum tile buffer height.")
         ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
             "Tile buffer padding for overlapping.")
-        ("tileMerge", po::value<bool>(&depthMapParams.mergeTiles)->default_value(depthMapParams.mergeTiles),
-            "Read & merge all computed tiles.")
         ("chooseTCamsPerTile", po::value<bool>(&depthMapParams.chooseTCamsPerTile)->default_value(depthMapParams.chooseTCamsPerTile),
             "Choose neighbour cameras per tile.")
         ("maxTCams", po::value<int>(&depthMapParams.maxTCams)->default_value(depthMapParams.maxTCams),
@@ -319,7 +317,6 @@ int aliceVision_main(int argc, char* argv[])
     // Workflow Parameters
     mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
     mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
-    mp.userParams.put("depthMap.mergeTiles", depthMapParams.mergeTiles);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);
