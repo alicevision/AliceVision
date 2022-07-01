@@ -208,6 +208,8 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
     }
 
     deleteArrayOfArrays<float>(&alldepths);
+
+    ALICEVISION_LOG_DEBUG(_tile << "Compute SGM depths list done.");
 }
 
 void SgmDepthList::logRcTcDepthInformation(const mvsUtils::MultiViewParams& mp) const
@@ -319,6 +321,12 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& m
       out_max = quantile(accDistanceMax, quantile_probability = sgmParams.seedsRangePercentile);
       midDepthPoint = midDepthPoint / static_cast<float>(out_nbDepths);
       out_mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
+    }
+    else
+    {
+      out_min = 0.f;
+      out_max = 0.f;
+      out_mid = 0.f;
     }
 
     ALICEVISION_LOG_DEBUG(_tile << "Compute min/max/mid/nb observation depth from SfM for R camera:" << std::endl
