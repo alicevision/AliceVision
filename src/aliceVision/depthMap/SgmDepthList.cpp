@@ -38,7 +38,7 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
     StaticVector<StaticVector<float>*>* alldepths;
 
     // all depths from the principal ray provided by target cameras
-    if(nbObsDepths < 20)
+    if(nbObsDepths < 10)
         alldepths = computeAllDepthsAndResetTcs(mp, sgmParams, -1);
     else
         alldepths = computeAllDepthsAndResetTcs(mp, sgmParams, midObsDepth);
@@ -72,7 +72,7 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
         float maxDepth = maxDepthAll;
 
         // if we want to use SfM seeds anf if we get enough information from these seeds, adjust min/maxDepth
-        if(sgmParams.useSfmSeeds && !mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 100)
+        if(sgmParams.useSfmSeeds && !mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 10)
         {
             minDepth = minObsDepth * (1.0f - sgmParams.seedsRangeInflate);
             maxDepth = maxObsDepth * (1.0f + sgmParams.seedsRangeInflate);
@@ -351,7 +351,7 @@ StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(co
     {
         // depths of all meaningful points on the principal ray of the reference camera regarding the target camera tc
         StaticVector<float>* tcdepths = getDepthsTc(mp, sgmParams, _tile.sgmTCams.at(c), midDepth);
-        if(sizeOfStaticVector<float>(tcdepths) < 50)
+        if(sizeOfStaticVector<float>(tcdepths) < 10)
         {
             // fallback if we don't have enough valid samples over the epipolar line
             if(tcdepths != nullptr)
@@ -363,7 +363,7 @@ StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(co
             getPreMatchingMinMaxDepths(mp, sgmParams, avMinDist, avMidDist, avMaxDist);
             tcdepths = getDepthsByPixelSize(mp, sgmParams, avMinDist, avMidDist, avMaxDist);
 
-            if(sizeOfStaticVector<float>(tcdepths) < 50)
+            if(sizeOfStaticVector<float>(tcdepths) < 10)
             {
                 if(tcdepths != nullptr)
                 {
