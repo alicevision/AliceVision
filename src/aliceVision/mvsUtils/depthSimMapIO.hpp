@@ -154,5 +154,19 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
                                            int step = 1,
                                            const std::string& customSuffix = "");
 
+
+/**
+ * @brief Delete depth/sim map tiles from disk
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] scale the depth/sim map downscale factor
+ * @param[in] step the depth/sim map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void deleteDepthSimMapTiles(int rc,
+                            const MultiViewParams& mp,
+                            int scale = 1,
+                            int step = 1,
+                            const std::string& customSuffix = "");
 } // namespace mvsUtils
 } // namespace aliceVision

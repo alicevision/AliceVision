@@ -11,6 +11,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -190,14 +191,32 @@ void readMapFromTiles(int rc,
 
     out_map.resize(width * height, 0.f);
 
-    const std::string mapFirstTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, 0, 0);
+    std::string firstTilePath;
 
-    if (!fs::exists(mapFirstTilePath))
-        ALICEVISION_THROW_ERROR("Cannot find depth/sim map first tile (rc: " << rc << ")");
+    {
+        const fs::path mapPath(getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, -1, -1));
+        const fs::path mapDirectory(mapPath.parent_path());
+
+        if(is_directory(mapDirectory))
+        {
+            const boost::regex pattern(mapPath.stem().string() + ".*" + mapPath.extension().string());
+            for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(mapDirectory), {}))
+            {
+                if(boost::regex_match(entry.path().filename().string(), pattern))
+                {
+                  firstTilePath = entry.path().string();
+                  break;
+                }
+            }
+        }
+    }
+
+    if(firstTilePath.empty())
+        ALICEVISION_THROW_ERROR("Cannot find any depth/sim map (rc: " << rc << ")");
 
     // get tile dimensions from metadata
     TileParams tileParams;
-    getTileParamsFromMetadata(mapFirstTilePath, tileParams);
+    getTileParamsFromMetadata(firstTilePath, tileParams);
 
     std::vector<ROI> tileList;
     getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
@@ -205,16 +224,22 @@ void readMapFromTiles(int rc,
     for(const ROI& roi : tileList)
     {
         using namespace imageIO;
-
-        // read tile map
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
-        int w, h;
 
-        std::vector<float> tileMap;
-        readImage(mapTilePath, w, h, tileMap, EImageColorSpace::NO_CONVERSION);
+        try
+        {
+            // read tile
+            std::vector<float> tileMap;
+            int w, h;
+            readImage(mapTilePath, w, h, tileMap, EImageColorSpace::NO_CONVERSION);
 
-        // add tile to the full map
-        addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
+            // add tile to the full map
+            addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
+        }
+        catch(const std::exception& e)
+        {
+            ALICEVISION_LOG_WARNING("Cannot find depth/sim map (rc: " << rc << "): " << fs::path(mapTilePath).filename().string());
+        }
     }
 }
 
@@ -431,7 +456,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
         const std::string depthMapFirstTilePath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, 0, 0);
 
         if (!fs::exists(depthMapFirstTilePath))
-            ALICEVISION_THROW_ERROR("Cannot find depth map first tile (rc: " << rc << ")");
+            ALICEVISION_THROW_ERROR("Cannot find depth map first tile (rc: " << rc << "): " << depthMapFirstTilePath);
 
         // get tile dimensions from metadata
         TileParams tileParams;
@@ -468,6 +493,64 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
     }
 
     return nbDepthValues;
+}
+
+void deleteDepthSimMapTiles(int rc,
+                            const MultiViewParams& mp,
+                            int scale,
+                            int step,
+                            const std::string& customSuffix)
+{
+  std::string firstTilePath;
+
+  {
+      const fs::path mapPath(getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix));
+      const fs::path mapDirectory(mapPath.parent_path());
+
+      if(is_directory(mapDirectory))
+      {
+          const boost::regex pattern(mapPath.stem().string() + ".*" + mapPath.extension().string());
+          for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(mapDirectory), {}))
+          {
+              if(boost::regex_match(entry.path().filename().string(), pattern))
+              {
+                firstTilePath = entry.path().string();
+                break;
+              }
+          }
+      }
+  }
+
+  if(firstTilePath.empty())
+      ALICEVISION_THROW_ERROR("Cannot delete any depth/sim map (rc: " << rc << ")");
+
+  // get tile dimensions from metadata
+  TileParams tileParams;
+  getTileParamsFromMetadata(firstTilePath, tileParams);
+
+  std::vector<ROI> tileList;
+  getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
+
+  for(std::size_t i = 0; i < tileList.size(); ++i)
+  {
+    using namespace imageIO;
+
+    const ROI& roi = tileList.at(i);
+
+    // read tile depth/sim maps
+    const std::string depthMapTilePath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
+    const std::string simMapTilePath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix, roi.x.begin, roi.y.begin);
+
+    try
+    {
+      fs::remove(depthMapTilePath);
+      fs::remove(simMapTilePath);
+    }
+    catch (const std::exception& e)
+    {
+      ALICEVISION_LOG_WARNING("Cannot delete depth/sim map tile (rc: " << rc << ", tile: " << (i + 1) << "/" << tileList.size()<< ").");
+    }
+  }
 }
 
 } // namespace mvsUtils
