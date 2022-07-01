@@ -39,6 +39,9 @@ public:
     // final T camera depth limits getter
     inline const StaticVector<Pixel>& getDepthsTcLimits() const { return _depthsTcLimits; }
 
+    // final R camera first/last depth getter
+    inline const std::pair<float, float> getMinMaxDepths() const { return {_depths.front(), _depths.back()}; }
+
     /**
      * @brief Compute R camera depth list / depth limits from T cameras
      * @param[in] mp the multi-view parameters
