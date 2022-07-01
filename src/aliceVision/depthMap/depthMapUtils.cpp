@@ -183,7 +183,10 @@ void mergeDepthSimMapTiles(int rc,
     mvsUtils::deleteDepthSimMapTiles(rc, mp, scale, step, customSuffix);             // delete tile files
 }
 
-void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp, const std::vector<ROI>& tileRoiList)
+void exportDepthSimMapTilePatternObj(int rc,
+                                     const mvsUtils::MultiViewParams& mp,
+                                     const std::vector<ROI>& tileRoiList,
+                                     const std::vector<std::pair<float, float>>& tileMinMaxDepthsList)
 {
   const std::string filepath = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::tilePattern, 1);
 
@@ -195,9 +198,7 @@ void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp
   std::vector<Point3d> vertices(nbRoiVertices * tileRoiList.size());
   std::vector<std::tuple<int,int,int>> faces(nbRoiFaces * tileRoiList.size());
 
-  const double cornerPixSize = tileRoiList.front().x.size() / 4;  // corner bevel size in image pixel
-  const double firstDepth = 0.0;                                  // corner mesh first depth
-  const double lastDepth = 100.0;                                 // corner mesh last depth
+  const double cornerPixSize = tileRoiList.front().x.size() / 5;  // corner bevel size in image pixel
 
   // 2 points offset from corner (to draw a bevel)
   const std::vector<std::pair<Point2d, Point2d>> roiCornerOffsets = {
@@ -207,10 +208,24 @@ void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp
     {{-cornerPixSize, 0.0},{0.0, -cornerPixSize}}   // corner (roi.x.end,   roi.y.end  )
   };
 
+  // vertex color sets
+  const std::vector<aiColor4D> roiColors = {
+    {1, 0, 0, 0},
+    {0, 1, 0, 0},
+    {0, 0, 1, 0},
+    {1, 1, 0, 0},
+    {0, 1, 1, 0},
+    {1, 0, 1, 0},
+  };
+
   // build vertices and faces for each ROI
   for(std::size_t ri = 0; ri < tileRoiList.size(); ++ri)
   {
       const ROI& roi = tileRoiList.at(ri);
+
+      const auto& minMaxDepth = tileMinMaxDepthsList.at(ri);
+      const float firstDepth = minMaxDepth.first;
+      const float lastDepth = minMaxDepth.second;
 
       const std::vector<Point2d> roiCorners = {
         {double(roi.x.begin), double(roi.y.begin)},
@@ -272,6 +287,13 @@ void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp
       aimesh->mVertices[i].x = vertex.x;
       aimesh->mVertices[i].y = vertex.y;
       aimesh->mVertices[i].z = vertex.z;
+  }
+
+  aimesh->mColors[0] = new aiColor4D[vertices.size()];
+
+  for(std::size_t i = 0; i < vertices.size(); ++i)
+  {
+      aimesh->mColors[0][i] = roiColors[(i/nbRoiVertices) % roiColors.size()];
   }
 
   aimesh->mNumFaces = faces.size();

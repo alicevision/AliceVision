@@ -264,9 +264,6 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
             tiles.push_back(t);
         }
-
-        if(depthMapParams.sgmParams.exportIntermediateResults || depthMapParams.refineParams.exportIntermediateResults)
-            exportDepthSimMapTilePatternObj(rc, mp, tileRoiList);
     }
 
     // allocate Sgm and Refine per stream in device memory
@@ -284,11 +281,15 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // allocate final deth/similarity map tile list in host memory
     std::vector<std::vector<CudaHostMemoryHeap<float2, 2>>> depthSimMapTilePerCam(nbRcPerBatch);
+    std::vector<std::vector<std::pair<float, float>>> depthMinMaxTilePerCam(nbRcPerBatch);
 
     for(int i = 0; i < nbRcPerBatch; ++i)
     {
         auto& depthSimMapTiles = depthSimMapTilePerCam.at(i);
+        auto& depthMinMaxTiles = depthMinMaxTilePerCam.at(i);
+
         depthSimMapTiles.resize(nbTilesPerCamera);
+        depthMinMaxTiles.resize(nbTilesPerCamera);
 
         for(int j = 0; j < nbTilesPerCamera; ++j)
           depthSimMapTiles.at(j).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
@@ -353,8 +354,12 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             if(sgmDepthList.getDepths().empty()) // no depth found
             {
                 resetDepthSimMap(tileDepthSimMap_hmh);
+                depthMinMaxTilePerCam.at(batchCamIndex).at(tile.id) = {0.f, 0.f};
                 continue;
             }
+
+            // store min/max depth
+            depthMinMaxTilePerCam.at(batchCamIndex).at(tile.id) = sgmDepthList.getMinMaxDepths();
 
             // log debug camera / depth information
             sgmDepthList.logRcTcDepthInformation(mp);
@@ -390,6 +395,9 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         {
           const int batchCamIndex = c % nbRcPerBatch;
           writeDepthSimMapFromTileList(c, mp, depthMapParams.tileParams, tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
+
+          if(depthMapParams.sgmParams.exportIntermediateResults || depthMapParams.refineParams.exportIntermediateResults)
+              exportDepthSimMapTilePatternObj(c, mp, tileRoiList, depthMinMaxTilePerCam.at(batchCamIndex));
         }
     }
 
