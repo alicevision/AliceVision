@@ -140,8 +140,12 @@ void mergeDepthSimMapTiles(int rc,
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
  * @param[in] tileRoiList tile region-of-interest list
+ * @param[in] tileMinMaxDepthsList tile min/max depth list
  */
-void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp, const std::vector<ROI>& tileRoiList);
+void exportDepthSimMapTilePatternObj(int rc,
+                                     const mvsUtils::MultiViewParams& mp,
+                                     const std::vector<ROI>& tileRoiList,
+                                     const std::vector<std::pair<float, float>>& tileMinMaxDepthsList);
 
 } // namespace depthMap
 } // namespace aliceVision
