@@ -10,6 +10,8 @@
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 
@@ -43,11 +45,29 @@ void getTileParamsFromMetadata(const std::string& mapFirstTilePath, TileParams& 
     }
 }
 
+/**
+ * @brief Weight one of the corners/edges of a tile according to the size of the padding
+ *
+ * When merging tiles, there are 8 intersection areas:
+ *  * 4 corners (intersection of 4 tiles or 2 tiles when the tile is on one image edge)
+ *  * 4 edges (intersection of 2 tiles)
+ *
+ * @param a alpha for top-left
+ * @param b alpha for top-right
+ * @param c alpha for bottom-right
+ * @param d alpha for bottom-left
+ * @param currentTileWidth
+ * @param currentTileHeight
+ * @param borderWidth tiles intersection area width (could be the intersection between 2 or 4 tiles)
+ * @param borderHeight tiles intersection area height
+ * @param lu left-up corner of the intersection area in the tile coordinate system
+ * @param in_tileMap image buffer of the tile
+ */
 void weightTileBorder(int a, int b, int c, int d, 
                       int currentTileWidth, 
                       int currentTileHeight,
                       int borderWidth, 
-                      int borderHeight,  
+                      int borderHeight,
                       const Point2d& lu, 
                       std::vector<float>& in_tileMap)
 {
@@ -56,17 +76,24 @@ void weightTileBorder(int a, int b, int c, int d,
     const int endX = std::min(int(rd.x), currentTileWidth);
     const int endY = std::min(int(rd.y), currentTileHeight);
 
+    // Add small margin where alpha is 0 for corners (lu and rd)
+    static const double margin = 2.0;
+    const Point2d lu_m(lu.x + margin, lu.y + margin);
+    const Point2d rd_m(rd.x - margin, rd.y - margin);
+    const double borderWidth_m = borderWidth - 2.0 * margin;
+    const double borderHeight_m = borderHeight - 2.0 * margin;
+
     for(int x = lu.x; x < endX; ++x)
     {
         for(int y = lu.y; y < endY; ++y)
         {
             // bilinear interpolation
-            const float ui = (rd.x - x) / borderWidth;
-            const float vi = (x - lu.x) / borderWidth;
-            const float uj = (rd.y - y) / borderHeight;
-            const float vj = (y - lu.y) / borderHeight;
+            const float r_x = clamp((rd_m.x - x) / borderWidth_m, 0.0, 1.0);
+            const float r_y = clamp((rd_m.y - y) / borderHeight_m, 0.0, 1.0);
+            const float l_x = clamp((x - lu_m.x) / borderWidth_m, 0.0, 1.0);
+            const float l_y = clamp((y - lu_m.y) / borderHeight_m, 0.0, 1.0);
 
-            const float weight = uj * (ui * a + vi * b) + vj * (ui * d + vi * c);
+            const float weight = r_y * (r_x * a + l_x * b) + l_y * (r_x * d + l_x * c);
 
             // apply weight to tile depth/sim map
             in_tileMap[y * currentTileWidth + x] *= weight;
