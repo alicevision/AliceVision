@@ -12,11 +12,14 @@
 #define CUDA_HOST __host__
 #define CUDA_CEIL(f)  ceil(f)
 #define CUDA_FLOOR(f) floor(f)
+#define CUDA_MAX(a,b) max(a,b)
 #else
 #define CUDA_HOST_DEVICE
 #define CUDA_HOST
 #define CUDA_CEIL(f)  std::ceil(f)
 #define CUDA_FLOOR(f) std::floor(f)
+#define CUDA_MAX(a,b) std::max(a, b)
+#include <algorithm>
 #include <cmath>
 #endif
 
@@ -169,7 +172,7 @@ CUDA_HOST inline Range inflateRange(const Range& range, float factor)
 {
     const float midRange = range.begin + (range.size() * 0.5f);
     const float inflateSize = range.size() * factor * 0.5f;
-    return Range(CUDA_FLOOR(midRange - inflateSize), CUDA_CEIL(midRange + inflateSize));
+    return Range(CUDA_FLOOR(CUDA_MAX(midRange - inflateSize, 0.f)), CUDA_CEIL(midRange + inflateSize));
 }
 
 /**
