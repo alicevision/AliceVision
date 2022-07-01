@@ -22,7 +22,6 @@ struct DepthMapParams
   SgmParams sgmParams;
   RefineParams refineParams;
 
-  bool mergeTiles = false;
   bool chooseTCamsPerTile = true;
   int maxTCams = 10;
 };

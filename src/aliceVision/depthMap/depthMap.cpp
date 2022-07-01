@@ -199,7 +199,6 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
 
     depthMapParams.maxTCams = mp.userParams.get<int>("depthMap.maxTCams", depthMapParams.maxTCams);
     depthMapParams.chooseTCamsPerTile = mp.userParams.get<bool>("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
-    depthMapParams.mergeTiles = mp.userParams.get<bool>("depthMap.mergeTiles", depthMapParams.mergeTiles);
 }
 
 void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
@@ -399,7 +398,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     }
 
     // merge intermediate results tiles if needed and desired
-    if(depthMapParams.mergeTiles && tiles.size() > cams.size())
+    if(tiles.size() > cams.size())
     {
         // merge tiles if needed and desired
         for(int rc : cams)
