@@ -180,6 +180,7 @@ void mergeDepthSimMapTiles(int rc,
 
     mvsUtils::readDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix);  // read and merge tiles
     mvsUtils::writeDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix); // write the merged depth/sim maps
+    mvsUtils::deleteDepthSimMapTiles(rc, mp, scale, step, customSuffix);             // delete tile files
 }
 
 void exportDepthSimMapTilePatternObj(int rc, const mvsUtils::MultiViewParams& mp, const std::vector<ROI>& tileRoiList)
