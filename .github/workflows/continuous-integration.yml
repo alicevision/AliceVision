@@ -101,7 +101,7 @@ jobs:
       DEPS_INSTALL_DIR: '${{ github.workspace }}/install'
       buildDir: '${{ github.workspace }}/build/'
       vcpkgDir: '${{ github.workspace }}\..\vcpkg'
-      tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
+      # tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
       COMMIT_ID: 467509eb8fe938de3e5f85a6cb1b72edacb2284c
@@ -120,11 +120,11 @@ jobs:
           git checkout ${{ env.COMMIT_ID }}
           cd ${{ github.workspace }}
 
-          New-Item -Path ${{ env.tripletPath}} -ItemType File
-          "set(VCPKG_TARGET_ARCHITECTURE x64)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          "set(VCPKG_CRT_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          "set(VCPKG_LIBRARY_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          "set(VCPKG_BUILD_TYPE release)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # New-Item -Path ${{ env.tripletPath}} -ItemType File
+          # "set(VCPKG_TARGET_ARCHITECTURE x64)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # "set(VCPKG_CRT_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # "set(VCPKG_LIBRARY_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # "set(VCPKG_BUILD_TYPE release)" | Out-File -FilePath ${{ env.tripletPath}} -Append
 
       - name: vcpkg - Boostrap
         run: |
