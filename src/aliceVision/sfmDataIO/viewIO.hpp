@@ -11,6 +11,7 @@
 #include <aliceVision/camera/IntrinsicBase.hpp>
 
 #include <boost/filesystem.hpp>
+#include <aliceVision/sfmData/uid.hpp>
 
 #include <memory>
 
