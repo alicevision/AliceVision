@@ -64,6 +64,12 @@ Building the project using vcpkg (recommended on Windows)
 [Vcpkg](https://github.com/alicevision/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
 AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
 
+```bash
+git clone https://github.com/alicevision/vcpkg --branch alicevision_master
+cd vcpkg
+.\bootstrap-vcpkg.bat
+```
+
 **Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
 
 To build AliceVision using vcpkg:
