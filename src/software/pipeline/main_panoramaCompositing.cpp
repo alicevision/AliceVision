@@ -80,8 +80,10 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
         if(!sfmData.isPoseAndIntrinsicDefined(viewIt.first))
             continue;
 
+        const std::string warpedPath = viewIt.second->getMetadata().at("AliceVision:warpedPath");
+
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+        const std::string maskPath = (fs::path(inputPath) / (warpedPath + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load metadata of mask with path " << maskPath);
 
         int width = 0;
@@ -117,7 +119,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
     return ret;
 }
 
-bool processImage(const PanoramaMap & panoramaMap, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, IndexT viewReference, const BoundingBox & referenceBoundingBox, bool showBorders, bool showSeams)
+bool processImage(const PanoramaMap & panoramaMap, const sfmData::SfMData & sfmData, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, IndexT viewReference, const BoundingBox & referenceBoundingBox, bool showBorders, bool showSeams)
 {
     // The laplacian pyramid must also contains some pixels outside of the bounding box to make sure 
     // there is a continuity between all the "views" of the panorama.
@@ -184,8 +186,10 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     image::Image<std::vector<IndexT>> visiblePixels(globalUnionBoundingBox.width, globalUnionBoundingBox.height, true);
     for (IndexT viewCurrent : overlappingViews)
     {        
+        const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
+        
         // Load mask
-        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+        const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(maskPath, mask);
@@ -357,6 +361,8 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             continue;
         }
 
+        const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
+
         ALICEVISION_LOG_INFO("Processing input " << posCurrent << "/" << overlappingViews.size());
 
         // Compute list of intersection between this view and the reference view
@@ -384,13 +390,13 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             const BoundingBox & bboxIntersect = intersections[indexIntersection];
 
             // Load image
-            const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
+            const std::string imagePath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
             ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
             image::Image<image::RGBfColor> source;
             image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
             // Load mask
-            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            const std::string maskPath = (fs::path(warpingFolder) / (warpedPath + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
             image::readImageDirect(maskPath, mask);
@@ -399,7 +405,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             image::Image<float> weights; 
             if (needWeights)
             {
-                const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
+                const std::string weightsPath = (fs::path(warpingFolder) / (warpedPath + "_weight.exr")).string();
                 ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
                 image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
             }
@@ -459,8 +465,8 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         return false;
     }
 
-    const std::string viewIdStr = std::to_string(viewReference);
-    const std::string outputFilePath = (fs::path(outputFolder) / (viewIdStr + ".exr")).string();
+    const std::string warpedPath = sfmData.getViews().at(viewReference)->getMetadata().at("AliceVision:warpedPath");
+    const std::string outputFilePath = (fs::path(outputFolder) / (warpedPath + ".exr")).string();
     image::Image<image::RGBAfColor> & output = compositer->getOutput();
 
     if (storageDataType == image::EStorageDataType::HalfFinite)
@@ -498,6 +504,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             }
 
             // Load mask
+            const std::string warpedPath = sfmData.getViews().at(viewCurrent)->getMetadata().at("AliceVision:warpedPath");
             const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
@@ -642,6 +649,14 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    std::set<std::string> uniquePreviousId;
+    for (auto pv : sfmData.getViews())
+    {
+        std::string pvid = pv.second->getMetadata().at("AliceVision:previousViewId");
+        uniquePreviousId.insert(pvid);
+    }
+    size_t oldViewsCount = uniquePreviousId.size();
+
     // Define range to compute
     int viewsCount = sfmData.getViews().size();
     if(rangeIteration != -1)
@@ -652,13 +667,15 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        int countIterations = int(std::ceil(double(viewsCount) / double(rangeSize)));
+        int countIterations = int(std::ceil(double(oldViewsCount) / double(rangeSize)));
        
         if(rangeIteration >= countIterations)
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
+
+        rangeSize = rangeSize * std::ceil(double(viewsCount) / double(oldViewsCount));
     }
     else
     {
@@ -679,6 +696,7 @@ int aliceVision_main(int argc, char** argv)
     {
         borderSize = 0;
     }
+
 
     // Build the map of inputs in the final panorama
     // This is mostly meant to compute overlaps between inputs
@@ -719,6 +737,8 @@ int aliceVision_main(int argc, char** argv)
         if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
             continue;
 
+        std::cout << sfmData.getViews()[viewReference]->getMetadata().at("AliceVision:warpedPath") << std::endl;
+
         BoundingBox referenceBoundingBox;
         if (!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
         {
@@ -726,7 +746,8 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        if (!processImage(*panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams)) 
+        /*381188086_11*/
+        if (!processImage(*panoramaMap, sfmData, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams)) 
         {
             succeeded = false;
             continue;

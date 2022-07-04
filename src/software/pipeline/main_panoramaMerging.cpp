@@ -123,16 +123,18 @@ int aliceVision_main(int argc, char** argv)
         if(!sfmData.isPoseAndIntrinsicDefined(viewId))
             continue;
 
+        const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
+
         // Get composited image path
-        const std::string imagePath = (fs::path(compositingFolder) / (std::to_string(viewId) + ".exr")).string();
-        
+        const std::string imagePath = (fs::path(compositingFolder) / (warpedPath + ".exr")).string();
+
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
         const int offsetX = metadata.find("AliceVision:offsetX")->get_int();
         const int offsetY = metadata.find("AliceVision:offsetY")->get_int();
         const int panoramaWidth = metadata.find("AliceVision:panoramaWidth")->get_int();
         const int panoramaHeight = metadata.find("AliceVision:panoramaHeight")->get_int();
-
+        
         if (first) 
         {
             panorama = image::Image<image::RGBAfColor>(panoramaWidth, panoramaHeight, true, image::RGBAfColor(0.0f, 0.0f, 0.f, 0.0f));

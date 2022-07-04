@@ -270,27 +270,56 @@ int aliceVision_main(int argc, char** argv)
 		// Preprocessing per view
 		for(std::size_t i = std::size_t(rangeStart); i < std::size_t(rangeStart + rangeSize); ++i)
 		{
-				const std::shared_ptr<sfmData::View> & viewIt = viewsOrderedByName[i];
+			const std::shared_ptr<sfmData::View> & viewIt = viewsOrderedByName[i];
 
-				// Retrieve view
-				const sfmData::View& view = *viewIt;
-				if (!sfmData.isPoseAndIntrinsicDefined(&view))
+			// Retrieve view
+			const sfmData::View& view = *viewIt;
+			if (!sfmData.isPoseAndIntrinsicDefined(&view))
+			{
+				continue;
+			}
+
+			ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
+
+			// Get intrinsics and extrinsics
+			geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
+			std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+		
+			// Compute coarse bounding box to make computations faster
+			BoundingBox coarseBboxInitial;
+			if (!computeCoarseBB(coarseBboxInitial, panoramaSize, camPose, *(intrinsic.get()))) 
+			{
+				continue;
+			}    
+
+
+			std::vector<BoundingBox> coarsesBbox;
+			if (coarseBboxInitial.width > coarseBboxInitial.height * 2.0)
+			{
+				int count = int(double(coarseBboxInitial.width) / double(coarseBboxInitial.height));
+				int width = coarseBboxInitial.width / count;
+
+				int pos = 0;
+				for (int id = 0; id < count; id++)
 				{
-					continue;
+					BoundingBox subCoarseBbox;
+					subCoarseBbox.left = coarseBboxInitial.left + pos;
+					subCoarseBbox.top = coarseBboxInitial.top;
+					subCoarseBbox.width = width;
+					subCoarseBbox.height = coarseBboxInitial.height;
+
+					coarsesBbox.push_back(subCoarseBbox);
+					pos += width;
 				}
+			}
+			else
+			{
+				coarsesBbox.push_back(coarseBboxInitial);
+			}
 
-				ALICEVISION_LOG_INFO("[" << int(i) + 1 - rangeStart << "/" << rangeSize << "] Processing view " << view.getViewId() << " (" << i + 1 << "/" << viewsOrderedByName.size() << ")");
-
-				// Get intrinsics and extrinsics
-				geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-				std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
-			
-				// Compute coarse bounding box to make computations faster
-				BoundingBox coarseBbox;
-				if (!computeCoarseBB(coarseBbox, panoramaSize, camPose, *(intrinsic.get()))) 
-				{
-					continue;
-				}    
+			for (int idsub = 0; idsub < coarsesBbox.size(); idsub++)
+			{
+				auto coarseBbox = coarsesBbox[idsub];
 
 				// round to the closest tiles
 				BoundingBox snappedCoarseBbox;
@@ -372,9 +401,10 @@ int aliceVision_main(int argc, char** argv)
 
 				// Define output paths
 				const std::string viewIdStr = std::to_string(view.getViewId());
-				const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + ".exr")).string();
-				const std::string maskFilepath = (fs::path(outputDirectory) / (viewIdStr + "_mask.exr")).string();
-				const std::string weightFilepath = (fs::path(outputDirectory) / (viewIdStr + "_weight.exr")).string();
+				const std::string subIdStr = std::to_string(idsub);
+				const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + ".exr")).string();
+				const std::string maskFilepath = (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + "_mask.exr")).string();
+				const std::string weightFilepath = (fs::path(outputDirectory) / (viewIdStr + "_" + subIdStr + "_weight.exr")).string();
 
 				// Create output images
 				std::unique_ptr<oiio::ImageOutput> out_view = oiio::ImageOutput::create(viewFilepath);
@@ -474,6 +504,7 @@ int aliceVision_main(int argc, char** argv)
 				out_view->close();
 				out_mask->close();
 				out_weights->close();
+			}
 		}
 
 		return EXIT_SUCCESS;
