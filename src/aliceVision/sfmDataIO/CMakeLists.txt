@@ -2,6 +2,7 @@
 set(sfmDataIO_files_headers
   sfmDataIO.hpp
   bafIO.hpp
+  colmap.hpp
   gtIO.hpp
   jsonIO.hpp
   middlebury.hpp
@@ -14,6 +15,7 @@ set(sfmDataIO_files_headers
 set(sfmDataIO_files_sources
   sfmDataIO.cpp
   bafIO.cpp
+  colmap.cpp
   gtIO.cpp
   jsonIO.cpp
   middlebury.cpp
