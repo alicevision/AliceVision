@@ -87,3 +87,10 @@ alicevision_add_test(middlebury_test.cpp
         aliceVision_numeric
         aliceVision_sfmDataIO
         )
+
+alicevision_add_test(colmap_test.cpp
+        NAME "sfmDataIO_colmap"
+        LINKS aliceVision_sfmData
+        aliceVision_numeric
+        aliceVision_sfmDataIO
+        )
