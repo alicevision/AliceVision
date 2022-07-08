@@ -80,6 +80,22 @@ alicevision_add_software(aliceVision_exportPMVS
         Boost::timer
 )
 
+# Export a SfM aliceVision scene to PMVS format
+alicevision_add_software(aliceVision_exportColmap
+        SOURCE main_exportColmap.cpp
+        FOLDER ${FOLDER_SOFTWARE_EXPORT}
+        LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
+        )
+
+
 # Export point cloud
 alicevision_add_software(aliceVision_exportColoredPointCloud
   SOURCE main_exportColoredPointCloud.cpp
