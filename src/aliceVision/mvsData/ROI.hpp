@@ -12,15 +12,18 @@
 #define CUDA_HOST __host__
 #define CUDA_CEIL(f)  ceil(f)
 #define CUDA_FLOOR(f) floor(f)
+#define CUDA_MIN(a,b) min(a,b)
 #define CUDA_MAX(a,b) max(a,b)
 #else
 #define CUDA_HOST_DEVICE
 #define CUDA_HOST
 #define CUDA_CEIL(f)  std::ceil(f)
 #define CUDA_FLOOR(f) std::floor(f)
+#define CUDA_MIN(a,b) std::min(a, b)
 #define CUDA_MAX(a,b) std::max(a, b)
 #include <algorithm>
 #include <cmath>
+#include <ostream>
 #endif
 
 namespace aliceVision {
@@ -55,6 +58,8 @@ struct Range
      */
     CUDA_HOST_DEVICE inline unsigned int size() const { return end - begin; }
 
+    CUDA_HOST_DEVICE inline bool isEmpty() const { return begin >= end; }
+
     /**
      * @brief Return true if the given index is contained in the Range.
      * @param[in] i the given index
@@ -65,6 +70,12 @@ struct Range
         return ((begin <= i) && (end > i));
     }
 };
+
+inline Range intersect(const Range& a, const Range& b)
+{
+    return Range(CUDA_MAX(a.begin, b.begin),
+                 CUDA_MIN(a.end, b.end));
+}
 
 /*
  * @struct ROI
@@ -114,6 +125,8 @@ struct ROI
      * @return the Y range size
      */
     CUDA_HOST_DEVICE inline unsigned int height() const { return y.size(); }
+
+    CUDA_HOST_DEVICE inline bool isEmpty() const { return x.isEmpty() || y.isEmpty(); }
 
     /**
      * @brief Return true if the given 2d point is contained in the ROI.
@@ -210,6 +223,25 @@ CUDA_HOST inline ROI inflateROI(const ROI& roi, float factor)
     return ROI(inflateRange(roi.x, factor),
                inflateRange(roi.y, factor));
 }
+
+
+inline ROI intersect(const ROI& a, const ROI& b)
+{
+    return ROI(intersect(a.x, b.x), intersect(a.y, b.y));
+}
+
+#if not defined(__NVCC__)
+inline std::ostream& operator<<(std::ostream& os, const Range& range)
+{
+    os << range.begin << "-" << range.end;
+    return os;
+}
+inline std::ostream& operator<<(std::ostream& os, const ROI& roi)
+{
+    os << "x: " << roi.x << ", y: " << roi.y;
+    return os;
+}
+#endif
 
 } // namespace aliceVision
 

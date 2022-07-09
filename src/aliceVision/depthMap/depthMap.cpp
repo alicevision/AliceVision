@@ -130,7 +130,7 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
 
     ALICEVISION_LOG_INFO("Device memory:" << std::endl
                          << "\t- available: " << deviceMemoryMB << " MB" << std::endl
-                         << "\t- requirement per tile: " << rcMinCostMB << " MB" << std::endl
+                         << "\t- requirement for the first tile: " << rcMinCostMB << " MB" << std::endl
                          << "\t- # computation buffers per tile: " << tileCostMB << " MB" << " (Sgm: " << sgmTileCostMB << " MB" << ", Refine: " << refineTileCostMB << " MB)" << std::endl
                          << "\t- # input images (R + " << depthMapParams.maxTCams << " Ts): " << rcCamsCost << " MB (single multi-res image size: " << cameraFrameCostMB << " MB)");
 
@@ -239,6 +239,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     {
         // compute T cameras list per R camera
         const std::vector<int> tCams = mp.findNearestCamsFromLandmarks(rc, depthMapParams.maxTCams).getDataWritable();
+        const ROI rcImageRod(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
 
         for(std::size_t ti = 0;  ti < tileRoiList.size(); ++ti)
         {
@@ -247,7 +248,9 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             t.id = ti;
             t.nbTiles = nbTilesPerCamera;
             t.rc = rc;
-            t.roi = tileRoiList.at(ti);
+            t.roi = intersect(tileRoiList.at(ti), rcImageRod);
+            if(t.roi.isEmpty())
+                continue;
 
             if(depthMapParams.chooseTCamsPerTile)
             {
