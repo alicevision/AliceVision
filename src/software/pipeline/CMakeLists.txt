@@ -521,30 +521,32 @@ if(ALICEVISION_BUILD_MVS)
   )
 endif() # if(ALICEVISION_BUILD_MVS)
 
-# Photometric Stereo
-alicevision_add_software(aliceVision_photometricStereo
-  SOURCE main_photometricStereo.cpp
-  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-  LINKS aliceVision_photometricStereo
-        aliceVision_system
-        aliceVision_mvsData
-        aliceVision_mvsUtils
-        aliceVision_sfmData
-        aliceVision_sfmDataIO
-        Boost::program_options
-)
+if(ALICEVISION_HAVE_OPENCV)
+    # Photometric Stereo
+    alicevision_add_software(aliceVision_photometricStereo
+      SOURCE main_photometricStereo.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_photometricStereo
+            aliceVision_system
+            aliceVision_mvsData
+            aliceVision_mvsUtils
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            Boost::program_options
+    )
 
-alicevision_add_software(aliceVision_normalIntegration
-  SOURCE main_normalIntegration.cpp
-  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-  LINKS aliceVision_photometricStereo
-        aliceVision_system
-        aliceVision_mvsData
-        aliceVision_mvsUtils
-        aliceVision_sfmData
-        aliceVision_sfmDataIO
-        Boost::program_options
-)
+    alicevision_add_software(aliceVision_normalIntegration
+      SOURCE main_normalIntegration.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_photometricStereo
+            aliceVision_system
+            aliceVision_mvsData
+            aliceVision_mvsUtils
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            Boost::program_options
+    )
+endif()
 
 alicevision_add_software(aliceVision_lightingCalibration
   SOURCE main_lightingCalibration.cpp
