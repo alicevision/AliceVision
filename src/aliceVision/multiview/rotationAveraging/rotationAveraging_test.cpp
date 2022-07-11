@@ -64,8 +64,6 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_ClosestSVDRotationMatrixNoisy )
 //     1
 BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
 {
-  using namespace std;
-
   //--
   // Setup 3 camera that have a relative orientation of 120deg
   // Set Z axis as UP Vector for the rotation
@@ -106,8 +104,6 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
 
 BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_SimpleTriplet)
 {
-  using namespace std;
-
   //--
   // Setup 3 camera that have a relative orientation of 120deg
   // Set Z axis as UP Vector for the rotation

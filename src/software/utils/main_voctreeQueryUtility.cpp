@@ -37,7 +37,6 @@
 
 static const int DIMENSION = 128;
 
-using namespace std;
 using namespace boost::accumulators;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -71,7 +70,7 @@ std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document 
 
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {
-  stringstream ss;
+  std::stringstream ss;
   ss << std::setw(zeroPadding) << std::setfill('0') << i;
   return ss.str();
 }
@@ -345,7 +344,7 @@ int aliceVision_main(int argc, char** argv)
   std::ofstream fileout;
   if(withOutput)
   {
-    fileout.open(outfile, ofstream::out);
+    fileout.open(outfile, std::ofstream::out);
   }
 
   std::map<std::size_t, voctree::SparseHistogram> histograms;
@@ -520,8 +519,8 @@ int aliceVision_main(int argc, char** argv)
   }
 
 #ifdef ALICEVISION_DEBUG_MATCHING
-  std::cout << " ---------------------------- \n" << endl;
-  std::cout << "Matching distances - Histogram: \n" << endl;
+  std::cout << " ---------------------------- \n" << std::endl;
+  std::cout << "Matching distances - Histogram: \n" << std::endl;
   std::map<int,int> stats;
   for( const auto& imgMatches: allMatches)
   {

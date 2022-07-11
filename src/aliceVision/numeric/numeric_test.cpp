@@ -17,7 +17,6 @@
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
-using namespace std;
 
 //-- Assert that stream interface is available
 BOOST_AUTO_TEST_CASE ( TinyMatrix_print )

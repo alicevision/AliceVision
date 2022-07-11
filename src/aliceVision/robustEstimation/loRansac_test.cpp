@@ -38,7 +38,7 @@ void lineFittingTest(std::size_t numPoints,
   assert(gaussianNoiseLevel >= 0);
   
   Mat2X xy(2, numPoints);
-  vector<std::size_t> vec_inliersGT;
+  std::vector<std::size_t> vec_inliersGT;
   generateLine(numPoints, outlierRatio, gaussianNoiseLevel, GTModel, gen, xy, vec_inliersGT);
 
   const bool withNoise = (gaussianNoiseLevel > std::numeric_limits<double>::epsilon());

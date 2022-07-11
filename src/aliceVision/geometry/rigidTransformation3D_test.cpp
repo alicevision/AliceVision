@@ -17,7 +17,6 @@
 
 using namespace aliceVision;
 using namespace aliceVision::geometry;
-using namespace std;
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleOnly)
 {

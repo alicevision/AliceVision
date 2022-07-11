@@ -82,7 +82,6 @@ BOOST_AUTO_TEST_CASE(kmeanInitializerVarying)
 
   const int FEATURENUMBER = 500;
   const std::size_t numTrial = 3;
-  using namespace std;
 
   // generate random values for K and DIMENSION
   std::default_random_engine generator;

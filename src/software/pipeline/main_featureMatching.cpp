@@ -52,7 +52,6 @@ using namespace aliceVision::robustEstimation;
 using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
 using namespace aliceVision::matchingImageCollection;
-using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
