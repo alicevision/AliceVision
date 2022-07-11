@@ -20,7 +20,6 @@
 using namespace aliceVision;
 using namespace aliceVision::linearProgramming;
 using namespace lInfinityCV;
-using namespace std;
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs) {
 

@@ -11,7 +11,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
 using namespace aliceVision;
 
 void meanAndStd(const Eigen::Matrix2Xf& points2d, Vec2f& mean, Vec2f& stdDev)

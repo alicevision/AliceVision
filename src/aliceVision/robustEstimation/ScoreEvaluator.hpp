@@ -10,8 +10,6 @@
 namespace aliceVision {
 namespace robustEstimation{
 
-using namespace std;
-
 /**
  * @brief Templated Functor class to evaluate a given model over a set of samples.
  */

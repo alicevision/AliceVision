@@ -20,7 +20,6 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/config.hpp>
 
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 
@@ -28,8 +27,8 @@ ImageScale::ImageScale( const Image< float >& I, double r )
 {
   IntegralImages inter( I );
   radius_size = r;
-  step = sqrt( 2.0 );
-  int size = max( I.Width(),I.Height() );
+  step = std::sqrt( 2.0 );
+  int size = std::max( I.Width(),I.Height() );
 
   int number= int( log( size / r ) / log( 2.0 ) ) + 1;
   angles.resize( number );
@@ -120,9 +119,9 @@ VLD::VLD( const ImageScale& series, T const& P1, T const& P2 ) : contrast( 0.0 )
   distance = std::hypot( dy, dx );
 
   if( distance == 0 )
-    cerr<<"Two SIFT points have the same coordinate"<<endl;
+    std::cerr << "Two SIFT points have the same coordinate" << std::endl;
 
-  const float radius = max( distance / float( dimension + 1 ), 2.0f );//at least 2
+  const float radius = std::max( distance / float( dimension + 1 ), 2.0f );//at least 2
 
   const double mainAngle = get_orientation();//absolute angle
 
@@ -141,7 +140,7 @@ VLD::VLD( const ImageScale& series, T const& P1, T const& P2 ) : contrast( 0.0 )
   double statistic[ binNum ];
   for( int i = 0; i < dimension; i++ )
   {
-    fill_n( statistic, binNum, 0.0);
+    std::fill_n( statistic, binNum, 0.0);
 
     float xi = float( begin_point[ 0 ] + float( i + 1 ) / ( dimension + 1 ) * ( dx ) );
     float yi = float( begin_point[ 1 ] + float( i + 1 ) / ( dimension + 1 ) * ( dy ) );
@@ -204,11 +203,11 @@ float KVLD( const Image< float >& I1,
             const Image< float >& I2,
             const std::vector<feature::PointFeature> & F1,
             const std::vector<feature::PointFeature> & F2,
-            const vector< Pair >& matches,
-            vector< Pair >& matchesFiltered,
-            vector< double >& score,
+            const std::vector< Pair >& matches,
+            std::vector< Pair >& matchesFiltered,
+            std::vector< double >& score,
             aliceVision::Mat& E,
-            vector< bool >& valide,
+            std::vector< bool >& valide,
             KvldParameters& kvldParameters )
 {
   matchesFiltered.clear();
@@ -216,15 +215,15 @@ float KVLD( const Image< float >& I1,
   ImageScale Chaine1( I1 );
   ImageScale Chaine2( I2 );
 
-  cout << "Image scale-space complete..." << endl;
+  std::cout << "Image scale-space complete..." << std::endl;
 
-  const float range1 = getRange( I1, min( F1.size(), matches.size() ), kvldParameters.inlierRate );
-  const float range2 = getRange( I2, min( F2.size(), matches.size() ), kvldParameters.inlierRate );
+  const float range1 = getRange( I1, std::min( F1.size(), matches.size() ), kvldParameters.inlierRate );
+  const float range2 = getRange( I2, std::min( F2.size(), matches.size() ), kvldParameters.inlierRate );
 
   const size_t size = matches.size();
 
   //================distance map construction, foruse of selecting neighbors===============//
-  cout << "computing distance maps" << endl;
+  std::cout << "computing distance maps" << std::endl;
 
   bool bPrecomputedDist = false;
 
@@ -243,9 +242,9 @@ float KVLD( const Image< float >& I1,
         dist2( b1, b2 ) = dist2( b2, b1 ) = point_distance( F2[ b1 ], F2[ b2 ] );
   }
 
-  fill( valide.begin(), valide.end(), true );
-  vector< double > scoretable( size, 0.0 );
-  vector< size_t > result( size, 0 );
+  std::fill( valide.begin(), valide.end(), true );
+  std::vector< double > scoretable( size, 0.0 );
+  std::vector< size_t > result( size, 0 );
 
 
 //============main iteration formatch verification==========//
@@ -256,8 +255,8 @@ float KVLD( const Image< float >& I1,
   {
     change = false;
 
-    fill( scoretable.begin(), scoretable.end(), 0.0 );
-    fill( result.begin(), result.end(), 0 );
+    std::fill( scoretable.begin(), scoretable.end(), 0.0 );
+    std::fill( result.begin(), result.end(), 0 );
     //========substep 1: search foreach match its neighbors and verify if they are gvld-consistent ============//
     for( int it1 = 0; it1 < size - 1; it1++ )
     {
@@ -375,7 +374,7 @@ float KVLD( const Image< float >& I1,
       for( int i = 0; i < size; i++ )
         scoretable[ i ]=0;
 
-      vector< bool > switching;
+      std::vector< bool > switching;
       for( int i = 0; i < size; i++ )
         switching.push_back( false );
 

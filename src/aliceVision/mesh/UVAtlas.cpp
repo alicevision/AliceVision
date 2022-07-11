@@ -12,15 +12,13 @@
 namespace aliceVision {
 namespace mesh {
 
-using namespace std;
-
 UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
                                  unsigned int textureSide, unsigned int gutterSize)
     : _textureSide(textureSide)
     , _gutterSize(gutterSize)
     , _mesh(mesh)
 {
-    vector<Chart> charts;
+    std::vector<Chart> charts;
 
     // create texture charts
     createCharts(charts, mp);
@@ -35,7 +33,7 @@ UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
     createTextureAtlases(charts, mp);
 }
 
-void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
+void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_INFO("Creating texture charts.");
 
@@ -88,11 +86,11 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
     }
 }
 
-void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
+void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_INFO("Packing texture charts (" <<  charts.size() << " charts).");
 
-    function<int(int)> findChart = [&](int cid)
+    std::function<int(int)> findChart = [&](int cid)
     {
         Chart& c = charts[cid];
         if(c.mergedWith >= 0)
@@ -105,29 +103,29 @@ void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
     };
 
     // list mesh edges (with duplicates)
-    vector<Edge> alledges;
+    std::vector<Edge> alledges;
     for(int i = 0; i < _mesh.tris.size(); ++i)
     {
         int a = _mesh.tris[i].v[0];
         int b = _mesh.tris[i].v[1];
         int c = _mesh.tris[i].v[2];
         Edge e1;
-        e1.pointIDs = make_pair(min(a, b), max(a, b));
+        e1.pointIDs = std::make_pair(std::min(a, b), std::max(a, b));
         e1.triangleIDs.emplace_back(i);
         alledges.emplace_back(e1);
         Edge e2;
-        e2.pointIDs = make_pair(min(b, c), max(b, c));
+        e2.pointIDs = std::make_pair(std::min(b, c), std::max(b, c));
         e2.triangleIDs.emplace_back(i);
         alledges.emplace_back(e2);
         Edge e3;
-        e3.pointIDs = make_pair(min(c, a), max(c, a));
+        e3.pointIDs = std::make_pair(std::min(c, a), std::max(c, a));
         e3.triangleIDs.emplace_back(i);
         alledges.emplace_back(e3);
     }
-    sort(alledges.begin(), alledges.end());
+    std::sort(alledges.begin(), alledges.end());
 
     // merge edges (no duplicate)
-    vector<Edge> edges;
+    std::vector<Edge> edges;
     auto eit = alledges.begin() + 1;
     while(eit != alledges.end())
     {
@@ -154,11 +152,11 @@ void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
             continue;
         Chart& a = charts[chartIDA];
         Chart& b = charts[chartIDB];
-        vector<int> cameraIntersection;
-        set_intersection(
+        std::vector<int> cameraIntersection;
+        std::set_intersection(
                     a.commonCameraIDs.begin(), a.commonCameraIDs.end(),
                     b.commonCameraIDs.begin(), b.commonCameraIDs.end(),
-                    back_inserter(cameraIntersection));
+                    std::back_inserter(cameraIntersection));
         if(cameraIntersection.empty()) // need at least 1 camera in common
             continue;
         if(a.triangleIDs.size() > b.triangleIDs.size())
@@ -185,7 +183,7 @@ void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
             }), charts.end());
 }
 
-void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
+void UVAtlas::finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_INFO("Finalize packed charts (" <<  charts.size() << " charts).");
 
@@ -213,10 +211,10 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
             for(auto it = chart.triangleIDs.begin(); it != chart.triangleIDs.end(); ++it)
             {
                 Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, mp, camId, mp.getWidth(camId), mp.getHeight(camId));
-                sourceLU.x = min(sourceLU.x, tp.lu.x);
-                sourceLU.y = min(sourceLU.y, tp.lu.y);
-                sourceRD.x = max(sourceRD.x, tp.rd.x);
-                sourceRD.y = max(sourceRD.y, tp.rd.y);
+                sourceLU.x = std::min(sourceLU.x, tp.lu.x);
+                sourceLU.y = std::min(sourceLU.y, tp.lu.y);
+                sourceRD.x = std::max(sourceRD.x, tp.rd.x);
+                sourceRD.y = std::max(sourceRD.y, tp.rd.y);
             }
             if ((sourceRD - sourceLU).size2() > (chart.sourceRD - chart.sourceLU).size2())
             {
@@ -236,7 +234,7 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
     }
 }
 
-void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
+void UVAtlas::createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_INFO("Creating texture atlases.");
 
@@ -260,7 +258,7 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
         texCount++;
         // create a texture atlas
         ALICEVISION_LOG_INFO("\t- texture atlas " << texCount);
-        vector<Chart> atlas;
+        std::vector<Chart> atlas;
         // create a tree root
         ChartRect* root = new ChartRect();
         root->LU.x = 0;

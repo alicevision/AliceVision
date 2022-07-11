@@ -21,7 +21,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
@@ -124,8 +123,8 @@ int main(int argc, char **argv)
   boost::progress_display my_progress_bar( vec_fileNames.size() );
   for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
   {
-    const string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
-    const string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
+    const std::string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
+    const std::string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
 
     Image<RGBColor> image, imageUd;
     readImage(inFileName, image, image::EImageColorSpace::NO_CONVERSION);

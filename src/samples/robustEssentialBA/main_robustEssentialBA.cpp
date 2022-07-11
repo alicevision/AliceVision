@@ -36,7 +36,6 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 using namespace svg;
-using namespace std;
 
 namespace fs = boost::filesystem;
 
@@ -53,10 +52,10 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K);
 ///   way 2: independent cameras motion [R|t], shared focal [f] and structure
 int main() {
   std::mt19937 randomNumberGenerator;
-  const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
+  const std::string sInputDir = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;
-  const string jpg_filenameL = sInputDir + "100_7101.jpg";
-  const string jpg_filenameR = sInputDir + "100_7102.jpg";
+  const std::string jpg_filenameL = sInputDir + "100_7101.jpg";
+  const std::string jpg_filenameR = sInputDir + "100_7102.jpg";
 
   Image<unsigned char> imageL, imageR;
   readImage(jpg_filenameL, imageL, EImageColorSpace::NO_CONVERSION);
@@ -82,7 +81,7 @@ int main() {
   {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
-    string out_filename = "01_concat.jpg";
+    std::string out_filename = "01_concat.jpg";
     writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
@@ -100,7 +99,7 @@ int main() {
       const PointFeature point = regionsR->Features()[i];
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
-    string out_filename = "02_features.jpg";
+    std::string out_filename = "02_features.jpg";
     writeImage(out_filename, concat, EImageColorSpace::NO_CONVERSION);
   }
 
@@ -125,7 +124,7 @@ int main() {
       << vec_PutativeMatches.size() << " #matches with Distance Ratio filter" << std::endl;
 
     // Draw correspondences after Nearest Neighbor ratio filter
-    svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
+    svgDrawer svgStream(imageL.Width() + imageR.Width(), std::max(imageL.Height(), imageR.Height()));
     svgStream.drawImage(jpg_filenameL, imageL.Width(), imageL.Height());
     svgStream.drawImage(jpg_filenameR, imageR.Width(), imageR.Height(), imageL.Width());
     for (size_t i = 0; i < vec_PutativeMatches.size(); ++i) {
@@ -180,7 +179,7 @@ int main() {
       << std::endl;
 
     // Show Essential validated point
-    svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
+    svgDrawer svgStream(imageL.Width() + imageR.Width(), std::max(imageL.Height(), imageR.Height()));
     svgStream.drawImage(jpg_filenameL, imageL.Width(), imageL.Height());
     svgStream.drawImage(jpg_filenameR, imageR.Width(), imageR.Height(), imageL.Width());
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
@@ -278,8 +277,8 @@ int main() {
 bool readIntrinsic(const std::string & fileName, Mat3 & K)
 {
   // Load the K matrix
-  ifstream in;
-  in.open( fileName.c_str(), ifstream::in);
+  std::ifstream in;
+  in.open(fileName.c_str(), std::ifstream::in);
   if(in.is_open())  {
     for (int j=0; j < 3; ++j)
       for (int i=0; i < 3; ++i)

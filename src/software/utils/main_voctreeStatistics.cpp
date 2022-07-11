@@ -34,7 +34,6 @@
 
 static const int DIMENSION = 128;
 
-using namespace std;
 using namespace boost::accumulators;
 using namespace aliceVision;
 
@@ -67,7 +66,7 @@ std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document 
 
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {
-  stringstream ss;
+  std::stringstream ss;
   ss << std::setw(zeroPadding) << std::setfill('0') << i;
   return ss.str();
 }

@@ -14,7 +14,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 
@@ -30,7 +29,7 @@ BOOST_AUTO_TEST_CASE(Image_Basis)
   //-- Get raw ptr to image data :
   const unsigned char * ptr = imaGray.data();
   ((unsigned char*)ptr)[0] = 2;
-  fill(((unsigned char*)ptr+9*10),((unsigned char*)ptr+10*10),2);
+  std::fill(((unsigned char*)ptr+9*10),((unsigned char*)ptr+10*10),2);
   //cout << "After" << endl << imaGray;
 
   // Construction by re-copy

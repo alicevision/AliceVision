@@ -31,7 +31,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace svg;
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
@@ -110,7 +109,7 @@ int main(int argc, char **argv)
 
   // Show both images side by side
   {
-    const string out_filename = "01.features."+describerTypesName+".svg";
+    const std::string out_filename = "01.features."+describerTypesName+".svg";
     drawKeypointsSideBySide(filenameLeft,
                             imageLeftSize,
                             featsL,
@@ -202,7 +201,7 @@ int main(int argc, char **argv)
 
       //Show fundamental validated point and compute residuals
       std::vector<double> vec_residuals(vec_inliers.size(), 0.0);
-      svgDrawer svgStream( imageLeft.Width() + imageRight.Width(), max(imageLeft.Height(), imageRight.Height()));
+      svgDrawer svgStream(imageLeft.Width() + imageRight.Width(), std::max(imageLeft.Height(), imageRight.Height()));
       svgStream.drawImage(filenameLeft, imageLeft.Width(), imageLeft.Height());
       svgStream.drawImage(filenameRight, imageRight.Width(), imageRight.Height(), imageLeft.Width());
       for ( size_t i = 0; i < vec_inliers.size(); ++i)  
@@ -219,8 +218,8 @@ int main(int argc, char **argv)
                                        LL.coords().cast<double>(),
                                        RR.coords().cast<double>()));
       }
-      const string out_filename = "04_ACRansacFundamental.svg";
-      ofstream svgFile( out_filename.c_str() );
+      const std::string out_filename = "04_ACRansacFundamental.svg";
+      std::ofstream svgFile( out_filename.c_str() );
       svgFile << svgStream.closeSvgFile().str();
       svgFile.close();
 

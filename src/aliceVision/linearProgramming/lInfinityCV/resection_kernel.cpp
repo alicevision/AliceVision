@@ -18,8 +18,6 @@ namespace aliceVision {
 namespace lInfinityCV {
 namespace kernel {
 
-using namespace std;
-
 void translate(const Mat3X & X, const Vec3 & vecTranslation,
                Mat3X * XPoints) {
   XPoints->resize(X.rows(), X.cols());
