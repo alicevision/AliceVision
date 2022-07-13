@@ -228,6 +228,27 @@ void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColo
     }
 }
 
+void image2PsMatrix(const aliceVision::image::Image<float>& imageIn, const aliceVision::image::Image<float>& mask, Eigen::VectorXf& imageOut)
+{
+    int nbRows = imageIn.rows();
+    int nbCols = imageIn.cols();
+    int index = 0;
+
+    bool hasMask = !((mask.rows() == 1) && (mask.cols() == 1));
+
+    for (int j = 0; j < nbCols; ++j)
+    {
+        for (int i = 0; i < nbRows; ++i)
+        {
+            if ((!hasMask) || mask(i,j) > 0)
+            {
+                imageOut(index) = imageIn(i,j);
+            }
+            ++index;
+        }
+    }
+}
+
 void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskIndexes, Eigen::MatrixXf& maskedMatrix)
 {
     for (int j = 0; j < maskedMatrix.cols(); ++j)

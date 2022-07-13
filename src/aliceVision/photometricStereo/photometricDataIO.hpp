@@ -24,6 +24,8 @@ void intensityScaling(std::array<float, 3> const& intensities, aliceVision::imag
 
 void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColor>& imageIn, const aliceVision::image::Image<float>& mask, Eigen::MatrixXf& imageOut);
 
+void image2PsMatrix(const aliceVision::image::Image<float>& imageIn, const aliceVision::image::Image<float>& mask, Eigen::VectorXf& imageOut);
+
 void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskIndexes, Eigen::MatrixXf& maskedMatrix);
 
 void reshapeInImage(const Eigen::MatrixXf& matrixIn, aliceVision::image::Image<aliceVision::image::RGBfColor>& imageOut);
