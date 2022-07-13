@@ -288,14 +288,16 @@ void convertNormalMap2png(const aliceVision::image::Image<aliceVision::image::RG
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            for (int ch = 0; ch < 3; ++ch)
+            if(normalsIm(i,j)(0)*normalsIm(i,j)(0) + normalsIm(i,j)(1)*normalsIm(i,j)(1) + normalsIm(i,j)(2)*normalsIm(i,j)(2) == 0)
             {
-                if (ch == 0)
-                {
-                    normalsImPNG(i,j)(ch) = floor((normalsIm(i,j)(ch) + 1)*127.5);
-                }
-                else
-                    normalsImPNG(i,j)(ch) = -floor((normalsIm(i,j)(ch) + 1)*127.5);
+                normalsImPNG(i,j)(0) = 0;
+                normalsImPNG(i,j)(1) = 0;
+                normalsImPNG(i,j)(2) = 0;
+            }
+            else {
+                normalsImPNG(i,j)(0) = floor(255*(normalsIm(i,j)(0) + 1)/2);
+                normalsImPNG(i,j)(1) = -floor(255*(normalsIm(i,j)(1) + 1)/2);
+                normalsImPNG(i,j)(2) = -floor(255*normalsIm(i,j)(2));
             }
         }
     }

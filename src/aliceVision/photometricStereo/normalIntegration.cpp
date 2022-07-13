@@ -487,17 +487,9 @@ void loadNormalMap(aliceVision::image::Image<aliceVision::image::RGBColor> input
         {
             if((normalsMask(i,j) > 0) || !hasMask)
             {
-                for (int ch = 0; ch < 3; ++ch)
-                {
-                    if(ch ==0)
-                    {
-                        outputNormals(i,j)(ch) = inputNormals(i,j)(ch)/127.5 - 1;
-                    }
-                    else
-                    {
-                        outputNormals(i,j)(ch) = - (inputNormals(i,j)(ch)/127.5 - 1);
-                    }
-                }
+                outputNormals(i,j)(0) = 2.0*inputNormals(i,j)(0)/255.0 - 1;
+                outputNormals(i,j)(1) = -(2.0*inputNormals(i,j)(1)/255.0 - 1);
+                outputNormals(i,j)(2) = -inputNormals(i,j)(2)/255.0;
             }
             else
             {
