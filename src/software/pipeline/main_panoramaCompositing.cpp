@@ -89,8 +89,8 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
         int width = 0;
         int height = 0;
         oiio::ParamValueList metadata = image::readImageMetadata(maskPath, width, height);
-        const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int();
-        const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int();
+        const int offsetX = metadata.find("AliceVision:offsetX")->get_int();
+        const int offsetY = metadata.find("AliceVision:offsetY")->get_int();
         panoramaSize.first = metadata.find("AliceVision:panoramaWidth")->get_int();
         panoramaSize.second = metadata.find("AliceVision:panoramaHeight")->get_int();
 
@@ -736,8 +736,6 @@ int aliceVision_main(int argc, char** argv)
         IndexT viewReference = chunk[posReference];
         if(!sfmData.isPoseAndIntrinsicDefined(viewReference))
             continue;
-
-        std::cout << sfmData.getViews()[viewReference]->getMetadata().at("AliceVision:warpedPath") << std::endl;
 
         BoundingBox referenceBoundingBox;
         if (!panoramaMap->getBoundingBox(referenceBoundingBox, viewReference))
