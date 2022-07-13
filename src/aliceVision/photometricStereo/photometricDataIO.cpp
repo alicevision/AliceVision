@@ -240,10 +240,10 @@ void applyMask(const Eigen::MatrixXf& inputMatrix, const std::vector<int>& maskI
     }
 }
 
-void reshapeInImage(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Image<aliceVision::image::RGBfColor>& normalsIm)
+void reshapeInImage(const Eigen::MatrixXf& matrixIn, aliceVision::image::Image<aliceVision::image::RGBfColor>& imageOut)
 {
-    int nbRows = normalsIm.rows();
-    int nbCols = normalsIm.cols();
+    int nbRows = imageOut.rows();
+    int nbCols = imageOut.cols();
 
     for (int j = 0; j < nbCols; ++j)
     {
@@ -252,7 +252,7 @@ void reshapeInImage(const Eigen::MatrixXf& normalsMatrix, aliceVision::image::Im
             int currentInd = j*nbRows + i;
             for (int ch = 0; ch < 3; ++ch)
             {
-                normalsIm(i,j)(ch) = normalsMatrix(ch,currentInd);
+                imageOut(i,j)(ch) = matrixIn(ch,currentInd);
             }
         }
     }
