@@ -215,6 +215,9 @@ int aliceVision_main(int argc, char** argv)
     spec_panorama.tile_width = tileSize;
 	spec_panorama.tile_height = tileSize;
 	spec_panorama.attribute("compression", "zips");
+    spec_panorama.attribute("openexr:lineOrder", "randomY");
+
+    metadata["openexr:lineOrder"] = "randomY";
 	spec_panorama.extra_attribs = metadata;
 
 	panorama->open(outputPanoramaPath, spec_panorama);
