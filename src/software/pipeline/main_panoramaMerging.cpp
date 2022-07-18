@@ -235,7 +235,9 @@ int aliceVision_main(int argc, char** argv)
     {
         IndexT viewId = viewItem.first;
         if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+        {
             continue;
+        }
 
         const std::string warpedPath = viewItem.second->getMetadata().at("AliceVision:warpedPath");
 
@@ -271,8 +273,17 @@ int aliceVision_main(int argc, char** argv)
 
             int y = ty * tileSize;
     
-            for (int tx = left; tx <= right; tx++)
+            for (int iter_tx = left; iter_tx <= right; iter_tx++)
             {
+                int tx = iter_tx;
+                int offset_loop = 0;
+
+                if (tx >= tileCountWidth)
+                {
+                    tx = tx - tileCountWidth;
+                    offset_loop = - panoramaWidth;
+                }
+                
                 if (tx < 0 || tx >= tileCountWidth) 
                 {
                     continue;
@@ -318,16 +329,17 @@ int aliceVision_main(int argc, char** argv)
                     for (int px = 0; px < tileSize; px++)
                     {
                         int panorama_x = x + px;
-                        int source_x = panorama_x - offsetX;
+                        int loffsetX = offsetX + offset_loop;
+                        int source_x = panorama_x - loffsetX;
 
                         if (source_x < 0)
                         {
-                            source_x = panoramaWidth + x + px - offsetX;
+                            source_x = panoramaWidth + x + px - loffsetX;
                         }
 
                         if (source_x >= width)
                         {
-                            source_x = x + px - panoramaWidth - offsetX;
+                            source_x = x + px - panoramaWidth - loffsetX;
                         }
 
                         if (source_x < 0 || source_x >= width)
@@ -389,7 +401,7 @@ int aliceVision_main(int argc, char** argv)
             }
             
             if (ti.tileContent)
-            {
+            {   
                 panorama->write_tile (tx * tileSize, ty * tileSize, 0, oiio::TypeDesc::FLOAT, ti.tileContent->data());
             }
             else
