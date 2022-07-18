@@ -649,13 +649,23 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    ALICEVISION_LOG_TRACE("Sfm data loaded");
+
     std::set<std::string> uniquePreviousId;
     for (auto pv : sfmData.getViews())
     {
+        if (pv.second->getMetadata().find("AliceVision:previousViewId") == pv.second->getMetadata().end())
+        {
+            ALICEVISION_LOG_ERROR("You mixed different versions of alicevision.");
+            ALICEVISION_LOG_ERROR("Warped images do not contain the required metadatas.");
+            return EXIT_FAILURE;
+        }
         std::string pvid = pv.second->getMetadata().at("AliceVision:previousViewId");
         uniquePreviousId.insert(pvid);
     }
     size_t oldViewsCount = uniquePreviousId.size();
+
+    ALICEVISION_LOG_TRACE("Previous id loaded");
 
     // Define range to compute
     int viewsCount = sfmData.getViews().size();
