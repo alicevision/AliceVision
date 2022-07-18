@@ -317,6 +317,12 @@ int aliceVision_main(int argc, char** argv)
 				coarsesBbox.push_back(coarseBboxInitial);
 			}
 
+			// Load image and convert it to linear colorspace
+			std::string imagePath = view.getImagePath();
+			ALICEVISION_LOG_INFO("Load image with path " << imagePath);
+			image::Image<image::RGBfColor> source;
+			image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
+
 			for (int idsub = 0; idsub < coarsesBbox.size(); idsub++)
 			{
 				auto coarseBbox = coarsesBbox[idsub];
@@ -377,15 +383,8 @@ int aliceVision_main(int argc, char** argv)
 				}
 
 				globalBbox.width = std::min(globalBbox.width, panoramaSize.first);
-
-
 				globalBbox.height = std::min(globalBbox.height, panoramaSize.second);
 
-				// Load image and convert it to linear colorspace
-				std::string imagePath = view.getImagePath();
-				ALICEVISION_LOG_INFO("Load image with path " << imagePath);
-				image::Image<image::RGBfColor> source;
-				image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
 
 				// Load metadata and update for output
 				oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
@@ -453,7 +452,6 @@ int aliceVision_main(int argc, char** argv)
 						boxes.push_back(localBbox);
 					}
 				}
-
 				
 				#pragma omp parallel for 
 				for (int boxId = 0; boxId < boxes.size(); boxId++) 
