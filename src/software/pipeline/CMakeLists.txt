@@ -612,6 +612,5 @@ if(ALICEVISION_HAVE_OPENCV)
           Boost::program_options
           ${OpenCV_LIBRARIES}
           onnxruntime
-          fmt
     )
 endif()

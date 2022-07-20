@@ -6,17 +6,14 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-
 #include <onnxruntime_cxx_api.h>
 
-void modelExplore(const Ort::Session session);
+void model_explore(const Ort::Session session);
 
-cv::Size verifySameResolution(std::string imagesPath);
+cv::Size resolution_verify(std::string imagesPath);
+cv::Size resolution_shrink(cv::Size originalSize);
 
-cv::Mat computeAverageMask(Ort::Session& session, const std::string imagesPath, const cv::Size imageSize);
+cv::Mat compute_mask(Ort::Session& session, const std::string imagePath, const cv::Size imageSize);
+cv::Mat compute_mask_mean(Ort::Session& session, const std::string imagesPath, const cv::Size imageSize);
 
-std::vector<std::pair<cv::Point2f, float>> circlesFromMask(const cv::Mat mask);
-
-cv::Mat computeMask(Ort::Session& session, const std::string imagePath, const cv::Size imageSize);
-
-cv::Size shrinkSize(cv::Size originalSize);
+std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask);

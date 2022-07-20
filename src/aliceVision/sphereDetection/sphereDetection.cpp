@@ -1,6 +1,4 @@
-#include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
+#include <aliceVision/sphereDetection/sphereDetection.hpp>
 
 #include <iostream>
 #include <numeric>
@@ -11,27 +9,13 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+// ONNX Runtime
 #include <onnxruntime_cxx_api.h>
 
 // Command line parameters
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
-
-#include <aliceVision/sphereDetection/sphereDetection.hpp>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-
-#include <iostream>
-#include <numeric>
-
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/utility.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 #define INPUT_NAME "input"
 #define OUTPUT_NAME "output"
@@ -68,17 +52,16 @@ float sigmoid(float x)
     return 1 / (1 + exp(-x));
 }
 
-void modelExplore(const Ort::Session session)
+void model_explore(const Ort::Session session)
 {
     // define allocator
     Ort::AllocatorWithDefaultOptions allocator;
 
-    // print name/shape of inputs
+    // print infos of inputs
     size_t input_count = session.GetInputCount();
-    const char* input_name;
     for(size_t i = 0; i < input_count; i++)
     {
-        input_name = session.GetInputName(i, allocator);
+        const char* input_name = session.GetInputName(i, allocator);
         ALICEVISION_LOG_DEBUG("Input[" << i << "]: " << input_name);
 
         Ort::TypeInfo input_info = session.GetInputTypeInfo(i);
@@ -93,12 +76,11 @@ void modelExplore(const Ort::Session session)
         ALICEVISION_LOG_DEBUG("  Size : " << input_size);
     }
 
-    // print name/shape of outputs
+    // print infos of outputs
     size_t output_count = session.GetOutputCount();
-    const char* output_name;
     for(size_t i = 0; i < output_count; i++)
     {
-        output_name = session.GetOutputName(i, allocator);
+        const char* output_name = session.GetOutputName(i, allocator);
         ALICEVISION_LOG_DEBUG("Output[" << i << "]: " << output_name);
 
         Ort::TypeInfo output_info = session.GetOutputTypeInfo(i);
@@ -114,14 +96,15 @@ void modelExplore(const Ort::Session session)
     }
 
     // Assume model has 1 input node and 1 output node.
-    assert(input_count == 1 && output_count == 1);
+    assert(input_count == INPUT_COUNT && output_count == OUTPUT_COUNT);
 }
 
-cv::Size verifySameResolution(std::string imagesPath)
+cv::Size resolution_verify(std::string path_images)
 {
+    // list all jpg inside the folder
     std::vector<cv::String> files;
-    std::string globString = imagesPath.append("/*.jpg");
-    cv::glob(globString, files, false);
+    std::string glob_images = path_images.append("/*.jpg");
+    cv::glob(glob_images, files, false);
 
     cv::Mat image;
     cv::Size image_size;
@@ -130,7 +113,7 @@ cv::Size verifySameResolution(std::string imagesPath)
     for(std::string file : files)
     {
         // read image
-        image = cv::imread(file, cv::ImreadModes::IMREAD_COLOR); // TODO: optimize to not open the file ?
+        image = cv::imread(file, cv::ImreadModes::IMREAD_COLOR);
 
         // get the resolution
         image_size = image.size();
@@ -152,106 +135,106 @@ cv::Size verifySameResolution(std::string imagesPath)
     return tmp_size;
 }
 
-cv::Mat computeMask(Ort::Session& session, const std::string imagePath, const cv::Size imageSize)
+cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size)
 {
     // read image
-    cv::Mat imageBGR = cv::imread(imagePath, cv::ImreadModes::IMREAD_COLOR);
+    cv::Mat image_BGR = cv::imread(image_path, cv::ImreadModes::IMREAD_COLOR);
 
     // resize image
-    cv::Mat resizedBGR;
-    cv::resize(imageBGR, resizedBGR, imageSize, cv::INTER_LINEAR);
+    cv::Mat resized_BGR;
+    cv::resize(image_BGR, resized_BGR, image_size, cv::INTER_LINEAR);
 
     // BGR -> RGB
-    cv::Mat imageRGB;
-    cv::cvtColor(resizedBGR, imageRGB, cv::ColorConversionCodes::COLOR_BGR2RGB);
+    cv::Mat image_RGB;
+    cv::cvtColor(resized_BGR, image_RGB, cv::ColorConversionCodes::COLOR_BGR2RGB);
 
     // uint8 -> float32
-    cv::Mat floatImage;
-    imageRGB.convertTo(floatImage, CV_32F, 1.0 / 255.0);
+    cv::Mat image_float;
+    image_RGB.convertTo(image_float, CV_32F, 1.0 / 255.0);
 
     // HWC to CHW
-    cv::Mat preprocessedImage;
-    cv::dnn::blobFromImage(floatImage, preprocessedImage);
+    cv::Mat image_blob;
+    cv::dnn::blobFromImage(image_float, image_blob);
 
     // creating tensors
-    std::vector<Ort::Value> inputTensors;
-    std::vector<Ort::Value> outputTensors;
+    std::vector<Ort::Value> input_data;
+    std::vector<Ort::Value> output_data;
 
-    // inference on cpu (?)
-    Ort::MemoryInfo memoryInfo =
+    // inference on cpu (?), TODO: try to make inference on gpu
+    Ort::MemoryInfo memory_info =
         Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     // selecting inputs and outputs
-    std::vector<const char*> inputNames{INPUT_NAME};
-    std::vector<const char*> outputNames{OUTPUT_NAME};
+    std::vector<const char*> input_names{INPUT_NAME};
+    std::vector<const char*> output_names{OUTPUT_NAME};
 
-    std::vector<int64_t> input_shape = {1, 3, imageSize.height, imageSize.width};
-    std::vector<int64_t> output_shape = {1, 1, imageSize.height, imageSize.width};
+    std::vector<int64_t> input_shape = {1, 3, image_size.height, image_size.width};
+    std::vector<int64_t> output_shape = {1, 1, image_size.height, image_size.width};
 
     size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<float>());
     size_t output_size = std::accumulate(begin(output_shape), end(output_shape), 1, std::multiplies<float>());
 
-    std::vector<float> inputTensorValues(input_size);
-    std::vector<float> outputTensorValues(output_size);
+    std::vector<float> input_tensor(input_size);
+    std::vector<float> output_tensor(output_size);
 
-    inputTensorValues.assign(preprocessedImage.begin<float>(), preprocessedImage.end<float>());
+    input_tensor.assign(image_blob.begin<float>(), image_blob.end<float>());
 
-    inputTensors.push_back(                                                                              //
-        Ort::Value::CreateTensor<float>(                                                                 //
-            memoryInfo, inputTensorValues.data(), input_size, input_shape.data(), input_shape.size()     //
-            )                                                                                            //
-    );                                                                                                   //
-    outputTensors.push_back(                                                                             //
-        Ort::Value::CreateTensor<float>(                                                                 //
-            memoryInfo, outputTensorValues.data(), output_size, output_shape.data(), output_shape.size() //
-            )                                                                                            //
-    );                                                                                                   //
+    input_data.push_back(                                                                            //
+        Ort::Value::CreateTensor<float>(                                                             //
+            memory_info, input_tensor.data(), input_size, input_shape.data(), input_shape.size()     //
+            )                                                                                        //
+    );                                                                                               //
+    output_data.push_back(                                                                           //
+        Ort::Value::CreateTensor<float>(                                                             //
+            memory_info, output_tensor.data(), output_size, output_shape.data(), output_shape.size() //
+            )                                                                                        //
+    );                                                                                               //
 
     // run the inference
-    session.Run(Ort::RunOptions{nullptr}, inputNames.data(), inputTensors.data(), INPUT_COUNT, outputNames.data(),
-                outputTensors.data(), OUTPUT_COUNT);
+    session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), INPUT_COUNT, output_names.data(),
+                output_data.data(), OUTPUT_COUNT);
 
-    assert(outputTensors.size() == session.GetOutputCount() && outputTensors[0].IsTensor());
-    ALICEVISION_LOG_DEBUG("output_tensor_shape: " << outputTensors[0].GetTensorTypeAndShapeInfo().GetShape());
+    assert(output_data.size() == session.GetOutputCount() && output_data[0].IsTensor());
+    ALICEVISION_LOG_DEBUG("output_tensor_shape: " << output_data[0].GetTensorTypeAndShapeInfo().GetShape());
 
-    std::transform(outputTensorValues.cbegin(), outputTensorValues.cend(), outputTensorValues.begin(), sigmoid);
+    std::transform(output_tensor.cbegin(), output_tensor.cend(), output_tensor.begin(), sigmoid);
 
-    cv::Mat m = cv::Mat(output_shape[2], output_shape[3], CV_32FC1);
-    memcpy(m.data, outputTensorValues.data(), outputTensorValues.size() * sizeof(float));
+    cv::Mat mask = cv::Mat(output_shape[2], output_shape[3], CV_32FC1);
+    memcpy(mask.data, output_tensor.data(), output_tensor.size() * sizeof(float));
 
-    return m;
+    return mask;
 }
 
-cv::Size shrinkSize(cv::Size originalSize)
+cv::Size resolution_shrink(cv::Size size_original)
 {
-    int longest_side = std::max(originalSize.width, originalSize.height);
+    int longest_side = std::max(size_original.width, size_original.height);
     float factor = MAX_SIZE / longest_side;
-    cv::Size resizedSize(originalSize.width * factor, originalSize.height * factor);
-    ALICEVISION_LOG_DEBUG("Resized image resolution: " << resizedSize);
+    cv::Size size_shrank(size_original.width * factor, size_original.height * factor);
+    ALICEVISION_LOG_DEBUG("Resized image resolution: " << size_shrank);
 
-    return resizedSize;
+    return size_shrank;
 }
 
-cv::Mat computeAverageMask(Ort::Session& session, const std::string imagesPath, const cv::Size imageSize)
+cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, const cv::Size image_size)
 {
-    cv::Size resized_size = shrinkSize(imageSize);
-    cv::Mat averagedImage(resized_size.height, resized_size.width, CV_32FC1);
+    cv::Size resized_size = resolution_shrink(image_size);
+    cv::Mat average_mask(resized_size.height, resized_size.width, CV_32FC1);
 
     std::vector<cv::String> files;
-    std::string globString = imagesPath + "/*.jpg";
-    cv::glob(globString, files, false);
+    std::string images_glob = images_path + "/*.jpg";
+    cv::glob(images_glob, files, false);
 
     for(std::string file : files)
     {
-        cv::Mat mask = computeMask(session, file, resized_size);
-        averagedImage += mask;
+        cv::Mat mask = compute_mask(session, file, resized_size);
+        average_mask += mask;
     }
 
-    averagedImage /= files.size();
-    return averagedImage;
+    average_mask /= files.size();
+    return average_mask;
 }
 
-std::vector<std::pair<cv::Point2f, float>> circlesFromMask(const cv::Mat mask)
+std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask)
 {
     std::vector<std::pair<cv::Point2f, float>> circles;
 
