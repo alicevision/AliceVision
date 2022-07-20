@@ -16,3 +16,7 @@ cv::Size verifySameResolution(std::string imagesPath);
 cv::Mat computeAverageMask(Ort::Session& session, const std::string imagesPath, const cv::Size imageSize);
 
 std::vector<std::pair<cv::Point2f, float>> circlesFromMask(const cv::Mat mask);
+
+cv::Mat computeMask(Ort::Session& session, const std::string imagePath, const cv::Size imageSize);
+
+cv::Size shrinkSize(cv::Size originalSize);

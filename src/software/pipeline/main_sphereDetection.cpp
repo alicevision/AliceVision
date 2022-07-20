@@ -80,13 +80,13 @@ int aliceVision_main(int argc, char** argv)
     Ort::Session session(env, modelInputPath.c_str(), session_options);
 
     // verify every image in the folder are of the same resolution
-    cv::Size shape = verifySameResolution(imageInputPath);
+    cv::Size size = verifySameResolution(imageInputPath);
 
-    // compute the average mask using the onnx model
-    cv::Mat averageMask = computeAverageMask(session, imageInputPath, shape);
+    // compute the mask
+    cv::Mat mask = computeAverageMask(session, imageInputPath, size);
 
     // extract circles from mask
-    auto circles = circlesFromMask(averageMask);
+    auto circles = circlesFromMask(mask);
 
     return 0;
 }
