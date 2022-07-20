@@ -339,7 +339,7 @@ public:
         
         Eigen::Matrix<double, 2, 14> J = (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto) ;
 
-        J.block(0, 10, 2, 4) = Eigen::Matrix<double, 2, 4>::Zero();
+        //J.block(0, 13, 2, 4) = Eigen::Matrix<double, 2, 4>::Zero();
 
         return J;
     }

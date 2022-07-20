@@ -237,7 +237,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion
 
 
     //Relax offcenter
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
+    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
@@ -248,13 +248,13 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion
     locksDistortions[1] = false;
     locksDistortions[2] = false;
     locksDistortions[3] = false;
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
+    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
     }
 
-    //Relax offcenter
+    /*//Relax offcenter
     locksDistortions[10] = false;
     locksDistortions[11] = false;
     locksDistortions[12] = true;
@@ -262,7 +262,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;
-    }
+    }*/
 
     //All
     locksDistortions[4] = false;
@@ -271,7 +271,7 @@ bool estimateDistortion3DEA4(std::shared_ptr<camera::Undistortion>& undistortion
     locksDistortions[7] = false;
     locksDistortions[8] = false;
     locksDistortions[9] = false;
-    if (!calibration::estimate(undistortion, statistics, items, false, locksDistortions))
+    if (!calibration::estimate(undistortion, statistics, items, true, locksDistortions))
     {
         ALICEVISION_LOG_ERROR("Failed to calibrate");
         return false;

@@ -310,19 +310,19 @@ public:
     const double cx_xxyy = 2 * cx04 - 6 * cx44;
     const double cx_xxxx = cx04 + cx24 + cx44;
     const double cx_yyyy = cx04 - cx24 + cx44;
-    
+
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
     const double cy_xxyy = cy04 + cy24 + cy44;
     const double cy_xxxx = 2 * cy04 - 6 * cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
-    double x = p.x() * ps;
-    double y = p.y() * ps;
+    double x = p.x();
+    double y = p.y();
 
     //First rotate axis
-    double xr = cphi * x + sphi * y;
-    double yr = -sphi * x + cphi * y;
+    double xr = x;// cphi* x + sphi * y;
+    double yr = y;// -sphi * x + cphi * y;
 
     double xx = xr * xr;
     double xxxx = xx * xx;
@@ -333,15 +333,15 @@ public:
     //Compute dist
     double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
     double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
-    
+
     //Squeeze axis
     const double squizzed_x = xd * sqx;
     const double squizzed_y = yd * sqy;
 
     //Unrotate axis
     Vec2 np;
-    np.x() = cphi * squizzed_x - sphi * squizzed_y;
-    np.y() = sphi * squizzed_x + cphi * squizzed_y;
+    np.x() = squizzed_x;// cphi* squizzed_x - sphi * squizzed_y;
+    np.y() = squizzed_y;// sphi* squizzed_x + cphi * squizzed_y;
 
     return np;
   }
@@ -371,19 +371,19 @@ public:
     const double cx_xxyy = 2 * cx04 - 6 * cx44;
     const double cx_xxxx = cx04 + cx24 + cx44;
     const double cx_yyyy = cx04 - cx24 + cx44;
-    
+
     const double cy_xx = cy02 + cy22;
     const double cy_yy = cy02 - cy22;
     const double cy_xxyy = cy04 + cy24 + cy44;
     const double cy_xxxx = 2 * cy04 - 6 * cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
-    double x = p.x() * ps;
-    double y = p.y() * ps;
+    double x = p.x();
+    double y = p.y();
 
     //First rotate axis
-    double xr = cphi * x + sphi * y;
-    double yr = -sphi * x + cphi * y;
+    double xr = x; // cphi* x + sphi * y;
+    double yr = y; // -sphi * x + cphi * y;
 
     double xx = xr * xr;
     double yy = yr * yr;
@@ -397,21 +397,25 @@ public:
     //Compute dist
     double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
     double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
-    
+
     //Squeeze axis
     const double squizzed_x = xd * sqx;
     const double squizzed_y = yd * sqy;
 
     //Unrotate axis
     Vec2 np;
-    np.x() = cphi * squizzed_x - sphi * squizzed_y;
-    np.y() = sphi * squizzed_x + cphi * squizzed_y;
+    np.x() = squizzed_x; // cphi* squizzed_x - sphi * squizzed_y;
+    np.y() = squizzed_y; // sphi* squizzed_x + cphi * squizzed_y;
 
     Eigen::Matrix2d d_np_d_squizzed;
-    d_np_d_squizzed(0, 0) = cphi;
-    d_np_d_squizzed(0, 1) = -sphi;
-    d_np_d_squizzed(1, 0) = sphi;
-    d_np_d_squizzed(1, 1) = cphi;
+    /* d_np_d_squizzed(0, 0) = cphi;
+     d_np_d_squizzed(0, 1) = -sphi;
+     d_np_d_squizzed(1, 0) = sphi;
+     d_np_d_squizzed(1, 1) = cphi;*/
+    d_np_d_squizzed(0, 0) = 1;
+    d_np_d_squizzed(0, 1) = 0;
+    d_np_d_squizzed(1, 0) = 0;
+    d_np_d_squizzed(1, 1) = 1;
 
     Eigen::Matrix2d d_squizzed_d_d;
     d_squizzed_d_d(0, 0) = sqx;
@@ -428,13 +432,13 @@ public:
     d_d_d_r(1, 1) = 1.0 + xx * cy_xx + 3.0 * yy * cy_yy + xxxx * cy_xxxx + 3.0 * xxyy * cy_xxyy + 5.0 * yyyy * cy_yyyy;
 
     Eigen::Matrix2d d_r_d_p;
-    d_r_d_p(0, 0) = cphi;
-    d_r_d_p(0, 1) = sphi;
-    d_r_d_p(1, 0) = -sphi;
-    d_r_d_p(1, 1) = cphi;
+    d_r_d_p(0, 0) = 1;
+    d_r_d_p(0, 1) = 0;
+    d_r_d_p(1, 0) = 0;
+    d_r_d_p(1, 1) = 1;
 
 
-    return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p * ps;
+    return d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p;
   }
 
   Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override
@@ -468,14 +472,14 @@ public:
     const double cy_xxxx = 2 * cy04 - 6 * cy44;
     const double cy_yyyy = cy04 - cy24 + cy44;
 
-    double x = p.x() * ps;
-    double y = p.y() * ps;
+    double x = p.x();
+    double y = p.y();
 
     //First rotate axis
-    double xr = cphi * x + sphi * y;
-    double yr = -sphi * x + cphi * y;
+    double xr = x;// cphi* x + sphi * y;
+    double yr = y;//-sphi * x + cphi * y;
 
-    
+
 
     double xx = xr * xr;
     double yy = yr * yr;
@@ -501,25 +505,26 @@ public:
     //Compute dist
     double xd = xr * (1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy);
     double yd = yr * (1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy);
-    
+
     //Squeeze axis
     const double squizzed_x = xd * sqx;
     const double squizzed_y = yd * sqy;
 
     //Unrotate axis
     Vec2 np;
-    np.x() = cphi * squizzed_x - sphi * squizzed_y;
-    np.y() = sphi * squizzed_x + cphi * squizzed_y;
+    np.x() = squizzed_x;// cphi* squizzed_x - sphi * squizzed_y;
+    np.y() = squizzed_y;// sphi* squizzed_x + cphi * squizzed_y;
 
-    Eigen::Matrix<double, 2, 14> d_np_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
+    /*Eigen::Matrix<double, 2, 14> d_np_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
     d_np_d_disto(0, 10) = (squizzed_x * -sphi) + (squizzed_y * -cphi);
-    d_np_d_disto(1, 10) = (squizzed_x * cphi) + (squizzed_y * -sphi);
+    d_np_d_disto(1, 10) = (squizzed_x * cphi) + (squizzed_y * -sphi);*/
 
     Eigen::Matrix2d d_np_d_squizzed;
-    d_np_d_squizzed(0, 0) = cphi;
-    d_np_d_squizzed(0, 1) = -sphi;
-    d_np_d_squizzed(1, 0) = sphi;
-    d_np_d_squizzed(1, 1) = cphi;
+    d_np_d_squizzed(0, 0) = 1;
+    d_np_d_squizzed(0, 1) = 0;
+    d_np_d_squizzed(1, 0) = 0;
+    d_np_d_squizzed(1, 1) = 1;
+
 
     Eigen::Matrix2d d_squizzed_d_d;
     d_squizzed_d_d(0, 0) = sqx;
@@ -531,7 +536,7 @@ public:
     d_squizzed_d_disto(0, 11) = xd;
     d_squizzed_d_disto(0, 12) = 0;
     d_squizzed_d_disto(1, 11) = 0;
-    d_squizzed_d_disto(1, 12) = yd;
+    d_squizzed_d_disto(1, 12) = yd ;
 
     //double xd = xr + xxx * cx_xx + xyy * cx_yy + xxxxx * cx_xxxx + xxxyy * cx_xxyy + xyyyy * cx_yyyy);
     //double yd = yr + xxy * cy_xx + yyy * cy_yy + xxxxy * cy_xxxx + xxyyy * cy_xxyy + yyyyy * cy_yyyy);
@@ -566,9 +571,7 @@ public:
     d_d_d_distop(1, 8) = xxyyy;
     d_d_d_distop(1, 9) = yyyyy;
 
-    Eigen::Matrix<double, 2, 14> d_r_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
-    d_r_d_disto(0, 10) = (x * -sphi) + (y * -cphi);
-    d_r_d_disto(1, 10) = (x * cphi) + (y * -sphi);
+
 
     Eigen::Matrix<double, 10, 14> d_distop_d_disto = Eigen::Matrix<double, 10, 14>::Zero();
     d_distop_d_disto(0, 0) = 1.0;
@@ -583,7 +586,7 @@ public:
     d_distop_d_disto(4, 4) = 1.0;
     d_distop_d_disto(4, 6) = -1.0;
     d_distop_d_disto(4, 8) = 1.0;
-    
+
     d_distop_d_disto(5, 1) = 1.0;
     d_distop_d_disto(5, 3) = 1.0;
     d_distop_d_disto(6, 1) = 1.0;
@@ -595,19 +598,13 @@ public:
     d_distop_d_disto(8, 9) = 1.0;
     d_distop_d_disto(9, 5) = 1.0;
     d_distop_d_disto(9, 7) = -1.0;
-    d_distop_d_disto(9, 9) = 1.0; 
+    d_distop_d_disto(9, 9) = 1.0;
 
-    Eigen::Matrix2d d_r_d_p;
-    d_r_d_p(0, 0) = cphi;
-    d_r_d_p(0, 1) = sphi;
-    d_r_d_p(1, 0) = -sphi;
-    d_r_d_p(1, 1) = cphi;
+    Eigen::Matrix<double, 2, 14> J = (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto);
 
-    Eigen::Matrix<double, 2, 14> d_p_d_disto = Eigen::Matrix<double, 2, 14>::Zero();
-    d_p_d_disto(0, 13) = p.x();
-    d_p_d_disto(1, 13) = p.y();
+    J.block(0, 10, 2, 4) = Eigen::Matrix<double, 2, 4>::Zero();
 
-    return d_np_d_disto + (d_np_d_squizzed * d_squizzed_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_distop * d_distop_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_disto) + (d_np_d_squizzed * d_squizzed_d_d * d_d_d_r * d_r_d_p * d_p_d_disto);
+    return J;
   }
 
 

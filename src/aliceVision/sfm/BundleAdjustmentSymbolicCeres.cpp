@@ -383,6 +383,162 @@ private:
     double _distance;
 };
 
+class CostUndistortionSimilar : public ceres::CostFunction {
+public:
+    CostUndistortionSimilar(size_t parameters_size) : _parameters_size(parameters_size)
+    {
+        set_num_residuals(1);
+
+        mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(2);
+        mutable_parameter_block_sizes()->push_back(parameters_size);
+        mutable_parameter_block_sizes()->push_back(parameters_size);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double * parameter_offset1 = parameters[0];
+        const double * parameter_offset2 = parameters[1];
+        const double* parameter_p1 = parameters[2];
+        const double* parameter_p2 = parameters[3];
+
+
+        double dist_offset = 0.0;
+        for (int i = 0; i < 2; i++)
+        {
+            double diff = parameter_offset1[i] - parameter_offset2[i];
+            dist_offset += diff * diff;
+        }
+
+        double dist_params = 0.0;
+        for (int i = 0; i < _parameters_size - 4; i++)
+        {
+            double diff = parameter_p1[i] - parameter_p2[i];
+            dist_params += diff * diff;
+        }
+
+        residuals[0] = dist_offset + dist_params;
+
+        if (jacobians == nullptr) {
+            return true;
+        }
+
+        if (jacobians[0] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, 1, 2, Eigen::RowMajor>> J(jacobians[0]);
+            J.fill(0);
+            for (int i = 0; i < 2; i++)
+            {
+                double diff = parameter_offset1[i] - parameter_offset2[i];
+                J(0, i) = 2.0 * diff;
+            }
+        }
+
+        if (jacobians[1] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, 1, 2, Eigen::RowMajor>> J(jacobians[1]);
+            J.fill(0);
+            for (int i = 0; i < 2; i++)
+            {
+                double diff = parameter_offset1[i] - parameter_offset2[i];
+                //J(0, i) = 2.0 * diff * -1.0;
+            }
+        }
+
+        if (jacobians[2] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 1, _parameters_size);
+
+            J.fill(0);
+            for (int i = 0; i < _parameters_size - 4; i++)
+            {
+                double diff = parameter_p1[i] - parameter_p2[i];
+                J(0, i) = 2.0 * diff;
+            }
+        }
+
+        if (jacobians[3] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[3], 1, _parameters_size);
+
+            J.fill(0);
+            for (int i = 0; i < _parameters_size - 4; i++)
+            {
+                double diff = parameter_p1[i] - parameter_p2[i];
+                //J(0, i) = 2.0 * diff * -1.0;
+            }
+        }
+
+        return true;
+    }
+
+private:
+    size_t _parameters_size;
+};
+
+class CostUndistortionGradient: public ceres::CostFunction {
+public:
+    CostUndistortionGradient(size_t parameters_size) : _parameters_size(parameters_size)
+    {
+        set_num_residuals(1);
+
+        mutable_parameter_block_sizes()->push_back(parameters_size);
+        mutable_parameter_block_sizes()->push_back(parameters_size);
+        mutable_parameter_block_sizes()->push_back(parameters_size);
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        const double* parameter_p1 = parameters[0];
+        const double* parameter_p2 = parameters[1];
+        const double* parameter_p3 = parameters[2];
+
+
+        double g1 = parameter_p2[11] - parameter_p1[11];
+        double g2 = parameter_p3[11] - parameter_p2[11];
+        double diff_1 = g1 - g2;
+
+        double g3 = parameter_p2[12] - parameter_p1[12];
+        double g4 = parameter_p3[12] - parameter_p2[12];
+        double diff_2 = g3 - g4;
+
+        double w = 10000.0;
+        residuals[0] =w * (diff_1 * diff_1 + diff_2 * diff_2);
+
+        if (jacobians == nullptr) {
+            return true;
+        }
+
+        if (jacobians[0] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[0], 1, _parameters_size);
+
+            J.fill(0);
+
+            J(0, 11) = w * 2.0 * diff_1 * -1.0;
+            J(0, 12) = w * 2.0 * diff_2 * -1.0;
+        }
+
+        if (jacobians[1] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 1, _parameters_size);
+
+            J.fill(0);
+
+            J(0, 11) = 0;// w * 2.0 * diff_1 * 2.0;
+            J(0, 12) = 0;// w * 2.0 * diff_2 * 2.0;
+        }
+
+        if (jacobians[2] != nullptr) {
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 1, _parameters_size);
+
+            J.fill(0);
+
+            J(0, 11) = 0;// w * 2.0 * diff_1 * -1.0;
+            J(0, 12) = 0;// w * 2.0 * diff_2 * -1.0;
+        }
+
+        return true;
+    }
+
+private:
+    size_t _parameters_size;
+};
+
 void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation, bool constraintPosition)
 {
   const Mat3& R = cameraPose.getTransform().rotation();
@@ -800,6 +956,20 @@ void BundleAdjustmentSymbolicCeres::addUndistortionsToProblem(const sfmData::SfM
 {
     const bool refineIntrinsicsUndistortion = refineOptions & REFINE_INTRINSICS_UNDISTORTION;
 
+    /*Sort undistortions by frame id*/
+    std::map<IndexT, IndexT> sorted_undistortions;
+    for (auto v : sfmData.getViews())
+    {
+        IndexT uid = v.second->getUndistortionId();
+        if (uid == UndefinedIndexT)
+        {
+            continue;
+        }
+
+        
+        sorted_undistortions[v.second->getFrameId()] = uid;
+    }
+
     for (auto p : sfmData.getUndistortions())
     {
         std::shared_ptr<camera::Undistortion> undistortionObject = p.second;
@@ -822,6 +992,32 @@ void BundleAdjustmentSymbolicCeres::addUndistortionsToProblem(const sfmData::SfM
 
         _allParametersBlocks.push_back(undistOffset.data());
         _allParametersBlocks.push_back(undistParameters.data());
+    }
+
+    for (auto it = sorted_undistortions.begin(); it != sorted_undistortions.end(); it++)
+    {
+        auto next_it = std::next(it);
+        if (next_it == sorted_undistortions.end())
+        {
+            break;
+        }
+
+        //std::shared_ptr<camera::Undistortion> undistortion = sfmData.getUndistortions().at(uid);
+        Vec2& undistOffset_1 = _undistortionOffsetBlocks[it->second];
+        Vec2& undistOffset_2 = _undistortionOffsetBlocks[next_it->second];
+        std::vector<double>& undistParameters_1 = _undistortionParametersBlocks[it->second];
+        std::vector<double>& undistParameters_2 = _undistortionParametersBlocks[next_it->second];
+        
+        //problem.AddResidualBlock(new CostUndistortionSimilar(undistParameters_1.size()), nullptr, undistOffset_1.data(), undistOffset_2.data(), undistParameters_1.data(), undistParameters_2.data());
+
+        auto next_next_it = std::next(next_it);
+        if (next_next_it == sorted_undistortions.end())
+        {
+            continue;
+        }
+
+        std::vector<double>& undistParameters_3 = _undistortionParametersBlocks[next_next_it->second];
+        //problem.AddResidualBlock(new CostUndistortionGradient(undistParameters_1.size()), nullptr, undistParameters_1.data(), undistParameters_2.data(), undistParameters_3.data());
     }
 }
 

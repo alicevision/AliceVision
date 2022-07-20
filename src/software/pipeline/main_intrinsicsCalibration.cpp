@@ -76,7 +76,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         std::string path = v.second->getImagePath();
         
         {
-            const std::regex base_regex("_([0-9]+)(FT|ft)_");
+            const std::regex base_regex("_([0-9]+)(FT|ft|MM)_");
             std::smatch base_match;
             if (std::regex_search(path, base_match, base_regex))
             {
@@ -100,7 +100,8 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         }
     }
 
-    double distances[] = { -1, 72.0, 72.0, 72.0, 72.0 };
+    
+    double distances[] = { distance };
 
     std::shared_ptr<camera::IntrinsicBase> refpinhole;
 
@@ -112,6 +113,8 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         const double localSquareSize = 0.25;
         const calibration::CheckerDetector& detector = boardsAllImages[viewId];
 
+        view->setFrameId(pos_view);
+
         std::vector<calibration::CheckerDetector::CheckerBoard> boards = detector.getBoards();
         if (boards.size() != 1)
         {
@@ -121,8 +124,6 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
         const calibration::CheckerDetector::CheckerBoard& board = boards[0];
         const std::vector<calibration::CheckerDetector::CheckerBoardCorner>& corners = detector.getCorners();
-
-     
 
         //Get intrinsics
         IndexT intrinsicId = view->getIntrinsicId();
@@ -148,10 +149,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         }
 
         refpinhole = pinhole;
-        //if (useSimplePinhole)
-        {
-            pinhole->setOffset({ 0, 0 });
-        }
+        pinhole->setOffset({ 0, 0 });
 
         //Build a list of points (meter to undistorted pixels)
         std::vector<Eigen::Vector3d> refpts;
@@ -189,7 +187,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
                 }
 
                 Eigen::Vector2d campt = pinhole->ima2cam(curpt);
-                const double scale = campt.norm() * campt.norm();
+                const double scale = campt.norm();
 
 
                 //Add observation
@@ -236,12 +234,14 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         std::mt19937 generator;
         std::vector<size_t> vec_inliers;
 
-        const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, generator, vec_inliers, 1000, &model);
+        const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, generator, vec_inliers, 1000, &model, 2.0);
         if (vec_inliers.size() < 10)
         {
             ALICEVISION_LOG_ERROR("Impossible to find pose");
             return false;
         }
+
+        ALICEVISION_LOG_ERROR(vec_inliers.size());
 
         // setup a default camera model from the found projection matrix
         Mat3 K, R;
@@ -262,6 +262,42 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         }
     }
 
+    //Make sure we have only one pose per distance
+    std::map<double, IndexT> unique_poses;
+    pos_view = 0;
+    for (auto p_view : sorted_views)
+    {
+        double dist = distances[pos_view];
+
+        if (dist > 0)
+        {
+            unique_poses[dist] = p_view.second->getPoseId();
+        }
+
+        pos_view++;
+    }
+
+    pos_view = 0;
+    for (auto p_view : sorted_views)
+    {
+        double dist = distances[pos_view];
+
+        if (dist > 0)
+        {
+            IndexT unique_id = unique_poses[dist];
+            IndexT old_id = p_view.second->getPoseId();
+
+            if (old_id != unique_id)
+            {
+                sfmData.getPoses().erase(old_id);
+                p_view.second->setPoseId(unique_id);
+            }
+        }
+
+        pos_view++;
+    }
+   
+
     //Compute non linear refinement
     {
         sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
@@ -269,7 +305,6 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
         sfm::BundleAdjustmentSymbolicCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
             sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
-            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_FOCAL |
             sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_UNDISTORTION;
 
         if (!ba.adjust(sfmData, boptions))
@@ -278,6 +313,22 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
             return false;
         }
     }
+
+    /*{
+        sfm::BundleAdjustmentSymbolicCeres::CeresOptions options;
+        options.summary = true;
+        sfm::BundleAdjustmentSymbolicCeres ba(options);
+        sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+            sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_DISTORTION;
+
+        if (!ba.adjust(sfmData, boptions))
+        {
+            ALICEVISION_LOG_ERROR("Failed to calibrate");
+            return false;
+        }
+    }*/
+
 
     std::map<IndexT, std::pair<double, int>> means;
     for (auto& v : sfmData.getViews())
