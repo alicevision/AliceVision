@@ -56,6 +56,9 @@ void normalIntegration(const std::string& inputPath, const bool& perspective, co
 
         K = K/downscale;
         K(2,2) = 1;
+
+        nbCols = normalsImPNG2.cols();
+        nbRows = normalsImPNG2.rows();
     }
 
     aliceVision::image::Image<float> depthMap(nbCols, nbRows);
@@ -153,14 +156,14 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 
             if(downscale > 1)
             {
-                nbCols = nbCols/downscale;
-                nbRows = nbRows/downscale;
-
-                normalsImPNG2.resize(nbCols, nbRows);
-                normalsMask.resize(nbCols, nbRows);
+                downscaleImageInplace(normalsImPNG2,downscale);
+                downscaleImageInplace(normalsMask,downscale);
 
                 K = K/downscale;
                 K(2,2) = 1;
+
+                nbCols = normalsImPNG2.cols();
+                nbRows = normalsImPNG2.rows();
             }
             // Main fonction
             aliceVision::image::Image<float> depthMap;
@@ -233,14 +236,14 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
 
         if(downscale > 1)
         {
-            nbCols = nbCols/downscale;
-            nbRows = nbRows/downscale;
-
-            normalsImPNG2.resize(nbCols, nbRows);
-            normalsMask.resize(nbCols, nbRows);
+            downscaleImageInplace(normalsImPNG2,downscale);
+            downscaleImageInplace(normalsMask,downscale);
 
             K = K/downscale;
             K(2,2) = 1;
+
+            nbCols = normalsImPNG2.cols();
+            nbRows = normalsImPNG2.rows();
         }
 
         // Main fonction
@@ -308,11 +311,21 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if(perspective)
+            if(normalsMask(i,j) > 0.7)
             {
-                depth(i,j) = std::exp(z.at<float>(i,j));
-            } else {
-                depth(i,j) = z.at<float>(i,j);
+                if(perspective)
+                {
+                    depth(i,j) = std::exp(z.at<float>(i,j));
+                } else {
+                    depth(i,j) = z.at<float>(i,j);
+                }
+             }
+            else
+            {
+                depth(i,j) = nanf("1");
+            }
+        }
+    }
             }
         }
     }
@@ -520,7 +533,7 @@ void loadNormalMap(aliceVision::image::Image<aliceVision::image::RGBColor> input
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if((normalsMask(i,j) > 0) || !hasMask)
+            if((normalsMask(i,j) > 0.7) || !hasMask)
             {
                 outputNormals(i,j)(0) = 2.0*inputNormals(i,j)(0)/255.0 - 1;
                 outputNormals(i,j)(1) = -(2.0*inputNormals(i,j)(1)/255.0 - 1);
