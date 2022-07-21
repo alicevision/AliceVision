@@ -326,9 +326,6 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
             }
         }
     }
-            }
-        }
-    }
 }
 
 
