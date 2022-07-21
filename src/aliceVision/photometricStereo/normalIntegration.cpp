@@ -13,6 +13,9 @@
 
 #include <Eigen/Dense>
 
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/resampling.hpp>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/eigen.hpp>
@@ -22,7 +25,7 @@
 
 using namespace aliceVision;
 
-void normalIntegration(const std::string& inputPath, bool perspective, const std::string& outputFodler)
+void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler)
 {
 
     std::string normalMapPath = inputPath + "/normals.png";
@@ -46,6 +49,15 @@ void normalIntegration(const std::string& inputPath, bool perspective, const std
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
     loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
 
+    if(downscale > 1)
+    {
+        downscaleImageInplace(normalsImPNG2,downscale);
+        downscaleImageInplace(normalsMask,downscale);
+
+        K = K/downscale;
+        K(2,2) = 1;
+    }
+
     aliceVision::image::Image<float> depthMap(nbCols, nbRows);
     aliceVision::image::Image<float> distanceMap(nbCols, nbRows);
     DCT_integration(normalsImPNG2, depthMap, perspective, K, normalsMask);
@@ -60,7 +72,7 @@ void normalIntegration(const std::string& inputPath, bool perspective, const std
     aliceVision::image::writeImage(pathToDM, distanceMap, aliceVision::image::EImageColorSpace::NO_CONVERSION, metadata);
 }
 
-void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, bool perspective, const std::string& outputFodler)
+void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler)
 {
     aliceVision::image::Image<aliceVision::image::RGBColor> normalsImPNG;
     aliceVision::image::ImageReadOptions options;
@@ -139,6 +151,17 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
                 }
             }
 
+            if(downscale > 1)
+            {
+                nbCols = nbCols/downscale;
+                nbRows = nbRows/downscale;
+
+                normalsImPNG2.resize(nbCols, nbRows);
+                normalsMask.resize(nbCols, nbRows);
+
+                K = K/downscale;
+                K(2,2) = 1;
+            }
             // Main fonction
             aliceVision::image::Image<float> depthMap;
 
@@ -207,6 +230,18 @@ void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::
         // Float normal map
         aliceVision::image::Image<aliceVision::image::RGBfColor> normalsImPNG2(nbCols, nbRows);
         loadNormalMap(normalsImPNG, normalsMask, normalsImPNG2);
+
+        if(downscale > 1)
+        {
+            nbCols = nbCols/downscale;
+            nbRows = nbRows/downscale;
+
+            normalsImPNG2.resize(nbCols, nbRows);
+            normalsMask.resize(nbCols, nbRows);
+
+            K = K/downscale;
+            K(2,2) = 1;
+        }
 
         // Main fonction
         aliceVision::image::Image<float> depthMap(nbCols, nbRows);
