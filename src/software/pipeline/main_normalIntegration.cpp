@@ -63,7 +63,7 @@ int aliceVision_main(int argc, char **argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
     ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to SfmData file")
-    ("downscale, d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
+    ("downscale,d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
 
     allParams.add(requiredParams).add(optionalParams);
     po::variables_map vm;
