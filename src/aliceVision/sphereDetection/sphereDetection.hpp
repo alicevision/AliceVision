@@ -10,10 +10,10 @@
 
 void model_explore(const Ort::Session session);
 
-cv::Size resolution_verify(std::string imagesPath);
-cv::Size resolution_shrink(cv::Size originalSize);
+std::pair<size_t, size_t> resolution_verify(std::string path_images);
+cv::Size resolution_shrink(cv::Size size_original);
 
-cv::Mat compute_mask(Ort::Session& session, const std::string imagePath, const cv::Size imageSize);
-cv::Mat compute_mask_mean(Ort::Session& session, const std::string imagesPath, const cv::Size imageSize);
+cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size);
+cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, const cv::Size image_size);
 
 std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask);

@@ -9,6 +9,10 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/io.cpp>
+
 // ONNX Runtime
 #include <onnxruntime_cxx_api.h>
 
@@ -99,34 +103,34 @@ void model_explore(const Ort::Session session)
     assert(input_count == INPUT_COUNT && output_count == OUTPUT_COUNT);
 }
 
-cv::Size resolution_verify(std::string path_images)
+std::pair<size_t, size_t> resolution_verify(std::string path_images)
 {
     // list all jpg inside the folder
     std::vector<cv::String> files;
     std::string glob_images = path_images.append("/*.jpg");
     cv::glob(glob_images, files, false);
 
-    cv::Mat image;
-    cv::Size image_size;
-    cv::Size tmp_size;
+    aliceVision::image::Image<aliceVision::image::RGBfColor> image_float;
+    std::pair<size_t, size_t> image_size;
+    std::pair<size_t, size_t> tmp_size;
 
-    for(std::string file : files)
+    for(size_t i = 0; i < files.size(); i++)
     {
         // read image
-        image = cv::imread(file, cv::ImreadModes::IMREAD_COLOR);
+        aliceVision::image::ImageReadOptions read_options;
+        read_options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
+        aliceVision::image::readImage(files[i], image_float, read_options);
 
         // get the resolution
-        image_size = image.size();
+        image_size.first = image_float.cols();  // width
+        image_size.second = image_float.rows(); // height
         ALICEVISION_LOG_DEBUG("image resolution: " << image_size);
 
-        // initialize width and height if necessary
-        if(tmp_size.width == 0 && tmp_size.height == 0)
-        {
-            tmp_size.width = image_size.width;
-            tmp_size.height = image_size.height;
-        }
+        // store the first image_size for comparison
+        if(i == 0)
+            tmp_size = image_size;
 
-        // check if width and height are the same
+        // check if sizes are the same
         assert(tmp_size == image_size);
     }
 

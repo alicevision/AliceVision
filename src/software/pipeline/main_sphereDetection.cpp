@@ -75,13 +75,13 @@ int aliceVision_main(int argc, char** argv)
     Ort::Session session(env, input_model_path.c_str(), session_options);
 
     // verify every image in the folder are of the same resolution
-    cv::Size size = resolution_verify(input_image_dir_path);
+    auto size = resolution_verify(input_image_dir_path);
 
     // compute the mask
-    cv::Mat mask = compute_mask_mean(session, input_image_dir_path, size);
+    // cv::Mat mask = compute_mask_mean(session, input_image_dir_path, size);
 
     // extract circles from mask
-    auto circles = compute_circles(mask);
+    // auto circles = compute_circles(mask);
 
     return 0;
 }
