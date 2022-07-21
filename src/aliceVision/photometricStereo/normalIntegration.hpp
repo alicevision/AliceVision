@@ -7,13 +7,14 @@
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/image/Image.hpp>
 
 #include <string>
 #include <vector>
 
-void normalIntegration(const std::string& inputPath, bool perspective, const std::string& outputFodler);
+void normalIntegration(const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler);
 
-void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, bool perspective, const std::string& outputFodler);
+void normalIntegration(const aliceVision::sfmData::SfMData& sfmData, const std::string& inputPath, const bool& perspective, const int& downscale, const std::string& outputFodler);
 
 void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<float>& depth, bool perspective, const Eigen::Matrix3f& K, const aliceVision::image::Image<float>& normalsMask);
 

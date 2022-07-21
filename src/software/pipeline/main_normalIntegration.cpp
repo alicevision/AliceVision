@@ -51,15 +51,21 @@ int aliceVision_main(int argc, char **argv)
     std::string inputPath;
     std::string sfmDataFile;
 
+    // image downscale factor during process
+    int downscale = 1;
+
     po::options_description allParams("AliceVision normal integration");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
     ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input : a folder containing the normal map and the mask")
-    ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to SfmData file")
     ("outputPath,o", po::value<std::string>(&outputFolder)->required(), "outputFolder.");
 
-    allParams.add(requiredParams);
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+    ("sfmDataFile,s", po::value<std::string>(&sfmDataFile)->default_value(""), "Path to SfmData file")
+    ("downscale, d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
 
+    allParams.add(requiredParams).add(optionalParams);
     po::variables_map vm;
     try
     {
@@ -90,7 +96,7 @@ int aliceVision_main(int argc, char **argv)
 
     if(sfmDataFile.compare("") == 0)
     {
-        normalIntegration(inputPath, isPerspective, outputFolder);
+        normalIntegration(inputPath, isPerspective, downscale, outputFolder);
     }
     else
     {
@@ -100,7 +106,7 @@ int aliceVision_main(int argc, char **argv)
           ALICEVISION_LOG_ERROR("The input file '" + sfmDataFile + "' cannot be read");
           return EXIT_FAILURE;
       }
-      normalIntegration(sfmData, inputPath, isPerspective, outputFolder);
+      normalIntegration(sfmData, inputPath, isPerspective, downscale, outputFolder);
     }
 
     return 0;
