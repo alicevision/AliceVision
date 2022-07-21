@@ -46,19 +46,28 @@ int aliceVision_main(int argc, char **argv)
     namespace fs = boost::filesystem;
 
     std::string inputPath;
+    std::string maskPath;
     std::string outputPath;
     std::string pathToLightData;
     size_t HS_order;
 
+    // image downscale factor during process
+    int downscale = 1;
+
     po::options_description allParams("AliceVision photometricStereo");
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures")
-    ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value(""), "Path to light file (JSON). If empty, expects txt files in picture folder")
-    ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
-    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path");
+    ("inputPath,i", po::value<std::string>(&inputPath)->required(), "Path to input; could be SfMData file or folder with pictures");
 
-    allParams.add(requiredParams);
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+    ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""), "Path to mask folder/file.")
+    ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"), "Path to light file (JSON). If empty, expects txt files in picture folder")
+    ("HSOrder,h", po::value<size_t>(&HS_order)->default_value(0), "HS order, 0 = directional, 1 = directional + ambiant")
+    ("outputPath,o", po::value<std::string>(&outputPath)->default_value(""), "output path")
+    ("downscale, d", po::value<int>(&downscale)->default_value(downscale), "Downscale factor for faster results" );
+
+    allParams.add(requiredParams).add(optionalParams);
 
     po::variables_map vm;
     try
@@ -89,9 +98,7 @@ int aliceVision_main(int argc, char **argv)
     ALICEVISION_COUT(vm);
 
     // If the path to light data is empty, set it to inputPath :
-    std::string fileExtension = fs::extension(pathToLightData);
-
-    if(!fileExtension.compare("json") && boost::filesystem::is_directory(inputPath))
+    if(pathToLightData.compare("") && boost::filesystem::is_directory(inputPath))
     {
         std::cout << "Warning : path to light data has been set to inputpath folder" << std::endl;
         pathToLightData = inputPath;
@@ -102,7 +109,7 @@ int aliceVision_main(int argc, char **argv)
     
     if(boost::filesystem::is_directory(inputPath))
     {
-        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, normalsIm, albedoIm);
+        photometricStereo(inputPath, pathToLightData, outputPath, HS_order, downscale, normalsIm, albedoIm);
     }
     else
     {
@@ -113,7 +120,7 @@ int aliceVision_main(int argc, char **argv)
           return EXIT_FAILURE;
       }
 
-      photometricStereo(sfmData, pathToLightData, outputPath, HS_order, normalsIm, albedoIm);
+      photometricStereo(sfmData, pathToLightData, maskPath, outputPath, HS_order, downscale, normalsIm, albedoIm);
     }
 
     return 0;

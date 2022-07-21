@@ -1,6 +1,9 @@
+#include "photometricStereo.hpp"
+#include "photometricDataIO.hpp"
+
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/io.cpp>
+#include <aliceVision/image/resampling.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -11,13 +14,11 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-
-#include "photometricDataIO.hpp"
-#include "photometricStereo.hpp"
+#include <algorithm>
 
 namespace fs = boost::filesystem;
 
-void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const std::string& inputPath, const std::string& lightData, const std::string& outputPath, const size_t HS_order, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -41,18 +42,19 @@ void photometricStereo(const std::string& inputPath, const std::string& lightDat
         buildLigtMatFromJSON(lightData, imageList, lightMat, intList);
     }
 
-
     aliceVision::image::Image<float> mask;
     fs::path lightDataPath = fs::path(lightData);
     std::string maskName = lightDataPath.remove_filename().string() + "/mask.png";
     loadMask(maskName, mask);
 
-    photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
+    photometricStereo(imageList, intList, lightMat, mask, downscale, normals, albedo);
 
     writePSResults(outputPath, normals, albedo);
+
+    aliceVision::image::writeImage(outputPath + "/mask.png", mask, aliceVision::image::EImageColorSpace::NO_CONVERSION);
 }
 
-void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& lightData, const std::string& outputPath, const size_t HS_order, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::string& lightData, const std::string& maskPath, const std::string& outputPath, const size_t HS_order, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t dim = 3;
     if(HS_order == 2)
@@ -95,18 +97,21 @@ void photometricStereo(const aliceVision::sfmData::SfMData& sfmData, const std::
             buildLigtMatFromJSON(lightData, imageList, lightMat, intList);
         }
 
-
         aliceVision::image::Image<float> mask;
-        fs::path lightDataPath = fs::path(lightData);
-        std::string maskName = lightDataPath.remove_filename().string() + "/mask.png";
-        loadMask(maskName, mask);
 
-        photometricStereo(imageList, intList, lightMat, mask, normals, albedo);
+        std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImagePath()).parent_path().filename().string();
+        std::string currentMaskPath = maskPath + "/" + pictureFolderName.erase(0,3) + ".png";
+
+        loadMask(currentMaskPath, mask);
+
+        photometricStereo(imageList, intList, lightMat, mask, downscale, normals, albedo);
         writePSResults(outputPath, normals, albedo, posesIt.first);
+
+        aliceVision::image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png", mask, aliceVision::image::EImageColorSpace::NO_CONVERSION);
     }
 }
 
-void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, const aliceVision::image::Image<float>& mask, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
+void photometricStereo(const std::vector<std::string>& imageList, const std::vector<std::array<float, 3>>& intList, const Eigen::MatrixXf& lightMat, aliceVision::image::Image<float>& mask, const int& downscale, aliceVision::image::Image<aliceVision::image::RGBfColor>& normals, aliceVision::image::Image<aliceVision::image::RGBfColor>& albedo)
 {
     size_t maskSize;
     int pictRows;
@@ -121,9 +126,14 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
     if(hasMask)
     {
+
+        if(downscale > 1)
+        {
+            downscaleImageInplace(mask,downscale);
+        }
+
         getIndMask(mask, indexes);
         maskSize = indexes.size();
-
         pictRows = mask.rows();
         pictCols = mask.cols();
 
@@ -136,6 +146,11 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         aliceVision::image::ImageReadOptions options;
         options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
         aliceVision::image::readImage(picturePath, imageFloat, options);
+
+        if(downscale > 1)
+        {
+            downscaleImageInplace(imageFloat,downscale);
+        }
 
         pictRows = imageFloat.rows();
         pictCols = imageFloat.cols();
@@ -156,6 +171,11 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         options.outputColorSpace = aliceVision::image::EImageColorSpace::NO_CONVERSION;
         aliceVision::image::readImage(picturePath, imageFloat, options);
 
+        if(downscale > 1)
+        {
+            downscaleImageInplace(imageFloat,downscale);
+        }
+
         intensityScaling(intList.at(i), imageFloat);
 
         Eigen::MatrixXf currentPicture(3,maskSize);
@@ -170,8 +190,23 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
 
     Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(lightMat.cols(),pictRows*pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3,pictRows*pictCols);
-
     Eigen::MatrixXf M_channel(3, maskSize);
+
+    // Normal estimation :
+    M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
+    int currentIdx;
+    for (size_t i = 0; i < maskSize; ++i)
+    {
+        if(hasMask)
+        {
+            currentIdx = indexes.at(i); // index in picture
+        }
+        else
+        {
+            currentIdx = i;
+        }
+        normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
+    }
 
     // Channelwise albedo estimation :
     for (size_t ch = 0; ch < 3; ++ch)
@@ -192,24 +227,7 @@ void photometricStereo(const std::vector<std::string>& imageList, const std::vec
         }
     }
 
-    // Normal estimation :
-    M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
-    int currentIdx;
-    for (size_t i = 0; i < maskSize; ++i)
-    {
-        if(hasMask)
-        {
-            currentIdx = indexes.at(i); // index in picture
-        }
-        else
-        {
-            currentIdx = i;
-        }
-        normalsVect.col(currentIdx) = M_channel.col(i)/M_channel.col(i).norm();
-    }
-
     albedoVect = albedoVect/albedoVect.maxCoeff();
-
     aliceVision::image::Image<aliceVision::image::RGBfColor> normalsIm(pictCols,pictRows);
     reshapeInImage(normalsVect, normalsIm);
     normals = normalsIm;

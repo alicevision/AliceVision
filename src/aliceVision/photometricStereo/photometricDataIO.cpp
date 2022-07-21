@@ -178,7 +178,7 @@ void getIndMask(aliceVision::image::Image<float> const& mask, std::vector<int>& 
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if(mask(i,j) != 0)
+            if( mask(i,j) > 0.7)
             {
                 int currentIndex = j*nbRows + i;
                 indexes.push_back(currentIndex);
@@ -216,7 +216,7 @@ void image2PsMatrix(const aliceVision::image::Image<aliceVision::image::RGBfColo
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if ((!hasMask) || mask(i,j) > 0)
+            if ((!hasMask) || mask(i,j) > 0.7)
             {
                 for(int ch = 0; ch < 3; ++ch)
                 {
@@ -240,7 +240,7 @@ void image2PsMatrix(const aliceVision::image::Image<float>& imageIn, const alice
     {
         for (int i = 0; i < nbRows; ++i)
         {
-            if ((!hasMask) || mask(i,j) > 0)
+            if ((!hasMask) || mask(i,j) > 0.7)
             {
                 imageOut(index) = imageIn(i,j);
             }
