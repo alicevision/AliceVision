@@ -13,7 +13,6 @@
 #include <software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <memory>
@@ -26,10 +25,11 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main( int argc, char **argv )
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -114,14 +114,14 @@ int aliceVision_main( int argc, char **argv )
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  if(!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
+  if (fs.exists(outputFolder))
+    fs.create_directory(outputFolder);
 
   // harmonization process
 
   aliceVision::system::Timer timer;
 
-  ColorHarmonizationEngineGlobal colorHarmonizeEngine(sfmDataFilename,
+  ColorHarmonizationEngineGlobal colorHarmonizeEngine(fs, sfmDataFilename,
     featuresFolders,
     matchesFolders,
     outputFolder,

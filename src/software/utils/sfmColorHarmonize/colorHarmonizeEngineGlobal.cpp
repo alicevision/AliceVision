@@ -39,8 +39,6 @@
 #include <functional>
 #include <sstream>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 
 using namespace lemon;
@@ -54,6 +52,7 @@ typedef feature::PointFeature FeatureT;
 typedef std::vector<FeatureT> featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
+    vfs::filesystem& fs,
     const std::string& sfmDataFilename,
     const std::vector<std::string>& featuresFolders,
     const std::vector<std::string>& matchesFolders,
@@ -61,14 +60,15 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
     const std::vector<feature::EImageDescriberType>& descTypes,
     int selectionMethod,
     int imgRef)
-  : _sfmDataFilename(sfmDataFilename)
+  : _fs{fs}
+  , _sfmDataFilename(sfmDataFilename)
   , _featuresFolders(featuresFolders)
   , _matchesFolders(matchesFolders)
   , _outputDirectory(outputDirectory)
   , _descTypes(descTypes)
 {
-  if(!fs::exists(outputDirectory))
-    fs::create_directory(outputDirectory);
+  if(!_fs.exists(outputDirectory))
+    _fs.create_directory(outputDirectory);
 
   // choose image reference
   while(imgRef < 0 || imgRef >= _fileNames.size())
@@ -108,7 +108,6 @@ inline void pauseProcess()
 
 bool ColorHarmonizationEngineGlobal::Process()
 {
-  vfs::filesystem fs;
   const std::string vec_selectionMethod[ 3 ] = { "fullFrame", "matchedPoints", "KVLD" };
   const std::string vec_harmonizeMethod[ 1 ] = { "quantifiedGainCompensation" };
   const int harmonizeMethod = 0;
@@ -145,7 +144,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     // Save the graph before cleaning:
     graph::exportToGraphvizData(
-      (fs::path(_outputDirectory) / "input_graph_poor_supportRemoved").string(),
+      (vfs::path(_outputDirectory) / "input_graph_poor_supportRemoved").string(),
       putativeGraph.g);
   }
 
@@ -212,8 +211,8 @@ bool ColorHarmonizationEngineGlobal::Process()
     std::pair< std::string, std::string > p_imaNames;
     p_imaNames = make_pair( _fileNames[ viewI ], _fileNames[ viewJ ] );
     std::cout << "Current edge : "
-      << fs::path(p_imaNames.first).filename().string() << "\t"
-      << fs::path(p_imaNames.second).filename().string() << std::endl;
+      << vfs::path(p_imaNames.first).filename().string() << "\t"
+      << vfs::path(p_imaNames.second).filename().string() << std::endl;
 
     //-- Compute the masks from the data selection:
     Image< unsigned char > maskI ( _imageSize[ viewI ].first, _imageSize[ viewI ].second );
@@ -272,24 +271,24 @@ bool ColorHarmonizationEngineGlobal::Process()
     if (bExportMask)
     {
       std::string sEdge = _fileNames[ viewI ] + "_" + _fileNames[ viewJ ];
-      sEdge = (fs::path(_outputDirectory) / sEdge ).string();
+      sEdge = (vfs::path(_outputDirectory) / sEdge ).string();
 
-      if( !fs::exists(sEdge) )
-        fs::create_directory(sEdge);
+      if (!_fs.exists(sEdge) )
+        _fs.create_directory(sEdge);
 
       std::string out_filename_I = "00_mask_I.png";
-      out_filename_I = (fs::path(sEdge) / out_filename_I).string();
+      out_filename_I = (vfs::path(sEdge) / out_filename_I).string();
 
       std::string out_filename_J = "00_mask_J.png";
-      out_filename_J = (fs::path(sEdge) / out_filename_J).string();
-      writeImage(fs, out_filename_I, maskI, image::EImageColorSpace::AUTO);
-      writeImage(fs, out_filename_J, maskJ, image::EImageColorSpace::AUTO);
+      out_filename_J = (vfs::path(sEdge) / out_filename_J).string();
+      writeImage(_fs, out_filename_I, maskI, image::EImageColorSpace::AUTO);
+      writeImage(_fs, out_filename_J, maskJ, image::EImageColorSpace::AUTO);
     }
 
     //-- Compute the histograms
     Image< RGBColor > imageI, imageJ;
-    readImage(fs, p_imaNames.first, imageI, image::EImageColorSpace::LINEAR);
-    readImage(fs, p_imaNames.second, imageJ, image::EImageColorSpace::LINEAR);
+    readImage(_fs, p_imaNames.first, imageI, image::EImageColorSpace::LINEAR);
+    readImage(_fs, p_imaNames.second, imageJ, image::EImageColorSpace::LINEAR);
 
     utils::Histogram< double > histoI( minvalue, maxvalue, bin);
     utils::Histogram< double > histoJ( minvalue, maxvalue, bin);
@@ -416,7 +415,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     }
 
     Image< RGBColor > image_c;
-    readImage(fs, _fileNames[ imaNum ], image_c , image::EImageColorSpace::LINEAR);
+    readImage(_fs, _fileNames[ imaNum ], image_c , image::EImageColorSpace::LINEAR);
 
     #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
@@ -429,12 +428,12 @@ bool ColorHarmonizationEngineGlobal::Process()
       }
     }
 
-    const std::string out_folder = (fs::path(_outputDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
-    if(!fs::exists(out_folder))
-      fs::create_directory(out_folder);
-    const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
+    const std::string out_folder = (vfs::path(_outputDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
+    if (!_fs.exists(out_folder))
+      _fs.create_directory(out_folder);
+    const std::string out_filename = (vfs::path(out_folder) / vfs::path(_fileNames[ imaNum ]).filename() ).string();
 
-    writeImage(fs, out_filename, image_c , image::EImageColorSpace::AUTO);
+    writeImage(_fs, out_filename, image_c , image::EImageColorSpace::AUTO);
   }
   return true;
 }
@@ -487,7 +486,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData((fs::path(_outputDirectory) / "initialGraph" ).string(),putativeGraph.g );
+  graph::exportToGraphvizData((vfs::path(_outputDirectory) / "initialGraph" ).string(),putativeGraph.g );
 
   return true;
 }
@@ -500,7 +499,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData((fs::path(_outputDirectory) / "initialGraph").string(), putativeGraph.g);
+  graph::exportToGraphvizData((vfs::path(_outputDirectory) / "initialGraph").string(), putativeGraph.g);
 
   const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
   std::cout << "\n"
@@ -558,7 +557,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   }
 
   // Save the graph after cleaning:
-  graph::exportToGraphvizData((fs::path(_outputDirectory) / "cleanedGraph").string(), putativeGraph.g);
+  graph::exportToGraphvizData((vfs::path(_outputDirectory) / "cleanedGraph").string(), putativeGraph.g);
 
   std::cout << "\n"
     << "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"

@@ -11,6 +11,7 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <memory>
 
@@ -35,6 +36,7 @@ class ColorHarmonizationEngineGlobal
 {
 public:
   ColorHarmonizationEngineGlobal(
+    vfs::filesystem& fs,
     const std::string& sfmDataFilename,
     const std::vector<std::string>& featuresFolders,
     const std::vector<std::string>& matchesFolders,
@@ -48,6 +50,7 @@ public:
   virtual bool Process();
 
 private:
+  vfs::filesystem& _fs;
 
   EHistogramSelectionMethod _selectionMethod;
   int _imgRef;

@@ -10,6 +10,7 @@ alicevision_add_software(aliceVision_utils_hardwareResources
   SOURCE main_hardwareResources.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_gpu
         Boost::program_options
 )
@@ -182,6 +183,7 @@ alicevision_add_software(aliceVision_utils_sfmColorHarmonize
          sfmColorHarmonize/colorHarmonizeEngineGlobal.cpp # TODO
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_feature
         aliceVision_kvld
