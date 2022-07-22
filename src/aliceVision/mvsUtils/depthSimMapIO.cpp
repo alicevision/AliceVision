@@ -212,6 +212,8 @@ void readMapFromTiles(int rc,
                       int step, 
                       const std::string& customSuffix)
 {
+    const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
+
     const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
     const int width = std::ceil(mp.getWidth(rc) / float(scaleStep));
     const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
@@ -221,7 +223,7 @@ void readMapFromTiles(int rc,
     std::string firstTilePath;
 
     {
-        const fs::path mapPath(getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, -1, -1));
+        const fs::path mapPath(getFileNameFromIndex(mp, rc, fileType, scale, customSuffix));
         const fs::path mapDirectory(mapPath.parent_path());
 
         if(is_directory(mapDirectory))
@@ -248,10 +250,15 @@ void readMapFromTiles(int rc,
     std::vector<ROI> tileList;
     getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
 
-    for(const ROI& roi : tileList)
+    for(std::size_t i = 0; i < tileList.size(); ++i)
     {
         using namespace imageIO;
+
+        const ROI roi = intersect(tileList.at(i), imageRoi);
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
+
+        if(roi.isEmpty())
+            continue;
 
         try
         {
@@ -265,7 +272,7 @@ void readMapFromTiles(int rc,
         }
         catch(const std::exception& e)
         {
-            ALICEVISION_LOG_WARNING("Cannot find depth/sim map (rc: " << rc << "): " << fs::path(mapTilePath).filename().string());
+            ALICEVISION_LOG_WARNING("Cannot find depth/sim map (rc: " << rc << "): " << mapTilePath);
         }
     }
 }
@@ -528,6 +535,8 @@ void deleteDepthSimMapTiles(int rc,
                             int step,
                             const std::string& customSuffix)
 {
+  const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
+
   std::string firstTilePath;
 
   {
@@ -562,7 +571,10 @@ void deleteDepthSimMapTiles(int rc,
   {
     using namespace imageIO;
 
-    const ROI& roi = tileList.at(i);
+    const ROI roi = intersect(tileList.at(i), imageRoi);
+
+    if(roi.isEmpty())
+        continue;
 
     // read tile depth/sim maps
     const std::string depthMapTilePath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
@@ -575,7 +587,9 @@ void deleteDepthSimMapTiles(int rc,
     }
     catch (const std::exception& e)
     {
-      ALICEVISION_LOG_WARNING("Cannot delete depth/sim map tile (rc: " << rc << ", tile: " << (i + 1) << "/" << tileList.size()<< ").");
+      ALICEVISION_LOG_WARNING("Cannot delete depth/sim map tile (rc: " << rc << ", tile: " << (i + 1) << "/" << tileList.size()<< "): " << std::endl
+                              << " - " << depthMapTilePath << std::endl
+                              << " - " << simMapTilePath << std::endl);
     }
   }
 }
