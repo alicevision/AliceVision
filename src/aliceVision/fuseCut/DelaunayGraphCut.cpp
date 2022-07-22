@@ -437,22 +437,21 @@ DelaunayGraphCut::~DelaunayGraphCut()
 
 void DelaunayGraphCut::saveDhInfo(const std::string& fileNameInfo)
 {
-    FILE* f = fopen(fileNameInfo.c_str(), "wb");
+    auto f = _fs.open_write_binary(fileNameInfo);
 
     int npts = getNbVertices();
-    fwrite(&npts, sizeof(int), 1, f);
+    f.fwrite(&npts, sizeof(int), 1);
     for(const GC_vertexInfo& v: _verticesAttr)
     {
         v.fwriteinfo(f);
     }
 
     int ncells = _cellsAttr.size();
-    fwrite(&ncells, sizeof(int), 1, f);
+    f.fwrite(&ncells, sizeof(int), 1);
     for(const GC_cellInfo& c: _cellsAttr)
     {
         c.fwriteinfo(f);
     }
-    fclose(f);
 }
 
 void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& fileNameInfo)

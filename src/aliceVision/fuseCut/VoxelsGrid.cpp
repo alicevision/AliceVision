@@ -342,8 +342,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
 
         // create file that indicates that the voxel has subvoxels
         std::string subfnFileMark = folderName + "sub.txt";
-        FILE* f = fopen(subfnFileMark.c_str(), "w");
-        fclose(f);
+        _fs.open_write_text(subfnFileMark);
 
         VoxelsGrid* vgnew = new VoxelsGrid(_fs, Voxel(2, 2, 2), &(*voxels)[i * 8], mp, subfn, doVisualize);
         vgnew->generateTracksForEachVoxel(ReconstructionPlan, numSubVoxs / 2, maxPts, level + 1, maxlevel,
@@ -597,7 +596,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
                 // open camPtsFile for append
                 std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + std::to_string(mp->getViewId(rc)) + ".bin";
-                FILE* fin = fopen(camPtsFileName.c_str(), "ab");
+                auto fin = _fs.open_write(camPtsFileName, std::ios::app | std::ios::binary);
                 StaticVector<Pixel>* camPtsIds = (*camsTracksPoints)[rc];
                 for(int j = 0; j < sizeOfStaticVector<Pixel>(camPtsIds); j++)
                 {
@@ -610,7 +609,6 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                     p.ncams = sizeOfStaticVector<Pixel>((*tracksPointsCams)[ptid]);
                     p.fwriteinfo(fin);
                 }
-                fclose(fin);
             } // for cams
 
             delete cams;
@@ -627,9 +625,10 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 void VoxelsGrid::vizualize()
 {
     std::string spaceWrlFileName = spaceRootDir + "tracks.wrl";
-    FILE* f = fopen(spaceWrlFileName.c_str(), "w");
-    fprintf(f, "#VRML V2.0 utf8\n");
-    fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
+    auto f = _fs.open_write_text(spaceWrlFileName);
+
+    f.printf("#VRML V2.0 utf8\n");
+    f.printf("Background {\n skyColor 1 1 1 \n } \n");
     int nvoxs = voxels->size() / 8;
     for(int i = 0; i < nvoxs; i++)
     {
@@ -637,10 +636,9 @@ void VoxelsGrid::vizualize()
         std::string fname = subFoldeName + "tracks.wrl";
         if (_fs.is_directory(subFoldeName.c_str()))
         {
-            fprintf(f, "Inline{ url [\"%s\"] \n }\n", fname.c_str());
+            f.printf("Inline{ url [\"%s\"] \n }\n", fname.c_str());
         }
     }
-    fclose(f);
 }
 
 void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
