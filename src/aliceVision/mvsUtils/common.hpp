@@ -29,7 +29,7 @@ long initEstimate();
 void printfEstimate(int i, int n, long startTime);
 void finishEstimate();
 std::string formatElapsedTime(long t1);
-inline void printfElapsedTime(long t1, std::string prefix = "")
+inline void printfElapsedTime(long t1, const std::string& prefix = "")
 {
     ALICEVISION_LOG_DEBUG(prefix << " " << formatElapsedTime(t1));
 }
