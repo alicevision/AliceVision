@@ -20,7 +20,6 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 #include <boost/program_options.hpp> 
 #include <boost/accumulators/accumulators.hpp>
@@ -47,7 +46,6 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
 namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
 
@@ -339,9 +337,9 @@ int aliceVision_main(int argc, char** argv)
     const std::string &feedPath = mediaPath[idCamera];
     // contains the folder where the video, the images or the filelist is
     const std::string subMediaFilepath = 
-        bfs::is_directory(bfs::path(mediaPath[idCamera])) ? 
+        fs.is_directory(vfs::path(mediaPath[idCamera])) ?
           (mediaPath[idCamera]) : 
-          (bfs::path(mediaPath[idCamera]).parent_path().string());
+          (vfs::path(mediaPath[idCamera]).parent_path().string());
 
     // create the feedProvider
     dataio::FeedProvider feed(fs, feedPath, calibFile);
