@@ -9,19 +9,22 @@
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include "LineKernel.hpp"
 
 #include <iostream>
-#include <fstream>  
 #include <vector>
 #include <random>
 #include <algorithm>
 
+namespace vfs = aliceVision::vfs;
 
 /**
  * @brief Generate a svg file with the ground truth line, the estimated one, the
  * estimated inliers and outliers.
  * 
+ * @param[in] fs Virtual file system handle.
  * @param[in] outfile The name of the svg file to generate.
  * @param[in] W The width of the image to generate.
  * @param[in] H The height of the image to generate.
@@ -30,7 +33,7 @@
  * @param[in] points The points from which the lines are generated.
  * @param[in] vec_inliers The inliers that fit the estimated line.
  */
-void drawTest(const std::string &outfile,
+void drawTest(vfs::filesystem& fs, const std::string &outfile,
               int imageWidth, 
               int imageHeight,
               const aliceVision::Vec2 &lineGT,
@@ -63,7 +66,7 @@ void drawTest(const std::string &outfile,
 
   //  ostringstream osSvg;
   //  osSvg << gaussianNoiseLevel << "_line_" << sqrt(errorMax) << ".svg";
-  std::ofstream svgFile(outfile);
+  auto svgFile = fs.open_write_text(outfile);
   svgFile << svgTest.closeSvgFile().str();
   svgFile.close();
 }

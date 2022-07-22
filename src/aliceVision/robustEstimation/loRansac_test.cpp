@@ -10,6 +10,7 @@
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/robustEstimation/lineTestGenerator.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <iostream>
 #include <random>
@@ -33,6 +34,7 @@ void lineFittingTest(std::size_t numPoints,
                     Vec2& estimatedModel,
                     std::vector<std::size_t>& vec_inliers)
 {
+  vfs::filesystem fs;
 
   assert(outlierRatio >= 0 && outlierRatio < 1);
   assert(gaussianNoiseLevel >= 0);
@@ -55,7 +57,7 @@ void lineFittingTest(std::size_t numPoints,
   const std::string base = "testRansac_line_t" + std::to_string(threshold) + "_n" + std::to_string(gaussianNoiseLevel);
   const int W = std::abs(xy(0, 0) - xy(0, numPoints - 1));
   const int H = (int) std::fabs(xy(1, 0) - xy(1, numPoints - 1));
-  drawTest(base + "_LORANSACtrial" + std::to_string(0) + ".svg",
+  drawTest(fs, base + "_LORANSACtrial" + std::to_string(0) + ".svg",
            W, H,
            GTModel,
            estimatedModel,
