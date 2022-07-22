@@ -46,6 +46,6 @@ alicevision_add_library(aliceVision_matching
 # Unit tests
 alicevision_add_test(matching_test.cpp NAME "matching"          LINKS aliceVision_matching)
 alicevision_add_test(filters_test.cpp  NAME "matching_filters"  LINKS aliceVision_matching)
-alicevision_add_test(indMatch_test.cpp NAME "matching_indMatch" LINKS aliceVision_matching)
+alicevision_add_test(indMatch_test.cpp NAME "matching_indMatch" LINKS aliceVision_matching aliceVision_vfs)
 
 add_subdirectory(kvld)

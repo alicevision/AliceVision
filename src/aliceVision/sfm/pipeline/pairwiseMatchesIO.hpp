@@ -49,7 +49,7 @@ inline bool loadPairwiseMatches(vfs::filesystem& fs,
   matchesFolders.insert(matchesFolders.end(), folders.begin(), folders.end());
 
   ALICEVISION_LOG_DEBUG("Loading matches");
-  if (!matching::Load(out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches, minNbMatches))
+  if (!matching::Load(fs, out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches, minNbMatches))
   {
     std::stringstream ss("Unable to read the matches file(s) from:\n");
     for(const std::string& folder : matchesFolders)

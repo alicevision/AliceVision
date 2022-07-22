@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 
 #include <string>
 
@@ -18,20 +19,23 @@ namespace matching {
 /**
  * @brief Load a match file.
  *
+ * @param[in] Virtual file system handle
  * @param[out] matches container for the output matches
  * @param[in] filepath the match file to load
  */
-bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath);
+bool LoadMatchFile(vfs::filesystem& fs, PairwiseMatches& matches, const std::string& filepath);
 
 /**
  * @brief Load the match file for each image.
+ * @param[in] fs Virtual file system handle
  * @param[out] matches container for the output matches.
  * @param[in] viewsKeys the list of views whose match files need to be loaded.
  * @param[in] folder the folder where to look for all the files.
  * @param[in] extension the extension of the match file.
  * @return the number of match file actually loaded (if a file cannot be loaded it is discarded)
  */
-std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
+std::size_t LoadMatchFilePerImage(vfs::filesystem& fs,
+                                  PairwiseMatches& matches,
                                   const std::set<IndexT>& viewsKeys,
                                   const std::string& folder,
                                   const std::string& extension);
@@ -40,6 +44,7 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
  * @brief Load all the matches from the folder. Optionally filter the view, the type of descriptors
  * and the number of matches.
  *
+ * @param[in] fs Virtual file system handle
  * @param[out] matches container for the output matches.
  * @param[in] viewsKeysFilter Restrict the matches to these views.
  * @param[in] folders The list of folder from where to lead the match files.
@@ -50,7 +55,8 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
  * @see filterMatchesByViews
  * @see filterTopMatches
  */
-bool Load(PairwiseMatches& matches,
+bool Load(vfs::filesystem& fs,
+          PairwiseMatches& matches,
           const std::set<IndexT>& viewsKeysFilter,
           const std::vector<std::string>& folders,
           const std::vector<feature::EImageDescriberType>& descTypesFilter,
@@ -75,6 +81,7 @@ void filterTopMatches(PairwiseMatches& allMatches, int maxNum, int minNum);
 /**
  * @brief Save match files.
  *
+ * @param[in] fs Virtual file system handle
  * @param[in] matches: container for the output matches
  * @param[in] folder: folder containing the match files
  * @param[in] extension: txt or bin file format
@@ -82,7 +89,8 @@ void filterTopMatches(PairwiseMatches& allMatches, int maxNum, int minNum);
  *            or one match file per image
  * @param[in] prefix: optional prefix for the output file(s)
  */
-bool Save(const PairwiseMatches& matches,
+bool Save(vfs::filesystem& fs,
+          const PairwiseMatches& matches,
           const std::string& folder,
           const std::string& extension,
           bool matchFilePerImage,

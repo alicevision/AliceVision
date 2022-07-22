@@ -416,7 +416,7 @@ int aliceVision_main(int argc, char **argv)
 
   // export putative matches
   if(savePutativeMatches)
-    Save(mapPutativesMatches, (fs::path(matchesFolder) / "putativeMatches").string(), fileExtension, matchFilePerImage, filePrefix);
+    Save(fs, mapPutativesMatches, (fs::path(matchesFolder) / "putativeMatches").string(), fileExtension, matchFilePerImage, filePrefix);
 
   ALICEVISION_LOG_INFO("Task (Regions Matching) done in (s): " + std::to_string(timer.elapsed()));
 
@@ -608,7 +608,7 @@ int aliceVision_main(int argc, char **argv)
 
   // export geometric filtered matches
   ALICEVISION_LOG_INFO("Save geometric matches.");
-  Save(finalMatches, matchesFolder, fileExtension, matchFilePerImage, filePrefix);
+  Save(fs, finalMatches, matchesFolder, fileExtension, matchFilePerImage, filePrefix);
   ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
   // d. Export some statistics

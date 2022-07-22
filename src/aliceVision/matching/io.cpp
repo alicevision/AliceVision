@@ -9,9 +9,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
-
-#include <boost/filesystem.hpp>
-#include <boost/range/iterator_range.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <map>
 #include <fstream>
@@ -19,16 +17,14 @@
 #include <string>
 #include <vector>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace matching {
 
-bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
+bool LoadMatchFile(vfs::filesystem& fs, PairwiseMatches& matches, const std::string& filepath)
 {
-  const std::string ext = fs::extension(filepath);
+  const std::string ext = vfs::path(filepath).extension().string();
 
-  if(!fs::exists(filepath))
+  if (!fs.exists(filepath))
     return false;
 
   if(ext == ".txt")
@@ -130,7 +126,8 @@ void filterMatchesByDesc(PairwiseMatches& allMatches, const std::vector<feature:
   allMatches.swap(filteredMatches);
 }
 
-std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
+std::size_t LoadMatchFilePerImage(vfs::filesystem& fs,
+                                  PairwiseMatches& matches,
                                   const std::set<IndexT>& viewsKeys,
                                   const std::string& folder,
                                   const std::string& extension)
@@ -145,7 +142,7 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
     const IndexT idView = *it;
     const std::string matchFilename = std::to_string(idView) + "." + extension;
     PairwiseMatches fileMatches;
-    if(!LoadMatchFile(fileMatches, (fs::path(folder) / matchFilename).string() ))
+    if (!LoadMatchFile(fs, fileMatches, (vfs::path(folder) / matchFilename).string() ))
     {
       #pragma omp critical
       {
@@ -168,16 +165,18 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
 
 /**
  * Load and add pair-wise matches to \p matches from all files in \p folder matching \p pattern.
+ * @param[in] fs Virtual file system handle
  * @param[out] matches PairwiseMatches to add loaded matches to
  * @param[in] folder Folder to load matches files from
  * @param[in] pattern Pattern that files must respect to be loaded
  */
-std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& folder, const std::string& pattern)
+std::size_t loadMatchesFromFolder(vfs::filesystem& fs, PairwiseMatches& matches,
+                                  const std::string& folder, const std::string& pattern)
 {
   std::size_t nbLoadedMatchFiles = 0;
   std::vector<std::string> matchFiles;
   // list all matches files in 'folder' matching (i.e containing) 'pattern'
-  for(const auto& entry : boost::make_iterator_range(fs::directory_iterator(folder), {}))
+  for(const auto& entry : vfs::directory_iterator(fs, folder))
   {
     if(entry.path().string().find(pattern) != std::string::npos)
     {
@@ -191,7 +190,7 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
     const std::string& matchFile = matchFiles[i];
     PairwiseMatches fileMatches;
     ALICEVISION_LOG_DEBUG("Loading match file: " << matchFile);
-    if(!LoadMatchFile(fileMatches, matchFile))
+    if(!LoadMatchFile(fs, fileMatches, matchFile))
     {
       ALICEVISION_LOG_WARNING("Unable to load match file: " << matchFile);
       continue;
@@ -222,7 +221,8 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
   return nbLoadedMatchFiles;
 }
 
-bool Load(PairwiseMatches& matches,
+bool Load(vfs::filesystem& fs,
+          PairwiseMatches& matches,
           const std::set<IndexT>& viewsKeysFilter,
           const std::vector<std::string>& folders,
           const std::vector<feature::EImageDescriberType>& descTypesFilter,
@@ -236,15 +236,15 @@ bool Load(PairwiseMatches& matches,
   std::set<std::string> foldersSet;
   for(const auto& folder : folders)
   {
-    if(fs::exists(folder))
+    if(fs.exists(folder))
     {
-      foldersSet.insert(fs::canonical(folder).string());
+      foldersSet.insert(fs.canonical(folder).string());
     }
   }
 
   for(const auto& folder : foldersSet)
   {
-    nbLoadedMatchFiles += loadMatchesFromFolder(matches, folder, pattern);
+    nbLoadedMatchFiles += loadMatchesFromFolder(fs, matches, folder, pattern);
   }
 
   if(!nbLoadedMatchFiles)
@@ -284,12 +284,13 @@ class MatchExporter
 {
 private:
   void saveTxt(
+    vfs::filesystem& fs,
     const std::string& filepath,
     const PairwiseMatches::const_iterator& matchBegin,
     const PairwiseMatches::const_iterator& matchEnd)
   {
-    const fs::path bPath = fs::path(filepath);
-    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + bPath.extension().string();
+    const vfs::path bPath = vfs::path(filepath);
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs.unique_path().string() + bPath.extension().string();
 
     // write temporary file
     {
@@ -312,7 +313,7 @@ private:
     }
 
     // rename temporary file
-    fs::rename(tmpPath, filepath);
+    fs.rename(tmpPath, filepath);
   }
 
 public:
@@ -323,23 +324,23 @@ public:
     : m_matches(matches)
     , m_directory(folder)
     , m_filename(filename)
-    , m_ext(fs::extension(filename))
+    , m_ext(vfs::path(filename).extension().string())
   {}
 
   ~MatchExporter() = default;
   
-  void saveGlobalFile()
+  void saveGlobalFile(vfs::filesystem& fs)
   {
-    const std::string filepath = (fs::path(m_directory) / m_filename).string();
+    const std::string filepath = (vfs::path(m_directory) / m_filename).string();
 
     if(m_ext == ".txt")
-      saveTxt(filepath, m_matches.begin(), m_matches.end());
+      saveTxt(fs, filepath, m_matches.begin(), m_matches.end());
     else
       throw std::runtime_error(std::string("Unknown matching file format: ") + m_ext);
   }
 
   /// Export matches into separate files, one for each image.
-  void saveOneFilePerImage()
+  void saveOneFilePerImage(vfs::filesystem& fs)
   {
     std::set<IndexT> keys;
     std::transform(
@@ -354,11 +355,11 @@ public:
       PairwiseMatches::const_iterator match = matchBegin;
       while(match != matchEnd && match->first.first == key)
         ++match;
-      const std::string filepath = (fs::path(m_directory) / (std::to_string(key) + "." + m_filename)).string();
+      const std::string filepath = (vfs::path(m_directory) / (std::to_string(key) + "." + m_filename)).string();
       ALICEVISION_LOG_DEBUG("Export Matches in: " << filepath);
       
       if(m_ext == ".txt")
-        saveTxt(filepath, matchBegin, match);
+        saveTxt(fs, filepath, matchBegin, match);
       else
         throw std::runtime_error(std::string("Unknown matching file format: ") + m_ext);
 
@@ -373,7 +374,8 @@ public:
   std::string m_filename;
 };
 
-bool Save(const PairwiseMatches& matches,
+bool Save(vfs::filesystem& fs,
+          const PairwiseMatches& matches,
           const std::string& folder,
           const std::string& extension,
           bool matchFilePerImage,
@@ -383,9 +385,9 @@ bool Save(const PairwiseMatches& matches,
   MatchExporter exporter(matches, folder, filename);
 
   if(matchFilePerImage)
-    exporter.saveOneFilePerImage();
+    exporter.saveOneFilePerImage(fs);
   else
-    exporter.saveGlobalFile();
+    exporter.saveGlobalFile(fs);
 
   return true;
 }
