@@ -40,6 +40,7 @@ alicevision_add_software(aliceVision_utils_imageProcessing
     SOURCE main_imageProcessing.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_feature
         aliceVision_sfm
