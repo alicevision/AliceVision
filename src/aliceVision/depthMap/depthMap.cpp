@@ -16,6 +16,10 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -120,7 +124,7 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
     {
         const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMap, 0);
 
-        if(!mvsUtils::FileExists(normalMapFilepath))
+        if (!fs::exists(normalMapFilepath))
         {
             std::vector<float> depthMap;
             int w = 0;

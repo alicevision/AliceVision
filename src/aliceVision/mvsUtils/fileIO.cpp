@@ -17,16 +17,6 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-bool FileExists(const std::string& filePath)
-{
-    return boost::filesystem::exists(filePath);
-}
-
-bool FolderExists(const std::string& folderPath)
-{
-    return boost::filesystem::is_directory(folderPath);
-}
-
 std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix)
 {
   std::string folder = mp._imagesFolder;
@@ -385,12 +375,6 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
 
 template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
-
-bool DeleteDirectory(const std::string& sPath)
-{
-    boost::filesystem::remove_all(sPath);
-    return true;
-}
 
 } // namespace mvsUtils
 } // namespace aliceVision

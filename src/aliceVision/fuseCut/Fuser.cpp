@@ -149,7 +149,7 @@ void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor,
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if(mvsUtils::FileExists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
+    if (bfs::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
     {
         return true;
     }
@@ -733,7 +733,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
     ALICEVISION_LOG_INFO("generating temp files.");
     std::string depthMapsPtsSimsTmpDir = tmpDir + "depthMapsPtsSimsTmp/";
 
-    if(!mvsUtils::FolderExists(depthMapsPtsSimsTmpDir))
+    if (!bfs::is_directory(depthMapsPtsSimsTmpDir))
     {
         bfs::create_directory(depthMapsPtsSimsTmpDir);
 
@@ -902,7 +902,7 @@ void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMaps
         remove(ptsfn.c_str());
         remove(simsfn.c_str());
     }
-    mvsUtils::DeleteDirectory(depthMapsPtsSimsTmpDir);
+    bfs::remove_all(depthMapsPtsSimsTmpDir);
 }
 
 } // namespace fuseCut

@@ -232,7 +232,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
 void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& fileNameP, const std::string& fileNameD)
 {
-    if(!FileExists(fileNameP))
+    if (!fs::exists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
 
     FILE* f = fopen(fileNameP.c_str(), "r");
@@ -268,7 +268,7 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     iRArr[index] = RArr[index].inverse();
     iCamArr[index] = iRArr[index] * iKArr[index];
 
-    if(FileExists(fileNameD))
+    if (fs::exists(fileNameD))
     {
         FILE* f = fopen(fileNameD.c_str(), "r");
         fscanf(f, "%f %f %f", &FocK1K2Arr[index].x, &FocK1K2Arr[index].y, &FocK1K2Arr[index].z);
