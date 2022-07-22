@@ -11,7 +11,6 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <fstream>
 
@@ -26,7 +25,6 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -85,8 +83,8 @@ int aliceVision_main(int argc, char **argv)
   bool bOneHaveDisto = false;
   
   // Create output dir
-  if (!fs::exists(outDirectory))
-    fs::create_directory(outDirectory);
+  if (!fs.exists(outDirectory))
+    fs.create_directory(outDirectory);
 
   // Read the SfM scene
   SfMData sfm_data;
@@ -127,7 +125,7 @@ int aliceVision_main(int argc, char **argv)
     const int h = pinhole_cam->h();
     
     // We can now create the .cam file for the View in the output dir 
-    std::ofstream outfile((fs::path(outDirectory) / (fs::path(view->getImagePath()).stem().string() + ".cam")).string());
+    std::ofstream outfile((vfs::path(outDirectory) / (vfs::path(view->getImagePath()).stem().string() + ".cam")).string());
     // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
     // for full specs
     const int largerDim = w > h ? w : h;
