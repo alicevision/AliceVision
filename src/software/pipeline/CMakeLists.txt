@@ -357,6 +357,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_mvsData
           aliceVision_mvsUtils
           aliceVision_mesh
