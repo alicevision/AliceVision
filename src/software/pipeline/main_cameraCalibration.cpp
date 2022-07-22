@@ -293,7 +293,7 @@ int aliceVision_main(int argc, char** argv)
 
   ALICEVISION_COUT("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
 
-  aliceVision::calibration::saveCameraParams(outputFilename, imageSize,
+  aliceVision::calibration::saveCameraParams(fs, outputFilename, imageSize,
                                          boardSize, squareSize, aspectRatio,
                                          cvCalibFlags, cameraMatrix, distCoeffs,
                                          writeExtrinsics ? rvecs : std::vector<cv::Mat>(),

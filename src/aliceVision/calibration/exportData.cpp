@@ -9,13 +9,13 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgcodecs.hpp>
 
 #include <boost/filesystem/path.hpp>
 
-#include <fstream>
 #include <iostream>
 #include <ctime>
 #include <cstdio>
@@ -102,12 +102,13 @@ void exportDebug(const std::string& debugSelectedImgFolder,
   }
 }
 
-void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
+void saveCameraParamsToPlainTxt(vfs::filesystem& ffs,
+                                const cv::Size& imageSize,
                                 const cv::Mat& cameraMatrix,
                                 const cv::Mat& distCoeffs,
                                 const std::string& filename)
 {
-  std::ofstream fs(filename, std::ios::out);
+  auto fs = ffs.open_write_text(filename);
   if (!fs.is_open())
   {
     ALICEVISION_LOG_WARNING("Unable to create the calibration file " << filename);
@@ -152,7 +153,7 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
   fs.close();
 }
 
-void saveCameraParams(const std::string& filename,
+void saveCameraParams(vfs::filesystem& ffs, const std::string& filename,
                       const cv::Size& imageSize, const cv::Size& boardSize,
                       float squareSize, float aspectRatio, int cvCalibFlags,
                       const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs,
@@ -230,7 +231,7 @@ void saveCameraParams(const std::string& filename,
     fs << "image_points" << imagePtMat;
   }
   const std::string txtfilename = filename.substr(0, filename.find_last_of(".")) + ".cal.txt";
-  saveCameraParamsToPlainTxt(imageSize, cameraMatrix, distCoeffs, txtfilename);
+  saveCameraParamsToPlainTxt(ffs, imageSize, cameraMatrix, distCoeffs, txtfilename);
 }
 
 }//namespace calibration

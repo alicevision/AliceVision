@@ -61,12 +61,13 @@ void exportDebug(const std::string& debugSelectedImgFolder,
 /**
  * @brief This function saves the parameters' camera into a txt file.
  *
+ * @param[in] fs Virtual file system handle
  * @param[in] imageSize The size of the image.
  * @param[in] cameraMatrix The calibration matrix K of the camera.
  * @param[in] distCoeffs The distortion coefficients.
  * @param[out] filename The name of the camera parameters file. 
  */
-void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
+void saveCameraParamsToPlainTxt(vfs::filesystem& fs, const cv::Size& imageSize,
                                 const cv::Mat& cameraMatrix,
                                 const cv::Mat& distCoeffs,
                                 const std::string& filename);
@@ -74,6 +75,7 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
 /**
  * @brief This function saves some parameters' camera into a txt file.
  *
+ * @param[in] fs Virtual file system handle
  * @param[in] filename The name of the camera parameters file.
  * @param[in] imageSize The size of the image.
  * @param[in] boardSize The size of the calibration pattern.
@@ -88,7 +90,7 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
  * @param[in] imagePoints Coordinates of the 2D points in each image of the sequence.
  * @param[in] totalAvgErr The average of the reprojection errors.
  */
-void saveCameraParams(const std::string& filename,
+void saveCameraParams(vfs::filesystem& fs, const std::string& filename,
                       const cv::Size& imageSize, const cv::Size& boardSize,
                       float squareSize, float aspectRatio, int cvCalibFlags,
                       const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs,
