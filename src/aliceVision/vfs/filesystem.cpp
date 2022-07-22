@@ -5,9 +5,45 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "filesystem.hpp"
+#include "istream.hpp"
+#include "ostream.hpp"
 
 namespace aliceVision {
 namespace vfs {
+
+istream filesystem::open_read_binary(const path& p)
+{
+    return open_read(p, std::ios_base::binary);
+}
+
+istream filesystem::open_read_text(const path& p)
+{
+    return open_read(p, {});
+}
+
+istream filesystem::open_read(const path& p, std::ios::openmode mode)
+{
+    auto buffer = std::make_unique<std::filebuf>();
+    buffer->open(p.string(), std::ios_base::in | mode);
+    return istream(std::move(buffer));
+}
+
+ostream filesystem::open_write_binary(const path& p)
+{
+    return open_write(p, std::ios_base::binary);
+}
+
+ostream filesystem::open_write_text(const path& p)
+{
+    return open_write(p, {});
+}
+
+ostream filesystem::open_write(const path& p, std::ios::openmode mode)
+{
+    auto buffer = std::make_unique<std::filebuf>();
+    buffer->open(p.string(), std::ios_base::out | mode);
+    return ostream(std::move(buffer));
+}
 
 bool filesystem::is_virtual_path(const path& p)
 {

@@ -2,6 +2,8 @@
 set(vfs_files_headers
     boost_common.hpp
     filesystem.hpp
+    istream.hpp
+    ostream.hpp
     path.hpp
 )
 

@@ -11,6 +11,9 @@
 namespace aliceVision {
 namespace vfs {
 
+class istream;
+class ostream;
+
 /**
  * This is a wrapper for boost::filesystem that also optionally implements a virtual in-memory file
  * system at paths starting with memory://. This allows to avoid unnecessary I/O in cases where
@@ -20,6 +23,13 @@ namespace vfs {
 class filesystem
 {
 public:
+    istream open_read_binary(const path& p);
+    istream open_read_text(const path& p);
+    istream open_read(const path& p, std::ios::openmode mode);
+    ostream open_write_binary(const path& p);
+    ostream open_write_text(const path& p);
+    ostream open_write(const path& p, std::ios::openmode mode);
+
     // Returns true if the path refers to within virtual filesystem.
     bool is_virtual_path(const path& p);
 
