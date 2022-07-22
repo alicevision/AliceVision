@@ -20,8 +20,8 @@
 
 #include <onnxruntime_cxx_api.h>
 
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
