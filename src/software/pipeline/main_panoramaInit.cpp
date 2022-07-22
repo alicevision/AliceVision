@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -41,7 +40,6 @@ std::istream& operator>>(std::istream& in, std::pair<double, double>& v)
 }
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
 
@@ -602,7 +600,7 @@ public:
     if(_debugDirectory.empty())
       return;
 
-    boost::filesystem::path filepath = boost::filesystem::path(_debugDirectory) /
+    vfs::path filepath = vfs::path(_debugDirectory) /
           (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
     image::writeImage(fs, filepath.string(), toSave, image::EImageColorSpace::AUTO);
   }
@@ -959,7 +957,7 @@ int main(int argc, char * argv[])
             std::vector<std::pair<std::string, int>> names_with_id;
             for(auto v : sfmData.getViews())
             {
-                boost::filesystem::path path_image(v.second->getImagePath());
+                vfs::path path_image(v.second->getImagePath());
                 names_with_id.push_back(std::make_pair(path_image.stem().string(), v.first));
             }
             std::sort(names_with_id.begin(), names_with_id.end());
@@ -1026,7 +1024,7 @@ int main(int argc, char * argv[])
         CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
         if(debugFisheyeCircleEstimation)
         {
-            boost::filesystem::path path(sfmOutputDataFilepath);
+            vfs::path path(sfmOutputDataFilepath);
             detector.setDebugDirectory(path.parent_path().string());
         }
         for(auto & v : sfmData.getViews())
