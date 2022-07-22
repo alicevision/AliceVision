@@ -28,7 +28,6 @@
 
 // Command line parameters
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -46,7 +45,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -275,13 +273,13 @@ int aliceVision_main(int argc, char** argv)
             metadata.push_back(oiio::ParamValue("AliceVision:meanNbUsedBrackets", extract::mean(acc_nbUsedBrackets)));
             metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
 
-            image::writeImage(fs, (fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
+            image::writeImage(fs, (vfs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
                               selectedPixels, image::EImageColorSpace::AUTO, metadata);
 
         }
 
         // Store to file
-        const std::string samplesFilepath = (fs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
+        const std::string samplesFilepath = (vfs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
         std::ofstream fileSamples(samplesFilepath, std::ios::binary);
         if (!fileSamples.is_open())
         {
