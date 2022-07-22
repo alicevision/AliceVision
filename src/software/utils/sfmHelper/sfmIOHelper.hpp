@@ -8,10 +8,11 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/algorithm/string.hpp>
 
-#include <fstream>
 #include <iterator>
 #include <set>
 #include <sstream>
@@ -59,12 +60,12 @@ struct IntrinsicCameraInfo
 // - a camera with exif data found in the database
 // - a camera with exif data not found in the database
 // - a camera with known intrinsic
-inline bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
+inline bool loadImageList(vfs::filesystem& fs, std::vector<CameraInfo> & vec_camImageName,
                            std::vector<IntrinsicCameraInfo> & vec_focalGroup,
                            const std::string & sFileName,
                            bool bVerbose = true )
 {
-  std::ifstream in(sFileName.c_str());
+  auto in = fs.open_read_text(sFileName);
   if(!in.is_open())
   {
     std::cerr << std::endl
@@ -191,17 +192,15 @@ inline bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
 }
 
 //-- Load an image list file but only return camera image names
-inline bool loadImageList( std::vector<std::string> & vec_camImageName,
+inline bool loadImageList(vfs::filesystem& fs, std::vector<std::string> & vec_camImageName,
                            const std::string & sListFileName,
                            bool bVerbose = true )
 {
   vec_camImageName.clear();
   std::vector<aliceVision::SfMIO::CameraInfo> vec_camImageIntrinsicInfo;
   std::vector<aliceVision::SfMIO::IntrinsicCameraInfo> vec_focalGroup;
-  if (loadImageList( vec_camImageIntrinsicInfo,
-                      vec_focalGroup,
-                      sListFileName,
-                      bVerbose) )
+  if (loadImageList(fs, vec_camImageIntrinsicInfo, vec_focalGroup,
+                    sListFileName, bVerbose))
   {
     for ( std::vector<aliceVision::SfMIO::CameraInfo>::const_iterator
       iter_camInfo = vec_camImageIntrinsicInfo.begin();

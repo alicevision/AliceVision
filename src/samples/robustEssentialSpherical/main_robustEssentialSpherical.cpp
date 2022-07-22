@@ -243,7 +243,7 @@ int main() {
             vec_inliers = vec_newInliers[index];
             std::ostringstream os;
             os << "./" << "relativePose_Spherical"<< ".ply";
-            plyHelper::exportToPly(vec_3D[index], os.str());
+            plyHelper::exportToPly(fs, vec_3D[index], os.str());
           }
         }
       }

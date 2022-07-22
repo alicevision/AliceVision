@@ -17,6 +17,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <Eigen/Core>
 
@@ -24,9 +25,6 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
 
-#include <iostream>
-#include <fstream>
-#include <ostream>
 #include <string>
 #include <chrono>
 #include <iomanip>
@@ -75,9 +73,10 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   return ss.str();
 }
 
-bool saveSparseHistogramPerImage(const std::string &filename, const aliceVision::voctree::SparseHistogramPerImage &docs)
+bool saveSparseHistogramPerImage(vfs::filesystem& fs, const std::string &filename,
+                                 const aliceVision::voctree::SparseHistogramPerImage &docs)
 {
-  std::ofstream fileout(filename);
+  auto fileout = fs.open_write_text(filename);
   if(!fileout.is_open())
     return false;
 
@@ -323,7 +322,7 @@ int aliceVision_main(int argc, char** argv)
 
   if(vm.count("saveDocumentMap"))
   {
-    saveSparseHistogramPerImage(documentMapFile, db.getSparseHistogramPerImage());
+    saveSparseHistogramPerImage(fs, documentMapFile, db.getSparseHistogramPerImage());
   }
 
   if(!withWeights)
@@ -343,10 +342,10 @@ int aliceVision_main(int argc, char** argv)
     // if 0 retrieve the score for all the documents of the database
     numImageQuery = db.size();
   }
-  std::ofstream fileout;
+  vfs::ostream fileout;
   if(withOutput)
   {
-    fileout.open(outfile, std::ofstream::out);
+    fileout = fs.open_write_text(outfile);
   }
 
   std::map<std::size_t, voctree::SparseHistogram> histograms;

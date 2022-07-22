@@ -11,6 +11,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/progress.hpp>
@@ -29,12 +30,12 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
+static std::vector<double> ReadIntrinsicsFile(vfs::filesystem& fs, const std::string& fname)
 {
   ALICEVISION_LOG_INFO("reading intrinsics: " << fname);
 
   std::vector<double> v(8);
-  std::ifstream ifs(fname);
+  auto ifs = fs.open_read_text(fname);
   if (!(ifs >> v[0] >> v[1] >> v[2] >> v[3] >> v[4] >> v[5] >> v[6] >> v[7]))
     throw std::runtime_error("failed to read intrinsics file");
   return v;
@@ -124,7 +125,7 @@ int aliceVision_main(int argc, char** argv)
   }
 
   // load intrinsics
-  auto v = ReadIntrinsicsFile(calibFile);
+  auto v = ReadIntrinsicsFile(fs, calibFile);
   camera::PinholeRadialK3 intrinsics = camera::PinholeRadialK3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 
   // export to abc

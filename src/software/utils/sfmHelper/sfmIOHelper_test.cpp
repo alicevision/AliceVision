@@ -12,11 +12,13 @@ using namespace aliceVision;
 using namespace aliceVision::SfMIO;
 
 TEST(SfMIOHelper, EmptyFile) {
+  vfs::filesystem fs;
+
   std::ostringstream os;
   os.str("");    
 
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  auto file = fs.open_write_text(sListsFile);
   file << os.str();
   file.close();
 
@@ -25,19 +27,20 @@ TEST(SfMIOHelper, EmptyFile) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_FALSE(
-    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList(fs, vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(0, vec_intrinsicGroups.size());
 }
 
 TEST(SfMIOHelper, UniqueIntrinsicGroup) {
+  vfs::filesystem fs;
 
   std::ostringstream os;
   os   //ImaName;W;H;FocalPix;KMatrix
     << "0.jpg;2592;1936;2052.91;0;1278.59;0;2052.91;958.71;0;0;1";
     
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  auto file = fs.open_write_text(sListsFile);
   file << os.str();
   file.close();
 
@@ -46,12 +49,13 @@ TEST(SfMIOHelper, UniqueIntrinsicGroup) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList(fs, vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(1, vec_intrinsicGroups.size());    
 }
 
 TEST(SfMIOHelper, SameCameraDifferentFocal) {
+  vfs::filesystem fs;
 
   std::ostringstream os;
   os   //ImaName;W;H;FocalPix;KMatrix
@@ -59,7 +63,7 @@ TEST(SfMIOHelper, SameCameraDifferentFocal) {
     << "DSC00403.JPG;4912;3264;6644;EASTMAN KODAK COMPANY;KODAK Z612 ZOOM DIGITAL CAMERA";
     
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  auto file = fs.open_write_text(sListsFile);
   file << os.str();
   file.close();
 
@@ -68,12 +72,13 @@ TEST(SfMIOHelper, SameCameraDifferentFocal) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList(fs, vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(2, vec_intrinsicGroups.size());
 }
 
 TEST(SfMIOHelper, ManyCameraDifferentFocal) {
+  vfs::filesystem fs;
 
   std::ostringstream os;
   os   //ImaName;W;H;FocalPix;CamMaker;CamName
@@ -90,7 +95,7 @@ TEST(SfMIOHelper, ManyCameraDifferentFocal) {
     << "IMG_3212.JPG;5616;3744;Xylus;Junior"; // not known camera
     
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  auto file = fs.open_write_text(sListsFile);
   file << os.str();
   file.close();
 
@@ -99,7 +104,7 @@ TEST(SfMIOHelper, ManyCameraDifferentFocal) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList(fs, vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(9, vec_intrinsicGroups.size());
   // Check intrinsic group Ids correctness
@@ -110,6 +115,7 @@ TEST(SfMIOHelper, ManyCameraDifferentFocal) {
 }
 
 TEST(SfMIOHelper, KnowAndUnknowCamera) {
+  vfs::filesystem fs;
 
   std::ostringstream os;
   os   //ImaName;W;H;FocalPix;CamMaker;CamName
@@ -117,7 +123,7 @@ TEST(SfMIOHelper, KnowAndUnknowCamera) {
     << "0.jpg;4912;3264;3344.34;0;2456;0;3344.34;1632;0;0;1";
       
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  auto file = fs.open_write_text(sListsFile);
   file << os.str();
   file.close();
 
@@ -126,12 +132,13 @@ TEST(SfMIOHelper, KnowAndUnknowCamera) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList(fs, vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(2, vec_intrinsicGroups.size());
 }
 
 TEST(SfMIOHelper, ThreeIntrinsicGroup_KMatrix) {
+  vfs::filesystem fs;
 
   std::ostringstream os;
   os   //ImaName;W;H;FocalPix;KMatrix
@@ -144,7 +151,7 @@ TEST(SfMIOHelper, ThreeIntrinsicGroup_KMatrix) {
     << "6.jpg;2592;1936;2044.66;0;1253.00;0;2044.66;981.52;0;0;1";
 
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  auto file = fs.open_write_text(sListsFile);
   file << os.str();
   file.close();
 
@@ -153,7 +160,7 @@ TEST(SfMIOHelper, ThreeIntrinsicGroup_KMatrix) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList(fs, vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(3, vec_intrinsicGroups.size());                                       
 }

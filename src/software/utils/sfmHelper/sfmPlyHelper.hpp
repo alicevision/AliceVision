@@ -8,7 +8,8 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
-
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -17,12 +18,11 @@ namespace aliceVision{
 namespace plyHelper{
 
 /// Export 3D point vector to PLY format
-inline bool exportToPly(const std::vector<Vec3> & vec_points,
+inline bool exportToPly(vfs::filesystem& fs, const std::vector<Vec3> & vec_points,
   const std::string & sFileName)
 {
-  std::ofstream outfile;
-  outfile.open(sFileName, std::ios_base::out);
-  
+  auto outfile = fs.open_write_text(sFileName);
+
   if(!outfile.is_open())
     throw std::runtime_error("Unable to create file "+sFileName);
 
@@ -48,14 +48,13 @@ inline bool exportToPly(const std::vector<Vec3> & vec_points,
 }
 
 /// Export 3D point vector and camera position to PLY format
-inline bool exportToPly(const std::vector<Vec3> & vec_points,
+inline bool exportToPly(vfs::filesystem& fs, const std::vector<Vec3> & vec_points,
   const std::vector<Vec3> & vec_camPos,
   const std::string & sFileName,
   const std::vector<Vec3> * vec_coloredPoints = NULL)
 {
-  std::ofstream outfile;
-  outfile.open(sFileName, std::ios_base::out);
-  
+  auto outfile = fs.open_write_text(sFileName);
+
   if(!outfile.is_open())
     throw std::runtime_error("Unable to create file "+sFileName);
 

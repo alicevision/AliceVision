@@ -13,6 +13,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -26,7 +27,6 @@
 #include <opencv2/mcc.hpp>
 
 #include <string>
-#include <fstream>
 #include <vector>
 #include <limits>
 
@@ -91,7 +91,7 @@ struct QuadSVG
     }
 };
 
-void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outputPath)
+void drawSVG(vfs::filesystem& fs, const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outputPath)
 {
     std::vector< QuadSVG > quadsToDraw;
 
@@ -123,7 +123,7 @@ void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outpu
             svg::svgStyle().stroke("red", 2));
     }
 
-    std::ofstream svgFile(outputPath.c_str());
+    auto svgFile = fs.open_write_text(outputPath);
     svgFile << svgSurface.closeSvgFile().str();
     svgFile.close();
 }
@@ -380,7 +380,7 @@ void detectColorChecker(
         if(settings.debug)
         {
             // Output debug data
-            drawSVG(cchecker, outputFolder + imgDestStem + counterStr + ".svg");
+            drawSVG(fs, cchecker, outputFolder + imgDestStem + counterStr + ".svg");
 
             cv::Ptr<cv::mcc::CCheckerDraw> cdraw = cv::mcc::CCheckerDraw::create(cchecker, CV_RGB(250, 0, 0), 3);
             cdraw->draw(imgBGR);
@@ -568,8 +568,7 @@ int aliceVision_main(int argc, char** argv)
     }
     data.add_child("checkers", ptCheckers);
 
-    std::ofstream f;
-    f.open(outputData);
+    auto f = fs.open_write_text(outputData);
     bpt::write_json(f, data);
     f.close();
 

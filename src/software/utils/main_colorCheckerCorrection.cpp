@@ -25,7 +25,6 @@
 #include <opencv2/mcc.hpp>
 
 #include <string>
-#include <fstream>
 #include <vector>
 #include <unordered_map>
 

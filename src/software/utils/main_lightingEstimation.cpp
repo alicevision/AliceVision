@@ -13,6 +13,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/lightingEstimation/lightingEstimation.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo_util.h>
@@ -398,7 +399,7 @@ int main(int argc, char** argv)
       estimator.estimateLigthing(shl);
       estimator.clear(); // clear aggregate data
 
-      std::ofstream file((vfs::path(outputFolder) / (std::to_string(viewId) + ".shl")).string());
+      auto file = fs.open_write_text(vfs::path(outputFolder) / (std::to_string(viewId) + ".shl"));
       if(file.is_open())
         file << shl;
     }
@@ -414,7 +415,7 @@ int main(int argc, char** argv)
     lightingEstimation::LightingVector shl;
     estimator.estimateLigthing(shl);
 
-    std::ofstream file((vfs::path(outputFolder) / ("global.shl")).string());
+    auto file = fs.open_write_text(vfs::path(outputFolder) / "global.shl");
     if(file.is_open())
       file << shl;
   }

@@ -12,6 +12,7 @@
 
 #include <aliceVision/utils/Histogram.hpp>
 #include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -67,12 +68,11 @@ inline bool computeSimilarity(
 }
 
 /// Export to PLY two camera trajectories
-inline bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
+inline bool exportToPly(vfs::filesystem& fs, const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
   const std::string & sFileName)
 {
-  std::ofstream outfile;
-  outfile.open(sFileName.c_str(), std::ios_base::out);
+  auto outfile = fs.open_write_text(sFileName);
 
   outfile << "ply"
     << '\n' << "format ascii 1.0"
@@ -103,6 +103,7 @@ inline bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
 /// Compare two camera path (translation and rotation residual after a 5DOF rigid registration)
 /// Export computed statistics to a HTLM stream
 inline void EvaluteToGT(
+  vfs::filesystem& fs,
   const std::vector<Vec3> & vec_camCenterGT,
   const std::vector<Vec3> & vec_camCenterComputed,
   const std::vector<Mat3> & vec_camRotGT,
@@ -175,9 +176,9 @@ inline void EvaluteToGT(
   std::cout << std::endl << "\nAngular error statistics:\n" << statsAngular;
 
   // Export camera position (viewable)
-  exportToPly(vec_camCenterGT, vec_camPosComputed_T, (vfs::path(sOutPath) / "camera_Registered.ply").string());
+  exportToPly(fs, vec_camCenterGT, vec_camPosComputed_T, (vfs::path(sOutPath) / "camera_Registered.ply").string());
 
-  exportToPly(vec_camCenterGT, vec_camCenterComputed, (vfs::path(sOutPath) / "camera_original.ply").string());
+  exportToPly(fs, vec_camCenterGT, vec_camCenterComputed, (vfs::path(sOutPath) / "camera_original.ply").string());
 
   //-- Export residual to the HTML report
   {

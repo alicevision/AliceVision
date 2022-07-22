@@ -23,7 +23,6 @@
 #include <geogram/basic/command_line_args.h>
 
 #include <iostream>
-#include <fstream>
 #include <ostream>
 #include <string>
 

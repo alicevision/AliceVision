@@ -12,6 +12,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <aliceVision/panorama/sphericalMapping.hpp>
@@ -25,7 +26,6 @@
 #include <string>
 #include <iostream>
 #include <iterator>
-#include <fstream>
 #include <vector>
 
 // These constants define the current software version.
@@ -276,7 +276,7 @@ bool splitEquirectangularDemo(vfs::filesystem& fs, const std::string& imagePath,
   }
 
   vfs::path path(imagePath);
-  std::ofstream svgFile(outputFolder + std::string("/") + path.stem().string() + std::string(".svg"));
+  auto svgFile = fs.open_write_text(outputFolder + std::string("/") + path.stem().string() + std::string(".svg"));
   svgFile << svgStream.closeSvgFile().str();
   return true;
 }

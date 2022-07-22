@@ -15,6 +15,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -236,8 +237,7 @@ int aliceVision_main(int argc, char **argv)
   // export the found camera position
   const std::string out_file_name = (vfs::path(outputFolder) / "found_pose_centers.ply").string();
   {
-    std::ofstream outfile;
-    outfile.open(out_file_name.c_str(), std::ios_base::out);
+    auto outfile = fs.open_write_text(out_file_name);
     if (outfile.is_open()) {
       outfile << "ply"
        << "\n" << "format ascii 1.0"

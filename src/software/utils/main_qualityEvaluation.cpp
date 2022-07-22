@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/config.hpp>
 
 #include <software/utils/precisionEvaluationToGt.hpp>
@@ -152,14 +153,14 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // visual output of the camera location
-  plyHelper::exportToPly(vec_camPosGT, (vfs::path(outputFolder) / "camGT.ply").string());
-  plyHelper::exportToPly(vec_C, (vfs::path(outputFolder) / "camComputed.ply").string());
+  plyHelper::exportToPly(fs, vec_camPosGT, (vfs::path(outputFolder) / "camGT.ply").string());
+  plyHelper::exportToPly(fs, vec_C, (vfs::path(outputFolder) / "camComputed.ply").string());
 
   // evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
-  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, randomNumberGenerator, &_htmlDocStream);
+  EvaluteToGT(fs, vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, randomNumberGenerator, &_htmlDocStream);
 
-  std::ofstream htmlFileStream((vfs::path(outputFolder) / "ExternalCalib_Report.html").string());
+  auto htmlFileStream = fs.open_write_text(vfs::path(outputFolder) / "ExternalCalib_Report.html");
   htmlFileStream << _htmlDocStream.getDoc();
 
   return EXIT_SUCCESS;
