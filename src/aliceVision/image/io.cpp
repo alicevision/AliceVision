@@ -17,15 +17,12 @@
 
 #include <aliceVision/half.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace image {
@@ -331,7 +328,7 @@ void readImage(vfs::filesystem& fs,
   // check requested channels number
   assert(nchannels == 1 || nchannels >= 3);
 
-  if(!fs::exists(path))
+  if (!fs.exists(path))
     ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
 
   oiio::ImageSpec configSpec;
@@ -510,9 +507,9 @@ void writeImage(vfs::filesystem& fs,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
                 const oiio::ROI& roi = oiio::ROI())
 {
-  const fs::path bPath = fs::path(path);
+  const vfs::path bPath = vfs::path(path);
   const std::string extension = boost::to_lower_copy(bPath.extension().string());
-  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs.unique_path().string() + extension;
   const bool isEXR = (extension == ".exr");
   //const bool isTIF = (extension == ".tif");
   const bool isJPG = (extension == ".jpg");
@@ -662,7 +659,7 @@ void writeImageNoFloat(vfs::filesystem& fs, const std::string& path,
     throw std::runtime_error("Can't write output image file '" + path + "'.");
 
   // rename temporary filename
-  fs::rename(tmpPath, path);
+  fs.rename(tmpPath, path);
 }
 
 void readImage(vfs::filesystem& fs, const std::string& path, Image<float>& image,

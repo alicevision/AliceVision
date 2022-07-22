@@ -2,15 +2,14 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
-
-
 namespace aliceVision
 {
 namespace image
 {
 
-CacheManager::CacheManager(const std::string & pathStorage, size_t blockSize, size_t maxBlocksPerIndex) :
+CacheManager::CacheManager(vfs::filesystem& fs, const std::string & pathStorage,
+                           size_t blockSize, size_t maxBlocksPerIndex) :
+_fs{fs},
 _blockSize(blockSize),
 _incoreBlockUsageCount(0),
 _incoreBlockUsageMax(10),
@@ -44,11 +43,10 @@ void CacheManager::setInCoreMaxObjectCount(size_t max) {
 }
 
 std::string CacheManager::getPathForIndex(size_t indexId) {
-
   if (_indexPaths.find(indexId) == _indexPaths.end()) {
 
-    boost::filesystem::path path(_basePathStorage);
-    path /= boost::filesystem::unique_path();
+    vfs::path path(_basePathStorage);
+    path /= _fs.unique_path();
     path += ".idx";
 
     _indexPaths[indexId] = path.string();
@@ -62,7 +60,7 @@ void CacheManager::deleteIndexFiles() {
   std::size_t cacheSize = 0;
   for (std::pair<const size_t, std::string> & p : _indexPaths)
   {
-    const std::size_t s = boost::filesystem::file_size(p.second);
+    const std::size_t s = _fs.file_size(p.second);
     ALICEVISION_LOG_TRACE("CacheManager::deleteIndexFiles: '" << p.second << "': " << s / (1024*1024) << "MB.");
     cacheSize += s;
   }
@@ -71,8 +69,8 @@ void CacheManager::deleteIndexFiles() {
   // Remove all cache files
   for (std::pair<const size_t, std::string> & p : _indexPaths)
   {
-    boost::filesystem::path path(p.second);
-    boost::filesystem::remove(path);
+    vfs::path path(p.second);
+    _fs.remove(path);
   }
 
   // Remove list of cache files
@@ -87,10 +85,10 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount) {
   size_t len = _blockSize * blocksCount;
 
   std::string pathname = getPathForIndex(index_id);
-  boost::filesystem::path path(pathname);
+  vfs::path path(pathname);
 
   std::ofstream file_index;
-  if (boost::filesystem::exists(path)) {
+  if (_fs.exists(path)) {
     file_index.open(pathname, std::ios::binary  | std::ios::out | std::ios::in);
   }
   else {
@@ -323,9 +321,10 @@ bool CachedTile::acquire() {
   return true;
 }
 
-TileCacheManager::TileCacheManager(const std::string & pathStorage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex) :
-CacheManager(pathStorage, tileWidth * tileHeight, maxTilesPerIndex),
-_tileWidth(tileWidth), _tileHeight(tileHeight)
+TileCacheManager::TileCacheManager(vfs::filesystem& fs, const std::string & pathStorage,
+                                   size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex) :
+    CacheManager(fs, pathStorage, tileWidth * tileHeight, maxTilesPerIndex),
+    _tileWidth(tileWidth), _tileHeight(tileHeight)
 {
 }
 
@@ -347,8 +346,10 @@ static unsigned int bitCount (unsigned int value)
 }
 
 
-std::shared_ptr<TileCacheManager> TileCacheManager::create(const std::string & path_storage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex) {
-
+std::shared_ptr<TileCacheManager>
+    TileCacheManager::create(vfs::filesystem& fs, const std::string & path_storage,
+                             size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex)
+{
   if (bitCount(tileWidth) != 1) 
   {
     return nullptr;
@@ -359,7 +360,8 @@ std::shared_ptr<TileCacheManager> TileCacheManager::create(const std::string & p
     return nullptr;
   }
 
-  TileCacheManager * obj = new TileCacheManager(path_storage, tileWidth, tileHeight, maxTilesPerIndex);
+  TileCacheManager * obj = new TileCacheManager(fs, path_storage, tileWidth, tileHeight,
+                                                maxTilesPerIndex);
     
   return std::shared_ptr<TileCacheManager>(obj);
 }

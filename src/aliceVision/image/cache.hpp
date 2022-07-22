@@ -8,6 +8,7 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
 #include <memory>
 
 #include <unordered_map>
@@ -179,11 +180,13 @@ public:
   /**
    * Create a cache manager
    * Each created object is associated to this manager.
+   * @param fs Virtual file system handle.
    * @param pathStorage the path to the directory where the file will be stored
    * @param blockSize the base size of an object
    * @param maxTilesPerIndex the maximal number of blocks for a given file (give a maximal size for a cache file)
    */
-  CacheManager(const std::string & pathStorage, size_t blockSize, size_t maxBlocksPerIndex);
+  CacheManager(vfs::filesystem& fs, const std::string & pathStorage, size_t blockSize,
+               size_t maxBlocksPerIndex);
   virtual ~CacheManager();
 
   /**
@@ -239,6 +242,7 @@ protected:
   
 
 protected:
+  vfs::filesystem& _fs;
   size_t _blockSize{0};
   size_t _incoreBlockUsageCount{0};
   size_t _incoreBlockUsageMax{0};
@@ -269,13 +273,15 @@ public:
   /**
    * There is no explicit constructor.
    * We want to force the use of shared pointer for the manager
+   * @param fs Virtual file system handle
    * @param pathStorage the path to the directory where the file will be stored
    * @param tileWidth the base width of a tile
    * @param tileWidth the base height of a tile
    * @param maxTilesPerIndex the maximal number of tiles for a given file (give a maximal size for a cache file)
    * @retuurn the manager shared pointer
    */
-  static std::shared_ptr<TileCacheManager> create(const std::string & pathStorage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex);
+  static std::shared_ptr<TileCacheManager> create(vfs::filesystem& fs, const std::string& pathStorage,
+                                                  size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex);
 
   /**
    * Notify the manager that a given tile was destroyed.
@@ -323,7 +329,8 @@ public:
 
 protected:
 
-  TileCacheManager(const std::string & pathStorage, size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex);
+  TileCacheManager(vfs::filesystem& fs, const std::string & pathStorage,
+                   size_t tileWidth, size_t tileHeight, size_t maxTilesPerIndex);
 
   virtual void onRemovedFromMRU(size_t objectId);
 
