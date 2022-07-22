@@ -29,7 +29,7 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    LargeScale(mvsUtils::MultiViewParams* _mp, std::string _spaceFolderName);
+    LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _spaceFolderName);
     ~LargeScale();
 
     std::string getSpaceCamsTracksDir();
@@ -37,7 +37,7 @@ public:
     void saveSpaceToFile();
     void loadSpaceFromFile();
     void initialEstimateSpace(int maxOcTreeDim);
-    LargeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName);
+    LargeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, const std::string& newSpaceFolderName);
     bool generateSpace(int maxPts, int ocTreeDim, bool generateTracks);
     Point3d getSpaceSteps();
 

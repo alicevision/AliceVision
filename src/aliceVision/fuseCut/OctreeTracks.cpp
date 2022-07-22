@@ -667,7 +667,8 @@ void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
     tracks->swap(tracksOut);
 }
 
-StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir)
+StaticVector<OctreeTracks::trackStruct*>*
+    OctreeTracks::fillOctree(int maxPts, const std::string& depthMapsPtsSimsTmpDir)
 {
     long t1 = clock();
     StaticVector<int> cams = _mp.findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
