@@ -17,6 +17,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -25,7 +26,6 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <iostream>
 #include <set>
 
 namespace aliceVision {
@@ -234,7 +234,7 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     if (!fs.exists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
 
-    std::ifstream in{fileNameP};
+    auto in = fs.open_read_text(fileNameP);
     char fc;
     in >> fc;
     if(fc == 'C') // FURUKAWA'S PROJCTION MATRIX FILE FORMAT
@@ -248,8 +248,7 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     }
     else
     {
-        in.close();
-        in.open(fileNameP);
+        in = fs.open_read_text(fileNameP);
     }
 
     Matrix3x4& pMatrix = camArr.at(index);
@@ -268,7 +267,7 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
 
     if (fs.exists(fileNameD))
     {
-        std::ifstream inD{fileNameD};
+        auto inD = fs.open_read_text(fileNameD);
         inD >> FocK1K2Arr[index].x >> FocK1K2Arr[index].y >> FocK1K2Arr[index].z;
     }
 }
