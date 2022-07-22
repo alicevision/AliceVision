@@ -25,7 +25,6 @@
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <sstream>
 
 // These constants define the current software version.
@@ -122,7 +121,7 @@ int aliceVision_main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // Analyze path
-    boost::filesystem::path path(sfmOutputDataFilename);
+    vfs::path path(sfmOutputDataFilename);
     std::string outputPath = path.parent_path().string();
 
     // Read sfm data
@@ -278,9 +277,9 @@ int aliceVision_main(int argc, char* argv[])
 
         // Prepare output file
         image::Image<image::RGBfColor> output;
-        boost::filesystem::path origImgPath(v.second->getImagePath());
+        vfs::path origImgPath(v.second->getImagePath());
         std::string origFilename = origImgPath.stem().string();
-        std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
+        std::string rotatedImagePath = (vfs::path(outputPath) / (origFilename + ".exr")).string();
         oiio::ParamValueList metadata = image::readImageMetadata(fs, v.second->getImagePath());
 
         // Read input file
