@@ -6,6 +6,7 @@
 
 #include <aliceVision/voctree/TreeBuilder.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <Eigen/Core>
 
@@ -21,6 +22,7 @@
 BOOST_AUTO_TEST_CASE(voctreeBuilder)
 {
   using namespace aliceVision;
+  vfs::filesystem fs;
 
   const std::string treeName = "test.tree";
 
@@ -66,10 +68,10 @@ BOOST_AUTO_TEST_CASE(voctreeBuilder)
   for(std::size_t i = 0; i < valid.size(); ++i)
     BOOST_CHECK(valid[i] != 0);
 
-  builder.tree().save(treeName);
+  builder.tree().save(fs, treeName);
 
   voctree::MutableVocabularyTree<FeatureFloat> loadedtree;
-  loadedtree.load(treeName);
+  loadedtree.load(fs, treeName);
 
   // check the centers are the same
   FeatureFloatVector centerOrig = builder.tree().centers();

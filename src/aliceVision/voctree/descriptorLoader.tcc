@@ -13,7 +13,6 @@
 #include <boost/progress.hpp>
 
 #include <iostream>
-#include <fstream>
 
 namespace aliceVision {
 namespace voctree {
@@ -44,7 +43,7 @@ std::size_t readDescFromFiles(vfs::filesystem& fs,
     // bytesPerElement could be 0 even after the first element (eg it has 0 descriptors...), so do it until we get the correct info
     if(bytesPerElement == 0)
     {
-      getInfoBinFile(currentFile.second, DescriptorT::static_size, numDescriptors, bytesPerElement);
+      getInfoBinFile(fs, currentFile.second, DescriptorT::static_size, numDescriptors, bytesPerElement);
     }
     else
     {

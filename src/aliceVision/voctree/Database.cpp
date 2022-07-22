@@ -5,11 +5,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Database.hpp"
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
 #include <boost/progress.hpp>
 #include <cmath>
-#include <fstream>
 #include <stdexcept>
 #include <boost/format.hpp>
 
@@ -144,29 +145,30 @@ void Database::computeTfIdfWeights(float default_weight)
   }
 }
 
-void Database::saveWeights(const std::string& file) const
+void Database::saveWeights(vfs::filesystem& fs, const std::string& file) const
 {
-  std::ofstream out(file.c_str(), std::ios_base::binary);
+  auto out = fs.open_write_binary(file);
   uint32_t num_words = word_weights_.size();
   out.write((char*) (&num_words), sizeof (uint32_t));
   out.write((char*) (&word_weights_[0]), num_words * sizeof (float));
 }
 
-void Database::loadWeights(const std::string& file)
+void Database::loadWeights(vfs::filesystem& fs, const std::string& file)
 {
-  std::ifstream in;
-  in.exceptions(std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
-
   try
   {
-    in.open(file.c_str(), std::ios_base::binary);
+    auto in = fs.open_read_binary(file);
+    if (!in.is_open())
+      throw std::runtime_error((boost::format("Failed to load vocabulary weights file '%s'") % file).str());
+
+    in.exceptions(std::istream::eofbit | std::istream::failbit | std::istream::badbit);
     uint32_t num_words = 0;
     in.read((char*) (&num_words), sizeof (uint32_t));
     word_files_.resize(num_words); // Inverted files start out empty
     word_weights_.resize(num_words);
     in.read((char*) (&word_weights_[0]), num_words * sizeof (float));
   }
-  catch(std::ifstream::failure& e)
+  catch (std::istream::failure& e)
   {
     throw std::runtime_error((boost::format("Failed to load vocabulary weights file '%s'") % file).str());
   }

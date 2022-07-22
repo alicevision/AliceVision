@@ -20,12 +20,13 @@ namespace voctree {
  * @brief Get the number of descriptors contained inside a .desc file and the number of bytes
  * used to store each descriptor elements
  *
+ * @param[in] Virtual file system handle
  * @param[in] path The .desc filename
  * @param[in] dim The number of elements per descriptor
  * @param[out] numDescriptors The number of descriptors stored in the file
  * @param[out] bytesPerElement The number of bytes used to store each element of the descriptor
  */
-void getInfoBinFile(const std::string& path, int dim, std::size_t& numDescriptors, int& bytesPerElement);
+void getInfoBinFile(vfs::filesystem& fs, const std::string& path, int dim, std::size_t& numDescriptors, int& bytesPerElement);
 
 /**
  * @brief Extract a list of decriptor files from a sfmData.

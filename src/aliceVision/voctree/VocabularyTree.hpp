@@ -15,13 +15,14 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <stdint.h>
 #include <vector>
 #include <map>
 #include <cassert>
 #include <limits>
-#include <fstream>
 #include <stdexcept>
 #include <iostream>
 
@@ -63,9 +64,9 @@ public:
   virtual ~IVocabularyTree() = 0;
 
   /// Save vocabulary to a file.
-  virtual void save(const std::string& file) const = 0;
+  virtual void save(vfs::filesystem& fs, const std::string& file) const = 0;
   /// Load vocabulary from a file.
-  virtual void load(const std::string& file) = 0;
+  virtual void load(vfs::filesystem& fs, const std::string& file) = 0;
 
   /**
    * @brief Create a SparseHistogram from a blind vector of descriptors.
@@ -109,9 +110,10 @@ public:
 
   /**
    * @brief Create from vocabulary file.
+   * @param fs Virtual file system handle
    * @param file vocabulary file path
    */
-  VocabularyTree(const std::string& file);
+  VocabularyTree(vfs::filesystem& fs, const std::string& file);
 
   /// Quantizes a feature into a discrete word.
   template<class DescriptorT>
@@ -142,9 +144,9 @@ public:
   void clear() override;
 
   /// Save vocabulary to a file.
-  void save(const std::string& file) const override;
+  void save(vfs::filesystem& fs, const std::string& file) const override;
   /// Load vocabulary from a file.
-  void load(const std::string& file) override;
+  void load(vfs::filesystem& fs, const std::string& file) override;
 
   bool operator==(const VocabularyTree& other) const
   {
@@ -180,10 +182,10 @@ VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree()
 }
 
 template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree(const std::string& file)
+VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree(vfs::filesystem& fs, const std::string& file)
 : k_(0), levels_(0), num_words_(0), word_start_(0)
 {
-  load(file);
+  load(fs, file);
 }
 
 template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
@@ -276,13 +278,14 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::clear()
 }
 
 template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string& file) const
+void VocabularyTree<Feature, Distance, FeatureAllocator>::save(vfs::filesystem& fs,
+                                                               const std::string& file) const
 {
   /// @todo Support serializing of non-"simple" feature classes
   /// @todo Some identifying name for the distance used
   assert(initialized());
 
-  std::ofstream out(file.c_str(), std::ios_base::binary);
+  auto out = fs.open_write_binary(file);
   out.write((char*) (&k_), sizeof (uint32_t));
   out.write((char*) (&levels_), sizeof (uint32_t));
   uint32_t size = centers_.size();
@@ -292,17 +295,18 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string
 }
 
 template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string& file)
+void VocabularyTree<Feature, Distance, FeatureAllocator>::load(vfs::filesystem& fs, const std::string& file)
 {
   clear();
 
-  std::ifstream in;
-  in.exceptions(std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
-
   uint32_t size;
   try
-  {
-    in.open(file.c_str(), std::ios_base::binary);
+  { 
+    auto in = fs.open_read_binary(file);
+    if (!in.is_open())
+      throw std::runtime_error("Failed to load vocabulary tree file" + file);
+
+    in.exceptions(std::istream::eofbit | std::istream::failbit | std::istream::badbit);
     in.read((char*) (&k_), sizeof (uint32_t));
     in.read((char*) (&levels_), sizeof (uint32_t));
     in.read((char*) (&size), sizeof (uint32_t));
@@ -311,7 +315,7 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
     in.read((char*) (&centers_[0]), centers_.size() * sizeof (Feature));
     in.read((char*) (&valid_centers_[0]), valid_centers_.size());
   }
-  catch(std::ifstream::failure& e)
+  catch(std::istream::failure& e)
   {
     throw std::runtime_error("Failed to load vocabulary tree file" + file);
   }
@@ -373,7 +377,8 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(feature::E
   return res;
 }
 
-inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, feature::EImageDescriberType& out_descType, const std::string& filepath)
+inline void load(vfs::filesystem& fs, std::unique_ptr<IVocabularyTree>& out_voctree,
+                 feature::EImageDescriberType& out_descType, const std::string& filepath)
 {
   std::size_t lastDot = filepath.find_last_of(".");
   if(lastDot == std::string::npos)
@@ -386,7 +391,7 @@ inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, feature::EImageD
 
   out_descType = feature::EImageDescriberType_stringToEnum(descTypeStr);
   out_voctree = createVoctreeForDescriberType(out_descType);
-  out_voctree->load(filepath);
+  out_voctree->load(fs, filepath);
 }
 
 }

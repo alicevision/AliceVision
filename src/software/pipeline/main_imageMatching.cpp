@@ -434,7 +434,7 @@ void conditionVocTree(vfs::filesystem& fs, const std::string& treeName, bool wit
     ALICEVISION_LOG_INFO("Loading vocabulary tree");
 
     auto loadVoctree_start = std::chrono::steady_clock::now();
-    aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+    aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(fs, treeName);
     auto loadVoctree_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loadVoctree_start);
     {
       std::stringstream ss;
@@ -454,7 +454,7 @@ void conditionVocTree(vfs::filesystem& fs, const std::string& treeName, bool wit
     if(withWeights)
     {
       ALICEVISION_LOG_INFO("Loading weights...");
-      db.loadWeights(weightsName);
+      db.loadWeights(fs, weightsName);
     }
     else
     {

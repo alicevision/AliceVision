@@ -52,7 +52,7 @@ KeyframeSelector::KeyframeSelector(vfs::filesystem& fs,
   }
 
   // load vocabulary tree
-  _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
+  _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(fs, voctreeFilePath));
 
   {
       ALICEVISION_LOG_INFO("vocabulary tree loaded with :" << std::endl

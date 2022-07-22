@@ -119,9 +119,9 @@ public:
   std::size_t size() const;
 
   /// Save the vocabulary word weights to a file.
-  void saveWeights(const std::string& file) const;
+  void saveWeights(vfs::filesystem& fs, const std::string& file) const;
   /// Load the vocabulary word weights from a file.
-  void loadWeights(const std::string& file);
+  void loadWeights(vfs::filesystem& fs, const std::string& file);
 
   // Save weights and documents
   //void save(const std::string& file) const;

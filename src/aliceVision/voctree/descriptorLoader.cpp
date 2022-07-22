@@ -7,21 +7,19 @@
 #include "descriptorLoader.hpp"
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
-
+#include <aliceVision/vfs/istream.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace aliceVision {
 namespace voctree {
 
-void getInfoBinFile(const std::string &path, int dim, std::size_t &numDescriptors, int &bytesPerElement)
+void getInfoBinFile(vfs::filesystem& ffs, const std::string &path, int dim, std::size_t &numDescriptors, int &bytesPerElement)
 {
-  std::fstream fs;
-
   // the file is supposed to have the number of descriptors as first element and then
   // the set of descriptors of dimension dim either as chars or floats
 
   // Open file and get the number of descriptors
-  fs.open(path, std::ios::in | std::ios::binary);
+  auto fs = ffs.open_read_binary(path);
 
   if(!fs.is_open())
   {

@@ -153,7 +153,7 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_COUT("Tree created in " << ((float) detect_elapsed.count()) / 1000 << " sec");
   ALICEVISION_COUT(builder.tree().centers().size() << " centers");
   ALICEVISION_COUT("Saving vocabulary tree as " << treeName);
-  builder.tree().save(treeName);
+  builder.tree().save(fs, treeName);
 
   aliceVision::voctree::SparseHistogramPerImage allSparseHistograms;
   // temporary vector used to save all the visual word for each image before adding them to documents
@@ -208,7 +208,7 @@ int aliceVision_main(int argc, char** argv)
   detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
   ALICEVISION_COUT("Computing weights done in " << detect_elapsed.count() << " sec");
   ALICEVISION_COUT("Saving weights as " << weightName);
-  db.saveWeights(weightName);
+  db.saveWeights(fs, weightName);
 
 
   if(sanityCheck)

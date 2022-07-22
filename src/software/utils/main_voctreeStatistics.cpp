@@ -157,7 +157,7 @@ int aliceVision_main(int argc, char** argv)
 
   // load vocabulary tree
   ALICEVISION_LOG_INFO("Loading vocabulary tree\n");
-  aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+  aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(fs, treeName);
   ALICEVISION_LOG_INFO("tree loaded with\n\t"
           << tree.levels() << " levels\n\t" 
           << tree.splits() << " branching factor");
@@ -179,7 +179,7 @@ int aliceVision_main(int argc, char** argv)
   if(withWeights)
   {
     ALICEVISION_LOG_INFO("Loading weights...");
-    db.loadWeights(weightsName);
+    db.loadWeights(fs, weightsName);
   }
   else
   {

@@ -278,7 +278,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   // Load vocabulary tree
   ALICEVISION_LOG_DEBUG("Loading vocabulary tree...");
 
-  voctree::load(_voctree, _voctreeDescType, vocTreeFilepath);
+  voctree::load(_fs, _voctree, _voctreeDescType, vocTreeFilepath);
 
   ALICEVISION_LOG_DEBUG("tree loaded with " << _voctree->levels() << " levels and "
           << _voctree->splits() << " branching factors");
@@ -289,7 +289,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   if(withWeights)
   {
     ALICEVISION_LOG_DEBUG("Loading weights...");
-    _database.loadWeights(weightsFilepath);
+    _database.loadWeights(_fs, weightsFilepath);
   }
   else
   {
