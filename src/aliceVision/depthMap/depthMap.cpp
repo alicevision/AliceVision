@@ -243,7 +243,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     {
         // compute T cameras list per R camera
         const std::vector<int> tCams = mp.findNearestCamsFromLandmarks(rc, depthMapParams.maxTCams).getDataWritable();
-        const ROI rcImageRod(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
+        const ROI rcImageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
 
         for(std::size_t ti = 0;  ti < tileRoiList.size(); ++ti)
         {
@@ -252,11 +252,13 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             t.id = ti;
             t.nbTiles = nbTilesPerCamera;
             t.rc = rc;
-            t.roi = intersect(tileRoiList.at(ti), rcImageRod);
-            if(t.roi.isEmpty())
-                continue;
+            t.roi = intersect(tileRoiList.at(ti), rcImageRoi);
 
-            if(depthMapParams.chooseTCamsPerTile)
+            if(t.roi.isEmpty())
+            {
+              // do nothing, this ROI cannot intersect the R camera ROI.
+            }
+            else if(depthMapParams.chooseTCamsPerTile)
             {
               // find nearest T cameras per tile
               t.sgmTCams = mp.findTileNearestCams(rc, depthMapParams.sgmParams.maxTCamsPerTile, tCams, t.roi);
@@ -340,6 +342,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             Tile& tile = tiles.at(i);
             const int batchCamIndex = tile.rc % nbRcPerBatch;
             const int streamIndex = tile.id % nbStreams;
+
+            // do not compute empty ROI
+            // some images in the dataset may be smaller than others
+            if(tile.roi.isEmpty())
+                continue;
 
             // get tile result depth/similarity map in host memory
             CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapTilePerCam.at(batchCamIndex).at(tile.id);
