@@ -433,7 +433,7 @@ void writeImage(const std::string& path,
     if(!outBuf->write(tmpPath))
       throw std::runtime_error("Can't write output image file '" + path + "'.");
 
-    // rename temporay filename
+    // rename temporary filename
     fs::rename(tmpPath, path);
 }
 
