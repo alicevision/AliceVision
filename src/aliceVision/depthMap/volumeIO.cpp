@@ -17,6 +17,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
@@ -118,7 +119,9 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, const std
     sfmDataIO::Save(mp.fs, pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath)
+void exportSimilaritySamplesCSV(vfs::filesystem& fs, const CudaHostMemoryHeap<TSim, 3>& volumeSim,
+                                const StaticVector<float>& depths, int camIndex, int scale, int step,
+                                const std::string& name, const std::string& filepath)
 {
     const auto volDim = volumeSim.getSize();
     const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
@@ -162,8 +165,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, co
         }
     }
 
-    std::ofstream file;
-    file.open(filepath, std::ios_base::app);
+    auto file = fs.open_write(filepath, std::ios::app);
     if (file.is_open())
         file << ss.str();
 }

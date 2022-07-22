@@ -98,7 +98,8 @@ bool Sgm::sgmRc()
         volumeSecBestSim_h.copyFrom(volumeSecBestSim_dmp);
 
         exportSimilarityVolume(volumeSecBestSim_h, _depths, _mp, _rc, _sgmParams.scale, _sgmParams.stepXY, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_beforeFiltering.abc");
-        exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, "beforeFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
+        exportSimilaritySamplesCSV(_mp.fs, volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY,
+                                   "beforeFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
     }
 
     // reuse best sim to put filtered sim volume
@@ -122,8 +123,9 @@ bool Sgm::sgmRc()
         CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeFilteredSim_dmp.getSize());
         volumeSecBestSim_h.copyFrom(volumeFilteredSim_dmp);
 
-        exportSimilarityVolume(volumeSecBestSim_h, _depths, _mp, _rc, _sgmParams.scale, _sgmParams.stepXY, _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_afterFiltering.abc");
-        exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, "afterFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
+        exportSimilarityVolume(volumeSecBestSim_h, _depths, _mp, _rc, _sgmParams.scale, _sgmParams.stepXY,
+                               _mp.getDepthMapsFolder() + std::to_string(viewId) + "_vol_afterFiltering.abc");
+        exportSimilaritySamplesCSV(_mp.fs, volumeSecBestSim_h, _depths, _rc, _sgmParams.scale, _sgmParams.stepXY, "afterFiltering", _mp.getDepthMapsFolder() + std::to_string(viewId) + "_9p.csv");
     }
 
     // Retrieve best depth per pixel
