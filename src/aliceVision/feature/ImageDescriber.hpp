@@ -11,6 +11,7 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/Regions.hpp>
 #include <aliceVision/image/Image.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 #include <memory>
 
 #include <string>
@@ -260,7 +261,7 @@ public:
     regions->Load(sfileNameFeats, sfileNameDescs);
   }
 
-  void Save(const Regions* regions,
+  void Save(vfs::filesystem& fs, const Regions* regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const;
 

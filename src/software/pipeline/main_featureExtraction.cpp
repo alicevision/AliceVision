@@ -321,7 +321,7 @@ private:
         regions = regions->createFilteredRegions(selectedIndices, out_associated3dPoint, out_mapFullToLocal);
       }
 
-      imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
+      imageDescriber->Save(fs, regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
       ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
   }
