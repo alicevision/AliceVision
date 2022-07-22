@@ -99,6 +99,8 @@ oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::RO
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -300,7 +302,7 @@ int aliceVision_main(int argc, char** argv)
               const std::string dstImage =
                   (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
                                                   image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+              image::writeImage(fs, dstImage, image_dist, image::EImageColorSpace::AUTO);
           }
 
           // UV Map: Distort
@@ -323,7 +325,7 @@ int aliceVision_main(int argc, char** argv)
               const std::string dstImage =
                   (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
                                                   image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+              image::writeImage(fs, dstImage, image_dist, image::EImageColorSpace::AUTO);
           }
       }
   }
@@ -348,8 +350,8 @@ int aliceVision_main(int argc, char** argv)
       const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
-      image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
-      oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
+      image::readImage(fs, view.getImagePath(), image, image::EImageColorSpace::LINEAR);
+      oiio::ParamValueList metadata = image::readImageMetadata(fs, view.getImagePath());
 
       if(cam->isValid() && cam->hasDistortion())
       {
@@ -374,18 +376,18 @@ int aliceVision_main(int argc, char** argv)
                                   std::to_string(rod.ybegin) + ";" + std::to_string(rod.yend));
             camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint, rod);
             const oiio::ROI roi = convertRodToRoi(cam, rod);
-            writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
+            writeImage(fs, dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
         }
         else
         {
             camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint);
-            image::writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+            image::writeImage(fs, dstImage, image_ud, image::EImageColorSpace::AUTO, metadata);
         }
       }
       else // (no distortion)
       {
         // copy the image since there is no distortion
-        image::writeImage(dstImage, image, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(fs, dstImage, image, image::EImageColorSpace::AUTO, metadata);
       }
     }
 

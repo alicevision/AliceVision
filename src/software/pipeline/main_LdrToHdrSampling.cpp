@@ -50,6 +50,7 @@ namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename;
     std::string outputFolder;
@@ -271,7 +272,7 @@ int aliceVision_main(int argc, char** argv)
             metadata.push_back(oiio::ParamValue("AliceVision:meanNbUsedBrackets", extract::mean(acc_nbUsedBrackets)));
             metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
 
-            image::writeImage((fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
+            image::writeImage(fs, (fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
                               selectedPixels, image::EImageColorSpace::AUTO, metadata);
 
         }

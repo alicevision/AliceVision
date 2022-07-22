@@ -66,6 +66,7 @@ Eigen::Matrix3d getRotationForCode(int code)
 
 int aliceVision_main(int argc, char* argv[])
 {
+    vfs::filesystem fs;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename;
     std::string sfmOutputDataFilename;
@@ -280,7 +281,7 @@ int aliceVision_main(int argc, char* argv[])
         boost::filesystem::path origImgPath(v.second->getImagePath());
         std::string origFilename = origImgPath.stem().string();
         std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
-        oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
+        oiio::ParamValueList metadata = image::readImageMetadata(fs, v.second->getImagePath());
 
         // Read input file
         image::Image<image::RGBfColor> originalImage;
@@ -290,7 +291,7 @@ int aliceVision_main(int argc, char* argv[])
         options.applyWhiteBalance = v.second->getApplyWhiteBalance();
         
 
-        image::readImage(v.second->getImagePath(), originalImage, options);
+        image::readImage(fs, v.second->getImagePath(), originalImage, options);
         oiio::ImageBuf bufInput(
             oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT),
             originalImage.data());
@@ -333,7 +334,7 @@ int aliceVision_main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        image::writeImage(rotatedImagePath, output, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(fs, rotatedImagePath, output, image::EImageColorSpace::AUTO, metadata);
         v.second->setWidth(output.Width());
         v.second->setHeight(output.Height());
         v.second->setImagePath(rotatedImagePath);

@@ -41,6 +41,7 @@ namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string sfmDataFilepath;
     std::string compositingFolder;
     std::string outputPanoramaPath;
@@ -127,7 +128,7 @@ int aliceVision_main(int argc, char** argv)
         const std::string imagePath = (fs::path(compositingFolder) / (std::to_string(viewId) + ".exr")).string();
         
         // Get offset
-        oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
+        oiio::ParamValueList metadata = image::readImageMetadata(fs, imagePath);
         const int offsetX = metadata.find("AliceVision:offsetX")->get_int();
         const int offsetY = metadata.find("AliceVision:offsetY")->get_int();
         const int panoramaWidth = metadata.find("AliceVision:panoramaWidth")->get_int();
@@ -142,7 +143,7 @@ int aliceVision_main(int argc, char** argv)
         // Load image
         ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
         image::Image<image::RGBAfColor> source;
-        image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(fs, imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
         for (int i = 0; i < source.Height(); i++)
         {
@@ -164,7 +165,7 @@ int aliceVision_main(int argc, char** argv)
 
     oiio::ParamValueList targetMetadata;
     targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
-    image::writeImage(outputPanoramaPath, panorama, image::EImageColorSpace::AUTO, targetMetadata);
+    image::writeImage(fs, outputPanoramaPath, panorama, image::EImageColorSpace::AUTO, targetMetadata);
 
     return EXIT_SUCCESS;
 }

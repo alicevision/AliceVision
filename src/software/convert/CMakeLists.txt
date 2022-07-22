@@ -49,6 +49,7 @@ alicevision_add_software(aliceVision_convertRAW
   SOURCE main_convertRAW.cpp
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         Boost::program_options
         Boost::filesystem

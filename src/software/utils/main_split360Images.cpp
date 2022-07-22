@@ -90,8 +90,9 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
 
 bool splitDualFisheye(const std::string& imagePath, const std::string& outputFolder, const std::string& splitPreset)
 {
+  vfs::filesystem fs;
   image::Image<image::RGBfColor> imageSource;
-  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
+  image::readImage(fs, imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   oiio::ImageBuf buffer;
   image::getBufferFromImage(imageSource, buffer);
@@ -131,8 +132,8 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
     oiio::ImageBufAlgo::cut(bufferOut, buffer, subImageROI);
 
     boost::filesystem::path path(imagePath);
-    image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
-                      imageOut, image::EImageColorSpace::AUTO, image::readImageMetadata(imagePath));
+    image::writeImage(fs, outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
+                      imageOut, image::EImageColorSpace::AUTO, image::readImageMetadata(fs, imagePath));
   }
   ALICEVISION_LOG_INFO(imagePath + " successfully split");
   return true;
@@ -140,8 +141,9 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 
 bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
+  vfs::filesystem fs;
   image::Image<image::RGBColor> imageSource;
-  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
+  image::readImage(fs, imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   const int inWidth = imageSource.Width();
   const int inHeight = imageSource.Height();
@@ -188,7 +190,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
     oiio::ImageSpec& outMetadataSpec = bufferOut.specmod();
 
-    outMetadataSpec.extra_attribs = image::readImageMetadata(imagePath);
+    outMetadataSpec.extra_attribs = image::readImageMetadata(fs, imagePath);
 
     // Ooerride make and model in order to force camera model in SfM
     outMetadataSpec.attribute("Make",  "Custom");
@@ -197,7 +199,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
     outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
     boost::filesystem::path path(imagePath);
-    image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
+    image::writeImage(fs, outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
                       imaOut, image::EImageColorSpace::AUTO, outMetadataSpec.extra_attribs);
 
     ++index;
@@ -209,8 +211,9 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
 bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
+  vfs::filesystem fs;
   image::Image<image::RGBColor> imageSource;
-  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
+  image::readImage(fs, imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   const int inWidth = imageSource.Width();
   const int inHeight = imageSource.Height();

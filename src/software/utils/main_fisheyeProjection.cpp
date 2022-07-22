@@ -213,6 +213,7 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, int nbIm
  */
 void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, float blurWidth, const std::array<std::vector<double>, 3>& rotations, std::string& outputPath)
 {
+  vfs::filesystem fs;
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
   std::vector<oiio::ImageBuf> buffers(nbImages);
@@ -227,7 +228,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
 
     ALICEVISION_LOG_INFO("Projecting " << imagePaths[i] << " into equirectangular space");
 
-    image::readImage(imagePaths[i], imageIn, image::EImageColorSpace::LINEAR);
+    image::readImage(fs, imagePaths[i], imageIn, image::EImageColorSpace::LINEAR);
     image::getBufferFromImage(imageIn, buffer);
     buffer.specmod().extra_attribs = metadatas[i];
 
@@ -247,7 +248,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
   {
     outputPath = (fs::path(outputPath) / ("panorama.exr")).string();
   }
-  image::writeImage(outputPath, imageOut, image::EImageColorSpace::AUTO, bufferOut.specmod().extra_attribs);
+  image::writeImage(fs, outputPath, imageOut, image::EImageColorSpace::AUTO, bufferOut.specmod().extra_attribs);
 
   ALICEVISION_LOG_INFO("Panorama successfully written as " << outputPath);
 }
@@ -255,6 +256,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
   // command-line parameters
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::vector<std::string> inputPath;                      // media file path list
@@ -341,7 +343,7 @@ int aliceVision_main(int argc, char** argv)
         {
           imagePaths.push_back(file.path().string());
 
-          const oiio::ParamValueList metadata = image::readImageMetadata(file.path().string());
+          const oiio::ParamValueList metadata = image::readImageMetadata(fs, file.path().string());
           metadatas.push_back(metadata);
           std::string dateTime;
           dateTime = metadata.get_string("Exif:DateTimeOriginal");
@@ -360,7 +362,7 @@ int aliceVision_main(int argc, char** argv)
     {
       imagePaths.push_back(path.string());
 
-      oiio::ParamValueList metadata = image::readImageMetadata(entry);
+      oiio::ParamValueList metadata = image::readImageMetadata(fs, entry);
       metadatas.push_back(metadata);
       std::string dateTime;
       dateTime = metadata.get_string("Exif:DateTimeOriginal");

@@ -30,6 +30,7 @@ namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
+  vfs::filesystem fs;
   std::string inputImagePath;
   std::string outputImagePath;
   // Temp storage for the Brown's distortion model
@@ -127,12 +128,12 @@ int main(int argc, char **argv)
     const std::string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
 
     Image<RGBColor> image, imageUd;
-    readImage(inFileName, image, image::EImageColorSpace::NO_CONVERSION);
+    readImage(fs, inFileName, image, image::EImageColorSpace::NO_CONVERSION);
 
     const PinholeRadialK3 cam(image.Width(), image.Height(), f, c(0), c(1), k(0), k(1), k(2));
 
     UndistortImage(image, &cam, imageUd, BLACK);
-    writeImage(outFileName, imageUd, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(fs, outFileName, imageUd, image::EImageColorSpace::NO_CONVERSION);
 
   } //end loop for each file
   return EXIT_SUCCESS;

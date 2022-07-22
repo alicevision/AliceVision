@@ -67,6 +67,7 @@ private:
     /// Load the images of a folder
     bool loadImages()
     {
+        vfs::filesystem fs;
         ALICEVISION_LOG_INFO("Loading images of the dataset: " << folderPath_);
 
         const boost::regex ppmFilter(".*.ppm");
@@ -112,13 +113,13 @@ private:
             image::Image<RGBColor> imageRGB;
             try
             {
-                image::readImage(path, imageRGB, image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(fs, path, imageRGB, image::EImageColorSpace::NO_CONVERSION);
                 vec_image_[i] = imageRGB;
             }
             catch(std::invalid_argument& e)
             {
                 image::Image<unsigned char> imageGray;
-                image::readImage(path, imageGray, image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(fs, path, imageGray, image::EImageColorSpace::NO_CONVERSION);
                 image::ConvertPixelType(imageGray, &imageRGB);
                 vec_image_[i] = imageRGB;
             }

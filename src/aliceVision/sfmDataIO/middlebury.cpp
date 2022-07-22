@@ -74,6 +74,8 @@ void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3
 sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std::string& basePath,
                                           bool uniqueIntrinsics, bool importPoses, bool lockIntrinsics, bool lockPoses)
 {
+    vfs::filesystem fs;
+
     std::ifstream infile(filename);
     if(!infile.is_open())
     {
@@ -107,7 +109,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
         const auto imagePath = (bfs::path(basePath) / bfs::path(imageName)).string();
         int imageWidth{};
         int imageHeight{};
-        image::readImageSize(imagePath, imageWidth, imageHeight);
+        image::readImageSize(fs, imagePath, imageWidth, imageHeight);
 
         // if uniqueIntrinsics do it once, otherwise always
         if((uniqueIntrinsics && scene.intrinsics.empty()) || !uniqueIntrinsics)

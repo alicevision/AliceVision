@@ -147,6 +147,7 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
 
 bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace, bool applyWhiteBalance, const Sampling::Params params)
 {
+    vfs::filesystem fs;
     const int radiusp1 = params.radius + 1;
     const int diameter = (params.radius * 2) + 1;
     const double area = double(diameter * diameter);
@@ -175,7 +176,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         options.applyWhiteBalance = applyWhiteBalance;
 
         // Load image
-        readImage(imagePaths[idBracket], img, options);
+        readImage(fs, imagePaths[idBracket], img, options);
 
         if(img.Width() != imageWidth || img.Height() != imageHeight)
         {

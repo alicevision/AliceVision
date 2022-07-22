@@ -123,6 +123,7 @@ void extract(std::shared_ptr<aliceVision::feature::ImageDescriber>& imageDescrib
 
 int main(int argc, char **argv)
 {
+  vfs::filesystem fs;
   std::string filenameLeft;
   std::string filenameRight;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -170,9 +171,9 @@ int main(int argc, char **argv)
   std::mt19937 randomNumberGenerator;
 
   Image<float> imageLeft, imageRight;
-  readImage(filenameLeft, imageLeft, image::EImageColorSpace::NO_CONVERSION);
+  readImage(fs, filenameLeft, imageLeft, image::EImageColorSpace::NO_CONVERSION);
   const auto imageLeftSize = std::make_pair<std::size_t, std::size_t>(imageLeft.Width(), imageLeft.Height());
-  readImage(filenameRight, imageRight, image::EImageColorSpace::NO_CONVERSION);
+  readImage(fs, filenameRight, imageRight, image::EImageColorSpace::NO_CONVERSION);
   const auto imageRightSize = std::make_pair<std::size_t, std::size_t>(imageRight.Width(), imageRight.Height());
 
   // Call Keypoint extractor

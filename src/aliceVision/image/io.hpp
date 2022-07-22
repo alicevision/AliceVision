@@ -10,6 +10,7 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/types.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/imagebuf.h>
@@ -148,36 +149,42 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
 
 /**
  * @brief extract metadata from an image for a given path
+ * @param[in] fs Filesystem access handle
  * @param[in] path The given path to the image
  * @param[out] width The image header width
  * @param[out] height The image header height
  * @return metadata All metadata find in the image
  */
-oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height);
+oiio::ParamValueList readImageMetadata(vfs::filesystem& fs, const std::string& path,
+                                       int& width, int& height);
 
 /**
  * @brief extract metadata from an image for a given path
+ * @param[in] fs Filesystem access handle
  * @param[in] path The given path to the image
  * @return metadata All metadata find in the image
  */
-oiio::ParamValueList readImageMetadata(const std::string& path);
+oiio::ParamValueList readImageMetadata(vfs::filesystem& fs, const std::string& path);
 
 /**
  * @brief extract metadata from an image for a given path
+ * @param[in] fs Filesystem access handle
  * @param[in] path The given path to the image
  * @param[out] width The image header width
  * @param[out] height The image header height
  * @param[out] metadata All metadata find in the image
  */
-void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata);
+void readImageMetadata(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+                       std::map<std::string, std::string>& metadata);
 
 /**
  * @brief return the size of the image for a given path
+ * @param fs Filesystem access handle
  * @param path The given path to the image
  * @param[out] width The image header width
  * @param[out] height The image header height
  */
-void readImageSize(const std::string& path, int& width, int& height);
+void readImageSize(vfs::filesystem& fs, const std::string& path, int& width, int& height);
 
 /**
  * @brief get OIIO buffer from an AliceVision image
@@ -193,39 +200,57 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer);
 
 /**
  * @brief read an image with a given path and buffer
+ * @param[in] fs Filesystem access handle
  * @param[in] path The given path to the image
  * @param[out] image The output image buffer
  * @param[in] image color space
  */
-void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions);
-void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions);
-void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions & imageReadOptions);
-void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions);
-void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions);
-void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions);
-void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<float>& image,
+               const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<unsigned char>& image,
+               const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<IndexT>& image,
+               const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBAfColor>& image,
+               const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBAColor>& image,
+               const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBfColor>& image,
+               const ImageReadOptions & imageReadOptions);
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBColor>& image,
+               const ImageReadOptions & imageReadOptions);
 
 /**
  * @brief read an image with a given path and buffer without any processing such as color conversion
+ * @param[in] fs Filesystem access handle
  * @param[in] path The given path to the image
  * @param[out] image The output image buffer
  */
-void readImageDirect(const std::string& path, Image<IndexT>& image);
-void readImageDirect(const std::string& path, Image<unsigned char>& image);
+void readImageDirect(vfs::filesystem& fs, const std::string& path, Image<IndexT>& image);
+void readImageDirect(vfs::filesystem& fs, const std::string& path, Image<unsigned char>& image);
 
 /**
  * @brief write an image with a given path and buffer
+ * @param[in] fs Filesystem access handle
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<float>& image,
+                EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<unsigned char>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<int>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<IndexT>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBAfColor>& image,
+                EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBAColor>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBfColor>& image,
+                EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBColor>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 
 template <typename T>

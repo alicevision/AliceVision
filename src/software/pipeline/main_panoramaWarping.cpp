@@ -96,6 +96,7 @@ bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData:
 
 int aliceVision_main(int argc, char** argv)
 {
+        vfs::filesystem fs;
 		std::string sfmDataFilename;
 		std::string outputDirectory;
 		std::pair<int, int> panoramaSize = {0, 0};
@@ -356,10 +357,10 @@ int aliceVision_main(int argc, char** argv)
 				std::string imagePath = view.getImagePath();
 				ALICEVISION_LOG_INFO("Load image with path " << imagePath);
 				image::Image<image::RGBfColor> source;
-				image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
+                image::readImage(fs, imagePath, source, image::EImageColorSpace::LINEAR);
 
 				// Load metadata and update for output
-				oiio::ParamValueList metadata = image::readImageMetadata(imagePath);
+                oiio::ParamValueList metadata = image::readImageMetadata(fs, imagePath);
 				metadata.push_back(oiio::ParamValue("AliceVision:offsetX", globalBbox.left));
 				metadata.push_back(oiio::ParamValue("AliceVision:offsetY", globalBbox.top));
 				metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", panoramaSize.first));

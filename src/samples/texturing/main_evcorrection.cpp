@@ -32,7 +32,9 @@ namespace oiio = OIIO;
  
 int main(int argc, char **argv) 
 { 
-    // command-line parameters 
+    vfs::filesystem fs;
+
+    // command-line parameters
  
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel()); 
     std::string inputFolderPath; 
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
             std::map<std::string, std::string> metadata; 
             const IndexT id_view = c, id_pose = c, id_intrinsic = 0, rigId = 0, subPoseId = 0; 
  
-            image::readImageMetadata(filePath.string(), w, h, metadata); 
+            image::readImageMetadata(fs, filePath.string(), w, h, metadata);
  
             sfm_data.views[c] = std::make_shared<sfmData::View>(filePath.string(), id_view, id_intrinsic, id_pose, w, h, rigId, subPoseId, metadata); 
  
@@ -117,7 +119,7 @@ int main(int argc, char **argv)
         const float evComp = float(cameraExposureMedian / view.getCameraExposureSetting().getExposure());
  
         image::Image<image::RGBfColor> img; 
-        image::readImage(view.getImagePath(), img, image::EImageColorSpace::LINEAR); 
+        image::readImage(fs, view.getImagePath(), img, image::EImageColorSpace::LINEAR);
  
         for(int pix = 0; pix < view.getWidth() * view.getHeight(); ++pix) 
             img(pix) *= evComp; 
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
 
         std::string outputPath = outputFilePath + fs::path(view.getImagePath()).stem().string() + ".EXR"; 
         oiio::ParamValueList metadata = image::getMetadataFromMap(view.getMetadata()); 
-        image::writeImage(outputPath, img, image::EImageColorSpace::LINEAR, metadata); 
+        image::writeImage(fs, outputPath, img, image::EImageColorSpace::LINEAR, metadata);
     } 
  
 /* 

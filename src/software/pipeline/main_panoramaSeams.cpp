@@ -45,6 +45,7 @@ namespace fs = boost::filesystem;
 bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, const std::pair<int, int> & panoramaSize, int downscale)
 {
     ALICEVISION_LOG_INFO("Estimating initial labels for panorama");
+    vfs::filesystem fs;
 
     WTASeams seams(panoramaSize.first / downscale, panoramaSize.second / downscale);
 
@@ -56,11 +57,11 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
-        image::readImageDirect(maskPath, mask);
+        image::readImageDirect(fs, maskPath, mask);
         image::downscaleImageInplace(mask, downscale);
 
         // Get offset
-        oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+        oiio::ParamValueList metadata = image::readImageMetadata(fs, maskPath);
         const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int() / downscale;
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int() / downscale;
 
@@ -68,7 +69,7 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         const std::string weightsPath = (fs::path(inputPath) / (std::to_string(viewId) + "_weight.exr")).string();
         ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
         image::Image<float> weights;
-        image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(fs, weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
         image::downscaleImageInplace(weights, downscale);
 
         if (!seams.appendWithLoop(mask, weights, viewId, offsetX, offsetY)) 
@@ -87,6 +88,7 @@ bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared
                      int downscale)
 {
     ALICEVISION_LOG_INFO("Estimating smart seams for panorama");
+    vfs::filesystem fs;
 
     int pyramidSize = 1 + std::max(0, smallestViewScale - 1);
     ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
@@ -106,18 +108,18 @@ bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared
         const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
-        image::readImageDirect(maskPath, mask);
+        image::readImageDirect(fs, maskPath, mask);
         image::downscaleImageInplace(mask, downscale);
 
         // Load Color
         const std::string colorsPath = (fs::path(inputPath) / (std::to_string(viewId) + ".exr")).string();
         ALICEVISION_LOG_TRACE("Load colors with path " << colorsPath);
         image::Image<image::RGBfColor> colors;
-        image::readImage(colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(fs, colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
         image::downscaleImageInplace(colors, downscale);
 
         // Get offset
-        oiio::ParamValueList metadata = image::readImageMetadata(maskPath);
+        oiio::ParamValueList metadata = image::readImageMetadata(fs, maskPath);
         const std::size_t offsetX = metadata.find("AliceVision:offsetX")->get_int() / downscale;
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int() / downscale;
 
@@ -160,6 +162,7 @@ size_t getGraphcutOptimalScale(int width, int height)
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string sfmDataFilepath;
     std::string warpingFolder;
     std::string outputLabels;
@@ -247,7 +250,7 @@ int aliceVision_main(int argc, char** argv)
         const std::string viewFilepath = (fs::path(warpingFolder) / (std::to_string(viewId) + ".exr")).string();
         ALICEVISION_LOG_TRACE("Read panorama size from file: " << viewFilepath);
 
-        oiio::ParamValueList metadata = image::readImageMetadata(viewFilepath);
+        oiio::ParamValueList metadata = image::readImageMetadata(fs, viewFilepath);
         panoramaSize.first = metadata.find("AliceVision:panoramaWidth")->get_int();
         panoramaSize.second = metadata.find("AliceVision:panoramaHeight")->get_int();
         tileSize = metadata.find("AliceVision:tileSize")->get_int();
@@ -292,7 +295,7 @@ int aliceVision_main(int argc, char** argv)
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
         int width, height;
-        image::readImageMetadata(maskPath, width, height);
+        image::readImageMetadata(fs, maskPath, width, height);
         width /= downscaleFactor;
         height /= downscaleFactor;
 
@@ -321,7 +324,7 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    image::writeImage(outputLabels, labels, image::EImageColorSpace::NO_CONVERSION);
+    image::writeImage(fs, outputLabels, labels, image::EImageColorSpace::NO_CONVERSION);
 
     return EXIT_SUCCESS;
 }

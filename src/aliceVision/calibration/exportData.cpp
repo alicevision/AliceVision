@@ -31,6 +31,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
                   const cv::Size& imageSize,
                   const std::string& suffix)
 {
+  vfs::filesystem fs;
   std::vector<int> export_params;
   aliceVision::image::Image<unsigned char> inputImage;
   aliceVision::image::Image<unsigned char> outputImage;
@@ -55,7 +56,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
 
     aliceVision::camera::UndistortImage(inputImage, &camera, outputImage, static_cast<unsigned char>(0));
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
-    aliceVision::image::writeImage(imagePath.string(), outputImage, image::EImageColorSpace::AUTO);
+    aliceVision::image::writeImage(fs, imagePath.string(), outputImage, image::EImageColorSpace::AUTO);
   }
   ALICEVISION_LOG_DEBUG("... finished");
 }

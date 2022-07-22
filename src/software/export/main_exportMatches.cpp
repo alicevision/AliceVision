@@ -74,6 +74,8 @@ void hslToRgb(float h, float s, float l,
 
 int aliceVision_main(int argc, char ** argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -200,18 +202,18 @@ int aliceVision_main(int argc, char ** argv)
     boost::filesystem::path origImgPath(viewImagePathI);
     std::string origFilename = origImgPath.stem().string();
     image::Image<image::RGBfColor> originalImage;
-    image::readImage(viewImagePathI, originalImage, image::EImageColorSpace::LINEAR);
+    image::readImage(fs, viewImagePathI, originalImage, image::EImageColorSpace::LINEAR);
     destFilename_I = (fs::path(outputFolder) / (origFilename + ".png")).string();
-    image::writeImage(destFilename_I, originalImage, image::EImageColorSpace::SRGB);
+    image::writeImage(fs, destFilename_I, originalImage, image::EImageColorSpace::SRGB);
     }
 
     {
     boost::filesystem::path origImgPath(viewImagePathJ);
     std::string origFilename = origImgPath.stem().string();
     image::Image<image::RGBfColor> originalImage;
-    image::readImage(viewImagePathJ, originalImage, image::EImageColorSpace::LINEAR);
+    image::readImage(fs, viewImagePathJ, originalImage, image::EImageColorSpace::LINEAR);
     destFilename_J = (fs::path(outputFolder) / (origFilename + ".png")).string();
-    image::writeImage(destFilename_J, originalImage, image::EImageColorSpace::SRGB);
+    image::writeImage(fs, destFilename_J, originalImage, image::EImageColorSpace::SRGB);
     }
 
     const std::pair<size_t, size_t> dimImageI = std::make_pair(viewI->getWidth(), viewI->getHeight());

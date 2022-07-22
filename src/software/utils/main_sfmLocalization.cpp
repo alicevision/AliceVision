@@ -38,6 +38,8 @@ namespace fs = boost::filesystem;
 //   - try to locate all the view of the SfM_Data reconstruction
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -178,7 +180,7 @@ int aliceVision_main(int argc, char **argv)
   std::unique_ptr<Regions> query_regions;
   image::Image<unsigned char> imageGray;
   {
-    image::readImage(queryImage, imageGray, image::EImageColorSpace::NO_CONVERSION);
+    image::readImage(fs, queryImage, imageGray, image::EImageColorSpace::NO_CONVERSION);
 
     // Compute features and descriptors
     imageDescribers->describe(imageGray, query_regions);

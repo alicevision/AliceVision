@@ -409,6 +409,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
                const std::vector<std::string>& metadataFolders, const EImageFormat outputFormat,
                const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
 {
+    vfs::filesystem fs;
     // Read metadata path
     std::string metadataFilePath;
     
@@ -450,7 +451,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
         metadataFilePath = inputPath;
     }
 
-    oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+    oiio::ParamValueList metadata = image::readImageMetadata(fs, metadataFilePath);
 
     if(isEXR)
     {
@@ -465,23 +466,24 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     {
         image::Image<float> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
+        image::writeImage(fs, outputPath, outputImage, outputColorSpace, metadata);
     }
     else if(outputFormat == EImageFormat::RGB)
     {
         image::Image<image::RGBfColor> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
+        image::writeImage(fs, outputPath, outputImage, outputColorSpace, metadata);
     }
     else 
     {
         // Already in RGBAf
-        image::writeImage(outputPath, image, outputColorSpace, metadata);
+        image::writeImage(fs, outputPath, image, outputColorSpace, metadata);
     }
 }
 
 int aliceVision_main(int argc, char * argv[])
 {
+    vfs::filesystem fs;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
     std::vector<std::string> inputFolders;
@@ -715,7 +717,7 @@ int aliceVision_main(int argc, char * argv[])
 
             // Read original image
             image::Image<image::RGBAfColor> image;
-            image::readImage(viewPath, image, options);
+            image::readImage(fs, viewPath, image, options);
 
             // If exposureCompensation is needed for sfmData files
             if (pParams.exposureCompensation)
@@ -824,7 +826,7 @@ int aliceVision_main(int argc, char * argv[])
 
             // Read original image
             image::Image<image::RGBAfColor> image;
-            image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
+            image::readImage(fs, inputFilePath, image, image::EImageColorSpace::LINEAR);
 
             // Image processing
             processImage(image, pParams);

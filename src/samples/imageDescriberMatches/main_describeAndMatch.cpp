@@ -32,6 +32,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
+  vfs::filesystem fs;
   std::string jpgFilenameL;
   std::string jpgFilenameR;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -78,8 +79,8 @@ int main(int argc, char **argv)
   std::mt19937 randomNumberGenerator;
 
   Image<unsigned char> imageL, imageR;
-  readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
-  readImage(jpgFilenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
+  readImage(fs, jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
+  readImage(fs, jpgFilenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
 
   // Call Keypoint extractor
   using namespace aliceVision::feature;
@@ -118,7 +119,7 @@ int main(int argc, char **argv)
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     const std::string out_filename = "00_images.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(fs, out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   {
@@ -136,7 +137,7 @@ int main(int argc, char **argv)
       DrawCircle(imaB.x()+imageL.Width(), imaB.y(), 3.0f, 255, &concat);
     }
     const std::string out_filename = "01_features.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(fs, out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   //--

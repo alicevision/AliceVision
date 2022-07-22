@@ -44,8 +44,9 @@ namespace fs = boost::filesystem;
 template <class ImageT, class MaskFuncT>
 void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)
 {
+  vfs::filesystem fs;
   ImageT image, image_ud;
-  readImage(srcImage, image, image::EImageColorSpace::LINEAR);
+  readImage(fs, srcImage, image, image::EImageColorSpace::LINEAR);
 
   //exposure correction
   if(evCorrection)
@@ -66,16 +67,17 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
     using Pix = typename ImageT::Tpixel;
     Pix pixZero(Pix::Zero());
     UndistortImage(image, cam, image_ud, pixZero);
-    writeImage(dstColorImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+    writeImage(fs, dstColorImage, image_ud, image::EImageColorSpace::AUTO, metadata);
   }
   else
   {
-    writeImage(dstColorImage, image, image::EImageColorSpace::AUTO, metadata);
+    writeImage(fs, dstColorImage, image, image::EImageColorSpace::AUTO, metadata);
   }
 }
 
 bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
 {
+  vfs::filesystem fs;
   for(const auto & masksFolder_str : masksFolders)
   {
     if(!masksFolder_str.empty() && fs::exists(masksFolder_str))
@@ -86,12 +88,12 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
 
       if(fs::exists(idMaskPath))
       {
-        image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
         return true;
       }
       else if(fs::exists(nameMaskPath))
       {
-        image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
         return true;
       }
     }
@@ -110,6 +112,8 @@ bool prepareDenseScene(const SfMData& sfmData,
                        bool saveMatricesFiles,
                        bool evCorrection)
 {
+  vfs::filesystem fs;
+
   // defined view Ids
   std::set<IndexT> viewIds;
 
@@ -160,7 +164,7 @@ bool prepareDenseScene(const SfMData& sfmData,
 
     // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type conversion problems with string maps.
     std::string srcImage = view->getImagePath();
-    oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
+    oiio::ParamValueList metadata = image::readImageMetadata(fs, srcImage);
 
     // export camera
     if(saveMetadata || saveMatricesFiles)

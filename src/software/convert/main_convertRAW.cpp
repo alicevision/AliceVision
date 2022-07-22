@@ -28,6 +28,7 @@ namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -123,8 +124,8 @@ int aliceVision_main(int argc, char** argv)
     try
     {
       ALICEVISION_LOG_INFO("Reading " << path);
-      image::readImage(path, image, image::EImageColorSpace::LINEAR);
-      metadata = image::readImageMetadata(path);
+      image::readImage(fs, path, image, image::EImageColorSpace::LINEAR);
+      metadata = image::readImageMetadata(fs, path);
     }
     catch(std::exception& e)
     {
@@ -135,7 +136,7 @@ int aliceVision_main(int argc, char** argv)
     // write output image
     try
     {
-      image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+      image::writeImage(fs, outputPath, image, image::EImageColorSpace::AUTO, metadata);
     }
     catch(std::exception& e)
     {

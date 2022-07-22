@@ -43,9 +43,11 @@ class CommonDataByPair_vldSegment  : public CommonDataByPair
     image::Image< unsigned char > & maskLeft,
     image::Image< unsigned char > & maskRight )
   {
+    vfs::filesystem fs;
+
     image::Image< unsigned char > imageL, imageR;
-    image::readImage( _sLeftImage, imageL, image::EImageColorSpace::LINEAR);
-    image::readImage( _sRightImage, imageR, image::EImageColorSpace::LINEAR);
+    image::readImage(fs, _sLeftImage, imageL, image::EImageColorSpace::LINEAR);
+    image::readImage(fs, _sRightImage, imageR, image::EImageColorSpace::LINEAR);
 
     image::Image< float > imgA ( imageL.GetMat().cast< float >() );
     image::Image< float > imgB(imageR.GetMat().cast< float >());

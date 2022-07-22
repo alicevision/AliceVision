@@ -108,6 +108,7 @@ inline void pauseProcess()
 
 bool ColorHarmonizationEngineGlobal::Process()
 {
+  vfs::filesystem fs;
   const std::string vec_selectionMethod[ 3 ] = { "fullFrame", "matchedPoints", "KVLD" };
   const std::string vec_harmonizeMethod[ 1 ] = { "quantifiedGainCompensation" };
   const int harmonizeMethod = 0;
@@ -281,14 +282,14 @@ bool ColorHarmonizationEngineGlobal::Process()
 
       std::string out_filename_J = "00_mask_J.png";
       out_filename_J = (fs::path(sEdge) / out_filename_J).string();
-      writeImage(out_filename_I, maskI, image::EImageColorSpace::AUTO);
-      writeImage(out_filename_J, maskJ, image::EImageColorSpace::AUTO);
+      writeImage(fs, out_filename_I, maskI, image::EImageColorSpace::AUTO);
+      writeImage(fs, out_filename_J, maskJ, image::EImageColorSpace::AUTO);
     }
 
     //-- Compute the histograms
     Image< RGBColor > imageI, imageJ;
-    readImage(p_imaNames.first, imageI, image::EImageColorSpace::LINEAR);
-    readImage(p_imaNames.second, imageJ, image::EImageColorSpace::LINEAR);
+    readImage(fs, p_imaNames.first, imageI, image::EImageColorSpace::LINEAR);
+    readImage(fs, p_imaNames.second, imageJ, image::EImageColorSpace::LINEAR);
 
     utils::Histogram< double > histoI( minvalue, maxvalue, bin);
     utils::Histogram< double > histoJ( minvalue, maxvalue, bin);
@@ -415,7 +416,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     }
 
     Image< RGBColor > image_c;
-    readImage( _fileNames[ imaNum ], image_c , image::EImageColorSpace::LINEAR);
+    readImage(fs, _fileNames[ imaNum ], image_c , image::EImageColorSpace::LINEAR);
 
     #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
@@ -433,7 +434,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       fs::create_directory(out_folder);
     const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
 
-    writeImage(out_filename, image_c , image::EImageColorSpace::AUTO);
+    writeImage(fs, out_filename, image_c , image::EImageColorSpace::AUTO);
   }
   return true;
 }

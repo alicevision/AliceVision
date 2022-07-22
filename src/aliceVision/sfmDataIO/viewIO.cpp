@@ -22,6 +22,8 @@ namespace sfmDataIO {
 
 void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const std::string& viewIdRegex)
 {
+  vfs::filesystem fs;
+
   // check if the view is complete
   if(view.getViewId() != UndefinedIndexT &&
      view.getIntrinsicId() != UndefinedIndexT &&
@@ -33,7 +35,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
   int width, height;
   std::map<std::string, std::string> metadata;
 
-  image::readImageMetadata(view.getImagePath(), width, height, metadata);
+  image::readImageMetadata(fs, view.getImagePath(), width, height, metadata);
 
   view.setWidth(width);
   view.setHeight(height);

@@ -5,6 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "oiioProxy.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/all.hpp>
 
@@ -221,9 +222,16 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
-oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
+oiio::ParamValueList readImageMetadata(vfs::filesystem& fs, const std::string& path,
+                                       int& width, int& height)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  std::unique_ptr<VfsIOReadProxy> ioproxy;
+  if (fs.is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<VfsIOReadProxy>(fs, path);
+  }
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, nullptr, ioproxy.get()));
   oiio::ImageSpec spec = in->spec();
 
   if(!in)
@@ -249,25 +257,26 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
   return metadata;
 }
 
-oiio::ParamValueList readImageMetadata(const std::string& path)
+oiio::ParamValueList readImageMetadata(vfs::filesystem& fs, const std::string& path)
 {
   int w, h;
-  return readImageMetadata(path, w, h);
+  return readImageMetadata(fs, path, w, h);
 }
 
 // Warning: type conversion problems from string to param value, we may lose some metadata with string maps
-void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
+void readImageMetadata(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+                       std::map<std::string, std::string>& metadata)
 {
-  oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
+  oiio::ParamValueList oiioMetadadata = readImageMetadata(fs, path, width, height);
 
   for(const auto& param : oiioMetadadata)
     metadata.emplace(param.name().string(), param.get_string());
 }
 
-void readImageSize(const std::string& path, int& width, int& height)
+void readImageSize(vfs::filesystem& fs, const std::string& path, int& width, int& height)
 {
     std::map<std::string, std::string> metadata;
-    readImageMetadata(path, width, height, metadata);
+    readImageMetadata(fs, path, width, height, metadata);
 }
 
 template<typename T>
@@ -312,7 +321,8 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer)
 }
 
 template<typename T>
-void readImage(const std::string& path,
+void readImage(vfs::filesystem& fs,
+               const std::string& path,
                oiio::TypeDesc format,
                int nchannels,
                Image<T>& image,
@@ -339,7 +349,12 @@ void readImage(const std::string& path,
   configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
 #endif
 
-  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+  std::unique_ptr<VfsIOReadProxy> ioproxy;
+  if (fs.is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<VfsIOReadProxy>(fs, path);
+  }
+  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec, ioproxy.get());
 
   inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
@@ -429,13 +444,19 @@ void readImage(const std::string& path,
 }
 
 template<typename T>
-void readImageNoFloat(const std::string& path,
+void readImageNoFloat(vfs::filesystem& fs, const std::string& path,
                oiio::TypeDesc format,
                Image<T>& image)
 {
   oiio::ImageSpec configSpec;
 
-  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+  std::unique_ptr<VfsIOReadProxy> ioproxy;
+  if (fs.is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<VfsIOReadProxy>(fs, path);
+  }
+
+  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec, ioproxy.get());
 
   inBuf.read(0, 0, true, format);
 
@@ -480,7 +501,8 @@ bool containsHalfFloatOverflow(const oiio::ImageBuf& image)
 }
 
 template<typename T>
-void writeImage(const std::string& path,
+void writeImage(vfs::filesystem& fs,
+                const std::string& path,
                 oiio::TypeDesc typeDesc,
                 int nchannels,
                 const Image<T>& image,
@@ -514,8 +536,8 @@ void writeImage(const std::string& path,
       imageSpec.set_roi_full(roi);
   }
 
-  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
-  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+  oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
+  oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
   if(imageColorSpace == EImageColorSpace::SRGB)
@@ -573,24 +595,31 @@ void writeImage(const std::string& path,
     }
   }
 
+  std::unique_ptr<VfsIOWriteProxy> ioproxy;
+  if (fs.is_virtual_path(tmpPath))
+  {
+    ioproxy = std::make_unique<VfsIOWriteProxy>(fs, tmpPath);
+    outBuf->set_write_ioproxy(ioproxy.get());
+  }
+
   // write image
   if(!outBuf->write(tmpPath))
     throw std::runtime_error("Can't write output image file '" + path + "'.");
 
   // rename temporary filename
-  fs::rename(tmpPath, path);
+  fs.rename(tmpPath, path);
 }
 
 template<typename T>
-void writeImageNoFloat(const std::string& path,
+void writeImageNoFloat(vfs::filesystem& fs, const std::string& path,
                 oiio::TypeDesc typeDesc,
                 const Image<T>& image,
                 EImageColorSpace imageColorSpace,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
-  const fs::path bPath = fs::path(path);
+  const vfs::path bPath = vfs::path(path);
   const std::string extension = boost::to_lower_copy(bPath.extension().string());
-  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs.unique_path().string() + extension;
   const bool isEXR = (extension == ".exr");
   //const bool isTIF = (extension == ".tif");
   const bool isJPG = (extension == ".jpg");
@@ -610,8 +639,8 @@ void writeImageNoFloat(const std::string& path,
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
   imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
 
-  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
-  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+  oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
+  oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
@@ -619,6 +648,13 @@ void writeImageNoFloat(const std::string& path,
     
     formatBuf.copy(*outBuf, typeDesc); // override format, use half instead of float
     outBuf = &formatBuf;
+  }
+
+  std::unique_ptr<VfsIOWriteProxy> ioproxy;
+  if (fs.is_virtual_path(tmpPath))
+  {
+    ioproxy = std::make_unique<VfsIOWriteProxy>(fs, tmpPath);
+    outBuf->set_write_ioproxy(ioproxy.get());
   }
 
   // write image
@@ -629,84 +665,98 @@ void writeImageNoFloat(const std::string& path,
   fs::rename(tmpPath, path);
 }
 
-void readImage(const std::string& path, Image<float>& image, const ImageReadOptions & imageReadOptions)
+void readImage(vfs::filesystem& fs, const std::string& path, Image<float>& image,
+               const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
+    readImage(fs, path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions & imageReadOptions)
+void readImage(vfs::filesystem& fs, const std::string& path, Image<unsigned char>& image,
+               const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
+    readImage(fs, path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
 }
 
-void readImageDirect(const std::string& path, Image<unsigned char>& image)
+void readImageDirect(vfs::filesystem& fs, const std::string& path, Image<unsigned char>& image)
 {
-  readImageNoFloat(path, oiio::TypeDesc::UINT8, image);
+    readImageNoFloat(fs, path, oiio::TypeDesc::UINT8, image);
 }
 
-void readImageDirect(const std::string& path, Image<IndexT>& image)
+void readImageDirect(vfs::filesystem& fs, const std::string& path, Image<IndexT>& image)
 {
-  readImageNoFloat(path, oiio::TypeDesc::UINT32, image);
+    readImageNoFloat(fs, path, oiio::TypeDesc::UINT32, image);
 }
 
-void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBAfColor>& image,
+               const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageReadOptions);
+    readImage(fs, path, oiio::TypeDesc::FLOAT, 4, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBAColor>& image,
+               const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 4, image, imageReadOptions);
+    readImage(fs, path, oiio::TypeDesc::UINT8, 4, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBfColor>& image,
+               const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::FLOAT, 3, image, imageReadOptions);
+    readImage(fs, path, oiio::TypeDesc::FLOAT, 3, image, imageReadOptions);
 }
 
-void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions)
+void readImage(vfs::filesystem& fs, const std::string& path, Image<RGBColor>& image,
+               const ImageReadOptions & imageReadOptions)
 {
-  readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
+    readImage(fs, path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
-void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<unsigned char>& image,
+                EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, imageColorSpace, metadata);
+    writeImageNoFloat(fs, path, oiio::TypeDesc::UINT8, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<int>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::INT32, image, imageColorSpace, metadata);
+    writeImageNoFloat(fs, path, oiio::TypeDesc::INT32, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<IndexT>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, imageColorSpace, metadata);
+    writeImageNoFloat(fs, path, oiio::TypeDesc::UINT32, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBAfColor>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata,roi);
+    writeImage(fs, path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata,roi);
 }
 
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBAColor>& image,
+                EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace, metadata);
+    writeImage(fs, path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI &roi)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBfColor>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI &roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata,roi);
+    writeImage(fs, path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata,roi);
 }
 
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<float>& image,
+                EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata,roi);
+    writeImage(fs, path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata,roi);
 }
 
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(vfs::filesystem& fs, const std::string& path, const Image<RGBColor>& image,
+                EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace, metadata);
+    writeImage(fs, path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace, metadata);
 }
 
 }  // namespace image

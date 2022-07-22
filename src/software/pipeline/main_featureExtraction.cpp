@@ -244,11 +244,12 @@ private:
 
   void computeViewJob(const ViewJob& job, bool useGPU = false)
   {
+    vfs::filesystem fs;
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
-    image::readImage(job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
+    image::readImage(fs, job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
 
     if(!_masksFolder.empty() && fs::exists(_masksFolder))
     {
@@ -258,11 +259,11 @@ private:
 
       if(fs::exists(idMaskPath))
       {
-        image::readImage(idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
       }
       else if(fs::exists(nameMaskPath))
       {
-        image::readImage(nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
       }
     }
 

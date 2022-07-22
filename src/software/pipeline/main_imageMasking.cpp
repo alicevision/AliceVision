@@ -80,6 +80,8 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
  */
 int main(int argc, char **argv)
 {
+    vfs::filesystem fs;
+
     // command-line parameters
     std::string sfmFilePath;
     std::string outputFilePath;
@@ -403,7 +405,7 @@ int main(int argc, char **argv)
         }
         const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
         const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
-        image::writeImage(resultPath, result, image::EImageColorSpace::LINEAR);
+        image::writeImage(fs, resultPath, result, image::EImageColorSpace::LINEAR);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

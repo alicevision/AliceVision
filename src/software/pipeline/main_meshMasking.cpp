@@ -34,6 +34,7 @@ namespace fs = boost::filesystem;
 
 bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string& srcImage)
 {
+    vfs::filesystem fs;
     for (const auto& masksFolder_str : masksFolders)
     {
         if (!masksFolder_str.empty() && fs::exists(masksFolder_str))
@@ -44,12 +45,12 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
 
             if (fs::exists(idMaskPath))
             {
-                image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
+                image::readImage(fs, idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
                 return true;
             }
             else if (fs::exists(nameMaskPath))
             {
-                image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
+                image::readImage(fs, nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
                 return true;
             }
         }

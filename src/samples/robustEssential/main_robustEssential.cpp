@@ -43,15 +43,15 @@ bool exportToPly(const std::vector<Vec3> & vec_points,
   const std::string & sFileName);
 
 int main() {
-
+  vfs::filesystem fs;
   std::mt19937 randomNumberGenerator;
   const std::string sInputDir = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   const std::string jpg_filenameL = sInputDir + "100_7101.jpg";
   const std::string jpg_filenameR = sInputDir + "100_7102.jpg";
 
   Image<unsigned char> imageL, imageR;
-  readImage(jpg_filenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
-  readImage(jpg_filenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
+  readImage(fs, jpg_filenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
+  readImage(fs, jpg_filenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
 
   //--
   // Detect regions thanks to an image_describer
@@ -74,7 +74,7 @@ int main() {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     std::string out_filename = "01_concat.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(fs, out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   //- Draw features on the two image (side by side)
@@ -92,7 +92,7 @@ int main() {
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     std::string out_filename = "02_features.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(fs, out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   std::vector<IndMatch> vec_PutativeMatches;

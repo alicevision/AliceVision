@@ -104,6 +104,7 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
 void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
                const image::EStorageDataType storageDataType)
 {
+    vfs::filesystem fs;
     // Read metadata path
     std::string metadataFilePath;
 
@@ -114,7 +115,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     metadataFilePath = inputPath;
 
     // Read metadata based on a filepath
-    oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
+    oiio::ParamValueList metadata = image::readImageMetadata(fs, metadataFilePath);
 
     if(isEXR)
     {
@@ -126,12 +127,13 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
 
-    image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+    image::writeImage(fs, outputPath, image, image::EImageColorSpace::AUTO, metadata);
 }
 
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     // command-line parameters
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
@@ -273,7 +275,7 @@ int aliceVision_main(int argc, char** argv)
                 options.applyWhiteBalance = view.getApplyWhiteBalance();
 
                 image::Image<image::RGBAfColor> image;
-                image::readImage(viewPath, image, options);
+                image::readImage(fs, viewPath, image, options);
 
                 // Image color correction processing
                 processColorCorrection(image, colorData);
@@ -348,7 +350,7 @@ int aliceVision_main(int argc, char** argv)
 
                 // Read original image
                 image::Image<image::RGBAfColor> image;
-                image::readImage(inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(fs, inputFilePath, image, image::EImageColorSpace::NO_CONVERSION);
 
                 // Image color correction processing
                 processColorCorrection(image, colorData);

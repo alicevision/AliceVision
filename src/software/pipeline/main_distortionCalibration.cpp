@@ -153,6 +153,7 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
 
 bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, const image::Image<image::RGBColor> & input, const std::string & checkerImagePath)
 {
+    vfs::filesystem fs;
     calibration::CheckerDetector detect;
     if (!detect.process(input))
     {
@@ -163,7 +164,7 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
     {
         image::Image<image::RGBColor> drawing = input;
         detect.drawCheckerBoard(drawing);
-        image::writeImage(checkerImagePath, drawing, image::EImageColorSpace::NO_CONVERSION);
+        image::writeImage(fs, checkerImagePath, drawing, image::EImageColorSpace::NO_CONVERSION);
     }
 
     lineWithPoints.clear();
@@ -467,6 +468,7 @@ bool generatePoints(std::vector<calibration::PointPair> & points, const std::sha
 
 int aliceVision_main(int argc, char* argv[])
 {
+    vfs::filesystem fs;
     std::string sfmInputDataFilepath;
     std::vector<std::string> lensGridFilepaths;
     std::string sfmOutputDataFilepath;
@@ -589,7 +591,7 @@ int aliceVision_main(int argc, char* argv[])
 
             //Read image
             image::Image<image::RGBColor> input;
-            image::readImage(lensGridFilepath, input, image::EImageColorSpace::SRGB);
+            image::readImage(fs, lensGridFilepath, input, image::EImageColorSpace::SRGB);
 
             if (pixelRatio != 1.0)
             {
@@ -752,7 +754,7 @@ int aliceVision_main(int argc, char* argv[])
             const std::string lensGridFilepath = lensGridFilepaths[i];
 
             image::Image<image::RGBColor> input;
-            image::readImage(lensGridFilepath, input, image::EImageColorSpace::SRGB);
+            image::readImage(fs, lensGridFilepath, input, image::EImageColorSpace::SRGB);
 
             const std::string undistortedImagePath =
                 (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_undistorted.exr";
@@ -761,10 +763,10 @@ int aliceVision_main(int argc, char* argv[])
 
             Vec2 offset;
             image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
-            image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
+            image::writeImage(fs, undistortedImagePath, ud, image::EImageColorSpace::AUTO);
 
             image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);
-            image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
+            image::writeImage(fs, stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
         }
     }
 

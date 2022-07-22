@@ -47,6 +47,7 @@ std::string getHdrImagePath(const std::string& outputPath, std::size_t g)
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename;
     std::string inputResponsePath;
@@ -281,7 +282,7 @@ int aliceVision_main(int argc, char** argv)
             image::ImageReadOptions options;
             options.outputColorSpace = image::EImageColorSpace::SRGB;
             options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
-            image::readImage(filepath, images[i], options);
+            image::readImage(fs, filepath, images[i], options);
 
             exposuresSetting[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);
         }
@@ -313,10 +314,10 @@ int aliceVision_main(int argc, char** argv)
         const std::string hdrImagePath = getHdrImagePath(outputPath, g);
 
         // Write an image with parameters from the target view
-        oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
+        oiio::ParamValueList targetMetadata = image::readImageMetadata(fs, targetView->getImagePath());
         targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
 
-        image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
+        image::writeImage(fs, hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
     }
 
     return EXIT_SUCCESS;

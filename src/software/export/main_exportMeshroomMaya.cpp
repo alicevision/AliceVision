@@ -30,6 +30,7 @@ namespace oiio = OIIO;
 
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -116,7 +117,7 @@ int aliceVision_main(int argc, char **argv)
     }
 
     image::Image<image::RGBColor> image, imageUd;
-    image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
+    image::readImage(fs, view.getImagePath(), image, image::EImageColorSpace::LINEAR);
 
     // compute undistorted image
     if(intrinsicPtr->isValid() && intrinsicPtr->hasDistortion())
@@ -145,10 +146,10 @@ int aliceVision_main(int argc, char **argv)
 
     const std::string basename = fs::path(view.getImagePath()).stem().string();
 
-    image::writeImage(outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg",
+    image::writeImage(fs, outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg",
                       imageProxy, image::EImageColorSpace::AUTO);
 
-    image::writeImage(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg",
+    image::writeImage(fs, outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg",
                       imageThumbnail, image::EImageColorSpace::AUTO);
 
     ++progressBar;

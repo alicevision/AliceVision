@@ -34,6 +34,7 @@ alicevision_add_library(aliceVision_image
     OpenImageIO::OpenImageIO
     OpenImageIO::OpenImageIO_Util
   PRIVATE_LINKS
+    aliceVision_vfs
     aliceVision_system
     ${OPENEXR_LIBRARIES}
     Boost::filesystem

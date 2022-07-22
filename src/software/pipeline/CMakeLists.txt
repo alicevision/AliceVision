@@ -11,7 +11,8 @@ if(ALICEVISION_BUILD_SFM)
   alicevision_add_software(aliceVision_cameraInit
     SOURCE main_cameraInit.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
+    LINKS aliceVision_vfs
+          aliceVision_system
           aliceVision_sensorDB
           aliceVision_image
           aliceVision_feature

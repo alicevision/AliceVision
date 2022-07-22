@@ -63,6 +63,7 @@ bool exportToMVE2Format(
   const std::string & sOutDirectory // Output MVE2 files folder
   )
 {
+  vfs::filesystem fs;
   bool bOk = true;
   // Create basis folder structure
   if (!fs::is_directory(sOutDirectory))
@@ -140,9 +141,9 @@ bool exportToMVE2Format(
       if (cam->isValid() && cam->hasDistortion())
       {
         // Undistort and save the image
-        readImage(srcImage, image, image::EImageColorSpace::NO_CONVERSION);
+        readImage(fs, srcImage, image, image::EImageColorSpace::NO_CONVERSION);
         UndistortImage(image, cam, image_ud, BLACK);
-        writeImage(dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION);
+        writeImage(fs, dstImage, image_ud, image::EImageColorSpace::NO_CONVERSION);
       }
       else // (no distortion)
       {
@@ -154,8 +155,8 @@ bool exportToMVE2Format(
         }
         else
         {
-          readImage( srcImage, image, image::EImageColorSpace::NO_CONVERSION);
-          writeImage( dstImage, image, image::EImageColorSpace::NO_CONVERSION);
+          readImage(fs, srcImage, image, image::EImageColorSpace::NO_CONVERSION);
+          writeImage(fs,  dstImage, image, image::EImageColorSpace::NO_CONVERSION);
         }
       }
 
@@ -208,7 +209,7 @@ bool exportToMVE2Format(
       // Save a thumbnail image "thumbnail.png", 50x50 pixels
       thumbnail = create_thumbnail(image, 50, 50);
       const std::string dstThumbnailImage = (fs::path(sOutViewIteratorDirectory) / "thumbnail.png").string();
-      writeImage(dstThumbnailImage, thumbnail, image::EImageColorSpace::NO_CONVERSION);
+      writeImage(fs, dstThumbnailImage, thumbnail, image::EImageColorSpace::NO_CONVERSION);
       
       ++view_index;
     }

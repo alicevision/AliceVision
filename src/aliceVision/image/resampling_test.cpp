@@ -21,10 +21,11 @@ using namespace aliceVision::image;
 
 BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
 {
+  vfs::filesystem fs;
   Image<unsigned char> image;
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
   ALICEVISION_LOG_DEBUG(png_filename);
-  BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
+  BOOST_CHECK_NO_THROW(readImage(fs, png_filename, image, image::EImageColorSpace::NO_CONVERSION));
 
 
   // Build sampling grid
@@ -45,13 +46,14 @@ BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
   GenericRessample( image , sampling_grid , image.Width() , image.Height() , sampler , imageOut ) ;
 
   std::string out_filename = ("test_ressample_same.png");
-  BOOST_CHECK_NO_THROW( writeImage( out_filename, imageOut, image::EImageColorSpace::NO_CONVERSION) ) ;
+  BOOST_CHECK_NO_THROW(writeImage(fs, out_filename, imageOut, image::EImageColorSpace::NO_CONVERSION));
 }
 
 // Iterative image rotations
 // Allow to check if the sampling function have some signal loss.
 template<typename SamplerT, typename ImageT>
 void ImageRotation(
+  vfs::filesystem& fs,
   const ImageT & imageIn,
   const SamplerT & sampler,
   const std::string & samplerString)
@@ -104,22 +106,23 @@ void ImageRotation(
 
     std::stringstream str ;
     str << "test_ressample_"<< samplerString <<"_rotate_" << id_rot << ".png" ;
-    writeImage(str.str(), imageOut, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(fs, str.str(), imageOut, image::EImageColorSpace::NO_CONVERSION);
     image = imageOut ;
   }
 }
 
 BOOST_AUTO_TEST_CASE(Ressampling_SampleRotate)
 {
+  vfs::filesystem fs;
   Image<RGBColor> image;
 
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
   ALICEVISION_LOG_DEBUG(png_filename);
-  BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
+  BOOST_CHECK_NO_THROW(readImage(fs, png_filename, image, image::EImageColorSpace::NO_CONVERSION));
 
-  BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerNearest >(), "SamplerNearest"));
-  BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerLinear >(), "SamplerLinear"));
-  BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerCubic >(), "SamplerCubic"));
-  BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerSpline16 >(), "SamplerSpline16"));
-  BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerSpline64 >(), "SamplerSpline64"));
+  BOOST_CHECK_NO_THROW(ImageRotation(fs, image, Sampler2d< SamplerNearest >(), "SamplerNearest"));
+  BOOST_CHECK_NO_THROW(ImageRotation(fs, image, Sampler2d< SamplerLinear >(), "SamplerLinear"));
+  BOOST_CHECK_NO_THROW(ImageRotation(fs, image, Sampler2d< SamplerCubic >(), "SamplerCubic"));
+  BOOST_CHECK_NO_THROW(ImageRotation(fs, image, Sampler2d< SamplerSpline16 >(), "SamplerSpline16"));
+  BOOST_CHECK_NO_THROW(ImageRotation(fs, image, Sampler2d< SamplerSpline64 >(), "SamplerSpline64"));
 }

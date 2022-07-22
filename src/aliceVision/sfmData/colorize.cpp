@@ -22,6 +22,7 @@ namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
+  vfs::filesystem fs;
   boost::progress_display progressBar(sfmData.getLandmarks().size(), std::cout, "\nCompute scene structure color\n");
 
   std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
@@ -103,7 +104,7 @@ void colorizeTracks(SfMData& sfmData)
     {
       const View& view = sfmData.getView(viewCardinal.viewId);
       image::Image<image::RGBColor> image;
-      image::readImage(view.getImagePath(), image, image::EImageColorSpace::SRGB);
+      image::readImage(fs, view.getImagePath(), image, image::EImageColorSpace::SRGB);
 
       for(Landmark& landmark : viewCardinal.landmarks)
       {

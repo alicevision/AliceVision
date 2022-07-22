@@ -87,6 +87,7 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, c
 
 BOOST_AUTO_TEST_CASE(hdr_laguerre)
 {
+    vfs::filesystem fs;
     std::vector<std::string> paths;
     std::vector<float> times;
 
@@ -115,8 +116,8 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
         image::Image<image::RGBfColor> imgA, imgB;
-        image::readImage(paths[imageId], imgA, image::EImageColorSpace::LINEAR);
-        image::readImage(paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, paths[imageId], imgA, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
 
         BOOST_CHECK(imgA.size() == imgB.size());
         double ratioExposures = times[imageId] / times[imageId + 1];
@@ -155,6 +156,7 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
 
 BOOST_AUTO_TEST_CASE(hdr_debevec)
 {
+    vfs::filesystem fs;
     std::vector<std::string> paths;
     std::vector<float> times;
 
@@ -189,8 +191,8 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
         image::Image<image::RGBfColor> imgA, imgB;
-        image::readImage(paths[imageId], imgA, image::EImageColorSpace::LINEAR);
-        image::readImage(paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, paths[imageId], imgA, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
 
         BOOST_CHECK(imgA.size() == imgB.size());
         double ratioExposures = times[imageId] / times[imageId + 1];
@@ -230,6 +232,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
 
 BOOST_AUTO_TEST_CASE(hdr_grossberg)
 {
+    vfs::filesystem fs;
     std::vector<std::string> paths;
     std::vector<float> times;
 
@@ -272,8 +275,8 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
         image::Image<image::RGBfColor> imgA, imgB;
-        image::readImage(paths[imageId], imgA, image::EImageColorSpace::LINEAR);
-        image::readImage(paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, paths[imageId], imgA, image::EImageColorSpace::LINEAR);
+        image::readImage(fs, paths[imageId + 1], imgB, image::EImageColorSpace::LINEAR);
 
         BOOST_CHECK(imgA.size() == imgB.size());
         double ratioExposures = times[imageId] / times[imageId + 1];

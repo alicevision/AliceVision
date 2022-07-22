@@ -596,13 +596,15 @@ public:
 
   template <class T>
   void debugImage(const image::Image<T> & toSave, const std::string & name, int pyramid_id, int level) {
+    vfs::filesystem fs;
+
     // Only export debug image if there is an debug output folder defined.
     if(_debugDirectory.empty())
       return;
 
     boost::filesystem::path filepath = boost::filesystem::path(_debugDirectory) /
           (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
-    image::writeImage(filepath.string(), toSave, image::EImageColorSpace::AUTO);
+    image::writeImage(fs, filepath.string(), toSave, image::EImageColorSpace::AUTO);
   }
 
 private:
@@ -622,6 +624,8 @@ private:
 int main(int argc, char * argv[])
 {
     using namespace aliceVision;
+
+    vfs::filesystem fs;
 
     std::string externalInfoFilepath;
     std::string sfmInputDataFilepath;
@@ -1029,7 +1033,7 @@ int main(int argc, char * argv[])
         {
           // Read original image
           image::Image<float> grayscale;
-          image::readImage(v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
+          image::readImage(fs, v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
           bool res = detector.appendImage(grayscale);
           if(!res)

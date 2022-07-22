@@ -47,6 +47,8 @@ public:
       return false;
     }
 
+    vfs::filesystem fs;
+
     // dealing with SFM mode
     if(_sfmMode)
     {
@@ -73,7 +75,7 @@ public:
 
       ALICEVISION_LOG_DEBUG(imageName);
 
-      image::readImage(imageName, image, image::EImageColorSpace::NO_CONVERSION);
+      image::readImage(fs, imageName, image, image::EImageColorSpace::NO_CONVERSION);
       return true;
     }
     return true;
@@ -95,6 +97,7 @@ private:
                      std::string &imageName,
                      bool &hasIntrinsics)
   {
+    vfs::filesystem fs;
     // if there are no more images to process
     if(_viewIterator == _sfmdata.getViews().end())
     {
@@ -106,7 +109,7 @@ private:
     // get the image
     const sfmData::View *view = _viewIterator->second.get();
     imageName = view->getImagePath();
-    image::readImage(imageName, image, image::EImageColorSpace::NO_CONVERSION);
+    image::readImage(fs, imageName, image, image::EImageColorSpace::NO_CONVERSION);
 
     // get the associated Intrinsics
     if((view->getIntrinsicId() == UndefinedIndexT) || (!_sfmdata.getIntrinsics().count(view->getIntrinsicId())))

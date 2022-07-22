@@ -343,6 +343,7 @@ void detectColorChecker(
     ImageOptions& imgOpt,
     CCheckerDetectionSettings &settings)
 {
+    vfs::filesystem fs;
     const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
     const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();
@@ -350,7 +351,7 @@ void detectColorChecker(
 
     // Load image
     image::Image<image::RGBAfColor> img;
-    image::readImage(imgSrcPath, img, imgOpt.readOptions);
+    image::readImage(fs, imgSrcPath, img, imgOpt.readOptions);
     cv::Mat imgBGR = image::imageRGBAToCvMatBGR(img, CV_8UC3);
 
     if(imgBGR.cols == 0 || imgBGR.rows == 0)
