@@ -11,6 +11,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
@@ -333,7 +334,7 @@ int aliceVision_main(int argc, char **argv)
       boost::to_lower(extension);
       if(extension == ".json")
       {
-          std::ifstream jsonFile(knownPosesFilePath);
+          auto jsonFile = fs.open_read_text(knownPosesFilePath);
           if(!jsonFile)
           {
               ALICEVISION_LOG_ERROR("Error opening file: " << knownPosesFilePath);
@@ -418,7 +419,7 @@ int aliceVision_main(int argc, char **argv)
       }
       else if(extension == ".ma")
       {
-          std::ifstream file(knownPosesPath.string());
+          auto file = fs.open_read_text(knownPosesPath);
 
           std::string line;
           std::string name;
