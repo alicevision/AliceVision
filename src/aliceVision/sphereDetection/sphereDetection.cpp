@@ -1,17 +1,16 @@
 #include <aliceVision/sphereDetection/sphereDetection.hpp>
 
+// Standard libs
 #include <iostream>
 #include <numeric>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/utility.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
+// AliceVision image library
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/io.cpp>
+#include <aliceVision/image/Image.hpp>
+
+// AliceVision logger
+#include <aliceVision/system/Logger.hpp>
 
 // ONNX Runtime
 #include <onnxruntime_cxx_api.h>
@@ -21,6 +20,17 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
+// black magic fuckery
+#include <aliceVision/imageMasking/eigen2cvHelpers.hpp>
+
+// OpenCv
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/core/utility.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+// Assumptions on model structure
 #define INPUT_NAME "input"
 #define OUTPUT_NAME "output"
 #define INPUT_COUNT 1
@@ -139,50 +149,56 @@ std::pair<size_t, size_t> resolution_verify(std::string path_images)
     return tmp_size;
 }
 
-cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size)
+cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const float downscale)
 {
     // read image
-    cv::Mat image_BGR = cv::imread(image_path, cv::ImreadModes::IMREAD_COLOR);
+    aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
+    aliceVision::image::readImage(image_path, image_alice, aliceVision::image::EImageColorSpace::SRGB);
 
     // resize image
-    cv::Mat resized_BGR;
-    cv::resize(image_BGR, resized_BGR, image_size, cv::INTER_LINEAR);
+    aliceVision::image::downscaleImageInplace(image_alice, downscale);
 
-    // BGR -> RGB
-    cv::Mat image_RGB;
-    cv::cvtColor(resized_BGR, image_RGB, cv::ColorConversionCodes::COLOR_BGR2RGB);
+    aliceVision::image::writeImage("/tmp/img.png", image_alice, aliceVision::image::EImageColorSpace::SRGB);
+
+    // convert to opencv image
+    cv::Mat image_opencv;
+    cv::eigen2cv(image_alice.GetMat(), image_opencv);
+
+    cv::imwrite("/tmp/img.png", image_opencv);
 
     // uint8 -> float32
-    cv::Mat image_float;
-    image_RGB.convertTo(image_float, CV_32F, 1.0 / 255.0);
+    image_opencv.convertTo(image_opencv, CV_32F, 1.0 / 255.0);
+
+    cv::imwrite("/tmp/img.png", image_opencv);
 
     // HWC to CHW
     cv::Mat image_blob;
-    cv::dnn::blobFromImage(image_float, image_blob);
+    cv::dnn::blobFromImage(image_opencv, image_blob);
 
-    // creating tensors
-    std::vector<Ort::Value> input_data;
-    std::vector<Ort::Value> output_data;
-
-    // inference on cpu (?), TODO: try to make inference on gpu
+    // inference on cpu TODO: try to make inference on gpu
     Ort::MemoryInfo memory_info =
         Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
-    // selecting inputs and outputs
-    std::vector<const char*> input_names{INPUT_NAME};
-    std::vector<const char*> output_names{OUTPUT_NAME};
+    // create shapes
+    std::vector<int64_t> input_shape = {1, 3, image_alice.Height(), image_alice.Width()};
+    std::vector<int64_t> output_shape = {1, 1, image_alice.Height(), image_alice.Width()};
 
-    std::vector<int64_t> input_shape = {1, 3, image_size.height, image_size.width};
-    std::vector<int64_t> output_shape = {1, 1, image_size.height, image_size.width};
+    // compute number of pixels inside tensors
+    int64_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<int64_t>());
+    int64_t output_size = input_size / 3;
 
-    size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<float>());
-    size_t output_size = std::accumulate(begin(output_shape), end(output_shape), 1, std::multiplies<float>());
-
+    // initialize tensors
     std::vector<float> input_tensor(input_size);
     std::vector<float> output_tensor(output_size);
 
+    // insert blob inside input tensor
     input_tensor.assign(image_blob.begin<float>(), image_blob.end<float>());
 
+    // create data payload (given to onnx run function)
+    std::vector<Ort::Value> input_data;
+    std::vector<Ort::Value> output_data;
+
+    // insert tesnors in data
     input_data.push_back(                                                                            //
         Ort::Value::CreateTensor<float>(                                                             //
             memory_info, input_tensor.data(), input_size, input_shape.data(), input_shape.size()     //
@@ -194,43 +210,42 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
             )                                                                                        //
     );                                                                                               //
 
+    // select inputs and outputs
+    std::vector<const char*> input_names{INPUT_NAME};
+    std::vector<const char*> output_names{OUTPUT_NAME};
+
     // run the inference
     session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), INPUT_COUNT, output_names.data(),
                 output_data.data(), OUTPUT_COUNT);
 
-    assert(output_data.size() == session.GetOutputCount() && output_data[0].IsTensor());
-    ALICEVISION_LOG_DEBUG("output_tensor_shape: " << output_data[0].GetTensorTypeAndShapeInfo().GetShape());
-
+    // apply sigmoid activation to model output
     std::transform(output_tensor.cbegin(), output_tensor.cend(), output_tensor.begin(), sigmoid);
 
+    // convert output_tensor to opencv image
     cv::Mat mask = cv::Mat(output_shape[2], output_shape[3], CV_32FC1);
     memcpy(mask.data, output_tensor.data(), output_tensor.size() * sizeof(float));
 
     return mask;
 }
 
-cv::Size resolution_shrink(cv::Size size_original)
+cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path,
+                          const std::pair<size_t, size_t> image_size)
 {
-    int longest_side = std::max(size_original.width, size_original.height);
-    float factor = MAX_SIZE / longest_side;
-    cv::Size size_shrank(size_original.width * factor, size_original.height * factor);
-    ALICEVISION_LOG_DEBUG("Resized image resolution: " << size_shrank);
+    // compute downscaling factor
+    int longest_side = std::max(image_size.first, image_size.second);
+    float factor = longest_side / MAX_SIZE;
+    ALICEVISION_LOG_DEBUG("Downscale factor: " << factor);
 
-    return size_shrank;
-}
+    // initialize final mask
+    cv::Mat average_mask(floor(image_size.second / factor), floor(image_size.first / factor), CV_32FC1);
 
-cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, const cv::Size image_size)
-{
-    cv::Size resized_size = resolution_shrink(image_size);
-    cv::Mat average_mask(resized_size.height, resized_size.width, CV_32FC1);
-
+    // retreive all jpg paths
     std::vector<cv::String> files;
-    std::string images_glob = images_path + "/*.jpg";
-    cv::glob(images_glob, files, false);
+    cv::glob(images_path + "/*.jpg", files, false);
 
     for(std::string file : files)
     {
-        cv::Mat mask = compute_mask(session, file, resized_size);
+        cv::Mat mask = compute_mask(session, file, factor);
         average_mask += mask;
     }
 
@@ -238,22 +253,25 @@ cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, 
     return average_mask;
 }
 
-std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask)
+std::vector<std::pair<cv::Point2f, float>> compute_circles(cv::Mat mask)
 {
-    std::vector<std::pair<cv::Point2f, float>> circles;
+    cv::imwrite("/tmp/img.png", mask);
 
     // [0.0, 1.0] -> [0, 255]
-    cv::Mat entier;
-    mask.convertTo(entier, CV_8UC1, 255);
+    mask.convertTo(mask, CV_8UC1, 255);
+
+    cv::imwrite("/tmp/img.png", mask);
 
     // detect edges with canny filter
-    cv::Mat canny_output;
-    Canny(entier, canny_output, 0, 255);
+    cv::Canny(mask, mask, 0, 255);
+
+    cv::imwrite("/tmp/img.png", mask);
 
     // detect contours
     std::vector<std::vector<cv::Point>> contours;
-    findContours(canny_output, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
+    std::vector<std::pair<cv::Point2f, float>> circles;
     for(size_t i = 0; i < contours.size(); i++)
     {
         // detect circle

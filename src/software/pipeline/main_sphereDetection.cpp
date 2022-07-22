@@ -78,10 +78,10 @@ int aliceVision_main(int argc, char** argv)
     auto size = resolution_verify(input_image_dir_path);
 
     // compute the mask
-    // cv::Mat mask = compute_mask_mean(session, input_image_dir_path, size);
+    cv::Mat mask = compute_mask_mean(session, input_image_dir_path, size);
 
     // extract circles from mask
-    // auto circles = compute_circles(mask);
+    auto circles = compute_circles(mask);
 
     return 0;
 }

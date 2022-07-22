@@ -11,9 +11,9 @@
 void model_explore(const Ort::Session session);
 
 std::pair<size_t, size_t> resolution_verify(std::string path_images);
-cv::Size resolution_shrink(cv::Size size_original);
 
-cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size);
-cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, const cv::Size image_size);
+cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const std::pair<size_t, size_t> image_size);
+cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path,
+                          const std::pair<size_t, size_t> image_size);
 
 std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask);
