@@ -19,6 +19,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include "nanoflann.hpp"
@@ -462,7 +463,7 @@ void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& 
 
     long t1 = clock();
 
-    // std::ofstream oFileT(fileNameDh.c_str());
+    // auto oFileT = _fs.open_write_text(fileNameDh);
     // oFileT << *_tetrahedralization; // TODO GEOGRAM
 
     mvsUtils::printfElapsedTime(t1);
@@ -3857,7 +3858,7 @@ void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t
     std::iota(idx.begin(), idx.end(), 0);
     std::shuffle(idx.begin(), idx.end(), generator);
 
-    std::ofstream csv(filePath);
+    auto csv = _fs.open_write_text(filePath);
     const char sep = ','; // separator
     csv << "fullnessScore" << sep <<
         "emptinessScore" << sep <<

@@ -9,8 +9,8 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -39,7 +39,7 @@ bool LargeScale::isSpaceSaved()
 
 void LargeScale::saveSpaceToFile()
 {
-    std::ofstream out(spaceFileName);
+    auto out = fs.open_write_text(spaceFileName);
     out << space[0].x << " " << space[1].x << " " << space[2].x << " " << space[3].x << " "
         << space[4].x << " " << space[5].x << " " << space[6].x << " " << space[7].x << "\n";
 
@@ -55,7 +55,7 @@ void LargeScale::saveSpaceToFile()
 
 void LargeScale::loadSpaceFromFile()
 {
-    std::ifstream in(spaceFileName);
+    auto in = fs.open_read_text(spaceFileName);
     in >> space[0].x >> space[1].x >> space[2].x >> space[3].x
        >> space[4].x >> space[5].x >> space[6].x >> space[7].x;
 
