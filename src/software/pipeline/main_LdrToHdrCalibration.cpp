@@ -28,7 +28,6 @@
 // Command line parameters
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <sstream>
 
@@ -43,7 +42,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 enum class ECalibrationMethod
 {
@@ -268,7 +266,7 @@ int aliceVision_main(int argc, char** argv)
         for(auto & group : groupedViews)
         {
             // Read from file
-            const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
+            const std::string samplesFilepath = (vfs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
             std::ifstream fileSamples(samplesFilepath, std::ios::binary);
             if (!fileSamples.is_open())
             {
@@ -300,7 +298,7 @@ int aliceVision_main(int argc, char** argv)
         for(auto & group : groupedViews)
         {
             // Read from file
-            const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
+            const std::string samplesFilepath = (vfs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
             std::ifstream fileSamples(samplesFilepath, std::ios::binary);
             if (!fileSamples.is_open())
             {
@@ -404,7 +402,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     const std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
-    const std::string htmlOutput = (fs::path(outputResponsePath).parent_path() / (std::string("response_") + methodName + std::string(".html"))).string();
+    const std::string htmlOutput = (vfs::path(outputResponsePath).parent_path() / (std::string("response_") + methodName + std::string(".html"))).string();
 
     response.write(outputResponsePath);
     response.writeHtml(htmlOutput, "response");

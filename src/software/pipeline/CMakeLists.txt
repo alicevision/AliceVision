@@ -460,6 +460,7 @@ alicevision_add_software(aliceVision_LdrToHdrCalibration
   SOURCE main_LdrToHdrCalibration.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_hdr
         aliceVision_sfmData
