@@ -16,6 +16,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -25,7 +26,6 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <map>
 
 // These constants define the current software version.
@@ -268,7 +268,7 @@ int aliceVision_main(int argc, char ** argv)
     }
 
     vfs::path outputFilename = vfs::path(outputFolder) / std::string(std::to_string(iter->first) + "_" + std::to_string(iter->second) + "_" + std::to_string(filteredMatches.getNbAllMatches()) + ".svg");
-    std::ofstream svgFile(outputFilename.string());
+    auto svgFile = fs.open_write_text(outputFilename);
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
   }

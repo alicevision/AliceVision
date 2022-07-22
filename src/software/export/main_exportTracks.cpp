@@ -19,6 +19,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <software/utils/sfmHelper/sfmIOHelper.hpp>
 
@@ -251,7 +252,7 @@ int aliceVision_main(int argc, char ** argv)
 
         vfs::path outputFilename = vfs::path(outputFolder) / std::string(std::to_string(viewI->getViewId()) + "_" + std::to_string(viewJ->getViewId()) + "_" + std::to_string(mapTracksCommon.size()) + ".svg");
 
-        std::ofstream svgFile(outputFilename.string());
+        auto svgFile = fs.open_write_text(outputFilename);
         svgFile << svgStream.closeSvgFile().str();
       }
     }

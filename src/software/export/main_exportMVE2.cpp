@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
@@ -18,7 +19,6 @@
 #include <cmath>
 #include <iterator>
 #include <iomanip>
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -99,7 +99,7 @@ bool exportToMVE2Format(
     const std::string filename = "synth_0.out";
     std::cout << "Writing bundle (" << cameraCount << " cameras, "
         << featureCount << " features): to " << filename << "...\n";
-    std::ofstream out((vfs::path(sOutDirectory) / filename).string());
+    auto out = fs.open_write_text(vfs::path(sOutDirectory) / filename);
     out << "drews 1.0\n";  // MVE expects this header
     out << cameraCount << " " << featureCount << "\n";
 
@@ -193,7 +193,7 @@ bool exportToMVE2Format(
 
       // To do:  trim any extra separator(s) from aliceVision name we receive, e.g.:
       // '/home/insight/aliceVision_KevinCain/aliceVision_Build/software/SfM/ImageDataset_SceauxCastle/images//100_7100.JPG'
-      std::ofstream file((vfs::path(sOutViewIteratorDirectory) / "meta.ini").string());
+      auto file = fs.open_write_text(vfs::path(sOutViewIteratorDirectory) / "meta.ini");
       file << fileOut.str();
       file.close();
 

@@ -10,10 +10,9 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
-
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -98,7 +97,7 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  std::ofstream outfile((vfs::path(outDirectory) / "sceneMeshlab.mlp").string());
+  auto outfile = fs.open_write_text(vfs::path(outDirectory) / "sceneMeshlab.mlp");
 
   // Init mlp file
   outfile << "<!DOCTYPE MeshLabDocument>" << outfile.widen('\n')

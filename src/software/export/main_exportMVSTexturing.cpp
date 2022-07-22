@@ -9,10 +9,10 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
 
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -125,7 +125,7 @@ int aliceVision_main(int argc, char **argv)
     const int h = pinhole_cam->h();
     
     // We can now create the .cam file for the View in the output dir 
-    std::ofstream outfile((vfs::path(outDirectory) / (vfs::path(view->getImagePath()).stem().string() + ".cam")).string());
+    auto outfile = fs.open_write_text(vfs::path(outDirectory) / (vfs::path(view->getImagePath()).stem().string() + ".cam"));
     // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
     // for full specs
     const int largerDim = w > h ? w : h;

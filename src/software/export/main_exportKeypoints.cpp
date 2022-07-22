@@ -24,7 +24,6 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <map>
 
 // These constants define the current software version.

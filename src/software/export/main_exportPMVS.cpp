@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
@@ -18,7 +19,6 @@
 #include <cmath>
 #include <iterator>
 #include <iomanip>
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -98,7 +98,7 @@ bool exportToPMVSFormat(
       const Mat34 P = camPinHole->getProjectiveEquivalent(pose);
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      std::ofstream file((vfs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
+      auto file = fs.open_write_text(vfs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt"));
       file << "CONTOUR" << os.widen('\n')
         << P.row(0) <<"\n"<< P.row(1) <<"\n"<< P.row(2) << os.widen('\n');
       file.close();
@@ -202,12 +202,12 @@ bool exportToPMVSFormat(
         }
         osVisData << os.widen('\n');
       }
-      std::ofstream file((vfs::path(sOutDirectory) / "vis.dat").string());
+      auto file = fs.open_write_text(vfs::path(sOutDirectory) / "vis.dat");
       file << osVisData.str();
       file.close();
     }
 
-    std::ofstream file((vfs::path(sOutDirectory) / "pmvs_options.txt").string());
+    auto file = fs.open_write_text(vfs::path(sOutDirectory) / "pmvs_options.txt");
     file << os.str();
     file.close();
   }
@@ -215,12 +215,13 @@ bool exportToPMVSFormat(
 }
 
 bool exportToBundlerFormat(
+  vfs::filesystem& fs,
   const SfMData & sfm_data,
   const std::string & sOutFile, //Output Bundle.rd.out file
   const std::string & sOutListFile)  //Output Bundler list.txt file
 {
-  std::ofstream os(sOutFile.c_str()	);
-  std::ofstream osList(sOutListFile.c_str()	);
+  auto os = fs.open_write_text(sOutFile);
+  auto osList = fs.open_write_text(sOutListFile);
   if (! os.is_open() || ! osList.is_open())
   {
     return false;
@@ -407,7 +408,7 @@ int aliceVision_main(int argc, char *argv[])
       nbCore,
       useVisData);
 
-    exportToBundlerFormat(sfmData,
+    exportToBundlerFormat(fs, sfmData,
       (vfs::path(outputFolder) /
       std::string("PMVS") /
       std::string("bundle.rd.out")).string(),

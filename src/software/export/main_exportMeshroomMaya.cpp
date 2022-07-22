@@ -14,8 +14,6 @@
 
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <fstream>
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
