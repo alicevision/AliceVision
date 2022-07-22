@@ -20,7 +20,6 @@
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -32,7 +31,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 using namespace aliceVision::track;
 using namespace aliceVision::sfm;
 
@@ -56,7 +54,7 @@ bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
     const sfmData::View& v = *(viewPair.second.get());
     
     if(name == std::to_string(v.getViewId()) ||
-       name == fs::path(v.getImagePath()).filename().string() ||
+       name == vfs::path(v.getImagePath()).filename().string() ||
        name == v.getImagePath())
     {
       out_viewId = v.getViewId();
@@ -275,10 +273,10 @@ int aliceVision_main(int argc, char **argv)
   }
 
   if(extraInfoFolder.empty())
-    extraInfoFolder = fs::path(outputSfM).parent_path().string();
+    extraInfoFolder = vfs::path(outputSfM).parent_path().string();
 
-  if (!fs::exists(extraInfoFolder))
-    fs::create_directory(extraInfoFolder);
+  if (!fs.exists(extraInfoFolder))
+    fs.create_directory(extraInfoFolder);
 
   // sequential reconstruction process
   aliceVision::system::Timer timer;
@@ -318,7 +316,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData,
     sfmParams,
     extraInfoFolder,
-    (fs::path(extraInfoFolder) / "sfm_log.html").string());
+    (vfs::path(extraInfoFolder) / "sfm_log.html").string());
 
   sfmEngine.initRandomSeed(randomSeed);
 
@@ -345,12 +343,12 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+  sfm::generateSfMReport(sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-  sfmDataIO::Save(fs, sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS|sfmDataIO::STRUCTURE));
+  sfmDataIO::Save(fs, sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS|sfmDataIO::STRUCTURE));
   sfmDataIO::Save(fs, sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
