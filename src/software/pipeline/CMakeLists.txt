@@ -262,7 +262,8 @@ if(ALICEVISION_BUILD_SFM)
   alicevision_add_software(aliceVision_cameraLocalization
     SOURCE main_cameraLocalization.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_localization
+    LINKS aliceVision_vfs
+          aliceVision_localization
           aliceVision_dataio
           aliceVision_image
           aliceVision_feature
