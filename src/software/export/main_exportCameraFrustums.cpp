@@ -14,7 +14,6 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -24,7 +23,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 /// Export camera frustrums as a triangle PLY file
 int aliceVision_main(int argc, char **argv)
@@ -94,8 +92,8 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // check that we can create the output folder/file
-  if(!fs::exists(fs::path(plyOutFilename).parent_path()))
-    if(!fs::create_directory(fs::path(plyOutFilename).parent_path()))
+  if (!fs.exists(vfs::path(plyOutFilename).parent_path()))
+    if (!fs.create_directory(vfs::path(plyOutFilename).parent_path()))
       return EXIT_FAILURE;
 
   // if sfmData have not structure, cameras are displayed as tiny normalized cones
