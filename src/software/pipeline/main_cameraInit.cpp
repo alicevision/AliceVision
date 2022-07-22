@@ -15,7 +15,6 @@
 #include <aliceVision/image/io.cpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 
@@ -38,23 +37,24 @@ using namespace aliceVision;
 using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 
 /**
  * @brief Recursively list all files from a folder with a specific extension
+ * @param[in] fs Virtual file system handle
  * @param[in] folderOrFile A file or foder path
  * @param[in] extensions An extensions filter
  * @param[out] outFiles A list of output image paths
  * @return true if folderOrFile have been load successfully
  */
-bool listFiles(const std::string& folderOrFile,
+bool listFiles(vfs::filesystem& fs,
+               const std::string& folderOrFile,
                const std::vector<std::string>& extensions,
                std::vector<std::string>& resources)
 {
-  if(fs::is_regular_file(folderOrFile))
+  if (fs.is_regular_file(folderOrFile))
   {
-    std::string fileExtension = fs::extension(folderOrFile);
+    std::string fileExtension = vfs::path(folderOrFile).extension().string();
     std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
     for(const std::string& extension: extensions)
     {
@@ -65,19 +65,19 @@ bool listFiles(const std::string& folderOrFile,
       }
     }
   }
-  else if(fs::is_directory(folderOrFile))
+  else if (fs.is_directory(folderOrFile))
   {
     // list all files of the folder
     std::vector<std::string> allFiles;
 
-    fs::directory_iterator endItr;
-    for(fs::directory_iterator itr(folderOrFile); itr != endItr; ++itr)
+    vfs::directory_iterator endItr;
+    for (vfs::directory_iterator itr(fs, folderOrFile); itr != endItr; ++itr)
       allFiles.push_back(itr->path().string());
 
     bool hasFile = false;
     for(const std::string& filePath: allFiles)
     {
-      if(listFiles(filePath, extensions, resources))
+      if (listFiles(fs, filePath, extensions, resources))
         hasFile = true;
     }
     return hasFile;
@@ -269,14 +269,14 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // check input folder
-  if(!imageFolder.empty() && !fs::exists(imageFolder) && !fs::is_directory(imageFolder))
+  if (!imageFolder.empty() && !fs.exists(imageFolder) && !fs.is_directory(imageFolder))
   {
     ALICEVISION_LOG_ERROR("The input folder doesn't exist");
     return EXIT_FAILURE;
   }
 
   // check sfm file
-  if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+  if (!sfmFilePath.empty() && !fs.exists(sfmFilePath) && !fs.is_regular_file(sfmFilePath))
   {
     ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
     return EXIT_FAILURE;
@@ -291,11 +291,11 @@ int aliceVision_main(int argc, char **argv)
 
   // ensure output folder exists
   {
-    const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
+    const std::string outputFolderPart = vfs::path(outputFilePath).parent_path().string();
 
-    if(!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+    if (!outputFolderPart.empty() && !fs.exists(outputFolderPart))
     {
-      if(!fs::create_directory(outputFolderPart))
+      if (!fs.create_directory(outputFolderPart))
       {
         ALICEVISION_LOG_ERROR("Cannot create output folder");
         return EXIT_FAILURE;
@@ -366,7 +366,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData::Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, image::getSupportedExtensions(), imagePaths))
+    if (listFiles(fs, imageFolder, image::getSupportedExtensions(), imagePaths))
     {
       std::vector<sfmData::View> incompleteViews(imagePaths.size());
 
@@ -406,7 +406,7 @@ int aliceVision_main(int argc, char **argv)
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
 
     // try to detect rig structure in the input folder
-    const fs::path parentPath = fs::path(view.getImagePath()).parent_path();
+    const vfs::path parentPath = vfs::path(view.getImagePath()).parent_path();
     if(boost::starts_with(parentPath.parent_path().stem().string(), "rig"))
     {
       try
@@ -436,7 +436,7 @@ int aliceVision_main(int argc, char **argv)
         IndexT frameId;
         std::string prefix;
         std::string suffix;
-        if(sfmDataIO::extractNumberFromFileStem(fs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
+        if (sfmDataIO::extractNumberFromFileStem(vfs::path(view.getImagePath()).stem().string(), frameId, prefix, suffix))
         {
           view.setFrameId(frameId);
         }
@@ -640,7 +640,7 @@ int aliceVision_main(int argc, char **argv)
         {
           // when we don't have a serial number, the folder will become part of the device ID.
           // This means that 2 images in different folder will NOT share intrinsics.
-          intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
+          intrinsic->setSerialNumber(vfs::path(view.getImagePath()).parent_path().string());
         }
         else if(groupCameraFallback == EGroupCameraFallback::IMAGE)
         {
@@ -774,7 +774,7 @@ int aliceVision_main(int argc, char **argv)
   {
     ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
     for(const auto& unsureSensor : unsureSensors)
-      ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
+      ALICEVISION_LOG_WARNING("image: '" << vfs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
                         << "\t- image camera brand: " << unsureSensor.first.first <<  std::endl
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
                         << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
@@ -791,7 +791,7 @@ int aliceVision_main(int argc, char **argv)
     {
       ss << "\t- camera brand: " << unknownSensor.first.first << "\n"
          << "\t- camera model: " << unknownSensor.first.second << "\n"
-         << "\t   - image: " << fs::path(unknownSensor.second).filename().string() << "\n";
+         << "\t   - image: " << vfs::path(unknownSensor.second).filename().string() << "\n";
     }
     ss << "Please add camera model(s) and sensor width(s) in the database.";
 
@@ -804,7 +804,7 @@ int aliceVision_main(int argc, char **argv)
     ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image(s):\n";
     for(const auto& intrinsicSetFromFocal35mm : intrinsicsSetFromFocal35mm)
     {
-      ss << "\t- image: " << fs::path(intrinsicSetFromFocal35mm.first).filename().string() << "\n"
+      ss << "\t- image: " << vfs::path(intrinsicSetFromFocal35mm.first).filename().string() << "\n"
          << "\t   - sensor width: " << intrinsicSetFromFocal35mm.second.first  << "\n"
          << "\t   - focal length: " << intrinsicSetFromFocal35mm.second.second << "\n";
     }
