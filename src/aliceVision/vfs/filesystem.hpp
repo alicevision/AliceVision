@@ -6,14 +6,12 @@
 
 #pragma once
 
+#include "fwd.hpp"
 #include "path.hpp"
 #include "directory_iterator.hpp"
 
 namespace aliceVision {
 namespace vfs {
-
-class istream;
-class ostream;
 
 /**
  * This is a wrapper for boost::filesystem that also optionally implements a virtual in-memory file
