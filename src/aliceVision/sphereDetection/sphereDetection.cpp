@@ -66,7 +66,7 @@ float sigmoid(float x)
     return 1 / (1 + exp(-x));
 }
 
-void model_explore(const Ort::Session session)
+void model_explore(Ort::Session& session)
 {
     // define allocator
     Ort::AllocatorWithDefaultOptions allocator;
@@ -250,21 +250,20 @@ cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, 
     return average_mask;
 }
 
-std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask)
+std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat prediction)
 {
     std::vector<std::pair<cv::Point2f, float>> circles;
 
     // [0.0, 1.0] -> [0, 255]
-    cv::Mat entier;
-    mask.convertTo(entier, CV_8UC1, 255);
+    cv::Mat mask;
+    prediction.convertTo(mask, CV_8UC1, 255);
 
     // detect edges with canny filter
-    cv::Mat canny_output;
-    Canny(entier, canny_output, 0, 255);
+    Canny(mask, mask, 0, 255);
 
     // detect contours
     std::vector<std::vector<cv::Point>> contours;
-    findContours(canny_output, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     for(size_t i = 0; i < contours.size(); i++)
     {

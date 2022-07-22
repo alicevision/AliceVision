@@ -74,6 +74,9 @@ int aliceVision_main(int argc, char** argv)
     Ort::SessionOptions session_options;
     Ort::Session session(env, input_model_path.c_str(), session_options);
 
+    // check model is correct
+    model_explore(session);
+
     // verify every image in the folder are of the same resolution
     auto size = resolution_verify(input_image_dir_path);
 

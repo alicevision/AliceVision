@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include <onnxruntime_cxx_api.h>
 
-void model_explore(const Ort::Session session);
+void model_explore(Ort::Session& session);
 
 cv::Size resolution_verify(std::string path_images);
 
