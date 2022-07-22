@@ -139,6 +139,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
 
 BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing)
 {
+  vfs::filesystem fs;
   const int nviews = 4;
   const int npoints = 3;
   const NViewDatasetConfigurator config;
@@ -180,7 +181,8 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   BundleAdjustmentCeres::CeresOptions options;
   options.setDenseBA();
 
-  std::shared_ptr<LocalBundleAdjustmentGraph> localBAGraph = std::make_shared<LocalBundleAdjustmentGraph>(sfmData);
+  std::shared_ptr<LocalBundleAdjustmentGraph> localBAGraph =
+          std::make_shared<LocalBundleAdjustmentGraph>(fs, sfmData);
   localBAGraph->setGraphDistanceLimit(1); // the default value is '1'
 
   /* DETAILS: 

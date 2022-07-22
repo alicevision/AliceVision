@@ -72,6 +72,7 @@ CCTagLocalizer::CCTagLocalizer(const sfmData::SfMData &sfmData,
 bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_data,
                                                    const std::string & feat_directory)
 {
+  vfs::filesystem fs;
   ALICEVISION_LOG_DEBUG("Build observations per view");
 
   // Build observations per view
@@ -119,7 +120,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(featuresFolders, id_view, _imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(fs, featuresFolders, id_view, _imageDescriber);
 
       // Filter descriptors to keep only the 3D reconstructed points
       _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);

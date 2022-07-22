@@ -11,14 +11,11 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 
-#include <boost/filesystem.hpp>
 #include <ceres/rotation.h>
 
 #include <aliceVision/camera/Equidistant.hpp>
 
 #include <fstream>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 
@@ -274,7 +271,7 @@ void BundleAdjustmentPanoramaCeres::CeresOptions::setSparseBA()
 bool BundleAdjustmentPanoramaCeres::Statistics::exportToFile(const std::string& folder, const std::string& filename) const
 {
   std::ofstream os;
-  os.open((fs::path(folder) / filename).string(), std::ios::app);
+  os.open((vfs::path(folder) / filename).string(), std::ios::app);
 
   if(!os.is_open())
   {

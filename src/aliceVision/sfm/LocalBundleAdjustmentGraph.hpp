@@ -9,6 +9,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 
 #include <lemon/list_graph.h>
 
@@ -30,7 +31,7 @@ class LocalBundleAdjustmentGraph
   
 public:
 
-  explicit LocalBundleAdjustmentGraph(const sfmData::SfMData& sfmData);
+  explicit LocalBundleAdjustmentGraph(vfs::filesystem& fs, const sfmData::SfMData& sfmData);
 
   /**
    * @brief Return the number of posed views for each graph-distance
@@ -311,6 +312,8 @@ private:
    * @param[in] intrinsicId
    */
   void removeIntrinsicEdgesFromTheGraph(IndexT intrinsicId);
+
+  vfs::filesystem& _fs;
 
   // Distances data
   // - Local BA needs to know the distance of all the old posed views to the new resected views.

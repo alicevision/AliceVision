@@ -11,14 +11,10 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <ceres/rotation.h>
 
 #include <fstream>
 
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -339,7 +335,7 @@ void BundleAdjustmentSymbolicCeres::CeresOptions::setSparseBA()
 bool BundleAdjustmentSymbolicCeres::Statistics::exportToFile(const std::string& folder, const std::string& filename) const
 {
   std::ofstream os;
-  os.open((fs::path(folder) / filename).string(), std::ios::app);
+  os.open((vfs::path(folder) / filename).string(), std::ios::app);
 
   if(!os.is_open())
   {

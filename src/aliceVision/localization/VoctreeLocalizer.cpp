@@ -364,7 +364,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(featuresFolders, id_view, *imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(fs, featuresFolders, id_view, *imageDescriber);
 
       if(descType == _voctreeDescType)
       {

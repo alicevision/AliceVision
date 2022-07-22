@@ -18,10 +18,8 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <aliceVision/utils/Histogram.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
 namespace aliceVision {
@@ -90,7 +88,7 @@ public:
 
 public:
 
-  ReconstructionEngine_sequentialSfM(const sfmData::SfMData& sfmData,
+  ReconstructionEngine_sequentialSfM(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
                                      const Params& params,
                                      const std::string& outputFolder,
                                      const std::string& loggingFile = "");

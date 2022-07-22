@@ -21,31 +21,41 @@ namespace sfm {
 
 /**
  * @brief Load Regions (Features & Descriptors) for one view.
+ * @param[in] fs Virtual file system handle
  * @param[in] folders The list of featureFolders
  * @param[in] viewId The view id
  * @param[in] imageDescriber The imageDescriber type
  * @return loaded Regions
  */
-std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& folders, IndexT viewId, const feature::ImageDescriber& imageDescriber);
+std::unique_ptr<feature::Regions> loadRegions(vfs::filesystem& fs,
+                                              const std::vector<std::string>& folders,
+                                              IndexT viewId,
+                                              const feature::ImageDescriber& imageDescriber);
 
 /**
  * @brief Load Features for one view.
+ * @param[in] fs Virtual file system handle
  * @param[in] folders The list of featureFolders
  * @param[in] viewId The view id
  * @param[in] imageDescriber The imageDescriber type
  * @return loaded Regions (with only features)
  */
-std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& folders, IndexT viewId, const feature::ImageDescriber& imageDescriber);
+std::unique_ptr<feature::Regions> loadFeatures(vfs::filesystem& fs,
+                                               const std::vector<std::string>& folders,
+                                               IndexT viewId,
+                                               const feature::ImageDescriber& imageDescriber);
 
 /**
  * @brief Load Features for each given view.
+ * @param[in] fs Virtual file system handle
  * @param[in,out] featuresPerDescPerView
  * @param[in] viewIds The given view list
  * @param[in] folders The feature Folders
  * @param[in] imageDescriberTypes The imageDescriber types
  * @return true if the features are correctlty loaded
  */
-bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
+bool loadFeaturesPerDescPerView(vfs::filesystem& fs,
+                                std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
                                 const std::vector<IndexT>& viewIds, const std::vector<std::string>& folders,
                                 const std::vector<feature::EImageDescriberType>& imageDescriberTypes);
 

@@ -220,14 +220,14 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations(const rotationAver
         }
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
         graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
-        graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+        graph::exportToGraphvizData((vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
 
         /*
         using namespace htmlDocument;
         std::ostringstream os;
         os << "<br>" << sGraph_name << "<br>"
            << "<img src=\""
-           << (fs::path(_sOutDirectory) / (sGraph_name + "svg")).string()
+           << (vfs::path(_sOutDirectory) / (sGraph_name + "svg")).string()
            << "\" height=\"600\">\n";
         _htmlDocStream->pushInfo(os.str());
         */
@@ -257,7 +257,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<I
 
   if(!_loggingFile.empty())
   {
-    sfmDataIO::Save(fs, _sfmData,(fs::path(_loggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(),
+    sfmDataIO::Save(fs, _sfmData, (vfs::path(_loggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(),
                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS));
   }
 
@@ -360,7 +360,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
     if (!_loggingFile.empty())
     {
       sfmDataIO::Save(fs, _sfmData,
-                     (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
+                     (vfs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
                      sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
   }
@@ -382,14 +382,14 @@ bool ReconstructionEngine_globalSfM::Adjust()
   if(success)
   {
     if(!_loggingFile.empty())
-      sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
+      sfmDataIO::Save(fs, _sfmData, (vfs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
                       sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
     // refine only structure and rotations & translations
     success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
 
     if(success && !_loggingFile.empty())
-      sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
+      sfmDataIO::Save(fs, _sfmData, (vfs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
                       sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
@@ -398,7 +398,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
     // refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
     success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ALL);
     if(success && !_loggingFile.empty())
-      sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
+      sfmDataIO::Save(fs, _sfmData, (vfs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
                       sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
@@ -414,7 +414,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
                         "\t- # landmarks after angular filter: " << pointcount_angular_filter);
 
   if(!_loggingFile.empty())
-    sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(),
+    sfmDataIO::Save(fs, _sfmData, (vfs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(),
                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
   // check that poses & intrinsic cover some measures (after outlier removal)
@@ -435,7 +435,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
   success = BA.adjust(_sfmData, refineOptions);
 
   if(success && !_loggingFile.empty())
-    sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+    sfmDataIO::Save(fs, _sfmData, (vfs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
   return success;
 }
@@ -665,7 +665,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       std::set<IndexT> set_ViewIds;
       std::transform(_sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
-      graph::exportToGraphvizData((fs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
+      graph::exportToGraphvizData((vfs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
     }
 
     // Log a relative pose graph
@@ -681,14 +681,14 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       }
       const std::string sGraph_name = "global_relative_rotation_pose_graph";
       graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
-      graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+      graph::exportToGraphvizData((vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
       /*
       using namespace htmlDocument;
       std::ostringstream os;
 
       os << "<br>" << "global_relative_rotation_pose_graph" << "<br>"
          << "<img src=\""
-         << (fs::path(_sOutDirectory) / "global_relative_rotation_pose_graph.svg").string()
+         << (vfs::path(_sOutDirectory) / "global_relative_rotation_pose_graph.svg").string()
          << "\" height=\"600\">\n";
       _htmlDocStream->pushInfo(os.str());
       */

@@ -442,15 +442,13 @@ bool ColorHarmonizationEngineGlobal::Process()
 
 bool ColorHarmonizationEngineGlobal::ReadInputData()
 {
-  vfs::filesystem fs;
-
-  if(!fs::is_directory( _outputDirectory))
+  if (!_fs.is_directory( _outputDirectory))
   {
     std::cerr << "The output folder is not a valid folder" << std::endl;
     return false;
   }
 
-  if(!fs::is_regular_file(_sfmDataFilename ))
+  if (!_fs.is_regular_file(_sfmDataFilename ))
   {
     std::cerr << "Invalid input sfm_data file: " << _sfmDataFilename << std::endl;
     return false;
@@ -458,7 +456,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
 
   // a. Read input scenes views
   SfMData sfmData;
-  if (!sfmDataIO::Load(fs, sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
+  if (!sfmDataIO::Load(_fs, sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
   {
     std::cerr << "The input file \""<< _sfmDataFilename << "\" cannot be read" << std::endl;
     return false;
@@ -474,14 +472,14 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // b. Read matches
-  if (!sfm::loadPairwiseMatches(fs, _pairwiseMatches, sfmData, _matchesFolders, _descTypes))
+  if (!sfm::loadPairwiseMatches(_fs, _pairwiseMatches, sfmData, _matchesFolders, _descTypes))
   {
     std::cerr << "Can't load matches files" << std::endl;
     return false;
   }
 
   // Read features:
-  if(!sfm::loadRegionsPerView(fs, _regionsPerView, sfmData, _featuresFolders, _descTypes))
+  if (!sfm::loadRegionsPerView(_fs, _regionsPerView, sfmData, _featuresFolders, _descTypes))
   {
     std::cerr << "Can't load feature files" << std::endl;
     return false;

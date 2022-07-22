@@ -314,6 +314,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   sfm::ReconstructionEngine_sequentialSfM sfmEngine(
+    fs,
     sfmData,
     sfmParams,
     extraInfoFolder,

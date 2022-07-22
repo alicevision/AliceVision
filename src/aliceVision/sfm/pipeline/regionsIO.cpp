@@ -8,19 +8,17 @@
 #include "regionsIO.hpp"
 
 #include <boost/progress.hpp>
-#include <boost/filesystem.hpp>
 
 #include <atomic>
 #include <cassert>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
 
 using namespace sfmData;
 
-std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& folders,
+std::unique_ptr<feature::Regions> loadRegions(vfs::filesystem& fs,
+                                              const std::vector<std::string>& folders,
                                               IndexT viewId,
                                               const feature::ImageDescriber& imageDescriber)
 {
@@ -34,10 +32,10 @@ std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& fo
 
   for(const std::string& folder : folders)
   {
-    const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
-    const fs::path descPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".desc");
+    const vfs::path featPath = vfs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
+    const vfs::path descPath = vfs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".desc");
 
-    if(fs::exists(featPath) && fs::exists(descPath))
+    if (fs.exists(featPath) && fs.exists(descPath))
     {
       featFilename = featPath.string();
       descFilename = descPath.string();
@@ -73,7 +71,8 @@ std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& fo
   return regionsPtr;
 }
 
-std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& folders,
+std::unique_ptr<feature::Regions> loadFeatures(vfs::filesystem& fs,
+                                               const std::vector<std::string>& folders,
                                               IndexT viewId,
                                               const feature::ImageDescriber& imageDescriber)
 {
@@ -88,16 +87,16 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
   std::set<std::string> foldersSet;
   for(const auto& folder : folders)
   {
-    if(fs::exists(folder))
+    if (fs.exists(folder))
     {
-      foldersSet.insert(fs::canonical(folder).string());
+      foldersSet.insert(fs.canonical(folder).string());
     }
   }
 
   for(const auto& folder : foldersSet)
   {
-    const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
-    if(fs::exists(featPath))
+    const vfs::path featPath = vfs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
+    if (fs.exists(featPath))
       featFilename = featPath.string();
   }
 
@@ -128,7 +127,8 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
   return regionsPtr;
 }
 
-bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
+bool loadFeaturesPerDescPerView(vfs::filesystem& fs,
+                                std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
                                 const std::vector<IndexT>& viewIds, const std::vector<std::string>& folders,
                                 const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
@@ -168,7 +168,8 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
     {
       try
       {
-        featuresPerView.at(viewIdx) = loadFeatures(folders, viewIds.at(viewIdx), *imageDescribers.at(descIdx));
+        featuresPerView.at(viewIdx) = loadFeatures(fs, folders, viewIds.at(viewIdx),
+                                                   *imageDescribers.at(descIdx));
       }
       catch(const std::exception& e)
       {
@@ -210,7 +211,9 @@ bool loadRegionsPerView(vfs::filesystem& fs, feature::RegionsPerView& regionsPer
      {
        if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));
+         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(fs, featuresFolders,
+                                                                    iter->second.get()->getViewId(),
+                                                                    *(imageDescribers.at(i)));
          if(regionsPtr)
          {
 #pragma omp critical
@@ -257,7 +260,9 @@ bool loadFeaturesPerView(vfs::filesystem& fs, feature::FeaturesPerView& features
     {
       for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
       {
-        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(featuresFolders, iter->second.get()->getViewId(), *imageDescribers.at(i));
+        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(fs, featuresFolders,
+                                                                    iter->second.get()->getViewId(),
+                                                                    *imageDescribers.at(i));
 
 #pragma omp critical
         {

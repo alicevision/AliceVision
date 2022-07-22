@@ -37,6 +37,7 @@ using namespace aliceVision::sfmData;
 // Test a scene where all the camera intrinsics are known
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
 {
+  vfs::filesystem fs;
   const int nviews = 6;
   const int npoints = 128;
   const NViewDatasetConfigurator config;
@@ -55,6 +56,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
   sfmParams.lockAllIntrinsics = true;
 
   ReconstructionEngine_sequentialSfM sfmEngine(
+    fs,
     sfmData2,
     sfmParams,
     "./",
@@ -86,6 +88,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
 // Test a scene where only the two first camera have known intrinsics
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
 {
+  vfs::filesystem fs;
   const int nviews = 6;
   const int npoints = 256;
   const NViewDatasetConfigurator config;
@@ -114,6 +117,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   sfmParams.lockAllIntrinsics = true;
 
   ReconstructionEngine_sequentialSfM sfmEngine(
+    fs,
     sfmData2,
     sfmParams,
     "./",
@@ -147,6 +151,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
 
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
 {
+  vfs::filesystem fs;
   const int nbPoses = 10;
   const int nbPoints = 128;
 
@@ -166,6 +171,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
   sfmParams.lockAllIntrinsics = true;
 
   ReconstructionEngine_sequentialSfM sfmEngine(
+    fs,
     sfmData2,
     sfmParams,
     "./",
