@@ -31,7 +31,7 @@ public:
   
   static bool isSupported(const std::string &ext);
   
-  FeederImpl(vfs::filesystem& fs) : _isInit(false) {}
+  FeederImpl(vfs::filesystem& fs) : _fs{fs}, _isInit(false) {}
   
   FeederImpl(vfs::filesystem& fs, const std::string& imagePath, const std::string& calibPath);
   
@@ -46,8 +46,6 @@ public:
       ALICEVISION_LOG_WARNING("Image feed is not initialized ");
       return false;
     }
-
-    vfs::filesystem fs;
 
     // dealing with SFM mode
     if(_sfmMode)
@@ -75,7 +73,7 @@ public:
 
       ALICEVISION_LOG_DEBUG(imageName);
 
-      image::readImage(fs, imageName, image, image::EImageColorSpace::NO_CONVERSION);
+      image::readImage(_fs, imageName, image, image::EImageColorSpace::NO_CONVERSION);
       return true;
     }
     return true;
@@ -97,7 +95,6 @@ private:
                      std::string &imageName,
                      bool &hasIntrinsics)
   {
-    vfs::filesystem fs;
     // if there are no more images to process
     if(_viewIterator == _sfmdata.getViews().end())
     {
@@ -107,7 +104,7 @@ private:
     // get the image
     const sfmData::View *view = _viewIterator->second.get();
     imageName = view->getImagePath();
-    image::readImage(fs, imageName, image, image::EImageColorSpace::NO_CONVERSION);
+    image::readImage(_fs, imageName, image, image::EImageColorSpace::NO_CONVERSION);
 
     // get the associated Intrinsics
     if((view->getIntrinsicId() == UndefinedIndexT) || (!_sfmdata.getIntrinsics().count(view->getIntrinsicId())))
@@ -140,6 +137,7 @@ private:
   static const std::vector<std::string> supportedExtensions;
   
 private:
+  vfs::filesystem& _fs;
   bool _isInit;
   bool _withCalibration;
   // It contains the images to be fed
@@ -162,8 +160,9 @@ bool ImageFeed::FeederImpl::isSupported(const std::string &ext)
 }
 
 ImageFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, const std::string& imagePath, const std::string& calibPath)
-: _isInit(false)
-, _withCalibration(false)
+    : _fs{fs}
+    , _isInit(false)
+    , _withCalibration(false)
 {
 //    ALICEVISION_LOG_DEBUG(imagePath);
   // if it is a json, calibPath is neglected

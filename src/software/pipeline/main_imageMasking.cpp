@@ -262,13 +262,16 @@ int main(int argc, char **argv)
 
             process = [&](OutImage& result, const std::string& inputPath)
             {
-                imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.maxSaturation, hsv.minValue, hsv.maxValue);
+                imageMasking::hsv(fs, result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.maxSaturation, hsv.minValue, hsv.maxValue);
             };
             break;
         }
         case EAlgorithm::AutoGrayscaleThreshold:
         {
-            process = imageMasking::autoGrayscaleThreshold;
+            process = [&](OutImage& result, const std::string& inputPath)
+            {
+                imageMasking::autoGrayscaleThreshold(fs, result, inputPath);
+            };
             break;
         }
         case EAlgorithm::GrabCut:
