@@ -16,6 +16,7 @@
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/config.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -62,7 +63,7 @@ ReconstructionEngine_globalSfM::~ReconstructionEngine_globalSfM()
   if(!_loggingFile.empty())
   {
     // Save the reconstruction Log
-    std::ofstream htmlFileStream(_loggingFile.c_str());
+    auto htmlFileStream = _fs.open_write_text(_loggingFile);
     htmlFileStream << _htmlDocStream->getDoc();
   }
 }

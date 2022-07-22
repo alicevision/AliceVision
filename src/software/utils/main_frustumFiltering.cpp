@@ -55,6 +55,7 @@ PairSet BuildPairsFromStructureObservations(const sfmData::SfMData& sfmData)
 
 /// Build a list of pair from the camera frusta intersections
 PairSet BuildPairsFromFrustumsIntersections(
+  vfs::filesystem& fs,
   const sfmData::SfMData & sfmData,
   const double z_near = -1., // default near plane
   const double z_far = -1.,  // default far plane
@@ -62,7 +63,7 @@ PairSet BuildPairsFromFrustumsIntersections(
 {
   const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
-    frustum_filter.export_Ply((vfs::path(sOutDirectory) / "frustums.ply").string());
+    frustum_filter.export_Ply(fs, (vfs::path(sOutDirectory) / "frustums.ply").string());
   return frustum_filter.getFrustumIntersectionPairs();
 }
 
@@ -149,7 +150,7 @@ int aliceVision_main(int argc, char **argv)
 
   aliceVision::system::Timer timer;
 
-  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, vfs::path(outputFilename).parent_path().string());
+  const PairSet pairs = BuildPairsFromFrustumsIntersections(fs, sfmData, zNear, zFar, vfs::path(outputFilename).parent_path().string());
   /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
 
   ALICEVISION_LOG_INFO("# pairs: " << pairs.size());

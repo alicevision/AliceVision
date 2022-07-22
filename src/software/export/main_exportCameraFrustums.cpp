@@ -100,7 +100,7 @@ int aliceVision_main(int argc, char **argv)
   const sfm::FrustumFilter frustumFilter(sfmData);
   if(!plyOutFilename.empty())
   {
-    if(frustumFilter.export_Ply(plyOutFilename))
+    if(frustumFilter.export_Ply(fs, plyOutFilename))
       return EXIT_SUCCESS;
   }
 

@@ -224,7 +224,7 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "sfm_report.html").string());
+  sfm::generateSfMReport(fs, sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");

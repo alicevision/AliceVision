@@ -29,6 +29,7 @@
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -701,7 +702,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
 
       // export and print information about the refinement
       const BundleAdjustmentCeres::Statistics& statistics = BA.getStatistics();
-      statistics.exportToFile(_outputFolder, "bundle_adjustment.csv");
+      statistics.exportToFile(_fs, _outputFolder, "bundle_adjustment.csv");
       statistics.show();
     }
 
@@ -813,7 +814,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     _htmlDocStream->pushXYChart(xBinTracks, observationsLengthHistogram.GetHist(),"3DtoTracksSize");
 
     // save the reconstruction Log
-    std::ofstream htmlFileStream(_htmlLogFile.c_str());
+    auto htmlFileStream = _fs.open_write_text(_htmlLogFile);
     htmlFileStream << _htmlDocStream->getDoc();
   }
 
@@ -1205,7 +1206,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
       _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
-      std::ofstream htmlFileStream((vfs::path(_outputFolder) / _htmlLogFile).string());
+      auto htmlFileStream = _fs.open_write_text((vfs::path(_outputFolder) / _htmlLogFile).string());
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }

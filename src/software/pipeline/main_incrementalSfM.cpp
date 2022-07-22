@@ -343,7 +343,7 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "sfm_report.html").string());
+  sfm::generateSfMReport(fs, sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);

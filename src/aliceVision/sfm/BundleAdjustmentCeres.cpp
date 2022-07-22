@@ -13,10 +13,9 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <ceres/rotation.h>
-
-#include <fstream>
 
 namespace aliceVision {
 namespace sfm {
@@ -318,11 +317,10 @@ void BundleAdjustmentCeres::CeresOptions::setSparseBA()
   }
 }
 
-bool BundleAdjustmentCeres::Statistics::exportToFile(const std::string& folder, const std::string& filename) const
+bool BundleAdjustmentCeres::Statistics::exportToFile(vfs::filesystem& fs, const std::string& folder,
+                                                     const std::string& filename) const
 {
-  std::ofstream os;
-  os.open((vfs::path(folder) / filename).string(), std::ios::app);
-
+  auto os = fs.open_write((vfs::path(folder) / filename).string(), std::ios::app);
   if(!os.is_open())
   {
     ALICEVISION_LOG_DEBUG("Unable to open the Bundle adjustment statistics file: '" << filename << "'.");

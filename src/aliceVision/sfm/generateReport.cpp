@@ -7,15 +7,16 @@
 
 #include "generateReport.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
-
 #include <aliceVision/utils/Histogram.hpp>
+#include <aliceVision/vfs/ostream.hpp>
+
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 namespace aliceVision {
 namespace sfm {
 
-bool generateSfMReport(const sfmData::SfMData& sfmData,
+bool generateSfMReport(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
                        const std::string& htmlFilename)
 {
   // Compute mean,max,median residual values per View
@@ -165,7 +166,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
     }
   }
 
-  std::ofstream htmlFileStream(htmlFilename.c_str());
+  auto htmlFileStream = fs.open_write_text(htmlFilename);
   htmlFileStream << htmlDocStream.getDoc();
   const bool bOk = !htmlFileStream.bad();
   return bOk;

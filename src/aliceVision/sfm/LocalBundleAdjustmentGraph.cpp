@@ -7,10 +7,10 @@
 #include "LocalBundleAdjustmentGraph.hpp"
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <lemon/bfs.h>
 
-#include <fstream>
 #include <algorithm>
 
 namespace aliceVision {
@@ -107,8 +107,7 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
 void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& folder, const std::string& filename)
 {
   ALICEVISION_LOG_DEBUG("Exporting intrinsics history...");
-  std::ofstream os;
-  os.open((vfs::path(folder) / filename).string(), std::ios::app);
+  auto os = _fs.open_write((vfs::path(folder) / filename).string(), std::ios::app);
   os.seekp(0, std::ios::end); // put the cursor at the end
 
   for(const auto& intrinsicHistoryPair : _intrinsicsHistory)
@@ -599,7 +598,8 @@ double LocalBundleAdjustmentGraph::standardDeviation(const std::vector<T>& data)
 
 
 
-void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, const std::string& folder, const std::string& nameComplement)
+void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData,
+                                           const std::string& folder, const std::string& nameComplement)
 {
   if (!_fs.exists(folder))
     _fs.create_directory(folder);
@@ -636,8 +636,7 @@ void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, cons
   dotStream << "}" << "\n";
   
   const std::string dotFilepath = (vfs::path(folder) / ("graph_" + std::to_string(_viewIdPerNode.size())  + "_" + nameComplement + ".dot")).string();
-  std::ofstream dotFile;
-  dotFile.open(dotFilepath);
+  auto dotFile = _fs.open_write_text(dotFilepath);
   dotFile.write(dotStream.str().c_str(), dotStream.str().length());
   dotFile.close();
   

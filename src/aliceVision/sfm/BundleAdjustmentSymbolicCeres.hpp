@@ -80,11 +80,13 @@ public:
      * @brief Export statistics about bundle adjustment in a CSV file
      *  The contents of the file have been writen such that it is easy to handle it with
      *  a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice)
+     * @param[in] fs Virtual file system handle
      * @param[in] folder The folder where you want to save the statistics file
      * @param[in] filename The filename of the statistics file
      * @return false it cannot open the file, true if it succeed
      */
-    bool exportToFile(const std::string& folder, const std::string& filename = "statistics.csv") const;
+    bool exportToFile(vfs::filesystem& fs, const std::string& folder,
+                      const std::string& filename = "statistics.csv") const;
 
     /**
      * @brief  Display statistics about bundle adjustment in the terminal

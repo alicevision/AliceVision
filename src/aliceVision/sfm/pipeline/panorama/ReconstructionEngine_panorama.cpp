@@ -33,6 +33,7 @@
 #include <aliceVision/matching/supportEstimation.hpp>
 
 #include <aliceVision/sfm/BundleAdjustmentPanoramaCeres.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -246,7 +247,7 @@ ReconstructionEngine_panorama::~ReconstructionEngine_panorama()
   if(!_loggingFile.empty())
   {
     // Save the reconstruction Log
-    std::ofstream htmlFileStream(_loggingFile.c_str());
+    auto htmlFileStream = _fs.open_write_text(_loggingFile);
     htmlFileStream << _htmlDocStream->getDoc();
   }
 }

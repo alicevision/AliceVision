@@ -33,7 +33,7 @@ public:
   PairSet getFrustumIntersectionPairs() const;
 
   /// export defined frustum in PLY file for viewing
-  bool export_Ply(const std::string& filename) const;
+  bool export_Ply(vfs::filesystem& fs, const std::string& filename) const;
 
 private:
 

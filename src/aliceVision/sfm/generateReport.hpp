@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <aliceVision/vfs/fwd.hpp>
 #include <string>
 
 namespace aliceVision {
@@ -19,11 +20,13 @@ namespace sfm {
 
 /**
  * @brief generate a report for the structure from motion
+ * @param fs Virtual file system handle
  * @param sfmData The input sfmData
  * @param htmlFilename The filename of the HTML report
  * @return true if ok
  */
-bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlFilename);
+bool generateSfMReport(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
+                       const std::string& htmlFilename);
 
 } // namespace sfm
 } // namespace aliceVision

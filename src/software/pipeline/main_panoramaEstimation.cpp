@@ -402,7 +402,7 @@ int aliceVision_main(int argc, char **argv)
   // Final report
   ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
-  sfm::generateSfMReport(outSfmData, (vfs::path(outDirectory) / "sfm_report.html").string());
+  sfm::generateSfMReport(fs, outSfmData, (vfs::path(outDirectory) / "sfm_report.html").string());
 
   // Add offsets to rotations
   for (auto& pose: outSfmData.getPoses())
