@@ -58,6 +58,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_featureExtraction.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_gpu
           aliceVision_image
           aliceVision_feature

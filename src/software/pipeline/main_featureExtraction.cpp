@@ -24,7 +24,6 @@
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <string>
@@ -43,22 +42,22 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 class FeatureExtractor
 {
   struct ViewJob
   {
+    vfs::filesystem& fs;
     const sfmData::View& view;
     std::size_t memoryConsuption = 0;
     std::string outputBasename;
     std::vector<std::size_t> cpuImageDescriberIndexes;
     std::vector<std::size_t> gpuImageDescriberIndexes;
 
-    ViewJob(const sfmData::View& view,
-            const std::string& outputFolder)
-      : view(view)
-      , outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
+    ViewJob(vfs::filesystem& fs, const sfmData::View& view, const std::string& outputFolder)
+      : fs{fs}
+      , view(view)
+      , outputBasename(vfs::path(vfs::path(outputFolder) / vfs::path(std::to_string(view.getViewId()))).string())
     {}
 
     ~ViewJob() = default;
@@ -90,8 +89,8 @@ class FeatureExtractor
         const std::shared_ptr<feature::ImageDescriber>& imageDescriber = imageDescribers.at(i);
         feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
 
-        if(fs::exists(getFeaturesPath(imageDescriberType)) &&
-           fs::exists(getDescriptorPath(imageDescriberType)))
+        if (fs.exists(getFeaturesPath(imageDescriberType)) &&
+           fs.exists(getDescriptorPath(imageDescriberType)))
           continue;
 
         memoryConsuption += imageDescriber->getMemoryConsumption(view.getWidth(), view.getHeight());
@@ -106,8 +105,9 @@ class FeatureExtractor
 
 public:
 
-  explicit FeatureExtractor(const sfmData::SfMData& sfmData)
-    : _sfmData(sfmData)
+  explicit FeatureExtractor(vfs::filesystem& fs, const sfmData::SfMData& sfmData)
+    : _fs{fs}
+    , _sfmData(sfmData)
   {}
 
   void setRange(int rangeStart, int rangeSize)
@@ -155,7 +155,7 @@ public:
     for(auto it = itViewBegin; it != itViewEnd; ++it)
     {
       const sfmData::View& view = *(it->second.get());
-      ViewJob viewJob(view, _outputFolder);
+      ViewJob viewJob(_fs, view, _outputFolder);
 
       viewJob.setImageDescribers(_imageDescribers);
       jobMaxMemoryConsuption = std::max(jobMaxMemoryConsuption, viewJob.memoryConsuption);
@@ -251,17 +251,17 @@ private:
 
     image::readImage(fs, job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
 
-    if(!_masksFolder.empty() && fs::exists(_masksFolder))
+    if (!_masksFolder.empty() && fs.exists(_masksFolder))
     {
-      const auto masksFolder = fs::path(_masksFolder);
-      const auto idMaskPath = masksFolder / fs::path(std::to_string(job.view.getViewId())).replace_extension("png");
-      const auto nameMaskPath = masksFolder / fs::path(job.view.getImagePath()).filename().replace_extension("png");
+      const auto masksFolder = vfs::path(_masksFolder);
+      const auto idMaskPath = masksFolder / vfs::path(std::to_string(job.view.getViewId())).replace_extension("png");
+      const auto nameMaskPath = masksFolder / vfs::path(job.view.getImagePath()).filename().replace_extension("png");
 
-      if(fs::exists(idMaskPath))
+      if (fs.exists(idMaskPath))
       {
         image::readImage(fs, idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
       }
-      else if(fs::exists(nameMaskPath))
+      else if (fs.exists(nameMaskPath))
       {
         image::readImage(fs, nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
       }
@@ -326,6 +326,7 @@ private:
     }
   }
 
+  vfs::filesystem& _fs;
   const sfmData::SfMData& _sfmData;
   std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
   std::string _masksFolder;
@@ -442,9 +443,9 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // create output folder
-  if(!fs::exists(outputFolder))
+  if (!fs.exists(outputFolder))
   {
-    if(!fs::create_directory(outputFolder))
+    if (!fs.create_directory(outputFolder))
     {
       ALICEVISION_LOG_ERROR("Cannot create output folder");
       return EXIT_FAILURE;
@@ -466,7 +467,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // create feature extractor
-  FeatureExtractor extractor(sfmData);
+  FeatureExtractor extractor(fs, sfmData);
   extractor.setMasksFolder(masksFolder);
   extractor.setOutputFolder(outputFolder);
 
