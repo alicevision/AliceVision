@@ -138,9 +138,9 @@ bool splitDualFisheye(vfs::filesystem& fs, const std::string& imagePath,
   return true;
 }
 
-bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
+bool splitEquirectangular(vfs::filesystem& fs, const std::string& imagePath, const std::string& outputFolder,
+                          std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
-  vfs::filesystem fs;
   image::Image<image::RGBColor> imageSource;
   image::readImage(fs, imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
@@ -208,9 +208,9 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 }
 
 
-bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
+bool splitEquirectangularDemo(vfs::filesystem& fs, const std::string& imagePath, const std::string& outputFolder,
+                              std::size_t nbSplits, std::size_t splitResolution, double fovDegree)
 {
-  vfs::filesystem fs;
   image::Image<image::RGBColor> imageSource;
   image::readImage(fs, imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
@@ -434,9 +434,9 @@ int aliceVision_main(int argc, char** argv)
     if(splitMode == "equirectangular")
     {
       if(equirectangularDemoMode)
-        hasCorrectPath = splitEquirectangularDemo(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
+        hasCorrectPath = splitEquirectangularDemo(fs, imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
       else
-        hasCorrectPath = splitEquirectangular(imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
+        hasCorrectPath = splitEquirectangular(fs, imagePath, outputFolder, equirectangularNbSplits, equirectangularSplitResolution, fov);
     }
     else if(splitMode == "dualfisheye")
     {

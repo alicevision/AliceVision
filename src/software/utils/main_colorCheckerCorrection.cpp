@@ -99,10 +99,10 @@ void processColorCorrection(image::Image<image::RGBAfColor>& image, cv::Mat& ref
 }
 
 
-void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+void saveImage(vfs::filesystem& fs, image::Image<image::RGBAfColor>& image,
+               const std::string& inputPath, const std::string& outputPath,
                const image::EStorageDataType storageDataType)
 {
-    vfs::filesystem fs;
     // Read metadata path
     std::string metadataFilePath;
 
@@ -279,7 +279,7 @@ int aliceVision_main(int argc, char** argv)
                 processColorCorrection(image, colorData);
 
                 // Save image
-                saveImage(image, viewPath, outputfilePath, storageDataType);
+                saveImage(fs, image, viewPath, outputfilePath, storageDataType);
 
                 // Update sfmdata view for this modification
                 view.setImagePath(outputfilePath);
@@ -354,7 +354,7 @@ int aliceVision_main(int argc, char** argv)
                 processColorCorrection(image, colorData);
 
                 // Save image
-                saveImage(image, inputFilePath, outputFilePath, storageDataType);
+                saveImage(fs, image, inputFilePath, outputFilePath, storageDataType);
             }
         }
     }
