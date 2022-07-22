@@ -25,7 +25,6 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 // These constants define the current software version.
@@ -41,7 +40,6 @@ using namespace aliceVision::track;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char ** argv)
 {
@@ -170,7 +168,7 @@ int aliceVision_main(int argc, char ** argv)
   }
 
   // for each pair, export the matches
-  fs::create_directory(outputFolder);
+  fs.create_directory(outputFolder);
   boost::progress_display myProgressBar( (viewCount*(viewCount-1)) / 2.0 , std::cout, "Export pairwise tracks\n");
 
   for(std::size_t I = 0; I < viewCount; ++I)
@@ -251,7 +249,7 @@ int aliceVision_main(int argc, char ** argv)
           svgStream.drawCircle(imaB.x() + dimImageI.first,imaB.y(), 3.0, svgStyle().stroke(featColor, 2.0));
         }
 
-        fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(viewI->getViewId()) + "_" + std::to_string(viewJ->getViewId()) + "_" + std::to_string(mapTracksCommon.size()) + ".svg");
+        vfs::path outputFilename = vfs::path(outputFolder) / std::string(std::to_string(viewI->getViewId()) + "_" + std::to_string(viewJ->getViewId()) + "_" + std::to_string(mapTracksCommon.size()) + ".svg");
 
         std::ofstream svgFile(outputFilename.string());
         svgFile << svgStream.closeSvgFile().str();
