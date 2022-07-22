@@ -412,6 +412,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshMasking.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_sfmMvsUtils
           aliceVision_mvsUtils
           aliceVision_mesh
