@@ -30,8 +30,6 @@ namespace depthMap {
 
 void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
 {
-    vfs::filesystem fs;
-
     sfmData::SfMData pointCloud;
     const int xyStep = 10;
 
@@ -67,7 +65,7 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const 
         }
     }
 
-    sfmDataIO::Save(fs, pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::Save(mp.fs, pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 inline unsigned char float_to_uchar(float v)
@@ -85,8 +83,6 @@ inline rgb float4_to_rgb(const float4& v)
 
 void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, const std::vector<float>& depths, int startDepth, int nbDepths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
 {
-    vfs::filesystem fs;
-
     sfmData::SfMData pointCloud;
     int xyStep = 10;
 
@@ -119,7 +115,7 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, const std
         }
     }
 
-    sfmDataIO::Save(fs, pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+    sfmDataIO::Save(mp.fs, pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath)

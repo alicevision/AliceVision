@@ -25,15 +25,11 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <iostream>
 #include <sstream>
 
 namespace aliceVision {
 namespace depthMap {
-
-namespace bfs = boost::filesystem;
 
 Sgm::Sgm(const SgmParams& sgmParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
     : _rc(rc)
