@@ -19,7 +19,6 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <cstdlib>
@@ -40,7 +39,6 @@ using namespace aliceVision::sfmData;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char ** argv)
 {
@@ -140,7 +138,7 @@ int aliceVision_main(int argc, char ** argv)
 
   // for each image, export visually the keypoints
 
-  fs::create_directory(outputFolder);
+  fs.create_directory(outputFolder);
   ALICEVISION_LOG_INFO("Export extracted keypoints for all images");
   boost::progress_display myProgressBar(sfmData.views.size());
   for(const auto &iterViews : sfmData.views)
@@ -154,7 +152,7 @@ int aliceVision_main(int argc, char ** argv)
     const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
 
     // output filename
-    fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
+    vfs::path outputFilename = vfs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
 
     matching::saveFeatures2SVG(viewImagePath,
                                dimImage,
