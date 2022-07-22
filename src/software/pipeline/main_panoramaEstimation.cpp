@@ -19,7 +19,6 @@
 #include <aliceVision/sfm/liealgebra.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -35,7 +34,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 bool estimateAutomaticReferenceFrame(Eigen::Matrix3d & referenceFrameUpdate, const sfmData::SfMData & toUpdate)
 {
@@ -259,9 +257,9 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  const std::string outDirectory = fs::path(outputSfMDataFilepath).parent_path().string();
+  const std::string outDirectory = vfs::path(outputSfMDataFilepath).parent_path().string();
 
-  if(!fs::exists(outDirectory))
+  if (!fs.exists(outDirectory))
   {
     ALICEVISION_LOG_ERROR("Output folder does not exist: " << outDirectory);
     return EXIT_FAILURE;
@@ -273,7 +271,7 @@ int aliceVision_main(int argc, char **argv)
     inputSfmData,
     params,
     outDirectory,
-    (fs::path(outDirectory) / "sfm_log.html").string());
+    (vfs::path(outDirectory) / "sfm_log.html").string());
 
   sfmEngine.initRandomSeed(randomSeed);
 
@@ -300,12 +298,12 @@ int aliceVision_main(int argc, char **argv)
 
   if(refine)
   {
-    sfmDataIO::Save(fs, sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
+    sfmDataIO::Save(fs, sfmEngine.getSfMData(), (vfs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
     if (!sfmEngine.Adjust())
     {
       return EXIT_FAILURE;
     }
-    sfmDataIO::Save(fs, sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
+    sfmDataIO::Save(fs, sfmEngine.getSfMData(), (vfs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
 
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
@@ -403,7 +401,7 @@ int aliceVision_main(int argc, char **argv)
   // Final report
   ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
-  sfm::generateSfMReport(outSfmData, (fs::path(outDirectory) / "sfm_report.html").string());
+  sfm::generateSfMReport(outSfmData, (vfs::path(outDirectory) / "sfm_report.html").string());
 
   // Add offsets to rotations
   for (auto& pose: outSfmData.getPoses())
@@ -440,7 +438,7 @@ int aliceVision_main(int argc, char **argv)
   // Export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
   sfmDataIO::Save(fs, outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::Save(fs, outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(fs, outSfmData, (vfs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   if(!outputViewsAndPosesFilepath.empty())
   {
