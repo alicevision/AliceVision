@@ -470,7 +470,7 @@ int aliceVision_main(int argc, char **argv)
 
     case EGeometricFilterType::FUNDAMENTAL_MATRIX:
     {
-      matchingImageCollection::robustModelEstimation(geometricMatches,
+      matchingImageCollection::robustModelEstimation(fs, geometricMatches,
         &sfmData,
         regionPerView,
         GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
@@ -482,7 +482,7 @@ int aliceVision_main(int argc, char **argv)
 
   case EGeometricFilterType::FUNDAMENTAL_WITH_DISTORTION:
   {
-    matchingImageCollection::robustModelEstimation(geometricMatches,
+    matchingImageCollection::robustModelEstimation(fs, geometricMatches,
       &sfmData,
       regionPerView,
       GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator, true),
@@ -494,7 +494,7 @@ int aliceVision_main(int argc, char **argv)
 
     case EGeometricFilterType::ESSENTIAL_MATRIX:
     {
-      matchingImageCollection::robustModelEstimation(geometricMatches,
+      matchingImageCollection::robustModelEstimation(fs, geometricMatches,
         &sfmData,
         regionPerView,
         GeometricFilterMatrix_E_AC(geometricErrorMax, maxIteration),
@@ -524,7 +524,7 @@ int aliceVision_main(int argc, char **argv)
     case EGeometricFilterType::HOMOGRAPHY_MATRIX:
     {
       const bool onlyGuidedMatching = true;
-      matchingImageCollection::robustModelEstimation(geometricMatches,
+      matchingImageCollection::robustModelEstimation(fs, geometricMatches,
         &sfmData,
         regionPerView,
         GeometricFilterMatrix_H_AC(geometricErrorMax, maxIteration),
@@ -535,7 +535,7 @@ int aliceVision_main(int argc, char **argv)
 
     case EGeometricFilterType::HOMOGRAPHY_GROWING:
     {
-      matchingImageCollection::robustModelEstimation(geometricMatches,
+      matchingImageCollection::robustModelEstimation(fs, geometricMatches,
         &sfmData,
         regionPerView,
         GeometricFilterMatrix_HGrowing(geometricErrorMax, maxIteration),

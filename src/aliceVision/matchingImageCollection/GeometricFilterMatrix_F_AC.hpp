@@ -49,7 +49,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class Regions_or_Features_ProviderT>
-  EstimationStatus geometricEstimation(const sfmData::SfMData* sfmData,
+  EstimationStatus geometricEstimation(vfs::filesystem& fs, const sfmData::SfMData* sfmData,
                                        const Regions_or_Features_ProviderT& regionsPerView,
                                        const Pair& pairIndex,
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
@@ -71,7 +71,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     const std::pair<std::size_t, std::size_t> imageSizeI(viewI.getWidth(), viewI.getHeight());
     const std::pair<std::size_t, std::size_t> imageSizeJ(viewJ.getWidth(), viewJ.getHeight());
 
-    return geometricEstimation(regionsPerView.getDataPerDesc(pairIndex.first),
+    return geometricEstimation(fs, regionsPerView.getDataPerDesc(pairIndex.first),
                                regionsPerView.getDataPerDesc(pairIndex.second),
                                camI, camJ,
                                imageSizeI, imageSizeJ,
@@ -85,7 +85,8 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class MapFeatOrRegionsPerDesc>
-  EstimationStatus geometricEstimation(const MapFeatOrRegionsPerDesc& regionI,
+  EstimationStatus geometricEstimation(vfs::filesystem& fs,
+                                       const MapFeatOrRegionsPerDesc& regionI,
                                        const MapFeatOrRegionsPerDesc& regionJ,
                                        const camera::IntrinsicBase* camI,
                                        const camera::IntrinsicBase* camJ,

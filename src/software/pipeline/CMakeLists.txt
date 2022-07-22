@@ -92,6 +92,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_featureMatching.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_feature
           aliceVision_multiview
           aliceVision_matchingImageCollection

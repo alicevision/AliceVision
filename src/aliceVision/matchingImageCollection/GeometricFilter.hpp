@@ -12,6 +12,7 @@
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/progress.hpp>
 
@@ -28,6 +29,7 @@ using namespace aliceVision::matching;
  * or all the pairs and regions correspondences contained in the putativeMatches set.
  * Allow to keep only geometrically coherent matches.
  * It discards pairs that do not lead to a valid robust model estimation.
+ * @param[in] fs Virtual file system handle
  * @param[out] geometricMatches
  * @param[in] sfmData
  * @param[in] regionsPerView
@@ -39,6 +41,7 @@ using namespace aliceVision::matching;
  */
 template<typename GeometryFunctor>
 void robustModelEstimation(
+  vfs::filesystem& fs,
   PairwiseMatches& out_geometricMatches,
   const sfmData::SfMData* sfmData,
   const feature::RegionsPerView& regionsPerView,
@@ -67,7 +70,9 @@ void robustModelEstimation(
     {
       MatchesPerDescType inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, randomNumberGenerator, inliers);
+      const EstimationStatus state = geometricFilter.geometricEstimation(fs, sfmData, regionsPerView, imagePair,
+                                                                         putativeMatchesPerType,
+                                                                         randomNumberGenerator, inliers);
       if(state.hasStrongSupport)
       {
         if(guidedMatching)

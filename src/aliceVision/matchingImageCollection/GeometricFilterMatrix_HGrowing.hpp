@@ -171,6 +171,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    *
    *
    * @tparam Regions_or_Features_ProviderT The Region provider.
+   * @param fs Virtual file system handle
    * @param sfmData The sfmData containing the info about the scene.
    * @param regionsPerView The region provider.
    * @param pairIndex The pair of view for which the geometric validation is computed.
@@ -180,7 +181,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @return The estimation status.
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationStatus geometricEstimation(const sfmData::SfMData * sfmData,
+  EstimationStatus geometricEstimation(vfs::filesystem& fs,
+                                       const sfmData::SfMData * sfmData,
                                        const Regions_or_Features_ProviderT &regionsPerView,
                                        const Pair &pairIndex,
                                        const matching::MatchesPerDescType &putativeMatchesPerType,
@@ -248,14 +250,13 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         continue;
       }
 
-      if (boost::filesystem::exists(outputSvgDir))
+      if (fs.exists(outputSvgDir))
       {
         const std::size_t nbMatches = outGeometricInliers.size();
         const std::string name = std::to_string(nbMatches) + "hmatches_" + std::to_string(viewI.getViewId()) + "_" +
                                  std::to_string(viewJ.getViewId()) +
                                  "_" + EImageDescriberType_enumToString(descType) + ".svg";
-        // @FIXME not worth it having boost::filesystem in a header
-        const std::string outFilename = (boost::filesystem::path(outputSvgDir) / boost::filesystem::path(name)).string();
+        const std::string outFilename = (vfs::path(outputSvgDir) / vfs::path(name)).string();
         drawHomographyMatches(viewI,
                               viewJ,
                               regions_I.Features(),

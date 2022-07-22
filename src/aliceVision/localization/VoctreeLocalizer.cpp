@@ -1116,6 +1116,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
 
   matching::MatchesPerDescType geometricInliersPerType;
   EstimationStatus estimationState = geometricFilter.geometricEstimation(
+        _fs,
         matchers.getDatabaseRegionsPerDesc(),
         matchedRegions,
         queryIntrinsics,

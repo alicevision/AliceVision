@@ -38,7 +38,8 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationStatus geometricEstimation(const sfmData::SfMData* sfmData,
+  EstimationStatus geometricEstimation(vfs::filesystem& fs,
+                                       const sfmData::SfMData* sfmData,
                                        const Regions_or_Features_ProviderT& regionsPerView,
                                        const Pair& pairIndex,
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
