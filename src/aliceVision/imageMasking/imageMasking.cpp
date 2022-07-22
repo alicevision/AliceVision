@@ -50,9 +50,9 @@ void rotateHue(cv::Mat & hsv, uint8_t delta)
 }
 }
 
-void hsv(OutImage& result, const std::string& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue)
+void hsv(vfs::filesystem& fs, OutImage& result, const std::string& inputPath,
+         float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue)
 {
-    vfs::filesystem fs;
     // HSV's hue channel is an rotation angle: it wraps at 0deg/360deg.
     // Hue for blue is 240deg. With hueRange=0.1, pixels are selected if (hue > 204deg && hue < 276deg).
     // Hue for red is 0deg. With hueRange=0.1, pixels are selected if (hue < 36deg && hue > 324deg).
@@ -78,9 +78,8 @@ void hsv(OutImage& result, const std::string& inputPath, float hue, float hueRan
     cv::inRange(input_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), result_cv);
 };
 
-void autoGrayscaleThreshold(OutImage& result, const std::string& inputPath)
+void autoGrayscaleThreshold(vfs::filesystem& fs, OutImage& result, const std::string& inputPath)
 {
-    vfs::filesystem fs;
     image::Image<unsigned char> input;
     image::readImage(fs, inputPath, input, image::EImageColorSpace::SRGB);
 

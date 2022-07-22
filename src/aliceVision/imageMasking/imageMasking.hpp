@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/vfs/fwd.hpp>
 #include <string>
 
 namespace aliceVision{
@@ -21,6 +22,7 @@ using OutImage = image::Image<unsigned char>;
 /**
  * @brief Create a mask based on the hue of each pixel.
  *
+ * @param[in] fs Virtual file system handle.
  * @param[out] result The resulting binary mask.
  * @param[in] inputPath The path of the image to mask.
  * @param[in] hue Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.
@@ -30,12 +32,13 @@ using OutImage = image::Image<unsigned char>;
  * @param[in] minValue Hue is meaningless if value is low. Do not mask pixels below this threshold.
  * @param[in] Do not mask pixels above this threshold. It might be useful to mask white/black pixels.
  */
-void hsv(OutImage& result, const std::string& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue);
+void hsv(vfs::filesystem& fs, OutImage& result, const std::string& inputPath,
+         float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue);
 
 /**
  * @Brief Otsu's Binarization of an image in grayscale.
  */
-void autoGrayscaleThreshold(OutImage& result, const std::string& inputPath);
+void autoGrayscaleThreshold(vfs::filesystem& fs, OutImage& result, const std::string& inputPath);
 
 
 /**
