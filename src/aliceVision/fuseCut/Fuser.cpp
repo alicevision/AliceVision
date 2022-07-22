@@ -733,7 +733,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
     ALICEVISION_LOG_INFO("generating temp files.");
     std::string depthMapsPtsSimsTmpDir = tmpDir + "depthMapsPtsSimsTmp/";
 
-    if(!mvsUtils::FolderExists(depthMapsPtsSimsTmpDir))
+    if (!bfs::is_directory(depthMapsPtsSimsTmpDir))
     {
         bfs::create_directory(depthMapsPtsSimsTmpDir);
 

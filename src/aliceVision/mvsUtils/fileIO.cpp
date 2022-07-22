@@ -17,11 +17,6 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-bool FolderExists(const std::string& folderPath)
-{
-    return boost::filesystem::is_directory(folderPath);
-}
-
 std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix)
 {
   std::string folder = mp._imagesFolder;

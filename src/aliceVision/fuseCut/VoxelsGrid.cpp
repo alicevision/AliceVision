@@ -142,11 +142,11 @@ std::string VoxelsGrid::getVoxelFolderName(int id) const
     std::string fnxyz = spaceRootDir + "X" + mvsUtils::num2str(v.x) + "Y" + mvsUtils::num2str(v.y) + "Z" + mvsUtils::num2str(v.z) + "/";
     // bfs::create_directory(fnxyz);
 
-    // if (FolderExists(fnx)==false) {
+    // if (bfs::is_directory(fnx)==false) {
     //	printf("Warning folder %s does not exist!\n",fnx.c_str());
     //}
 
-    // if (FolderExists(fnxyz)==false) {
+    // if (bfs::is_directory(fnxyz)==false) {
     //	printf("Warning folder %s does not exist!\n",fnxyz.c_str());
     //}
 
@@ -203,7 +203,7 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
     std::string folderName = getVoxelFolderName(id);
 
     bfs::create_directory(folderName);
-    if(!mvsUtils::FolderExists(folderName))
+    if (!bfs::is_directory(folderName))
     {
         ALICEVISION_LOG_WARNING("Folder '" << folderName << "' does not exist.");
     }
@@ -383,7 +383,7 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
         Voxel subLU = LU + v * ns;
         Voxel subRD = LU + (v + 1) * ns;
 
-        // if (FolderExists(subfn)==true)
+        // if (bfs::is_directory(subfn)==true)
         if (bfs::exists(subfnFileMark))
         {
             VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, subfn, doVisualize);
@@ -635,7 +635,7 @@ void VoxelsGrid::vizualize()
     {
         std::string subFoldeName = getVoxelFolderName(i);
         std::string fname = subFoldeName + "tracks.wrl";
-        if(mvsUtils::FolderExists(subFoldeName.c_str()))
+        if (bfs::is_directory(subFoldeName.c_str()))
         {
             fprintf(f, "Inline{ url [\"%s\"] \n }\n", fname.c_str());
         }
