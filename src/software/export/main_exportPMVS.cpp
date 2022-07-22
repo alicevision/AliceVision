@@ -11,7 +11,6 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -33,9 +32,9 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 bool exportToPMVSFormat(
+  vfs::filesystem& fs,
   const SfMData & sfm_data,
   const std::string & sOutDirectory,  //Output PMVS files folder
   const int downsampling_factor,
@@ -43,23 +42,22 @@ bool exportToPMVSFormat(
   const bool b_VisData = true
   )
 {
-  vfs::filesystem fs;
   bool bOk = true;
-  if (!fs::exists(sOutDirectory))
+  if (!fs.exists(sOutDirectory))
   {
-    fs::create_directory(sOutDirectory);
-    bOk = fs::is_directory(sOutDirectory);
+    fs.create_directory(sOutDirectory);
+    bOk = fs.is_directory(sOutDirectory);
   }
 
   // Create basis folder structure
-  fs::create_directory(fs::path(sOutDirectory) / std::string("models"));
-  fs::create_directory(fs::path(sOutDirectory) / std::string("txt"));
-  fs::create_directory(fs::path(sOutDirectory) / std::string("visualize"));
+  fs.create_directory(vfs::path(sOutDirectory) / std::string("models"));
+  fs.create_directory(vfs::path(sOutDirectory) / std::string("txt"));
+  fs.create_directory(vfs::path(sOutDirectory) / std::string("visualize"));
 
   if (bOk &&
-      fs::is_directory(fs::path(sOutDirectory) / std::string("models")) &&
-      fs::is_directory(fs::path(sOutDirectory) / std::string("txt")) &&
-      fs::is_directory(fs::path(sOutDirectory) / std::string("visualize")))
+      fs.is_directory(vfs::path(sOutDirectory) / std::string("models")) &&
+      fs.is_directory(vfs::path(sOutDirectory) / std::string("txt")) &&
+      fs.is_directory(vfs::path(sOutDirectory) / std::string("visualize")))
   {
     bOk = true;
   }
@@ -100,7 +98,7 @@ bool exportToPMVSFormat(
       const Mat34 P = camPinHole->getProjectiveEquivalent(pose);
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      std::ofstream file((fs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
+      std::ofstream file((vfs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
       file << "CONTOUR" << os.widen('\n')
         << P.row(0) <<"\n"<< P.row(1) <<"\n"<< P.row(2) << os.widen('\n');
       file.close();
@@ -121,7 +119,7 @@ bool exportToPMVSFormat(
       const std::string srcImage = view->getImagePath();
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      const std::string dstImage = (fs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
+      const std::string dstImage = (vfs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if (cam->isValid() && cam->hasDistortion())
       {
@@ -133,10 +131,10 @@ bool exportToPMVSFormat(
       else // (no distortion)
       {
         // copy the image if extension match
-        if (fs::extension(srcImage) == ".JPG" ||
-          fs::extension(srcImage) == ".jpg")
+        if (vfs::path(srcImage).extension().string() == ".JPG" ||
+          vfs::path(srcImage).extension().string() == ".jpg")
         {
-          fs::copy_file(srcImage, dstImage);
+          fs.copy_file(srcImage, dstImage);
         }
         else
         {
@@ -204,12 +202,12 @@ bool exportToPMVSFormat(
         }
         osVisData << os.widen('\n');
       }
-      std::ofstream file((fs::path(sOutDirectory) / "vis.dat").string());
+      std::ofstream file((vfs::path(sOutDirectory) / "vis.dat").string());
       file << osVisData.str();
       file.close();
     }
 
-    std::ofstream file((fs::path(sOutDirectory) / "pmvs_options.txt").string());
+    std::ofstream file((vfs::path(sOutDirectory) / "pmvs_options.txt").string());
     file << os.str();
     file.close();
   }
@@ -283,7 +281,7 @@ bool exportToBundlerFormat(
             << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
             << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
 
-          osList << fs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
+          osList << vfs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
         }
         else 
         {
@@ -391,8 +389,8 @@ int aliceVision_main(int argc, char *argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
+  if (!fs.exists(outputFolder))
+    fs.create_directory(outputFolder);
 
   SfMData sfmData;
   if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -403,17 +401,17 @@ int aliceVision_main(int argc, char *argv[])
   }
 
   {
-    exportToPMVSFormat(sfmData,
-      (fs::path(outputFolder) / std::string("PMVS")).string(),
+    exportToPMVSFormat(fs, sfmData,
+      (vfs::path(outputFolder) / std::string("PMVS")).string(),
       resolution,
       nbCore,
       useVisData);
 
     exportToBundlerFormat(sfmData,
-      (fs::path(outputFolder) /
+      (vfs::path(outputFolder) /
       std::string("PMVS") /
       std::string("bundle.rd.out")).string(),
-      (fs::path(outputFolder) /
+      (vfs::path(outputFolder) /
       std::string("PMVS") /
       std::string("list.txt")).string());
 

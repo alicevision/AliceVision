@@ -73,6 +73,7 @@ alicevision_add_software(aliceVision_exportPMVS
   SOURCE main_exportPMVS.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_feature
         aliceVision_sfmData
