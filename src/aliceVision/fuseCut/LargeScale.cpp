@@ -190,7 +190,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         delete vgnew;
         delete vg;
 
-        mvsUtils::DeleteDirectory(tmpdir);
+        bfs::remove_all(tmpdir);
 
         deleteTempPtsSimsFiles(*mp, depthMapsPtsSimsTmpDir);
 

@@ -37,7 +37,5 @@ template<class Image>
 void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
     imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
-bool DeleteDirectory(const std::string& sPath);
-
 } // namespace mvsUtils
 } // namespace aliceVision

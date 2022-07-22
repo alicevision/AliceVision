@@ -376,11 +376,5 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
 template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
-bool DeleteDirectory(const std::string& sPath)
-{
-    boost::filesystem::remove_all(sPath);
-    return true;
-}
-
 } // namespace mvsUtils
 } // namespace aliceVision

@@ -902,7 +902,7 @@ void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMaps
         remove(ptsfn.c_str());
         remove(simsfn.c_str());
     }
-    mvsUtils::DeleteDirectory(depthMapsPtsSimsTmpDir);
+    bfs::remove_all(depthMapsPtsSimsTmpDir);
 }
 
 } // namespace fuseCut
