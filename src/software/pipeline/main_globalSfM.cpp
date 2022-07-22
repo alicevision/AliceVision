@@ -16,7 +16,6 @@
 #include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -28,7 +27,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -184,17 +182,17 @@ int aliceVision_main(int argc, char **argv)
   }
 
   if(extraInfoFolder.empty())
-    extraInfoFolder = fs::path(outSfMDataFilepath).parent_path().string();
+    extraInfoFolder = vfs::path(outSfMDataFilepath).parent_path().string();
 
-  if (!fs::exists(extraInfoFolder))
-    fs::create_directory(extraInfoFolder);
+  if (!fs.exists(extraInfoFolder))
+    fs.create_directory(extraInfoFolder);
 
   // global SfM reconstruction process
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
     extraInfoFolder,
-    (fs::path(extraInfoFolder) / "sfm_log.html").string());
+    (vfs::path(extraInfoFolder) / "sfm_log.html").string());
 
   sfmEngine.initRandomSeed(randomSeed);
 
@@ -225,13 +223,13 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+  sfm::generateSfMReport(sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
 
   sfmDataIO::Save(fs, sfmEngine.getSfMData(), outSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::Save(fs, sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(fs, sfmEngine.getSfMData(), (vfs::path(extraInfoFolder) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
     sfmDataIO::Save(fs, sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
