@@ -9,12 +9,14 @@
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision  {
 namespace matching {
 
 /// Display pair wises matches as an Adjacency matrix in svg format
-inline void PairwiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
+inline void PairwiseMatchingToAdjacencyMatrixSVG(vfs::filesystem& fs, const size_t NbImages,
   const matching::PairwiseMatches & map_Matches,
   const std::string & sOutName)
 {
@@ -54,7 +56,7 @@ inline void PairwiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
       (NbImages)*scaleFactor - 2*scaleFactor, (NbImages+1)*scaleFactor,
       svg::svgStyle().stroke("black", 1.0));
 
-    std::ofstream svgFileStream( sOutName.c_str());
+    auto svgFileStream = fs.open_write_text(sOutName);
     svgFileStream << svgStream.closeSvgFile().str();
   }
 }

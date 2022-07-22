@@ -8,6 +8,8 @@
 #include "svgVisualization.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
@@ -128,7 +130,8 @@ inline void drawInliersSideBySide(svg::svgDrawer& svgStream,
     }
 }
 
-void drawMatchesSideBySide(const std::string& imagePathLeft,
+void drawMatchesSideBySide(vfs::filesystem& fs,
+                           const std::string& imagePathLeft,
                            const std::pair<size_t,size_t>& imageSizeLeft,
                            const std::vector<feature::PointFeature>& keypointsLeft,
                            const std::string& imagePathRight,
@@ -165,8 +168,7 @@ void drawMatchesSideBySide(const std::string& imagePathLeft,
     svgStream.drawCircle(xRight, R.y(), radiusRight, rightStyle);
   }
 
-
-  std::ofstream svgFile(outputSVGPath);
+  auto svgFile = fs.open_write_text(outputSVGPath);
   if (!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file " + outputSVGPath);
@@ -181,7 +183,8 @@ void drawMatchesSideBySide(const std::string& imagePathLeft,
   svgFile.close();
 }
 
-void drawHomographyMatches(const std::string& imagePathLeft,
+void drawHomographyMatches(vfs::filesystem& fs,
+                           const std::string& imagePathLeft,
                            const std::pair<size_t,size_t>& imageSizeLeft,
                            const std::vector<feature::PointFeature>& features_I,
                            const std::string& imagePathRight,
@@ -238,7 +241,7 @@ void drawHomographyMatches(const std::string& imagePathLeft,
     }
   }
 
-  std::ofstream svgFile(outFilename);
+  auto svgFile = fs.open_write_text(outFilename);
   if(!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file "+outFilename);
@@ -253,7 +256,8 @@ void drawHomographyMatches(const std::string& imagePathLeft,
   svgFile.close();
 }
 
-void saveMatches2SVG(const std::string &imagePathLeft,
+void saveMatches2SVG(vfs::filesystem& fs,
+                     const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
                      const feature::MapRegionsPerDesc &keypointsLeft,
                      const std::string &imagePathRight,
@@ -291,13 +295,14 @@ void saveMatches2SVG(const std::string &imagePathLeft,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath.c_str() );
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
 
 
-void saveKeypoints2SVG(const std::string &inputImagePath,
+void saveKeypoints2SVG(vfs::filesystem& fs,
+                       const std::string &inputImagePath,
                        const std::pair<size_t,size_t> & imageSize,
                        const std::vector<feature::PointFeature> &keypoints,
                        const std::string &outputSVGPath,
@@ -325,7 +330,7 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();  
 }
@@ -345,7 +350,8 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
  * @param[in] richKeypoint Draw rich keypoints with a circle proportional to the
  * octave in which the point has been detected.
  */
-void drawKeypointsSideBySide(const std::string&imagePathLeft,
+void drawKeypointsSideBySide(vfs::filesystem& fs,
+                             const std::string&imagePathLeft,
                              const std::pair<size_t,size_t>& imageSizeLeft,
                              const std::vector<feature::PointFeature>& keypointsLeft,
                              const std::string &imagePathRight,
@@ -375,7 +381,7 @@ void drawKeypointsSideBySide(const std::string&imagePathLeft,
     svgStream.drawCircle(kpt.x()+offset, kpt.y(), (richKeypoint) ? kpt.scale()*radiusRight : radiusRight, styleRight);
   }
 
-  std::ofstream svgFile(outputSVGPath);
+  auto svgFile = fs.open_write_text(outputSVGPath);
   if(!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file " + outputSVGPath);
@@ -390,7 +396,8 @@ void drawKeypointsSideBySide(const std::string&imagePathLeft,
   svgFile.close();
 }
 
-void saveFeatures2SVG(const std::string &inputImagePath,
+void saveFeatures2SVG(vfs::filesystem& fs,
+                      const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
                       const feature::MapFeaturesPerDesc & keypoints,
                       const std::string & outputSVGPath)
@@ -413,7 +420,7 @@ void saveFeatures2SVG(const std::string &inputImagePath,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -427,7 +434,8 @@ void saveFeatures2SVG(const std::string &inputImagePath,
  * @param[in] points A vector containing the points to draw.
  * @param[in] outputSVGPath The name of the svg file to generate.
  */
-void saveFeatures2SVG(const std::string &inputImagePath,
+void saveFeatures2SVG(vfs::filesystem& fs,
+                      const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
                       const Mat &points,
                       const std::string &outputSVGPath,
@@ -461,7 +469,7 @@ void saveFeatures2SVG(const std::string &inputImagePath,
     }   
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -506,7 +514,8 @@ bool lineToBorderPoints(const Vec3 &epiLine, const std::size_t imgW, const std::
   
 }
 
-void saveEpipolarGeometry2SVG(const std::string &imagePath,
+void saveEpipolarGeometry2SVG(vfs::filesystem& fs,
+                              const std::string &imagePath,
                               const std::pair<size_t, size_t> & imageSize,
                               const std::vector<feature::PointFeature> &keypoints,
                               const std::vector<feature::PointFeature> &otherKeypoints,
@@ -617,12 +626,12 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
     svgStream.drawCircle(point(0), point(1), 3 * radius, svg::svgStyle().stroke("red", strokeWidth).fill("red"));
   }
 
-  std::ofstream svgFile(outputSVGPath.c_str());
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
 
-void saveMatchesAsMotion(const std::string &imagePath,
+void saveMatchesAsMotion(vfs::filesystem& fs, const std::string &imagePath,
                          const std::pair<size_t, size_t> & imageSize,
                          const std::vector<feature::PointFeature> &keypoints,
                          const std::vector<feature::PointFeature> &otherKeypoints,
@@ -655,12 +664,13 @@ void saveMatchesAsMotion(const std::string &imagePath,
 
     }
   }
-  std::ofstream svgFile(outputSVGPath.c_str());
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
 
-void saveMatchesAsMotion(const std::string &imagePath,
+void saveMatchesAsMotion(vfs::filesystem& fs,
+                         const std::string &imagePath,
                          const std::pair<size_t, size_t> & imageSize,
                          const std::vector<feature::PointFeature> &keypoints,
                          const std::vector<feature::PointFeature> &otherKeypoints,
@@ -705,7 +715,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
       }
     }
   }
-  std::ofstream svgFile(outputSVGPath);
+  auto svgFile = fs.open_write_text(outputSVGPath);
   if(!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file " + outputSVGPath);
@@ -722,7 +732,8 @@ void saveMatchesAsMotion(const std::string &imagePath,
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 
-void saveCCTag2SVG(const std::string &inputImagePath,
+void saveCCTag2SVG(vfs::filesystem& fs,
+                   const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
                       const feature::CCTAG_Regions &cctags,
                       const std::string &outputSVGPath)
@@ -751,12 +762,13 @@ void saveCCTag2SVG(const std::string &inputImagePath,
     svgStream.drawText(kpt.x(), kpt.y(), textSize, std::to_string(cctagId), "yellow");
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
 
-void saveCCTagMatches2SVG(const std::string &imagePathLeft,
+void saveCCTagMatches2SVG(vfs::filesystem& fs,
+                          const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
                      const feature::CCTAG_Regions &cctagLeft,
                      const std::string &imagePathRight,
@@ -868,7 +880,7 @@ void saveCCTagMatches2SVG(const std::string &imagePathLeft,
     }
   }
 
-  std::ofstream svgFile(outputSVGPath.c_str());
+  auto svgFile = fs.open_write_text(outputSVGPath);
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }

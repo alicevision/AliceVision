@@ -208,7 +208,8 @@ void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatur
 
 
 
-void drawHomographyMatches(const sfmData::View &viewI,
+void drawHomographyMatches(vfs::filesystem& fs,
+                           const sfmData::View &viewI,
                            const sfmData::View &viewJ,
                            const std::vector<feature::PointFeature> &siofeatures_I,
                            const std::vector<feature::PointFeature> &siofeatures_J,
@@ -222,7 +223,7 @@ void drawHomographyMatches(const sfmData::View &viewI,
   const auto imageSizeLeft = std::make_pair(viewI.getWidth(), viewI.getHeight());
   const auto imageSizeRight = std::make_pair(viewJ.getWidth(), viewJ.getHeight());
 
-  drawHomographyMatches(imagePathLeft,
+  drawHomographyMatches(fs, imagePathLeft,
                         imageSizeLeft,
                         siofeatures_I,
                         imagePathRight,

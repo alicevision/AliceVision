@@ -241,7 +241,7 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
       extractedFeatures[descType] = queryRegionsPerDesc.at(descType)->GetRegionsPositions();
     }
 
-    matching::saveFeatures2SVG(imagePath,
+    matching::saveFeatures2SVG(_fs, imagePath,
                      queryImageSize,
                      extractedFeatures,
                      param->_visualDebug + "/" + vfs::path(imagePath).stem().string() + ".svg");
@@ -492,7 +492,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       const std::string matchedImage = vfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();
       
-      matching::saveMatches2SVG(imagePath,
+      matching::saveMatches2SVG(_fs, imagePath,
                       queryImageSize,
                       queryRegions,
                       matchedPath,
@@ -673,7 +673,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
-        matching::saveFeatures2SVG(imagePath,
+        matching::saveFeatures2SVG(_fs, imagePath,
                                  queryImageSize,
                                  resectionData.pt2D,
                                  param._visualDebug + "/" + vfs::path(imagePath).stem().string() + ".associations.svg");
@@ -715,7 +715,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
 
   if(!param._visualDebug.empty() && !imagePath.empty())
   {
-    matching::saveFeatures2SVG(imagePath,
+    matching::saveFeatures2SVG(_fs, imagePath,
                      queryImageSize,
                      resectionData.pt2D,
                      param._visualDebug + "/" + vfs::path(imagePath).stem().string() + ".associations.svg",
@@ -886,7 +886,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
       outputName += matchedImage;
       outputName += ".svg";
 
-      matching::saveMatches2SVG(imagePath,
+      matching::saveMatches2SVG(_fs, imagePath,
                                 imageSize,
                                 queryRegions,
                                 matchedPath,

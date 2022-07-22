@@ -128,6 +128,7 @@ void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatur
 /**
  * @brief Generate a svg file with the two images and the matches grouped in different color
  * according to their supporting homography.
+ * @param[in] fs Virtual file system path
  * @param[in] outFilename The filename of the svg file to generate.
  * @param[in] viewI The first view.
  * @param[in] viewJ The second view.
@@ -136,7 +137,8 @@ void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatur
  * @param[in] homographiesAndMatches Contains each found homography and the relevant supporting matches.
  * @param[in] putativeMatches The putative matches.
  */
-void drawHomographyMatches(const sfmData::View &viewI,
+void drawHomographyMatches(vfs::filesystem& fs,
+                           const sfmData::View &viewI,
                            const sfmData::View &viewJ,
                            const std::vector<feature::PointFeature> &siofeatures_I,
                            const std::vector<feature::PointFeature> &siofeatures_J,
@@ -257,7 +259,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                                  std::to_string(viewJ.getViewId()) +
                                  "_" + EImageDescriberType_enumToString(descType) + ".svg";
         const std::string outFilename = (vfs::path(outputSvgDir) / vfs::path(name)).string();
-        drawHomographyMatches(viewI,
+        drawHomographyMatches(fs, viewI,
                               viewJ,
                               regions_I.Features(),
                               regions_J.Features(),

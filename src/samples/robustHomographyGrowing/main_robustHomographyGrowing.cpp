@@ -205,7 +205,7 @@ int main(int argc, char **argv)
   //--
   {
     const std::string out_filename = "01.features."+describerTypesName+".svg";
-    matching::drawKeypointsSideBySide(filenameLeft,
+    matching::drawKeypointsSideBySide(fs, filenameLeft,
                             imageLeftSize,
                             regions_perImage.at(0).get()->Features(),
                             filenameRight,
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
   // two ways to show the matches
   {
     // side by side
-    drawMatchesSideBySide(filenameLeft,
+    drawMatchesSideBySide(fs, filenameLeft,
                           imageLeftSize,
                           regions_perImage.at(0).get()->Features(),
                           filenameRight,
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
 
     const bool isLeft = true;
     const bool richKpts = false;
-    saveMatchesAsMotion(filenameLeft,
+    saveMatchesAsMotion(fs, filenameLeft,
                         imageLeftSize,
                         regions_perImage.at(0).get()->Features(),
                         regions_perImage.at(1).get()->Features(),
@@ -296,7 +296,7 @@ int main(int argc, char **argv)
     const bool richKpts = false;
 
     // first visualize all the filtered matched together, without distinction of which homography they belong to
-    saveMatchesAsMotion(filenameLeft,
+    saveMatchesAsMotion(fs, filenameLeft,
                         imageLeftSize,
                         regions_perImage.at(0).get()->Features(),
                         regions_perImage.at(1).get()->Features(),
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
                         isLeft, richKpts);
 
     // now visualize the matches grouped by homography with different colors
-    saveMatchesAsMotion(filenameLeft,
+    saveMatchesAsMotion(fs, filenameLeft,
                         imageLeftSize,
                         regions_perImage.at(0).get()->Features(),
                         regions_perImage.at(1).get()->Features(),
@@ -314,7 +314,7 @@ int main(int argc, char **argv)
                         isLeft, richKpts);
 
     // finally we can visualize the pair of images size by size with the matches grouped by color
-    drawHomographyMatches(filenameLeft,
+    drawHomographyMatches(fs, filenameLeft,
                           imageLeftSize,
                           regions_perImage.at(0).get()->Features(),
                           filenameRight,

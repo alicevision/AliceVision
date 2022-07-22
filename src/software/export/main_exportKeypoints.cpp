@@ -154,7 +154,7 @@ int aliceVision_main(int argc, char ** argv)
     // output filename
     vfs::path outputFilename = vfs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
 
-    matching::saveFeatures2SVG(viewImagePath,
+    matching::saveFeatures2SVG(fs, viewImagePath,
                                dimImage,
                                featuresPerView.getData().at(view->getViewId()),
                                outputFilename.string());

@@ -423,7 +423,7 @@ int aliceVision_main(int argc, char **argv)
   if(exportDebugFiles)
   {
     //-- export putative matches Adjacency matrix
-    PairwiseMatchingToAdjacencyMatrixSVG(sfmData.getViews().size(),
+    PairwiseMatchingToAdjacencyMatrixSVG(fs, sfmData.getViews().size(),
       mapPutativesMatches,
       (vfs::path(matchesFolder) / "PutativeAdjacencyMatrix.svg").string());
     //-- export view pair graph once putative graph matches have been computed
@@ -614,7 +614,7 @@ int aliceVision_main(int argc, char **argv)
   {
     // export Adjacency matrix
     ALICEVISION_LOG_INFO("Export Adjacency Matrix of the pairwise's geometric matches");
-    PairwiseMatchingToAdjacencyMatrixSVG(sfmData.getViews().size(),
+    PairwiseMatchingToAdjacencyMatrixSVG(fs, sfmData.getViews().size(),
       finalMatches,(vfs::path(matchesFolder) / "GeometricAdjacencyMatrix.svg").string());
 
     /*

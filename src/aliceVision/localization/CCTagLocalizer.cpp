@@ -226,7 +226,7 @@ bool CCTagLocalizer::localize(const image::Image<float> & imageGrey,
     const feature::CCTAG_Regions & cctagQueryRegions = tmpQueryRegions.getRegions<feature::CCTAG_Regions>(_cctagDescType);
     
     // just debugging -- save the svg image with detected cctag
-    matching::saveCCTag2SVG(imagePath, 
+    matching::saveCCTag2SVG(_fs, imagePath,
                             imageSize, 
                             cctagQueryRegions,
                             param->_visualDebug + "/" + vfs::path(imagePath).stem().string()+".svg");
@@ -824,7 +824,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
       outputName += ".svg";
       
       const bool showNotMatched = true;
-      matching::saveCCTagMatches2SVG(imagePath, 
+      matching::saveCCTagMatches2SVG(_fs, imagePath,
                                      imageSize, 
                                      queryRegions,
                                      matchedPath,

@@ -10,6 +10,8 @@
 #include <iostream>
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/feature/feature.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace matching {
@@ -109,8 +111,8 @@ public:
     * \param vec_match  The matches that we want to save.
     * \return bool True if everything was ok, otherwise false.
     */
-    bool saveMatch(const char* nameFile) const  {
-      std::ofstream f(nameFile);
+    bool saveMatch(vfs::filesystem& fs, const char* nameFile) const  {
+      auto f = fs.open_write_text(nameFile);
       if( f.is_open() ) {
         std::copy(_vecDecoredMatches.begin(), _vecDecoredMatches.end(),
           std::ostream_iterator<IndMatchDecoratorStruct>(f, ""));

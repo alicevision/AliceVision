@@ -10,9 +10,10 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <map>
-#include <fstream>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -29,7 +30,7 @@ bool LoadMatchFile(vfs::filesystem& fs, PairwiseMatches& matches, const std::str
 
   if(ext == ".txt")
   {
-    std::ifstream stream(filepath.c_str());
+    auto stream = fs.open_read_text(filepath);
     if (!stream.is_open())
       return false;
 
@@ -294,7 +295,7 @@ private:
 
     // write temporary file
     {
-      std::ofstream stream(tmpPath.c_str(), std::ios::out);
+      auto stream = fs.open_write_text(tmpPath);
       for(PairwiseMatches::const_iterator match = matchBegin;
         match != matchEnd;
         ++match)

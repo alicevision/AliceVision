@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   // Show both images side by side
   {
     const std::string out_filename = "01.features."+describerTypesName+".svg";
-    drawKeypointsSideBySide(filenameLeft,
+    drawKeypointsSideBySide(fs, filenameLeft,
                             imageLeftSize,
                             featsL,
                             filenameRight,
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
   // two ways to show the matches
   {
     // side by side
-    drawMatchesSideBySide(filenameLeft, imageLeftSize, featsL,
+    drawMatchesSideBySide(fs, filenameLeft, imageLeftSize, featsL,
                           filenameRight, imageRightSize, featsR,
                           vec_PutativeMatches,
                           "02.putativeMatchesSideBySide." + describerTypesName + ".svg");
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 
     const bool isLeft = true;
     const bool richKpts = false;
-    saveMatchesAsMotion(filenameLeft, imageLeftSize, featsL, featsR,
+    saveMatchesAsMotion(fs, filenameLeft, imageLeftSize, featsL, featsR,
                         vec_PutativeMatches,
                         "03.putativeMatchesMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
