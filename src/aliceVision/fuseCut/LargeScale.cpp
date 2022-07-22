@@ -35,7 +35,7 @@ LargeScale::~LargeScale()
 
 bool LargeScale::isSpaceSaved()
 {
-    return mvsUtils::FileExists(spaceFileName);
+    return bfs::exists(spaceFileName);
 }
 
 void LargeScale::saveSpaceToFile()

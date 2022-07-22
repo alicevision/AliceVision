@@ -149,7 +149,7 @@ void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor,
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if(mvsUtils::FileExists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
+    if (bfs::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
     {
         return true;
     }

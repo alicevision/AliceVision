@@ -162,7 +162,7 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     const std::string fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
     const std::string fileNameTracksStat = folderName + "tracksGridStat.bin";
 
-    if(!mvsUtils::FileExists(fileNameTracksPts))
+    if (!bfs::exists(fileNameTracksPts))
         return nullptr;
 
     StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(fileNameTracksStat); // minPixSize, minSim, npts
@@ -384,7 +384,7 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
         Voxel subRD = LU + (v + 1) * ns;
 
         // if (FolderExists(subfn)==true)
-        if(mvsUtils::FileExists(subfnFileMark))
+        if (bfs::exists(subfnFileMark))
         {
             VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, subfn, doVisualize);
             vgrec->generateSpace(vgnew, subLU, subRD, depthMapsPtsSimsTmpDir);
@@ -479,7 +479,7 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
 
-    if(mvsUtils::FileExists(fileNameTracksPts))
+    if (bfs::exists(fileNameTracksPts))
     {
         OctreeTracks* ott =
             new OctreeTracks(&(*voxels)[voxelId * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
@@ -525,7 +525,7 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
 
-    if(mvsUtils::FileExists(fileNameTracksPts))
+    if (bfs::exists(fileNameTracksPts))
     {
         StaticVector<int>* tcams;
         StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
@@ -579,7 +579,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
         // printf("SAVING %i-th VOXEL POINTS TO CAMS FILES\n",i);
 
-        if(mvsUtils::FileExists(fileNameTracksPts))
+        if (bfs::exists(fileNameTracksPts))
         {
             StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
             StaticVector<StaticVector<Pixel>*>* tracksPointsCams =

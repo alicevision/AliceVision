@@ -25,7 +25,6 @@ namespace oiio = OIIO;
 namespace aliceVision {
 namespace mvsUtils {
 
-bool FileExists(const std::string& filePath);
 bool FolderExists(const std::string& folderPath);
 
 std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale = 0, const std::string& customSuffix = "");

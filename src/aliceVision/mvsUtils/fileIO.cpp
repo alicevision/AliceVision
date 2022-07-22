@@ -17,11 +17,6 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-bool FileExists(const std::string& filePath)
-{
-    return boost::filesystem::exists(filePath);
-}
-
 bool FolderExists(const std::string& folderPath)
 {
     return boost::filesystem::is_directory(folderPath);
