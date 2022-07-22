@@ -20,7 +20,7 @@ namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
-ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, std::string _spaceRootDir)
+ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir)
     : VoxelsGrid(dimmensions, space, _mp, _spaceRootDir)
 {
     nVoxelsTracks = getNVoxelsTracks();

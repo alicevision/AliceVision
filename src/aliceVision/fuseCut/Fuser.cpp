@@ -727,7 +727,8 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
     return maxDim;
 }
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams& mp, bool addRandomNoise, float percNoisePts,
+std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiViewParams& mp,
+                                     bool addRandomNoise, float percNoisePts,
                                      int noisPixSizeDistHalfThr)
 {
     ALICEVISION_LOG_INFO("generating temp files.");
@@ -893,7 +894,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
     return depthMapsPtsSimsTmpDir;
 }
 
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMapsPtsSimsTmpDir)
+void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir)
 {
     for(int rc = 0; rc < mp.ncams; rc++)
     {

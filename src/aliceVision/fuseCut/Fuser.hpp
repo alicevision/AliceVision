@@ -51,9 +51,10 @@ private:
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams& mp, bool addRandomNoise = false,
-                                     float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMapsPtsSimsTmpDir);
+std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiViewParams& mp,
+                                     bool addRandomNoise = false, float percNoisePts = 0.0,
+                                     int noisPixSizeDistHalfThr = 0);
+void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir);
 
 } // namespace fuseCut
 } // namespace aliceVision

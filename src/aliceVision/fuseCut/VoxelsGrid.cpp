@@ -499,7 +499,7 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
     }
 }
 
-VoxelsGrid* VoxelsGrid::cloneSpace(int numSubVoxs, std::string newSpaceRootDir)
+VoxelsGrid* VoxelsGrid::cloneSpace(int numSubVoxs, const std::string& newSpaceRootDir)
 {
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("cloning space.");
@@ -540,7 +540,7 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
     }
 }
 
-VoxelsGrid* VoxelsGrid::copySpace(std::string newSpaceRootDir)
+VoxelsGrid* VoxelsGrid::copySpace(const std::string& newSpaceRootDir)
 {
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("Copy space.");
