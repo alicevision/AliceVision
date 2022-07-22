@@ -13,6 +13,7 @@ namespace vfs {
 
 using boost::system::error_code;
 using boost::filesystem::copy_option;
+using boost::filesystem::directory_options;
 using boost::filesystem::file_status;
 using boost::filesystem::space_info;
 

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "path.hpp"
+#include "directory_iterator.hpp"
 
 namespace aliceVision {
 namespace vfs {
