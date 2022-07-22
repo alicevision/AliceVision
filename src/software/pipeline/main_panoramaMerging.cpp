@@ -26,7 +26,6 @@
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -37,7 +36,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -125,7 +123,7 @@ int aliceVision_main(int argc, char** argv)
             continue;
 
         // Get composited image path
-        const std::string imagePath = (fs::path(compositingFolder) / (std::to_string(viewId) + ".exr")).string();
+        const std::string imagePath = (vfs::path(compositingFolder) / (std::to_string(viewId) + ".exr")).string();
         
         // Get offset
         oiio::ParamValueList metadata = image::readImageMetadata(fs, imagePath);
