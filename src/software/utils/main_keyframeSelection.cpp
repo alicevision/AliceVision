@@ -185,7 +185,7 @@ int aliceVision_main(int argc, char** argv)
   }
 
   // initialize KeyframeSelector
-  KeyframeSelector selector(mediaPaths, sensorDbPath, voctreeFilePath, outputFolder);
+  KeyframeSelector selector(fs, mediaPaths, sensorDbPath, voctreeFilePath, outputFolder);
   
   // initialize media metadatas vector
   std::vector<KeyframeSelector::CameraInfo> cameraInfos(nbCameras);

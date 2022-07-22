@@ -10,14 +10,10 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <random>
 #include <tuple>
 #include <cassert>
 #include <cstdlib>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
@@ -36,11 +32,13 @@ int getRandomInt()
   return randomDist(randomTwEngine);
 }
 
-KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
+KeyframeSelector::KeyframeSelector(vfs::filesystem& fs,
+                                   const std::vector<std::string>& mediaPaths,
                                    const std::string& sensorDbPath,
                                    const std::string& voctreeFilePath,
                                    const std::string& outputFolder)
-  : _mediaPaths(mediaPaths)
+  : _fs{fs}
+  , _mediaPaths(mediaPaths)
   , _sensorDbPath(sensorDbPath)
   , _voctreeFilePath(voctreeFilePath)
   , _outputFolder(outputFolder)
@@ -78,8 +76,6 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
 
 void KeyframeSelector::process()
 {
-  vfs::filesystem fs;
-
   // create feeds and count minimum number of frames
   std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
   for(std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
@@ -87,7 +83,7 @@ void KeyframeSelector::process()
     const auto& path = _mediaPaths.at(mediaIndex);
 
     // create a feed provider per mediaPaths
-    _feeds.emplace_back(new dataio::FeedProvider(fs, path));
+    _feeds.emplace_back(new dataio::FeedProvider(_fs, path));
 
     const auto& feed = *_feeds.back();
 
@@ -126,14 +122,14 @@ void KeyframeSelector::process()
   if(_feeds.size() > 1)
   {
     const std::string rigFolder = _outputFolder + "/rig/";
-    if(!fs::exists(rigFolder))
-      fs::create_directory(rigFolder);
+    if (!_fs.exists(rigFolder))
+      _fs.create_directory(rigFolder);
 
     for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
     {
       const std::string subPoseFolder = rigFolder + std::to_string(mediaIndex);
-      if(!fs::exists(subPoseFolder))
-        fs::create_directory(subPoseFolder);
+      if(!_fs.exists(subPoseFolder))
+        _fs.create_directory(subPoseFolder);
     }
   }
   
@@ -427,15 +423,15 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
                                      std::size_t mediaIndex)
 {
   auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  fs::path folder{_outputFolder};
+  vfs::path folder{_outputFolder};
 
   if(_feeds.size() > 1)
-     folder  /= fs::path("rig") / fs::path(std::to_string(mediaIndex));
+     folder /= vfs::path("rig") / vfs::path(std::to_string(mediaIndex));
 
   std::ostringstream filenameSS;
   filenameSS << std::setw(_padding) << std::setfill('0') << frameIndex << ".jpg";
 
-  const auto filepath = (folder / fs::path(filenameSS.str())).string();
+  const auto filepath = (folder / vfs::path(filenameSS.str())).string();
 
   mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(getRandomInt()));
 

@@ -57,12 +57,14 @@ public:
     
   /**
    * @brief KeyframeSelector constructor
+   * @param[in] fs Virtual file system handle.
    * @param[in] mediaPath video file path or image sequence directory
    * @param[in] sensorDbPath camera sensor width database path
    * @param[in] voctreeFilePath vocabulary tree path
    * @param[in] outputFolder output keyframes directory
    */
-  KeyframeSelector(const std::vector<std::string>& mediaPaths,
+  KeyframeSelector(vfs::filesystem& fs,
+                   const std::vector<std::string>& mediaPaths,
                    const std::string& sensorDbPath,
                    const std::string& voctreeFilePath,
                    const std::string& outputFolder);
@@ -207,6 +209,8 @@ public:
   }
     
 private:
+
+  vfs::filesystem& _fs;
 
   // Paths
 
