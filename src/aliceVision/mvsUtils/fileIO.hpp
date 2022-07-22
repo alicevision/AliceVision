@@ -33,7 +33,7 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
 std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
 
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite);
-Matrix3x4 load3x4MatrixFromFile(FILE* fi);
+Matrix3x4 load3x4MatrixFromFile(std::istream& in);
 
 
 template<class Image>

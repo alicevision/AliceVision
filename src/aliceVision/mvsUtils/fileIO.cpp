@@ -298,23 +298,23 @@ FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, 
 }
 
 
-Matrix3x4 load3x4MatrixFromFile(FILE* fi)
+Matrix3x4 load3x4MatrixFromFile(std::istream& in)
 {
     Matrix3x4 m;
 
     // M[col*3 + row]
     float a, b, c, d;
-    fscanf(fi, "%f %f %f %f \n", &a, &b, &c, &d);
+    in >> a >> b >> c >> d;
     m.m11 = a;
     m.m12 = b;
     m.m13 = c;
     m.m14 = d;
-    fscanf(fi, "%f %f %f %f \n", &a, &b, &c, &d);
+    in >> a >> b >> c >> d;
     m.m21 = a;
     m.m22 = b;
     m.m23 = c;
     m.m24 = d;
-    fscanf(fi, "%f %f %f %f \n", &a, &b, &c, &d);
+    in >> a >> b >> c >> d;
     m.m31 = a;
     m.m32 = b;
     m.m33 = c;
