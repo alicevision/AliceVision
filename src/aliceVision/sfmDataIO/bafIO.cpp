@@ -7,17 +7,20 @@
 
 #include "bafIO.hpp"
 
-#include <fstream>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
 
 bool saveBAF(
+  vfs::filesystem& fs,
   const sfmData::SfMData& sfmData,
   const std::string& filename,
   ESfMData partFlag)
 {
-  std::ofstream stream(filename.c_str());
+  auto stream = fs.open_write_text(filename.c_str());
   if (!stream.is_open())
     return false;
 
@@ -99,7 +102,7 @@ bool saveBAF(
   {
     const std::string sFile = (vfs::path(filename).parent_path() / (vfs::path(filename).stem().string() + "_imgList.txt")).string();
 
-    stream.open(sFile.c_str());
+    stream = fs.open_write_text(sFile);
     if (!stream.is_open())
       return false;
     for (sfmData::Views::const_iterator iterV = sfmData.getViews().begin();

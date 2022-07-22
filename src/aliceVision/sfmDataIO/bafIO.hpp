@@ -32,12 +32,14 @@ namespace sfmDataIO {
 
 /**
  * @brief Save SfMData in an ASCII BAF (Bundle Adjustment File).
+ * @param[in] fs Virtual file system handle
  * @param[in] sfmData The input SfMData
  * @param[in] filename The filename
  * @param[in] partFlag The ESfMData save flag
  * @return true if completed
  */
-bool saveBAF(const sfmData::SfMData& sfmData,
+bool saveBAF(vfs::filesystem& fs,
+             const sfmData::SfMData& sfmData,
              const std::string& filename,
              ESfMData partFlag);
 

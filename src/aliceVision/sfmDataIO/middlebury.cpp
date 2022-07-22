@@ -7,10 +7,8 @@
 #include "middlebury.hpp"
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
-
-#include <boost/filesystem.hpp>
-
-#include <fstream>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -73,7 +71,7 @@ sfmData::SfMData middleburySceneToSfmData(vfs::filesystem& fs, const std::string
                                           const std::string& basePath, bool uniqueIntrinsics,
                                           bool importPoses, bool lockIntrinsics, bool lockPoses)
 {
-    std::ifstream infile(filename);
+    auto infile = fs.open_read_text(filename);
     if(!infile.is_open())
     {
         ALICEVISION_LOG_ERROR("Unable to open " << filename);

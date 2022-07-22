@@ -208,12 +208,13 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 
 /**
  * @brief Save an SfMData in a JSON file with a boost property tree.
+ * @param[in] fs Virtual file system handle
  * @param[in] sfmData The input SfMData
  * @param[in] filename The filename
  * @param[in] partFlag The ESfMData save flag
  * @return true if completed
  */
-bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
+bool saveJSON(vfs::filesystem& fs, const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
 /**
  * @brief Load a JSON SfMData file.

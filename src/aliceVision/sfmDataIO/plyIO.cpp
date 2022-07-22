@@ -7,12 +7,14 @@
 
 #include "plyIO.hpp"
 
-#include <fstream>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
 
 bool savePLY(
+  vfs::filesystem& fs,
   const sfmData::SfMData& sfmData,
   const std::string& filename,
   ESfMData partFlag)
@@ -24,7 +26,7 @@ bool savePLY(
     return false;
 
   //Create the stream and check it is ok
-  std::ofstream stream(filename.c_str());
+  auto stream = fs.open_write_text(filename);
   if (!stream.is_open())
     return false;
 

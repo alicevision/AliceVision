@@ -7,6 +7,8 @@
 #include "jsonIO.hpp"
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
 
@@ -367,7 +369,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
 }
 
 
-bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool saveJSON(vfs::filesystem& fs, const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
   const Vec3i version = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
 
@@ -492,8 +494,8 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
   }
 
   // write the json file with the tree
-
-  bpt::write_json(filename, fileTree);
+  auto stream = fs.open_write_text(filename);
+  bpt::write_json(stream, fileTree);
 
   return true;
 }
@@ -517,7 +519,8 @@ bool loadJSON(vfs::filesystem& fs, sfmData::SfMData& sfmData, const std::string&
   bpt::ptree fileTree;
 
   // read the json file and initialize the tree
-  bpt::read_json(filename, fileTree);
+  auto stream = fs.open_read_text(filename);
+  bpt::read_json(stream, fileTree);
 
   // version
   {

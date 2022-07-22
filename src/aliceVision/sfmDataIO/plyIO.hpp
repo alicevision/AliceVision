@@ -16,12 +16,14 @@ namespace sfmDataIO {
 
 /**
  * @brief Save the structure and camera positions of a SfMData container as 3D points in a PLY ASCII file.
+ * @param[in] Virtual file system handle
  * @param[in] sfmData The input SfMData
  * @param[in] filename The filename
  * @param[in] partFlag The ESfMData save flag
  * @return true if completed
  */
-bool savePLY(const sfmData::SfMData& sfmData,
+bool savePLY(vfs::filesystem& fs,
+             const sfmData::SfMData& sfmData,
              const std::string& filename,
              ESfMData partFlag);
 

@@ -8,10 +8,11 @@
 #include "gtIO.hpp"
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sfmData/uid.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/regex.hpp>
 
-#include <fstream>
 #include <vector>
 
 namespace aliceVision {
@@ -23,7 +24,7 @@ bool read_aliceVision_Camera(vfs::filesystem& fs, const std::string& camName,
   std::vector<double> val;
   if (vfs::path(camName).extension().string() == ".bin")
   {
-    std::ifstream in(camName.c_str(), std::ios::in|std::ios::binary);
+    auto in = fs.open_read_binary(camName);
     if (!in.is_open())
     {
       ALICEVISION_LOG_ERROR("Failed to open file '" << camName << "' for reading");
@@ -39,8 +40,7 @@ bool read_aliceVision_Camera(vfs::filesystem& fs, const std::string& camName,
   }
   else
   {
-    std::ifstream ifs;
-    ifs.open( camName.c_str(), std::ifstream::in);
+    auto ifs = fs.open_read_text(camName);
     if (!ifs.is_open()) {
       ALICEVISION_LOG_ERROR("Failed to open file '" << camName << "' for reading");
       return false;
@@ -80,8 +80,7 @@ bool read_aliceVision_Camera(vfs::filesystem& fs, const std::string& camName,
 bool read_Strecha_Camera(vfs::filesystem& fs, const std::string& camName,
                          camera::Pinhole& cam, geometry::Pose3& pose)
 {
-  std::ifstream ifs;
-  ifs.open( camName.c_str(), std::ifstream::in);
+  auto ifs = fs.open_read_text(camName);
   if (!ifs.is_open()) {
     ALICEVISION_LOG_ERROR("Failed to open file '" << camName << "' for reading");
     return false;

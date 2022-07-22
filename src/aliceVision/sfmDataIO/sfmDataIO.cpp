@@ -139,15 +139,15 @@ bool Save(vfs::filesystem& fs, const sfmData::SfMData& sfmData, const std::strin
 
   if(extension == ".sfm" || extension == ".json") // JSON File
   {
-    status = saveJSON(sfmData, tmpPath, partFlag);
+    status = saveJSON(fs, sfmData, tmpPath, partFlag);
   }
   else if(extension == ".ply") // Polygon File
   {
-    status = savePLY(sfmData, tmpPath, partFlag);
+    status = savePLY(fs, sfmData, tmpPath, partFlag);
   }
   else if (extension == ".baf") // Bundle Adjustment File
   {
-    status = saveBAF(sfmData, tmpPath, partFlag);
+    status = saveBAF(fs, sfmData, tmpPath, partFlag);
   }
   else if (extension == ".abc") // Alembic
   {
