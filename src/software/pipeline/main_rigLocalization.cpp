@@ -283,7 +283,7 @@ int aliceVision_main(int argc, char** argv)
   if(useVoctreeLocalizer)
   {
     ALICEVISION_COUT("Localizing sequence using the voctree localizer");
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(fs, sfmData,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath,
@@ -303,7 +303,7 @@ int aliceVision_main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   else
   {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmData, descriptorsFolder);
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(fs, sfmData, descriptorsFolder);
     localizer.reset(tmpLoc);
     
     localization::CCTagLocalizer::Parameters *tmpParam = new localization::CCTagLocalizer::Parameters();

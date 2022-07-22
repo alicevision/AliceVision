@@ -21,7 +21,6 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
-namespace fs = boost::filesystem;
 using namespace aliceVision;
 
 sfm::ImageLocalizerMatchData generateRandomMatch_Data(std::size_t numPts)
@@ -69,6 +68,7 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
 
 BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
 {
+  vfs::filesystem fs;
   const double threshold = 1e-10;
   const std::size_t numResults = 10;
   const std::string filename = "test_localizationResults.json";
@@ -149,6 +149,6 @@ BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
       BOOST_CHECK(matchedImagesGT[j] == matchedImages[j]);
     }
 
-    fs::remove(filename);
+    fs.remove(filename);
   }
 }

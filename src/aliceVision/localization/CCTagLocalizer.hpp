@@ -42,7 +42,7 @@ class CCTagLocalizer : public ILocalizer
   
 public:
   
-  CCTagLocalizer(const sfmData::SfMData &sfmData,
+  CCTagLocalizer(vfs::filesystem& fs, const sfmData::SfMData &sfmData,
                  const std::string &descriptorsFolder);
    
   void setCudaPipe(int i) override;
@@ -156,7 +156,8 @@ public:
   virtual ~CCTagLocalizer();
 
 private:
-  
+  vfs::filesystem& _fs;
+
   bool loadReconstructionDescriptors(
     const sfmData::SfMData & sfm_data,
     const std::string & feat_directory);

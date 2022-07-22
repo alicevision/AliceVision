@@ -335,7 +335,7 @@ int aliceVision_main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   if(!useVoctreeLocalizer)
   {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmData, descriptorsFolder);
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(fs, sfmData, descriptorsFolder);
     localizer.reset(tmpLoc);
 
     localization::CCTagLocalizer::Parameters* tmpParam = new localization::CCTagLocalizer::Parameters();
@@ -346,7 +346,7 @@ int aliceVision_main(int argc, char** argv)
 #endif
   {
 
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(fs, sfmData,
                                                    descriptorsFolder,
                                                    vocTreeFilepath,
                                                    weightsFilepath,

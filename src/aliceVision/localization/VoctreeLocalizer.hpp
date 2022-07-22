@@ -95,7 +95,8 @@ public:
    *
    * It enable the use of combined SIFT and CCTAG features.
    */
-  VoctreeLocalizer(const sfmData::SfMData &sfmData,
+  VoctreeLocalizer(vfs::filesystem& fs,
+                   const sfmData::SfMData &sfmData,
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath,
@@ -344,7 +345,8 @@ private:
   
   
 public:
-  
+  vfs::filesystem& _fs;
+
   /// for each view index, it contains the features and descriptors that have an
   /// associated 3D point
   feature::RegionsPerView _regionsPerView;
