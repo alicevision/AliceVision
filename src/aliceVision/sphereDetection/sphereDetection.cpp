@@ -158,18 +158,12 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     // resize image
     aliceVision::image::downscaleImageInplace(image_alice, downscale);
 
-    aliceVision::image::writeImage("/tmp/img.png", image_alice, aliceVision::image::EImageColorSpace::SRGB);
-
     // convert to opencv image
     cv::Mat image_opencv;
     cv::eigen2cv(image_alice.GetMat(), image_opencv);
 
-    cv::imwrite("/tmp/img.png", image_opencv);
-
     // uint8 -> float32
     image_opencv.convertTo(image_opencv, CV_32F, 1.0 / 255.0);
-
-    cv::imwrite("/tmp/img.png", image_opencv);
 
     // HWC to CHW
     cv::Mat image_blob;
@@ -185,7 +179,7 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
 
     // compute number of pixels inside tensors
     int64_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<int64_t>());
-    int64_t output_size = input_size / 3;
+    int64_t output_size = std::accumulate(begin(output_shape), end(output_shape), 1, std::multiplies<int64_t>());
 
     // initialize tensors
     std::vector<float> input_tensor(input_size);
@@ -255,17 +249,11 @@ cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path,
 
 std::vector<std::pair<cv::Point2f, float>> compute_circles(cv::Mat mask)
 {
-    cv::imwrite("/tmp/img.png", mask);
-
     // [0.0, 1.0] -> [0, 255]
     mask.convertTo(mask, CV_8UC1, 255);
 
-    cv::imwrite("/tmp/img.png", mask);
-
     // detect edges with canny filter
     cv::Canny(mask, mask, 0, 255);
-
-    cv::imwrite("/tmp/img.png", mask);
 
     // detect contours
     std::vector<std::vector<cv::Point>> contours;
