@@ -25,12 +25,14 @@ public:
   /**
    * Put masks to white, all image is considered as valid pixel selection
    *
+   * \param[in] fs Virtual file system handle
    * \param[out] maskLeft Mask of the left image (initialized to corresponding image size).
    * \param[out] maskRight  Mask of the right image (initialized to corresponding image size).
    *
    * \return True.
    */
-  virtual bool computeMask( image::Image< unsigned char > & maskLeft, image::Image< unsigned char > & maskRight )
+  virtual bool computeMask(vfs::filesystem& fs, image::Image< unsigned char > & maskLeft,
+                           image::Image< unsigned char > & maskRight )
   {
     maskLeft.fill( image::WHITE );
     maskRight.fill( image::WHITE );

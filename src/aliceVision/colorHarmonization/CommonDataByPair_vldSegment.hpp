@@ -34,17 +34,17 @@ class CommonDataByPair_vldSegment  : public CommonDataByPair
   /**
    * Put masks to white, images are conserved
    *
+   * \param[in] fs Virtual file system handle.
    * \param[out] maskLeft Mask of the left image (initialized to corresponding image size).
    * \param[out] maskRight  Mask of the right image (initialized to corresponding image size).
    *
    * \return True.
    */
   virtual bool computeMask(
+    vfs::filesystem& fs,
     image::Image< unsigned char > & maskLeft,
     image::Image< unsigned char > & maskRight )
   {
-    vfs::filesystem fs;
-
     image::Image< unsigned char > imageL, imageR;
     image::readImage(fs, _sLeftImage, imageL, image::EImageColorSpace::LINEAR);
     image::readImage(fs, _sRightImage, imageR, image::EImageColorSpace::LINEAR);

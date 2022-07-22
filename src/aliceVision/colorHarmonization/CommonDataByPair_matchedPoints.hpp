@@ -39,12 +39,14 @@ public:
   /**
    * Fill mask from corresponding points (each point pictured by a disk of radius _radius)
    *
+   * \param[in] fs Virtual file system handle
    * \param[out] maskLeft Mask of the left image (initialized to corresponding image size).
    * \param[out] maskRight  Mask of the right image  (initialized to corresponding image size).
    *
    * \return True if some pixel have been set to true.
    */
-  virtual bool computeMask( image::Image< unsigned char > & maskLeft, image::Image< unsigned char > & maskRight )
+  virtual bool computeMask(vfs::filesystem& fs, image::Image< unsigned char > & maskLeft,
+                           image::Image< unsigned char > & maskRight )
   {
     maskLeft.fill(0);
     maskRight.fill(0);

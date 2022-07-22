@@ -108,8 +108,6 @@ inline void pauseProcess()
 
 bool ColorHarmonizationEngineGlobal::Process()
 {
-  vfs::filesystem fs;
-
   const std::string vec_selectionMethod[ 3 ] = { "fullFrame", "matchedPoints", "KVLD" };
   const std::string vec_harmonizeMethod[ 1 ] = { "quantifiedGainCompensation" };
   const int harmonizeMethod = 0;
@@ -227,7 +225,7 @@ bool ColorHarmonizationEngineGlobal::Process()
         colorHarmonization::CommonDataByPair_fullFrame  dataSelector(
           p_imaNames.first,
           p_imaNames.second);
-        dataSelector.computeMask( maskI, maskJ );
+        dataSelector.computeMask(_fs, maskI, maskJ);
       }
       break;
       case eHistogramHarmonizeMatchedPoints:
@@ -240,7 +238,7 @@ bool ColorHarmonizationEngineGlobal::Process()
           _regionsPerView.getRegionsPerDesc(viewI),
           _regionsPerView.getRegionsPerDesc(viewJ),
           circleSize);
-        dataSelector.computeMask( maskI, maskJ );
+        dataSelector.computeMask(_fs, maskI, maskJ);
       }
       break;
       case eHistogramHarmonizeVLDSegment:
@@ -259,7 +257,7 @@ bool ColorHarmonizationEngineGlobal::Process()
             _regionsPerView.getRegions(viewI, descType).Features(),
             _regionsPerView.getRegions(viewJ, descType).Features());
 
-          dataSelector.computeMask( maskI, maskJ );
+          dataSelector.computeMask(_fs, maskI, maskJ);
         }
       }
       break;

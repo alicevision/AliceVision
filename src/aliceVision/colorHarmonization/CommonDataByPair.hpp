@@ -29,12 +29,14 @@ public:
   /**
    * Compute mask forthe two images
    *
+   * \param[in] fs Virtual file system handle
    * \param[out] maskLeft Mask of the left image (initialized to corresponding image size).
    * \param[out] maskRight  Mask of the right image (initialized to corresponding image size).
    *
    * \return True if(mask not empty).
    */
-  virtual bool computeMask( image::Image< unsigned char > & maskLeft, image::Image< unsigned char > & maskRight ) = 0;
+  virtual bool computeMask(vfs::filesystem& fs, image::Image< unsigned char > & maskLeft,
+                           image::Image< unsigned char > & maskRight ) = 0;
 
   /**
    * Compute Histogram for the color's masked data
