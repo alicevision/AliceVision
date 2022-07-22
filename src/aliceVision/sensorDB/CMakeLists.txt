@@ -15,6 +15,7 @@ set(sensorDB_files_sources
 alicevision_add_library(aliceVision_sensorDB
   SOURCES ${sensorDB_files_headers} ${sensorDB_files_sources}
   PRIVATE_LINKS
+    aliceVision_vfs
     Boost::filesystem
     Boost::system
     Boost::boost
@@ -26,7 +27,12 @@ install(FILES cameraSensors.db
 )
 
 # Unit tests
-alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS aliceVision_sensorDB Boost::filesystem)
+alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase"
+  LINKS
+    aliceVision_sensorDB
+    aliceVision_vfs
+    Boost::filesystem
+)
 
 
 

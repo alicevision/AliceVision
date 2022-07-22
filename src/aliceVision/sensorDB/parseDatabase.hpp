@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/sensorDB/Datasheet.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 
 #include <vector>
 #include <string>
@@ -17,11 +18,13 @@ namespace sensorDB {
 
 /**
  * @brief Parse the given sensor database
+ * @param[in] fs Virtual file system handle
  * @param[in] databaseFilePath The file path of the given database
  * @param[out] databaseStructure The database in memory
  * @return True if ok
  */
-bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& databaseStructure);
+bool parseDatabase(vfs::filesystem& fs, const std::string& databaseFilePath,
+                   std::vector<Datasheet>& databaseStructure);
 
 /**
  * @brief Get information for the given camera brand / model

@@ -8,6 +8,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -20,6 +21,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char ** argv)
 {
+  aliceVision::vfs::filesystem fs;
   std::string sensorDatabasePath;
   std::string brandName;
   std::string modelName;
@@ -61,7 +63,7 @@ int main(int argc, char ** argv)
   std::vector<aliceVision::sensorDB::Datasheet> vec_database;
   aliceVision::sensorDB::Datasheet datasheet;
 
-  if ( !aliceVision::sensorDB::parseDatabase( sensorDatabasePath, vec_database ) )
+  if (!aliceVision::sensorDB::parseDatabase(fs, sensorDatabasePath, vec_database ) )
   {
     std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
     return EXIT_FAILURE;

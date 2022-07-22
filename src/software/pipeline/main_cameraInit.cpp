@@ -331,7 +331,7 @@ int aliceVision_main(int argc, char **argv)
       }
   }
 
-  if(!sensorDatabasePath.empty() && !sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
+  if (!sensorDatabasePath.empty() && !sensorDB::parseDatabase(fs, sensorDatabasePath, sensorDatabase))
   {
       ALICEVISION_LOG_ERROR("Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;

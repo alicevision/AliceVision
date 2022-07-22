@@ -7,8 +7,8 @@
 
 #include "parseDatabase.hpp"
 #include <aliceVision/sensorDB/Datasheet.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <vector>
@@ -18,15 +18,13 @@
 #include <fstream>
 #include <iterator>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace sensorDB {
 
-bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& databaseStructure)
+bool parseDatabase(vfs::filesystem& fs, const std::string& databaseFilePath, std::vector<Datasheet>& databaseStructure)
 {
   std::ifstream fileIn(databaseFilePath);
-  if(!fileIn || !fs::exists(databaseFilePath) || !fs::is_regular_file(databaseFilePath))
+  if(!fileIn || !fs.exists(databaseFilePath) || !fs.is_regular_file(databaseFilePath))
     return false;
 
   std::string line;

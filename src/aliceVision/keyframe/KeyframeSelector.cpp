@@ -457,7 +457,7 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
   
   sensorDB::Datasheet find;
   std::vector<sensorDB::Datasheet> vecDatabase;
-  sensorDB::parseDatabase(_sensorDbPath, vecDatabase);
+  sensorDB::parseDatabase(_fs, _sensorDbPath, vecDatabase);
 
   if(sensorDB::getInfo(cameraInfo.brand, cameraInfo.model, vecDatabase, find))
   {
