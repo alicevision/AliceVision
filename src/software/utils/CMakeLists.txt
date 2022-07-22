@@ -222,6 +222,7 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
   SOURCE main_keyframeSelection.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_keyframe
         ${OPENIMAGEIO_LIBRARIES}
         Boost::program_options
