@@ -294,7 +294,8 @@ if(ALICEVISION_BUILD_SFM)
   alicevision_add_software(aliceVision_rigLocalization
     SOURCE main_rigLocalization.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_localization
+    LINKS aliceVision_vfs
+          aliceVision_localization
           aliceVision_dataio
           aliceVision_rig
           aliceVision_image
