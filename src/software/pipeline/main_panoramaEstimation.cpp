@@ -268,6 +268,7 @@ int aliceVision_main(int argc, char **argv)
   // Panorama reconstruction process
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_panorama sfmEngine(
+    fs,
     inputSfmData,
     params,
     outDirectory,

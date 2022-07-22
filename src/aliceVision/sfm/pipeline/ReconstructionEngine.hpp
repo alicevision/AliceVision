@@ -16,7 +16,7 @@
 namespace aliceVision {
 namespace sfm {
 
-void retrieveMarkersId(sfmData::SfMData& sfmData);
+void retrieveMarkersId(vfs::filesystem& fs, sfmData::SfMData& sfmData);
 
 
 /**
@@ -29,11 +29,14 @@ public:
 
   /**
    * @brief ReconstructionEngine Constructor
+   * @param[in] fs Virtual file system handle
    * @param[in] sfmData The input SfMData of the scene
    * @param[in] outFolder The folder where outputs will be stored
    */
-  ReconstructionEngine(const sfmData::SfMData& sfmData, const std::string& outFolder)
-    : _outputFolder(outFolder)
+  ReconstructionEngine(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
+                       const std::string& outFolder)
+    : _fs{fs}
+    , _outputFolder(outFolder)
     , _sfmData(sfmData)
   {}
 
@@ -69,13 +72,12 @@ public:
    */
   inline void colorize()
   {
-    vfs::filesystem fs;
-    sfmData::colorizeTracks(fs, _sfmData);
+    sfmData::colorizeTracks(_fs, _sfmData);
   }
 
   void retrieveMarkersId()
   {
-      aliceVision::sfm::retrieveMarkersId(_sfmData);
+      aliceVision::sfm::retrieveMarkersId(_fs, _sfmData);
   }
 
   void initRandomSeed(int seed)
@@ -84,6 +86,7 @@ public:
   }
 
 protected:
+  vfs::filesystem& _fs;
   /// Output folder where outputs will be stored
   std::string _outputFolder;
   /// Internal SfMData

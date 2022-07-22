@@ -221,11 +221,12 @@ bool robustRelativeRotation_fromR(const Mat &x1, const Mat &x2, const std::pair<
 }
 
 
-ReconstructionEngine_panorama::ReconstructionEngine_panorama(const SfMData& sfmData,
+ReconstructionEngine_panorama::ReconstructionEngine_panorama(vfs::filesystem& fs,
+                                                             const SfMData& sfmData,
                                                              const ReconstructionEngine_panorama::Params& params,
                                                              const std::string& outDirectory,
                                                              const std::string& loggingFile)
-  : ReconstructionEngine(sfmData, outDirectory)
+  : ReconstructionEngine(fs, sfmData, outDirectory)
   , _params(params)
   , _loggingFile(loggingFile)
 {

@@ -14,9 +14,8 @@ namespace aliceVision {
 namespace sfm {
 
 
-void retrieveMarkersId(sfmData::SfMData& sfmData)
+void retrieveMarkersId(vfs::filesystem& fs, sfmData::SfMData& sfmData)
 {
-    vfs::filesystem fs;
     std::set<feature::EImageDescriberType> allMarkerDescTypes;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     allMarkerDescTypes.insert(feature::EImageDescriberType::CCTAG3);

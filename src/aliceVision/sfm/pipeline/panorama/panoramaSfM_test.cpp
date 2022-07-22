@@ -27,7 +27,7 @@ using namespace aliceVision;
 // - Create two matrices of calibration for two views
 
 void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::shared_ptr<camera::IntrinsicBase> & intrinsic_noisy, double ratio_inliers) {
-
+  vfs::filesystem fs;
   sfmData::SfMData sfmdata;
   sfmdata.getIntrinsics()[0] = intrinsic_noisy;
 
@@ -120,7 +120,7 @@ void test_panorama(std::shared_ptr<camera::IntrinsicBase> & intrinsic_gt, std::s
   sfm::ReconstructionEngine_panorama::Params params;
   params.eRelativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_R;
 
-  sfm::ReconstructionEngine_panorama pano(sfmdata, params, "");
+  sfm::ReconstructionEngine_panorama pano(fs, sfmdata, params, "");
   pano.SetFeaturesProvider(&fpv);
   pano.SetMatchesProvider(&matches);
 

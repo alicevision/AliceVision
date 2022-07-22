@@ -161,7 +161,8 @@ public:
       bool intermediateRefineWithFocal = false; //< intermediate refine with rotation+focal
       bool intermediateRefineWithFocalDist = false; //< intermediate refine with rotation+focal+distortion
   };
-  ReconstructionEngine_panorama(const sfmData::SfMData& sfmData,
+  ReconstructionEngine_panorama(vfs::filesystem& fs,
+                                const sfmData::SfMData& sfmData,
                                 const Params& params,
                                 const std::string& outDirectory,
                                 const std::string& loggingFile = "");

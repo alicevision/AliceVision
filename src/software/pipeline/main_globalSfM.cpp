@@ -190,6 +190,7 @@ int aliceVision_main(int argc, char **argv)
   // global SfM reconstruction process
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_globalSfM sfmEngine(
+    fs,
     sfmData,
     extraInfoFolder,
     (vfs::path(extraInfoFolder) / "sfm_log.html").string());

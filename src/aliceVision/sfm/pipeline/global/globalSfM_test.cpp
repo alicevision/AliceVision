@@ -36,6 +36,7 @@ using namespace aliceVision::sfmData;
 //   - the desired number of poses are found.
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
 {
+  vfs::filesystem fs;
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -50,6 +51,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    fs,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
@@ -86,6 +88,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
 {
+  vfs::filesystem fs;
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -100,6 +103,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    fs,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
@@ -136,6 +140,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chordal)
 {
+  vfs::filesystem fs;
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -150,6 +155,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    fs,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
@@ -186,6 +192,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
 {
+  vfs::filesystem fs;
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -200,6 +207,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    fs,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
