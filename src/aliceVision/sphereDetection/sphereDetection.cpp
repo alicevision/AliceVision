@@ -290,7 +290,7 @@ std::vector<circle_info> compute_circles(const cv::Mat prediction)
         circles.push_back(circle);
     }
 
-    ALICEVISION_LOG_DEBUG(circles);
+    ALICEVISION_LOG_DEBUG("circles: " << circles);
 
     return circles;
 }
@@ -313,5 +313,5 @@ void export_json(std::string output_path, std::vector<circle_info> circles)
 
     bpt::write_json(output_path, root);
 
-    ALICEVISION_LOG_DEBUG("JSON exported");
+    ALICEVISION_LOG_DEBUG("JSON exported: " << output_path);
 }
