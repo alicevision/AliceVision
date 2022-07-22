@@ -11,6 +11,9 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <geogram/points/kd_tree.h>
 
@@ -164,24 +167,23 @@ void Mesh::save(vfs::filesystem& fs, const std::string& filepath)
 
 bool Mesh::loadFromBin(vfs::filesystem& fs, const std::string& binFilepath)
 {
-    FILE* f = fopen(binFilepath.c_str(), "rb");
+    auto f = fs.open_read_binary(binFilepath);
 
-    if(f == nullptr)
+    if (!f)
         return false;
 
     int npts;
-    fread(&npts, sizeof(int), 1, f);
+    f.fread(&npts, sizeof(int), 1);
     pts = StaticVector<Point3d>();
     pts.resize(npts);
-    fread(&pts[0], sizeof(Point3d), npts, f);
+    f.fread(&pts[0], sizeof(Point3d), npts);
 
     int ntris;
-    fread(&ntris, sizeof(int), 1, f);
+    f.fread(&ntris, sizeof(int), 1);
     tris = StaticVector<Mesh::triangle>();
     tris.resize(ntris);
-    fread(&tris[0], sizeof(Mesh::triangle), ntris, f);
+    f.fread(&tris[0], sizeof(Mesh::triangle), ntris);
 
-    fclose(f);
     return true;
 }
 
@@ -190,22 +192,21 @@ void Mesh::saveToBin(vfs::filesystem& fs, const std::string& binFilepath)
     long t = std::clock();
     ALICEVISION_LOG_DEBUG("Save mesh to bin.");
     // printf("open\n");
-    FILE* f = fopen(binFilepath.c_str(), "wb");
+
+    auto f = fs.open_write_binary(binFilepath);
 
     int npts = pts.size();
     // printf("write npts %i\n",npts);
-    fwrite(&npts, sizeof(int), 1, f);
+    f.fwrite(&npts, sizeof(int), 1);
     // printf("write pts\n");
-    fwrite(&pts[0], sizeof(Point3d), npts, f);
+    f.fwrite(&pts[0], sizeof(Point3d), npts);
 
     int ntris = tris.size();
     // printf("write ntris %i\n",ntris);
-    fwrite(&ntris, sizeof(int), 1, f);
+    f.fwrite(&ntris, sizeof(int), 1);
     // printf("write tris\n");
-    fwrite(&tris[0], sizeof(Mesh::triangle), ntris, f);
+    f.fwrite(&tris[0], sizeof(Mesh::triangle), ntris);
 
-    // printf("close\n");
-    fclose(f);
     // printf("done\n");
     mvsUtils::printfElapsedTime(t, "Save mesh to bin ");
 }
