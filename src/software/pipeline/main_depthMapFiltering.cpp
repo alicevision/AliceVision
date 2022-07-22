@@ -32,6 +32,7 @@ namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
 {
+    vfs::filesystem fs;
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -134,7 +135,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;

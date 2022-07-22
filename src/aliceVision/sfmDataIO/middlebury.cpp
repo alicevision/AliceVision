@@ -15,8 +15,6 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
-namespace bfs = boost::filesystem;
-
 Mat3 extractMat3FromVec(const std::vector<std::string>& entries, std::size_t offset)
 {
     // we are supposed to read 9 elements, so the offset must be coherent with the vector size
@@ -71,11 +69,10 @@ void parseMiddleburyCamera(const std::string& line, std::string& imageName, Mat3
     translation(2) = std::stod(entries[21]);
 }
 
-sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std::string& basePath,
-                                          bool uniqueIntrinsics, bool importPoses, bool lockIntrinsics, bool lockPoses)
+sfmData::SfMData middleburySceneToSfmData(vfs::filesystem& fs, const std::string& filename,
+                                          const std::string& basePath, bool uniqueIntrinsics,
+                                          bool importPoses, bool lockIntrinsics, bool lockPoses)
 {
-    vfs::filesystem fs;
-
     std::ifstream infile(filename);
     if(!infile.is_open())
     {
@@ -106,7 +103,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std
         Vec3 translation;
         parseMiddleburyCamera(line, imageName, matK, rotation, translation);
 
-        const auto imagePath = (bfs::path(basePath) / bfs::path(imageName)).string();
+        const auto imagePath = (vfs::path(basePath) / vfs::path(imageName)).string();
         int imageWidth{};
         int imageHeight{};
         image::readImageSize(fs, imagePath, imageWidth, imageHeight);

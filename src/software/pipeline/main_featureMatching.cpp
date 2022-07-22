@@ -88,6 +88,8 @@ void getStatsMap(const PairwiseMatches& map)
 /// - Export computed data
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -261,7 +263,7 @@ int aliceVision_main(int argc, char **argv)
   // a. Load SfMData (image view & intrinsics data)
 
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;

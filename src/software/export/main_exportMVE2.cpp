@@ -245,6 +245,8 @@ bool exportToMVE2Format(
 
 int aliceVision_main(int argc, char *argv[])
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -302,7 +304,7 @@ int aliceVision_main(int argc, char *argv[])
 
   // Read the input SfM scene
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     std::cerr << std::endl
       << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;

@@ -32,7 +32,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
                     const std::string & outputFilename /*= ""*/,
                     std::size_t minPointVisibility /*=0*/)
 {
-  
+  vfs::filesystem fs;
+
   const std::size_t numViews = vec_localizationResult.size();
   assert(numViews > 0 );
    
@@ -261,7 +262,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   if(!outputFilename.empty())
   {
     const std::string outfile = outputFilename+".BEFORE.json";
-    if(!sfmDataIO::Save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Save(fs, tinyScene, outfile, sfmDataIO::ESfMData::ALL))
       ALICEVISION_CERR("Could not save " << outfile);
   }
 
@@ -287,7 +288,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     if(!outputFilename.empty())
     {
       const std::string outfile = outputFilename+".AFTER.json";
-      if(!sfmDataIO::Save(tinyScene, outfile, sfmDataIO::ESfMData::ALL))
+      if (!sfmDataIO::Save(fs, tinyScene, outfile, sfmDataIO::ESfMData::ALL))
         ALICEVISION_CERR("Could not save " << outfile);
     }
   }

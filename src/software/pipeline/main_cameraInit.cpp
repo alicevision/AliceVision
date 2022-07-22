@@ -137,6 +137,8 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
  */
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -356,7 +358,7 @@ int aliceVision_main(int argc, char **argv)
   if(imageFolder.empty())
   {
     // fill SfMData from the JSON file
-    loadJSON(sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true, viewIdMethod, viewIdRegex);
+    loadJSON(fs, sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true, viewIdMethod, viewIdRegex);
   }
   else
   {
@@ -373,7 +375,7 @@ int aliceVision_main(int argc, char **argv)
       {
         sfmData::View& view = incompleteViews.at(i);
         view.setImagePath(imagePaths.at(i));
-        updateIncompleteView(view, viewIdMethod, viewIdRegex);
+        updateIncompleteView(fs, view, viewIdMethod, viewIdRegex);
       }
 
       for(const auto& view : incompleteViews)
@@ -826,7 +828,7 @@ int aliceVision_main(int argc, char **argv)
   }
   
   // store SfMData views & intrinsic data
-  if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if (!Save(fs, sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }

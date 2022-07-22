@@ -211,7 +211,7 @@ int main(int argc, char **argv)
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
+    if (!sfmDataIO::Load(fs, sfmData, sfmFilePath, sfmDataIO::ESfMData::VIEWS))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;

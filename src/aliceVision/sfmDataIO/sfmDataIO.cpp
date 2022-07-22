@@ -20,8 +20,6 @@
 
 #include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace sfmDataIO {
 
@@ -92,14 +90,15 @@ bool ValidIds(const sfmData::SfMData& sfmData, ESfMData partFlag)
   return bRet;
 }
 
-bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool Load(vfs::filesystem& fs, sfmData::SfMData& sfmData, const std::string& filename,
+          ESfMData partFlag)
 {
-  const std::string extension = fs::extension(filename);
+  const std::string extension = vfs::path(filename).extension().string();
   bool status = false;
 
   if(extension == ".sfm" || extension == ".json") // JSON File
   {
-    status = loadJSON(sfmData, filename, partFlag);
+    status = loadJSON(fs, sfmData, filename, partFlag);
   }
   else if (extension == ".abc") // Alembic
   {
@@ -110,9 +109,9 @@ bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partF
       ALICEVISION_THROW_ERROR("Cannot load the ABC file: \"" << filename << "\", AliceVision is built without Alembic support.");
 #endif
   }
-  else if(fs::is_directory(filename))
+  else if (fs.is_directory(filename))
   {
-    status = readGt(filename, sfmData);
+    status = readGt(fs, filename, sfmData);
   }
   else // It is not a folder or known format, return false
   {
@@ -130,11 +129,12 @@ bool Load(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partF
   return status;
 }
 
-bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
+bool Save(vfs::filesystem& fs, const sfmData::SfMData& sfmData, const std::string& filename,
+          ESfMData partFlag)
 {
-  const fs::path bPath = fs::path(filename);
+  const vfs::path bPath = vfs::path(filename);
   const std::string extension = bPath.extension().string();
-  const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs.unique_path().string() + extension;
   bool status = false;
 
   if(extension == ".sfm" || extension == ".json") // JSON File
@@ -168,7 +168,7 @@ bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData
 
   // rename temporary filename
   if(status)
-    fs::rename(tmpPath, filename);
+    fs.rename(tmpPath, filename);
 
   return status;
 }

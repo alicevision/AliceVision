@@ -263,14 +263,14 @@ int main() {
       landmarks[i].observations[tinyScene.views[1]->getViewId()] = sfmData::Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j, RR.scale());
       landmarks[i].X = X;
     }
-    sfmDataIO::Save(tinyScene, "EssentialGeometry_start.ply", sfmDataIO::ESfMData::ALL);
+    sfmDataIO::Save(fs, tinyScene, "EssentialGeometry_start.ply", sfmDataIO::ESfMData::ALL);
 
     //D. Perform Bundle Adjustment of the scene
 
     BundleAdjustmentCeres bundle_adjustment_obj;
     bundle_adjustment_obj.adjust(tinyScene);
 
-    sfmDataIO::Save(tinyScene, "EssentialGeometry_refined.ply", sfmDataIO::ESfMData::ALL);
+    sfmDataIO::Save(fs, tinyScene, "EssentialGeometry_refined.ply", sfmDataIO::ESfMData::ALL);
   }
   return EXIT_SUCCESS;
 }

@@ -42,6 +42,7 @@ bfs::path absolutePathNoExt(const bfs::path& p)
 
 int aliceVision_main(int argc, char* argv[])
 {
+    vfs::filesystem fs;
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -192,7 +193,7 @@ int aliceVision_main(int argc, char* argv[])
     if(!sfmDataFilename.empty())
     {
         ALICEVISION_LOG_INFO("Load dense point cloud.");
-        if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
+        if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
         {
           ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
           return EXIT_FAILURE;

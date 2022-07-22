@@ -167,6 +167,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
 : _isInit(false)
 , _withCalibration(false)
 {
+  vfs::filesystem fs;
   namespace bf = boost::filesystem;
 //    ALICEVISION_LOG_DEBUG(imagePath);
   // if it is a json, calibPath is neglected
@@ -177,7 +178,8 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     if(ext == ".json")
     {
       // load the json
-      _isInit = sfmDataIO::Load(_sfmdata, imagePath, sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
+      _isInit = sfmDataIO::Load(fs, _sfmdata, imagePath,
+                                sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
       _viewIterator = _sfmdata.getViews().begin();
       _sfmMode = true;
     }

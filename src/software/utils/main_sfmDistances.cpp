@@ -138,6 +138,8 @@ void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPo
 
 int main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -220,7 +222,7 @@ int main(int argc, char **argv)
 
   // Load input scene
   sfmData::SfMData sfmDataIn;
-  if(!sfmDataIO::Load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if (!sfmDataIO::Load(fs, sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;

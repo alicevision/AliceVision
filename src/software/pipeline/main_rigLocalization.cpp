@@ -63,6 +63,8 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
+
   // common parameters
   /// the AliceVision .json/abc data file
   std::string sfmFilePath;
@@ -271,7 +273,7 @@ int aliceVision_main(int argc, char** argv)
 
   // load SfMData
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL))
+  if (!sfmDataIO::Load(fs, sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
     return EXIT_FAILURE;

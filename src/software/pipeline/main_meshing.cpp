@@ -249,6 +249,7 @@ inline std::istream& operator>>(std::istream& in, BoundingBox& out_bbox)
 
 int aliceVision_main(int argc, char* argv[])
 {
+    vfs::filesystem fs;
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -445,7 +446,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;
@@ -499,14 +500,14 @@ int aliceVision_main(int argc, char* argv[])
                     std::array<Point3d, 8> hexah;
 
                     float minPixSize;
-                    fuseCut::Fuser fs(mp);
+                    fuseCut::Fuser fuser(mp);
 
                     if (boundingBox.isInitialized())
                         boundingBox.toHexahedron(&hexah[0]);
                     else if(meshingFromDepthMaps && (!estimateSpaceFromSfM || sfmData.getLandmarks().empty()))
-                      fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
+                      fuser.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
                     else
-                      fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
+                      fuser.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations, estimateSpaceMinObservationAngle);
 
                     {
                         const double length = hexah[0].x - hexah[1].x;
@@ -543,7 +544,8 @@ int aliceVision_main(int argc, char* argv[])
                       removeLandmarksWithoutObservations(densePointCloud);
                       if(colorizeOutput)
                         sfmData::colorizeTracks(densePointCloud);
-                      sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
+                      sfmDataIO::Save(fs, densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(),
+                                      sfmDataIO::ESfMData::ALL_DENSE);
                     }
 
                     delaunayGC.createGraphCut(&hexah[0], cams, outDirectory.string() + "/",
@@ -599,7 +601,7 @@ int aliceVision_main(int argc, char* argv[])
 
     removeLandmarksWithoutObservations(densePointCloud);
     ALICEVISION_LOG_INFO("Save dense point cloud.");
-    sfmDataIO::Save(densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
+    sfmDataIO::Save(fs, densePointCloud, outputDensePointCloud, sfmDataIO::ESfMData::ALL_DENSE);
 
     ALICEVISION_LOG_INFO("Save obj mesh file.");
     ALICEVISION_LOG_INFO("OUTPUT MESH " << outputMesh);

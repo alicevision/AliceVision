@@ -342,6 +342,8 @@ private:
 /// - Export computed data
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
@@ -457,7 +459,7 @@ int aliceVision_main(int argc, char **argv)
   // load input scene
   sfmData::SfMData sfmData;
   std::cout << sfmData.getViews().size()  << std::endl;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
     return EXIT_FAILURE;

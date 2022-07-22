@@ -529,6 +529,8 @@ void meshMasking(
  */
 int main(int argc, char **argv)
 {
+    vfs::filesystem fs;
+
     // command-line parameters
     std::string sfmFilePath;
     std::string inputMeshPath;
@@ -629,7 +631,7 @@ int main(int argc, char **argv)
     }
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
+    if (!sfmDataIO::Load(fs, sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL_DENSE))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
         return EXIT_FAILURE;

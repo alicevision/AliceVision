@@ -146,7 +146,7 @@ SfMData createTestScene(IndexT singleViewsCount,
 // - Import to .json
 //-----------------
 BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
-
+    vfs::filesystem fs;
     int flags = ALL;
 
     // Create a random scene
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as JSON
     const std::string jsonFile = "importExport.sfm";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmData,
         jsonFile.c_str(),
         ESfMData(flags)));
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Reload
     SfMData sfmJsonToJson;
     {
-        BOOST_CHECK(Load(sfmJsonToJson, jsonFile, ESfMData(flags)));
+        BOOST_CHECK(Load(fs, sfmJsonToJson, jsonFile, ESfMData(flags)));
         BOOST_CHECK(sfmData == sfmJsonToJson);
     }
     
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as ABC
     const std::string abcFile = "abcToAbc.abc";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmData,
         abcFile.c_str(),              
         ESfMData(flags)));
@@ -184,9 +184,9 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Reload
     SfMData sfmAbcToAbc;
     {
-        BOOST_CHECK(Load(sfmAbcToAbc, abcFile, ESfMData(flags)));
+        BOOST_CHECK(Load(fs, sfmAbcToAbc, abcFile, ESfMData(flags)));
         std::string abcFile2 = "abcToJson.sfm";
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmAbcToAbc,
         abcFile2.c_str(),
         ESfMData(flags)));
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as ABC
     const std::string abcFile2 = "abcToAbc2.abc";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmAbcToAbc,
         abcFile2.c_str(),
         ESfMData(flags)));
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as JSON
     const std::string jsonFile3 = "jsonToABC.sfm";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmData,
         jsonFile3.c_str(),
         ESfMData(flags)));
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Reload
     SfMData sfmJsonToABC;
     {
-        BOOST_CHECK(Load(sfmJsonToABC, jsonFile3, ESfMData(flags)));
+        BOOST_CHECK(Load(fs, sfmJsonToABC, jsonFile3, ESfMData(flags)));
         BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC.views.size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC.intrinsics.size());
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as ABC
     const std::string abcFile3 = "jsonToABC.abc";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmJsonToABC,
         abcFile3.c_str(),
         ESfMData(flags)));
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Reload
     SfMData sfmJsonToABC2;
     {
-        BOOST_CHECK(Load(sfmJsonToABC2, abcFile3, ESfMData(flags)));
+        BOOST_CHECK(Load(fs, sfmJsonToABC2, abcFile3, ESfMData(flags)));
         BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC2.views.size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC2.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as ABC
     const std::string abcFile4 = "jsonToABC2.abc";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmJsonToABC2,
         abcFile4.c_str(),
         ESfMData(flags)));
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Reload
     SfMData sfmJsonToABC3;
     {
-        BOOST_CHECK(Load(sfmJsonToABC3, abcFile4, ESfMData(flags)));
+        BOOST_CHECK(Load(fs, sfmJsonToABC3, abcFile4, ESfMData(flags)));
         BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC3.views.size());
         BOOST_CHECK_EQUAL( sfmData.getPoses().size(), sfmJsonToABC3.getPoses().size());
         BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Export as JSON
     const std::string jsonFile4 = "jsonToABC2.sfm";
     {
-        BOOST_CHECK(Save(
+        BOOST_CHECK(Save(fs,
         sfmJsonToABC3,
         jsonFile4.c_str(),
         ESfMData(flags)));

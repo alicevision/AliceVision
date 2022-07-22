@@ -32,6 +32,8 @@ namespace fs = boost::filesystem;
 /// Compute the structure of a scene according existing camera poses.
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -111,7 +113,7 @@ int aliceVision_main(int argc, char **argv)
   
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -180,12 +182,12 @@ int aliceVision_main(int argc, char **argv)
 
   if(fs::extension(outSfMDataFilename) != ".ply")
   {
-    sfmDataIO::Save(sfmData,
+    sfmDataIO::Save(fs, sfmData,
          (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
          sfmDataIO::ESfMData::ALL);
   }
 
-  if(sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
+  if (sfmDataIO::Save(fs, sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     return EXIT_SUCCESS;
   
   ALICEVISION_LOG_ERROR("Can't save the output SfMData.");

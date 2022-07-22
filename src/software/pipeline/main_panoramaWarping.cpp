@@ -187,7 +187,7 @@ int aliceVision_main(int argc, char** argv)
 		// Camera intrinsics
 		// Camera extrinsics
 		sfmData::SfMData sfmData;
-		if(!sfmDataIO::Load(sfmData, sfmDataFilename,
+		if (!sfmDataIO::Load(fs, sfmData, sfmDataFilename,
 												sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
 		{
 				ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");

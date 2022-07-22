@@ -112,6 +112,7 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename;
     std::string samplesFolder;
@@ -190,7 +191,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Read sfm data
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(fs, sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
         return EXIT_FAILURE;

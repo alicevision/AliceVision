@@ -24,6 +24,8 @@ namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
+
     // command-line parameters
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmOutputDataFilepath; // output folder for splited images
@@ -76,7 +78,7 @@ int aliceVision_main(int argc, char** argv)
     sfmDataIO::generateSampleScene(sfmData);
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
-    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::Save(fs, sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be write.");
         return EXIT_FAILURE;

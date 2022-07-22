@@ -549,6 +549,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string sfmDataFilepath;
     std::string labelsFilepath;
     std::string warpingFolder;
@@ -639,7 +640,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
+    if (!sfmDataIO::Load(fs, sfmData, sfmDataFilepath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilepath + "' cannot be read");
         return EXIT_FAILURE;

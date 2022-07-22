@@ -242,6 +242,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations(const rotationAver
 bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<IndexT, Mat3>& global_rotations,
                                                                  matching::PairwiseMatches& tripletWise_matches)
 {
+  vfs::filesystem fs;
+
   // Translation averaging (compute translations & update them to a global common coordinates system)
   GlobalSfMTranslationAveragingSolver translation_averaging_solver;
   const bool bTranslationAveraging = translation_averaging_solver.Run(
@@ -255,7 +257,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<I
 
   if(!_loggingFile.empty())
   {
-    sfmDataIO::Save(_sfmData,(fs::path(_loggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS));
+    sfmDataIO::Save(fs, _sfmData,(fs::path(_loggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(),
+                    sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS));
   }
 
   return bTranslationAveraging;
@@ -264,6 +267,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<I
 /// Compute the initial structure of the scene
 bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::PairwiseMatches& tripletWise_matches)
 {
+  vfs::filesystem fs;
+
   // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
   {
     using namespace aliceVision::track;
@@ -354,7 +359,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
     // Export initial structure
     if (!_loggingFile.empty())
     {
-      sfmDataIO::Save(_sfmData,
+      sfmDataIO::Save(fs, _sfmData,
                      (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
                      sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
@@ -365,6 +370,8 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
 // Adjust the scene (& remove outliers)
 bool ReconstructionEngine_globalSfM::Adjust()
 {
+  vfs::filesystem fs;
+
   // refine sfm  scene (in a 3 iteration process (free the parameters regarding their incertainty order)):
   BundleAdjustmentCeres::CeresOptions options; 
   options.useParametersOrdering = false; // disable parameters ordering
@@ -375,13 +382,15 @@ bool ReconstructionEngine_globalSfM::Adjust()
   if(success)
   {
     if(!_loggingFile.empty())
-      sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+      sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
+                      sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
     // refine only structure and rotations & translations
     success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
 
     if(success && !_loggingFile.empty())
-      sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+      sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
+                      sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
   if(success && !_lockAllIntrinsics)
@@ -389,7 +398,8 @@ bool ReconstructionEngine_globalSfM::Adjust()
     // refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
     success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ALL);
     if(success && !_loggingFile.empty())
-      sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+      sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
+                      sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
   // Remove outliers (max_angle, residual error)
@@ -404,7 +414,8 @@ bool ReconstructionEngine_globalSfM::Adjust()
                         "\t- # landmarks after angular filter: " << pointcount_angular_filter);
 
   if(!_loggingFile.empty())
-    sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+    sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(),
+                    sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
   // check that poses & intrinsic cover some measures (after outlier removal)
   const IndexT minPointPerPose = 12; // 6 min
@@ -424,7 +435,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
   success = BA.adjust(_sfmData, refineOptions);
 
   if(success && !_loggingFile.empty())
-    sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+    sfmDataIO::Save(fs, _sfmData, (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
   return success;
 }

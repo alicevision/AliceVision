@@ -108,6 +108,8 @@ inline void pauseProcess()
 
 bool ColorHarmonizationEngineGlobal::Process()
 {
+  vfs::filesystem fs;
+
   const std::string vec_selectionMethod[ 3 ] = { "fullFrame", "matchedPoints", "KVLD" };
   const std::string vec_harmonizeMethod[ 1 ] = { "quantifiedGainCompensation" };
   const int harmonizeMethod = 0;
@@ -440,6 +442,8 @@ bool ColorHarmonizationEngineGlobal::Process()
 
 bool ColorHarmonizationEngineGlobal::ReadInputData()
 {
+  vfs::filesystem fs;
+
   if(!fs::is_directory( _outputDirectory))
   {
     std::cerr << "The output folder is not a valid folder" << std::endl;
@@ -454,7 +458,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
 
   // a. Read input scenes views
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
+  if (!sfmDataIO::Load(fs, sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
   {
     std::cerr << "The input file \""<< _sfmDataFilename << "\" cannot be read" << std::endl;
     return false;

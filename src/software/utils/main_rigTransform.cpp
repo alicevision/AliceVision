@@ -42,6 +42,7 @@ static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string exportFile;
   std::string importFile;
@@ -116,7 +117,7 @@ int aliceVision_main(int argc, char** argv)
 
   // import sfm data
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, importFile, sfmDataIO::ESfMData::ALL))
+  if (!sfmDataIO::Load(fs, sfmData, importFile, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< importFile << "' cannot be read");
     return EXIT_FAILURE;

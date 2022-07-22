@@ -217,6 +217,7 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
 
 /**
  * @brief Load a JSON SfMData file.
+ * @param fs Virtual filesystem handle
  * @param[out] sfmData The output SfMData
  * @param[in] filename The filename
  * @param[in] partFlag The ESfMData load flag
@@ -225,7 +226,8 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
  * @param[in] viewIdRegex Optional regex used when viewIdMethod is FILENAME
  * @return true if completed
  */
-bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag, bool incompleteViews = false,
+bool loadJSON(vfs::filesystem& fs, sfmData::SfMData& sfmData, const std::string& filename,
+              ESfMData partFlag, bool incompleteViews = false,
               EViewIdMethod viewIdMethod = EViewIdMethod::METADATA, const std::string& viewIdRegex = "");
 
 } // namespace sfmDataIO

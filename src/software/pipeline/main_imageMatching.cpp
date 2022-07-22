@@ -704,7 +704,7 @@ int aliceVision_main(int argc, char** argv)
   sfmData::SfMData sfmDataA, sfmDataB;
 
   using namespace sfmDataIO;
-  if(!sfmDataIO::Load(sfmDataA, sfmDataFilenameA, ESfMData(ESfMData::VIEWS|ESfMData::EXTRINSICS|ESfMData::INTRINSICS)))
+  if (!sfmDataIO::Load(fs, sfmDataA, sfmDataFilenameA, ESfMData(ESfMData::VIEWS|ESfMData::EXTRINSICS|ESfMData::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameA + "' cannot be read.");
     return EXIT_FAILURE;
@@ -712,7 +712,7 @@ int aliceVision_main(int argc, char** argv)
 
   if(useMultiSfM)
   {
-    if(!sfmDataIO::Load(sfmDataB, sfmDataFilenameB, ESfMData(ESfMData::VIEWS|ESfMData::EXTRINSICS|ESfMData::INTRINSICS)))
+    if (!sfmDataIO::Load(fs, sfmDataB, sfmDataFilenameB, ESfMData(ESfMData::VIEWS|ESfMData::EXTRINSICS|ESfMData::INTRINSICS)))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
       return EXIT_FAILURE;
@@ -880,7 +880,7 @@ int aliceVision_main(int argc, char** argv)
     // should not loose B data
     sfmDataB.combine(sfmDataA);
 
-    if(!sfmDataIO::Save(sfmDataB, outputCombinedSfM, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Save(fs, sfmDataB, outputCombinedSfM, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("Unable to save combined SfM: " << outputCombinedSfM);
       return EXIT_FAILURE;

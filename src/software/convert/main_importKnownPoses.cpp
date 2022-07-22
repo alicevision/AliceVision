@@ -131,6 +131,8 @@ XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath,
 // import from a SfMData format to another
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string knownPosesFilePath;
@@ -185,7 +187,7 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_COUT(vm);
 
   // Loading the sfmData to modify it
-  if(!sfmDataIO::Load(sfmData, sfmDataFilePath, sfmDataIO::ESfMData::ALL))
+  if (!sfmDataIO::Load(fs, sfmData, sfmDataFilePath, sfmDataIO::ESfMData::ALL))
   {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilePath << "' cannot be read.");
       return EXIT_FAILURE;
@@ -524,7 +526,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // export the SfMData scene in the expected format
-  if(!sfmDataIO::Save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
+  if (!sfmDataIO::Save(fs, sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
   {
       ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputFilename << "'");
       return EXIT_FAILURE;

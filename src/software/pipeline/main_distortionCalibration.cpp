@@ -525,7 +525,7 @@ int aliceVision_main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::Load(fs, sfmData, sfmInputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;
@@ -552,7 +552,7 @@ int aliceVision_main(int argc, char* argv[])
     if(lensGridFilepaths.empty())
     {
         ALICEVISION_LOG_WARNING("No lens grid image to perform the lens calibration.");
-        if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if (!sfmDataIO::Save(fs, sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
             ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be read.");
             return EXIT_FAILURE;
@@ -770,7 +770,7 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
-    if(!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+    if (!sfmDataIO::Save(fs, sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be read.");
         return EXIT_FAILURE;

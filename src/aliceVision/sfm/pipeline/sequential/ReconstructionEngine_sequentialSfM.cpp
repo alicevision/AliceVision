@@ -390,6 +390,8 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
 
 double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 {
+  vfs::filesystem fs;
+
   IndexT resectionId = 0;
 
   std::set<IndexT> remainingViewIds;
@@ -469,7 +471,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
         auto chrono_start = std::chrono::steady_clock::now();
         std::ostringstream os;
         os << "sfm_" << std::setw(8) << std::setfill('0') << resectionId;
-        sfmDataIO::Save(_sfmData, (fs::path(_sfmStepFolder) / (os.str() + _params.sfmStepFileExtension)).string(), _params.sfmStepFilter);
+        sfmDataIO::Save(fs, _sfmData, (fs::path(_sfmStepFolder) / (os.str() + _params.sfmStepFileExtension)).string(), _params.sfmStepFilter);
         ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       }
 

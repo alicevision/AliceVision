@@ -233,7 +233,7 @@ int aliceVision_main(int argc, char** argv)
                                                  inputExt) != sfmSupportedExtensions.end())
         {
             sfmData::SfMData sfmData;
-            if(!sfmDataIO::Load(sfmData, inputExpression, sfmDataIO::VIEWS))
+            if (!sfmDataIO::Load(fs, sfmData, inputExpression, sfmDataIO::VIEWS))
             {
                 ALICEVISION_LOG_ERROR("The input SfMData file '" << inputExpression << "' cannot be read.");
                 return EXIT_FAILURE;
@@ -290,7 +290,7 @@ int aliceVision_main(int argc, char** argv)
             // Save sfmData with modified path to images
             const std::string sfmfilePath =
                 (vfs::path(outputPath) / vfs::path(inputExpression).filename()).generic_string();
-            if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            if (!sfmDataIO::Save(fs, sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
             {
                 ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
 

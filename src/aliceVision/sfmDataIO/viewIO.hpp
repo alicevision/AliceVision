@@ -55,11 +55,14 @@ inline std::istream& operator>>(std::istream& in, EViewIdMethod& s)
 
 /**
  * @brief update an incomplete view (at least only the image path)
+ * @param fs Virtual filesystem handle
  * @param view The given incomplete view
  * @param[in] viewIdMethod ViewId generation method to use
  * @param[in] viewIdRegex Optional regex used when viewIdMethod is FILENAME
  */
-void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EViewIdMethod::METADATA, const std::string& viewIdRegex = "");
+void updateIncompleteView(vfs::filesystem& fs, sfmData::View& view,
+                          EViewIdMethod viewIdMethod = EViewIdMethod::METADATA,
+                          const std::string& viewIdRegex = "");
 
 /**
  * @brief create an intrinsic for the given View

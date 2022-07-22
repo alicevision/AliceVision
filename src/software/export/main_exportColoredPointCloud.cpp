@@ -30,6 +30,8 @@ namespace po = boost::program_options;
 // Convert from a SfMData format to another
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -91,7 +93,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::Load(fs, sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
@@ -102,7 +104,7 @@ int aliceVision_main(int argc, char **argv)
 
   // export the SfMData scene in the expected format
   ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");
-  if(!sfmDataIO::Save(sfmData, outputSfMDataFilename.c_str(), sfmDataIO::ESfMData::ALL))
+  if(!sfmDataIO::Save(fs, sfmData, outputSfMDataFilename.c_str(), sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The output SfMData file '" + sfmDataFilename + "' cannot be save.");
     return EXIT_FAILURE;

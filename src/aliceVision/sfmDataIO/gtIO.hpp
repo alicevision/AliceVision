@@ -16,9 +16,11 @@
 namespace aliceVision {
 namespace sfmDataIO {
 
-bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, geometry::Pose3& pose);
+bool read_aliceVision_Camera(vfs::filesystem& fs, const std::string& camName,
+                             camera::Pinhole& cam, geometry::Pose3& pose);
 
-bool read_Strecha_Camera(const std::string& camName, camera::Pinhole& cam, geometry::Pose3& pose);
+bool read_Strecha_Camera(vfs::filesystem& fs, const std::string& camName,
+                         camera::Pinhole& cam, geometry::Pose3& pose);
 
 /**
 @brief Reads a set of Pinhole Cameras and its poses from a ground truth dataset.
@@ -27,7 +29,7 @@ bool read_Strecha_Camera(const std::string& camName, camera::Pinhole& cam, geome
 @param[in] useUID, set to false to disable UID".
 @return Returns true if data has been read without errors
 **/
-bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID = true);
+bool readGt(vfs::filesystem& fs, const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID = true);
 
 } // namespace sfmDataIO
 } // namespace aliceVision

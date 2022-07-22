@@ -84,6 +84,8 @@ bool estimateAutomaticReferenceFrame(Eigen::Matrix3d & referenceFrameUpdate, con
 
 int aliceVision_main(int argc, char **argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
@@ -210,7 +212,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load input SfMData scene
   sfmData::SfMData inputSfmData;
-  if(!sfmDataIO::Load(inputSfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::Load(fs, inputSfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -298,12 +300,12 @@ int aliceVision_main(int argc, char **argv)
 
   if(refine)
   {
-    sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
+    sfmDataIO::Save(fs, sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
     if (!sfmEngine.Adjust())
     {
       return EXIT_FAILURE;
     }
-    sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
+    sfmDataIO::Save(fs, sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
 
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
@@ -437,12 +439,12 @@ int aliceVision_main(int argc, char **argv)
 
   // Export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
-  sfmDataIO::Save(outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
-  sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(fs, outSfmData, outputSfMDataFilepath, sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(fs, outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   if(!outputViewsAndPosesFilepath.empty())
   {
-      sfmDataIO::Save(outSfmData, outputViewsAndPosesFilepath,
+      sfmDataIO::Save(fs, outSfmData, outputViewsAndPosesFilepath,
                       sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS));
   }
 

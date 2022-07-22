@@ -17,6 +17,7 @@ namespace sfmDataIO {
 
 /**
  * @brief Read the file containing the cameras (intrinsics and pose) in the middlebury format
+ * @param[in] fs Virtual filesystem handle
  * @param[in] filename middlebury file (e.g. temple_par.txt)
  * @param[in] basePath the base path where the images can be found
  * @param[in] uniqueIntrinsics whether to consider all the intrinsics of the cameras the same (those of the first camera)
@@ -25,8 +26,9 @@ namespace sfmDataIO {
  * @param[in] lockPoses set the poses to locked (i.e. they cannot change during e.g. structure from motion)
  * @return the corresponding SfMData representation of the scene
  */
-sfmData::SfMData middleburySceneToSfmData(const std::string& filename, const std::string& basePath,
-                                          bool uniqueIntrinsics, bool importPoses, bool lockIntrinsics, bool lockPoses);
+sfmData::SfMData middleburySceneToSfmData(vfs::filesystem& fs, const std::string& filename,
+                                          const std::string& basePath, bool uniqueIntrinsics,
+                                          bool importPoses, bool lockIntrinsics, bool lockPoses);
 
 /**
  * @brief Parse a line of the middlebury file containing the calibration, the pose and the image name
