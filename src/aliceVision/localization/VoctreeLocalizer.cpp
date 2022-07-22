@@ -273,8 +273,6 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
                                     const std::string & weightsFilepath,
                                     const std::string & featFolder)
 {
-  vfs::filesystem fs;
-
   bool withWeights = !weightsFilepath.empty();
 
   // Load vocabulary tree
@@ -328,7 +326,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
   }
 
-  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders(fs);
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders(_fs);
   if(!featFolder.empty())
     featuresFolders.emplace_back(featFolder);
 
@@ -364,7 +362,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(fs, featuresFolders, id_view, *imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(_fs, featuresFolders, id_view, *imageDescriber);
 
       if(descType == _voctreeDescType)
       {
