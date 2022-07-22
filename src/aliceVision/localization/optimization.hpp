@@ -24,7 +24,8 @@ namespace localization{
  * The camera poses are refined as well. If \p allTheSameIntrinsics is provided  
  * a single camera having constant internal parameters during the whole sequence is assumed.
  *  
- * @param[in,out] vec_localizationResult The series of camera poses and point correspondences. 
+ * @param[in] fs Virtual file system handle
+ * @param[in,out] vec_localizationResult The series of camera poses and point correspondences.
  * @param[in] allTheSameIntrinsics If true all the intrinsics of the sequence are
  * assumed to be the same, ie a sequence in which the camrera parameters do not change.
  * @param[in] b_refine_intrinsic Whether to refine the camera parameters.
@@ -40,7 +41,7 @@ namespace localization{
  * points (and associated 2D features) will be discarded.
  * @return true if the bundle adjustment has success.
  */
-bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
+bool refineSequence(vfs::filesystem& fs, std::vector<LocalizationResult> & vec_localizationResult,
                     bool allTheSameIntrinsics = true,
                     bool b_refine_intrinsic = true,
                     bool b_no_distortion = false,

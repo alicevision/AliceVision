@@ -23,7 +23,8 @@
 namespace aliceVision{
 namespace localization{
 
-bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
+bool refineSequence(vfs::filesystem& fs,
+                    std::vector<LocalizationResult> & vec_localizationResult,
                     bool allTheSameIntrinsics /*= true*/,
                     bool b_refine_intrinsic /*= true*/,
                     bool b_no_distortion /*= false*/,
@@ -32,8 +33,6 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
                     const std::string & outputFilename /*= ""*/,
                     std::size_t minPointVisibility /*=0*/)
 {
-  vfs::filesystem fs;
-
   const std::size_t numViews = vec_localizationResult.size();
   assert(numViews > 0 );
    

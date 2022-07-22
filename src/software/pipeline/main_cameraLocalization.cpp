@@ -477,7 +477,7 @@ int aliceVision_main(int argc, char** argv)
     const bool b_allTheSame = true;
     const bool b_refineStructure = false;
     const bool b_refinePose = true;
-    const bool BAresult = localization::refineSequence(vec_localizationResults,
+    const bool BAresult = localization::refineSequence(fs, vec_localizationResults,
                                                        b_allTheSame, 
                                                        !noBArefineIntrinsics, 
                                                        noDistortion, 
