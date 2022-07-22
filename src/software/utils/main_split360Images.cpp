@@ -11,11 +11,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <aliceVision/panorama/sphericalMapping.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
 
 #include <OpenImageIO/imageio.h>
@@ -35,7 +35,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace oiio = OIIO;
 
@@ -88,9 +87,9 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
   return f;
 }
 
-bool splitDualFisheye(const std::string& imagePath, const std::string& outputFolder, const std::string& splitPreset)
+bool splitDualFisheye(vfs::filesystem& fs, const std::string& imagePath,
+                      const std::string& outputFolder, const std::string& splitPreset)
 {
-  vfs::filesystem fs;
   image::Image<image::RGBfColor> imageSource;
   image::readImage(fs, imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
@@ -131,7 +130,7 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 
     oiio::ImageBufAlgo::cut(bufferOut, buffer, subImageROI);
 
-    boost::filesystem::path path(imagePath);
+    vfs::path path(imagePath);
     image::writeImage(fs, outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
                       imageOut, image::EImageColorSpace::AUTO, image::readImageMetadata(fs, imagePath));
   }
@@ -198,7 +197,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
     const float focal_mm = focal_px / splitResolution; // muliplied by sensorWidth (which is 1 for "Custom")
     outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
-    boost::filesystem::path path(imagePath);
+    vfs::path path(imagePath);
     image::writeImage(fs, outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
                       imaOut, image::EImageColorSpace::AUTO, outMetadataSpec.extra_attribs);
 
@@ -276,7 +275,7 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
     }
   }
 
-  boost::filesystem::path path(imagePath);
+  vfs::path path(imagePath);
   std::ofstream svgFile(outputFolder + std::string("/") + path.stem().string() + std::string(".svg"));
   svgFile << svgStream.closeSvgFile().str();
   return true;
@@ -284,6 +283,8 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
+
   // command-line parameters
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string inputPath;                      // media file path list
@@ -364,9 +365,9 @@ int aliceVision_main(int argc, char** argv)
   
   // check output folder and update to its absolute path
   {
-    const fs::path outDir = fs::absolute(outputFolder);
+    const vfs::path outDir = fs.absolute(outputFolder);
     outputFolder = outDir.string();
-    if(!fs::is_directory(outDir))
+    if(!fs.is_directory(outDir))
     {
       ALICEVISION_LOG_ERROR("Can't find folder " << outputFolder);
       return EXIT_FAILURE;
@@ -405,15 +406,15 @@ int aliceVision_main(int argc, char** argv)
   std::vector<std::string> badPaths;
 
   {
-    const fs::path path = fs::absolute(inputPath);
-    if(fs::exists(path) && fs::is_directory(path))
+    const vfs::path path = fs.absolute(inputPath);
+    if (fs.exists(path) && fs.is_directory(path))
     {
-      for(fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
+      for (const vfs::directory_entry& entry : vfs::directory_iterator(fs, path))
         imagePaths.push_back(entry.path().string());
 
       ALICEVISION_LOG_INFO("Find " << imagePaths.size() << " file paths.");
     }
-    else if(fs::exists(path))
+    else if (fs.exists(path))
     {
       imagePaths.push_back(path.string());
     }
@@ -439,7 +440,7 @@ int aliceVision_main(int argc, char** argv)
     }
     else if(splitMode == "dualfisheye")
     {
-      hasCorrectPath = splitDualFisheye(imagePath, outputFolder, dualFisheyeSplitPreset);
+      hasCorrectPath = splitDualFisheye(fs, imagePath, outputFolder, dualFisheyeSplitPreset);
     }
     else //exif
     {
