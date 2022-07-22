@@ -1,6 +1,8 @@
 #include "cache.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision
 {
@@ -87,12 +89,12 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount) {
   std::string pathname = getPathForIndex(index_id);
   vfs::path path(pathname);
 
-  std::ofstream file_index;
-  if (_fs.exists(path)) {
-    file_index.open(pathname, std::ios::binary  | std::ios::out | std::ios::in);
+  vfs::ostream file_index;
+  if (_fs.exists(path)) { 
+    file_index = _fs.open_write(pathname, std::ios::binary | std::ios::out | std::ios::in);
   }
   else {
-    file_index.open(pathname, std::ios::binary  | std::ios::out);
+    file_index = _fs.open_write(pathname, std::ios::binary | std::ios::out);
   }
   
   if (!file_index.is_open()) {
@@ -123,7 +125,7 @@ std::unique_ptr<unsigned char> CacheManager::load(size_t startBlockId, size_t bl
 
   const std::string path = getPathForIndex(indexId);
   
-  std::ifstream file_index(path, std::ios::binary);
+  auto file_index = _fs.open_read_binary(path);
   if (!file_index.is_open()) {
     return std::unique_ptr<unsigned char>();
   }  
@@ -153,7 +155,7 @@ bool CacheManager::save(std::unique_ptr<unsigned char> && data, size_t startBloc
 
   const std::string path = getPathForIndex(indexId);
 
-  std::ofstream file_index(path, std::ios::binary | std::ios::out | std::ios::in);
+  auto file_index = _fs.open_write(path, std::ios::binary | std::ios::out | std::ios::in);
   if (!file_index.is_open()) {
     return false;
   }
