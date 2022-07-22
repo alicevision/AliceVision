@@ -8,6 +8,7 @@
 
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <string>
 #include <vector>
@@ -23,6 +24,7 @@ namespace voctree {
 /**
  * @brief Given a vocabulary tree and a set of features it builds a database
  *
+ * @param[in] fs Virtual filesystem handle
  * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
@@ -32,7 +34,8 @@ namespace voctree {
  * @return the number of overall features read
  */
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const sfmData::SfMData& sfmData,
+std::size_t populateDatabase(vfs::filesystem& fs,
+                             const sfmData::SfMData& sfmData,
                              const std::vector<std::string>& featuresFolders,
                              const VocabularyTree<VocDescriptorT>& tree,
                              Database& db,
@@ -43,6 +46,7 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
+ * @param[in] fs Virtual filesystem handle
  * @param[in] filepath A file containithe path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be usedng  for feature quantization
@@ -54,7 +58,8 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const sfmData::SfMData& sfmData,
+void queryDatabase(vfs::filesystem& fs,
+                   const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
@@ -68,6 +73,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
+ * @param[in] fs Virtual filesystem handle
  * @param[in] filepath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
@@ -79,7 +85,8 @@ void queryDatabase(const sfmData::SfMData& sfmData,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const sfmData::SfMData& sfmData,
+void queryDatabase(vfs::filesystem& fs,
+                   const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
@@ -92,6 +99,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
 /**
  * @brief Returns some statistics (histogram) 
  * 
+ * @param[in] fs Virtual filesystem handle
  * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
@@ -101,7 +109,8 @@ void queryDatabase(const sfmData::SfMData& sfmData,
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
-void voctreeStatistics(const sfmData::SfMData& sfmData,
+void voctreeStatistics(vfs::filesystem& fs,
+                       const sfmData::SfMData& sfmData,
                        const std::vector<std::string>& featuresFolders,
                        const VocabularyTree<VocDescriptorT>& tree,
                        const Database& db,

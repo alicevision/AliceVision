@@ -80,6 +80,7 @@ static const std::string programDescription =
  */
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string weightsName;                  // the filename for the voctree weights
   bool withWeights = false;            // flag for the optional weights file
@@ -188,7 +189,7 @@ int aliceVision_main(int argc, char** argv)
   // read the descriptors and populate the database
   ALICEVISION_LOG_INFO("Reading descriptors from " << sfmDataFilename);
   auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmData, featuresFolders, tree, db);
+  size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(fs, sfmData, featuresFolders, tree, db);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
@@ -220,7 +221,7 @@ int aliceVision_main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-  aliceVision::voctree::voctreeStatistics<DescriptorUChar>(querySfmData, featuresFolders, tree, db, distance, globalHisto);
+  aliceVision::voctree::voctreeStatistics<DescriptorUChar>(fs, querySfmData, featuresFolders, tree, db, distance, globalHisto);
   
   std::cout << "-----------------" << std::endl;
   

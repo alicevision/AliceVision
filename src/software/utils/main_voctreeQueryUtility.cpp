@@ -308,7 +308,7 @@ int aliceVision_main(int argc, char** argv)
 
   ALICEVISION_LOG_INFO("Reading descriptors from " << sfmDataFilename);
   auto detect_start = std::chrono::steady_clock::now();
-  std::size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmData, featuresFolders, tree, db, Nmax);
+  std::size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(fs, sfmData, featuresFolders, tree, db, Nmax);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
@@ -363,7 +363,8 @@ int aliceVision_main(int argc, char** argv)
   {
     // otherwise query the database with the provided query list
     ALICEVISION_LOG_INFO("Querying the database with the documents in " << querySfmDataFilename);
-    voctree::queryDatabase<DescriptorUChar>(*querySfmData, featuresFolders, tree, db, numImageQuery, allDocMatches, histograms, distance, Nmax);
+    voctree::queryDatabase<DescriptorUChar>(fs, *querySfmData, featuresFolders, tree, db,
+                                            numImageQuery, allDocMatches, histograms, distance, Nmax);
   }
 
   // Load the corresponding RegionsPerView

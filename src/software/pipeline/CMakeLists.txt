@@ -76,7 +76,8 @@ if(ALICEVISION_BUILD_SFM)
   alicevision_add_software(aliceVision_imageMatching
     SOURCE main_imageMatching.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
+    LINKS aliceVision_vfs
+          aliceVision_system
           aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO

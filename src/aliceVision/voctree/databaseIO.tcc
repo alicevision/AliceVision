@@ -22,14 +22,15 @@ namespace aliceVision {
 namespace voctree {
 
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const sfmData::SfMData& sfmData,
+std::size_t populateDatabase(vfs::filesystem& fs,
+                             const sfmData::SfMData& sfmData,
                              const std::vector<std::string>& featuresFolders,
                              const VocabularyTree<VocDescriptorT>& tree,
                              Database& db,
                              const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(sfmData, featuresFolders, descriptorsFiles);
+  getListOfDescriptorFiles(fs, sfmData, featuresFolders, descriptorsFiles);
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
@@ -62,7 +63,8 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
 }
 
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const sfmData::SfMData& sfmData,
+std::size_t populateDatabase(vfs::filesystem& fs,
+                             const sfmData::SfMData& sfmData,
                              const std::vector<std::string>& featuresFolders,
                              const VocabularyTree<VocDescriptorT>& tree,
                              Database& db,
@@ -70,7 +72,7 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
                              const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(sfmData, featuresFolders, descriptorsFiles);
+  getListOfDescriptorFiles(fs, sfmData, featuresFolders, descriptorsFiles);
   std::size_t numDescriptors = 0;
 
   // Read the descriptors
@@ -104,7 +106,8 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
 }
 
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const sfmData::SfMData& sfmData,
+void queryDatabase(vfs::filesystem& fs,
+                   const sfmData::SfMData& sfmData,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
                    size_t numResults,
@@ -113,7 +116,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
                    const int Nmax)
 {
   std::map<size_t, Document> documents;
-  queryDatabase<DescriptorT>(sfmData, tree, db, numResults, allDocMatches, documents, distanceMethod, Nmax);
+  queryDatabase<DescriptorT>(fs, sfmData, tree, db, numResults, allDocMatches, documents, distanceMethod, Nmax);
 }
 
 /**
@@ -121,6 +124,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
+ * @param[in] fs Virtual filesystem handle.
  * @param[in] filepath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
@@ -132,7 +136,8 @@ void queryDatabase(const sfmData::SfMData& sfmData,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const sfmData::SfMData& sfmData,
+void queryDatabase(vfs::filesystem& fs,
+                   const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
@@ -143,7 +148,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
                    const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(sfmData, featuresFolders, descriptorsFiles);
+  getListOfDescriptorFiles(fs, sfmData, featuresFolders, descriptorsFiles);
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
@@ -180,7 +185,8 @@ void queryDatabase(const sfmData::SfMData& sfmData,
 }
 
 template<class DescriptorT, class VocDescriptorT>
-void voctreeStatistics(const sfmData::SfMData& sfmData,
+void voctreeStatistics(vfs::filesystem& fs,
+                       const sfmData::SfMData& sfmData,
                        const std::vector<std::string>& featuresFolders,
                        const VocabularyTree<VocDescriptorT>& tree,
                        const Database& db,
@@ -188,7 +194,7 @@ void voctreeStatistics(const sfmData::SfMData& sfmData,
                        std::map<int, int>& globalHistogram)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(sfmData, featuresFolders, descriptorsFiles);
+  getListOfDescriptorFiles(fs, sfmData, featuresFolders, descriptorsFiles);
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");

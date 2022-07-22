@@ -55,10 +55,10 @@ void getInfoBinFile(const std::string &path, int dim, std::size_t &numDescriptor
   }
 }
 
-void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
+void getListOfDescriptorFiles(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
+                              const std::vector<std::string>& featuresFolders,
+                              std::map<IndexT, std::string>& descriptorsFiles)
 {
-  namespace bfs = boost::filesystem;
-
   descriptorsFiles.clear();
 
   if(sfmData.getViews().empty())
@@ -86,9 +86,9 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector
       for(const feature::EImageDescriberType descType: descTypes)
       {
         // generate the equivalent .desc file path
-        const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(descType) + ".desc")).string();
+        const std::string filepath = vfs::path(vfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(descType) + ".desc")).string();
 
-        if(bfs::exists(filepath))
+        if (fs.exists(filepath))
         {
           descriptorsFiles[view.first] = filepath;
           found = true;

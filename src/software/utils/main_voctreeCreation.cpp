@@ -44,6 +44,8 @@ typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUCh
  */
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
+
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   int tbVerbosity = 2;
   std::string weightName;
@@ -127,7 +129,7 @@ int aliceVision_main(int argc, char** argv)
   std::vector<size_t> descRead;
   ALICEVISION_COUT("Reading descriptors from " << sfmDataFilename);
   auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotDescriptors = aliceVision::voctree::readDescFromFiles<DescriptorFloat, DescriptorUChar>(sfmData, featuresFolders, descriptors, descRead);
+  size_t numTotDescriptors = aliceVision::voctree::readDescFromFiles<DescriptorFloat, DescriptorUChar>(fs, sfmData, featuresFolders, descriptors, descRead);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
   if(descriptors.empty())

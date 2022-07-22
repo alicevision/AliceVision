@@ -421,7 +421,8 @@ void generateFromVoctree(PairList& allMatches,
   }
 }
 
-void conditionVocTree(const std::string& treeName, bool withWeights, const std::string& weightsName, const EImageMatchingMode matchingMode, const std::vector<std::string>& featuresFolders,
+void conditionVocTree(vfs::filesystem& fs, const std::string& treeName, bool withWeights,
+                      const std::string& weightsName, const EImageMatchingMode matchingMode, const std::vector<std::string>& featuresFolders,
                       const sfmData::SfMData& sfmDataA, std::size_t nbMaxDescriptors, const std::string& sfmDataFilenameA, const sfmData::SfMData& sfmDataB, const std::string& sfmDataFilenameB,
                       bool useMultiSfM, const std::map<IndexT, std::string>& descriptorsFilesA, std::size_t numImageQuery, OrderedPairList& selectedPairs)
 {
@@ -483,7 +484,7 @@ void conditionVocTree(const std::string& treeName, bool withWeights, const std::
            (matchingMode == EImageMatchingMode::A_AB) ||
            (matchingMode == EImageMatchingMode::A_A))
         {
-          nbFeaturesLoadedInputA = voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
+          nbFeaturesLoadedInputA = voctree::populateDatabase<DescriptorUChar>(fs, sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
           nbSetDescriptors = db.getSparseHistogramPerImage().size();
 
           if(nbFeaturesLoadedInputA == 0)
@@ -495,13 +496,13 @@ void conditionVocTree(const std::string& treeName, bool withWeights, const std::
         if((matchingMode == EImageMatchingMode::A_AB) ||
            (matchingMode == EImageMatchingMode::A_B))
         {
-          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
+          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(fs, sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
           nbSetDescriptors = db.getSparseHistogramPerImage().size();
         }
 
         if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
         {
-          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
+          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(fs, sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
           nbSetDescriptors += db2.getSparseHistogramPerImage().size();
         }
 
@@ -559,6 +560,7 @@ void conditionVocTree(const std::string& treeName, bool withWeights, const std::
 
 int aliceVision_main(int argc, char** argv)
 {
+  vfs::filesystem fs;
   // command-line parameters
 
   /// verbosity level
@@ -778,10 +780,10 @@ int aliceVision_main(int argc, char** argv)
   if(method != EImageMatchingMethod::EXHAUSTIVE)
   {
       // load descriptor filenames
-      aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
+      aliceVision::voctree::getListOfDescriptorFiles(fs, sfmDataA, featuresFolders, descriptorsFilesA);
 
       if(useMultiSfM)
-          aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
+          aliceVision::voctree::getListOfDescriptorFiles(fs, sfmDataB, featuresFolders, descriptorsFilesB);
   }
 
   OrderedPairList selectedPairs;
@@ -805,7 +807,7 @@ int aliceVision_main(int argc, char** argv)
     case EImageMatchingMethod::VOCABULARYTREE:
     {
       ALICEVISION_LOG_INFO("Use VOCABULARYTREE matching.");
-      conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
+      conditionVocTree(fs, treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
                        sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
       break;
     }
@@ -819,7 +821,7 @@ int aliceVision_main(int argc, char** argv)
     {
       ALICEVISION_LOG_INFO("Use SEQUENTIAL and VOCABULARYTREE matching.");
       generateSequentialMatches(sfmDataA, numImageQuerySequential, selectedPairs);
-      conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
+      conditionVocTree(fs, treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
                        sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
       break;
     }

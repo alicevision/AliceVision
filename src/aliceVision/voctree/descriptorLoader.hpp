@@ -29,16 +29,19 @@ void getInfoBinFile(const std::string& path, int dim, std::size_t& numDescriptor
 
 /**
  * @brief Extract a list of decriptor files from a sfmData.
+ * @param[in] fs Virtual filesystem handle
  * @param[in] sfmDataPath The input sfmData
  * @param[in] featuresFolders The folder(s) containing the descriptor files
  * @param[out] descriptorsFiles A list of descriptor files 
  */
-void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
+void getListOfDescriptorFiles(vfs::filesystem& fs,
+                              const sfmData::SfMData& sfmData,
                               const std::vector<std::string>& featuresFolders,
                               std::map<IndexT, std::string>& descriptorsFiles);
 
 /**
  * @brief Read a set of descriptors from a file containing the path to the descriptor files.
+ * @param[in] fs Virtual filesystem handle.
  * @param[in] sfmDataPath The input sfmData
  * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in,out] descriptors the vector to which append all the read descriptors
@@ -47,10 +50,11 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
  *
  */
 template<class DescriptorT, class FileDescriptorT>
-std::size_t readDescFromFiles(const sfmData::SfMData& sfmData,
-                         const std::vector<std::string>& featuresFolders,
-                         std::vector<DescriptorT>& descriptors,
-                         std::vector<std::size_t>& numFeatures);
+std::size_t readDescFromFiles(vfs::filesystem& fs,
+                              const sfmData::SfMData& sfmData,
+                              const std::vector<std::string>& featuresFolders,
+                              std::vector<DescriptorT>& descriptors,
+                              std::vector<std::size_t>& numFeatures);
 
 } // namespace voctree
 } // namespace aliceVision
