@@ -11,7 +11,6 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <string>
@@ -24,7 +23,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -92,14 +90,14 @@ int aliceVision_main(int argc, char** argv)
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
 
   // check output folder
-  if(!fs::is_directory(outputFolder))
-    fs::create_directory(outputFolder);
+  if (!fs.is_directory(outputFolder))
+    fs.create_directory(outputFolder);
 
   int nbImages = 0;
   for(const std::string& path : imagePaths)
   {
     // check input path
-    if(!fs::is_regular_file(path))
+    if (!fs.is_regular_file(path))
     {
       ALICEVISION_LOG_ERROR("Error: Can't find image '" + path + "'.");
       return EXIT_FAILURE;
@@ -108,9 +106,9 @@ int aliceVision_main(int argc, char** argv)
     nbImages += 1;
 
     // genrate output filename
-    std::string outputPath = (outputFolder + "/" + fs::path(path).filename().replace_extension(image::EImageFileType_enumToString(outputFileType)).string());
+    std::string outputPath = (outputFolder + "/" + vfs::path(path).filename().replace_extension(image::EImageFileType_enumToString(outputFileType)).string());
 
-    if(fs::is_regular_file(outputPath))
+    if (fs.is_regular_file(outputPath))
     {
       ALICEVISION_LOG_ERROR("Error: Image '" + outputPath + "' already exists.");
       return EXIT_FAILURE;

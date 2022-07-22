@@ -8,9 +8,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/progress.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
 #include <boost/algorithm/string/case_conv.hpp> 
 
@@ -24,10 +24,10 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main( int argc, char** argv )
 {
+  vfs::filesystem fs;
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string outputFolder;
   std::string inputFolder;
@@ -89,23 +89,23 @@ int aliceVision_main( int argc, char** argv )
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if(!(fs::exists(inputFolder) && fs::is_directory(inputFolder)))
+  if (!(fs.exists(inputFolder) && fs.is_directory(inputFolder)))
   {
     ALICEVISION_LOG_ERROR(inputFolder << " does not exists or it is not a folder");
     return EXIT_FAILURE;
   }
 
   // if the folder does not exist create it (recursively)
-  if(!fs::exists(outputFolder))
+  if (!fs.exists(outputFolder))
   {
-    fs::create_directories(outputFolder);
+    fs.create_directories(outputFolder);
   }
   
   std::size_t countFeat = 0;
   std::size_t countDesc = 0;
 
-  fs::directory_iterator iterator(inputFolder);
-  for(; iterator != fs::directory_iterator(); ++iterator)
+  vfs::directory_iterator iterator(fs, inputFolder);
+  for(; iterator != vfs::directory_iterator(); ++iterator)
   {
     // get the extension of the current file to check whether it is an image
     std::string ext = iterator->path().extension().string();
@@ -115,13 +115,13 @@ int aliceVision_main( int argc, char** argv )
     if(ext == ".feat")
     {
       // just copy the file into the output folder
-      fs::copy_file(iterator->path(), fs::path(outputFolder)/fs::path(filename), fs::copy_option::overwrite_if_exists);
+      fs.copy_file(iterator->path(), vfs::path(outputFolder) / vfs::path(filename), vfs::copy_option::overwrite_if_exists);
       
       ++countFeat;
     }
     else if(ext == ".desc")
     {
-      const std::string outpath = (fs::path(outputFolder)/fs::path(filename)).string();
+      const std::string outpath = (vfs::path(outputFolder) / vfs::path(filename)).string();
       std::vector<feature::Descriptor<float, siftSize> > floatDescriptors;
       
       // load the float descriptors

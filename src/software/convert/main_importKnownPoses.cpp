@@ -14,7 +14,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <string>
@@ -37,7 +36,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace json = boost::property_tree;
-namespace fs = boost::filesystem;
 
 
 struct XMPData
@@ -59,11 +57,12 @@ struct XMPData
 };
 
 
-XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath, std::string stem, fs::directory_entry pathIt)
+XMPData read_xmp(vfs::filesystem& fs, const std::string& xmpFilepath, std::string knownPosesFilePath,
+                 std::string stem, vfs::directory_entry pathIt)
 {
     XMPData xmp;
-    const fs::path path = pathIt.path();
-    if(!is_regular_file(path))
+    const vfs::path path = pathIt.path();
+    if (!fs.is_regular_file(path))
         ALICEVISION_THROW_ERROR("Path isn't a regulat file: " << path);
     std::string extension = path.extension().string();
     boost::to_lower(extension);
@@ -201,15 +200,15 @@ int aliceVision_main(int argc, char **argv)
   std::map<std::string, IndexT> viewIdPerStem;
   for(const auto viewIt : sfmData.getViews())
   {
-    const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+    const std::string stem = vfs::path(viewIt.second->getImagePath()).stem().string();
     viewIdPerStem[stem] = viewIt.first;
   }
-  fs::path knownPosesPath(knownPosesFilePath);
-  if(fs::is_directory(knownPosesPath))
+  vfs::path knownPosesPath(knownPosesFilePath);
+  if (fs.is_directory(knownPosesPath))
   {
       try
       {
-          for (const auto& pathIt : fs::directory_iterator(knownPosesPath))
+          for (const auto& pathIt : vfs::directory_iterator(fs, knownPosesPath))
           {
               const std::string stem = pathIt.path().stem().string();
               if (viewIdPerStem.count(stem) == 0) 
@@ -217,7 +216,7 @@ int aliceVision_main(int argc, char **argv)
                   continue;
               }
 
-              const XMPData xmp = read_xmp(pathIt.path().string(), knownPosesFilePath, stem, pathIt);
+              const XMPData xmp = read_xmp(fs, pathIt.path().string(), knownPosesFilePath, stem, pathIt);
 
               const IndexT viewId = viewIdPerStem[stem];
               sfmData::View& view = sfmData.getView(viewId);
@@ -328,7 +327,7 @@ int aliceVision_main(int argc, char **argv)
       }
 
   }
-  else if(is_regular_file(knownPosesPath))
+  else if (fs.is_regular_file(knownPosesPath))
   {
       std::string extension = knownPosesPath.extension().string();
       boost::to_lower(extension);
