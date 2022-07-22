@@ -141,8 +141,11 @@ void writeDepthSimMapFromTileList(int rc,
                                   int step,
                                   const std::string& customSuffix)
 {
-  const int scaleStep = scale * step;
+  ALICEVISION_LOG_TRACE("Merge and write depth/similarity map tiles (rc: " << rc << ", view id: " << mp.getViewId(rc) << ").");
+  
+  const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
 
+  const int scaleStep = scale * step;
   const int width  = std::ceil(mp.getWidth(rc)  / float(scaleStep));
   const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
   const int bufferSize = width * height;
@@ -150,9 +153,13 @@ void writeDepthSimMapFromTileList(int rc,
   std::vector<float> depthMap(bufferSize, 0.f); // map should be initialize, additive process
   std::vector<float> simMap(bufferSize, 0.f);   // map should be initialize, additive process
 
+
   for(size_t i = 0; i < tileRoiList.size(); ++i)
   {
-    const ROI& roi = tileRoiList.at(i);
+    const ROI roi = intersect(tileRoiList.at(i), imageRoi);
+
+    if(roi.isEmpty())
+        continue;
 
     std::vector<float> tileDepthMap;
     std::vector<float> tileSimMap;
