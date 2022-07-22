@@ -374,6 +374,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_meshDenoising.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+            aliceVision_vfs
             aliceVision_mvsUtils
             MeshSDLibrary
             Eigen3::Eigen
