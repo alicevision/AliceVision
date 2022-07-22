@@ -19,8 +19,6 @@
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -51,6 +49,8 @@ namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
+  aliceVision::vfs::filesystem fs;
+
   // Command line arguments
   bfs::path inputPath;
   std::string outputFilename;
@@ -165,7 +165,7 @@ int aliceVision_main(int argc, char** argv)
   std::clock_t start = std::clock();
 
   // create the feedProvider
-  aliceVision::dataio::FeedProvider feed(inputPath.string());
+  aliceVision::dataio::FeedProvider feed(fs, inputPath.string());
   if (!feed.isInit())
   {
     ALICEVISION_CERR("ERROR while initializing the FeedProvider!");

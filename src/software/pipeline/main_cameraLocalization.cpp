@@ -385,7 +385,7 @@ int aliceVision_main(int argc, char** argv)
   }
   
   // create the feedProvider
-  dataio::FeedProvider feed(mediaFilepath, calibFile);
+  dataio::FeedProvider feed(fs, mediaFilepath, calibFile);
   if(!feed.isInit())
   {
     ALICEVISION_CERR("ERROR while initializing the FeedProvider!");

@@ -31,9 +31,9 @@ public:
   
   static bool isSupported(const std::string &ext);
   
-  FeederImpl() : _isInit(false) {}
+  FeederImpl(vfs::filesystem& fs) : _isInit(false) {}
   
-  FeederImpl(const std::string& imagePath, const std::string& calibPath);
+  FeederImpl(vfs::filesystem& fs, const std::string& imagePath, const std::string& calibPath);
   
   template<typename T>
   bool readImage(image::Image<T> &image,
@@ -104,8 +104,6 @@ private:
       return false;
     }
 
-    namespace bf = boost::filesystem;
-
     // get the image
     const sfmData::View *view = _viewIterator->second.get();
     imageName = view->getImagePath();
@@ -163,17 +161,15 @@ bool ImageFeed::FeederImpl::isSupported(const std::string &ext)
   return(std::find(start, end, boost::to_lower_copy(ext)) != end);
 }
 
-ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::string& calibPath) 
+ImageFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, const std::string& imagePath, const std::string& calibPath)
 : _isInit(false)
 , _withCalibration(false)
 {
-  vfs::filesystem fs;
-  namespace bf = boost::filesystem;
 //    ALICEVISION_LOG_DEBUG(imagePath);
   // if it is a json, calibPath is neglected
-  if(bf::is_regular_file(imagePath))
+  if (fs.is_regular_file(imagePath))
   {
-    const std::string ext = bf::path(imagePath).extension().string();
+    const std::string ext = vfs::path(imagePath).extension().string();
     // if it is a sfmdata.json
     if(ext == ".json")
     {
@@ -203,7 +199,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       {
         // compose the file name as the base path of the inputPath and
         // the filename just read
-        const std::string filename = (bf::path(imagePath).parent_path() / line).string();
+        const std::string filename = (vfs::path(imagePath).parent_path() / line).string();
         _images.push_back(filename);
       }
       // Close file
@@ -218,16 +214,16 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       throw std::invalid_argument("File or mode not yet implemented");
     }
   }
-  else if(bf::is_directory(imagePath) || bf::is_directory(bf::path(imagePath).parent_path()))
+  else if (fs.is_directory(imagePath) || fs.is_directory(vfs::path(imagePath).parent_path()))
   {
     std::string folder = imagePath;
     // Recover the pattern : img.@.png (for example)
     std::string filePattern;
     std::regex re;
-    if(!bf::is_directory(imagePath))
+    if (!fs.is_directory(imagePath))
     {
-      filePattern = bf::path(imagePath).filename().string();
-      folder = bf::path(imagePath).parent_path().string();
+      filePattern = vfs::path(imagePath).filename().string();
+      folder = vfs::path(imagePath).parent_path().string();
       ALICEVISION_LOG_DEBUG("filePattern: " << filePattern);
       std::string regexStr = filePattern;
       re = utils::filterToRegex(regexStr);
@@ -238,14 +234,14 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     }
     ALICEVISION_LOG_DEBUG("directory feedImage");
     // if it is a directory, list all the images and add them to the list
-    bf::directory_iterator iterator(folder);
+    vfs::directory_iterator iterator(fs, folder);
     // since some OS will provide the files in a random order, first store them
     // in a priority queue and then fill the _image queue with the alphabetical
     // order from the priority queue
     std::priority_queue<std::string, 
                     std::vector<std::string>, 
                     std::greater<std::string> > tmpSorter;
-    for(; iterator != bf::directory_iterator(); ++iterator)
+    for(; iterator != vfs::directory_iterator(); ++iterator)
     {
       // get the extension of the current file to check whether it is an image
       const std::string ext = iterator->path().extension().string();
@@ -355,10 +351,10 @@ bool ImageFeed::FeederImpl::goToNextFrame()
 /*                     ImageFeed                                               */
 /*******************************************************************************/
 
-ImageFeed::ImageFeed() : _imageFeed(new FeederImpl()) { }
+ImageFeed::ImageFeed(vfs::filesystem& fs) : _imageFeed(new FeederImpl(fs)) { }
 
-ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)  
-    : _imageFeed( new FeederImpl(imagePath, calibPath) ) { }
+ImageFeed::ImageFeed(vfs::filesystem& fs, const std::string& imagePath, const std::string& calibPath)
+    : _imageFeed(new FeederImpl(fs, imagePath, calibPath) ) { }
 
 bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB, 
                      camera::PinholeRadialK3 &camIntrinsics,

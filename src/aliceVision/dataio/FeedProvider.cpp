@@ -11,8 +11,6 @@
 #include "VideoFeed.hpp"
 #endif
 
-#include <boost/filesystem.hpp>
-
 #include <exception>
 #include <iostream>
 #include <string>
@@ -22,21 +20,20 @@
 namespace aliceVision{
 namespace dataio{
 
-FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) 
-: _isVideo(false), _isLiveFeed(false)
+FeedProvider::FeedProvider(vfs::filesystem& fs, const std::string &feedPath, const std::string &calibPath)
+    : _fs{fs}, _isVideo(false), _isLiveFeed(false)
 {
-  namespace bf = boost::filesystem;
   if(feedPath.empty())
   {
     throw std::invalid_argument("Empty filepath.");
   }
-  if(bf::is_regular_file(bf::path(feedPath))) 
+  if (fs.is_regular_file(vfs::path(feedPath)))
   {
     // Image or video file
-    const std::string extension = bf::path(feedPath).extension().string();
+    const std::string extension = vfs::path(feedPath).extension().string();
     if(ImageFeed::isSupported(extension))
     {
-      _feeder.reset(new ImageFeed(feedPath, calibPath));
+      _feeder.reset(new ImageFeed(fs, feedPath, calibPath));
     }
     else 
     {
@@ -52,10 +49,10 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
   }
   // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
   // if the user just gives the relative path as "bar", throws invalid argument exception.
-  else if(bf::is_directory(bf::path(feedPath)) || bf::is_directory(bf::path(feedPath).parent_path()))
+  else if (fs.is_directory(vfs::path(feedPath)) || fs.is_directory(vfs::path(feedPath).parent_path()))
   {
     // Folder or sequence of images
-    _feeder.reset(new ImageFeed(feedPath, calibPath));
+    _feeder.reset(new ImageFeed(fs, feedPath, calibPath));
   }
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
   else if(isdigit(feedPath[0]))

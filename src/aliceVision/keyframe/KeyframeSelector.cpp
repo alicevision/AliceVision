@@ -78,6 +78,8 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
 
 void KeyframeSelector::process()
 {
+  vfs::filesystem fs;
+
   // create feeds and count minimum number of frames
   std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
   for(std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
@@ -85,7 +87,7 @@ void KeyframeSelector::process()
     const auto& path = _mediaPaths.at(mediaIndex);
 
     // create a feed provider per mediaPaths
-    _feeds.emplace_back(new dataio::FeedProvider(path));
+    _feeds.emplace_back(new dataio::FeedProvider(fs, path));
 
     const auto& feed = *_feeds.back();
 

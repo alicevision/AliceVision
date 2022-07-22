@@ -7,6 +7,7 @@
 #pragma once
 
 #include "IFeed.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <string>
 #include <memory>
@@ -19,8 +20,9 @@ class ImageFeed : public IFeed
 public:
   /**
    * @brief Empty constructor
+   * @param[in] fs Virtual filesystem handle
    */	
-  ImageFeed();
+  ImageFeed(vfs::filesystem& fs);
   
   /**
    * @brief Set up an image based feed from a choice of different sources:
@@ -29,6 +31,7 @@ public:
    * 3) a txt file containing a list of images to use
    * 4) a regex for an image sequence
    * 
+   * @param[in] fs Virtual filesystem handle.
    * @param[in] imagePath The source of images, it could be a file (json, txt) or a directory.
    * @param[in] calibPath The source for the camera intrinsics common to each image. 
    * The format for the file is
@@ -43,7 +46,7 @@ public:
    * 
    * @see readCalibrationFromFile()
    */
-  ImageFeed(const std::string& imagePath, const std::string& calibPath);
+  ImageFeed(vfs::filesystem& fs, const std::string& imagePath, const std::string& calibPath);
   
   /**
    * @brief Provide a new RGB image from the feed

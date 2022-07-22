@@ -363,7 +363,7 @@ int aliceVision_main(int argc, char** argv)
           (bfs::path(mediaPath[idCamera]).parent_path().string());
 
     // create the feedProvider
-    feeders[idCamera] = new dataio::FeedProvider(feedPath, calibFile);
+    feeders[idCamera] = new dataio::FeedProvider(fs, feedPath, calibFile);
     if(!feeders[idCamera]->isInit())
     {
       ALICEVISION_CERR("ERROR while initializing the FeedProvider for the camera " 

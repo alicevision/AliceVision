@@ -7,6 +7,7 @@
 #pragma once
 
 #include "IFeed.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <string>
 #include <memory>
@@ -18,7 +19,7 @@ class FeedProvider
 {
 public:
   
-  FeedProvider(const std::string &feedPath, const std::string &calibPath = "");
+  FeedProvider(vfs::filesystem& fs, const std::string &feedPath, const std::string &calibPath = "");
   
   /**
    * @brief Provide a new RGB image from the feed.
@@ -111,7 +112,9 @@ public:
 
   virtual ~FeedProvider();
     
+  vfs::filesystem& fs() const { return _fs; }
 private:
+  vfs::filesystem& _fs;
   std::unique_ptr<IFeed> _feeder;
   bool _isVideo;
   bool _isLiveFeed;
