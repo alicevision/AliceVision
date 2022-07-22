@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Mesh.hpp"
+#include "AssimpIOSystem.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
@@ -82,9 +83,9 @@ std::istream& operator>>(std::istream& in, EFileType& meshFileType)
     return in;
 }
 
-void Mesh::save(const std::string& filepath)
+void Mesh::save(vfs::filesystem& fs, const std::string& filepath)
 {
-    const std::string fileTypeStr = boost::filesystem::path(filepath).extension().string().substr(1);
+    const std::string fileTypeStr = vfs::path(filepath).extension().string().substr(1);
     const EFileType fileType = mesh::EFileType_stringToEnum(fileTypeStr);
 
     ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
@@ -151,6 +152,7 @@ void Mesh::save(const std::string& filepath)
     }
 
     Assimp::Exporter exporter;
+    exporter.SetIOHandler(new VfsIOSystem(fs));
     exporter.Export(&scene, formatId, filepath, pPreprocessing);
 
     ALICEVISION_LOG_INFO("Save mesh to " << fileTypeStr << " done.");
@@ -161,7 +163,7 @@ void Mesh::save(const std::string& filepath)
     ALICEVISION_LOG_DEBUG("Normals: " << normals.size());
 }
 
-bool Mesh::loadFromBin(const std::string& binFilepath)
+bool Mesh::loadFromBin(vfs::filesystem& fs, const std::string& binFilepath)
 {
     FILE* f = fopen(binFilepath.c_str(), "rb");
 
@@ -184,7 +186,7 @@ bool Mesh::loadFromBin(const std::string& binFilepath)
     return true;
 }
 
-void Mesh::saveToBin(const std::string& binFilepath)
+void Mesh::saveToBin(vfs::filesystem& fs, const std::string& binFilepath)
 {
     long t = std::clock();
     ALICEVISION_LOG_DEBUG("Save mesh to bin.");
@@ -2349,9 +2351,10 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
     }
 }
 
-void Mesh::load(const std::string& filepath)
+void Mesh::load(vfs::filesystem& fs, const std::string& filepath)
 {
     Assimp::Importer importer;
+    importer.SetIOHandler(new VfsIOSystem(fs));
 
     pts.clear();
     tris.clear();
@@ -2364,7 +2367,7 @@ void Mesh::load(const std::string& filepath)
     normals.clear();
     pointsVisibilities.clear();
 
-    if(!boost::filesystem::exists(filepath))
+    if (!fs.exists(filepath))
     {
         ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << filepath);
     }

@@ -428,6 +428,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_texturing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_mvsData
           aliceVision_sfmMvsUtils
           aliceVision_mvsUtils

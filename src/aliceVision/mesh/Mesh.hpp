@@ -164,11 +164,11 @@ public:
     Mesh();
     ~Mesh();
 
-    void save(const std::string& filepath);
+    void save(vfs::filesystem& fs, const std::string& filepath);
 
-    bool loadFromBin(const std::string& binFilepath);
-    void saveToBin(const std::string& binFilepath);
-    void load(const std::string& filepath);
+    bool loadFromBin(vfs::filesystem& fs, const std::string& binFilepath);
+    void saveToBin(vfs::filesystem& fs, const std::string& binFilepath);
+    void load(vfs::filesystem& fs, const std::string& filepath);
 
     void addMesh(const Mesh& mesh);
 

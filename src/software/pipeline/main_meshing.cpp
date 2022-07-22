@@ -605,7 +605,7 @@ int aliceVision_main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Save obj mesh file.");
     ALICEVISION_LOG_INFO("OUTPUT MESH " << outputMesh);
-    mesh->save(outputMesh);
+    mesh->save(fs, outputMesh);
     delete mesh;
 
 

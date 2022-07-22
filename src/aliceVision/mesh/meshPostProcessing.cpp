@@ -11,12 +11,8 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 
-#include <boost/filesystem/operations.hpp>
-
 namespace aliceVision {
 namespace mesh {
-
-namespace bfs = boost::filesystem;
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inout_ptsCams, mvsUtils::MultiViewParams& mp,
                       const std::string& debugFolderName,
@@ -28,7 +24,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
     bool exportDebug = (float)mp.userParams.get<bool>("delaunaycut.exportDebugGC", false);
 
     if(exportDebug)
-        inout_mesh->save(debugFolderName + "rawGraphCut");
+        inout_mesh->save(mp.fs, debugFolderName + "rawGraphCut");
 
     // copy ptsCams
     {
@@ -74,7 +70,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
         meOpt.cleanMesh(10);
 
         if(exportDebug)
-            meOpt.save(debugFolderName + "MeshClean");
+            meOpt.save(mp.fs, debugFolderName + "MeshClean");
 
         /////////////////////////////
         {
@@ -128,7 +124,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
             meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
             if(exportDebug)
-                meOpt.save(debugFolderName + "mesh_smoothed");
+                meOpt.save(mp.fs, debugFolderName + "mesh_smoothed");
         }
 
         meOpt.deallocateCleaningAttributes();

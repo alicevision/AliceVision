@@ -1,5 +1,6 @@
 # Headers
 set(mesh_files_headers
+  AssimpIOSystem.hpp
   geoMesh.hpp
   Mesh.hpp
   MeshAnalyze.hpp

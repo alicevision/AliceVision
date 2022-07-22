@@ -286,7 +286,7 @@ void Texturing::updateAtlases()
 }
 
 void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
-                                 const boost::filesystem::path& outPath, imageIO::EImageFileType textureFileType)
+                                 const vfs::path& outPath, imageIO::EImageFileType textureFileType)
 {
     // Ensure that contribution levels do not contain 0 and are sorted (as each frequency band contributes to lower bands).
     auto& m = texParams.multiBandNbContrib;
@@ -370,7 +370,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 }
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache, const bfs::path& outPath, imageIO::EImageFileType textureFileType)
+                                       const std::vector<size_t>& atlasIDs,
+                                       mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                       const vfs::path& outPath, imageIO::EImageFileType textureFileType)
 {
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
@@ -674,7 +676,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     }
 
                     const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) + std::string(".") + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-                    bfs::path texturePath = outPath / textureName;
+                    vfs::path texturePath = outPath / textureName;
 
                     using namespace imageIO;
                     OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
@@ -735,12 +737,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 }
             }
         }
-        writeTexture(atlasTexture, atlasID, outPath, textureFileType, -1);
+        writeTexture(mp.fs, atlasTexture, atlasID, outPath, textureFileType, -1);
     }
 }
 
 void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
-                                            const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
+                                            const vfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
 {
     GEO::Mesh geoDenseMesh;
     toGeoMesh(denseMesh, geoDenseMesh);
@@ -759,11 +761,9 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
 
 
 
-void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
-                             imageIO::EImageFileType textureFileType, const int level)
+void Texturing::writeTexture(vfs::filesystem& fs, AccuImage& atlasTexture, const std::size_t atlasID,
+                             const vfs::path &outPath, imageIO::EImageFileType textureFileType, const int level)
 {
-    vfs::filesystem fs;
-
     unsigned int outTextureSide = texParams.textureSide;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
     // edge padding (dilate gutter)
@@ -893,7 +893,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     }
 
     const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + imageIO::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-    bfs::path texturePath = outPath / textureName;
+    vfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
@@ -908,13 +908,13 @@ void Texturing::clear()
     mesh = nullptr;
 }
 
-void Texturing::loadWithAtlas(const std::string& filepath, bool flipNormals)
+void Texturing::loadWithAtlas(vfs::filesystem& fs, const std::string& filepath, bool flipNormals)
 {
     // Clear internal data
     clear();
     mesh = new Mesh();
     // Load .obj
-    mesh->load(filepath);
+    mesh->load(fs, filepath);
 
     // Handle normals flipping
     if(flipNormals)
@@ -959,7 +959,7 @@ void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod,
     }
 }
 
-void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
+void Texturing::replaceMesh(vfs::filesystem& fs, const std::string& otherMeshPath, bool flipNormals)
 {
     // keep previous mesh/visibilities as reference
     Mesh* refMesh = mesh;
@@ -968,7 +968,7 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     mesh = nullptr;
     
     // load input obj file
-    loadWithAtlas(otherMeshPath, flipNormals);
+    loadWithAtlas(fs, otherMeshPath, flipNormals);
     // allocate pointsVisibilities for new internal mesh
     mesh->pointsVisibilities = PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
@@ -1012,17 +1012,17 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
         // Meanwhile,
         // use a temporary obj file to save result - Geogram merges common UV coordinates per facet corner -
         // and reload it
-        const std::string tmpObjPath = (bfs::temp_directory_path() / bfs::unique_path()).string() + ".obj";
+        const std::string tmpObjPath = (mp.fs.temp_directory_path() / mp.fs.unique_path()).string() + ".obj";
         // save temp mesh with UVs
         GEO::mesh_save(geoMesh, tmpObjPath);
         // replace initial mesh
-        replaceMesh(tmpObjPath);
+        replaceMesh(mp.fs, tmpObjPath);
         // remove temp mesh
-        bfs::remove(tmpObjPath);
+        mp.fs.remove(tmpObjPath);
     }
 }
 
-void Texturing::saveAs(const bfs::path& dir, const std::string& basename, 
+void Texturing::saveAs(const vfs::path& dir, const std::string& basename,
     EFileType meshFileType, 
     imageIO::EImageFileType textureFileType,
     const BumpMappingParams& bumpMappingParams)
@@ -1295,12 +1295,10 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                              const GEO::MeshFacetsAABB& denseMeshAABB, const GEO::Mesh& sparseMesh,
                                              size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
-                                             const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
+                                             const vfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
 {
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
-
-    vfs::filesystem fs;
 
     std::vector<ColorRGBf> normalMap(texParams.textureSide * texParams.textureSide);
     std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
@@ -1448,11 +1446,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                                     normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
         const std::string name = "Normal_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
-        bfs::path normalMapPath = outPath / name;
+        vfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
         imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::NO_CONVERSION,imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::writeImage(fs, normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+        imageIO::writeImage(mp.fs, normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
     }
 
     // Save Height Maps
@@ -1483,18 +1481,18 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
-            bfs::path bumpMapPath = outPath / bumpName;
+            vfs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
-            imageIO::writeImage(fs, bumpMapPath.string(), outTextureSide, outTextureSide, heightMap,
+            imageIO::writeImage(mp.fs, bumpMapPath.string(), outTextureSide, outTextureSide, heightMap,
                                 imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
         }
         // Save Displacement Map
         if(bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
         {
             const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
-            bfs::path dispMapPath = outPath / dispName;
+            vfs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
-            imageIO::writeImage(fs, dispMapPath.string(), outTextureSide, outTextureSide, heightMap,
+            imageIO::writeImage(mp.fs, dispMapPath.string(), outTextureSide, outTextureSide, heightMap,
                                 imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
         }
     }

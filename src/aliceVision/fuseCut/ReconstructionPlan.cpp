@@ -326,7 +326,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         if (ls->fs.exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
-            mei->loadFromBin(fileName);
+            mei->loadFromBin(ls->fs, fileName);
             npts += mei->pts.size();
             ntris += mei->tris.size();
 
@@ -362,7 +362,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         if (ls->fs.exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
-            mei->loadFromBin(fileName);
+            mei->loadFromBin(ls->fs, fileName);
 
             // to remove artefacts on the border
             Point3d hexah[8];

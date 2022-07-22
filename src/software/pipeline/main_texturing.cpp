@@ -35,11 +35,6 @@ using namespace aliceVision;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
-bfs::path absolutePathNoExt(const bfs::path& p)
-{
-    return p.parent_path() / p.stem();
-}
-
 int aliceVision_main(int argc, char* argv[])
 {
     vfs::filesystem fs;
@@ -211,7 +206,7 @@ int aliceVision_main(int argc, char* argv[])
     // load input mesh (to texture) obj file
     ALICEVISION_LOG_INFO("Load input mesh.");
     mesh.clear();
-    mesh.loadWithAtlas(inputMeshFilepath, flipNormals);
+    mesh.loadWithAtlas(fs, inputMeshFilepath, flipNormals);
 
     // load reference dense point cloud with visibilities
     ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
@@ -269,7 +264,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Generate height and normal maps.");
 
         mesh::Mesh denseMesh;
-        denseMesh.load(inputRefMeshFilepath);
+        denseMesh.load(fs, inputRefMeshFilepath);
 
         mesh.generateNormalAndHeightMaps(mp, denseMesh, outputFolder, bumpMappingParams);
     }

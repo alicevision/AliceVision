@@ -11,6 +11,7 @@
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -92,6 +93,8 @@ std::istream& operator>>(std::istream& in, ESubsetType& subsetType)
 
 int aliceVision_main(int argc, char* argv[])
 {
+    vfs::filesystem fs;
+
     // timer initialization
 
     system::Timer timer;
@@ -199,7 +202,7 @@ int aliceVision_main(int argc, char* argv[])
         bfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
-    texturing.loadWithAtlas(inputMeshPath);
+    texturing.loadWithAtlas(fs, inputMeshPath);
     mesh::Mesh* mesh = texturing.mesh;
 
     if(!mesh)
@@ -310,7 +313,7 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Save mesh.");
 
     // Save output mesh
-    outMesh.save(outputMeshPath);
+    outMesh.save(fs, outputMeshPath);
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 

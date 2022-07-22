@@ -10,6 +10,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -34,6 +35,8 @@ namespace fs = boost::filesystem;
  */
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
+
     // timer initialization
 
     system::Timer timer;
@@ -122,7 +125,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input mesh
     mesh::Texturing texturing;
-    texturing.loadWithAtlas(inputMeshPath);
+    texturing.loadWithAtlas(fs, inputMeshPath);
     mesh::Mesh* inputMesh = texturing.mesh;
 
     if(!inputMesh)
@@ -141,7 +144,7 @@ int aliceVision_main(int argc, char** argv)
 
     // save output mesh
     ALICEVISION_LOG_INFO("Convert mesh.");
-    inputMesh->save(outputFilePath);
+    inputMesh->save(fs, outputFilePath);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
