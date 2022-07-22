@@ -6,7 +6,6 @@
 
 // Reading command line options
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -31,7 +30,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData::SfMData& sfmData, const float ratioUpscale)
 {
@@ -373,9 +371,9 @@ int aliceVision_main(int argc, char** argv)
 
 				// Define output paths
 				const std::string viewIdStr = std::to_string(view.getViewId());
-				const std::string viewFilepath = (fs::path(outputDirectory) / (viewIdStr + ".exr")).string();
-				const std::string maskFilepath = (fs::path(outputDirectory) / (viewIdStr + "_mask.exr")).string();
-				const std::string weightFilepath = (fs::path(outputDirectory) / (viewIdStr + "_weight.exr")).string();
+				const std::string viewFilepath = (vfs::path(outputDirectory) / (viewIdStr + ".exr")).string();
+				const std::string maskFilepath = (vfs::path(outputDirectory) / (viewIdStr + "_mask.exr")).string();
+				const std::string weightFilepath = (vfs::path(outputDirectory) / (viewIdStr + "_weight.exr")).string();
 
 				// Create output images
 				std::unique_ptr<oiio::ImageOutput> out_view = oiio::ImageOutput::create(viewFilepath);
