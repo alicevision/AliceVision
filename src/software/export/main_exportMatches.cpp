@@ -20,7 +20,6 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <cstdlib>
@@ -42,7 +41,6 @@ using namespace aliceVision::sfmData;
 using namespace svg;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 // Convert HUE color to RGB
 inline float hue2rgb(float p, float q, float t){
@@ -181,7 +179,7 @@ int aliceVision_main(int argc, char ** argv)
 
   // for each pair, export the matches
 
-  fs::create_directory(outputFolder);
+  fs.create_directory(outputFolder);
   ALICEVISION_LOG_INFO("Export pairwise matches");
   const PairSet pairs = matching::getImagePairs(pairwiseMatches);
   boost::progress_display myProgressBar(pairs.size());
@@ -199,20 +197,20 @@ int aliceVision_main(int argc, char ** argv)
     std::string destFilename_I;
     std::string destFilename_J;
     {
-    boost::filesystem::path origImgPath(viewImagePathI);
+    vfs::path origImgPath(viewImagePathI);
     std::string origFilename = origImgPath.stem().string();
     image::Image<image::RGBfColor> originalImage;
     image::readImage(fs, viewImagePathI, originalImage, image::EImageColorSpace::LINEAR);
-    destFilename_I = (fs::path(outputFolder) / (origFilename + ".png")).string();
+    destFilename_I = (vfs::path(outputFolder) / (origFilename + ".png")).string();
     image::writeImage(fs, destFilename_I, originalImage, image::EImageColorSpace::SRGB);
     }
 
     {
-    boost::filesystem::path origImgPath(viewImagePathJ);
+    vfs::path origImgPath(viewImagePathJ);
     std::string origFilename = origImgPath.stem().string();
     image::Image<image::RGBfColor> originalImage;
     image::readImage(fs, viewImagePathJ, originalImage, image::EImageColorSpace::LINEAR);
-    destFilename_J = (fs::path(outputFolder) / (origFilename + ".png")).string();
+    destFilename_J = (vfs::path(outputFolder) / (origFilename + ".png")).string();
     image::writeImage(fs, destFilename_J, originalImage, image::EImageColorSpace::SRGB);
     }
 
@@ -269,7 +267,7 @@ int aliceVision_main(int argc, char ** argv)
       }
     }
 
-    fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(iter->first) + "_" + std::to_string(iter->second) + "_" + std::to_string(filteredMatches.getNbAllMatches()) + ".svg");
+    vfs::path outputFilename = vfs::path(outputFolder) / std::string(std::to_string(iter->first) + "_" + std::to_string(iter->second) + "_" + std::to_string(filteredMatches.getNbAllMatches()) + ".svg");
     std::ofstream svgFile(outputFilename.string());
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
