@@ -14,7 +14,6 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -39,7 +38,6 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::sfmDataIO;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 template <class ImageT, class MaskFuncT>
 void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)
@@ -80,18 +78,18 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
   vfs::filesystem fs;
   for(const auto & masksFolder_str : masksFolders)
   {
-    if(!masksFolder_str.empty() && fs::exists(masksFolder_str))
+    if(!masksFolder_str.empty() && fs.exists(masksFolder_str))
     {
-      const auto masksFolder = fs::path(masksFolder_str);
-      const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension("png");
-      const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension("png");
+      const auto masksFolder = vfs::path(masksFolder_str);
+      const auto idMaskPath = masksFolder / vfs::path(std::to_string(viewId)).replace_extension("png");
+      const auto nameMaskPath = masksFolder / vfs::path(srcImage).filename().replace_extension("png");
 
-      if(fs::exists(idMaskPath))
+      if (fs.exists(idMaskPath))
       {
         image::readImage(fs, idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
         return true;
       }
-      else if(fs::exists(nameMaskPath))
+      else if (fs.exists(nameMaskPath))
       {
         image::readImage(fs, nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
         return true;
@@ -188,14 +186,14 @@ bool prepareDenseScene(const SfMData& sfmData,
 
       if(saveMatricesFiles)
       {
-        std::ofstream fileP((fs::path(outFolder) / (baseFilename + "_P.txt")).string());
+        std::ofstream fileP((vfs::path(outFolder) / (baseFilename + "_P.txt")).string());
         fileP << std::setprecision(10)
              << P(0, 0) << " " << P(0, 1) << " " << P(0, 2) << " " << P(0, 3) << "\n"
              << P(1, 0) << " " << P(1, 1) << " " << P(1, 2) << " " << P(1, 3) << "\n"
              << P(2, 0) << " " << P(2, 1) << " " << P(2, 2) << " " << P(2, 3) << "\n";
         fileP.close();
 
-        std::ofstream fileKRt((fs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
+        std::ofstream fileKRt((vfs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
         fileKRt << std::setprecision(10)
              << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"
              << K(1, 0) << " " << K(1, 1) << " " << K(1, 2) << "\n"
@@ -256,7 +254,7 @@ bool prepareDenseScene(const SfMData& sfmData,
 
           srcImage = paths[0];
       }
-      const std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
+      const std::string dstColorImage = (vfs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const IntrinsicBase* cam = iterIntrinsic->second.get();
 
       // add exposure values to images metadata
@@ -393,8 +391,8 @@ int aliceVision_main(int argc, char *argv[])
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
 
   // Create output dir
-  if(!fs::exists(outFolder))
-    fs::create_directory(outFolder);
+  if (!fs.exists(outFolder))
+    fs.create_directory(outFolder);
 
   // Read the input SfM scene
   SfMData sfmData;
