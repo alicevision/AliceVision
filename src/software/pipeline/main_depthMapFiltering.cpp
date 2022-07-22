@@ -174,9 +174,9 @@ int aliceVision_main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Filter depth maps.");
 
     {
-        fuseCut::Fuser fs(mp);
-        fs.filterGroups(cams, pixToleranceFactor, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
-        fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
+        fuseCut::Fuser fuser(fs, mp);
+        fuser.filterGroups(cams, pixToleranceFactor, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
+        fuser.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
     if (computeNormalMaps)

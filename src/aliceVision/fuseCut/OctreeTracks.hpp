@@ -87,7 +87,8 @@ public:
     int minNumOfConsistentCams;
     float simWspThr;
 
-    OctreeTracks(const Point3d* voxel_, mvsUtils::MultiViewParams* mp_, Voxel dimensions);
+    OctreeTracks(vfs::filesystem& fs, const Point3d* voxel_, mvsUtils::MultiViewParams* mp_,
+                 Voxel dimensions);
     ~OctreeTracks();
 
     float computeAveragePixelSizeForVoxel();

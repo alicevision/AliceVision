@@ -11,6 +11,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 namespace aliceVision {
 
@@ -25,7 +26,7 @@ class Fuser
 public:
     const mvsUtils::MultiViewParams& _mp;
 
-    Fuser(const mvsUtils::MultiViewParams& mp);
+    Fuser(vfs::filesystem& fs, const mvsUtils::MultiViewParams& mp);
     ~Fuser();
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
@@ -45,15 +46,19 @@ public:
     Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim, const sfmData::SfMData* sfmData = nullptr);
 
 private:
+    vfs::filesystem& _fs;
+
     bool updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
 };
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams& mp, bool addRandomNoise = false,
+std::string generateTempPtsSimsFiles(vfs::filesystem& fs, std::string tmpDir,
+                                     mvsUtils::MultiViewParams& mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir);
+void deleteTempPtsSimsFiles(vfs::filesystem& fs, mvsUtils::MultiViewParams& mp,
+                            const std::string& depthMapsPtsSimsTmpDir);
 
 } // namespace fuseCut
 } // namespace aliceVision

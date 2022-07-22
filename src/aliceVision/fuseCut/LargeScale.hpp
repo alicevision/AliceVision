@@ -11,6 +11,7 @@
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/fuseCut/OctreeTracks.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <array>
 
@@ -20,6 +21,7 @@ namespace fuseCut {
 class LargeScale
 {
 public:
+    vfs::filesystem& fs;
     mvsUtils::MultiViewParams* mp;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
@@ -29,7 +31,7 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _spaceFolderName);
+    LargeScale(vfs::filesystem& fs, mvsUtils::MultiViewParams* _mp, const std::string& _spaceFolderName);
     ~LargeScale();
 
     std::string getSpaceCamsTracksDir();

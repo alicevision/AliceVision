@@ -18,9 +18,10 @@ using namespace aliceVision::fuseCut;
 
 BOOST_AUTO_TEST_CASE(fuseCut_largeScale_io)
 {
+    vfs::filesystem fs;
     sfmData::SfMData sfmData;
     mvsUtils::MultiViewParams mp{sfmData};
-    LargeScale ls{&mp, "test_tmp"};
+    LargeScale ls{fs, &mp, "test_tmp"};
     ls.space = {{
         { 1.1, 1.2, 1.3 },
         { 2.1, 2.2, 2.3 },
@@ -36,7 +37,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_largeScale_io)
     ls.spaceFileName = "test_tmp/ls_space.txt";
     ls.saveSpaceToFile();
 
-    LargeScale newLs{&mp, "test_tmp"};
+    LargeScale newLs{fs, &mp, "test_tmp"};
     newLs.spaceFileName = "test_tmp/ls_space.txt";
     newLs.loadSpaceFromFile();
 

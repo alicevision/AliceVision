@@ -42,7 +42,8 @@ alicevision_add_library(aliceVision_fuseCut
 # Unit tests
 alicevision_add_test(DelaunayGraphCut_test.cpp
   NAME "fuseCut_delaunayGraphCut"
-  LINKS aliceVision_fuseCut
+  LINKS aliceVision_vfs
+    aliceVision_fuseCut
     aliceVision_sfm
     aliceVision_multiview
     aliceVision_multiview_test_data

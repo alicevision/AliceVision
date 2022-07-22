@@ -20,7 +20,8 @@ class ReconstructionPlan : public VoxelsGrid
 {
 public:
     StaticVector<int>* nVoxelsTracks;
-    ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, std::string _spaceRootDir);
+    ReconstructionPlan(vfs::filesystem& fs, Voxel& dimmensions, Point3d* space,
+                       mvsUtils::MultiViewParams* _mp, std::string _spaceRootDir);
     ~ReconstructionPlan();
 
     unsigned long getNTracks(const Voxel& LU, const Voxel& RD);
@@ -37,8 +38,9 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 mesh::Mesh* joinMeshes(int gl, LargeScale* ls);
 mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
-StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
-void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams);
+StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(vfs::filesystem& fs, const std::vector<std::string>& recsDirs);
+void loadLargeScalePtsCams(vfs::filesystem& fs, const std::vector<std::string>& recsDirs,
+                           StaticVector<StaticVector<int>>& out_ptsCams);
 
 } // namespace fuseCut
 } // namespace aliceVision

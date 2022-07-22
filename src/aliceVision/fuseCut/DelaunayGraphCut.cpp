@@ -25,9 +25,6 @@
 
 #include <geogram/points/kd_tree.h>
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/operations.hpp>
-
 #include <random>
 #include <stdexcept>
 
@@ -38,8 +35,6 @@
 
 namespace aliceVision {
 namespace fuseCut {
-
-namespace bfs = boost::filesystem;
 
 // #define USE_GEOGRAM_KDTREE 1
 
@@ -267,7 +262,7 @@ void removeInvalidPoints(std::vector<Point3d>& verticesCoordsPrepare, std::vecto
     verticesAttrPrepare.swap(verticesAttrTmp);
 }
 
-void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, std::vector<float>& simScorePrepare,
+void createVerticesWithVisibilities(vfs::filesystem& fs, const StaticVector<int>& cams, std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, std::vector<float>& simScorePrepare,
                                     std::vector<GC_vertexInfo>& verticesAttrPrepare, mvsUtils::MultiViewParams& mp, float simFactor, float voteMarginFactor, float contributeMarginFactor, float simGaussianSize)
 {
 #ifdef USE_GEOGRAM_KDTREE
@@ -308,7 +303,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
             // If we have a simMap in input use it,
             // else init with a constant value.
-            if(boost::filesystem::exists(simMapFilepath))
+            if (fs.exists(simMapFilepath))
             {
                 imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
@@ -420,8 +415,9 @@ void DelaunayGraphCut::IntersectionHistory::append(const GeometryIntersection& g
     angleToCam.push_back(angleBetwV1andV2(dirVect, intersectPt - originPt));
 }
 
-DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams& mp)
-  : _mp(mp)
+DelaunayGraphCut::DelaunayGraphCut(vfs::filesystem& fs, mvsUtils::MultiViewParams& mp)
+  : _fs{fs}
+  , _mp(mp)
 {
     _camsVertexes.resize(_mp.ncams, -1);
 
@@ -1102,7 +1098,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 const std::string simMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::simMap, 0);
                 // If we have a simMap in input use it,
                 // else init with a constant value.
-                if(boost::filesystem::exists(simMapFilepath))
+                if (_fs.exists(simMapFilepath))
                 {
                     imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                     if(wTmp != width || hTmp != height)
@@ -1122,7 +1118,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap, 0);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
-                if(boost::filesystem::exists(nmodMapFilepath))
+                if (_fs.exists(nmodMapFilepath))
                 {
                     imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
                                        imageIO::EImageColorSpace::NO_CONVERSION);
@@ -1231,7 +1227,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
     // Compute the vertices positions and simScore from all input depthMap/simMap images,
     // and declare the visibility information (the cameras indexes seeing the vertex).
-    createVerticesWithVisibilities(cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
+    createVerticesWithVisibilities(_fs, cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
                                    verticesAttrPrepare, _mp, params.simFactor, params.voteMarginFactor, params.contributeMarginFactor, params.simGaussianSize);
 
     ALICEVISION_LOG_INFO("Compute max angle per point");
@@ -1333,7 +1329,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     {
         ALICEVISION_LOG_INFO("Create final visibilities");
         // Initialize the vertice attributes and declare the visibility information
-        createVerticesWithVisibilities(cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
+        createVerticesWithVisibilities(_fs, cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
                                        verticesAttrPrepare, _mp, params.simFactor, params.voteMarginFactor, params.contributeMarginFactor, params.simGaussianSize);
     }
 
@@ -3787,7 +3783,7 @@ void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3
         mesh->tris.push_back(t);
     }
 
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = _fs.temp_directory_path().generic_string();
     mesh->save(tempDirPath + "/" + filename);
     meshf->save(tempDirPath + "/" + filename);
 }
@@ -3852,7 +3848,7 @@ void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename, st
 
 void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit)
 {
-    assert(boost::filesystem::path(filePath).extension().string() == std::string(".csv"));
+    assert(vfs::path(filePath).extension().string() == std::string(".csv"));
 
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());

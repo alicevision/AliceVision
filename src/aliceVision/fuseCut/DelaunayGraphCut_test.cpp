@@ -56,6 +56,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size = 
 
 BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 {
+    vfs::filesystem fs;
     system::Logger::get()->setLogLevel(system::EVerboseLevel::Trace);
 
     const NViewDatasetConfigurator config(1000, 1000, 500, 500, 1, 0);
@@ -69,19 +70,19 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 
     std::array<Point3d, 8> hexah;
 
-    Fuser fs(mp);
+    Fuser fuser(fs, mp);
     const size_t minObservations = 2;
     const float minObservationsAngle = 0.01f;
-    fs.divideSpaceFromSfM(sfmData, &hexah[0], minObservations, minObservationsAngle);
+    fuser.divideSpaceFromSfM(sfmData, &hexah[0], minObservations, minObservationsAngle);
 
     StaticVector<int> cams;
     cams.resize(mp.getNbCameras());
     for (int i = 0; i < cams.size(); ++i)
         cams[i] = i;
     
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = fs.temp_directory_path().generic_string();
     
-    DelaunayGraphCut delaunayGC(mp);
+    DelaunayGraphCut delaunayGC(fs, mp);
     ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");
 
     // delaunayGC.createDensePointCloud(&hexah[0], cams, &sfmData, nullptr);

@@ -461,8 +461,8 @@ void OctreeTracks::trackStruct::doPrintf()
         ALICEVISION_LOG_INFO("\t- cam: " << i << ", rc: " << cams[i].x << ", val: " << cams[i].y);
 }
 
-OctreeTracks::OctreeTracks(const Point3d* voxel_, mvsUtils::MultiViewParams* mp_, Voxel dimensions)
-    : Fuser(*mp_)
+OctreeTracks::OctreeTracks(vfs::filesystem& fs, const Point3d* voxel_, mvsUtils::MultiViewParams* mp_, Voxel dimensions)
+    : Fuser(fs, *mp_)
 {
     numSubVoxsX = dimensions.x;
     numSubVoxsY = dimensions.y;

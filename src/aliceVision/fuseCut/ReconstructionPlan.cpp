@@ -13,15 +13,12 @@
 #include <aliceVision/fuseCut/VoxelsGrid.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
-#include <boost/filesystem.hpp>
-
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
-
-ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, mvsUtils::MultiViewParams* _mp, std::string _spaceRootDir)
-    : VoxelsGrid(dimmensions, space, _mp, _spaceRootDir)
+ReconstructionPlan::ReconstructionPlan(vfs::filesystem& fs, Voxel& dimmensions, Point3d* space,
+                                       mvsUtils::MultiViewParams* _mp, std::string _spaceRootDir)
+    : VoxelsGrid(fs, dimmensions, space, _mp, _spaceRootDir)
 {
     nVoxelsTracks = getNVoxelsTracks();
 }
@@ -248,7 +245,8 @@ void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out)
     mvsUtils::inflateHexahedron(&(*voxels)[id * 8], out, dist);
 }
 
-StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs)
+StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(vfs::filesystem& fs,
+                                                        const std::vector<std::string>& recsDirs)
 {
     StaticVector<StaticVector<int>*>* ptsCamsFromDct = new StaticVector<StaticVector<int>*>();
     for(int i = 0; i < recsDirs.size(); ++i)
@@ -257,7 +255,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
 
-        if (!bfs::exists(filePtsCamsFromDCTName))
+        if (!fs.exists(filePtsCamsFromDCTName))
         {
             delete ptsCamsFromDct;
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
@@ -273,7 +271,8 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
     return ptsCamsFromDct;
 }
 
-void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams)
+void loadLargeScalePtsCams(vfs::filesystem& fs, const std::vector<std::string>& recsDirs,
+                           StaticVector<StaticVector<int>>& out_ptsCams)
 {
     for(int i = 0; i < recsDirs.size(); ++i)
     {
@@ -281,7 +280,7 @@ void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVecto
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
 
-        if (!bfs::exists(filePtsCamsFromDCTName))
+        if (!fs.exists(filePtsCamsFromDCTName))
         {
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
@@ -314,7 +313,7 @@ StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors
 mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray,
                     LargeScale* ls)
 {
-    ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
+    ReconstructionPlan rp(ls->fs, ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
 
     ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
     int npts = 0;
@@ -324,7 +323,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if (bfs::exists(fileName))
+        if (ls->fs.exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -360,7 +359,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if (bfs::exists(fileName))
+        if (ls->fs.exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -376,7 +375,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 
             ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
-            if (bfs::exists(fileName))
+            if (ls->fs.exists(fileName))
             {
                 StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
                 StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
@@ -417,7 +416,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
 {
     ReconstructionPlan* rp =
-        new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
+        new ReconstructionPlan(ls->fs, ls->dimensions, &ls->space[0], ls->mp, ls->spaceVoxelsFolderName);
     std::string param = "LargeScale:gridLevel" + mvsUtils::num2str(gl);
     int gridLevel = ls->mp->userParams.get<int>(param.c_str(), gl * 300);
 

@@ -11,6 +11,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/fuseCut/OctreeTracks.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -27,8 +28,10 @@ public:
     std::string spaceCamsTracksDir;
     bool doVisualize;
 
-    VoxelsGrid();
-    VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir, bool _doVisualize = false);
+    VoxelsGrid(vfs::filesystem& fs);
+    VoxelsGrid(vfs::filesystem& fs, const Voxel& dimensions, Point3d* _space,
+               mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir,
+               bool _doVisualize = false);
     ~VoxelsGrid();
 
     VoxelsGrid* clone(const std::string& _spaceRootDir);
@@ -54,6 +57,9 @@ public:
     VoxelsGrid* copySpace(std::string newSpaceRootDir);
 
     void getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi);
+
+protected:
+    vfs::filesystem& _fs;
 };
 
 } // namespace fuseCut

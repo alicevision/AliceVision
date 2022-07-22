@@ -25,8 +25,6 @@
 namespace aliceVision {
 namespace fuseCut {
 
-namespace bfs = boost::filesystem;
-
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale)
 {
     unsigned long npts = 0;
@@ -58,8 +56,9 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
     return npts;
 }
 
-Fuser::Fuser(const mvsUtils::MultiViewParams& mp)
+Fuser::Fuser(vfs::filesystem& fs, const mvsUtils::MultiViewParams& mp)
   : _mp(mp)
+  , _fs{fs}
 {}
 
 Fuser::~Fuser()
@@ -149,7 +148,7 @@ void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor,
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if (bfs::exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
+    if (_fs.exists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
     {
         return true;
     }
@@ -727,15 +726,16 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
     return maxDim;
 }
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams& mp, bool addRandomNoise, float percNoisePts,
+std::string generateTempPtsSimsFiles(vfs::filesystem& fs, std::string tmpDir,
+                                     mvsUtils::MultiViewParams& mp, bool addRandomNoise, float percNoisePts,
                                      int noisPixSizeDistHalfThr)
 {
     ALICEVISION_LOG_INFO("generating temp files.");
     std::string depthMapsPtsSimsTmpDir = tmpDir + "depthMapsPtsSimsTmp/";
 
-    if (!bfs::is_directory(depthMapsPtsSimsTmpDir))
+    if (!fs.is_directory(depthMapsPtsSimsTmpDir))
     {
-        bfs::create_directory(depthMapsPtsSimsTmpDir);
+        fs.create_directory(depthMapsPtsSimsTmpDir);
 
         int scale = 0;
         int scaleuse = std::max(1, scale);
@@ -893,7 +893,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
     return depthMapsPtsSimsTmpDir;
 }
 
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir)
+void deleteTempPtsSimsFiles(vfs::filesystem& fs, mvsUtils::MultiViewParams& mp,
+                            const std::string& depthMapsPtsSimsTmpDir)
 {
     for(int rc = 0; rc < mp.ncams; rc++)
     {
@@ -902,7 +903,7 @@ void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& de
         remove(ptsfn.c_str());
         remove(simsfn.c_str());
     }
-    bfs::remove_all(depthMapsPtsSimsTmpDir);
+    fs.remove_all(depthMapsPtsSimsTmpDir);
 }
 
 } // namespace fuseCut

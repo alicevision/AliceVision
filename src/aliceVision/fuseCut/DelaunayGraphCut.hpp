@@ -204,6 +204,7 @@ public:
         }
     };
 
+    vfs::filesystem& _fs;
     mvsUtils::MultiViewParams& _mp;
 
     GEO::Delaunay_var _tetrahedralization;
@@ -223,7 +224,7 @@ public:
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(mvsUtils::MultiViewParams& mp);
+    DelaunayGraphCut(vfs::filesystem& fs, mvsUtils::MultiViewParams& mp);
     virtual ~DelaunayGraphCut();
 
     /**
