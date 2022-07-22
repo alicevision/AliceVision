@@ -168,7 +168,7 @@ int aliceVision_main(int argc, char **argv)
 
   // features reading
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+  if (!sfm::loadFeaturesPerView(fs, featuresPerView, sfmData, featuresFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
@@ -177,7 +177,7 @@ int aliceVision_main(int argc, char **argv)
   // matches reading
   // Load the match file (try to read the two matches file formats).
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes))
+  if (!sfm::loadPairwiseMatches(fs, pairwiseMatches, sfmData, matchesFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolders);
     return EXIT_FAILURE;
@@ -217,9 +217,9 @@ int aliceVision_main(int argc, char **argv)
 
   // set featuresFolders and matchesFolders relative paths
   {
-    sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
-    sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-    sfmEngine.getSfMData().setAbsolutePath(fs::path(outSfMDataFilepath).parent_path().string());
+    sfmEngine.getSfMData().addFeaturesFolders(fs, featuresFolders);
+    sfmEngine.getSfMData().addMatchesFolders(fs, matchesFolders);
+    sfmEngine.getSfMData().setAbsolutePath(fs, vfs::path(outSfMDataFilepath).parent_path().string());
   }
 
   ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());

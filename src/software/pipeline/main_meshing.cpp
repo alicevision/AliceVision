@@ -543,7 +543,7 @@ int aliceVision_main(int argc, char* argv[])
                       createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, ptsCams, densePointCloud);
                       removeLandmarksWithoutObservations(densePointCloud);
                       if(colorizeOutput)
-                        sfmData::colorizeTracks(densePointCloud);
+                        sfmData::colorizeTracks(fs, densePointCloud);
                       sfmDataIO::Save(fs, densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(),
                                       sfmDataIO::ESfMData::ALL_DENSE);
                     }
@@ -586,7 +586,7 @@ int aliceVision_main(int argc, char* argv[])
 
     if(colorizeOutput)
     {
-      sfmData::colorizeTracks(densePointCloud);
+      sfmData::colorizeTracks(fs, densePointCloud);
       // colorize output mesh before landmarks filtering
       // to have a 1:1 mapping between points and mesh vertices
       const auto& landmarks = densePointCloud.getLandmarks();

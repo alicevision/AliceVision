@@ -10,18 +10,14 @@
 #include <aliceVision/sfmData/View.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp> 
-#include <boost/filesystem.hpp>
-
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfmData {
 
-std::size_t computeViewUID(const View& view)
+std::size_t computeViewUID(vfs::filesystem& fs, const View& view)
 {
   std::size_t uid = 0;
-  const fs::path imagePath = view.getImagePath();
+  const vfs::path imagePath = view.getImagePath();
 
   {
       std::string ext = imagePath.extension().string();
@@ -85,7 +81,7 @@ std::size_t computeViewUID(const View& view)
   else
   {
     // if no original date/time, fallback to the file date/time
-    std::time_t t = fs::last_write_time(imagePath);
+    std::time_t t = fs.last_write_time(imagePath);
     stl::hash_combine(uid, t);
   }
 
@@ -147,13 +143,14 @@ void sanityCheckLandmarks(const Landmarks &landmarks, const Views &views)
   }  
 }
 
-void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdToNew, bool sanityCheck)
+void regenerateUID(vfs::filesystem& fs, SfMData &sfmdata,
+                   std::map<std::size_t, std::size_t> &oldIdToNew, bool sanityCheck)
 {
   // if the views are empty, nothing to be done. 
   if(sfmdata.getViews().empty())
     return;
   
-  regenerateViewUIDs(sfmdata.views, oldIdToNew);
+  regenerateViewUIDs(fs, sfmdata.views, oldIdToNew);
   
   if(!sanityCheck)
     return;
@@ -165,7 +162,7 @@ void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdTo
 }
 
 
-void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdToNew)
+void regenerateViewUIDs(vfs::filesystem& fs, Views &views, std::map<std::size_t, std::size_t> &oldIdToNew)
 {
   // if the views are empty, nothing to be done. 
   if(views.empty())
@@ -178,7 +175,7 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
     const View& currentView = *iter.second.get();
 
     // compute the view UID
-    const std::size_t uid = computeViewUID(currentView);
+    const std::size_t uid = computeViewUID(fs, currentView);
 
     // update the mapping
     assert(oldIdToNew.count(currentView.getViewId()) == 0);

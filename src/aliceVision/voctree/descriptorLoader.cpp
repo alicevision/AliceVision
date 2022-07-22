@@ -70,7 +70,7 @@ void getListOfDescriptorFiles(vfs::filesystem& fs, const sfmData::SfMData& sfmDa
                                                          feature::EImageDescriberType::SIFT_UPRIGHT};
   std::vector<std::string> allFeaturesFolders(featuresFolders);
   // add features folders from SfMData in search
-  for(const auto& folder: sfmData.getFeaturesFolders())
+  for(const auto& folder: sfmData.getFeaturesFolders(fs))
   {
     if(std::find(allFeaturesFolders.begin(), allFeaturesFolders.end(), folder) == allFeaturesFolders.end())
       allFeaturesFolders.push_back(folder);

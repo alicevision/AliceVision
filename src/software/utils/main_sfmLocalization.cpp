@@ -151,7 +151,7 @@ int aliceVision_main(int argc, char **argv)
   sfm::SfMLocalizationSingle3DTrackObservationDatabase localizer;
   {
     feature::RegionsPerView regionsPerView;
-    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, {describerType}))
+    if (!sfm::loadRegionsPerView(fs, regionsPerView, sfmData, featuresFolders, {describerType}))
     {
       ALICEVISION_LOG_ERROR("Invalid regions.");
       return EXIT_FAILURE;

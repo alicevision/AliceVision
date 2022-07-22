@@ -140,7 +140,7 @@ int aliceVision_main(int argc, char ** argv)
 
   // read the features
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes))
+  if(!sfm::loadFeaturesPerView(fs, featuresPerView, sfmData, featuresFolders, describerMethodTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
@@ -148,7 +148,7 @@ int aliceVision_main(int argc, char ** argv)
 
   // read the matches
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerMethodTypes))
+  if (!sfm::loadPairwiseMatches(fs, pairwiseMatches, sfmData, matchesFolders, describerMethodTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid matches file");
     return EXIT_FAILURE;

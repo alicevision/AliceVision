@@ -380,7 +380,7 @@ int aliceVision_main(int argc, char** argv)
   
   
   feature::RegionsPerView regionsPerView;
-  if(!aliceVision::sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, {describerType}))
+  if(!aliceVision::sfm::loadRegionsPerView(fs, regionsPerView, sfmData, featuresFolders, {describerType}))
   {
     ALICEVISION_LOG_ERROR("Invalid regions." << std::endl);
     return EXIT_FAILURE;

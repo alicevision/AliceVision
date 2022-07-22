@@ -20,9 +20,8 @@
 namespace aliceVision {
 namespace sfmData {
 
-void colorizeTracks(SfMData& sfmData)
+void colorizeTracks(vfs::filesystem& fs, SfMData& sfmData)
 {
-  vfs::filesystem fs;
   boost::progress_display progressBar(sfmData.getLandmarks().size(), std::cout, "\nCompute scene structure color\n");
 
   std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;

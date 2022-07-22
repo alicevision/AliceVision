@@ -474,14 +474,14 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // b. Read matches
-  if(!sfm::loadPairwiseMatches(_pairwiseMatches, sfmData, _matchesFolders, _descTypes))
+  if (!sfm::loadPairwiseMatches(fs, _pairwiseMatches, sfmData, _matchesFolders, _descTypes))
   {
     std::cerr << "Can't load matches files" << std::endl;
     return false;
   }
 
   // Read features:
-  if(!sfm::loadRegionsPerView(_regionsPerView, sfmData, _featuresFolders, _descTypes))
+  if(!sfm::loadRegionsPerView(fs, _regionsPerView, sfmData, _featuresFolders, _descTypes))
   {
     std::cerr << "Can't load feature files" << std::endl;
     return false;

@@ -9,16 +9,12 @@
 
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
-
 namespace aliceVision {
 namespace sfmData {
 
 using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
-
-namespace fs = boost::filesystem;
 
 SfMData::SfMData()
 {
@@ -112,11 +108,14 @@ bool SfMData::operator==(const SfMData& other) const {
 
 /**
  * @brief Convert paths in \p folders to absolute paths using \p absolutePath parent folder as base.
+ * @param[in] fs Virtual filesystem handle
  * @param[in] folders list of paths to convert
  * @param[in] absolutePath filepath which parent folder should be used as base for absolute path conversion
  * @return the list of converted absolute paths or input folder if absolutePath is empty
  */
-std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folders, const std::string& absolutePath)
+std::vector<std::string> toAbsoluteFolders(vfs::filesystem& fs,
+                                           const std::vector<std::string>& folders,
+                                           const std::string& absolutePath)
 {
   // if absolute path is not set, return input folders
   if(absolutePath.empty())
@@ -126,11 +125,11 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
   absolutePaths.reserve(folders.size());
   for(const auto& folder: folders)
   {
-    const fs::path f = fs::absolute(folder, fs::path(absolutePath).parent_path());
-    if(fs::exists(f))
+    const vfs::path f = fs.absolute(folder, vfs::path(absolutePath).parent_path());
+    if (fs.exists(f))
     {
-      // fs::canonical can only be used if the path exists
-      absolutePaths.push_back(fs::canonical(f).string());
+      // vfs::canonical can only be used if the path exists
+      absolutePaths.push_back(fs.canonical(f).string());
     }
     else
     {
@@ -143,18 +142,20 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
 /** 
  * @brief Add paths contained in \p folders to \p dst as relative paths to \p absolutePath.
  *        Paths already present in \p dst are omitted.
+ * @param[in] fs Virtual filesystem handle
  * @param[in] dst list in which paths should be added
  * @param[in] folders paths to add to \p dst as relative folders
  * @param[in] absolutePath filepath which parent folder should be used as base for relative path conversions
  */
-void addAsRelativeFolders(std::vector<std::string>& dst, const std::vector<std::string>& folders, const std::string& absolutePath)
+void addAsRelativeFolders(vfs::filesystem& fs, std::vector<std::string>& dst,
+                          const std::vector<std::string>& folders, const std::string& absolutePath)
 {
   for(auto folderPath: folders) 
   {
     // if absolutePath is set, convert to relative path
-    if(!absolutePath.empty() && fs::path(folderPath).is_absolute())
+    if(!absolutePath.empty() && vfs::path(folderPath).is_absolute())
     {
-      folderPath = fs::relative(folderPath, fs::path(absolutePath).parent_path()).string();
+      folderPath = fs.relative(folderPath, vfs::path(absolutePath).parent_path()).string();
     }
     // add path only if not already in dst
     if(std::find(dst.begin(), dst.end(), folderPath) == dst.end())
@@ -164,37 +165,37 @@ void addAsRelativeFolders(std::vector<std::string>& dst, const std::vector<std::
   }
 }
 
-std::vector<std::string> SfMData::getFeaturesFolders() const
+std::vector<std::string> SfMData::getFeaturesFolders(vfs::filesystem& fs) const
 {
-  return toAbsoluteFolders(_featuresFolders, _absolutePath);
+  return toAbsoluteFolders(fs, _featuresFolders, _absolutePath);
 }
 
-std::vector<std::string> SfMData::getMatchesFolders() const
+std::vector<std::string> SfMData::getMatchesFolders(vfs::filesystem& fs) const
 {
-  return toAbsoluteFolders(_matchesFolders, _absolutePath);
+  return toAbsoluteFolders(fs, _matchesFolders, _absolutePath);
 }
 
-void SfMData::addFeaturesFolders(const std::vector<std::string>& folders)
+void SfMData::addFeaturesFolders(vfs::filesystem& fs, const std::vector<std::string>& folders)
 {
-  addAsRelativeFolders(_featuresFolders, folders, _absolutePath);
+  addAsRelativeFolders(fs, _featuresFolders, folders, _absolutePath);
 }
 
-void SfMData::addMatchesFolders(const std::vector<std::string>& folders)
+void SfMData::addMatchesFolders(vfs::filesystem& fs, const std::vector<std::string>& folders)
 {
-  addAsRelativeFolders(_matchesFolders, folders, _absolutePath);
+  addAsRelativeFolders(fs, _matchesFolders, folders, _absolutePath);
 }
 
-void SfMData::setAbsolutePath(const std::string& path)
+void SfMData::setAbsolutePath(vfs::filesystem& fs, const std::string& path)
 {
   // get absolute path to features/matches folders
-  const std::vector<std::string> featuresFolders = getFeaturesFolders();
-  const std::vector<std::string> matchesFolders = getMatchesFolders();
+  const std::vector<std::string> featuresFolders = getFeaturesFolders(fs);
+  const std::vector<std::string> matchesFolders = getMatchesFolders(fs);
   // change internal absolute path
   _absolutePath = path;
   // re-set features/matches folders
   // they will be converted back to relative paths based on updated _absolutePath
-  setFeaturesFolders(featuresFolders);
-  setMatchesFolders(matchesFolders);
+  setFeaturesFolders(fs, featuresFolders);
+  setMatchesFolders(fs, matchesFolders);
 }
 
 std::set<IndexT> SfMData::getValidViews() const
@@ -253,16 +254,16 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
 }
 
 
-void SfMData::combine(const SfMData& sfmData)
+void SfMData::combine(vfs::filesystem& fs, const SfMData& sfmData)
 {
   if(!_rigs.empty() && !sfmData._rigs.empty())
     throw std::runtime_error("Can't combine two SfMData with rigs");
 
   // feature folder
-  addFeaturesFolders(sfmData.getFeaturesFolders());
+  addFeaturesFolders(fs, sfmData.getFeaturesFolders(fs));
 
   // matching folder
-  addMatchesFolders(sfmData.getMatchesFolders());
+  addMatchesFolders(fs, sfmData.getMatchesFolders(fs));
 
   // views
   views.insert(sfmData.views.begin(), sfmData.views.end());

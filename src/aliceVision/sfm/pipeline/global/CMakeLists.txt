@@ -5,4 +5,5 @@ alicevision_add_test(globalSfM_test.cpp
         aliceVision_multiview_test_data
         aliceVision_feature
         aliceVision_system
+        aliceVision_vfs
 )

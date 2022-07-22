@@ -161,15 +161,17 @@ public:
 
   /**
    * @brief Get absolute features folder paths
+   * @param[in] fs Virtual file system handle
    * @return features folders paths
    */
-  std::vector<std::string> getFeaturesFolders() const;
+  std::vector<std::string> getFeaturesFolders(vfs::filesystem& fs) const;
 
   /**
    * @brief Get absolute matches folder paths
+   * @param[in] fs Virtual file system handle
    * @return matches folder paths
    */
-  std::vector<std::string> getMatchesFolders() const;
+  std::vector<std::string> getMatchesFolders(vfs::filesystem& fs) const;
 
   /**
    * @brief List the view indexes that have valid camera intrinsic and pose.
@@ -398,71 +400,78 @@ public:
    * @brief Add the given \p folder to features folders.
    * @note If SfmData's absolutePath has been set, 
    *       an absolute path will be converted to a relative one.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] folder path to a folder containing features
    */
-  inline void addFeaturesFolder(const std::string& folder)
+  inline void addFeaturesFolder(vfs::filesystem& fs, const std::string& folder)
   {
-    addFeaturesFolders({folder});
+    addFeaturesFolders(fs, {folder});
   }
 
   /**
    * @brief Add the given \p folders to features folders.
    * @note If SfmData's absolutePath has been set, 
    *       absolute paths will be converted to relative ones.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] folders paths to folders containing features
    */
-  void addFeaturesFolders(const std::vector<std::string>& folders);
+  void addFeaturesFolders(vfs::filesystem& fs, const std::vector<std::string>& folders);
 
   /**
    * @brief Add the given \p folder to matches folders.
    * @note If SfmData's absolutePath has been set, 
    *       an absolute path will be converted to a relative one.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] folder path to a folder containing matches
    */
-  inline void addMatchesFolder(const std::string& folder)
+  inline void addMatchesFolder(vfs::filesystem& fs, const std::string& folder)
   {
-    addMatchesFolders({folder});
+    addMatchesFolders(fs, {folder});
   }
 
   /**
    * @brief Add the given \p folders to matches folders.
    * @note If SfmData's absolutePath has been set, 
    *       absolute paths will be converted to relative ones.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] folders paths to folders containing matches
    */
-  void addMatchesFolders(const std::vector<std::string>& folders);
+  void addMatchesFolders(vfs::filesystem& fs, const std::vector<std::string>& folders);
 
   /**
    * @brief Replace the current features folders by the given ones.
    * @note If SfmData's absolutePath has been set, 
    *       absolute paths will be converted to relative ones.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] folders paths to folders containing features
    */
-  inline void setFeaturesFolders(const std::vector<std::string>& folders)
+  inline void setFeaturesFolders(vfs::filesystem& fs, const std::vector<std::string>& folders)
   {
     _featuresFolders.clear();
-    addFeaturesFolders(folders);
+    addFeaturesFolders(fs, folders);
   }
 
   /**
    * @brief Replace the current matches folders by the given ones.
    * @note If SfmData's absolutePath has been set, 
    *       absolute paths will be converted to relative ones.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] folders paths to folders containing matches
    */
-  inline void setMatchesFolders(const std::vector<std::string>& folders)
+  inline void setMatchesFolders(vfs::filesystem& fs, const std::vector<std::string>& folders)
   {
     _matchesFolders.clear();
-    addMatchesFolders(folders);
+    addMatchesFolders(fs, folders);
   }
 
   /**
    * @brief Set the SfMData file absolute path.
    * @note Internal relative features/matches folders will be remapped 
    *       to be relative to the new absolute \p path.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] path The absolute path to the SfMData file folder
    */
-  void setAbsolutePath(const std::string& path);
+  void setAbsolutePath(vfs::filesystem& fs, const std::string& path);
 
   /**
    * @brief Set the given pose for the given view
@@ -509,9 +518,10 @@ public:
   /**
    * @brief Insert data from the given sfmData if possible.
    * note: This operation doesn't override existing data.
+   * @param[in] fs Virtual filesystem handle
    * @param[in] sfmData A given SfMData
    */
-  void combine(const SfMData& sfmData);
+  void combine(vfs::filesystem& fs, const SfMData& sfmData);
 
   void clear();
 

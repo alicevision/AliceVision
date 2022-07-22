@@ -69,7 +69,8 @@ public:
    */
   inline void colorize()
   {
-    sfmData::colorizeTracks(_sfmData);
+    vfs::filesystem fs;
+    sfmData::colorizeTracks(fs, _sfmData);
   }
 
   void retrieveMarkersId()

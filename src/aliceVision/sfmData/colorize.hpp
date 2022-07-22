@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <aliceVision/vfs/fwd.hpp>
+
 namespace aliceVision {
 namespace sfmData {
 
@@ -16,9 +18,10 @@ class SfMData;
  * @brief colorizeTracks Add the associated color to each 3D point of
  * the sfmData, using the track to determine the best view from which
  * to get the color.
+ * @param[in] fs Virtual filesystem handle.
  * @param[in,out] sfmData The container of the data
  */
-void colorizeTracks(SfMData& sfmData);
+void colorizeTracks(vfs::filesystem& fs, SfMData& sfmData);
 
 } // namespace sfmData
 } // namespace aliceVision

@@ -100,7 +100,7 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // compute the scene structure color
-  sfmData::colorizeTracks(sfmData);
+  sfmData::colorizeTracks(fs, sfmData);
 
   // export the SfMData scene in the expected format
   ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");

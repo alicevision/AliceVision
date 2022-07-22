@@ -127,7 +127,7 @@ int aliceVision_main(int argc, char **argv)
 
   // prepare the Regions provider
   feature::RegionsPerView regionsPerView;
-  if(!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, describerMethodTypes))
+  if(!sfm::loadRegionsPerView(fs, regionsPerView, sfmData, featuresFolders, describerMethodTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid regions.");
     return EXIT_FAILURE;
@@ -148,7 +148,7 @@ int aliceVision_main(int argc, char **argv)
   {
     // load pre-computed matches
     matching::PairwiseMatches matches;
-    if(!sfm::loadPairwiseMatches(matches, sfmData, matchesFolders, describerMethodTypes))
+    if (!sfm::loadPairwiseMatches(fs, matches, sfmData, matchesFolders, describerMethodTypes))
       return EXIT_FAILURE;
 
     pairs = matching::getImagePairs(matches);

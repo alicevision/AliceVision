@@ -98,7 +98,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_
 
   ALICEVISION_LOG_DEBUG("Load Features and Descriptors per view");
 
-  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders();
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders(fs);
   featuresFolders.emplace_back(feat_directory);
 
   // Read for each view the corresponding Regions and store them

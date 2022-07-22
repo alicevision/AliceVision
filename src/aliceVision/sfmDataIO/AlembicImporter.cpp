@@ -818,12 +818,13 @@ AlembicImporter::~AlembicImporter()
 
 void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
 {
+  vfs::filesystem fs;
   const index_t sampleFrame = 0;
   IObject rootObj = _dataImpl->_rootEntity.getChild("mvgRoot");
   ICompoundProperty userProps = rootObj.getProperties();
 
   // set SfMData folder absolute path
-  sfmdata.setAbsolutePath(_dataImpl->_filename);
+  sfmdata.setAbsolutePath(fs, _dataImpl->_filename);
 
   std::vector<::uint32_t> vecAbcVersion = {0, 0, 0};
 
@@ -843,27 +844,27 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
   {
     std::vector<std::string> featuresFolders;
     getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_featuresFolders", sampleFrame, featuresFolders);
-    sfmdata.setFeaturesFolders(featuresFolders);
+    sfmdata.setFeaturesFolders(fs, featuresFolders);
   }
 
   if(userProps.getPropertyHeader("mvg_matchesFolders"))
   {
     std::vector<std::string> matchesFolders;
     getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_matchesFolders", sampleFrame, matchesFolders);
-    sfmdata.setMatchesFolders(matchesFolders);
+    sfmdata.setMatchesFolders(fs, matchesFolders);
   }
 
   // keep compatibility with single folder for feature and matching
   if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_featureFolder"))
   {
     const std::string featuresFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_featureFolder", sampleFrame);
-    sfmdata.addFeaturesFolder(featuresFolder);
+    sfmdata.addFeaturesFolder(fs, featuresFolder);
   }
 
   if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_matchingFolder"))
   {
     const std::string matchesFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_matchingFolder", sampleFrame);
-    sfmdata.addMatchesFolder(matchesFolder);
+    sfmdata.addMatchesFolder(fs, matchesFolder);
   }
 
   // TODO : handle the case where the archive wasn't correctly opened

@@ -273,6 +273,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
                                     const std::string & weightsFilepath,
                                     const std::string & featFolder)
 {
+  vfs::filesystem fs;
 
   bool withWeights = !weightsFilepath.empty();
 
@@ -327,7 +328,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
   }
 
-  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders();
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders(fs);
   if(!featFolder.empty())
     featuresFolders.emplace_back(featFolder);
 

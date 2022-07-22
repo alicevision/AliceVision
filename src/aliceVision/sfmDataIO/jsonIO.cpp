@@ -529,11 +529,11 @@ bool loadJSON(vfs::filesystem& fs, sfmData::SfMData& sfmData, const std::string&
   // folders
   if(fileTree.count("featuresFolders"))
     for(bpt::ptree::value_type& featureFolderNode : fileTree.get_child("featuresFolders"))
-      sfmData.addFeaturesFolder(featureFolderNode.second.get_value<std::string>());
+      sfmData.addFeaturesFolder(fs, featureFolderNode.second.get_value<std::string>());
 
   if(fileTree.count("matchesFolders"))
     for(bpt::ptree::value_type& matchingFolderNode : fileTree.get_child("matchesFolders"))
-      sfmData.addMatchesFolder(matchingFolderNode.second.get_value<std::string>());
+      sfmData.addMatchesFolder(fs, matchingFolderNode.second.get_value<std::string>());
 
   // intrinsics
   if(loadIntrinsics && fileTree.count("intrinsics"))

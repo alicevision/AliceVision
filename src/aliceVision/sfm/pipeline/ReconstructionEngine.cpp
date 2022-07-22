@@ -16,6 +16,7 @@ namespace sfm {
 
 void retrieveMarkersId(sfmData::SfMData& sfmData)
 {
+    vfs::filesystem fs;
     std::set<feature::EImageDescriberType> allMarkerDescTypes;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     allMarkerDescTypes.insert(feature::EImageDescriberType::CCTAG3);
@@ -44,7 +45,7 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
     std::set<IndexT> filter;
     // It could be optimized by loading only the minimal number of desc files,
     // but as we are only retrieving them for markers, the performance impact is limited.
-    if (!sfm::loadRegionsPerView(regionPerView, sfmData, sfmData.getFeaturesFolders(), markerDescTypes, filter))
+    if (!sfm::loadRegionsPerView(fs, regionPerView, sfmData, sfmData.getFeaturesFolders(fs), markerDescTypes, filter))
     {
         ALICEVISION_THROW_ERROR("Error while loading markers regions.");
     }

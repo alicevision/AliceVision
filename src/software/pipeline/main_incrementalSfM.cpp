@@ -260,7 +260,7 @@ int aliceVision_main(int argc, char **argv)
 
   // features reading
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+  if (!sfm::loadFeaturesPerView(fs, featuresPerView, sfmData, featuresFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features.");
     return EXIT_FAILURE;
@@ -268,7 +268,7 @@ int aliceVision_main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
+  if (!sfm::loadPairwiseMatches(fs, pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;
@@ -330,9 +330,9 @@ int aliceVision_main(int argc, char **argv)
 
   // set featuresFolders and matchesFolders relative paths
   {
-      sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
-      sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-      sfmEngine.getSfMData().setAbsolutePath(outputSfM);
+      sfmEngine.getSfMData().addFeaturesFolders(fs, featuresFolders);
+      sfmEngine.getSfMData().addMatchesFolders(fs, matchesFolders);
+      sfmEngine.getSfMData().setAbsolutePath(fs, outputSfM);
   }
 
   // get the color for the 3D points

@@ -53,11 +53,13 @@ void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& 
 
 /**
  * @brief Compute features and matches per view
+ * @param[in] fs: Virtual file system handle
  * @param[in] sfmData: scene containing the views
  * @param[out] out_featPerView: vector containing the number of features for each view
  * @param[out] out_matchPerView: vector containing the number of matches for each view
  */
-void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<size_t>& out_featPerView, std::vector<size_t>& out_matchPerView);
+void computeFeatMatchPerView(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
+                             std::vector<size_t>& out_featPerView, std::vector<size_t>& out_matchPerView);
 
 /**
  * @brief Compute histogram of scale for observations

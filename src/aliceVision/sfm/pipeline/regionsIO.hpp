@@ -51,6 +51,7 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
 
 /**
  * @brief Load Regions (Features & Descriptors) for each view of the provided SfMData container.
+ * @param[in] fs Virtual file system handle
  * @param[in,out] regionsPerView
  * @param[in] sfmData The provided SfMData container
  * @param[in] folders The feature Folders
@@ -58,7 +59,7 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
  * @param[in] filter To load Regions only for a sub-set of the views contained in the sfmData
  * @return true if the regions are correctlty loaded
  */
-bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
+bool loadRegionsPerView(vfs::filesystem& fs, feature::RegionsPerView& regionsPerView,
                         const sfmData::SfMData& sfmData,
                         const std::vector<std::string>& folders,
                         const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
@@ -66,13 +67,14 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
 
 /**
  * @brief Load Features for each view of the provided SfMData container.
+ * @param[in] fs Virtual file system handle
  * @param[in,out] featuresPerView
  * @param[in] sfmData The provided SfMData container
  * @param[in] folders The feature Folders
  * @param[in] imageDescriberTypes The imageDescriber types
  * @return true if the features are correctlty loaded
  */
-bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
+bool loadFeaturesPerView(vfs::filesystem& fs, feature::FeaturesPerView& featuresPerView,
                          const sfmData::SfMData& sfmData,
                          const std::vector<std::string>& folders,
                          const std::vector<feature::EImageDescriberType>& imageDescriberTypes);

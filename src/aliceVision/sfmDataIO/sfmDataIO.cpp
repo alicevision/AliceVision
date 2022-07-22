@@ -120,7 +120,7 @@ bool Load(vfs::filesystem& fs, sfmData::SfMData& sfmData, const std::string& fil
   }
 
   if(status)
-    sfmData.setAbsolutePath(filename);
+    sfmData.setAbsolutePath(fs, filename);
 
   // Assert that loaded intrinsics | extrinsics are linked to valid view
   if(status && (partFlag & VIEWS) && ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))

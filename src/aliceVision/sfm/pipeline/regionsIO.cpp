@@ -180,13 +180,13 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
   return loadingSuccess;
 }
 
-bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
+bool loadRegionsPerView(vfs::filesystem& fs, feature::RegionsPerView& regionsPerView,
             const SfMData& sfmData,
             const std::vector<std::string>& folders,
             const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& viewIdFilter)
 {
-  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
+  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(fs); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
   auto last = std::unique(featuresFolders.begin(), featuresFolders.end());
   featuresFolders.erase(last, featuresFolders.end());
@@ -231,12 +231,12 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
 }
 
 
-bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
+bool loadFeaturesPerView(vfs::filesystem& fs, feature::FeaturesPerView& featuresPerView,
                       const SfMData& sfmData,
                       const std::vector<std::string>& folders,
                       const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
-  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
+  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(fs); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
 
   boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Loading features\n");

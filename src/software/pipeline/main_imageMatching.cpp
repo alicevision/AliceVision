@@ -878,7 +878,7 @@ int aliceVision_main(int argc, char** argv)
   {
     // combine A to B
     // should not loose B data
-    sfmDataB.combine(sfmDataA);
+    sfmDataB.combine(fs, sfmDataA);
 
     if (!sfmDataIO::Save(fs, sfmDataB, outputCombinedSfM, sfmDataIO::ESfMData::ALL))
     {

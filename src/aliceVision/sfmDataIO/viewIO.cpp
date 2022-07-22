@@ -84,7 +84,7 @@ void updateIncompleteView(vfs::filesystem& fs, sfmData::View& view, EViewIdMetho
     else
     {
       // Use metadata
-      view.setViewId(sfmData::computeViewUID(view));
+      view.setViewId(sfmData::computeViewUID(fs, view));
     }
   }
 

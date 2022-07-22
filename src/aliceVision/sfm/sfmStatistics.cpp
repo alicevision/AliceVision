@@ -204,14 +204,16 @@ void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& 
     }
 }
 
-void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<std::size_t>& out_featPerView, std::vector<std::size_t>& out_matchPerView)
+void computeFeatMatchPerView(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
+                             std::vector<std::size_t>& out_featPerView,
+                             std::vector<std::size_t>& out_matchPerView)
 {
     const auto descTypesTmp = sfmData.getLandmarkDescTypes();
     const std::vector<feature::EImageDescriberType> describerTypes(descTypesTmp.begin(), descTypesTmp.end());
 
     // features reading
     feature::FeaturesPerView featuresPerView;
-    if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, sfmData.getFeaturesFolders(), describerTypes))
+    if(!sfm::loadFeaturesPerView(fs, featuresPerView, sfmData, sfmData.getFeaturesFolders(fs), describerTypes))
     {
         ALICEVISION_LOG_ERROR("Invalid features.");
         return;
@@ -219,7 +221,7 @@ void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<std::s
 
     // matches reading
     matching::PairwiseMatches pairwiseMatches;
-    if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, sfmData.getMatchesFolders(), describerTypes, 0, 0, true))
+    if(!sfm::loadPairwiseMatches(fs, pairwiseMatches, sfmData, sfmData.getMatchesFolders(fs), describerTypes, 0, 0, true))
     {
         ALICEVISION_LOG_ERROR("Unable to load matches.");
         return;

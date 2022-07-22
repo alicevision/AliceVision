@@ -323,7 +323,7 @@ int aliceVision_main(int argc, char **argv)
 
   // load the corresponding view regions
   RegionsPerView regionPerView;
-  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolders, describerTypes, filter))
+  if(!sfm::loadRegionsPerView(fs, regionPerView, sfmData, featuresFolders, describerTypes, filter))
   {
     ALICEVISION_LOG_ERROR("Invalid regions in '" + sfmDataFilename + "'");
     return EXIT_FAILURE;
