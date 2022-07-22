@@ -8,9 +8,9 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_io.h>
@@ -35,7 +35,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 enum class EOperationType : unsigned char
 {
@@ -121,6 +120,8 @@ void fixMeshForBooleanOperations(GEO::Mesh& m)
  */
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
+
     // timer initialization
 
     system::Timer timer;
@@ -196,14 +197,14 @@ int aliceVision_main(int argc, char** argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // check first mesh file path
-    if(!inputFirstMeshPath.empty() && !fs::exists(inputFirstMeshPath) && !fs::is_regular_file(inputFirstMeshPath))
+    if (!inputFirstMeshPath.empty() && !fs.exists(inputFirstMeshPath) && !fs.is_regular_file(inputFirstMeshPath))
     {
         ALICEVISION_LOG_ERROR("The first mesh file doesn't exist");
         return EXIT_FAILURE;
     }
 
     // check second mesh file path
-    if(!inputSecondMeshPath.empty() && !fs::exists(inputSecondMeshPath) && !fs::is_regular_file(inputSecondMeshPath))
+    if (!inputSecondMeshPath.empty() && !fs.exists(inputSecondMeshPath) && !fs.is_regular_file(inputSecondMeshPath))
     {
         ALICEVISION_LOG_ERROR("The second mesh file doesn't exist");
         return EXIT_FAILURE;
@@ -218,11 +219,11 @@ int aliceVision_main(int argc, char** argv)
 
     // ensure output folder exists
     {
-        const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
+        const std::string outputFolderPart = vfs::path(outputFilePath).parent_path().string();
 
-        if(!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+        if (!outputFolderPart.empty() && !fs.exists(outputFolderPart))
         {
-            if(!fs::create_directory(outputFolderPart))
+            if (!fs.create_directory(outputFolderPart))
             {
                 ALICEVISION_LOG_ERROR("Cannot create output folder");
                 return EXIT_FAILURE;
