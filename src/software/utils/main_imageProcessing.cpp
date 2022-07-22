@@ -419,7 +419,7 @@ void saveImage(vfs::filesystem& fs, image::Image<image::RGBAfColor>& image,
     {
         // The file must match the file name and extension to be used as a metadata replacement.
         const std::vector<std::string> metadataFilePaths = utils::getFilesPathsFromFolders(
-            metadataFolders, [&filename](const boost::filesystem::path& path)
+            fs, metadataFolders, [&filename](const vfs::path& path)
             {
                 return path.filename().string() == filename;
             }
@@ -665,7 +665,7 @@ int aliceVision_main(int argc, char * argv[])
             // if inputFolders are used
             if(checkInputFolders)
             {
-                const std::vector<std::string> foundViewPaths = sfmDataIO::viewPathsFromFolders(view, inputFolders);
+                const auto foundViewPaths = sfmDataIO::viewPathsFromFolders(fs, view, inputFolders);
 
                 // Checks if a file associated with a given view is found in the inputfolders
                 if(foundViewPaths.empty())
@@ -768,7 +768,7 @@ int aliceVision_main(int argc, char * argv[])
         if(inputExpression.empty())
         {
             // Get supported files
-            filesStrPaths = utils::getFilesPathsFromFolders(inputFolders, [](const boost::filesystem::path& path) {
+            filesStrPaths = utils::getFilesPathsFromFolders(fs, inputFolders, [](const vfs::path& path) {
                 return image::isSupported(path.extension().string());
             });
         }
@@ -790,8 +790,8 @@ int aliceVision_main(int argc, char * argv[])
 
                 const std::regex regex = utils::filterToRegex(inputExpression);
                 // Get supported files in inputPath directory which matches our regex filter
-                filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), 
-                    [&regex](const boost::filesystem::path& path) {
+                filesStrPaths = utils::getFilesPathsFromFolder(fs, inputPath.parent_path().generic_string(),
+                    [&regex](const vfs::path& path) {
                         return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
                     }
                 );

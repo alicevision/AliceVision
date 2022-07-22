@@ -388,6 +388,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshFiltering.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_mvsUtils
           aliceVision_mesh
           Boost::program_options

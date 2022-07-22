@@ -241,7 +241,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     {      
       if(!imagesFolders.empty())
       {
-          std::vector<std::string> paths = sfmDataIO::viewPathsFromFolders(*view, imagesFolders);
+          std::vector<std::string> paths = sfmDataIO::viewPathsFromFolders(fs, *view, imagesFolders);
 
           // if path was not found
           if(paths.empty())

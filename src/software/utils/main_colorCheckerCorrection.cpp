@@ -314,7 +314,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::regex regex = utils::filterToRegex(inputExpression);
                 // Get supported files in inputPath directory which matches our regex filter
                 filesStrPaths = utils::getFilesPathsFromFolder(
-                    inputPath.parent_path().generic_string(), [&regex](const vfs::path& path) {
+                    fs, inputPath.parent_path().generic_string(), [&regex](const vfs::path& path) {
                         return image::isSupported(path.extension().string()) &&
                                std::regex_match(path.generic_string(), regex);
                     });

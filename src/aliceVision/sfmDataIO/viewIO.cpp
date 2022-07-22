@@ -264,11 +264,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   return intrinsic;
 }
 
-std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders)
+std::vector<std::string> viewPathsFromFolders(vfs::filesystem& fs, const sfmData::View& view,
+                                              const std::vector<std::string>& folders)
 {
-    return utils::getFilesPathsFromFolders(folders, [&view](const boost::filesystem::path& path) {
-        const boost::filesystem::path stem = path.stem();
-        return (stem == std::to_string(view.getViewId()) || stem == fs::path(view.getImagePath()).stem());
+    return utils::getFilesPathsFromFolders(fs, folders, [&view](const vfs::path& path) {
+        const vfs::path stem = path.stem();
+        return (stem == std::to_string(view.getViewId()) || stem == vfs::path(view.getImagePath()).stem());
     });
 }
 

@@ -46,6 +46,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
     , _depthMapsFilterFolder(depthMapsFilterFolder + "/")
     , _processDownscale(downscale)
 {
+    vfs::filesystem fs;
     verbose = userParams.get<bool>("global.verbose", true);
     simThr = userParams.get<double>("global.simThr", 0.0);
     _useSil = userParams.get<bool>("global.use_silhouettes", _useSil);
@@ -73,8 +74,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
             // find folder file extension
-            std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder, 
-                [&view](const fs::path& path) 
+            std::vector<std::string> paths = utils::getFilesPathsFromFolder(fs, _imagesFolder,
+                [&view](const vfs::path& path)
                 {
                     return (path.stem() == std::to_string(view.getViewId()) && (imageIO::isSupportedUndistortFormat(path.extension().string())));
                 }

@@ -9,8 +9,7 @@
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <memory>
 
@@ -86,11 +85,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
 /**
 * @brief Allows you to retrieve the files paths corresponding to a view by searching through a list of folders.
 *        Filename must be the same or equal to the viewId.
+* @param[in] fs Virtual filesystem handle
 * @param[in] the view
 * @param[in] the folder list
 * @return the list of paths to the corresponding view if found in the folders, otherwise returns an empty list.
 */
-std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const std::vector<std::string>& folders);
+std::vector<std::string> viewPathsFromFolders(vfs::filesystem& fs, const sfmData::View& view, const std::vector<std::string>& folders);
 
 
 /*
