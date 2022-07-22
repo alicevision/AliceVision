@@ -40,9 +40,10 @@ using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 
 template <class ImageT, class MaskFuncT>
-void process(const std::string &dstColorImage, const IntrinsicBase* cam, const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection, float exposureCompensation, MaskFuncT && maskFunc)
+void process(vfs::filesystem& fs, const std::string &dstColorImage, const IntrinsicBase* cam,
+             const oiio::ParamValueList & metadata, const std::string & srcImage, bool evCorrection,
+             float exposureCompensation, MaskFuncT && maskFunc)
 {
-  vfs::filesystem fs;
   ImageT image, image_ud;
   readImage(fs, srcImage, image, image::EImageColorSpace::LINEAR);
 
@@ -73,9 +74,9 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
   }
 }
 
-bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
+bool tryLoadMask(vfs::filesystem& fs, image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
+                 const IndexT viewId, const std::string & srcImage)
 {
-  vfs::filesystem fs;
   for(const auto & masksFolder_str : masksFolders)
   {
     if(!masksFolder_str.empty() && fs.exists(masksFolder_str))
@@ -99,7 +100,7 @@ bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::strin
   return false;
 }
 
-bool prepareDenseScene(const SfMData& sfmData,
+bool prepareDenseScene(vfs::filesystem& fs, const SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
                        const std::vector<std::string>& masksFolders,
                        int beginIndex,
@@ -110,8 +111,6 @@ bool prepareDenseScene(const SfMData& sfmData,
                        bool saveMatricesFiles,
                        bool evCorrection)
 {
-  vfs::filesystem fs;
-
   // defined view Ids
   std::set<IndexT> viewIds;
 
@@ -270,9 +269,10 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
 
       image::Image<unsigned char> mask;
-      if(tryLoadMask(&mask, masksFolders, viewId, srcImage))
+      if(tryLoadMask(fs, &mask, masksFolders, viewId, srcImage))
       {
-        process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
+        process<Image<RGBAfColor>>(fs, dstColorImage, cam, metadata, srcImage, evCorrection,
+                                   exposureCompensation, [&mask] (Image<RGBAfColor> & image)
         {
           if(image.Width() * image.Height() != mask.Width() * mask.Height())
           {
@@ -290,7 +290,8 @@ bool prepareDenseScene(const SfMData& sfmData,
       else
       {
         const auto noMaskingFunc = [] (Image<RGBAfColor> & image) {};
-        process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
+        process<Image<RGBAfColor>>(fs, dstColorImage, cam, metadata, srcImage, evCorrection,
+                                   exposureCompensation, noMaskingFunc);
       }
     }
 
@@ -425,7 +426,8 @@ int aliceVision_main(int argc, char *argv[])
   }
 
   // export
-  if(prepareDenseScene(sfmData, imagesFolders, masksFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
+  if (prepareDenseScene(fs, sfmData, imagesFolders, masksFolders, rangeStart, rangeEnd,
+                        outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
     return EXIT_SUCCESS;
 
   return EXIT_FAILURE;

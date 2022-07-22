@@ -106,8 +106,8 @@ public:
 
   CircleDetector() = delete;
 
-  CircleDetector(size_t width, size_t height, size_t minimal_size)
-  : _source_width(width), _source_height(height), _minimal_size(minimal_size), _radius(0) {
+  CircleDetector(vfs::filesystem& fs, size_t width, size_t height, size_t minimal_size)
+      : _fs{fs}, _source_width(width), _source_height(height), _minimal_size(minimal_size), _radius(0) {
   }
 
   void setDebugDirectory(const std::string& dir) {
@@ -594,18 +594,17 @@ public:
 
   template <class T>
   void debugImage(const image::Image<T> & toSave, const std::string & name, int pyramid_id, int level) {
-    vfs::filesystem fs;
-
     // Only export debug image if there is an debug output folder defined.
     if(_debugDirectory.empty())
       return;
 
     vfs::path filepath = vfs::path(_debugDirectory) /
           (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
-    image::writeImage(fs, filepath.string(), toSave, image::EImageColorSpace::AUTO);
+    image::writeImage(_fs, filepath.string(), toSave, image::EImageColorSpace::AUTO);
   }
 
 private:
+  vfs::filesystem& _fs;
   std::vector<PyramidFloat> _pyramids;
   image::Image<float> _gradientImage;
   std::string _debugDirectory;
@@ -1021,7 +1020,7 @@ int main(int argc, char * argv[])
 
       if(camera::isEquidistant(intrinsic->getType()))
       { 
-        CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
+        CircleDetector detector(fs, intrinsic->w(), intrinsic->h(), 256);
         if(debugFisheyeCircleEstimation)
         {
             vfs::path path(sfmOutputDataFilepath);

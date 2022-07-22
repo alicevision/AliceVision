@@ -30,9 +30,9 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 
 
-bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string& srcImage)
+bool tryLoadMask(vfs::filesystem& fs, image::Image<unsigned char>* mask,
+                 const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string& srcImage)
 {
-    vfs::filesystem fs;
     for (const auto& masksFolder_str : masksFolders)
     {
         if (!masksFolder_str.empty() && fs.exists(masksFolder_str))
@@ -93,7 +93,7 @@ struct MaskCache
             item = &_cache.back();
             const IndexT viewId = _mp.getViewId(camId);
             auto * const mask = item->mask.get();
-            const bool loaded = tryLoadMask(mask, _masksFolders, viewId, _mp.getImagePath(camId));
+            const bool loaded = tryLoadMask(_mp.fs, mask, _masksFolders, viewId, _mp.getImagePath(camId));
             if (loaded)
             {
                 if (_undistortMasks)

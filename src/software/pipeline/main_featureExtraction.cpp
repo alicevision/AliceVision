@@ -244,26 +244,25 @@ private:
 
   void computeViewJob(const ViewJob& job, bool useGPU = false)
   {
-    vfs::filesystem fs;
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
-    image::readImage(fs, job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
+    image::readImage(_fs, job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
 
-    if (!_masksFolder.empty() && fs.exists(_masksFolder))
+    if (!_masksFolder.empty() && _fs.exists(_masksFolder))
     {
       const auto masksFolder = vfs::path(_masksFolder);
       const auto idMaskPath = masksFolder / vfs::path(std::to_string(job.view.getViewId())).replace_extension("png");
       const auto nameMaskPath = masksFolder / vfs::path(job.view.getImagePath()).filename().replace_extension("png");
 
-      if (fs.exists(idMaskPath))
+      if (_fs.exists(idMaskPath))
       {
-        image::readImage(fs, idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+        image::readImage(_fs, idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
       }
-      else if (fs.exists(nameMaskPath))
+      else if (_fs.exists(nameMaskPath))
       {
-        image::readImage(fs, nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+        image::readImage(_fs, nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
       }
     }
 
@@ -321,7 +320,7 @@ private:
         regions = regions->createFilteredRegions(selectedIndices, out_associated3dPoint, out_mapFullToLocal);
       }
 
-      imageDescriber->Save(fs, regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
+      imageDescriber->Save(_fs, regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
       ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
   }

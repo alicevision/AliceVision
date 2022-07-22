@@ -150,9 +150,9 @@ image::Image<image::RGBfColor> undistortSTMAP(Vec2 & offset, const std::shared_p
     return result;
 }
 
-bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, const image::Image<image::RGBColor> & input, const std::string & checkerImagePath)
+bool retrieveLines(vfs::filesystem& fs, std::vector<calibration::LineWithPoints>& lineWithPoints,
+                   const image::Image<image::RGBColor>& input, const std::string& checkerImagePath)
 {
-    vfs::filesystem fs;
     calibration::CheckerDetector detect;
     if (!detect.process(input))
     {
@@ -629,7 +629,7 @@ int aliceVision_main(int argc, char* argv[])
 
             // Retrieve lines
             std::vector<calibration::LineWithPoints> lineWithPoints;
-            if (!retrieveLines(lineWithPoints, input, checkerImagePath))
+            if (!retrieveLines(fs, lineWithPoints, input, checkerImagePath))
             {
                 ALICEVISION_LOG_ERROR("Impossible to extract the checkerboards lines");
                 continue;

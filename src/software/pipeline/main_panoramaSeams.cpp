@@ -40,10 +40,10 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
 
-bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, const std::pair<int, int> & panoramaSize, int downscale)
+bool computeWTALabels(vfs::filesystem& fs, image::Image<IndexT>& labels, const std::vector<std::shared_ptr<sfmData::View>> & views,
+                      const std::string& inputPath, const std::pair<int, int>& panoramaSize, int downscale)
 {
     ALICEVISION_LOG_INFO("Estimating initial labels for panorama");
-    vfs::filesystem fs;
 
     WTASeams seams(panoramaSize.first / downscale, panoramaSize.second / downscale);
 
@@ -81,13 +81,12 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
     return true;
 }
 
-bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared_ptr<sfmData::View>>& views,
+bool computeGCLabels(vfs::filesystem& fs, image::Image<IndexT>& labels,
+                     const std::vector<std::shared_ptr<sfmData::View>>& views,
                      const std::string& inputPath, std::pair<int, int>& panoramaSize, int smallestViewScale,
                      int downscale)
 {
     ALICEVISION_LOG_INFO("Estimating smart seams for panorama");
-    vfs::filesystem fs;
-
     int pyramidSize = 1 + std::max(0, smallestViewScale - 1);
     ALICEVISION_LOG_INFO("Graphcut pyramid size is " << pyramidSize);
 
@@ -307,7 +306,7 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO(views.size() << " views to process");
 
     image::Image<IndexT> labels;
-    if(!computeWTALabels(labels, views, warpingFolder, panoramaSize, downscaleFactor))
+    if (!computeWTALabels(fs, labels, views, warpingFolder, panoramaSize, downscaleFactor))
     {
         ALICEVISION_LOG_ERROR("Error computing initial labels");
         return EXIT_FAILURE;
@@ -315,7 +314,7 @@ int aliceVision_main(int argc, char** argv)
 
     if (useGraphCut)
     {
-        if(!computeGCLabels(labels, views, warpingFolder, panoramaSize, smallestScale, downscaleFactor))
+        if(!computeGCLabels(fs, labels, views, warpingFolder, panoramaSize, smallestScale, downscaleFactor))
         {
             ALICEVISION_LOG_ERROR("Error computing graph cut labels");
             return EXIT_FAILURE;

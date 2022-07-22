@@ -62,9 +62,9 @@ size_t getCompositingOptimalScale(int width, int height)
     return (optimal_scale);
 }
 
-std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const std::string & inputPath, const size_t borderSize)
+std::unique_ptr<PanoramaMap> buildMap(vfs::filesystem& fs, const sfmData::SfMData& sfmData,
+                                      const std::string& inputPath, const size_t borderSize)
 {   
-    vfs::filesystem fs;
     if (sfmData.getViews().empty())
     {
         return nullptr;
@@ -116,10 +116,11 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
     return ret;
 }
 
-bool processImage(const PanoramaMap & panoramaMap, const std::string & compositerType, const std::string & warpingFolder, const std::string & labelsFilePath, const std::string & outputFolder, const image::EStorageDataType & storageDataType, IndexT viewReference, const BoundingBox & referenceBoundingBox, bool showBorders, bool showSeams)
+bool processImage(vfs::filesystem& fs, const PanoramaMap& panoramaMap, const std::string& compositerType,
+                  const std::string& warpingFolder, const std::string& labelsFilePath, const std::string& outputFolder,
+                  const image::EStorageDataType& storageDataType, IndexT viewReference,
+                  const BoundingBox& referenceBoundingBox, bool showBorders, bool showSeams)
 {
-    vfs::filesystem fs;
-
     // The laplacian pyramid must also contains some pixels outside of the bounding box to make sure 
     // there is a continuity between all the "views" of the panorama.
     BoundingBox panoramaBoundingBox = referenceBoundingBox;
@@ -684,7 +685,7 @@ int aliceVision_main(int argc, char** argv)
 
     // Build the map of inputs in the final panorama
     // This is mostly meant to compute overlaps between inputs
-    std::unique_ptr<PanoramaMap> panoramaMap = buildMap(sfmData, warpingFolder, borderSize);
+    std::unique_ptr<PanoramaMap> panoramaMap = buildMap(fs, sfmData, warpingFolder, borderSize);
     if (viewsCount == 0) 
     {
         ALICEVISION_LOG_ERROR("No valid views");
@@ -728,7 +729,8 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        if (!processImage(*panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder, storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams)) 
+        if (!processImage(fs, *panoramaMap, compositerType, warpingFolder, labelsFilepath, outputFolder,
+                          storageDataType, viewReference, referenceBoundingBox, showBorders, showSeams))
         {
             succeeded = false;
             continue;
