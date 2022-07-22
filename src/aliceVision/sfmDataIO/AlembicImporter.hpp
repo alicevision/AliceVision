@@ -18,7 +18,7 @@ class AlembicImporter
 {
 public:
 
-  explicit AlembicImporter(const std::string& filename);
+  explicit AlembicImporter(vfs::filesystem& fs, const std::string& filename);
 
   ~AlembicImporter();
 

@@ -791,8 +791,9 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
 
 struct AlembicImporter::DataImpl
 {
-  DataImpl(const std::string& filename)
+  DataImpl(vfs::filesystem& fs, const std::string& filename) : _fs{fs}
   {
+    // TODO: port alembic importer to use vfs
     Alembic::AbcCoreFactory::IFactory factory;
     Alembic::AbcCoreFactory::IFactory::CoreType coreType;
     Abc::IArchive archive = factory.getArchive(filename, coreType);
@@ -804,13 +805,14 @@ struct AlembicImporter::DataImpl
     _filename = filename;
   }
   
+  vfs::filesystem& _fs;
   IObject _rootEntity;
   std::string _filename;
 };
 
-AlembicImporter::AlembicImporter(const std::string& filename)
+AlembicImporter::AlembicImporter(vfs::filesystem& fs, const std::string& filename)
 {
-  _dataImpl.reset(new DataImpl(filename));
+  _dataImpl.reset(new DataImpl(fs, filename));
 }
 
 AlembicImporter::~AlembicImporter()
@@ -818,7 +820,8 @@ AlembicImporter::~AlembicImporter()
 
 void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
 {
-  vfs::filesystem fs;
+  auto& fs = _dataImpl->_fs;
+
   const index_t sampleFrame = 0;
   IObject rootObj = _dataImpl->_rootEntity.getChild("mvgRoot");
   ICompoundProperty userProps = rootObj.getProperties();

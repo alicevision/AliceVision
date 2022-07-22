@@ -103,7 +103,7 @@ bool Load(vfs::filesystem& fs, sfmData::SfMData& sfmData, const std::string& fil
   else if (extension == ".abc") // Alembic
   {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-      AlembicImporter(filename).populateSfM(sfmData, partFlag);
+      AlembicImporter(fs, filename).populateSfM(sfmData, partFlag);
       status = true;
 #else
       ALICEVISION_THROW_ERROR("Cannot load the ABC file: \"" << filename << "\", AliceVision is built without Alembic support.");
