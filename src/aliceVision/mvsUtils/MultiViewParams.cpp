@@ -626,7 +626,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
 
 StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName) const
 {
-    StaticVector<Point2d>* minMaxDepths = loadArrayFromFile<Point2d>(minMaxDepthsFileName);
+    StaticVector<Point2d>* minMaxDepths = loadArrayFromFile<Point2d>(fs, minMaxDepthsFileName);
     StaticVector<int> tcams;
     tcams.reserve(getNbCameras());
     for(int rc = 0; rc < getNbCameras(); rc++)

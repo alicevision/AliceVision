@@ -83,7 +83,7 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
         std::string folderName = getVoxelFolderName(i);
         std::string fileNameTracksPts;
         fileNameTracksPts = folderName + "tracksGridPts.bin";
-        int n = getArrayLengthFromFile(fileNameTracksPts);
+        int n = getArrayLengthFromFile(_fs, fileNameTracksPts);
         // printf("%i %i\n",i,n);
         nVoxelsTracks->push_back(n);
         //mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
@@ -104,7 +104,7 @@ unsigned long VoxelsGrid::getNTracks() const
         const std::string folderName = getVoxelFolderName(i);
         std::string fileNameTracksPts;
         fileNameTracksPts = folderName + "tracksGridPts.bin";
-        int n = getArrayLengthFromFile(fileNameTracksPts);
+        int n = getArrayLengthFromFile(_fs, fileNameTracksPts);
         // printf("%i %i\n",i,n);
         ntracks += (unsigned long)n;
         //mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
@@ -165,10 +165,10 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     if (!_fs.exists(fileNameTracksPts))
         return nullptr;
 
-    StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(fileNameTracksStat); // minPixSize, minSim, npts
-    StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
-    StaticVector<StaticVector<Pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
-    *cams = loadArrayFromFile<int>(fileNameTracksCams);
+    StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(_fs, fileNameTracksStat); // minPixSize, minSim, npts
+    StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(_fs, fileNameTracksPts);
+    StaticVector<StaticVector<Pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<Pixel>(_fs, fileNameTracksPtsCams);
+    *cams = loadArrayFromFile<int>(_fs, fileNameTracksCams);
 
     StaticVector<OctreeTracks::trackStruct*>* tracks = new StaticVector<OctreeTracks::trackStruct*>();
     tracks->reserve(tracksPoints->size());
@@ -239,10 +239,10 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
     fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
     fileNameTracksStat = folderName + "tracksGridStat.bin";
 
-    saveArrayToFile<int>(fileNameTracksCams, cams);
-    saveArrayToFile<Point3d>(fileNameTracksPts, tracksPoints);
-    saveArrayToFile<Point3d>(fileNameTracksStat, tracksStat);
-    saveArrayOfArraysToFile<Pixel>(fileNameTracksPtsCams, tracksPointsCams);
+    saveArrayToFile<int>(_fs, fileNameTracksCams, cams);
+    saveArrayToFile<Point3d>(_fs, fileNameTracksPts, tracksPoints);
+    saveArrayToFile<Point3d>(_fs, fileNameTracksStat, tracksStat);
+    saveArrayOfArraysToFile<Pixel>(_fs, fileNameTracksPtsCams, tracksPointsCams);
 
     delete tracksPoints;
     delete tracksStat;
@@ -581,10 +581,10 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
         if (_fs.exists(fileNameTracksPts))
         {
-            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(_fs, fileNameTracksPts);
             StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
-                loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
-            StaticVector<int>* cams = loadArrayFromFile<int>(fileNameTracksCams);
+                loadArrayOfArraysFromFile<Pixel>(_fs, fileNameTracksPtsCams);
+            StaticVector<int>* cams = loadArrayFromFile<int>(_fs, fileNameTracksCams);
 
             // printf("distributing %i tracks to %i camspts files  \n", tracksPoints->size(), cams->size());
             StaticVector<StaticVector<Pixel>*>* camsTracksPoints =

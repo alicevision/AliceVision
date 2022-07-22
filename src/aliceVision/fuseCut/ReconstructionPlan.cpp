@@ -260,7 +260,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(vfs::filesystem& fs,
             delete ptsCamsFromDct;
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
-        StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
+        StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(fs, filePtsCamsFromDCTName);
         ptsCamsFromDct->reserveAdd(ptsCamsFromDcti->size());
         for(int i = 0; i < ptsCamsFromDcti->size(); i++)
         {
@@ -284,7 +284,7 @@ void loadLargeScalePtsCams(vfs::filesystem& fs, const std::vector<std::string>& 
         {
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
-        loadArrayOfArraysFromFile<int>(out_ptsCams, filePtsCamsFromDCTName);
+        loadArrayOfArraysFromFile<int>(fs, out_ptsCams, filePtsCamsFromDCTName);
     }
 }
 
@@ -377,7 +377,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
             if (ls->fs.exists(fileName))
             {
-                StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
+                StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(ls->fs, fileName);
                 StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
 
                 for(int j = 0; j < trisColsi->size(); j++)
@@ -422,7 +422,7 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
 
     std::string optimalReconstructionPlanFileName =
         ls->spaceFolderName + "optimalReconstructionPlan" + mvsUtils::num2str(gridLevel) + ".bin";
-    StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(optimalReconstructionPlanFileName);
+    StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(ls->fs, optimalReconstructionPlanFileName);
 
     auto subFolderName = ls->mp->userParams.get<std::string>("LargeScale.subFolderName", "");
     if(subFolderName.empty())
@@ -465,7 +465,7 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
 
 mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
 {
-    StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
+    StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(ls->fs, voxelsArrayFileName);
     std::vector<std::string> recsDirs = ls->getRecsDirs(voxelsArray);
 
     mesh::Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);

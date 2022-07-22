@@ -195,7 +195,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
 
         deleteTempPtsSimsFiles(fs, *mp, depthMapsPtsSimsTmpDir);
 
-        saveArrayToFile<Point3d>(spaceFolderName + "spacePatitioning.bin", ReconstructionPlan);
+        saveArrayToFile<Point3d>(fs, spaceFolderName + "spacePatitioning.bin", ReconstructionPlan);
         delete ReconstructionPlan;
 
         saveSpaceToFile();

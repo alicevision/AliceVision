@@ -894,13 +894,13 @@ std::string generateTempPtsSimsFiles(vfs::filesystem& fs, std::string tmpDir,
                 mvsUtils::printfElapsedTime(t1);
             }
 
-            saveArrayToFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp.getViewId(rc)) + "pts.bin", pts);
-            saveArrayToFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp.getViewId(rc)) + "sims.bin", sims);
+            saveArrayToFile<Point3d>(fs, depthMapsPtsSimsTmpDir + std::to_string(mp.getViewId(rc)) + "pts.bin", pts);
+            saveArrayToFile<float>(fs, depthMapsPtsSimsTmpDir + std::to_string(mp.getViewId(rc)) + "sims.bin", sims);
             delete pts;
             delete sims;
         }
 
-        saveArrayToFile<Point2d>(depthMapsPtsSimsTmpDir + "minMaxDepths.bin", minMaxDepths);
+        saveArrayToFile<Point2d>(fs, depthMapsPtsSimsTmpDir + "minMaxDepths.bin", minMaxDepths);
         delete minMaxDepths;
     }
 

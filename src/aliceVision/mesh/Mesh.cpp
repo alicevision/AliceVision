@@ -960,9 +960,9 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::
                                                        const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
     StaticVector<float> depthMap;
-    loadArrayFromFile<float>(depthMap, depthMapFilepath);
+    loadArrayFromFile<float>(mp.fs, depthMap, depthMapFilepath);
     StaticVector<StaticVector<int>> trisMap;
-    loadArrayOfArraysFromFile<int>(trisMap, trisMapFilepath);
+    loadArrayOfArraysFromFile<int>(mp.fs, trisMap, trisMapFilepath);
 
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
@@ -973,9 +973,9 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::
     std::string trisMapFilepath = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
 
     StaticVector<float> depthMap;
-    loadArrayFromFile<float>(depthMap, depthMapFilepath);
+    loadArrayFromFile<float>(mp.fs, depthMap, depthMapFilepath);
     StaticVector<StaticVector<int>> trisMap;
-    loadArrayOfArraysFromFile<int>(trisMap, trisMapFilepath);
+    loadArrayOfArraysFromFile<int>(mp.fs, trisMap, trisMapFilepath);
 
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
@@ -1928,7 +1928,7 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
     {
         std::string visTrisFilepath = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
-        loadArrayFromFile<int>(visTris, visTrisFilepath);
+        loadArrayFromFile<int>(mp.fs, visTris, visTrisFilepath);
         if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
@@ -1956,7 +1956,7 @@ void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsU
     {
         std::string visTrisFilepath = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
         StaticVector<int> visTris;
-        loadArrayFromFile<int>(visTris, visTrisFilepath);
+        loadArrayFromFile<int>(mp.fs, visTris, visTrisFilepath);
         if(!visTris.empty())
         {
             for(int i = 0; i < visTris.size(); ++i)
