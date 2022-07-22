@@ -30,14 +30,14 @@ int aliceVision_main(int argc, char** argv)
 {
     std::string input_model_path;
     std::string input_image_dir_path;
-    std::string output_json_dir_path;
+    std::string output_json_path;
 
     po::options_description required_parameters("Required parameters");
-    required_parameters.add_options()                                                                             //
-        ("input_model_path,m", po::value<std::string>(&input_model_path)->required(), "model input path")         //
-        ("input_image_dir_path,i", po::value<std::string>(&input_image_dir_path)->required(), "image input path") //
-        ("output_json_dir_path,o", po::value<std::string>(&output_json_dir_path)->required(), "json output path") //
-        ;                                                                                                         //
+    required_parameters.add_options()                                                                                 //
+        ("input_model_path,m", po::value<std::string>(&input_model_path)->required(), "model input path")             //
+        ("input_image_dir_path,i", po::value<std::string>(&input_image_dir_path)->required(), "image dir input path") //
+        ("output_json_path,o", po::value<std::string>(&output_json_path)->required(), "json output path")             //
+        ;                                                                                                             //
 
     po::options_description all_parameters("AliceVision sphereDetection");
     all_parameters.add(required_parameters);
@@ -85,6 +85,9 @@ int aliceVision_main(int argc, char** argv)
 
     // extract circles from mask
     auto circles = compute_circles(mask);
+
+    // convert circles to json
+    export_json(output_json_path, circles);
 
     return 0;
 }

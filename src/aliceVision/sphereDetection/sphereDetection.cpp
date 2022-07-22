@@ -30,6 +30,13 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+// Boost JSON
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
+// namespaces
+namespace bpt = boost::property_tree;
+
 // Assumptions on model structure
 #define INPUT_NAME "input"
 #define OUTPUT_NAME "output"
@@ -120,6 +127,8 @@ cv::Size resolution_verify(std::string path_images)
     std::string glob_images = path_images.append("/*.jpg");
     cv::glob(glob_images, files, false);
 
+    ALICEVISION_LOG_DEBUG("files: " << files);
+
     cv::Mat image;
     cv::Size image_size;
     cv::Size tmp_size;
@@ -155,18 +164,19 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     // Eigen -> OpenCV
     cv::Mat image_opencv;
     cv::eigen2cv(image_alice.GetMat(), image_opencv);
+    ALICEVISION_LOG_TRACE("converted to opencv matrix");
 
     // uint8 -> float32
     image_opencv.convertTo(image_opencv, CV_32FC3, 1 / 255.0);
-
-    // BGR -> RGB
-    cv::cvtColor(image_opencv, image_opencv, cv::ColorConversionCodes::COLOR_BGR2RGB);
+    ALICEVISION_LOG_TRACE("converted to floating image");
 
     // resize image
     cv::resize(image_opencv, image_opencv, image_size, cv::INTER_LINEAR);
+    ALICEVISION_LOG_TRACE("resized the image");
 
     // HWC to CHW
     cv::dnn::blobFromImage(image_opencv, image_opencv);
+    ALICEVISION_LOG_TRACE("converted to CHW format");
 
     // inference on cpu TODO: use gpu
     Ort::MemoryInfo memory_info =
@@ -207,9 +217,13 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     std::vector<const char*> input_names{INPUT_NAME};
     std::vector<const char*> output_names{OUTPUT_NAME};
 
+    ALICEVISION_LOG_TRACE("inference ready");
+
     // run the inference
     session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), INPUT_COUNT, output_names.data(),
                 output_data.data(), OUTPUT_COUNT);
+
+    ALICEVISION_LOG_TRACE("inference done");
 
     // apply sigmoid activation to output_tensor
     std::transform(output_tensor.cbegin(), output_tensor.cend(), output_tensor.begin(), sigmoid);
@@ -217,6 +231,7 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     // convert output_tensor to opencv image
     cv::Mat mask = cv::Mat(output_shape[2], output_shape[3], CV_32FC1);
     memcpy(mask.data, output_tensor.data(), output_tensor.size() * sizeof(float));
+    ALICEVISION_LOG_TRACE("converted inference output to opencv image");
 
     return mask;
 }
@@ -250,9 +265,9 @@ cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, 
     return average_mask;
 }
 
-std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat prediction)
+std::vector<circle_info> compute_circles(const cv::Mat prediction)
 {
-    std::vector<std::pair<cv::Point2f, float>> circles;
+    std::vector<circle_info> circles;
 
     // [0.0, 1.0] -> [0, 255]
     cv::Mat mask;
@@ -268,7 +283,7 @@ std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat predict
     for(size_t i = 0; i < contours.size(); i++)
     {
         // detect circle
-        std::pair<cv::Point2f, float> circle;
+        circle_info circle;
         cv::minEnclosingCircle(contours[i], circle.first, circle.second);
 
         // add circle to vector
@@ -278,4 +293,25 @@ std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat predict
     ALICEVISION_LOG_DEBUG(circles);
 
     return circles;
+}
+
+void export_json(std::string output_path, std::vector<circle_info> circles)
+{
+    bpt::ptree root, spheres;
+
+    for(auto circle : circles)
+    {
+        bpt::ptree sphere;
+        sphere.put("pos_x", circle.first.x);
+        sphere.put("pos_y", circle.first.y);
+        sphere.put("radius", circle.second);
+
+        spheres.push_back(std::make_pair("", sphere));
+    }
+
+    root.add_child("Scene 1", spheres);
+
+    bpt::write_json(output_path, root);
+
+    ALICEVISION_LOG_DEBUG("JSON exported");
 }
