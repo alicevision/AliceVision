@@ -27,7 +27,6 @@
 #include <boost/progress.hpp>
 
 #include <string>
-#include <fstream>
 #include <sstream>
 #include <iostream>
 #include <functional>

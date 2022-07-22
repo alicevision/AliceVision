@@ -12,6 +12,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
@@ -23,7 +24,6 @@
 #include <set>
 #include <iterator>
 #include <iomanip>
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -185,14 +185,14 @@ bool prepareDenseScene(vfs::filesystem& fs, const SfMData& sfmData,
 
       if(saveMatricesFiles)
       {
-        std::ofstream fileP((vfs::path(outFolder) / (baseFilename + "_P.txt")).string());
+        auto fileP = fs.open_write_text(vfs::path(outFolder) / (baseFilename + "_P.txt"));
         fileP << std::setprecision(10)
              << P(0, 0) << " " << P(0, 1) << " " << P(0, 2) << " " << P(0, 3) << "\n"
              << P(1, 0) << " " << P(1, 1) << " " << P(1, 2) << " " << P(1, 3) << "\n"
              << P(2, 0) << " " << P(2, 1) << " " << P(2, 2) << " " << P(2, 3) << "\n";
         fileP.close();
 
-        std::ofstream fileKRt((vfs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
+        auto fileKRt = fs.open_write_text(vfs::path(outFolder) / (baseFilename + "_KRt.txt"));
         fileKRt << std::setprecision(10)
              << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"
              << K(1, 0) << " " << K(1, 1) << " " << K(1, 2) << "\n"

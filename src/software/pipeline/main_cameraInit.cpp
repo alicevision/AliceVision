@@ -19,7 +19,6 @@
 #include <boost/regex.hpp>
 
 #include <iostream>
-#include <fstream>
 #include <sstream>
 #include <memory>
 #include <string>

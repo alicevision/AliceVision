@@ -13,6 +13,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/config.hpp>
 
 #include <Eigen/Core>
@@ -20,7 +21,6 @@
 #include <boost/program_options.hpp>
 
 #include <iostream>
-#include <fstream>
 #include <ostream>
 #include <string>
 #include <set>
@@ -866,8 +866,7 @@ int aliceVision_main(int argc, char** argv)
   }
 
   // write it to file
-  std::ofstream fileout;
-  fileout.open(outputFile, std::ofstream::out);
+  auto fileout = fs.open_write_text(outputFile);
   fileout << selectedPairs;
   fileout.close();
 

@@ -22,7 +22,6 @@
 #include <aliceVision/system/main.hpp>
 
 // IO
-#include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>

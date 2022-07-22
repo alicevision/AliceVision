@@ -35,7 +35,6 @@
 #include <boost/program_options.hpp>
 
 #include <cstdlib>
-#include <fstream>
 #include <cctype>
 
 // These constants define the current software version.

@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -33,9 +34,6 @@
 #include <boost/accumulators/statistics.hpp>
 
 #include <sstream>
-
-#include <fstream>
-
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -280,7 +278,7 @@ int aliceVision_main(int argc, char** argv)
 
         // Store to file
         const std::string samplesFilepath = (vfs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
-        std::ofstream fileSamples(samplesFilepath, std::ios::binary);
+        auto fileSamples = fs.open_write_binary(samplesFilepath);
         if (!fileSamples.is_open())
         {
             ALICEVISION_LOG_ERROR("Impossible to write samples");

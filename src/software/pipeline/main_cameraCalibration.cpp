@@ -33,7 +33,6 @@
 #include <cstdio>
 #include <string>
 #include <cctype>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <exception>

@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/istream.hpp>
 #include <OpenImageIO/imagebufalgo.h>
 
 // SFMData
@@ -30,9 +31,6 @@
 #include <boost/program_options.hpp>
 
 #include <sstream>
-
-#include <fstream>
-
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -267,7 +265,7 @@ int aliceVision_main(int argc, char** argv)
         {
             // Read from file
             const std::string samplesFilepath = (vfs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
-            std::ifstream fileSamples(samplesFilepath, std::ios::binary);
+            auto fileSamples = fs.open_read_binary(samplesFilepath);
             if (!fileSamples.is_open())
             {
                 ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
@@ -299,7 +297,7 @@ int aliceVision_main(int argc, char** argv)
         {
             // Read from file
             const std::string samplesFilepath = (vfs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
-            std::ifstream fileSamples(samplesFilepath, std::ios::binary);
+            auto fileSamples = fs.open_read_binary(samplesFilepath);
             if (!fileSamples.is_open())
             {
                 ALICEVISION_LOG_ERROR("Impossible to read samples from file " << samplesFilepath);
