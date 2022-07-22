@@ -108,7 +108,7 @@ int aliceVision_main(int argc, char** argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // load rig calibration file
-  if(!rig::loadRigCalibration(rigFile, extrinsics))
+  if (!rig::loadRigCalibration(fs, rigFile, extrinsics))
   {
     ALICEVISION_LOG_ERROR("Unable to open " << rigFile);
     return EXIT_FAILURE;

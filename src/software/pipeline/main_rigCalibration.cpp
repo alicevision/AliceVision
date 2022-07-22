@@ -470,7 +470,7 @@ int aliceVision_main(int argc, char** argv)
   }
   
   // save the rig calibration (subposes)
-  rig.saveCalibration(outputFile);
+  rig.saveCalibration(fs, outputFile);
   
   
   // just print out the results

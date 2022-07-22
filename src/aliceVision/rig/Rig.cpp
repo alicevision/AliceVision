@@ -8,10 +8,11 @@
 #include "ResidualError.hpp"
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <ceres/rotation.h>
 
-#include <fstream>
 #include <exception>
 
 #ifdef VISUAL_DEBUG_MODE
@@ -577,9 +578,9 @@ bool Rig::optimizeCalibration()
 }
 
 
-bool Rig::saveCalibration(const std::string &filename)
+bool Rig::saveCalibration(vfs::filesystem& fs, const std::string &filename)
 {
-  return saveRigCalibration(filename, _vRelativePoses);
+  return saveRigCalibration(fs, filename, _vRelativePoses);
 }
 
 
@@ -647,9 +648,9 @@ void cvpause(){
 #endif
 }
 
-bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3> &subposes)
+bool loadRigCalibration(vfs::filesystem& ffs, const std::string &filename, std::vector<geometry::Pose3> &subposes)
 {
-  std::ifstream fs(filename, std::ios::in);
+  auto fs = ffs.open_read_text(filename);
   if(!fs.is_open())
   {
     ALICEVISION_CERR("Unable to load the calibration file " << filename);
@@ -694,9 +695,10 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
 //C[2]
 //R[0][0] // second camera rotation
 //...
-bool saveRigCalibration(const std::string &filename, const std::vector<geometry::Pose3> &subposes)
+bool saveRigCalibration(vfs::filesystem& ffs, const std::string& filename,
+                        const std::vector<geometry::Pose3>& subposes)
 {
-  std::ofstream fs(filename, std::ios::out);
+  auto fs = ffs.open_write_text(filename);
   if(!fs.is_open())
   {
     ALICEVISION_CERR("Unable to create the calibration file " << filename);

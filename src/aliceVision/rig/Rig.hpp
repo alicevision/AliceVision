@@ -82,11 +82,12 @@ public:
   
   /**
    * @brief Save the calibrated poses to a text file.
+   * @param[in] vfs Virtual file system handle
    * @param filename The filename for the calibration file.
    * @return true if everything went ok.
    * @see saveRigCalibration()
    */
-  bool saveCalibration(const std::string &filename);
+  bool saveCalibration(vfs::filesystem& fs, const std::string &filename);
   
   /*
    * @brief Visual debug function displaying the reprojected 3D points and their
@@ -141,6 +142,7 @@ void cvpause();
 
 /**
  * @brief Load the set of subposes from a simple text file.
+ * @param[in] vfs Virtual file system handle
  * @param[in] filename The file from which to load the subposes.
  * @param[out] subposes The loaded subposes.
  * @return true if everything went ok.
@@ -156,10 +158,11 @@ void cvpause();
  * R[0][0] // second camera rotation
  * ...
  */
-bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3> &subposes);
+bool loadRigCalibration(vfs::filesystem& fs, const std::string &filename, std::vector<geometry::Pose3> &subposes);
 
 /**
  * @brief Save the set of subposes from a simple text file.
+ * @param[in] vfs Virtual file system handle
  * @param[in] filename The file to which the subposes are saved.
  * @param[in] subposes The subposes to write.
  * @return true if everything went ok.
@@ -175,7 +178,7 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
  * R[0][0] // second camera rotation
  * ...
  */
-bool saveRigCalibration(const std::string &filename, const std::vector<geometry::Pose3> &subposes);
+bool saveRigCalibration(vfs::filesystem& fs, const std::string &filename, const std::vector<geometry::Pose3> &subposes);
 
 } // namespace rig
 } // namespace aliceVision
