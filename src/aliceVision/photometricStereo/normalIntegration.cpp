@@ -315,7 +315,7 @@ void DCT_integration(const aliceVision::image::Image<aliceVision::image::RGBfCol
             {
                 if(perspective)
                 {
-                    depth(i,j) = std::exp(z.at<float>(i,j));
+                    depth(i,j) = -std::exp(z.at<float>(i,j));
                 } else {
                     depth(i,j) = z.at<float>(i,j);
                 }
@@ -359,9 +359,8 @@ void normal2PQ(const aliceVision::image::Image<aliceVision::image::RGBfColor>& n
             {
                 float v = i - K(1,2);
 
-                float denom = u*normalsX(i,j) + v*normalsY(i,j) + f*normalsZ(i,j);
-
-                if ((denom == 0) || (hasMask && (normalsMask(i,j) == 0)))
+                float denom = std::max(-(u*normalsX(i,j) + v*normalsY(i,j) + f*normalsZ(i,j)),float(0.0001));
+                if (hasMask && (normalsMask(i,j) < 0.3))
                 {
                     p(i,j) = 0;
                     q(i,j) = 0;
