@@ -7,6 +7,7 @@ alicevision_add_software(aliceVision_samples_describeAndMatch
         aliceVision_image
         aliceVision_feature
         aliceVision_matching
+        aliceVision_vfs
         vlsift
         Boost::program_options
 )

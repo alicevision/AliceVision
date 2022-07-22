@@ -73,7 +73,7 @@ std::size_t readDescFromFiles(vfs::filesystem& fs,
   for(const auto &currentFile : descriptorsFiles)
   {
     // Read the descriptors and append them in the vector
-    feature::loadDescsFromBinFile<DescriptorT, FileDescriptorT>(currentFile.second, descriptors, true);
+    feature::loadDescsFromBinFile<DescriptorT, FileDescriptorT>(fs, currentFile.second, descriptors, true);
     std::size_t result = descriptors.size();
 
     // Add the number of descriptors from this file

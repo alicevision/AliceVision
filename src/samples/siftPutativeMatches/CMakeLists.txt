@@ -6,5 +6,6 @@ alicevision_add_software(aliceVision_samples_siftMatching
   LINKS aliceVision_image
         aliceVision_feature
         aliceVision_matching
+        aliceVision_vfs
         vlsift
 )

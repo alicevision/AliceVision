@@ -254,21 +254,21 @@ public:
 
   // IO - one file for region features, one file for region descriptors
 
-  void Load(Regions* regions,
+  void Load(vfs::filesystem& fs, Regions* regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    regions->Load(sfileNameFeats, sfileNameDescs);
+    regions->Load(fs, sfileNameFeats, sfileNameDescs);
   }
 
   void Save(vfs::filesystem& fs, const Regions* regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const;
 
-  void LoadFeatures(Regions* regions,
+  void LoadFeatures(vfs::filesystem& fs, Regions* regions,
     const std::string& sfileNameFeats) const
   {
-    regions->LoadFeatures(sfileNameFeats);
+    regions->LoadFeatures(fs, sfileNameFeats);
   }
 };
 

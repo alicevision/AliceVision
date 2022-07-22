@@ -104,5 +104,5 @@ if(ALICEVISION_HAVE_OPENCV)
 endif()
 
 # Unit tests
-alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_feature)
+alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_vfs aliceVision_feature)
 alicevision_add_test(metric_test.cpp   NAME "descriptor_metric"   LINKS aliceVision_feature)

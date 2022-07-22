@@ -8,7 +8,6 @@
 #include "aliceVision/feature/feature.hpp"
 
 #include <iostream>
-#include <fstream>
 #include <iterator>
 #include <vector>
 
@@ -36,29 +35,32 @@ typedef std::vector<Desc_T> Descs_T;
 static const int CARD = 12;
 
 BOOST_AUTO_TEST_CASE(featureIO_NON_EXISTING_FILE) {
+  vfs::filesystem fs;
 
   // Try to read a non-existing feature file
   Feats_T vec_feats;
-  BOOST_CHECK_THROW(loadFeatsFromFile("x.feat", vec_feats), std::exception);
+  BOOST_CHECK_THROW(loadFeatsFromFile(fs, "x.feat", vec_feats), std::exception);
 
   // Try to read a non-existing descriptor file
   Descs_T vec_descs;
-  BOOST_CHECK_THROW(loadDescsFromFile("x.desc", vec_descs), std::exception);
-  BOOST_CHECK_THROW(loadDescsFromBinFile("x.desc", vec_descs), std::exception);
+  BOOST_CHECK_THROW(loadDescsFromFile(fs, "x.desc", vec_descs), std::exception);
+  BOOST_CHECK_THROW(loadDescsFromBinFile(fs, "x.desc", vec_descs), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(featureIO_ASCII) {
+  vfs::filesystem fs;
+
   Feats_T vec_feats;
   for(int i = 0; i < CARD; ++i)  {
     vec_feats.push_back(Feature_T(i, i*2, i*3, i*4));
   }
 
   //Save them to a file
-  BOOST_CHECK_NO_THROW(saveFeatsToFile("tempFeats.feat", vec_feats));
+  BOOST_CHECK_NO_THROW(saveFeatsToFile(fs, "tempFeats.feat", vec_feats));
 
   //Read the saved data and compare to input (to check write/read IO)
   Feats_T vec_feats_read;
-  BOOST_CHECK_NO_THROW(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
+  BOOST_CHECK_NO_THROW(loadFeatsFromFile(fs, "tempFeats.feat", vec_feats_read));
   BOOST_CHECK_EQUAL(CARD, vec_feats_read.size());
 
   for(int i = 0; i < CARD; ++i) {
@@ -73,6 +75,8 @@ BOOST_AUTO_TEST_CASE(featureIO_ASCII) {
 //-- Descriptors interface test
 //--
 BOOST_AUTO_TEST_CASE(descriptorIO_ASCII) {
+  vfs::filesystem fs;
+
   // Create an input series of descriptor
   Descs_T vec_descs;
   for(int i = 0; i < CARD; ++i)  {
@@ -83,11 +87,11 @@ BOOST_AUTO_TEST_CASE(descriptorIO_ASCII) {
   }
 
   //Save them to a file
-  BOOST_CHECK_NO_THROW(saveDescsToFile("tempDescs.desc", vec_descs));
+  BOOST_CHECK_NO_THROW(saveDescsToFile(fs, "tempDescs.desc", vec_descs));
 
   //Read the saved data and compare to input (to check write/read IO)
   Descs_T vec_descs_read;
-  BOOST_CHECK_NO_THROW(loadDescsFromFile("tempDescs.desc", vec_descs_read));
+  BOOST_CHECK_NO_THROW(loadDescsFromFile(fs, "tempDescs.desc", vec_descs_read));
   BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
   for(int i = 0; i < CARD; ++i) {
@@ -98,6 +102,8 @@ BOOST_AUTO_TEST_CASE(descriptorIO_ASCII) {
 
 //Test binary export of descriptor
 BOOST_AUTO_TEST_CASE(descriptorIO_BINARY) {
+  vfs::filesystem fs;
+
   // Create an input series of descriptor
   Descs_T vec_descs;
   for(int i = 0; i < CARD; ++i)
@@ -109,11 +115,11 @@ BOOST_AUTO_TEST_CASE(descriptorIO_BINARY) {
   }
 
   //Save them to a file
-  BOOST_CHECK_NO_THROW(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
+  BOOST_CHECK_NO_THROW(saveDescsToBinFile(fs, "tempDescsBin.desc", vec_descs));
 
   //Read the saved data and compare to input (to check write/read IO)
   Descs_T vec_descs_read;
-  BOOST_CHECK_NO_THROW(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
+  BOOST_CHECK_NO_THROW(loadDescsFromBinFile(fs, "tempDescsBin.desc", vec_descs_read));
   BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
   for(int i = 0; i < CARD; ++i) {

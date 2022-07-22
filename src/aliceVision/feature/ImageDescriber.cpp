@@ -192,7 +192,7 @@ void ImageDescriber::Save(vfs::filesystem& fs, const Regions* regions,
   const std::string tmpFeatsPath = (bFeatsPath.parent_path() / bFeatsPath.stem()).string() + "." + fs.unique_path().string() + bFeatsPath.extension().string();
   const std::string tmpDescsPath = (bDescsPath.parent_path() / bDescsPath.stem()).string() + "." + fs.unique_path().string() + bDescsPath.extension().string();
 
-  regions->Save(tmpFeatsPath, tmpDescsPath);
+  regions->Save(fs, tmpFeatsPath, tmpDescsPath);
 
   // rename temporary filenames
   fs.rename(tmpFeatsPath, sfileNameFeats);

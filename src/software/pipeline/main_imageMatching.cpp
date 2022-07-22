@@ -356,7 +356,8 @@ void generateAllMatchesBetweenTwoMap(const std::set<IndexT>& viewIdsA,
     }
 }
 
-void generateFromVoctree(PairList& allMatches,
+void generateFromVoctree(vfs::filesystem& fs,
+                         PairList& allMatches,
                          const std::map<IndexT, std::string>& descriptorsFiles,
                          const aliceVision::voctree::Database& db,
                          const aliceVision::voctree::VocabularyTree<DescriptorFloat>& tree,
@@ -401,7 +402,7 @@ void generateFromVoctree(PairList& allMatches,
       // compute the sparse histogram of each image A
       std::vector<DescriptorUChar> descriptors;
       // read the descriptors
-      loadDescsFromBinFile(featuresPathA, descriptors, false, nbMaxDescriptors);
+      loadDescsFromBinFile(fs, featuresPathA, descriptors, false, nbMaxDescriptors);
       imageSH = tree.quantizeToSparse(descriptors);
     }
 
@@ -535,12 +536,12 @@ void conditionVocTree(vfs::filesystem& fs, const std::string& treeName, bool wit
 
       if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
       {
-        generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
-        generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
+        generateFromVoctree(fs, allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
+        generateFromVoctree(fs, allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
       }
       else
       {
-        generateFromVoctree(allMatches, descriptorsFilesA, db, tree, matchingMode,  nbMaxDescriptors, numImageQuery);
+        generateFromVoctree(fs, allMatches, descriptorsFilesA, db, tree, matchingMode,  nbMaxDescriptors, numImageQuery);
       }
 
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);

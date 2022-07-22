@@ -57,9 +57,9 @@ protected:
   std::vector<PointFeature> _vec_feats;    // region features
 
 public:
-  void LoadFeatures(const std::string& sfileNameFeats)
+  void LoadFeatures(vfs::filesystem& fs, const std::string& sfileNameFeats)
   {
-    loadFeatsFromFile(sfileNameFeats, _vec_feats);
+    loadFeatsFromFile(fs, sfileNameFeats, _vec_feats);
   }
 
   PointFeatures GetRegionsPositions() const
@@ -84,14 +84,16 @@ public:
   //--
 
   virtual void Load(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) = 0;
 
   virtual void Save(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const = 0;
 
-  virtual void SaveDesc(const std::string& sfileNameDescs) const = 0;
+  virtual void SaveDesc(vfs::filesystem& fs, const std::string& sfileNameDescs) const = 0;
 
   //--
   //- Basic description of a descriptor [Type, Length]
@@ -189,25 +191,27 @@ public:
 
   /// Read from files the regions and their corresponding descriptors.
   void Load(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) override
   {
-    loadFeatsFromFile(sfileNameFeats, this->_vec_feats);
-    loadDescsFromBinFile(sfileNameDescs, _vec_descs);
+    loadFeatsFromFile(fs, sfileNameFeats, this->_vec_feats);
+    loadDescsFromBinFile(fs, sfileNameDescs, _vec_descs);
   }
 
   /// Export in two separate files the regions and their corresponding descriptors.
   void Save(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const override
   {
-    saveFeatsToFile(sfileNameFeats, this->_vec_feats);
-    saveDescsToBinFile(sfileNameDescs, _vec_descs);
+    saveFeatsToFile(fs, sfileNameFeats, this->_vec_feats);
+    saveDescsToBinFile(fs, sfileNameDescs, _vec_descs);
   }
 
-  void SaveDesc(const std::string& sfileNameDescs) const override
+  void SaveDesc(vfs::filesystem& fs, const std::string& sfileNameDescs) const override
   {
-    saveDescsToBinFile(sfileNameDescs, _vec_descs);
+    saveDescsToBinFile(fs, sfileNameDescs, _vec_descs);
   }
 
   /// Mutable and non-mutable DescriptorT getters.

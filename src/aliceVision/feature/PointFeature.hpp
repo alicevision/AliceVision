@@ -8,9 +8,11 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
+#include "aliceVision/vfs/istream.hpp"
+#include "aliceVision/vfs/ostream.hpp"
 #include <iostream>
 #include <iterator>
-#include <fstream>
 #include <string>
 #include <vector>
 
@@ -97,12 +99,13 @@ inline std::istream& operator>>(std::istream& in, PointFeature& obj)
 /// Read feats from file
 template<typename FeaturesT >
 inline void loadFeatsFromFile(
+  vfs::filesystem& fs,
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {
   vec_feat.clear();
 
-  std::ifstream fileIn(sfileNameFeats);
+  auto fileIn = fs.open_read_text(sfileNameFeats);
 
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load features file, can't open '" + sfileNameFeats + "' !");
@@ -119,10 +122,11 @@ inline void loadFeatsFromFile(
 /// Write feats to file
 template<typename FeaturesT >
 inline void saveFeatsToFile(
+  vfs::filesystem& fs,
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {
-  std::ofstream file(sfileNameFeats.c_str());
+  auto file = fs.open_write_text(sfileNameFeats);
 
   if (!file.is_open())
     throw std::runtime_error("Can't save features file, can't open '" + sfileNameFeats + "' !");

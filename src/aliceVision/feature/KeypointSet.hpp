@@ -30,40 +30,44 @@ public:
 
   /// Read from files the feats and their corresponding descriptors.
   void loadFromFile(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs)
   {
-    loadFeatsFromFile(sfileNameFeats, _feats);
-    loadDescsFromFile(sfileNameDescs, _descs);
+    loadFeatsFromFile(fs, sfileNameFeats, _feats);
+    loadDescsFromFile(fs, sfileNameDescs, _descs);
   }
 
   /// Export in two separate files the feats and their corresponding descriptors.
   void saveToFile(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    saveFeatsToFile(sfileNameFeats, _feats);
-    saveDescsToFile(sfileNameDescs, _descs);
+    saveFeatsToFile(fs, sfileNameFeats, _feats);
+    saveDescsToFile(fs, sfileNameDescs, _descs);
   }
 
   /// Read from files the feats and their corresponding descriptors
   ///  descriptor in binary to save place
   void loadFromBinFile(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs)
   {
-    loadFeatsFromFile(sfileNameFeats, _feats);
-    loadDescsFromBinFile(sfileNameDescs, _descs);
+    loadFeatsFromFile(fs, sfileNameFeats, _feats);
+    loadDescsFromBinFile(fs, sfileNameDescs, _descs);
   }
 
   /// Export in two separate files the feats and their corresponding descriptors
   ///  descriptor in binary to save place
   void saveToBinFile(
+    vfs::filesystem& fs,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    saveFeatsToFile(sfileNameFeats, _feats);
-    saveDescsToBinFile(sfileNameDescs, _descs);
+    saveFeatsToFile(fs, sfileNameFeats, _feats);
+    saveDescsToBinFile(fs, sfileNameDescs, _descs);
   }
 
   /// Mutable and non-mutable FeatureT getters.

@@ -53,7 +53,7 @@ std::unique_ptr<feature::Regions> loadRegions(vfs::filesystem& fs,
 
   try
   {
-    regionsPtr->Load(featFilename, descFilename);
+    regionsPtr->Load(fs, featFilename, descFilename);
   }
   catch(const std::exception& e)
   {
@@ -110,7 +110,7 @@ std::unique_ptr<feature::Regions> loadFeatures(vfs::filesystem& fs,
 
   try
   {
-    regionsPtr->LoadFeatures(featFilename);
+    regionsPtr->LoadFeatures(fs, featFilename);
   }
   catch(const std::exception& e)
   {

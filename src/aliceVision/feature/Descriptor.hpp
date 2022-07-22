@@ -8,10 +8,12 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <iostream>
 #include <iterator>
-#include <fstream>
 #include <string>
 #include <vector>
 #include <exception>
@@ -172,12 +174,13 @@ std::istream& Descriptor<T,N>::read(std::istream& in)
 /// Read descriptors from file
 template<typename DescriptorsT >
 inline void loadDescsFromFile(
+  vfs::filesystem& fs,
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
   vec_desc.clear();
 
-  std::ifstream fileIn(sfileNameDescs.c_str());
+  auto fileIn = fs.open_read_text(sfileNameDescs);
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load descriptor file, can't open '" + sfileNameDescs + "' !");
 
@@ -195,10 +198,11 @@ inline void loadDescsFromFile(
 /// Write descriptors to file
 template<typename DescriptorsT >
 inline void saveDescsToFile(
+  vfs::filesystem& fs,
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
-  std::ofstream file(sfileNameDescs.c_str());
+  auto file = fs.open_write_text(sfileNameDescs);
   if(!file.is_open())
     throw std::runtime_error("Can't save descriptor file, can't open '" + sfileNameDescs + "' !");
 
@@ -253,6 +257,7 @@ void convertDesc(
  */
 template<typename DescriptorT, typename FileDescriptorT = DescriptorT>
 inline void loadDescsFromBinFile(
+  vfs::filesystem& fs,
   const std::string & sfileNameDescs,
   std::vector<DescriptorT> & vec_desc,
   bool append = false,
@@ -261,7 +266,7 @@ inline void loadDescsFromBinFile(
   if( !append ) // for compatibility
     vec_desc.clear();
 
-  std::ifstream fileIn(sfileNameDescs.c_str(), std::ios::in | std::ios::binary);
+  auto fileIn = fs.open_read_binary(sfileNameDescs);
 
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load descriptor binary file, can't open '" + sfileNameDescs + "' !");
@@ -299,12 +304,13 @@ inline void loadDescsFromBinFile(
 /// Write descriptors to file (in binary mode)
 template<typename DescriptorsT >
 inline void saveDescsToBinFile(
+  vfs::filesystem& fs,
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
   typedef typename DescriptorsT::value_type VALUE;
 
-  std::ofstream file(sfileNameDescs.c_str(), std::ios::out | std::ios::binary);
+  auto file = fs.open_write_binary(sfileNameDescs);
 
   if (!file.is_open())
     throw std::runtime_error("Can't save descriptor binary file, can't open '" + sfileNameDescs + "' !");

@@ -125,7 +125,7 @@ int aliceVision_main( int argc, char** argv )
       std::vector<feature::Descriptor<float, siftSize> > floatDescriptors;
       
       // load the float descriptors
-      feature::loadDescsFromBinFile(iterator->path().string(), floatDescriptors, false);
+      feature::loadDescsFromBinFile(fs, iterator->path().string(), floatDescriptors, false);
       
       const size_t numDesc = floatDescriptors.size();
       
@@ -153,7 +153,7 @@ int aliceVision_main( int argc, char** argv )
       assert(charDescriptors.size() == floatDescriptors.size());
       
       // save the unsigned char
-      feature::saveDescsToBinFile(outpath, charDescriptors);
+      feature::saveDescsToBinFile(fs, outpath, charDescriptors);
       
       if(doSanityCheck)
       {
@@ -161,8 +161,8 @@ int aliceVision_main( int argc, char** argv )
         // reload everything and compare
         floatDescriptors.clear();
         charDescriptors.clear();
-        feature::loadDescsFromBinFile(iterator->path().string(), floatDescriptors, false);
-        feature::loadDescsFromBinFile(outpath, charDescriptors, false);
+        feature::loadDescsFromBinFile(fs, iterator->path().string(), floatDescriptors, false);
+        feature::loadDescsFromBinFile(fs, outpath, charDescriptors, false);
 
         assert(charDescriptors.size() == numDesc);
         assert(charDescriptors.size() == floatDescriptors.size());

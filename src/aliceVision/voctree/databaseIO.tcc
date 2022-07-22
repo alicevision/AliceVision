@@ -44,7 +44,7 @@ std::size_t populateDatabase(vfs::filesystem& fs,
     std::vector<DescriptorT> descriptors;
 
     // Read the descriptors
-    loadDescsFromBinFile(currentFile.second, descriptors, false, Nmax);
+    loadDescsFromBinFile(fs, currentFile.second, descriptors, false, Nmax);
     size_t result = descriptors.size();
     
     SparseHistogram newDoc =  tree.quantizeToSparse(descriptors);
@@ -163,7 +163,7 @@ void queryDatabase(vfs::filesystem& fs,
     std::vector<DescriptorT> descriptors;
 
     // Read the descriptors
-    loadDescsFromBinFile(currentFileIt->second, descriptors, false, Nmax);
+    loadDescsFromBinFile(fs, currentFileIt->second, descriptors, false, Nmax);
 
     // quantize the descriptors
     SparseHistogram query = tree.quantizeToSparse(descriptors);
@@ -205,7 +205,7 @@ void voctreeStatistics(vfs::filesystem& fs,
     std::vector<DescriptorT> descriptors;
 
     // Read the descriptors
-    loadDescsFromBinFile(currentFile.second, descriptors, false);
+    loadDescsFromBinFile(fs, currentFile.second, descriptors, false);
 
     // query the database
     SparseHistogram query = tree.quantizeToSparse(descriptors);
