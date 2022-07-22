@@ -23,7 +23,6 @@
 #include <assimp/scene.h>
 #include <Eigen/Dense>
 
-#include <fstream>
 #include <map>
 
 namespace aliceVision {
