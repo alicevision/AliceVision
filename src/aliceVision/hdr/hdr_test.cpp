@@ -14,12 +14,11 @@
 
 #include <random>
 #include <array>
-#include <boost/filesystem.hpp>
 
 using namespace aliceVision;
-namespace fs = boost::filesystem;
 
-bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, const hdr::rgbCurve& gt_response)
+bool buildBrackets(vfs::filesystem& fs, std::vector<std::string>& paths, std::vector<float>& times,
+                   const hdr::rgbCurve& gt_response)
 {
     /* Exposure time for each bracket */
     times = {0.05f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f};
@@ -72,8 +71,8 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, c
             }
         }
 
-        boost::filesystem::path temp = boost::filesystem::temp_directory_path();
-        temp /= boost::filesystem::unique_path();
+        vfs::path temp = fs.temp_directory_path();
+        temp /= fs.unique_path();
         temp += ".exr";
 
         ALICEVISION_LOG_INFO("writing to " << temp.string());
@@ -103,7 +102,7 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
         gt_curve.getCurve(2)[i] = hdr::laguerreFunction(laguerreParams[2], x);
     }
 
-    buildBrackets(paths, times, gt_curve);
+    buildBrackets(fs, paths, times, gt_curve);
 
     std::vector<std::vector<std::string>> all_paths;
     all_paths.push_back(paths);
@@ -172,7 +171,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
         gt_curve.getCurve(2)[i] = hdr::laguerreFunction(laguerreParams[2], x);
     }
 
-    buildBrackets(paths, times, gt_curve);
+    buildBrackets(fs, paths, times, gt_curve);
 
     std::vector<std::vector<std::string>> all_paths;
     all_paths.push_back(paths);
@@ -259,7 +258,7 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
         }
     }
 
-    buildBrackets(paths, times, gt_curve);
+    buildBrackets(fs, paths, times, gt_curve);
 
     std::vector<std::vector<std::string>> all_paths;
     std::vector<std::vector<float>> exposures;

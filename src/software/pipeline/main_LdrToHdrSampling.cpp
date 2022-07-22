@@ -232,7 +232,10 @@ int aliceVision_main(int argc, char** argv)
         std::vector<double> exposures = getExposures(exposuresSetting);
 
         std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB, applyWhiteBalance, params);
+        const bool res = hdr::Sampling::extractSamplesFromImages(fs, out_samples, paths, exposures,
+                                                                 width, height, channelQuantization,
+                                                                 image::EImageColorSpace::SRGB,
+                                                                 applyWhiteBalance, params);
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);
