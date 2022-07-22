@@ -39,7 +39,7 @@ FeedProvider::FeedProvider(vfs::filesystem& fs, const std::string &feedPath, con
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
       // let's try it with a video
-      _feeder.reset(new VideoFeed(feedPath, calibPath));
+      _feeder.reset(new VideoFeed(fs, feedPath, calibPath));
       _isVideo = true;
 #else
       throw std::invalid_argument("Unsupported mode! If you intended to use a video"
@@ -59,7 +59,7 @@ FeedProvider::FeedProvider(vfs::filesystem& fs, const std::string &feedPath, con
   {
     // let's try it with a video
     const int deviceNumber =  std::atoi(feedPath.c_str());
-    _feeder.reset(new VideoFeed(deviceNumber, calibPath));
+    _feeder.reset(new VideoFeed(fs, deviceNumber, calibPath));
     _isVideo = true;
     _isLiveFeed = true;
   }

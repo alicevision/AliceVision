@@ -9,6 +9,7 @@
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 
 namespace aliceVision{
 namespace dataio{
@@ -79,10 +80,12 @@ public:
 //@todo to be move somewhere else more appropriated
 /**
  * @brief Read the calibration from a simple text file.
+ * @param[in] fs Virtual file system handle
  * @param[in] filename The file containing the calibration parameters.
  * @param[out] camIntrinsics The loaded parameters.
  */
-void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK3 &camIntrinsics);
+void readCalibrationFromFile(vfs::filesystem& fs, const std::string &filename,
+                             camera::PinholeRadialK3 &camIntrinsics);
 
 }//namespace dataio 
 }//namespace aliceVision

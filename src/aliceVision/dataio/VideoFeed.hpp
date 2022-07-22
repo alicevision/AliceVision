@@ -22,6 +22,7 @@ public:
   /**
    * @brief Set up an image feed from a video
    * 
+   * @param[in] fs Virtual file system handle
    * @param[in] videoPath The video source.
    * @param[in] calibPath The source for the camera intrinsics. 
    * The format for the file is
@@ -36,11 +37,12 @@ public:
    * 
    * @see readCalibrationFromFile()
    */  
-  VideoFeed(const std::string &videoPath, const std::string &calibPath);
+  VideoFeed(vfs::filesystem& fs, const std::string &videoPath, const std::string &calibPath);
 
   /**
    * @brief Set up an image feed from a video
    * 
+   * @param[in] fs Virtual file system handle
    * @param[in] videoDevice The device id from which capture the live feed.
    * @param[in] calibPath The source for the camera intrinsics. 
    * The format for the file is
@@ -55,7 +57,7 @@ public:
    * 
    * @see readCalibrationFromFile()
    */    
-  VideoFeed(int videoDevice, const std::string &calibPath);
+  VideoFeed(vfs::filesystem& fs, int videoDevice, const std::string &calibPath);
   
   /**
    * @brief Provide a new RGB image from the feed

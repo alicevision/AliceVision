@@ -9,14 +9,13 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
 #include <boost/algorithm/string/replace.hpp>
 
 #include <queue>
 #include <iostream>
-#include <fstream>
 #include <exception>
 #include <regex>
 #include <iterator>
@@ -191,10 +190,10 @@ ImageFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, const std::string& imageP
     {
       // we expect a simple txt file with a list of path to images relative to the 
       // location of the txt file itself
-      std::fstream fs(imagePath, std::ios::in);
+      auto stream = fs.open_read_text(imagePath);
       std::string line;
       // parse each line of the text file
-      while(getline(fs, line))
+      while (getline(stream, line))
       {
         // compose the file name as the base path of the inputPath and
         // the filename just read
@@ -202,7 +201,7 @@ ImageFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, const std::string& imageP
         _images.push_back(filename);
       }
       // Close file
-      fs.close();
+      stream.close();
       _withCalibration = !calibPath.empty();
       _sfmMode = false;
       _isInit = true;
@@ -275,7 +274,7 @@ ImageFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, const std::string& imageP
   if(_withCalibration)
   {
     // load the calibration from calibPath
-    readCalibrationFromFile(calibPath, _camIntrinsics);
+    readCalibrationFromFile(fs, calibPath, _camIntrinsics);
   }
 }
 

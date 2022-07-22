@@ -25,9 +25,9 @@ class VideoFeed::FeederImpl
 public:
   FeederImpl() : _isInit(false) { }
   
-  FeederImpl(const std::string &videoPath, const std::string &calibPath);
+  FeederImpl(vfs::filesystem& fs, const std::string &videoPath, const std::string &calibPath);
   
-  FeederImpl(int videoDevice, const std::string &calibPath);
+  FeederImpl(vfs::filesystem& fs, int videoDevice, const std::string &calibPath);
   
   bool isInit() const {return _isInit;}
   
@@ -62,7 +62,8 @@ private:
 };
 
 
-VideoFeed::FeederImpl::FeederImpl(const std::string &videoPath, const std::string &calibPath)
+VideoFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, const std::string &videoPath,
+                                  const std::string &calibPath)
 : _isInit(false), _isLive(false), _withIntrinsics(false), _videoPath(videoPath)
 {
     // load the video
@@ -78,12 +79,13 @@ VideoFeed::FeederImpl::FeederImpl(const std::string &videoPath, const std::strin
   // load the calibration path
   _withIntrinsics = !calibPath.empty();
   if(_withIntrinsics)
-    readCalibrationFromFile(calibPath, _camIntrinsics);
+    readCalibrationFromFile(fs, calibPath, _camIntrinsics);
   
   _isInit = true;
 }
 
-VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string &calibPath)
+VideoFeed::FeederImpl::FeederImpl(vfs::filesystem& fs, int videoDevice,
+                                  const std::string &calibPath)
 : _isInit(false), _isLive(true), _withIntrinsics(false), _videoPath(std::to_string(videoDevice))
 {
     // load the video
@@ -99,7 +101,7 @@ VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string &calibPath)
   // load the calibration path
   _withIntrinsics = !calibPath.empty();
   if(_withIntrinsics)
-    readCalibrationFromFile(calibPath, _camIntrinsics);
+    readCalibrationFromFile(fs, calibPath, _camIntrinsics);
   
   _isInit = true;
 }
@@ -243,12 +245,12 @@ bool VideoFeed::FeederImpl::goToNextFrame()
 
 VideoFeed::VideoFeed() : _feeder(new FeederImpl()) { }
 
-VideoFeed::VideoFeed(const std::string &videoPath, const std::string &calibPath) 
-  : _feeder(new FeederImpl(videoPath, calibPath))
+VideoFeed::VideoFeed(vfs::filesystem& fs, const std::string &videoPath, const std::string &calibPath)
+  : _feeder(new FeederImpl(fs, videoPath, calibPath))
 { }
 
-VideoFeed::VideoFeed(int videoDevice, const std::string &calibPath) 
-  : _feeder(new FeederImpl(videoDevice, calibPath))
+VideoFeed::VideoFeed(vfs::filesystem& fs, int videoDevice, const std::string &calibPath)
+  : _feeder(new FeederImpl(fs, videoDevice, calibPath))
 { }
 
 bool VideoFeed::readImage(image::Image<image::RGBColor> &imageRGB,

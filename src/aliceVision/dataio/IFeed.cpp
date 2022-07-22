@@ -7,8 +7,9 @@
 #include "IFeed.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
-#include <fstream>
 #include <exception>
 
 namespace aliceVision{
@@ -23,10 +24,11 @@ namespace dataio{
 // double #k0
 // double #k1
 // double #k2
-void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK3 &camIntrinsics)
+void readCalibrationFromFile(vfs::filesystem& fs, const std::string &filename,
+                             camera::PinholeRadialK3 &camIntrinsics)
 {
-  std::ifstream fs(filename, std::ios::in);
-  if(!fs.is_open())
+  auto stream = fs.open_read_text(filename);
+  if (!stream.is_open())
   {
     ALICEVISION_LOG_WARNING("Unable to open the calibration file " << filename);
     throw std::invalid_argument("Unable to open the calibration file "+filename);
@@ -36,17 +38,17 @@ void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK
   const size_t numParam = 6;
   std::vector<double> params(numParam, 0);
   
-  fs >> width;
-  fs >> height;
+  stream >> width;
+  stream >> height;
   for(size_t i = 0; i < numParam; ++i)
   {
-    fs >> params[i];
+    stream >> params[i];
   }
   camIntrinsics = camera::PinholeRadialK3(width, height, 
                                   params[0], params[1], params[2],
                                   params[3], params[4], params[5]);
   
-  fs.close();
+  stream.close();
 }
 
 }//namespace dataio 
