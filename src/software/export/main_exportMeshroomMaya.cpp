@@ -10,7 +10,6 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
@@ -25,7 +24,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 namespace oiio = OIIO;
 
 int aliceVision_main(int argc, char **argv)
@@ -82,14 +80,14 @@ int aliceVision_main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // create output folders
-  if(!fs::is_directory(outputFolder))
-    fs::create_directory(outputFolder);
-  if(!fs::is_directory(outputFolder + "/undistort/"))
-    fs::create_directory(outputFolder + "/undistort/");
-  if(!fs::is_directory(outputFolder + "/undistort/proxy/"))
-    fs::create_directory(outputFolder + "/undistort/proxy/");
-  if(!fs::is_directory(outputFolder + "/undistort/thumbnail/"))
-    fs::create_directory(outputFolder + "/undistort/thumbnail/");
+  if (!fs.is_directory(outputFolder))
+    fs.create_directory(outputFolder);
+  if (!fs.is_directory(outputFolder + "/undistort/"))
+    fs.create_directory(outputFolder + "/undistort/");
+  if (!fs.is_directory(outputFolder + "/undistort/proxy/"))
+    fs.create_directory(outputFolder + "/undistort/proxy/");
+  if (!fs.is_directory(outputFolder + "/undistort/thumbnail/"))
+    fs.create_directory(outputFolder + "/undistort/thumbnail/");
 
   // read the SfM scene
   sfmData::SfMData sfmData;
@@ -144,7 +142,7 @@ int aliceVision_main(int argc, char **argv)
     oiio::ImageBufAlgo::resample(proxyBuf,     imageBuf, false,     proxyROI); // no interpolation
     oiio::ImageBufAlgo::resample(thumbnailBuf, imageBuf, false, thumbnailROI); // no interpolation
 
-    const std::string basename = fs::path(view.getImagePath()).stem().string();
+    const std::string basename = vfs::path(view.getImagePath()).stem().string();
 
     image::writeImage(fs, outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg",
                       imageProxy, image::EImageColorSpace::AUTO);

@@ -101,6 +101,7 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
     SOURCE main_exportMeshroomMaya.cpp
     FOLDER ${FOLDER_SOFTWARE_EXPORT}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_image
           aliceVision_feature
           aliceVision_sfmData
