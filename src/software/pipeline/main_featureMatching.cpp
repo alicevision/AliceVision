@@ -286,7 +286,7 @@ int aliceVision_main(int argc, char **argv)
     for(const std::string& imagePairsFile: predefinedPairList)
     {
       ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
-      if(!loadPairs(imagePairsFile, pairs, rangeStart, rangeSize))
+      if (!loadPairs(fs, imagePairsFile, pairs, rangeStart, rangeSize))
           return EXIT_FAILURE;
     }
   }

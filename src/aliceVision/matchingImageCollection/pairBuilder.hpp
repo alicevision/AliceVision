@@ -19,7 +19,7 @@ PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart=-1, int rang
 
 /// Load a set of PairSet from a file
 /// I J K L (pair that link I)
-bool loadPairs(
+bool loadPairs(vfs::filesystem& fs,
      const std::string &sFileName, // filename of the list file,
      PairSet & pairs,
      int rangeStart=-1,
@@ -28,6 +28,6 @@ bool loadPairs(
 /// Save a set of PairSet to a file (one pair per line)
 /// I J
 /// I K
-bool savePairs(const std::string &sFileName, const PairSet & pairs);
+bool savePairs(vfs::filesystem& fs, const std::string &sFileName, const PairSet & pairs);
 
 }; // namespace aliceVision

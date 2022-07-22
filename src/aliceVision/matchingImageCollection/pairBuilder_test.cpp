@@ -63,6 +63,8 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
 
 BOOST_AUTO_TEST_CASE(matchingImageCollection_IO)
 {
+  vfs::filesystem fs;
+
   PairSet pairSetGT;
   pairSetGT.insert( std::make_pair(0,1) );
   pairSetGT.insert( std::make_pair(1,2) );
@@ -73,9 +75,9 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_IO)
   pairSetGTsorted.insert( std::make_pair(0,2) );
   pairSetGTsorted.insert( std::make_pair(1,2) );
 
-  BOOST_CHECK( savePairs("pairsT_IO.txt", pairSetGT));
+  BOOST_CHECK(savePairs(fs, "pairsT_IO.txt", pairSetGT));
 
   PairSet loaded_Pairs;
-  BOOST_CHECK( loadPairs("pairsT_IO.txt", loaded_Pairs));
+  BOOST_CHECK(loadPairs(fs, "pairsT_IO.txt", loaded_Pairs));
   BOOST_CHECK( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
 }

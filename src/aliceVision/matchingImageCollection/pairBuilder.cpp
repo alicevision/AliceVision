@@ -8,12 +8,14 @@
 #include "pairBuilder.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/algorithm/string.hpp>
 
 #include <set>
 #include <iostream>
-#include <fstream>
 #include <sstream>
 
 namespace aliceVision {
@@ -45,12 +47,12 @@ PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart, int rangeSi
   return pairs;
 }
 
-bool loadPairs(const std::string &sFileName,
+bool loadPairs(vfs::filesystem& fs, const std::string &sFileName,
                PairSet & pairs,
                int rangeStart,
                int rangeSize)
 {
-  std::ifstream in(sFileName.c_str());
+  auto in = fs.open_read_text(sFileName);
   if(!in.is_open())
   {
     ALICEVISION_LOG_WARNING("loadPairs: Impossible to read the specified file: \"" << sFileName << "\".");
@@ -106,9 +108,9 @@ bool loadPairs(const std::string &sFileName,
   return true;
 }
 
-bool savePairs(const std::string &sFileName, const PairSet & pairs)
+bool savePairs(vfs::filesystem& fs, const std::string &sFileName, const PairSet & pairs)
 {
-  std::ofstream outStream(sFileName.c_str());
+  auto outStream = fs.open_write_text(sFileName);
   if(!outStream.is_open())  {
     ALICEVISION_LOG_WARNING("savePairs: Impossible to open the output specified file: \"" << sFileName << "\".");
     return false;
