@@ -20,6 +20,7 @@
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri_noise.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
 #include <iostream>
 #include <vector>
@@ -35,6 +36,7 @@ using namespace linearProgramming;
 using namespace lInfinityCV;
 
 BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVER) {
+  vfs::filesystem fs;
 
   const int nViews = 5;
   const int nbPoints = 5;
@@ -46,7 +48,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVE
     NRealisticCamerasCardioid(nViews, nbPoints,
     NViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -143,12 +145,12 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVE
     BOOST_CHECK_SMALL(dResidual, 1e-1);
   }
 
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
-
+  vfs::filesystem fs;
   const int nViews = 5;
   const int nbPoints = 5;
   const double focalValue = 1000;
@@ -159,7 +161,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
     NRealisticCamerasCardioid(nViews, nbPoints,
     NViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -257,6 +259,6 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
     BOOST_CHECK_SMALL(dResidual, 1e-1);
   }
 
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK

@@ -19,6 +19,7 @@
 #endif // ALICEVISION_HAVE_MOSEK
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/resection.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
 
 #define BOOST_TEST_MODULE ResectionLInfinity
@@ -41,13 +42,13 @@ void translate(const Mat3X & X, const Vec3 & vecTranslation,
 }
 
 BOOST_AUTO_TEST_CASE(Resection_L_Infinity_OSICLP) {
-
+  vfs::filesystem fs;
   const int nViews = 3;
   const int nbPoints = 10;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
 
@@ -94,18 +95,19 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_OSICLP) {
     Mat34 COMPUTED_ProjectionMatrix = P.array() / P.norm();
     EXPECT_MATRIX_NEAR(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix, 1e-4);
   }
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 BOOST_AUTO_TEST_CASE(Resection_L_Infinity_MOSEK) {
+  vfs::filesystem fs;
 
   const int nViews = 3;
   const int nbPoints = 10;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
 
@@ -152,6 +154,6 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_MOSEK) {
     Mat34 COMPUTED_ProjectionMatrix = P.array() / P.norm();
     EXPECT_MATRIX_NEAR(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix, 1e-4);
   }
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 #endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)

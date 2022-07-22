@@ -10,6 +10,7 @@
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTij.hpp"
 
 #include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
 #define BOOST_TEST_MODULE translation_averaging_globalTi_from_tijs
 
@@ -22,6 +23,7 @@ using namespace aliceVision::linearProgramming;
 using namespace lInfinityCV;
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs) {
+  vfs::filesystem fs;
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -41,8 +43,8 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs) {
       bCardiod, bRelative_Translation_PerTriplet
     );
 
-  d.exportToPLY("global_translations_from_Tij_GT.ply");
-  visibleCamPosToSVGSurface(d._C, "global_translations_from_Tij_GT.svg");
+  d.exportToPLY(fs, "global_translations_from_Tij_GT.ply");
+  visibleCamPosToSVGSurface(fs, d._C, "global_translations_from_Tij_GT.svg");
 
   //-- Compute the global translations from the translation heading directions
   //-   with the L_infinity optimization

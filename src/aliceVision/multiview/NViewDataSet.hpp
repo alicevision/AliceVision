@@ -9,6 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 
 #include <vector>
 
@@ -48,7 +49,7 @@ struct NViewDataSet
    * @brief Export in PLY the point structure and camera and camera looking dir.
    * @param[in] outFilename
    */
-  void exportToPLY(const std::string& outFilename) const;
+  void exportToPLY(vfs::filesystem& fs, const std::string& outFilename) const;
 };
 
 struct NViewDatasetConfigurator

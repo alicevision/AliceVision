@@ -22,6 +22,7 @@
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/triangulation.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
 #define BOOST_TEST_MODULE lInfinityCVTriangulation
 
@@ -33,13 +34,14 @@ using namespace linearProgramming;
 using namespace lInfinityCV;
 
 BOOST_AUTO_TEST_CASE(lInfinityCV_Triangulation_OSICLPSOLVER) {
+  vfs::filesystem fs;
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   std::vector<Mat34> vec_Pi;
 
-  d.exportToPLY("test_Before_Infinity_Triangulation_OSICLP.ply");
+  d.exportToPLY(fs, "test_Before_Infinity_Triangulation_OSICLP.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
   d2._X.fill(0); //Set _Xi of dataset 2 to 0 to be sure of new data computation
@@ -88,18 +90,19 @@ BOOST_AUTO_TEST_CASE(lInfinityCV_Triangulation_OSICLPSOLVER) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-5);
     BOOST_CHECK_SMALL(dResidual3D, 1e-5);
   }
-  d2.exportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
+  d2.exportToPLY(fs, "test_After_Infinity_Triangulation_OSICLP.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 BOOST_AUTO_TEST_CASE(computervision_Triangulation_MOSEK) {
+  vfs::filesystem fs;
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   std::vector<Mat34> vec_Pi;
 
-  d.exportToPLY("test_Before_Infinity_Triangulation_MOSEK.ply");
+  d.exportToPLY(fs, "test_Before_Infinity_Triangulation_MOSEK.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
   d2._X.fill(0); //Set _Xi of dataset 2 to 0 to be sure of new data computation
@@ -148,6 +151,6 @@ BOOST_AUTO_TEST_CASE(computervision_Triangulation_MOSEK) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-5);
     BOOST_CHECK_SMALL(dResidual3D, 1e-5);
   }
-  d2.exportToPLY("test_After_Infinity_Triangulation_MOSEK.ply");
+  d2.exportToPLY(fs, "test_After_Infinity_Triangulation_MOSEK.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK

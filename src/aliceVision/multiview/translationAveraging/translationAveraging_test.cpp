@@ -8,8 +8,8 @@
 #include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/multiview/translationAveraging/solver.hpp"
 #include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
-#include <fstream>
 #include <map>
 #include <utility>
 #include <vector>
@@ -24,6 +24,7 @@ using namespace aliceVision;
 using namespace aliceVision::translationAveraging;
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_softL1_Ceres) {
+  vfs::filesystem fs;
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -43,8 +44,8 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_softL1_Ce
       bCardiod, bRelative_Translation_PerTriplet
     );
 
-  d.exportToPLY("global_translations_from_triplets_GT.ply");
-  visibleCamPosToSVGSurface(d._C, "global_translations_from_triplets_GT.svg");
+  d.exportToPLY(fs, "global_translations_from_triplets_GT.ply");
+  visibleCamPosToSVGSurface(fs, d._C, "global_translations_from_triplets_GT.svg");
 
   // Solve the translation averaging problem:
   std::vector<Vec3> vec_translations;
@@ -73,6 +74,7 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_softL1_Ce
 }
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_softl1_Ceres) {
+  vfs::filesystem fs;
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -92,8 +94,8 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_softl1_Ceres) {
       bCardiod, bRelative_Translation_PerTriplet
     );
 
-  d.exportToPLY("global_translations_from_Tij_GT.ply");
-  visibleCamPosToSVGSurface(d._C, "global_translations_from_Tij_GT.svg");
+  d.exportToPLY(fs, "global_translations_from_Tij_GT.ply");
+  visibleCamPosToSVGSurface(fs, d._C, "global_translations_from_Tij_GT.svg");
 
   // Solve the translation averaging problem:
   std::vector<Vec3> vec_translations;
@@ -122,6 +124,7 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_softl1_Ceres) {
 }
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_l2_chordal) {
+  vfs::filesystem fs;
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -141,8 +144,8 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_l2_chorda
       bCardiod, bRelative_Translation_PerTriplet
     );
 
-  d.exportToPLY("global_translations_from_Tij_GT.ply");
-  visibleCamPosToSVGSurface(d._C, "global_translations_from_Tij_GT.svg");
+  d.exportToPLY(fs, "global_translations_from_Tij_GT.ply");
+  visibleCamPosToSVGSurface(fs, d._C, "global_translations_from_Tij_GT.svg");
 
   //-- Compute the global translations from the triplets of heading directions
   //-   with the L2 minimization of a Chordal distance

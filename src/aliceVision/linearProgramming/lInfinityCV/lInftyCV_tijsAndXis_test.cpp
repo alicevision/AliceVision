@@ -17,6 +17,7 @@
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
 #include <iostream>
 #include <vector>
@@ -32,13 +33,14 @@ using namespace linearProgramming;
 using namespace lInfinityCV;
 
 BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_OSICLP_SOLVER) {
+  vfs::filesystem fs;
 
   const size_t nViews = 3;
   const size_t nbPoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -112,17 +114,18 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_OSICLP_SOLVER) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-4);
   }
 
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 
 BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_OSICLP_SOLVER_K) {
+  vfs::filesystem fs;
 
   const size_t nViews = 3;
   const size_t nbPoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1000,1000,500,500,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -200,18 +203,19 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_OSICLP_SOLVER_K) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-4);
   }
 
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_MOSEK) {
+  vfs::filesystem fs;
 
   const size_t nViews = 3;
   const size_t nbPoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -285,6 +289,6 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_MOSEK) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-4);
   }
 
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK

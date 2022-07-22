@@ -61,6 +61,7 @@ alicevision_add_test(lInftyCV_global_translations_fromTriplets_test.cpp
   LINKS aliceVision_multiview_test_data
         aliceVision_multiview
         aliceVision_lInftyComputerVision
+        aliceVision_vfs
 )
 
 # Linfinity Global translations from heading directions
@@ -69,6 +70,7 @@ alicevision_add_test(lInftyCV_global_translations_fromTij_test.cpp
   LINKS aliceVision_multiview_test_data
         aliceVision_multiview
         aliceVision_lInftyComputerVision
+        aliceVision_vfs
 )
 # Linfinity Translation and Structure 
 alicevision_add_test(lInftyCV_tijsAndXis_test.cpp

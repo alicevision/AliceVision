@@ -11,6 +11,7 @@
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/numeric/projection.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
 
 #include <iostream>
 #include <vector>
@@ -69,6 +70,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
 
 BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
 {
+  vfs::filesystem fs;
   std::mt19937 randomNumberGenerator;
 
   const int nViews = 3;
@@ -76,7 +78,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.exportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY(fs, "test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
 
@@ -120,5 +122,5 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
     BOOST_CHECK_SMALL(FrobeniusDistance(GT_ProjectionMatrix, estimatedProjectionMatrix), 1e-1 );
     BOOST_CHECK_SMALL(reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), estimatedProjectionMatrix), 0.75);
   }
-  d2.exportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY(fs, "test_After_Infinity.ply");
 }

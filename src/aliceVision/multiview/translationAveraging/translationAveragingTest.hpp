@@ -12,13 +12,14 @@
 #include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/graph/Triplet.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
+#include "aliceVision/vfs/ostream.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
 
-#include <fstream>
 #include <map>
 #include <utility>
 #include <vector>
@@ -43,6 +44,7 @@ int modifiedMod
 //-- Export a series of camera positions to a SVG surface of specified squared size
 void visibleCamPosToSVGSurface
 (
+  vfs::filesystem& fs,
   const std::vector<Vec3> & vec_Ci,
   const std::string & fileName
 )
@@ -77,7 +79,7 @@ void visibleCamPosToSVGSurface
     }
     std::ostringstream osSvgGT;
     osSvgGT << fileName;
-    std::ofstream svgFileGT( osSvgGT.str().c_str());
+    auto svgFileGT = fs.open_write_text(osSvgGT.str());
     svgFileGT << svgSurface_GT.closeSvgFile().str();
   }
 }
