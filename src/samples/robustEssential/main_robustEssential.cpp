@@ -29,8 +29,6 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace svg;
 
-namespace fs = boost::filesystem;
-
 /// Read intrinsic K matrix from a file (ASCII)
 /// F 0 ppx
 /// 0 F ppy
@@ -137,7 +135,7 @@ int main() {
   {
     Mat3 K;
     //read K from file
-    if (!readIntrinsic((fs::path(sInputDir) / "K.txt").string(), K))
+    if (!readIntrinsic((vfs::path(sInputDir) / "K.txt").string(), K))
     {
       std::cerr << "Cannot read intrinsic parameters." << std::endl;
       return EXIT_FAILURE;

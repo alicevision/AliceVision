@@ -15,12 +15,12 @@
 
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <string>
 #include <iostream>
@@ -36,7 +36,6 @@ using namespace aliceVision::image;
 using namespace aliceVision::matching;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -44,10 +43,10 @@ namespace fs = boost::filesystem;
 class RepeatabilityDataset
 {
 public:
-    RepeatabilityDataset(const std::string& folderPath)
+    RepeatabilityDataset(vfs::filesystem& fs, const std::string& folderPath)
         : folderPath_(folderPath)
     {
-        loadImages();
+        loadImages(fs);
         loadGroundTruthHs();
     }
 
@@ -65,9 +64,8 @@ public:
 
 private:
     /// Load the images of a folder
-    bool loadImages()
+    bool loadImages(vfs::filesystem& fs)
     {
-        vfs::filesystem fs;
         ALICEVISION_LOG_INFO("Loading images of the dataset: " << folderPath_);
 
         const boost::regex ppmFilter(".*.ppm");
@@ -76,10 +74,10 @@ private:
         std::vector<std::string> ppmFiles;
         std::vector<std::string> pgmFiles;
 
-        boost::filesystem::directory_iterator endItr;
-        for(boost::filesystem::directory_iterator i(folderPath_); i != endItr; ++i)
+        vfs::directory_iterator endItr;
+        for (vfs::directory_iterator i(fs, folderPath_); i != endItr; ++i)
         {
-            if(!boost::filesystem::is_regular_file(i->status()))
+            if (!fs.is_regular_file(i->status()))
                 continue;
 
             boost::smatch what;
@@ -109,7 +107,7 @@ private:
         vec_image_.resize(vec_image_basename.size());
         for(int i = 0; i < vec_image_basename.size(); ++i)
         {
-            const std::string path = (fs::path(folderPath_) / vec_image_basename[i]).string();
+            const std::string path = (vfs::path(folderPath_) / vec_image_basename[i]).string();
             image::Image<RGBColor> imageRGB;
             try
             {
@@ -231,6 +229,7 @@ struct RepeatabilityResults_Matching
 //
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
     std::string datasetPath;
     std::string outputFolder;
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -326,10 +325,10 @@ int aliceVision_main(int argc, char** argv)
     // List all subdirectories and for each one compute the repeatability
     std::vector<std::string> vec_dataset_path;
 
-    boost::filesystem::directory_iterator endItr;
-    for(boost::filesystem::directory_iterator i(datasetPath); i != endItr; ++i)
+    vfs::directory_iterator endItr;
+    for (vfs::directory_iterator i(fs, datasetPath); i != endItr; ++i)
     {
-        if(boost::filesystem::is_directory(i->status()))
+        if (fs.is_directory(i->status()))
         {
             vec_dataset_path.push_back(i->path().string());
         }
@@ -361,10 +360,10 @@ int aliceVision_main(int argc, char** argv)
         {
             ALICEVISION_LOG_INFO("Start dataset: " << sPath);
 
-            if(fs::is_regular_file(sPath))
+            if (fs.is_regular_file(sPath))
                 continue;
 
-            RepeatabilityDataset dataset(sPath);
+            RepeatabilityDataset dataset(fs, sPath);
 
             if(!dataset.check())
             {
@@ -432,9 +431,9 @@ int aliceVision_main(int argc, char** argv)
                     featResults.results[std::to_string(i)] = results;
                 }
                 const std::string outputFilepath =
-                    (fs::path(outputFolder) / (descName + "_featureRepeatability.csv")).string();
+                    (vfs::path(outputFolder) / (descName + "_featureRepeatability.csv")).string();
                 ALICEVISION_LOG_INFO("Export file: " << outputFilepath);
-                featResults.exportToFile(outputFilepath, fs::path(sPath).stem().string());
+                featResults.exportToFile(outputFilepath, vfs::path(sPath).stem().string());
             }
 
             if(matchingRepeatability)
@@ -470,7 +469,7 @@ int aliceVision_main(int argc, char** argv)
                                 << "\n"
                                 << "*******************************"
                                 << "\n"
-                                << "** " << fs::path(sPath).stem().string() << " **"
+                                << "** " << vfs::path(sPath).stem().string() << " **"
                                 << "\n"
                                 << "*******************************"
                                 << "\n"
@@ -490,9 +489,9 @@ int aliceVision_main(int argc, char** argv)
                         static_cast<double>(matches_0I.size() / (double)putativesMatches.size())};
                     matchResults.results[std::to_string(i)] = results;
                 }
-                const std::string outputFilepath = (fs::path(outputFolder) / (descName + "_matchingRepeatability.csv")).string();
+                const std::string outputFilepath = (vfs::path(outputFolder) / (descName + "_matchingRepeatability.csv")).string();
                 ALICEVISION_LOG_INFO("Export file: " << outputFilepath);
-                matchResults.exportToFile(outputFilepath, fs::path(sPath).stem().string());
+                matchResults.exportToFile(outputFilepath, vfs::path(sPath).stem().string());
             }
         }
     }

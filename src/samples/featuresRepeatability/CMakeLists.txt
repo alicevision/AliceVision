@@ -5,6 +5,7 @@ alicevision_add_software(aliceVision_samples_repeatabilityDataset
         aliceVision_feature
         aliceVision_matching
         aliceVision_system
+        aliceVision_vfs
         aliceVision_multiview
         vlsift
         Boost::program_options

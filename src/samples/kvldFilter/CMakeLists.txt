@@ -4,6 +4,7 @@ alicevision_add_software(aliceVision_samples_kvldFilter
   SOURCE main_kvldFilter.cpp
   FOLDER ${FOLDER_SAMPLES}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_multiview
         aliceVision_kvld
