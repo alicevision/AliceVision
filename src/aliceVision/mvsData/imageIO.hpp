@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/vfs/fwd.hpp>
 #include <string>
 
 #include <OpenImageIO/paramlist.h>
@@ -168,14 +169,15 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
  * @param[out] height The image height
  * @param[out] nchannels The image channel number
  */
-void readImageSpec(const std::string& path, int& width, int& height, int& nchannels);
+void readImageSpec(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+                   int& nchannels);
 
 /**
  * @brief read image metadata from a given path
  * @param[in] path The given path to the image
  * @param[out] metadata The image metadata
  */
-void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata);
+void readImageMetadata(vfs::filesystem& fs, const std::string& path, oiio::ParamValueList& metadata);
 
 /**
  * @brief Test if the extension is supported for undistorted images.
@@ -186,34 +188,54 @@ bool isSupportedUndistortFormat(const std::string &ext);
 
 /**
  * @brief read an image with a given path and buffer
+ * @param[in] fs Virtual file system handle
  * @param[in] path The given path to the image
  * @param[out] width The output image width
  * @param[out] height The output image height
  * @param[out] buffer The output image buffer
  * @param[in] image color space
  */
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBAf>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+               std::vector<unsigned char>& buffer, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+               std::vector<unsigned short>& buffer, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+               std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+               std::vector<float>& buffer, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+               std::vector<ColorRGBf>& buffer, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, int& width, int& height,
+               std::vector<ColorRGBAf>& buffer, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace);
+void readImage(vfs::filesystem& fs, const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace);
 
 /**
  * @brief write an image with a given path and buffer
+ * @param[in] fs Virtual file system handle
  * @param[in] path The given path to the image
  * @param[in] width The input image width
  * @param[in] height The input image height
  * @param[in] buffer The input image buffer
  */
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<ColorRGBf>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, ImageRGBf& image, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, int width, int height,
+                const std::vector<unsigned char>& buffer, EImageQuality imageQuality,
+                const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, int width, int height,
+                const std::vector<unsigned short>& buffer, EImageQuality imageQuality,
+                const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, int width, int height,
+                const std::vector<rgb>& buffer, EImageQuality imageQuality,
+                const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, int width, int height,
+                const std::vector<float>& buffer, EImageQuality imageQuality,
+                const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, int width, int height,
+                const std::vector<ColorRGBf>& buffer, EImageQuality imageQuality,
+                const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(vfs::filesystem& fs, const std::string& path, ImageRGBf& image,
+                EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 } // namespace imageIO
 } // namespace aliceVision

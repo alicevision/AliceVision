@@ -314,7 +314,8 @@ Matrix3x4 load3x4MatrixFromFile(std::istream& in)
 }
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
+void loadImage(vfs::filesystem& fs, const std::string& path, const MultiViewParams& mp, int camId,
+               Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
 {
     // check image size
     auto checkImageSize = [&path, &mp, camId, &img](){
@@ -331,17 +332,17 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
 
     if(correctEV == ECorrectEV::NO_CORRECTION)
     {
-        imageIO::readImage(path, img, colorspace);
+        imageIO::readImage(fs, path, img, colorspace);
         checkImageSize();
     }
     // if exposure correction, apply it in linear colorspace and then convert colorspace
     else
     {
-        imageIO::readImage(path, img, imageIO::EImageColorSpace::LINEAR);
+        imageIO::readImage(fs, path, img, imageIO::EImageColorSpace::LINEAR);
         checkImageSize();
 
         oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(path, metadata);
+        imageIO::readImageMetadata(fs, path, metadata);
 
         float exposureCompensation = metadata.get_float("AliceVision:EVComp", -1);
 
@@ -373,8 +374,8 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
     }
 }
 
-template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
-template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<ImageRGBf>(vfs::filesystem& fs, const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<ImageRGBAf>(vfs::filesystem& fs, const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

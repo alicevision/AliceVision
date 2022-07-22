@@ -17,6 +17,7 @@
 #include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -761,6 +762,8 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
                              imageIO::EImageFileType textureFileType, const int level)
 {
+    vfs::filesystem fs;
+
     unsigned int outTextureSide = texParams.textureSide;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
     // edge padding (dilate gutter)
@@ -895,7 +898,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
 
     using namespace imageIO;
     OutputFileColorSpace colorspace(texParams.processColorspace, EImageColorSpace::AUTO);
-    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
+    writeImage(fs, texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
 
@@ -1297,6 +1300,8 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
 
+    vfs::filesystem fs;
+
     std::vector<ColorRGBf> normalMap(texParams.textureSide * texParams.textureSide);
     std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
     const auto& triangles = _atlases[atlasID];
@@ -1447,7 +1452,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
         imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::NO_CONVERSION,imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+        imageIO::writeImage(fs, normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
     }
 
     // Save Height Maps
@@ -1480,7 +1485,8 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
             bfs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
-            imageIO::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+            imageIO::writeImage(fs, bumpMapPath.string(), outTextureSide, outTextureSide, heightMap,
+                                imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
         }
         // Save Displacement Map
         if(bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
@@ -1488,7 +1494,8 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
             bfs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
-            imageIO::writeImage(dispMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+            imageIO::writeImage(fs, dispMapPath.string(), outTextureSide, outTextureSide, heightMap,
+                                imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
         }
     }
 }

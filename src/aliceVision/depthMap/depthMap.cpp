@@ -129,13 +129,14 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
             std::vector<float> depthMap;
             int w = 0;
             int h = 0;
-            readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageColorSpace::NO_CONVERSION);
+            readImage(mp.fs, getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageColorSpace::NO_CONVERSION);
 
             std::vector<ColorRGBf> normalMap;
             normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
 
             cps.computeNormalMap(mapping, depthMap, normalMap, rc, 1, gammaC, gammaP, wsh);
-            writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+            writeImage(mp.fs, normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap,
+                       EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
         }
     }
     cps.deleteNormalMapping(mapping);

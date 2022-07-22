@@ -34,7 +34,7 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
     {
         const std::string filename = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale);
         oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(filename, metadata);
+        imageIO::readImageMetadata(mp.fs, filename, metadata);
         int nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
         if(nbDepthValues < 0)
@@ -45,7 +45,7 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
 
             ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values.");
 
-            imageIO::readImage(mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+            imageIO::readImage(mp.fs, mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
             // no need to transpose for this operation
             for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); ++i)
                 nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
@@ -163,8 +163,10 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
     {
         int width, height;
 
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+        imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1),
+                           width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+        imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1),
+                           width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
     }
 
     std::vector<unsigned char> numOfModalsMap(w * h, 0);
@@ -192,7 +194,8 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
         {
             int width, height;
-            imageIO::readImage(getFileNameFromIndex(_mp, tc, mvsUtils::EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+            imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, tc, mvsUtils::EFileType::depthMap, 1),
+                               width, height, tcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
         }
 
         if(!tcdepthMap.empty())
@@ -219,7 +222,8 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
     {
         using namespace imageIO;
-        writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), w, h, numOfModalsMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+        writeImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), w, h,
+                   numOfModalsMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
     }
 
     delete numOfPtsMap;
@@ -260,9 +264,12 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     {
         int width, height;
 
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1), width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1), width, height, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), width, height, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
+        imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1),
+                           width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
+        imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1),
+                           width, height, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
+        imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap),
+                           width, height, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
     }
 
     int nbDepthValues = 0;
@@ -317,8 +324,10 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     }
 
     using namespace imageIO;
-    writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
-    writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
+    writeImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), w, h,
+               depthMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
+    writeImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), w, h,
+               simMap, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
 
     ALICEVISION_LOG_DEBUG(rc << " solved.");
     mvsUtils::printfElapsedTime(t1);
@@ -345,7 +354,8 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
 
         {
             int width, height;
-            imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, rcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+            imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
+                               width, height, rcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
         }
 
         for(int y = 0; y < h; y++)
@@ -443,7 +453,8 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
         {
             int width, height;
 
-            imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+            imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
+                               width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
         }
 
         for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i += stepPts)
@@ -487,7 +498,8 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
         {
             int width, height;
 
-            imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+            imageIO::readImage(_mp.fs, getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
+                               width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
         }
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
@@ -762,8 +774,10 @@ std::string generateTempPtsSimsFiles(vfs::filesystem& fs, std::string tmpDir,
             {
                 int width, height;
 
-                imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-                imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+                imageIO::readImage(mp.fs, getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale),
+                                   width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+                imageIO::readImage(mp.fs, getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale),
+                                   width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
             }
 
             if(addRandomNoise)

@@ -114,7 +114,7 @@ void ImagesCache<Image>::refreshData(int camId)
         }
 
         const std::string imagePath = _imagesNames.at(camId);
-        loadImage(imagePath, _mp, camId, *(_imgs[mapId]), _colorspace, _correctEV);
+        loadImage(_mp.fs, imagePath, _mp, camId, *(_imgs[mapId]), _colorspace, _correctEV);
 
         ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }

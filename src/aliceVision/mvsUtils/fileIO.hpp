@@ -34,8 +34,8 @@ Matrix3x4 load3x4MatrixFromFile(std::istream& in);
 
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
-    imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+void loadImage(vfs::filesystem& fs, const std::string& path, const MultiViewParams& mp, int camId,
+               Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

@@ -121,7 +121,7 @@ MultiViewParams::MultiViewParams(vfs::filesystem& fs,
         const bool fileExists = fs.exists(imgParams.path);
         if(fileExists)
         {
-            imageIO::readImageMetadata(imgParams.path, metadata);
+            imageIO::readImageMetadata(fs, imgParams.path, metadata);
             scaleIt = metadata.find("AliceVision:downscale");
             pIt = metadata.find("AliceVision:P");
         }
@@ -136,7 +136,7 @@ MultiViewParams::MultiViewParams(vfs::filesystem& fs,
         {
             // use image dimension
             int w, h, channels;
-            imageIO::readImageSpec(imgParams.path, w, h, channels);
+            imageIO::readImageSpec(fs, imgParams.path, w, h, channels);
             const int widthScale = imgParams.width / w;
             const int heightScale = imgParams.height / h;
 
@@ -653,7 +653,7 @@ StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point
     for(int rc = 0; rc < getNbCameras(); rc++)
     {
         oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(getImagePath(rc), metadata);
+        imageIO::readImageMetadata(fs, getImagePath(rc), metadata);
 
         const float minDepth = metadata.get_float("AliceVision:minDepth", -1);
         const float maxDepth = metadata.get_float("AliceVision:maxDepth", -1);
