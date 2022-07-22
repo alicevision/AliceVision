@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     const NViewDatasetConfigurator config(1000, 1000, 500, 500, 1, 0);
     SfMData sfmData = generateSfm(config, 6);
 
-    mvsUtils::MultiViewParams mp(sfmData, "", "", "", false);
+    mvsUtils::MultiViewParams mp(fs, sfmData, "", "", "", false);
 
     mp.userParams.put("LargeScale.universePercentile", 0.999);
     mp.userParams.put("delaunaycut.forceTEdgeDelta", 0.1f);

@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/structures.hpp>
+#include <aliceVision/vfs/fwd.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -73,6 +74,8 @@ enum class EFileType {
 class MultiViewParams
 {
 public:
+    vfs::filesystem& fs;
+
     /// prepareDenseScene data
     std::string _imagesFolder;
     /// camera projection matrix P
@@ -100,7 +103,8 @@ public:
 
     boost::property_tree::ptree userParams;
 
-    MultiViewParams(const sfmData::SfMData& sfmData,
+    MultiViewParams(vfs::filesystem& fs,
+                    const sfmData::SfMData& sfmData,
                     const std::string& imagesFolder = "",
                     const std::string& depthMapsFolder = "",
                     const std::string& depthMapsFilterFolder = "",

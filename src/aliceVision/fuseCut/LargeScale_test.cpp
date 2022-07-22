@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_largeScale_io)
 {
     vfs::filesystem fs;
     sfmData::SfMData sfmData;
-    mvsUtils::MultiViewParams mp{sfmData};
+    mvsUtils::MultiViewParams mp{fs, sfmData};
     LargeScale ls{fs, &mp, "test_tmp"};
     ls.space = {{
         { 1.1, 1.2, 1.3 },

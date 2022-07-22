@@ -658,7 +658,7 @@ int main(int argc, char **argv)
     // execute
     system::Timer timer;
 
-    mvsUtils::MultiViewParams mp(sfmData);
+    mvsUtils::MultiViewParams mp(fs, sfmData);
 
     if (usePointsVisibilities)
     {
