@@ -16,7 +16,6 @@
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -38,7 +37,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
@@ -132,7 +130,7 @@ void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outpu
 
 
 struct ImageOptions {
-    fs::path imgFsPath;
+    vfs::path imgFsPath;
     std::string viewId;
     std::string lensSerialNumber;
     std::string bodySerialNumber;
@@ -339,12 +337,12 @@ struct MacbethCCheckerQuad : Quad {
 
 
 void detectColorChecker(
+    vfs::filesystem& fs,
     std::vector<MacbethCCheckerQuad> &detectedCCheckers,
     ImageOptions& imgOpt,
     CCheckerDetectionSettings &settings)
 {
-    vfs::filesystem fs;
-    const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
+    const std::string outputFolder = vfs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
     const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
@@ -389,7 +387,7 @@ void detectColorChecker(
             cv::imwrite(outputFolder + imgDestStem + counterStr + ".jpg", imgBGR);
 
             const std::string masksFolder = outputFolder + "masks/";
-            fs::create_directory(masksFolder);
+            fs.create_directory(masksFolder);
 
             for (int i = 0; i < ccq._cellMasks.size(); ++i)
                 cv::imwrite(masksFolder + imgDestStem + counterStr + "_" + std::to_string(i) + ".jpg", ccq._cellMasks[i]);
@@ -400,6 +398,8 @@ void detectColorChecker(
 
 int aliceVision_main(int argc, char** argv)
 {
+    vfs::filesystem fs;
+
     // command-line parameters
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
@@ -474,7 +474,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector< MacbethCCheckerQuad > detectedCCheckers;
 
     // Check if inputExpression is recognized as sfm data file
-    const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
+    const std::string inputExt = boost::to_lower_copy(vfs::path(inputExpression).extension().string());
     static const std::array<std::string, 2> sfmSupportedExtensions = {".sfm", ".abc"};
     if(std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) != sfmSupportedExtensions.end())
     {
@@ -501,17 +501,17 @@ int aliceVision_main(int argc, char** argv)
                 view.getMetadataLensSerialNumber() };
             imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::SRGB;
             imgOpt.readOptions.applyWhiteBalance = view.getApplyWhiteBalance();
-            detectColorChecker(detectedCCheckers, imgOpt, settings);
+            detectColorChecker(fs, detectedCCheckers, imgOpt, settings);
         }
 
     }
     else
     {
         // load input as image file or image folder
-        const fs::path inputPath(inputExpression);
+        const vfs::path inputPath(inputExpression);
         std::vector<std::string> filesStrPaths;
 
-        if(fs::is_regular_file(inputPath))
+        if (fs.is_regular_file(inputPath))
         {
             filesStrPaths.push_back(inputPath.string());
         }
@@ -522,7 +522,7 @@ int aliceVision_main(int argc, char** argv)
             const std::regex regex = utils::filterToRegex(inputExpression);
             // Get supported files in inputPath directory which matches our regex filter
             filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(),
-               [&regex](const boost::filesystem::path& path) {
+               [&regex](const vfs::path& path) {
                  return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
                }
             );
@@ -548,7 +548,7 @@ int aliceVision_main(int argc, char** argv)
             ImageOptions imgOpt;
             imgOpt.imgFsPath = imgSrcPath;
             imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::SRGB;
-            detectColorChecker(detectedCCheckers, imgOpt, settings);
+            detectColorChecker(fs, detectedCCheckers, imgOpt, settings);
         }
 
     }
