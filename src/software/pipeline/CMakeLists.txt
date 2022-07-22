@@ -31,6 +31,7 @@ if(ALICEVISION_BUILD_SFM)
       LINKS aliceVision_image
             aliceVision_imageMasking
             aliceVision_system
+            aliceVision_vfs
             aliceVision_sfmData
             aliceVision_sfmDataIO
             ${OpenCV_LIBRARIES}
