@@ -235,28 +235,27 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     if (!fs::exists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
 
-    FILE* f = fopen(fileNameP.c_str(), "r");
+    std::ifstream in{fileNameP};
     char fc;
-    fscanf(f, "%c", &fc);
+    in >> fc;
     if(fc == 'C') // FURUKAWA'S PROJCTION MATRIX FILE FORMAT
     {
-        fscanf(f, "%c", &fc);   // O
-        fscanf(f, "%c", &fc);   // N
-        fscanf(f, "%c", &fc);   // T
-        fscanf(f, "%c", &fc);   // O
-        fscanf(f, "%c", &fc);   // U
-        fscanf(f, "%c\n", &fc); // R
+        in >> fc; // O
+        in >> fc; // N
+        in >> fc; // T
+        in >> fc; // O
+        in >> fc; // U
+        in >> fc; // R
     }
     else
     {
-        fclose(f);
-        f = fopen(fileNameP.c_str(), "r");
+        in.close();
+        in.open(fileNameP);
     }
 
     Matrix3x4& pMatrix = camArr.at(index);
 
-    pMatrix = load3x4MatrixFromFile(f);
-    fclose(f);
+    pMatrix = load3x4MatrixFromFile(in);
 
     // apply scale to camera matrix (camera matrix is scale 1)
     const int imgScale = _imagesScale.at(index) * _processDownscale;
@@ -270,9 +269,8 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
 
     if (fs::exists(fileNameD))
     {
-        FILE* f = fopen(fileNameD.c_str(), "r");
-        fscanf(f, "%f %f %f", &FocK1K2Arr[index].x, &FocK1K2Arr[index].y, &FocK1K2Arr[index].z);
-        fclose(f);
+        std::ifstream inD{fileNameD};
+        inD >> FocK1K2Arr[index].x >> FocK1K2Arr[index].y >> FocK1K2Arr[index].z;
     }
 }
 
