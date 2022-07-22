@@ -18,7 +18,6 @@
 #include <OpenImageIO/imagebufalgo_util.h>
 
 #include <boost/program_options.hpp> 
-#include <boost/filesystem.hpp>
 
 #include <string>
 #include <vector>
@@ -31,7 +30,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 enum class EAlbedoEstimation
 {
@@ -184,9 +182,11 @@ inline std::istream& operator>>(std::istream& in, ELightingColor& v)
     return in;
 }
 
-void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, EAlbedoEstimation albedoEstimationMethod, int albedoEstimationFilterSize, const std::string& outputFolder, IndexT viewId)
+void initAlbedo(vfs::filesystem& fs, image::Image<image::RGBfColor>& albedo,
+                const image::Image<image::RGBfColor>& picture,
+                EAlbedoEstimation albedoEstimationMethod, int albedoEstimationFilterSize,
+                const std::string& outputFolder, IndexT viewId)
 {
-  vfs::filesystem fs;
   switch(albedoEstimationMethod)
   {
     case EAlbedoEstimation::CONSTANT:
@@ -206,7 +206,7 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
-      image::writeImage(fs, (fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage(fs, (vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -218,16 +218,17 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       oiio::ImageBuf K;
       oiio::ImageBufAlgo::make_kernel(K, "gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
-      image::writeImage(fs, (fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage(fs, (vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
   }
 }
 
-void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture, EAlbedoEstimation albedoEstimationMethod, int albedoEstimationFilterSize, const std::string& outputFolder, IndexT viewId)
+void initAlbedo(vfs::filesystem& fs, image::Image<float>& albedo,
+                const image::Image<float>& picture, EAlbedoEstimation albedoEstimationMethod,
+                int albedoEstimationFilterSize, const std::string& outputFolder, IndexT viewId)
 {
-  vfs::filesystem fs;
   switch(albedoEstimationMethod)
   {
     case EAlbedoEstimation::CONSTANT:
@@ -247,7 +248,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
-      image::writeImage(fs, (fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage(fs, (vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -259,7 +260,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       oiio::ImageBuf K;
       oiio::ImageBufAlgo::make_kernel(K, "gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
-      image::writeImage(fs, (fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage(fs, (vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -376,7 +377,7 @@ int main(int argc, char** argv)
       image::Image<float> albedo, picture;
       image::readImage(fs, picturePath, picture, image::EImageColorSpace::LINEAR);
 
-      initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
+      initAlbedo(fs, albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
 
       estimator.addImage(albedo, picture, normals);
     }
@@ -385,7 +386,7 @@ int main(int argc, char** argv)
       image::Image<image::RGBfColor> albedo, picture;
       image::readImage(fs, picturePath, picture, image::EImageColorSpace::LINEAR);
 
-      initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
+      initAlbedo(fs, albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
 
       estimator.addImage(albedo, picture, normals);
     }
@@ -397,7 +398,7 @@ int main(int argc, char** argv)
       estimator.estimateLigthing(shl);
       estimator.clear(); // clear aggregate data
 
-      std::ofstream file((fs::path(outputFolder) / (std::to_string(viewId) + ".shl")).string());
+      std::ofstream file((vfs::path(outputFolder) / (std::to_string(viewId) + ".shl")).string());
       if(file.is_open())
         file << shl;
     }
@@ -413,7 +414,7 @@ int main(int argc, char** argv)
     lightingEstimation::LightingVector shl;
     estimator.estimateLigthing(shl);
 
-    std::ofstream file((fs::path(outputFolder) / ("global.shl")).string());
+    std::ofstream file((vfs::path(outputFolder) / ("global.shl")).string());
     if(file.is_open())
       file << shl;
   }
