@@ -187,6 +187,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_panoramaSeams.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_image
           aliceVision_sfmData
           aliceVision_sfmDataIO

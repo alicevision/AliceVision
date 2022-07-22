@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -40,7 +39,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
 
 bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shared_ptr<sfmData::View>> & views, const std::string & inputPath, const std::pair<int, int> & panoramaSize, int downscale)
 {
@@ -54,7 +52,7 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         IndexT viewId = viewIt->getViewId();
 
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
+        const std::string maskPath = (vfs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(fs, maskPath, mask);
@@ -66,7 +64,7 @@ bool computeWTALabels(image::Image<IndexT> & labels, const std::vector<std::shar
         const std::size_t offsetY = metadata.find("AliceVision:offsetY")->get_int() / downscale;
 
         // Load Weights
-        const std::string weightsPath = (fs::path(inputPath) / (std::to_string(viewId) + "_weight.exr")).string();
+        const std::string weightsPath = (vfs::path(inputPath) / (std::to_string(viewId) + "_weight.exr")).string();
         ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
         image::Image<float> weights;
         image::readImage(fs, weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
@@ -105,14 +103,14 @@ bool computeGCLabels(image::Image<IndexT>& labels, const std::vector<std::shared
         IndexT viewId = viewIt->getViewId();
 
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
+        const std::string maskPath = (vfs::path(inputPath) / (std::to_string(viewId) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(fs, maskPath, mask);
         image::downscaleImageInplace(mask, downscale);
 
         // Load Color
-        const std::string colorsPath = (fs::path(inputPath) / (std::to_string(viewId) + ".exr")).string();
+        const std::string colorsPath = (vfs::path(inputPath) / (std::to_string(viewId) + ".exr")).string();
         ALICEVISION_LOG_TRACE("Load colors with path " << colorsPath);
         image::Image<image::RGBfColor> colors;
         image::readImage(fs, colorsPath, colors, image::EImageColorSpace::NO_CONVERSION);
@@ -247,7 +245,7 @@ int aliceVision_main(int argc, char** argv)
     int downscaleFactor = 1;
     {
         const IndexT viewId = *sfmData.getValidViews().begin();
-        const std::string viewFilepath = (fs::path(warpingFolder) / (std::to_string(viewId) + ".exr")).string();
+        const std::string viewFilepath = (vfs::path(warpingFolder) / (std::to_string(viewId) + ".exr")).string();
         ALICEVISION_LOG_TRACE("Read panorama size from file: " << viewFilepath);
 
         oiio::ParamValueList metadata = image::readImageMetadata(fs, viewFilepath);
@@ -293,7 +291,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // Load mask
-        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
+        const std::string maskPath = (vfs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
         int width, height;
         image::readImageMetadata(fs, maskPath, width, height);
         width /= downscaleFactor;
