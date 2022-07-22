@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <aliceVision/vfs/fwd.hpp>
+
 // AliceVision does not support Eigen with alignment,
 // So ensure Eigen is used with the correct flags.
 #ifndef EIGEN_MAX_ALIGN_BYTES
@@ -465,7 +467,7 @@ void MeanAndVarianceAlongRows(const Mat &A,
                               Vec *mean_pointer,
                               Vec *variance_pointer);
 
-bool exportMatToTextFile(const Mat & mat, const std::string & filename,
+bool exportMatToTextFile(vfs::filesystem& fs, const Mat & mat, const std::string & filename,
                          const std::string & sPrefix = "A");
 
 inline int is_finite(const double val)

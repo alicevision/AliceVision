@@ -8,8 +8,8 @@
 
 #include "numeric.hpp"
 
-#include <iostream>
-#include <fstream>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <string>
 
 namespace aliceVision {
@@ -134,12 +134,11 @@ void MeanAndVarianceAlongRows(const Mat &A,
     }
 }
 
-bool exportMatToTextFile(const Mat & mat, const std::string & filename,
+bool exportMatToTextFile(vfs::filesystem& fs, const Mat & mat, const std::string & filename,
   const std::string & sPrefix)
 {
   bool bOk = false;
-  std::ofstream outfile;
-  outfile.open(filename.c_str(), std::ios_base::out);
+  auto outfile = fs.open_write_text(filename);
   if (outfile.is_open()) {
     outfile << sPrefix << "=[" << std::endl;
     for (int j=0; j < mat.rows(); ++j)  {
