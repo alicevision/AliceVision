@@ -216,7 +216,11 @@ void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCach
     }
 
     // update the cached camera container
-    ALICEVISION_LOG_TRACE("Add camera on device cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
+    if(deviceCamera.getGlobalCamId() < 0)
+      ALICEVISION_LOG_TRACE("Add camera on device cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ").");
+    else
+      ALICEVISION_LOG_TRACE("Add camera on device cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ")."
+                            << "Replace camera (id: " << deviceCamera.getGlobalCamId() << ", view id: " << mp.getViewId(deviceCamera.getGlobalCamId()) << ", downscale: " << deviceCamera.getDownscale() << ")");
 
     mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = imageCache.getImg_sync(globalCamId);
 
