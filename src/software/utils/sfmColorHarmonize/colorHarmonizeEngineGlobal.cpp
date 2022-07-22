@@ -144,7 +144,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     // Save the graph before cleaning:
     graph::exportToGraphvizData(
-      (vfs::path(_outputDirectory) / "input_graph_poor_supportRemoved").string(),
+      _fs, (vfs::path(_outputDirectory) / "input_graph_poor_supportRemoved").string(),
       putativeGraph.g);
   }
 
@@ -486,7 +486,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData((vfs::path(_outputDirectory) / "initialGraph" ).string(),putativeGraph.g );
+  graph::exportToGraphvizData(_fs, (vfs::path(_outputDirectory) / "initialGraph" ).string(),putativeGraph.g );
 
   return true;
 }
@@ -499,7 +499,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData((vfs::path(_outputDirectory) / "initialGraph").string(), putativeGraph.g);
+  graph::exportToGraphvizData(_fs, (vfs::path(_outputDirectory) / "initialGraph").string(), putativeGraph.g);
 
   const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
   std::cout << "\n"
@@ -557,7 +557,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   }
 
   // Save the graph after cleaning:
-  graph::exportToGraphvizData((vfs::path(_outputDirectory) / "cleanedGraph").string(), putativeGraph.g);
+  graph::exportToGraphvizData(_fs, (vfs::path(_outputDirectory) / "cleanedGraph").string(), putativeGraph.g);
 
   std::cout << "\n"
     << "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"

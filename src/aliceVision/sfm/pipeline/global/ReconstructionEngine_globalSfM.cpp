@@ -221,7 +221,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations(const rotationAver
         }
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
         graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
-        graph::exportToGraphvizData((vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+        graph::exportToGraphvizData(_fs, (vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
 
         /*
         using namespace htmlDocument;
@@ -660,7 +660,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       std::set<IndexT> set_ViewIds;
       std::transform(_sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
-      graph::exportToGraphvizData((vfs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
+      graph::exportToGraphvizData(_fs, (vfs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
     }
 
     // Log a relative pose graph
@@ -676,7 +676,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       }
       const std::string sGraph_name = "global_relative_rotation_pose_graph";
       graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
-      graph::exportToGraphvizData((vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+      graph::exportToGraphvizData(_fs, (vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
       /*
       using namespace htmlDocument;
       std::ostringstream os;

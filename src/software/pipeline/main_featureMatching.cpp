@@ -435,7 +435,7 @@ int aliceVision_main(int argc, char **argv)
 
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(mapPutativesMatches));
 
-      graph::exportToGraphvizData(
+      graph::exportToGraphvizData(_fs,
         (vfs::path(matchesFolder) / "putative_matches.dot").string(),
         putativeGraph.g);
     }
@@ -624,7 +624,7 @@ int aliceVision_main(int argc, char **argv)
       std::transform(sfmData.getViews().begin(), sfmData.getViews().end(),
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(finalMatches));
-      graph::exportToGraphvizData(
+      graph::exportToGraphvizData(fs,
         (vfs::path(matchesFolder) / "geometric_matches.dot").string(),
         putativeGraph.g);
     }
