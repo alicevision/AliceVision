@@ -404,8 +404,8 @@ int aliceVision_main(int argc, char** argv)
     const std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
     const std::string htmlOutput = (vfs::path(outputResponsePath).parent_path() / (std::string("response_") + methodName + std::string(".html"))).string();
 
-    response.write(outputResponsePath);
-    response.writeHtml(htmlOutput, "response");
+    response.write(fs, outputResponsePath);
+    response.writeHtml(fs, htmlOutput, "response");
 
     return EXIT_SUCCESS;
 }

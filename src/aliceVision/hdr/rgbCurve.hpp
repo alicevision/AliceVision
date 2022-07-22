@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/vfs/fwd.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <cassert>
@@ -96,9 +97,10 @@ public:
 
   /**
    * @brief rgbCurve constructor
+   * @param[in] fs Virtual file system handle
    * @param[in] path - filepath of an rgbCurve file
    */
-  explicit rgbCurve(const std::string &path);
+  explicit rgbCurve(vfs::filesystem& fs, const std::string &path);
 
   void resize(std::size_t newSize)
   {
@@ -309,19 +311,19 @@ public:
     * @brief Write in a csv file
     * @param[in] path
     */
-  void write(const std::string &path, const std::string &name = "rgbCurve") const;
+  void write(vfs::filesystem& fs, const std::string &path, const std::string &name = "rgbCurve") const;
 
   /**
   * @brief Write in an html file
   * @param[in] path
   */
-  void writeHtml(const std::string &path, const std::string& title) const;
+  void writeHtml(vfs::filesystem& fs, const std::string &path, const std::string& title) const;
 
   /**
     * @brief Read and fill curves from a csv file
     * @param[in] path
     */
-  void read(const std::string &path);
+  void read(vfs::filesystem& fs, const std::string &path);
 
   bool isEmpty() const
   {

@@ -261,7 +261,7 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_DEBUG("inputResponsePath: " << inputResponsePath);
 
     hdr::rgbCurve response(channelQuantization);
-    response.read(inputResponsePath);
+    response.read(fs, inputResponsePath);
 
     for(std::size_t g = rangeStart; g < rangeStart + rangeSize; ++g)
     {

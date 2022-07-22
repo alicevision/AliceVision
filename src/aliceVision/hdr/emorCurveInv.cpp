@@ -6,7 +6,6 @@
 
 #include "emorCurve.hpp"
 #include <functional>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 

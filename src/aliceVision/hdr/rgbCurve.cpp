@@ -6,13 +6,15 @@
 
 #include "rgbCurve.hpp"
 #include <functional>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <numeric>
 #include <limits>
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -29,9 +31,9 @@ rgbCurve::rgbCurve(std::size_t size)
     setZero();
 }
 
-rgbCurve::rgbCurve(const std::string &path)
+rgbCurve::rgbCurve(vfs::filesystem& fs, const std::string &path)
 {
-      read(path);
+      read(fs, path);
 }
 
 void rgbCurve::setFunction(EFunctionType functionType)
@@ -509,9 +511,9 @@ const rgbCurve rgbCurve::meanCurves() const
   return mean.multiply(float(1.f/nbChannels));
 }
 
-void rgbCurve::write(const std::string &path, const std::string &name) const
+void rgbCurve::write(vfs::filesystem& fs, const std::string& path, const std::string& name) const
 {
-    std::ofstream file(path);
+    auto file = fs.open_write_text(path);
 
     if(!file)
     {
@@ -532,7 +534,7 @@ void rgbCurve::write(const std::string &path, const std::string &name) const
     file.close();
 }
 
-void rgbCurve::writeHtml(const std::string& path, const std::string& title) const
+void rgbCurve::writeHtml(vfs::filesystem& fs, const std::string& path, const std::string& title) const
 {
     using namespace htmlDocument;
 
@@ -553,15 +555,15 @@ void rgbCurve::writeHtml(const std::string& path, const std::string& title) cons
     jsxGraph.close();
 
     // save the reconstruction Log
-    std::ofstream htmlFileStream(path.c_str());
+    auto htmlFileStream = fs.open_write_text(path);
     htmlFileStream << htmlDocumentStream(title).getDoc();
     htmlFileStream << jsxGraph.toStr();
 }
 
 
-void rgbCurve::read(const std::string &path)
+void rgbCurve::read(vfs::filesystem& fs, const std::string &path)
 {
-    std::ifstream file(path);
+    auto file = fs.open_read_text(path);
     std::vector <std::vector <std::string> > fileData;
 
     if(!file)
