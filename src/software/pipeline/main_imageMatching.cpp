@@ -18,7 +18,6 @@
 #include <Eigen/Core>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -38,7 +37,6 @@ using namespace aliceVision;
 using namespace aliceVision::voctree;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
@@ -848,11 +846,11 @@ int aliceVision_main(int argc, char** argv)
   }
 
   // check if the output folder exists
-  const auto basePath = fs::path(outputFile).parent_path();
-  if(!basePath.empty() && !fs::exists(basePath))
+  const auto basePath = vfs::path(outputFile).parent_path();
+  if(!basePath.empty() && !fs.exists(basePath))
   {
     // then create the missing folder
-    if(!fs::create_directories(basePath))
+    if (!fs.create_directories(basePath))
     {
       ALICEVISION_LOG_ERROR("Unable to create folders: " << basePath);
       return EXIT_FAILURE;
