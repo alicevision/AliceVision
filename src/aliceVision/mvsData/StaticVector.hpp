@@ -219,7 +219,7 @@ int indexOf(T* arr, int n, const T& what)
 }
 
 template <class T>
-void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*>* aa)
+void saveArrayOfArraysToFile(const std::string& fileName, StaticVector<StaticVector<T>*>* aa)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayOfArraysToFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "wb");
@@ -723,7 +723,7 @@ void loadArrayFromFileIntoArray(StaticVector<T>* a, const std::string& fileName,
     fclose(f);
 }
 
-int getArrayLengthFromFile(std::string fileName);
+int getArrayLengthFromFile(const std::string& fileName);
 
 template <class T>
 void deleteAllPointers(StaticVector<T*>& vec)
