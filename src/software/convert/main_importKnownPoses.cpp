@@ -59,7 +59,7 @@ struct XMPData
 };
 
 
-XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath, std::string stem, fs::directory_entry pathIt)
+XMPData read_xmp(const std::string& xmpFilepath, const std::string& knownPosesFilePath, const std::string& stem, fs::directory_entry pathIt)
 {
     XMPData xmp;
     const fs::path path = pathIt.path();
@@ -93,7 +93,7 @@ XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath,
     ALICEVISION_LOG_TRACE("stem: " << stem);
     ALICEVISION_LOG_TRACE("rotation: " << rotationStrings);
 
-    for(std::string rot_val : rotationStrings)
+    for (const auto& rot_val : rotationStrings)
     {
         xmp.rotation.push_back(std::stod(rot_val));
     }
@@ -111,7 +111,7 @@ XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath,
         boost::split(positionStrings, positionStr, boost::is_any_of(" \t"), boost::token_compress_on);
     }
 
-    for(std::string pos_val : positionStrings)
+    for (const auto& pos_val : positionStrings)
     {
         xmp.position.push_back(std::stod(pos_val));
     }
@@ -121,7 +121,7 @@ XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath,
     boost::split(distortionStrings, distortionStr, boost::is_any_of(" \t"), boost::token_compress_on);
     ALICEVISION_LOG_TRACE("distortion: " << distortionStrings);
 
-    for(std::string disto_val : distortionStrings)
+    for (const auto& disto_val : distortionStrings)
     {
         xmp.distortionCoefficients.push_back(std::stod(disto_val));
     }
