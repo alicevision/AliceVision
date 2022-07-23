@@ -17,8 +17,9 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -26,13 +27,10 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <iostream>
 #include <set>
 
 namespace aliceVision {
 namespace mvsUtils {
-
-namespace fs = boost::filesystem;
 
 MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& imagesFolder,
@@ -70,7 +68,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
               const int scale = (depthMapsFolder.empty() ? 0 : 1);
               path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap, scale);
           }
-          else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
+          else if(_imagesFolder != "/" && !_imagesFolder.empty() && vfs::is_directory(_imagesFolder) && !vfs::is_empty(_imagesFolder))
           {
             // find folder file extension
             std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder,
@@ -92,7 +90,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                     std::to_string(view.getViewId()) + "' in folder '" + _imagesFolder + "'.");
             }
 
-            path = _imagesFolder + std::to_string(view.getViewId()) + fs::path(paths[0]).extension().string();
+            path = _imagesFolder + std::to_string(view.getViewId()) + vfs::path(paths[0]).extension().string();
           }
 
           dimensions.emplace(view.getWidth(), view.getHeight());
@@ -119,7 +117,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         oiio::ParamValueList::const_iterator scaleIt = metadata.end();
         oiio::ParamValueList::const_iterator pIt = metadata.end();
         
-        const bool fileExists = fs::exists(imgParams.path);
+        const bool fileExists = vfs::exists(imgParams.path);
         if(fileExists)
         {
             imageIO::readImageMetadata(imgParams.path, metadata);
@@ -165,7 +163,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const std::string fileNameP = getFileNameFromIndex(*this, i, EFileType::P);
             const std::string fileNameD = getFileNameFromIndex(*this, i, EFileType::D);
 
-            if(fs::exists(fileNameP) && fs::exists(fileNameD))
+            if (vfs::exists(fileNameP) && vfs::exists(fileNameD))
             {
                 ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
 
@@ -232,10 +230,10 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
 void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& fileNameP, const std::string& fileNameD)
 {
-    if (!fs::exists(fileNameP))
+    if (!vfs::exists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
 
-    std::ifstream in{fileNameP};
+    vfs::istream in{fileNameP};
     char fc;
     in >> fc;
     if(fc == 'C') // FURUKAWA'S PROJCTION MATRIX FILE FORMAT
@@ -267,9 +265,9 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     iRArr[index] = RArr[index].inverse();
     iCamArr[index] = iRArr[index] * iKArr[index];
 
-    if (fs::exists(fileNameD))
+    if (vfs::exists(fileNameD))
     {
-        std::ifstream inD{fileNameD};
+        vfs::istream inD{fileNameD};
         inD >> FocK1K2Arr[index].x >> FocK1K2Arr[index].y >> FocK1K2Arr[index].z;
     }
 }
