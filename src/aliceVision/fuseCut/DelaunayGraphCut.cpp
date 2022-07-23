@@ -19,14 +19,13 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include "nanoflann.hpp"
 
 #include <geogram/points/kd_tree.h>
-
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/operations.hpp>
 
 #include <random>
 #include <stdexcept>
@@ -38,8 +37,6 @@
 
 namespace aliceVision {
 namespace fuseCut {
-
-namespace bfs = boost::filesystem;
 
 // #define USE_GEOGRAM_KDTREE 1
 
@@ -308,7 +305,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
             // If we have a simMap in input use it,
             // else init with a constant value.
-            if(boost::filesystem::exists(simMapFilepath))
+            if (vfs::exists(simMapFilepath))
             {
                 imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
@@ -466,7 +463,7 @@ void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& 
 
     long t1 = clock();
 
-    // std::ofstream oFileT(fileNameDh.c_str());
+    // vfs::ostream oFileT(fileNameDh.c_str());
     // oFileT << *_tetrahedralization; // TODO GEOGRAM
 
     mvsUtils::printfElapsedTime(t1);
@@ -1102,7 +1099,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 const std::string simMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::simMap, 0);
                 // If we have a simMap in input use it,
                 // else init with a constant value.
-                if(boost::filesystem::exists(simMapFilepath))
+                if (vfs::exists(simMapFilepath))
                 {
                     imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                     if(wTmp != width || hTmp != height)
@@ -1122,7 +1119,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap, 0);
                 // If we have an nModMap in input (from depthmapfilter) use it,
                 // else init with a constant value.
-                if(boost::filesystem::exists(nmodMapFilepath))
+                if (vfs::exists(nmodMapFilepath))
                 {
                     imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
                                        imageIO::EImageColorSpace::NO_CONVERSION);
@@ -3787,7 +3784,7 @@ void DelaunayGraphCut::exportDebugMesh(const std::string& filename, const Point3
         mesh->tris.push_back(t);
     }
 
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = vfs::temp_directory_path().generic_string();
     mesh->save(tempDirPath + "/" + filename);
     meshf->save(tempDirPath + "/" + filename);
 }
@@ -3852,7 +3849,7 @@ void DelaunayGraphCut::exportBackPropagationMesh(const std::string& filename, st
 
 void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t& sizeLimit)
 {
-    assert(boost::filesystem::path(filePath).extension().string() == std::string(".csv"));
+    assert(vfs::path(filePath).extension().string() == std::string(".csv"));
 
     const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
     std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
@@ -3861,7 +3858,7 @@ void DelaunayGraphCut::writeScoreInCsv(const std::string& filePath, const size_t
     std::iota(idx.begin(), idx.end(), 0);
     std::shuffle(idx.begin(), idx.end(), generator);
 
-    std::ofstream csv(filePath);
+    vfs::ostream csv(filePath);
     const char sep = ','; // separator
     csv << "fullnessScore" << sep <<
         "emptinessScore" << sep <<

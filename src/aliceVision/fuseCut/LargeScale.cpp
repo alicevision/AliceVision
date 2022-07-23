@@ -9,13 +9,12 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
-
-namespace bfs = boost::filesystem;
 
 LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _spaceFolderName)
   : mp(_mp)
@@ -23,8 +22,8 @@ LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _space
   , spaceVoxelsFolderName(_spaceFolderName + "_data/")
   , spaceFileName(spaceFolderName + "/space.txt")
 {
-    bfs::create_directory(spaceFolderName);
-    bfs::create_directory(spaceVoxelsFolderName);
+    vfs::create_directory(spaceFolderName);
+    vfs::create_directory(spaceVoxelsFolderName);
 
     doVisualize = mp->userParams.get<bool>("LargeScale.doVisualizeOctreeTracks", false);
 }
@@ -35,12 +34,12 @@ LargeScale::~LargeScale()
 
 bool LargeScale::isSpaceSaved()
 {
-    return bfs::exists(spaceFileName);
+    return vfs::exists(spaceFileName);
 }
 
 void LargeScale::saveSpaceToFile()
 {
-    std::ofstream out(spaceFileName);
+    vfs::ostream out(spaceFileName);
     out << space[0].x << " " << space[1].x << " " << space[2].x << " " << space[3].x << " "
         << space[4].x << " " << space[5].x << " " << space[6].x << " " << space[7].x << "\n";
 
@@ -56,7 +55,7 @@ void LargeScale::saveSpaceToFile()
 
 void LargeScale::loadSpaceFromFile()
 {
-    std::ifstream in(spaceFileName);
+    vfs::istream in(spaceFileName);
     in >> space[0].x >> space[1].x >> space[2].x >> space[3].x
        >> space[4].x >> space[5].x >> space[6].x >> space[7].x;
 
@@ -170,7 +169,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         ReconstructionPlan->reserve(1000000);
 
         std::string tmpdir = spaceFolderName + "tmp/";
-        bfs::create_directory(tmpdir);
+        vfs::create_directory(tmpdir);
         VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, tmpdir, doVisualize);
         int maxlevel = 0;
         vg->generateTracksForEachVoxel(ReconstructionPlan, maxOcTreeDim, maxPts, 1, maxlevel, depthMapsPtsSimsTmpDir);
@@ -192,7 +191,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         delete vgnew;
         delete vg;
 
-        bfs::remove_all(tmpdir);
+        vfs::remove_all(tmpdir);
 
         deleteTempPtsSimsFiles(*mp, depthMapsPtsSimsTmpDir);
 

@@ -7,8 +7,7 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/math/constants/constants.hpp>
 
@@ -81,7 +80,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     for (int i = 0; i < cams.size(); ++i)
         cams[i] = i;
     
-    const std::string tempDirPath = boost::filesystem::temp_directory_path().generic_string();
+    const std::string tempDirPath = vfs::temp_directory_path().generic_string();
     
     DelaunayGraphCut delaunayGC(mp);
     ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");

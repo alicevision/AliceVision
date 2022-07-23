@@ -11,13 +11,10 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
-
-namespace bfs = boost::filesystem;
 
 VoxelsGrid::VoxelsGrid()
 {
@@ -34,10 +31,10 @@ VoxelsGrid::VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::Multi
     }
     voxels = mvsUtils::computeVoxels(space, dimensions);
     spaceRootDir = _spaceRootDir;
-    bfs::create_directory(spaceRootDir);
+    vfs::create_directory(spaceRootDir);
 
     spaceCamsTracksDir = _spaceRootDir + "camsTracks/";
-    bfs::create_directory(spaceCamsTracksDir);
+    vfs::create_directory(spaceCamsTracksDir);
 }
 
 VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
@@ -58,10 +55,10 @@ VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
         out->space[k] = space[k];
     }
     out->spaceRootDir = _spaceRootDir;
-    bfs::create_directory(out->spaceRootDir);
+    vfs::create_directory(out->spaceRootDir);
 
     out->spaceCamsTracksDir = _spaceRootDir + "camsTracks/";
-    bfs::create_directory(out->spaceCamsTracksDir);
+    vfs::create_directory(out->spaceCamsTracksDir);
 
     return out;
 }
@@ -136,17 +133,17 @@ std::string VoxelsGrid::getVoxelFolderName(int id) const
     const Voxel v = getVoxelForId(id);
     // std::string fnx = spaceRootDir + "X"+num2str(v.x)+"/";
     // std::string fnxyz = fnx + "Y"+num2str(v.y)+"Z"+num2str(v.z)+"/";
-    // bfs::create_directory(fnx);
-    // bfs::create_directory(fnxyz);
+    // vfs::create_directory(fnx);
+    // vfs::create_directory(fnxyz);
 
     std::string fnxyz = spaceRootDir + "X" + mvsUtils::num2str(v.x) + "Y" + mvsUtils::num2str(v.y) + "Z" + mvsUtils::num2str(v.z) + "/";
-    // bfs::create_directory(fnxyz);
+    // vfs::create_directory(fnxyz);
 
-    // if (bfs::is_directory(fnx)==false) {
+    // if (vfs::is_directory(fnx)==false) {
     //	printf("Warning folder %s does not exist!\n",fnx.c_str());
     //}
 
-    // if (bfs::is_directory(fnxyz)==false) {
+    // if (vfs::is_directory(fnxyz)==false) {
     //	printf("Warning folder %s does not exist!\n",fnxyz.c_str());
     //}
 
@@ -162,7 +159,7 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     const std::string fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
     const std::string fileNameTracksStat = folderName + "tracksGridStat.bin";
 
-    if (!bfs::exists(fileNameTracksPts))
+    if (!vfs::exists(fileNameTracksPts))
         return nullptr;
 
     StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(fileNameTracksStat); // minPixSize, minSim, npts
@@ -202,8 +199,8 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
 
     std::string folderName = getVoxelFolderName(id);
 
-    bfs::create_directory(folderName);
-    if (!bfs::is_directory(folderName))
+    vfs::create_directory(folderName);
+    if (!vfs::is_directory(folderName))
     {
         ALICEVISION_LOG_WARNING("Folder '" << folderName << "' does not exist.");
     }
@@ -338,7 +335,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         std::string folderName = getVoxelFolderName(i);
         // std::string subfn = folderName + "sub/";
         std::string subfn = folderName;
-        bfs::create_directory(subfn);
+        vfs::create_directory(subfn);
 
         // create file that indicates that the voxel has subvoxels
         std::string subfnFileMark = folderName + "sub.txt";
@@ -383,8 +380,8 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
         Voxel subLU = LU + v * ns;
         Voxel subRD = LU + (v + 1) * ns;
 
-        // if (bfs::is_directory(subfn)==true)
-        if (bfs::exists(subfnFileMark))
+        // if (vfs::is_directory(subfn)==true)
+        if (vfs::exists(subfnFileMark))
         {
             VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, subfn, doVisualize);
             vgrec->generateSpace(vgnew, subLU, subRD, depthMapsPtsSimsTmpDir);
@@ -479,7 +476,7 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
 
-    if (bfs::exists(fileNameTracksPts))
+    if (vfs::exists(fileNameTracksPts))
     {
         OctreeTracks* ott =
             new OctreeTracks(&(*voxels)[voxelId * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
@@ -525,7 +522,7 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
 
-    if (bfs::exists(fileNameTracksPts))
+    if (vfs::exists(fileNameTracksPts))
     {
         StaticVector<int>* tcams;
         StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
@@ -579,7 +576,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
         // printf("SAVING %i-th VOXEL POINTS TO CAMS FILES\n",i);
 
-        if (bfs::exists(fileNameTracksPts))
+        if (vfs::exists(fileNameTracksPts))
         {
             StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
             StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
@@ -635,7 +632,7 @@ void VoxelsGrid::vizualize()
     {
         std::string subFoldeName = getVoxelFolderName(i);
         std::string fname = subFoldeName + "tracks.wrl";
-        if (bfs::is_directory(subFoldeName.c_str()))
+        if (vfs::is_directory(subFoldeName.c_str()))
         {
             fprintf(f, "Inline{ url [\"%s\"] \n }\n", fname.c_str());
         }
