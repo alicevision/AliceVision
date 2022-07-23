@@ -8,8 +8,7 @@
 #include "SfMData.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -17,8 +16,6 @@ namespace sfmData {
 using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
-
-namespace fs = boost::filesystem;
 
 SfMData::SfMData()
 {
@@ -126,11 +123,11 @@ std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folde
   absolutePaths.reserve(folders.size());
   for(const auto& folder: folders)
   {
-    const fs::path f = fs::absolute(folder, fs::path(absolutePath).parent_path());
-    if(fs::exists(f))
+    const vfs::path f = vfs::absolute(folder, vfs::path(absolutePath).parent_path());
+    if (vfs::exists(f))
     {
-      // fs::canonical can only be used if the path exists
-      absolutePaths.push_back(fs::canonical(f).string());
+      // vfs::canonical can only be used if the path exists
+      absolutePaths.push_back(vfs::canonical(f).string());
     }
     else
     {
@@ -152,9 +149,9 @@ void addAsRelativeFolders(std::vector<std::string>& dst, const std::vector<std::
   for(auto folderPath: folders) 
   {
     // if absolutePath is set, convert to relative path
-    if(!absolutePath.empty() && fs::path(folderPath).is_absolute())
+    if(!absolutePath.empty() && vfs::path(folderPath).is_absolute())
     {
-      folderPath = fs::relative(folderPath, fs::path(absolutePath).parent_path()).string();
+      folderPath = vfs::relative(folderPath, vfs::path(absolutePath).parent_path()).string();
     }
     // add path only if not already in dst
     if(std::find(dst.begin(), dst.end(), folderPath) == dst.end())

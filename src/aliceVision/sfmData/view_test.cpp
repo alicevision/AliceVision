@@ -7,7 +7,6 @@
 #include <boost/test/unit_test.hpp>
 
 using namespace aliceVision;
-namespace fs = boost::filesystem;
 
 BOOST_AUTO_TEST_CASE(View_Metadata)
 {

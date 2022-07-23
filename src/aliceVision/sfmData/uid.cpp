@@ -8,12 +8,9 @@
 #include "uid.hpp"
 
 #include <aliceVision/sfmData/View.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp> 
-#include <boost/filesystem.hpp>
-
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfmData {
@@ -21,7 +18,7 @@ namespace sfmData {
 std::size_t computeViewUID(const View& view)
 {
   std::size_t uid = 0;
-  const fs::path imagePath = view.getImagePath();
+  const vfs::path imagePath = view.getImagePath();
 
   {
       std::string ext = imagePath.extension().string();
@@ -85,7 +82,7 @@ std::size_t computeViewUID(const View& view)
   else
   {
     // if no original date/time, fallback to the file date/time
-    std::time_t t = fs::last_write_time(imagePath);
+    std::time_t t = vfs::last_write_time(imagePath);
     stl::hash_combine(uid, t);
   }
 
