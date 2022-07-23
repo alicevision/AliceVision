@@ -17,6 +17,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
@@ -162,7 +163,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, co
         }
     }
 
-    std::ofstream file;
+    vfs::ostream file;
     file.open(filepath, std::ios_base::app);
     if (file.is_open())
         file << ss.str();

@@ -21,12 +21,8 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
-#include <boost/filesystem.hpp>
-
 namespace aliceVision {
 namespace depthMap {
-
-namespace bfs = boost::filesystem;
 
 Refine::Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
     : _rc(rc)
