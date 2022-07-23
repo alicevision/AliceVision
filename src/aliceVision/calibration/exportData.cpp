@@ -9,13 +9,13 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
+
 
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include <boost/filesystem/path.hpp>
-
-#include <fstream>
 #include <iostream>
 #include <ctime>
 #include <cstdio>
@@ -54,7 +54,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
     // drawChessboardCorners(view, boardSize, cv::Mat(pointbuf), found);
 
     aliceVision::camera::UndistortImage(inputImage, &camera, outputImage, static_cast<unsigned char>(0));
-    const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
+    const vfs::path imagePath = vfs::path(debugFolder) / (std::to_string(currentFrame) + suffix);
     aliceVision::image::writeImage(imagePath.string(), outputImage, image::EImageColorSpace::AUTO);
   }
   ALICEVISION_LOG_DEBUG("... finished");
@@ -107,7 +107,7 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
                                 const cv::Mat& distCoeffs,
                                 const std::string& filename)
 {
-  std::ofstream fs(filename, std::ios::out);
+  vfs::ostream fs(filename);
   if (!fs.is_open())
   {
     ALICEVISION_LOG_WARNING("Unable to create the calibration file " << filename);
