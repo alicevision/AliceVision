@@ -9,6 +9,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -28,15 +30,11 @@
 
 // Command line parameters
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 
 #include <sstream>
-
-#include <fstream>
-
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -46,7 +44,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -271,14 +268,14 @@ int aliceVision_main(int argc, char** argv)
             metadata.push_back(oiio::ParamValue("AliceVision:meanNbUsedBrackets", extract::mean(acc_nbUsedBrackets)));
             metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
 
-            image::writeImage((fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
+            image::writeImage((vfs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
                               selectedPixels, image::EImageColorSpace::AUTO, metadata);
 
         }
 
         // Store to file
-        const std::string samplesFilepath = (fs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
-        std::ofstream fileSamples(samplesFilepath, std::ios::binary);
+        const std::string samplesFilepath = (vfs::path(outputFolder) / (std::to_string(groupIdx) + "_samples.dat")).string();
+        vfs::ostream fileSamples(samplesFilepath, std::ios::binary);
         if (!fileSamples.is_open())
         {
             ALICEVISION_LOG_ERROR("Impossible to write samples");

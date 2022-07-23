@@ -446,6 +446,7 @@ alicevision_add_software(aliceVision_LdrToHdrSampling
   SOURCE main_LdrToHdrSampling.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_hdr
         aliceVision_sfmData
