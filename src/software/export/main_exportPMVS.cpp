@@ -9,9 +9,10 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -19,7 +20,6 @@
 #include <cmath>
 #include <iterator>
 #include <iomanip>
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -33,7 +33,6 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 bool exportToPMVSFormat(
   const SfMData & sfm_data,
@@ -44,21 +43,21 @@ bool exportToPMVSFormat(
   )
 {
   bool bOk = true;
-  if (!fs::exists(sOutDirectory))
+  if (!vfs::exists(sOutDirectory))
   {
-    fs::create_directory(sOutDirectory);
-    bOk = fs::is_directory(sOutDirectory);
+    vfs::create_directory(sOutDirectory);
+    bOk = vfs::is_directory(sOutDirectory);
   }
 
   // Create basis folder structure
-  fs::create_directory(fs::path(sOutDirectory) / std::string("models"));
-  fs::create_directory(fs::path(sOutDirectory) / std::string("txt"));
-  fs::create_directory(fs::path(sOutDirectory) / std::string("visualize"));
+  vfs::create_directory(vfs::path(sOutDirectory) / std::string("models"));
+  vfs::create_directory(vfs::path(sOutDirectory) / std::string("txt"));
+  vfs::create_directory(vfs::path(sOutDirectory) / std::string("visualize"));
 
   if (bOk &&
-      fs::is_directory(fs::path(sOutDirectory) / std::string("models")) &&
-      fs::is_directory(fs::path(sOutDirectory) / std::string("txt")) &&
-      fs::is_directory(fs::path(sOutDirectory) / std::string("visualize")))
+      vfs::is_directory(vfs::path(sOutDirectory) / std::string("models")) &&
+      vfs::is_directory(vfs::path(sOutDirectory) / std::string("txt")) &&
+      vfs::is_directory(vfs::path(sOutDirectory) / std::string("visualize")))
   {
     bOk = true;
   }
@@ -99,7 +98,7 @@ bool exportToPMVSFormat(
       const Mat34 P = camPinHole->getProjectiveEquivalent(pose);
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      std::ofstream file((fs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
+      vfs::ostream file((vfs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
       file << "CONTOUR" << os.widen('\n')
         << P.row(0) <<"\n"<< P.row(1) <<"\n"<< P.row(2) << os.widen('\n');
       file.close();
@@ -120,7 +119,7 @@ bool exportToPMVSFormat(
       const std::string srcImage = view->getImagePath();
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      const std::string dstImage = (fs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
+      const std::string dstImage = (vfs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if (cam->isValid() && cam->hasDistortion())
       {
@@ -132,10 +131,10 @@ bool exportToPMVSFormat(
       else // (no distortion)
       {
         // copy the image if extension match
-        if (fs::extension(srcImage) == ".JPG" ||
-          fs::extension(srcImage) == ".jpg")
+        if (vfs::path(srcImage).extension().string() == ".JPG" ||
+          vfs::path(srcImage).extension().string() == ".jpg")
         {
-          fs::copy_file(srcImage, dstImage);
+          vfs::copy_file(srcImage, dstImage);
         }
         else
         {
@@ -203,12 +202,12 @@ bool exportToPMVSFormat(
         }
         osVisData << os.widen('\n');
       }
-      std::ofstream file((fs::path(sOutDirectory) / "vis.dat").string());
+      vfs::ostream file((vfs::path(sOutDirectory) / "vis.dat").string());
       file << osVisData.str();
       file.close();
     }
 
-    std::ofstream file((fs::path(sOutDirectory) / "pmvs_options.txt").string());
+    vfs::ostream file((vfs::path(sOutDirectory) / "pmvs_options.txt").string());
     file << os.str();
     file.close();
   }
@@ -220,8 +219,8 @@ bool exportToBundlerFormat(
   const std::string & sOutFile, //Output Bundle.rd.out file
   const std::string & sOutListFile)  //Output Bundler list.txt file
 {
-  std::ofstream os(sOutFile.c_str()	);
-  std::ofstream osList(sOutListFile.c_str()	);
+  vfs::ostream os(sOutFile.c_str()	);
+  vfs::ostream osList(sOutListFile.c_str()	);
   if (! os.is_open() || ! osList.is_open())
   {
     return false;
@@ -282,7 +281,7 @@ bool exportToBundlerFormat(
             << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
             << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
 
-          osList << fs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
+          osList << vfs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
         }
         else 
         {
@@ -388,8 +387,8 @@ int aliceVision_main(int argc, char *argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
+  if (!vfs::exists(outputFolder))
+    vfs::create_directory(outputFolder);
 
   SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -401,16 +400,16 @@ int aliceVision_main(int argc, char *argv[])
 
   {
     exportToPMVSFormat(sfmData,
-      (fs::path(outputFolder) / std::string("PMVS")).string(),
+      (vfs::path(outputFolder) / std::string("PMVS")).string(),
       resolution,
       nbCore,
       useVisData);
 
     exportToBundlerFormat(sfmData,
-      (fs::path(outputFolder) /
+      (vfs::path(outputFolder) /
       std::string("PMVS") /
       std::string("bundle.rd.out")).string(),
-      (fs::path(outputFolder) /
+      (vfs::path(outputFolder) /
       std::string("PMVS") /
       std::string("list.txt")).string());
 
