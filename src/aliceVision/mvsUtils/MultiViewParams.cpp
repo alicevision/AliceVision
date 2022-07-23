@@ -73,8 +73,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
             // find folder file extension
-            std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder, 
-                [&view](const fs::path& path) 
+            std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder,
+                [&view](const vfs::path& path)
                 {
                     return (path.stem() == std::to_string(view.getViewId()) && (imageIO::isSupportedUndistortFormat(path.extension().string())));
                 }

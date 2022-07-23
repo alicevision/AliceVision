@@ -6,13 +6,12 @@
 
 #pragma once
 
-#include "boost/filesystem.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/directory_iterator.hpp>
 
 #include <vector>
 #include <string>
 #include <functional>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace utils {
@@ -23,19 +22,19 @@ namespace utils {
  * @return the paths list to the corresponding files if they validate the predicate, otherwise it returns an empty list.
  */
 inline std::vector<std::string> getFilesPathsFromFolder(const std::string& folder,
-                                                 const std::function<bool(const boost::filesystem::path&)>& predicate)
+                                                        const std::function<bool(const vfs::path&)>& predicate)
 {
     // Get all files paths in folder
     std::vector<std::string> paths;
 
     // If the path isn't a folder path
-    if(!fs::is_directory(folder))
+    if (!vfs::is_directory(folder))
         throw std::invalid_argument("The path '" + folder + "' is not a valid folder path.");
 
-    for(const auto& pathIt : fs::directory_iterator(folder))
+    for (const auto& pathIt : vfs::directory_iterator(folder))
     {
-        const fs::path path = pathIt.path();
-        if(is_regular_file(path) && predicate(path))
+        const vfs::path path = pathIt.path();
+        if (vfs::is_regular_file(path) && predicate(path))
             paths.push_back(path.generic_string());
     }
 
@@ -49,7 +48,7 @@ inline std::vector<std::string> getFilesPathsFromFolder(const std::string& folde
  * @return the paths list to the corresponding files if they validate the predicate, otherwise it returns an empty list.
  */
 inline std::vector<std::string> getFilesPathsFromFolders(const std::vector<std::string>& folders,
-                                                  const std::function<bool(const boost::filesystem::path&)>& predicate)
+                                                         const std::function<bool(const vfs::path&)>& predicate)
 {
     std::vector<std::string> paths;
     for(const std::string& folder : folders)
