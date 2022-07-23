@@ -271,6 +271,7 @@ alicevision_add_software(aliceVision_utils_lightingEstimation
   SOURCE main_lightingEstimation.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_numeric
         aliceVision_sfmData
         aliceVision_sfmDataIO

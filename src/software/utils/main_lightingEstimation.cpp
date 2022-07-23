@@ -13,12 +13,13 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/lightingEstimation/lightingEstimation.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo_util.h>
 
 #include <boost/program_options.hpp> 
-#include <boost/filesystem.hpp>
 
 #include <string>
 #include <vector>
@@ -31,7 +32,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 enum class EAlbedoEstimation
 {
@@ -205,7 +205,7 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage((vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -216,7 +216,7 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage((vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -244,7 +244,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage((vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -255,7 +255,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+      image::writeImage((vfs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
                         image::EImageColorSpace::AUTO);
     }
     break;
@@ -392,7 +392,7 @@ int main(int argc, char** argv)
       estimator.estimateLigthing(shl);
       estimator.clear(); // clear aggregate data
 
-      std::ofstream file((fs::path(outputFolder) / (std::to_string(viewId) + ".shl")).string());
+      vfs::ostream file((vfs::path(outputFolder) / (std::to_string(viewId) + ".shl")).string());
       if(file.is_open())
         file << shl;
     }
@@ -408,7 +408,7 @@ int main(int argc, char** argv)
     lightingEstimation::LightingVector shl;
     estimator.estimateLigthing(shl);
 
-    std::ofstream file((fs::path(outputFolder) / ("global.shl")).string());
+    vfs::ostream file((vfs::path(outputFolder) / ("global.shl")).string());
     if(file.is_open())
       file << shl;
   }
