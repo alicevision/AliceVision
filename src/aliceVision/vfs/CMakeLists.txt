@@ -2,12 +2,16 @@
 set(vfs_files_headers
     boost_common.hpp
     filesystem.hpp
+    istream.hpp
+    ostream.hpp
     path.hpp
 )
 
 # Sources
 set(vfs_files_sources
     filesystem.cpp
+    istream.cpp
+    ostream.cpp
     path.cpp
 )
 
