@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/config.hpp>
 
 #include <software/utils/precisionEvaluationToGt.hpp>
@@ -18,7 +19,6 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <iostream>
@@ -31,7 +31,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -97,8 +96,8 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
+  if (!vfs::exists(outputFolder))
+    vfs::create_directory(outputFolder);
 
   // load GT camera rotations & positions [R|C]:
   std::mt19937 randomNumberGenerator;
@@ -152,14 +151,14 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // visual output of the camera location
-  plyHelper::exportToPly(vec_camPosGT, (fs::path(outputFolder) / "camGT.ply").string());
-  plyHelper::exportToPly(vec_C, (fs::path(outputFolder) / "camComputed.ply").string());
+  plyHelper::exportToPly(vec_camPosGT, (vfs::path(outputFolder) / "camGT.ply").string());
+  plyHelper::exportToPly(vec_C, (vfs::path(outputFolder) / "camComputed.ply").string());
 
   // evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
   EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, randomNumberGenerator, &_htmlDocStream);
 
-  std::ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
+  std::ofstream htmlFileStream((vfs::path(outputFolder) / "ExternalCalib_Report.html").string());
   htmlFileStream << _htmlDocStream.getDoc();
 
   return EXIT_SUCCESS;
