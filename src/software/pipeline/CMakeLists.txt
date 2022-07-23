@@ -472,6 +472,7 @@ alicevision_add_software(aliceVision_LdrToHdrMerge
   SOURCE main_LdrToHdrMerge.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         aliceVision_hdr
         aliceVision_sfmData
