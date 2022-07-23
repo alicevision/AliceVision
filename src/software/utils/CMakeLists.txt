@@ -81,7 +81,8 @@ alicevision_add_software(aliceVision_utils_voctreeCreation
 alicevision_add_software(aliceVision_utils_voctreeQueryUtility
   SOURCE main_voctreeQueryUtility.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
-  LINKS aliceVision_voctree
+  LINKS aliceVision_vfs
+        aliceVision_voctree
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
