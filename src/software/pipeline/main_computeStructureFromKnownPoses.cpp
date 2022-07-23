@@ -14,10 +14,10 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -27,7 +27,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 /// Compute the structure of a scene according existing camera poses.
 int aliceVision_main(int argc, char **argv)
@@ -178,10 +177,10 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "\t- # landmarks found: " << sfmData.getLandmarks().size());
 
-  if(fs::extension(outSfMDataFilename) != ".ply")
+  if (vfs::path(outSfMDataFilename).extension().string() != ".ply")
   {
     sfmDataIO::Save(sfmData,
-         (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
+         (vfs::path(outSfMDataFilename).parent_path() / (vfs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
          sfmDataIO::ESfMData::ALL);
   }
 
