@@ -210,6 +210,7 @@ alicevision_add_software(aliceVision_utils_sfmLocalization
   SOURCE main_sfmLocalization.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData

@@ -15,9 +15,10 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -29,7 +30,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 // Image localization API sample:
 // - Allow to locate an image to an existing SfM_reconstruction
@@ -163,8 +163,8 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-    if (!fs::exists(outputFolder))
-      fs::create_directory(outputFolder);
+    if (!vfs::exists(outputFolder))
+      vfs::create_directory(outputFolder);
     
     if(!localizer.Init(sfmData, regionsPerView))
     {
@@ -234,9 +234,9 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // export the found camera position
-  const std::string out_file_name = (fs::path(outputFolder) / "found_pose_centers.ply").string();
+  const std::string out_file_name = (vfs::path(outputFolder) / "found_pose_centers.ply").string();
   {
-    std::ofstream outfile;
+    vfs::ostream outfile;
     outfile.open(out_file_name.c_str(), std::ios_base::out);
     if (outfile.is_open()) {
       outfile << "ply"
