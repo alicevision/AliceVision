@@ -1,6 +1,8 @@
 # Headers
 set(vfs_files_headers
     boost_common.hpp
+    directory_entry.hpp
+    directory_iterator.hpp
     filesystem.hpp
     istream.hpp
     ostream.hpp
@@ -9,6 +11,8 @@ set(vfs_files_headers
 
 # Sources
 set(vfs_files_sources
+    directory_entry.cpp
+    directory_iterator.cpp
     filesystem.cpp
     istream.cpp
     ostream.cpp
