@@ -11,6 +11,8 @@
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/oiioProxy.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -18,7 +20,6 @@
 
 #include <aliceVision/half.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <iostream>
@@ -29,9 +30,6 @@
 #include <stdexcept>
 #include <memory>
 #include <string>
-
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 
@@ -164,7 +162,14 @@ void readImageSpec(const std::string& path,
                    int& nchannels)
 {
   ALICEVISION_LOG_DEBUG("[IO] Read Image Spec: " << path);
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+
+  std::unique_ptr<image::VfsIOReadProxy> ioproxy;
+  if (vfs::is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<image::VfsIOReadProxy>(path);
+  }
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, nullptr, ioproxy.get()));
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
@@ -181,7 +186,14 @@ void readImageSpec(const std::string& path,
 void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata)
 {
   ALICEVISION_LOG_DEBUG("[IO] Read Image Metadata: " << path);
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+
+  std::unique_ptr<image::VfsIOReadProxy> ioproxy;
+  if (vfs::is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<image::VfsIOReadProxy>(path);
+  }
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, nullptr, ioproxy.get()));
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
@@ -229,7 +241,12 @@ void readImage(const std::string& path,
     configSpec.attribute("raw:ColorSpace", "Linear");   // want linear colorspace with sRGB primaries
 #endif
 
-    oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+    std::unique_ptr<image::VfsIOReadProxy> ioproxy;
+    if (vfs::is_virtual_path(path))
+    {
+      ioproxy = std::make_unique<image::VfsIOReadProxy>(path);
+    }
+    oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec, ioproxy.get());
 
     inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
@@ -387,9 +404,9 @@ void writeImage(const std::string& path,
                 OutputFileColorSpace colorspace,
                 const oiio::ParamValueList& metadata)
 {
-    const fs::path bPath = fs::path(path);
+    const vfs::path bPath = vfs::path(path);
     const std::string extension = bPath.extension().string();
-    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + vfs::unique_path().string() + extension;
     const bool isEXR = (extension == ".exr");
     //const bool isTIF = (extension == ".tif");
     const bool isJPG = (extension == ".jpg");
@@ -415,8 +432,8 @@ void writeImage(const std::string& path,
     imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
     imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
 
-    const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(buffer.data())); // original image buffer
-    const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+    oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(buffer.data())); // original image buffer
+    oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
     imageAlgo::colorconvert(colorspaceBuf, *outBuf, colorspace.from, colorspace.to);
@@ -429,12 +446,19 @@ void writeImage(const std::string& path,
       outBuf = &formatBuf;
     }
 
+    std::unique_ptr<image::VfsIOWriteProxy> ioproxy;
+    if (vfs::is_virtual_path(tmpPath))
+    {
+      ioproxy = std::make_unique<image::VfsIOWriteProxy>(tmpPath);
+      outBuf->set_write_ioproxy(ioproxy.get());
+    }
+
     // write image
     if(!outBuf->write(tmpPath))
       throw std::runtime_error("Can't write output image file '" + path + "'.");
 
     // rename temporary filename
-    fs::rename(tmpPath, path);
+    vfs::rename(tmpPath, path);
 }
 
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
