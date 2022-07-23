@@ -13,10 +13,10 @@
 #include <aliceVision/stl/regex.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <string>
@@ -31,7 +31,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 // convert from a SfMData format to another
 int aliceVision_main(int argc, char **argv)
@@ -160,8 +159,8 @@ int aliceVision_main(int argc, char **argv)
       for(std::size_t i = 0; i < imageWhiteList.size(); ++i)
       {
         // Compare to filename, stem (filename without extension), view UID or regex on the full path
-        if (imageWhiteList[i] == fs::path(view.getImagePath()).filename() ||
-            imageWhiteList[i] == fs::path(view.getImagePath()).stem() ||
+        if (imageWhiteList[i] == vfs::path(view.getImagePath()).filename().string() ||
+            imageWhiteList[i] == vfs::path(view.getImagePath()).stem().string() ||
             imageWhiteList[i] == std::to_string(view.getViewId()) ||
             std::regex_match(view.getImagePath(), imageWhiteRegexList[i])
             )

@@ -11,10 +11,11 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <string>
@@ -37,7 +38,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace json = boost::property_tree;
-namespace fs = boost::filesystem;
 
 
 struct XMPData
@@ -59,11 +59,11 @@ struct XMPData
 };
 
 
-XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath, std::string stem, fs::directory_entry pathIt)
+XMPData read_xmp(const std::string& xmpFilepath, std::string knownPosesFilePath, std::string stem, vfs::directory_entry pathIt)
 {
     XMPData xmp;
-    const fs::path path = pathIt.path();
-    if(!is_regular_file(path))
+    const vfs::path path = pathIt.path();
+    if (!vfs::is_regular_file(path))
         ALICEVISION_THROW_ERROR("Path isn't a regulat file: " << path);
     std::string extension = path.extension().string();
     boost::to_lower(extension);
@@ -199,15 +199,15 @@ int aliceVision_main(int argc, char **argv)
   std::map<std::string, IndexT> viewIdPerStem;
   for(const auto viewIt : sfmData.getViews())
   {
-    const std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+    const std::string stem = vfs::path(viewIt.second->getImagePath()).stem().string();
     viewIdPerStem[stem] = viewIt.first;
   }
-  fs::path knownPosesPath(knownPosesFilePath);
-  if(fs::is_directory(knownPosesPath))
+  vfs::path knownPosesPath(knownPosesFilePath);
+  if (vfs::is_directory(knownPosesPath))
   {
       try
       {
-          for (const auto& pathIt : fs::directory_iterator(knownPosesPath))
+          for (const auto& pathIt : vfs::directory_iterator(knownPosesPath))
           {
               const std::string stem = pathIt.path().stem().string();
               if (viewIdPerStem.count(stem) == 0) 
@@ -326,13 +326,13 @@ int aliceVision_main(int argc, char **argv)
       }
 
   }
-  else if(is_regular_file(knownPosesPath))
+  else if (vfs::is_regular_file(knownPosesPath))
   {
       std::string extension = knownPosesPath.extension().string();
       boost::to_lower(extension);
       if(extension == ".json")
       {
-          std::ifstream jsonFile(knownPosesFilePath);
+          vfs::istream jsonFile(knownPosesFilePath);
           if(!jsonFile)
           {
               ALICEVISION_LOG_ERROR("Error opening file: " << knownPosesFilePath);
@@ -417,7 +417,7 @@ int aliceVision_main(int argc, char **argv)
       }
       else if(extension == ".ma")
       {
-          std::ifstream file(knownPosesPath.string());
+          vfs::istream file(knownPosesPath.string());
 
           std::string line;
           std::string name;

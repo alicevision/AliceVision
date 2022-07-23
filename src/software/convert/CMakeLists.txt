@@ -10,6 +10,7 @@ alicevision_add_software(aliceVision_convertSfMFormat
   SOURCE main_convertSfMFormat.cpp
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
@@ -24,6 +25,7 @@ alicevision_add_software(aliceVision_convertFloatDescriptorToUchar
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_localization
         aliceVision_feature
+        aliceVision_vfs
         Boost::program_options
         Boost::filesystem
         Boost::boost
@@ -37,6 +39,7 @@ alicevision_add_software(aliceVision_importKnownPoses
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_vfs
         Boost::program_options
         Boost::filesystem
         Boost::boost
@@ -49,6 +52,7 @@ alicevision_add_software(aliceVision_convertRAW
   SOURCE main_convertRAW.cpp
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_image
         Boost::program_options
         Boost::filesystem
@@ -61,6 +65,7 @@ alicevision_add_software(aliceVision_convertMesh
   SOURCE main_convertMesh.cpp
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_numeric
 	aliceVision_mesh
         ${Boost_LIBRARIES}

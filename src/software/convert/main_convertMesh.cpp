@@ -10,12 +10,11 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <iostream>
-#include <fstream>
 #include <ostream>
 #include <string>
 
@@ -27,7 +26,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 /**
  * @brief Convert Mesh
@@ -93,7 +91,7 @@ int aliceVision_main(int argc, char** argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // check first mesh file path
-    if(!inputMeshPath.empty() && !fs::exists(inputMeshPath) && !fs::is_regular_file(inputMeshPath))
+    if (!inputMeshPath.empty() && !vfs::exists(inputMeshPath) && !vfs::is_regular_file(inputMeshPath))
     {
         ALICEVISION_LOG_ERROR("The input mesh file doesn't exist");
         return EXIT_FAILURE;
@@ -108,11 +106,11 @@ int aliceVision_main(int argc, char** argv)
 
     // ensure output folder exists
     {
-        const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
+        const std::string outputFolderPart = vfs::path(outputFilePath).parent_path().string();
 
-        if(!outputFolderPart.empty() && !fs::exists(outputFolderPart))
+        if (!outputFolderPart.empty() && !vfs::exists(outputFolderPart))
         {
-            if(!fs::create_directory(outputFolderPart))
+            if (!vfs::create_directory(outputFolderPart))
             {
                 ALICEVISION_LOG_ERROR("Cannot create output folder");
                 return EXIT_FAILURE;
