@@ -427,6 +427,7 @@ if(ALICEVISION_BUILD_MVS)
     SOURCE main_meshResampling.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_mvsUtils
           Geogram::geogram
           Boost::program_options
