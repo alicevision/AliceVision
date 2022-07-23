@@ -249,6 +249,7 @@ alicevision_add_software(aliceVision_utils_split360Images
   SOURCE main_split360Images.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_numeric
         aliceVision_image
         aliceVision_panorama
