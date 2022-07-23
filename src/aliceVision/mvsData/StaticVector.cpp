@@ -6,34 +6,31 @@
 
 #include "StaticVector.hpp"
 
-#include <cstdio>
-
 namespace aliceVision {
 
 int getArrayLengthFromFile(std::string fileName)
 {
-    FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
+    vfs::istream f{fileName, std::ios_base::binary};
+    if (!f)
     {
         // printf("WARNING: file %s does not exists!\n", fileName.c_str());
         return 0;
     }
 
     int n = 0;
-    size_t retval = fread(&n, sizeof(int), 1, f);
+    size_t retval = f.fread(&n, sizeof(int), 1);
     if( retval != sizeof(int) )
     {
         ALICEVISION_LOG_WARNING("[IO] getArrayLengthFromFile: can't read array length (1)");
     }
     if(n == -1)
     {
-        retval = fread(&n, sizeof(int), 1, f);
+        retval = f.fread(&n, sizeof(int), 1);
         if( retval != sizeof(int) )
         {
             ALICEVISION_LOG_WARNING("[IO] getArrayLengthFromFile: can't read array length (2)");
         }
     }
-    fclose(f);
     return n;
 }
 
