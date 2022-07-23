@@ -121,7 +121,8 @@ if(ALICEVISION_HAVE_ALEMBIC)
   alicevision_add_software(aliceVision_utils_rigTransform
     SOURCE main_rigTransform.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
-    LINKS aliceVision_sfmData
+    LINKS aliceVision_vfs
+          aliceVision_sfmData
           aliceVision_sfmDataIO
           aliceVision_localization
           aliceVision_dataio

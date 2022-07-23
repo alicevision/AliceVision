@@ -11,6 +11,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/progress.hpp>
@@ -34,7 +35,7 @@ static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
   ALICEVISION_LOG_INFO("reading intrinsics: " << fname);
 
   std::vector<double> v(8);
-  std::ifstream ifs(fname);
+  vfs::istream ifs(fname);
   if (!(ifs >> v[0] >> v[1] >> v[2] >> v[3] >> v[4] >> v[5] >> v[6] >> v[7]))
     throw std::runtime_error("failed to read intrinsics file");
   return v;
