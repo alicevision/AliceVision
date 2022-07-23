@@ -8,14 +8,12 @@
 #include "gtIO.hpp"
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sfmData/uid.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
 #include <boost/regex.hpp>
-#include <boost/filesystem.hpp>
 
-#include <fstream>
 #include <vector>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -23,9 +21,9 @@ namespace sfmDataIO {
 bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, geometry::Pose3& pose)
 {
   std::vector<double> val;
-  if (fs::extension(camName) == ".bin")
+  if (vfs::path(camName).extension().string() == ".bin")
   {
-    std::ifstream in(camName.c_str(), std::ios::in|std::ios::binary);
+    vfs::istream in(camName, std::ios::binary);
     if (!in.is_open())
     {
       ALICEVISION_LOG_ERROR("Failed to open file '" << camName << "' for reading");
@@ -41,8 +39,7 @@ bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, g
   }
   else
   {
-    std::ifstream ifs;
-    ifs.open( camName.c_str(), std::ifstream::in);
+    vfs::istream ifs{camName};
     if (!ifs.is_open()) {
       ALICEVISION_LOG_ERROR("Failed to open file '" << camName << "' for reading");
       return false;
@@ -58,7 +55,7 @@ bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, g
 
   //Update the camera from file value
   Mat34 P;
-  if (fs::extension(camName) == ".bin")
+  if (vfs::path(camName).extension().string() == ".bin")
   {
     P << val[0], val[3], val[6], val[9],
       val[1], val[4], val[7], val[10],
@@ -81,8 +78,7 @@ bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, g
 
 bool read_Strecha_Camera(const std::string& camName, camera::Pinhole& cam, geometry::Pose3& pose)
 {
-  std::ifstream ifs;
-  ifs.open( camName.c_str(), std::ifstream::in);
+  vfs::istream ifs{camName};
   if (!ifs.is_open()) {
     ALICEVISION_LOG_ERROR("Failed to open file '" << camName << "' for reading");
     return false;
@@ -128,8 +124,8 @@ bool read_Strecha_Camera(const std::string& camName, camera::Pinhole& cam, geome
 bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
 {
   // IF GT_Folder exists, perform evaluation of the quality of rotation estimates
-  const std::string sGTPath = (fs::path(rootPath) / "gt_dense_cameras").string();
-  if (!fs::is_directory(sGTPath))
+  const std::string sGTPath = (vfs::path(rootPath) / "gt_dense_cameras").string();
+  if (!vfs::is_directory(sGTPath))
   {
     ALICEVISION_LOG_WARNING("There is no valid GT data to read from " << sGTPath);
     return false;
@@ -145,10 +141,10 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
   std::vector<std::string> binFiles;
   std::vector<std::string> camFiles;
 
-  boost::filesystem::directory_iterator endItr;
-  for(boost::filesystem::directory_iterator i(sGTPath); i != endItr; ++i)
+  vfs::directory_iterator endItr;
+  for (vfs::directory_iterator i(sGTPath); i != endItr; ++i)
   {
-      if(!boost::filesystem::is_regular_file(i->status()))
+      if (!vfs::is_regular_file(i->status()))
         continue;
 
       boost::smatch what;
@@ -186,7 +182,7 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
   }
 
   ALICEVISION_LOG_TRACE("Read rotation and translation estimates");
-  const std::string imgPath = (fs::path(rootPath) / "images").string();
+  const std::string imgPath = (vfs::path(rootPath) / "images").string();
   std::map< std::string, Mat3 > map_R_gt;
   //Try to read .suffix camera (parse camera names)
 
@@ -202,15 +198,15 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
   {
     geometry::Pose3 pose;
     std::shared_ptr<camera::Pinhole> pinholeIntrinsic = std::make_shared<camera::Pinhole>();
-    bool loaded = fcnReadCamPtr((fs::path(sGTPath) / *iter).string(), *pinholeIntrinsic.get(), pose);
+    bool loaded = fcnReadCamPtr((vfs::path(sGTPath) / *iter).string(), *pinholeIntrinsic.get(), pose);
     if (!loaded)
     {
       ALICEVISION_LOG_ERROR("Failed to load: " << *iter);
       return false;
     }
 
-    const std::string imgName = fs::path(*iter).stem().string();
-    const std::string imgFile = (fs::path(imgPath) / imgName).string();
+    const std::string imgName = vfs::path(*iter).stem().string();
+    const std::string imgFile = (vfs::path(imgPath) / imgName).string();
 
     std::shared_ptr<sfmData::View> viewPtr = std::make_shared<sfmData::View>(imgFile, UndefinedIndexT, index);
 

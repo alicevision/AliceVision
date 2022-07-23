@@ -7,7 +7,7 @@
 
 #include "plyIO.hpp"
 
-#include <fstream>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -24,7 +24,7 @@ bool savePLY(
     return false;
 
   //Create the stream and check it is ok
-  std::ofstream stream(filename.c_str());
+  vfs::ostream stream(filename.c_str());
   if (!stream.is_open())
     return false;
 

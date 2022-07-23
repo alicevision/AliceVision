@@ -6,12 +6,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "bafIO.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
 
-#include <boost/filesystem.hpp>
-
-#include <fstream>
-
-namespace fs = boost::filesystem;
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -21,7 +19,7 @@ bool saveBAF(
   const std::string& filename,
   ESfMData partFlag)
 {
-  std::ofstream stream(filename.c_str());
+  vfs::ostream stream(filename.c_str());
   if (!stream.is_open())
     return false;
 
@@ -101,7 +99,7 @@ bool saveBAF(
 
   // Export View filenames & ids as an imgList.txt file
   {
-    const std::string sFile = (fs::path(filename).parent_path() / (fs::path(filename).stem().string() + "_imgList.txt")).string();
+    const std::string sFile = (vfs::path(filename).parent_path() / (vfs::path(filename).stem().string() + "_imgList.txt")).string();
 
     stream.open(sFile.c_str());
     if (!stream.is_open())

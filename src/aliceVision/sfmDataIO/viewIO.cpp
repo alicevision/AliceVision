@@ -15,8 +15,6 @@
 #include <stdexcept>
 #include <regex>
 
-namespace fs = boost::filesystem;
-
 namespace aliceVision {
 namespace sfmDataIO {
 
@@ -58,7 +56,7 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
       }
 
       // Get view image filename without extension
-      const std::string filename = boost::filesystem::path(view.getImagePath()).stem().string();
+      const std::string filename = vfs::path(view.getImagePath()).stem().string();
 
       std::smatch match;
       std::regex_search(filename, match, re);
@@ -94,15 +92,15 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
     // check if the rig poseId id is defined
     if(view.isPartOfRig())
     {
-      ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << fs::path(view.getImagePath()).filename().string() << "' marked as part of a rig." << std::endl);
-      throw std::invalid_argument("Error: Can't find poseId for'" + fs::path(view.getImagePath()).filename().string() + "' marked as part of a rig.");
+      ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << vfs::path(view.getImagePath()).filename().string() << "' marked as part of a rig." << std::endl);
+      throw std::invalid_argument("Error: Can't find poseId for'" + vfs::path(view.getImagePath()).filename().string() + "' marked as part of a rig.");
     }
     else
       view.setPoseId(view.getViewId());
   }
   else if((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
   {
-    ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << fs::path(view.getImagePath()).filename().string() << "'." << std::endl);
+    ALICEVISION_LOG_WARNING("PoseId and viewId are different for image '" << vfs::path(view.getImagePath()).filename().string() << "'." << std::endl);
   }
 }
 
@@ -161,7 +159,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
     if(exifWidth > 0 && exifHeight > 0 &&
        (exifWidth != view.getWidth() || exifHeight != view.getHeight()))
     {
-      ALICEVISION_LOG_WARNING("Resized image detected: " << fs::path(view.getImagePath()).filename().string() << std::endl
+      ALICEVISION_LOG_WARNING("Resized image detected: " << vfs::path(view.getImagePath()).filename().string() << std::endl
                           << "\t- real image size: " <<  view.getWidth() << "x" <<  view.getHeight() << std::endl
                           << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
       isResized = true;
@@ -171,7 +169,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   // handle case where focal length (mm) is unset or false
   if(mmFocalLength <= 0.0)
   {
-    ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
+    ALICEVISION_LOG_WARNING("Image '" << vfs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
                              << "Can't compute focal length, use default." << std::endl);
   }
   else
