@@ -11,9 +11,9 @@
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -22,7 +22,6 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 enum class ESubsetType : unsigned char
@@ -194,9 +193,9 @@ int aliceVision_main(int argc, char* argv[])
     // check and set filtering subset type
     const ESubsetType filteringSubsetType = ESubsetType_stringToEnum(filteringSubsetTypeName);
 
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    vfs::path outDirectory = vfs::path(outputMeshPath).parent_path();
+    if (!vfs::is_directory(outDirectory))
+        vfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
     texturing.loadWithAtlas(inputMeshPath);
