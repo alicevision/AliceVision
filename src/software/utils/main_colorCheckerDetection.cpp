@@ -13,10 +13,11 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -27,7 +28,6 @@
 #include <opencv2/mcc.hpp>
 
 #include <string>
-#include <fstream>
 #include <vector>
 #include <limits>
 
@@ -38,7 +38,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
@@ -125,14 +124,14 @@ void drawSVG(const cv::Ptr<cv::mcc::CChecker> &checker, const std::string& outpu
             svg::svgStyle().stroke("red", 2));
     }
 
-    std::ofstream svgFile(outputPath.c_str());
+    vfs::ostream svgFile(outputPath.c_str());
     svgFile << svgSurface.closeSvgFile().str();
     svgFile.close();
 }
 
 
 struct ImageOptions {
-    fs::path imgFsPath;
+    vfs::path imgFsPath;
     std::string viewId;
     std::string lensSerialNumber;
     std::string bodySerialNumber;
@@ -343,7 +342,7 @@ void detectColorChecker(
     ImageOptions& imgOpt,
     CCheckerDetectionSettings &settings)
 {
-    const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
+    const std::string outputFolder = vfs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
     const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();
     const std::string imgDestStem = imgSrcStem;
@@ -388,7 +387,7 @@ void detectColorChecker(
             cv::imwrite(outputFolder + imgDestStem + counterStr + ".jpg", imgBGR);
 
             const std::string masksFolder = outputFolder + "masks/";
-            fs::create_directory(masksFolder);
+            vfs::create_directory(masksFolder);
 
             for (int i = 0; i < ccq._cellMasks.size(); ++i)
                 cv::imwrite(masksFolder + imgDestStem + counterStr + "_" + std::to_string(i) + ".jpg", ccq._cellMasks[i]);
@@ -473,7 +472,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector< MacbethCCheckerQuad > detectedCCheckers;
 
     // Check if inputExpression is recognized as sfm data file
-    const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
+    const std::string inputExt = boost::to_lower_copy(vfs::path(inputExpression).extension().string());
     static const std::array<std::string, 2> sfmSupportedExtensions = {".sfm", ".abc"};
     if(std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) != sfmSupportedExtensions.end())
     {
@@ -507,10 +506,10 @@ int aliceVision_main(int argc, char** argv)
     else
     {
         // load input as image file or image folder
-        const fs::path inputPath(inputExpression);
+        const vfs::path inputPath(inputExpression);
         std::vector<std::string> filesStrPaths;
 
-        if(fs::is_regular_file(inputPath))
+        if (vfs::is_regular_file(inputPath))
         {
             filesStrPaths.push_back(inputPath.string());
         }
@@ -521,7 +520,7 @@ int aliceVision_main(int argc, char** argv)
             const std::regex regex = utils::filterToRegex(inputExpression);
             // Get supported files in inputPath directory which matches our regex filter
             filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(),
-               [&regex](const boost::filesystem::path& path) {
+               [&regex](const vfs::path& path) {
                  return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
                }
             );
@@ -567,7 +566,7 @@ int aliceVision_main(int argc, char** argv)
     }
     data.add_child("checkers", ptCheckers);
 
-    std::ofstream f;
+    vfs::ostream f;
     f.open(outputData);
     bpt::write_json(f, data);
     f.close();
