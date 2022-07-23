@@ -11,6 +11,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
     SOURCE main_exportAnimatedCamera.cpp
     FOLDER ${FOLDER_SOFTWARE_EXPORT}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_sfmData
           aliceVision_sfmDataIO
           Boost::program_options

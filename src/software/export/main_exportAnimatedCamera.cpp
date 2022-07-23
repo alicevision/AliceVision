@@ -13,9 +13,9 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <cstdlib>
@@ -31,9 +31,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
-
-
 
 oiio::ROI computeRod(const camera::IntrinsicBase* intrinsic, bool correctPrincipalPoint)
 
@@ -250,11 +247,11 @@ int aliceVision_main(int argc, char** argv)
     }
   }
 
-  const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
+  const vfs::path undistortedImagesFolderPath = vfs::path(outFolder) / "undistort";
   const bool writeUndistordedResult = undistortedImages || exportUVMaps;
 
-  if(writeUndistordedResult && !fs::exists(undistortedImagesFolderPath))
-    fs::create_directory(undistortedImagesFolderPath);
+  if (writeUndistordedResult && !vfs::exists(undistortedImagesFolderPath))
+    vfs::create_directory(undistortedImagesFolderPath);
 
   std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;
   std::map<std::string, std::vector<std::pair<std::size_t, IndexT>> > dslrViewPerKey;
@@ -339,7 +336,7 @@ int aliceVision_main(int argc, char** argv)
 
     ++progressBar;
 
-    const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
+    const std::string imagePathStem = vfs::path(viewPair.second->getImagePath()).stem().string();
 
     // undistort camera images
     if(undistortedImages)
@@ -466,7 +463,7 @@ int aliceVision_main(int argc, char** argv)
 
   ALICEVISION_LOG_INFO("Export animated camera(s)...");
 
-  sfmDataIO::AlembicExporter exporter((fs::path(outFolder) / "camera.abc").string());
+  sfmDataIO::AlembicExporter exporter((vfs::path(outFolder) / "camera.abc").string());
 
   for(const auto& cameraViews : videoViewPerFrame)
   {
@@ -493,7 +490,7 @@ int aliceVision_main(int argc, char** argv)
         const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
         const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
         const std::string& imagePath = findViewIt->second->getImagePath();
-        const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+        const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + vfs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
         exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
       }
@@ -516,7 +513,7 @@ int aliceVision_main(int argc, char** argv)
         const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
         const sfmData::CameraPose pose = sfmData.getPose(view);
         const std::string& imagePath = view.getImagePath();
-        const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+        const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + vfs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
         exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, view.getViewId(), view.getIntrinsicId());
     }
