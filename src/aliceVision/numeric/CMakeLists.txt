@@ -19,6 +19,7 @@ alicevision_add_library(aliceVision_numeric
     Boost::boost
     Boost::log
     Boost::log_setup
+    aliceVision_vfs
   PUBLIC_DEFINITIONS
     ${AV_EIGEN_DEFINITIONS}
 )

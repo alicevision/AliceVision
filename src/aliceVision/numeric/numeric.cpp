@@ -8,8 +8,7 @@
 
 #include "numeric.hpp"
 
-#include <iostream>
-#include <fstream>
+#include <aliceVision/vfs/ostream.hpp>
 #include <string>
 
 namespace aliceVision {
@@ -138,7 +137,7 @@ bool exportMatToTextFile(const Mat & mat, const std::string & filename,
   const std::string & sPrefix)
 {
   bool bOk = false;
-  std::ofstream outfile;
+  vfs::ostream outfile;
   outfile.open(filename.c_str(), std::ios_base::out);
   if (outfile.is_open()) {
     outfile << sPrefix << "=[" << std::endl;
