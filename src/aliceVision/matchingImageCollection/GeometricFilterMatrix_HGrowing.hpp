@@ -11,8 +11,7 @@
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/sfmData/SfMData.hpp"
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <cmath>
 
@@ -248,14 +247,13 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         continue;
       }
 
-      if (boost::filesystem::exists(outputSvgDir))
+      if (vfs::exists(outputSvgDir))
       {
         const std::size_t nbMatches = outGeometricInliers.size();
         const std::string name = std::to_string(nbMatches) + "hmatches_" + std::to_string(viewI.getViewId()) + "_" +
                                  std::to_string(viewJ.getViewId()) +
                                  "_" + EImageDescriberType_enumToString(descType) + ".svg";
-        // @FIXME not worth it having boost::filesystem in a header
-        const std::string outFilename = (boost::filesystem::path(outputSvgDir) / boost::filesystem::path(name)).string();
+        const std::string outFilename = (vfs::path(outputSvgDir) / vfs::path(name)).string();
         drawHomographyMatches(viewI,
                               viewJ,
                               regions_I.Features(),
