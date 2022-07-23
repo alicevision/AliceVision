@@ -8,18 +8,16 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/feature/akaze/AKAZE.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <dependencies/cmdLine/cmdLine.h>
-
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <sstream>
 
 using namespace aliceVision;
 using namespace svg;
-namespace fs = boost::filesystem;
 
 void usage( const std::string & appName )
 {
@@ -71,7 +69,7 @@ int main( int argc , char ** argv )
   }
 
   // Compute base output filename
-  const std::string outputBaseName = fs::path(sOuputFile).stem().string();
+  const std::string outputBaseName = vfs::path(sOuputFile).stem().string();
 
   image::Image<unsigned char> src;
   readImageadImage(sInputImage, src);

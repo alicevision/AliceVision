@@ -9,6 +9,7 @@ alicevision_add_software(aliceVision_samples_robustEssentialBA
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_vfs
         vlsift
         Boost::filesystem
 )

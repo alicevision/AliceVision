@@ -9,9 +9,9 @@
 #include <aliceVision/system/cmdline.hpp> 
 #include <aliceVision/image/io.hpp> 
 #include <aliceVision/image/pixelTypes.hpp> 
+#include <aliceVision/vfs/filesystem.hpp>
  
 #include <boost/program_options.hpp> 
-#include <boost/filesystem.hpp> 
  
 #include <string> 
 #include <sstream> 
@@ -26,7 +26,6 @@
 using namespace aliceVision; 
  
 namespace po = boost::program_options; 
-namespace fs = boost::filesystem; 
  
 namespace oiio = OIIO; 
  
@@ -89,11 +88,11 @@ int main(int argc, char **argv)
     sfmData::SfMData sfm_data; 
  
     int c = 0; 
-    fs::path folderPath(inputFolderPath); 
-    for(auto& file : fs::directory_iterator(folderPath)) 
+    vfs::path folderPath(inputFolderPath);
+    for(auto& file : vfs::directory_iterator(folderPath))
     { 
-        fs::path filePath = file.path(); 
-        if(fs::is_regular_file(filePath)) 
+        vfs::path filePath = file.path();
+        if (vfs::is_regular_file(filePath))
         { 
             int w, h; 
             std::map<std::string, std::string> metadata; 
@@ -122,19 +121,19 @@ int main(int argc, char **argv)
         for(int pix = 0; pix < view.getWidth() * view.getHeight(); ++pix) 
             img(pix) *= evComp; 
  
-        ALICEVISION_LOG_INFO(fs::path(view.getImagePath()).stem()); 
+        ALICEVISION_LOG_INFO(vfs::path(view.getImagePath()).stem());
         ALICEVISION_LOG_INFO("  EV: " << view.getEv()); 
         ALICEVISION_LOG_INFO("  EV Compensation: " << evComp);
 
-        std::string outputPath = outputFilePath + fs::path(view.getImagePath()).stem().string() + ".EXR"; 
+        std::string outputPath = outputFilePath + vfs::path(view.getImagePath()).stem().string() + ".EXR";
         oiio::ParamValueList metadata = image::getMetadataFromMap(view.getMetadata()); 
         image::writeImage(outputPath, img, image::EImageColorSpace::LINEAR, metadata); 
     } 
  
 /* 
     // calculate EV for all images in the input folder 
-    fs::path folderPath(inputFolderPath); 
-    for(auto& filePath : fs::directory_iterator(folderPath)) 
+    vfs::path folderPath(inputFolderPath);
+    for(auto& filePath : fs.directory_iterator(fs, folderPath))
     { 
         Image img; 
         int w, h; 

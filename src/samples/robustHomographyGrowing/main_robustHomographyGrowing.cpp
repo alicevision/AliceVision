@@ -28,7 +28,6 @@ using namespace aliceVision;
 using namespace aliceVision::image;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 //void writeImage(const std::string &filepath, Image<float>& concat)
 //{

@@ -7,10 +7,10 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/progress.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <string>
@@ -26,7 +26,6 @@ using namespace aliceVision::camera;
 using namespace aliceVision::image;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -90,8 +89,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (!fs::exists(outputImagePath))
-    fs::create_directory(outputImagePath);
+  if (!vfs::exists(outputImagePath))
+    vfs::create_directory(outputImagePath);
 
   std::cout << "Used Brown's distortion model values: \n"
     << "  Distortion center: " << c.transpose() << "\n"
@@ -103,10 +102,10 @@ int main(int argc, char **argv)
 
   std::vector<std::string> vec_fileNames;
 
-  boost::filesystem::directory_iterator endItr;
-  for(boost::filesystem::directory_iterator i(inputImagePath); i != endItr; ++i)
+  vfs::directory_iterator endItr;
+  for (vfs::directory_iterator i(inputImagePath); i != endItr; ++i)
   {
-      if(!boost::filesystem::is_regular_file(i->status()))
+      if (!vfs::is_regular_file(i->status()))
         continue;
 
       boost::smatch what;
@@ -123,8 +122,8 @@ int main(int argc, char **argv)
   boost::progress_display my_progress_bar( vec_fileNames.size() );
   for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
   {
-    const std::string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
-    const std::string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
+    const std::string inFileName = (vfs::path(inputImagePath) / vfs::path(vec_fileNames[j]).filename()).string();
+    const std::string outFileName = (vfs::path(outputImagePath) / vfs::path(vec_fileNames[j]).filename()).string();
 
     Image<RGBColor> image, imageUd;
     readImage(inFileName, image, image::EImageColorSpace::NO_CONVERSION);

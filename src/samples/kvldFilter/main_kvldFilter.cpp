@@ -14,11 +14,11 @@
 #include <aliceVision/matching/kvld/kvld.h>
 #include <aliceVision/matching/kvld/kvld_draw.h>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <string>
 #include <iostream>
@@ -35,7 +35,6 @@ using namespace aliceVision::matching;
 using namespace aliceVision::robustEstimation;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -93,8 +92,8 @@ int main(int argc, char **argv)
   // -----------------------------
 
   // Create output dir
-  if (!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
+  if (!vfs::exists(outputFolder))
+    vfs::create_directory(outputFolder);
 
   const std::string jpg_filenameL = imageAFilename;
   const std::string jpg_filenameR = imageBFilename;
@@ -246,7 +245,7 @@ int main(int argc, char **argv)
       }
     }
     std::string out_filename = "05_KVLD_Matches.svg";
-    out_filename = (fs::path(outputFolder) / out_filename).string();
+    out_filename = (vfs::path(outputFolder) / out_filename).string();
     std::ofstream svgFile(out_filename.c_str());
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -275,7 +274,7 @@ int main(int argc, char **argv)
       }
     }
     std::string out_filename = "06_KVLD_Keypoints.svg";
-    out_filename = (fs::path(outputFolder) / out_filename).string();
+    out_filename = (vfs::path(outputFolder) / out_filename).string();
     std::ofstream svgFile(out_filename.c_str());
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -293,12 +292,12 @@ int main(int argc, char **argv)
 
   {
     std::string out_filename = "07_Left-K-VLD-MASK.jpg";
-    out_filename = (fs::path(outputFolder) / out_filename).string();
+    out_filename = (vfs::path(outputFolder) / out_filename).string();
     writeImage(out_filename, imageOutL, image::EImageColorSpace::NO_CONVERSION);
   }
   {
     std::string out_filename = "08_Right-K-VLD-MASK.jpg";
-    out_filename = (fs::path(outputFolder) / out_filename).string();
+    out_filename = (vfs::path(outputFolder) / out_filename).string();
     writeImage(out_filename, imageOutR, image::EImageColorSpace::NO_CONVERSION);
   }
 
