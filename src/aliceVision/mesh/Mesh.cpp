@@ -5,11 +5,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Mesh.hpp"
+#include "AssimpIOSystem.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <geogram/points/kd_tree.h>
 
@@ -22,7 +24,6 @@
 #include <assimp/scene.h>
 #include <Eigen/Dense>
 
-#include <fstream>
 #include <map>
 
 namespace aliceVision {
@@ -84,7 +85,7 @@ std::istream& operator>>(std::istream& in, EFileType& meshFileType)
 
 void Mesh::save(const std::string& filepath)
 {
-    const std::string fileTypeStr = boost::filesystem::path(filepath).extension().string().substr(1);
+    const std::string fileTypeStr = vfs::path(filepath).extension().string().substr(1);
     const EFileType fileType = mesh::EFileType_stringToEnum(fileTypeStr);
 
     ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
@@ -151,6 +152,7 @@ void Mesh::save(const std::string& filepath)
     }
 
     Assimp::Exporter exporter;
+    exporter.SetIOHandler(new VfsIOSystem());
     exporter.Export(&scene, formatId, filepath, pPreprocessing);
 
     ALICEVISION_LOG_INFO("Save mesh to " << fileTypeStr << " done.");
@@ -2352,6 +2354,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
 void Mesh::load(const std::string& filepath)
 {
     Assimp::Importer importer;
+    importer.SetIOHandler(new VfsIOSystem());
 
     pts.clear();
     tris.clear();
@@ -2364,7 +2367,7 @@ void Mesh::load(const std::string& filepath)
     normals.clear();
     pointsVisibilities.clear();
 
-    if(!boost::filesystem::exists(filepath))
+    if (!vfs::exists(filepath))
     {
         ALICEVISION_THROW_ERROR("Mesh::load: no such file: " << filepath);
     }

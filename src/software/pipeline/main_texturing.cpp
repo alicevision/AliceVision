@@ -35,11 +35,6 @@ using namespace aliceVision;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
-bfs::path absolutePathNoExt(const bfs::path& p)
-{
-    return p.parent_path() / p.stem();
-}
-
 int aliceVision_main(int argc, char* argv[])
 {
     system::Timer timer;
