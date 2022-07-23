@@ -236,7 +236,8 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
 alicevision_add_software(aliceVision_utils_sfmDistances
   SOURCE main_sfmDistances.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
-  LINKS aliceVision_sfm
+  LINKS aliceVision_vfs
+        aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
         ${Boost_LIBRARIES}

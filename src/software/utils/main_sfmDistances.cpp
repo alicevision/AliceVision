@@ -9,12 +9,12 @@
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
-#include <boost/filesystem.hpp>
 
 #include <string>
 #include <sstream>
@@ -29,7 +29,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 /**
  * @brief Alignment method enum
@@ -129,7 +128,7 @@ void extractCamerasPositions(std::vector<std::pair<std::string, Vec3>>& outputPo
             outputPositions.push_back(std::make_pair(viewIdStr, sfmData.getPose(*viewIt.second).getTransform().center()));
             continue;
         }
-        std::string stem = fs::path(viewIt.second->getImagePath()).stem().string();
+        std::string stem = vfs::path(viewIt.second->getImagePath()).stem().string();
         if (searchSet.empty() || searchSet.count(stem))
         {
             outputPositions.push_back(std::make_pair(viewIt.second->getImagePath(), sfmData.getPose(*viewIt.second).getTransform().center()));
