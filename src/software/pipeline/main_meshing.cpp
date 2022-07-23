@@ -21,11 +21,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <Eigen/Geometry>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cmath>
 
@@ -36,7 +36,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 enum EPartitioningMode
@@ -471,11 +470,11 @@ int aliceVision_main(int argc, char* argv[])
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
 
-    fs::path outDirectory = fs::path(outputMesh).parent_path();
-    if(!fs::is_directory(outDirectory))
-        fs::create_directory(outDirectory);
+    vfs::path outDirectory = vfs::path(outputMesh).parent_path();
+    if (!vfs::is_directory(outDirectory))
+        vfs::create_directory(outDirectory);
 
-    fs::path tmpDirectory = outDirectory / "tmp";
+    vfs::path tmpDirectory = outDirectory / "tmp";
 
     ALICEVISION_LOG_WARNING("repartitionMode: " << repartitionMode);
     ALICEVISION_LOG_WARNING("partitioningMode: " << partitioningMode);
