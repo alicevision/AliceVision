@@ -6,8 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sensorDB/parseDatabase.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <string>
 
@@ -16,10 +15,10 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
+using namespace aliceVision;
 using namespace aliceVision::sensorDB;
-namespace fs = boost::filesystem;
 
-static const std::string sDatabase = (fs::path(THIS_SOURCE_DIR) / "cameraSensors.db").string();
+static const std::string sDatabase = (vfs::path(THIS_SOURCE_DIR) / "cameraSensors.db").string();
 
 BOOST_AUTO_TEST_CASE(InvalidDatabase)
 {
