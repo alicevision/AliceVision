@@ -9,9 +9,10 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -19,7 +20,6 @@
 #include <cmath>
 #include <iterator>
 #include <iomanip>
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -34,7 +34,6 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::feature;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 /// Naive image bilinear resampling of an image for thumbnail generation
 template <typename ImageT>
@@ -65,11 +64,11 @@ bool exportToMVE2Format(
 {
   bool bOk = true;
   // Create basis folder structure
-  if (!fs::is_directory(sOutDirectory))
+  if (!vfs::is_directory(sOutDirectory))
   {
     std::cout << "\033[1;31mCreating folder:  " << sOutDirectory << "\033[0m\n";
-    fs::create_directory(sOutDirectory);
-    bOk = fs::is_directory(sOutDirectory);
+    vfs::create_directory(sOutDirectory);
+    bOk = vfs::is_directory(sOutDirectory);
   }
 
   if (!bOk)
@@ -81,11 +80,11 @@ bool exportToMVE2Format(
   // Export the SfMData scene to the MVE2 format
   {
     // Create 'views' subfolder
-    const std::string sOutViewsDirectory = (fs::path(sOutDirectory) / "views").string();
-    if (!fs::exists(sOutViewsDirectory))
+    const std::string sOutViewsDirectory = (vfs::path(sOutDirectory) / "views").string();
+    if (!vfs::exists(sOutViewsDirectory))
     {
       std::cout << "\033[1;31mCreating folder:  " << sOutViewsDirectory << "\033[0m\n";
-      fs::create_directory(sOutViewsDirectory);
+      vfs::create_directory(sOutViewsDirectory);
     }
 
     // Prepare to write bundle file
@@ -100,7 +99,7 @@ bool exportToMVE2Format(
     const std::string filename = "synth_0.out";
     std::cout << "Writing bundle (" << cameraCount << " cameras, "
         << featureCount << " features): to " << filename << "...\n";
-    std::ofstream out((fs::path(sOutDirectory) / filename).string());
+    vfs::ostream out((vfs::path(sOutDirectory) / filename).string());
     out << "drews 1.0\n";  // MVE expects this header
     out << cameraCount << " " << featureCount << "\n";
 
@@ -125,15 +124,15 @@ bool exportToMVE2Format(
       // Warning: We use view_index instead of view->getViewId() because MVE use indexes instead of IDs.
       padding << std::setw(4) << std::setfill('0') << view_index;
 
-      sOutViewIteratorDirectory = (fs::path(sOutViewsDirectory) / ("view_" + padding.str() + ".mve")).string();
-      if (!fs::exists(sOutViewIteratorDirectory))
+      sOutViewIteratorDirectory = (vfs::path(sOutViewsDirectory) / ("view_" + padding.str() + ".mve")).string();
+      if (!vfs::exists(sOutViewIteratorDirectory))
       {
-        fs::create_directory(sOutViewIteratorDirectory);
+        vfs::create_directory(sOutViewIteratorDirectory);
       }
 
       // We have a valid view with a corresponding camera & pose
       const std::string srcImage = view->getImagePath();
-      const std::string dstImage = (fs::path(sOutViewIteratorDirectory) / "undistorted.png").string();
+      const std::string dstImage = (vfs::path(sOutViewIteratorDirectory) / "undistorted.png").string();
 
       Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
       const IntrinsicBase * cam = iterIntrinsic->second.get();
@@ -147,10 +146,10 @@ bool exportToMVE2Format(
       else // (no distortion)
       {
         // If extensions match, copy the PNG image
-        if (fs::extension(srcImage) == ".PNG" ||
-          fs::extension(srcImage) == ".png")
+        if (vfs::path(srcImage).extension().string() == ".PNG" ||
+          vfs::path(srcImage).extension().string() == ".png")
         {
-          fs::copy_file(srcImage, dstImage);
+          vfs::copy_file(srcImage, dstImage);
         }
         else
         {
@@ -190,11 +189,11 @@ bool exportToMVE2Format(
         << fileOut.widen('\n')
         << "[view]" << fileOut.widen('\n')
         << "id = " << view_index << fileOut.widen('\n')
-        << "name = " << fs::path(srcImage.c_str()).filename().string() << fileOut.widen('\n');
+        << "name = " << vfs::path(srcImage.c_str()).filename().string() << fileOut.widen('\n');
 
       // To do:  trim any extra separator(s) from aliceVision name we receive, e.g.:
       // '/home/insight/aliceVision_KevinCain/aliceVision_Build/software/SfM/ImageDataset_SceauxCastle/images//100_7100.JPG'
-      std::ofstream file((fs::path(sOutViewIteratorDirectory) / "meta.ini").string());
+      vfs::ostream file((vfs::path(sOutViewIteratorDirectory) / "meta.ini").string());
       file << fileOut.str();
       file.close();
 
@@ -207,7 +206,7 @@ bool exportToMVE2Format(
 
       // Save a thumbnail image "thumbnail.png", 50x50 pixels
       thumbnail = create_thumbnail(image, 50, 50);
-      const std::string dstThumbnailImage = (fs::path(sOutViewIteratorDirectory) / "thumbnail.png").string();
+      const std::string dstThumbnailImage = (vfs::path(sOutViewIteratorDirectory) / "thumbnail.png").string();
       writeImage(dstThumbnailImage, thumbnail, image::EImageColorSpace::NO_CONVERSION);
       
       ++view_index;
@@ -296,8 +295,8 @@ int aliceVision_main(int argc, char *argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!fs::exists(outDirectory))
-    fs::create_directory(outDirectory);
+  if (!vfs::exists(outDirectory))
+    vfs::create_directory(outDirectory);
 
   // Read the input SfM scene
   SfMData sfmData;
@@ -308,7 +307,7 @@ int aliceVision_main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  if (exportToMVE2Format(sfmData, (fs::path(outDirectory) / "MVE").string()))
+  if (exportToMVE2Format(sfmData, (vfs::path(outDirectory) / "MVE").string()))
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;
