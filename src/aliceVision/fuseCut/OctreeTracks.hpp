@@ -98,7 +98,7 @@ public:
     void filterOctreeTracks2(StaticVector<trackStruct*>* tracks);
     void updateOctreeTracksCams(StaticVector<trackStruct*>* tracks);
     StaticVector<trackStruct*>* fillOctreeFromTracks(StaticVector<trackStruct*>* tracksIn);
-    StaticVector<trackStruct*>* fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir);
+    StaticVector<trackStruct*>* fillOctree(int maxPts, const std::string& depthMapsPtsSimsTmpDir);
     StaticVector<int>* getTracksCams(StaticVector<OctreeTracks::trackStruct*>* tracks);
     void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };

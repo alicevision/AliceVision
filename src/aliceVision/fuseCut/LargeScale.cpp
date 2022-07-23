@@ -17,7 +17,7 @@ namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
-LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, std::string _spaceFolderName)
+LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, const std::string& _spaceFolderName)
   : mp(_mp)
   , spaceFolderName(_spaceFolderName)
   , spaceVoxelsFolderName(_spaceFolderName + "_data/")
@@ -87,7 +87,8 @@ std::string LargeScale::getSpaceCamsTracksDir()
     return out;
 }
 
-LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName)
+LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim,
+                                                  const std::string& newSpaceFolderName)
 {
     if(isSpaceSaved())
     {

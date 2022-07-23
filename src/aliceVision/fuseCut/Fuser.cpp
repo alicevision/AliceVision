@@ -893,7 +893,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
     return depthMapsPtsSimsTmpDir;
 }
 
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMapsPtsSimsTmpDir)
+void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, const std::string& depthMapsPtsSimsTmpDir)
 {
     for(int rc = 0; rc < mp.ncams; rc++)
     {
