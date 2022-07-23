@@ -7,13 +7,11 @@
 
 #include "regionsIO.hpp"
 
+#include <aliceVision/vfs/filesystem.hpp>
 #include <boost/progress.hpp>
-#include <boost/filesystem.hpp>
 
 #include <atomic>
 #include <cassert>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -34,10 +32,10 @@ std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& fo
 
   for(const std::string& folder : folders)
   {
-    const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
-    const fs::path descPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".desc");
+    const vfs::path featPath = vfs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
+    const vfs::path descPath = vfs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".desc");
 
-    if(fs::exists(featPath) && fs::exists(descPath))
+    if (vfs::exists(featPath) && vfs::exists(descPath))
     {
       featFilename = featPath.string();
       descFilename = descPath.string();
@@ -88,16 +86,16 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
   std::set<std::string> foldersSet;
   for(const auto& folder : folders)
   {
-    if(fs::exists(folder))
+    if (vfs::exists(folder))
     {
-      foldersSet.insert(fs::canonical(folder).string());
+      foldersSet.insert(vfs::canonical(folder).string());
     }
   }
 
   for(const auto& folder : foldersSet)
   {
-    const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
-    if(fs::exists(featPath))
+    const vfs::path featPath = vfs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
+    if (vfs::exists(featPath))
       featFilename = featPath.string();
   }
 

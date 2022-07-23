@@ -7,14 +7,12 @@
 #include "LocalBundleAdjustmentGraph.hpp"
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <lemon/bfs.h>
 
-#include <fstream>
 #include <algorithm>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -108,8 +106,8 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
 void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& folder, const std::string& filename)
 {
   ALICEVISION_LOG_DEBUG("Exporting intrinsics history...");
-  std::ofstream os;
-  os.open((fs::path(folder) / filename).string(), std::ios::app);
+  vfs::ostream os;
+  os.open((vfs::path(folder) / filename).string(), std::ios::app);
   os.seekp(0, std::ios::end); // put the cursor at the end
 
   for(const auto& intrinsicHistoryPair : _intrinsicsHistory)
@@ -602,8 +600,8 @@ double LocalBundleAdjustmentGraph::standardDeviation(const std::vector<T>& data)
 
 void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, const std::string& folder, const std::string& nameComplement)
 {
-  if(!fs::exists(folder))
-    fs::create_directory(folder);
+  if (!vfs::exists(folder))
+    vfs::create_directory(folder);
   
   std::stringstream dotStream;
   dotStream << "digraph lemon_dot_example {" << "\n";
@@ -636,8 +634,8 @@ void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, cons
   }
   dotStream << "}" << "\n";
   
-  const std::string dotFilepath = (fs::path(folder) / ("graph_" + std::to_string(_viewIdPerNode.size())  + "_" + nameComplement + ".dot")).string();
-  std::ofstream dotFile;
+  const std::string dotFilepath = (vfs::path(folder) / ("graph_" + std::to_string(_viewIdPerNode.size())  + "_" + nameComplement + ".dot")).string();
+  vfs::ostream dotFile;
   dotFile.open(dotFilepath);
   dotFile.write(dotStream.str().c_str(), dotStream.str().length());
   dotFile.close();

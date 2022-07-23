@@ -33,6 +33,8 @@
 #include <aliceVision/matching/supportEstimation.hpp>
 
 #include <aliceVision/sfm/BundleAdjustmentPanoramaCeres.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -245,7 +247,7 @@ ReconstructionEngine_panorama::~ReconstructionEngine_panorama()
   if(!_loggingFile.empty())
   {
     // Save the reconstruction Log
-    std::ofstream htmlFileStream(_loggingFile.c_str());
+    vfs::ostream htmlFileStream(_loggingFile.c_str());
     htmlFileStream << _htmlDocStream->getDoc();
   }
 }
@@ -362,7 +364,7 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
         }
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
         graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
-        graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+        graph::exportToGraphvizData((vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
       }
     }
   }
@@ -771,7 +773,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       std::set<IndexT> set_ViewIds;
       std::transform(_sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
-      graph::exportToGraphvizData((fs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
+      graph::exportToGraphvizData((vfs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
     }
 
     // Log a relative pose graph
@@ -787,7 +789,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       }
       const std::string sGraph_name = "global_relative_rotation_pose_graph";
       graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
-      graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
+      graph::exportToGraphvizData((vfs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
     }
   }
 }

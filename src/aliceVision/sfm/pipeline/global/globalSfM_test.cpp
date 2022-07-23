@@ -11,8 +11,6 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <cmath>
 #include <cstdio>
 #include <iostream>
@@ -27,8 +25,6 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
-
-namespace fs = boost::filesystem;
 
 // Test summary:
 // - Create features points and matching from the synthetic dataset

@@ -18,10 +18,8 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <aliceVision/utils/Histogram.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
 namespace aliceVision {

@@ -11,11 +11,10 @@
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/geometry/HalfPlane.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/progress.hpp>
-
-#include <fstream>
 
 namespace aliceVision {
 namespace sfm {
@@ -98,7 +97,7 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
 // Export defined frustum in PLY file for viewing
 bool FrustumFilter::export_Ply(const std::string & filename) const
 {
-  std::ofstream of(filename.c_str());
+  vfs::ostream of(filename.c_str());
   if (!of.is_open())
     return false;
   // Vertex count evaluation

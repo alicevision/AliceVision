@@ -279,7 +279,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       out_filename_I = (vfs::path(sEdge) / out_filename_I).string();
 
       std::string out_filename_J = "00_mask_J.png";
-      out_filename_J = (fs::path(sEdge) / out_filename_J).string();
+      out_filename_J = (vfs::path(sEdge) / out_filename_J).string();
       writeImage(out_filename_I, maskI, image::EImageColorSpace::AUTO);
       writeImage(out_filename_J, maskJ, image::EImageColorSpace::AUTO);
     }
@@ -439,13 +439,13 @@ bool ColorHarmonizationEngineGlobal::Process()
 
 bool ColorHarmonizationEngineGlobal::ReadInputData()
 {
-  if(!fs::is_directory( _outputDirectory))
+  if (!vfs::is_directory( _outputDirectory))
   {
     std::cerr << "The output folder is not a valid folder" << std::endl;
     return false;
   }
 
-  if(!fs::is_regular_file(_sfmDataFilename ))
+  if (!vfs::is_regular_file(_sfmDataFilename ))
   {
     std::cerr << "Invalid input sfm_data file: " << _sfmDataFilename << std::endl;
     return false;

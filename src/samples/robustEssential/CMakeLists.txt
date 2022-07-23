@@ -6,6 +6,7 @@ alicevision_add_software(aliceVision_samples_robustEssential
   LINKS aliceVision_image
         aliceVision_multiview
         aliceVision_system
+        aliceVision_vfs
         aliceVision_feature
         aliceVision_matching
         aliceVision_sfm

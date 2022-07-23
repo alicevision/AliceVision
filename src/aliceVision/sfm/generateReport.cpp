@@ -7,14 +7,12 @@
 
 #include "generateReport.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
-
 #include <aliceVision/utils/Histogram.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
+
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
-
-#include <boost/filesystem.hpp>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -93,7 +91,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
     os.str("");
     os << sRowBegin
       << sColBegin << id_view << sColEnd
-      << sColBegin + fs::path(v->getImagePath()).stem().string() + sColEnd;
+      << sColBegin + vfs::path(v->getImagePath()).stem().string() + sColEnd;
 
     // IdView | basename | #Observations | residuals min | residual median | residual max
     if(sfmData.isPoseAndIntrinsicDefined(v))
@@ -157,7 +155,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
 
       svg::svgHisto svg_Histo;
       svg_Histo.draw(histo.GetHist(), std::pair<float,float>(0.f, maxRange),
-        (fs::path(htmlFilename).parent_path() / std::string("residuals_histogram.svg")).string(),
+        (vfs::path(htmlFilename).parent_path() / std::string("residuals_histogram.svg")).string(),
         600, 200);
 
       os.str("");
@@ -169,7 +167,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
     }
   }
 
-  std::ofstream htmlFileStream(htmlFilename.c_str());
+  vfs::ostream htmlFileStream(htmlFilename.c_str());
   htmlFileStream << htmlDocStream.getDoc();
   const bool bOk = !htmlFileStream.bad();
   return bOk;
