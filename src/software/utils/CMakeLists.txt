@@ -309,6 +309,7 @@ if(ALICEVISION_HAVE_OPENCV)
     SOURCE main_colorCheckerCorrection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
     LINKS aliceVision_system
+          aliceVision_vfs
           aliceVision_sfmData
           aliceVision_sfmDataIO
           Boost::program_options

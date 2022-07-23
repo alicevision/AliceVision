@@ -13,9 +13,10 @@
 
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 #include <aliceVision/config.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -26,7 +27,6 @@
 #include <opencv2/mcc.hpp>
 
 #include <string>
-#include <fstream>
 #include <vector>
 #include <unordered_map>
 
@@ -37,7 +37,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
@@ -107,7 +106,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Read metadata path
     std::string metadataFilePath;
 
-    const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
+    const std::string outExtension = boost::to_lower_copy(vfs::path(outputPath).extension().string());
     const bool isEXR = (outExtension == ".exr");
     
     // Metadata are extracted from the original images
@@ -208,14 +207,15 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(fs::exists(inputData))
+    if (vfs::exists(inputData))
     {
         // checkers collection
         std::vector<CChecker> ccheckers;
 
         // property tree from data input
         bpt::ptree data;
-        bpt::read_json(inputData, data);
+        vfs::istream inputDataStream{inputData};
+        bpt::read_json(inputDataStream, data);
 
         for(const bpt::ptree::value_type& ccheckerPTree : data.get_child("checkers"))
             ccheckers.push_back(CChecker(ccheckerPTree));
@@ -227,7 +227,7 @@ int aliceVision_main(int argc, char** argv)
         std::unordered_map<IndexT, std::string> ViewPaths;
 
         // Check if sfmInputDataFilename exist and is recognized as sfm data file
-        const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
+        const std::string inputExt = boost::to_lower_copy(vfs::path(inputExpression).extension().string());
         static const std::array<std::string, 3> sfmSupportedExtensions = {".sfm", ".json", ".abc"};
         if(!inputExpression.empty() && std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(),
                                                  inputExt) != sfmSupportedExtensions.end())
@@ -259,11 +259,11 @@ int aliceVision_main(int argc, char** argv)
                 const std::string viewPath = viewIt.second;
                 sfmData::View& view = sfmData.getView(viewId);
 
-                const fs::path fsPath = viewPath;
+                const vfs::path fsPath = viewPath;
                 const std::string fileExt = fsPath.extension().string();
                 const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
                 const std::string outputfilePath =
-                    (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+                    (vfs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
 
                 ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "' for color correction.");
 
@@ -289,7 +289,7 @@ int aliceVision_main(int argc, char** argv)
 
             // Save sfmData with modified path to images
             const std::string sfmfilePath =
-                (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
+                (vfs::path(outputPath) / vfs::path(inputExpression).filename()).generic_string();
             if(!sfmDataIO::Save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
             {
                 ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
@@ -300,10 +300,10 @@ int aliceVision_main(int argc, char** argv)
         else
         {
             // load input as image file or image folder
-            const fs::path inputPath(inputExpression);
+            const vfs::path inputPath(inputExpression);
             std::vector<std::string> filesStrPaths;
 
-            if(fs::is_regular_file(inputPath))
+            if (vfs::is_regular_file(inputPath))
             {
                 filesStrPaths.push_back(inputPath.string());
             }
@@ -314,7 +314,7 @@ int aliceVision_main(int argc, char** argv)
                 const std::regex regex = utils::filterToRegex(inputExpression);
                 // Get supported files in inputPath directory which matches our regex filter
                 filesStrPaths = utils::getFilesPathsFromFolder(
-                    inputPath.parent_path().generic_string(), [&regex](const boost::filesystem::path& path) {
+                    inputPath.parent_path().generic_string(), [&regex](const vfs::path& path) {
                         return image::isSupported(path.extension().string()) &&
                                std::regex_match(path.generic_string(), regex);
                     });
@@ -337,11 +337,11 @@ int aliceVision_main(int argc, char** argv)
             int i = 0;
             for(const std::string& inputFilePath : filesStrPaths)
             {
-                const fs::path path = fs::path(inputFilePath);
+                const vfs::path path = vfs::path(inputFilePath);
                 const std::string filename = path.stem().string();
                 const std::string fileExt = path.extension().string();
                 const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-                const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+                const std::string outputFilePath = (vfs::path(outputPath) / (filename + outputExt)).generic_string();
 
                 ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt
                                          << "' for color correction.");
