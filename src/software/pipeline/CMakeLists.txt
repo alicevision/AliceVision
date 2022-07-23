@@ -386,6 +386,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_meshDecimate.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+            aliceVision_vfs
             aliceVision_mvsUtils
             OpenMesh
             Boost::program_options

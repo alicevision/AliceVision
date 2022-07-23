@@ -9,6 +9,7 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <OpenMesh/Core/IO/reader/OBJReader.hh>
 #include <OpenMesh/Core/IO/writer/OBJWriter.hh>
@@ -19,7 +20,6 @@
 #include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -28,7 +28,6 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
@@ -107,9 +106,9 @@ int aliceVision_main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    vfs::path outDirectory = vfs::path(outputMeshPath).parent_path();
+    if (!vfs::is_directory(outDirectory))
+        vfs::create_directory(outDirectory);
 
     // Mesh type
     typedef OpenMesh::TriMesh_ArrayKernelT<>                      Mesh;
