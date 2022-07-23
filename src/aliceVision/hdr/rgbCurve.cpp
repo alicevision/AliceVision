@@ -6,13 +6,14 @@
 
 #include "rgbCurve.hpp"
 #include <functional>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <numeric>
 #include <limits>
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -511,7 +512,7 @@ const rgbCurve rgbCurve::meanCurves() const
 
 void rgbCurve::write(const std::string &path, const std::string &name) const
 {
-    std::ofstream file(path);
+    vfs::ostream file(path);
 
     if(!file)
     {
@@ -553,7 +554,7 @@ void rgbCurve::writeHtml(const std::string& path, const std::string& title) cons
     jsxGraph.close();
 
     // save the reconstruction Log
-    std::ofstream htmlFileStream(path.c_str());
+    vfs::ostream htmlFileStream(path.c_str());
     htmlFileStream << htmlDocumentStream(title).getDoc();
     htmlFileStream << jsxGraph.toStr();
 }
@@ -561,7 +562,7 @@ void rgbCurve::writeHtml(const std::string& path, const std::string& title) cons
 
 void rgbCurve::read(const std::string &path)
 {
-    std::ifstream file(path);
+    vfs::istream file(path);
     std::vector <std::vector <std::string> > fileData;
 
     if(!file)
