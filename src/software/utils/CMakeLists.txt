@@ -137,6 +137,7 @@ alicevision_add_software(aliceVision_utils_qualityEvaluation
   SOURCE main_qualityEvaluation.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO

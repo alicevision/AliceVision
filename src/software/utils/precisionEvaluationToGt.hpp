@@ -11,15 +11,13 @@
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
-
 #include <vector>
 #include <algorithm>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision
 {
@@ -74,7 +72,7 @@ inline bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
   const std::string & sFileName)
 {
-  std::ofstream outfile;
+  vfs::ostream outfile;
   outfile.open(sFileName.c_str(), std::ios_base::out);
 
   outfile << "ply"
@@ -178,9 +176,9 @@ inline void EvaluteToGT(
   std::cout << std::endl << "\nAngular error statistics:\n" << statsAngular;
 
   // Export camera position (viewable)
-  exportToPly(vec_camCenterGT, vec_camPosComputed_T, (fs::path(sOutPath) / "camera_Registered.ply").string());
+  exportToPly(vec_camCenterGT, vec_camPosComputed_T, (vfs::path(sOutPath) / "camera_Registered.ply").string());
 
-  exportToPly(vec_camCenterGT, vec_camCenterComputed, (fs::path(sOutPath) / "camera_original.ply").string());
+  exportToPly(vec_camCenterGT, vec_camCenterComputed, (vfs::path(sOutPath) / "camera_original.ply").string());
 
   //-- Export residual to the HTML report
   {
@@ -225,7 +223,7 @@ inline void EvaluteToGT(
 
     svg::svgHisto svg_BaselineHistogram;
     svg_BaselineHistogram.draw(baselineHistogram.GetHist(), std::pair<float, float>(0.f, maxRange),
-                   (fs::path(sOutPath) / "baseline_histogram.svg").string(),
+                   (vfs::path(sOutPath) / "baseline_histogram.svg").string(),
                    600, 200);
 
     os.str("");
@@ -284,7 +282,7 @@ inline void EvaluteToGT(
 
     svg::svgHisto svg_AngularHistogram;
     svg_AngularHistogram.draw(angularHistogram.GetHist(), std::pair<float, float>(0.f, maxRangeAngular),
-                   (fs::path(sOutPath) / "angular_histogram.svg").string(),
+                   (vfs::path(sOutPath) / "angular_histogram.svg").string(),
                    600, 200);
 
     os.str("");
@@ -319,10 +317,10 @@ inline void EvaluteToGT(
 inline int findIdGT(std::string file, std::vector<std::string> filelist)
 {
   int result = -1;
-  std::string file_relative = fs::path(file).filename().string();
+  std::string file_relative = vfs::path(file).filename().string();
   for(unsigned int i = 0; i < filelist.size(); ++i)
   {
-    if(file_relative.compare(fs::path(filelist[i]).stem().string()) == 0)
+    if(file_relative.compare(vfs::path(filelist[i]).stem().string()) == 0)
     {
       result = i;
       break;
