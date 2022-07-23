@@ -9,15 +9,12 @@
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/system/Logger.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <random>
 #include <tuple>
 #include <cassert>
 #include <cstdlib>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
@@ -124,14 +121,14 @@ void KeyframeSelector::process()
   if(_feeds.size() > 1)
   {
     const std::string rigFolder = _outputFolder + "/rig/";
-    if(!fs::exists(rigFolder))
-      fs::create_directory(rigFolder);
+    if (!vfs::exists(rigFolder))
+      vfs::create_directory(rigFolder);
 
     for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
     {
       const std::string subPoseFolder = rigFolder + std::to_string(mediaIndex);
-      if(!fs::exists(subPoseFolder))
-        fs::create_directory(subPoseFolder);
+      if (!vfs::exists(subPoseFolder))
+        vfs::create_directory(subPoseFolder);
     }
   }
   
@@ -425,15 +422,15 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
                                      std::size_t mediaIndex)
 {
   auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  fs::path folder{_outputFolder};
+  vfs::path folder{_outputFolder};
 
   if(_feeds.size() > 1)
-     folder  /= fs::path("rig") / fs::path(std::to_string(mediaIndex));
+     folder /= vfs::path("rig") / vfs::path(std::to_string(mediaIndex));
 
   std::ostringstream filenameSS;
   filenameSS << std::setw(_padding) << std::setfill('0') << frameIndex << ".jpg";
 
-  const auto filepath = (folder / fs::path(filenameSS.str())).string();
+  const auto filepath = (folder / vfs::path(filenameSS.str())).string();
 
   mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(getRandomInt()));
 
