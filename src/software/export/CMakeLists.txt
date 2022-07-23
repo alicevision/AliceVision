@@ -174,6 +174,7 @@ alicevision_add_software(aliceVision_exportCameraFrustums
   SOURCE main_exportCameraFrustums.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
