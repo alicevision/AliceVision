@@ -12,13 +12,14 @@
 #include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/graph/Triplet.hpp"
+#include "aliceVision/vfs/filesystem.hpp"
+#include "aliceVision/vfs/ostream.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
 
-#include <fstream>
 #include <map>
 #include <utility>
 #include <vector>
@@ -77,7 +78,7 @@ void visibleCamPosToSVGSurface
     }
     std::ostringstream osSvgGT;
     osSvgGT << fileName;
-    std::ofstream svgFileGT( osSvgGT.str().c_str());
+    vfs::ostream svgFileGT( osSvgGT.str().c_str());
     svgFileGT << svgSurface_GT.closeSvgFile().str();
   }
 }

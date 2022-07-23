@@ -9,9 +9,10 @@
 #include "NViewDataSet.hpp"
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <cmath>
-#include <fstream>
 
 namespace aliceVision {
 
@@ -76,8 +77,8 @@ Mat34 NViewDataSet::P(size_t i)const {
 
 void NViewDataSet::exportToPLY(
   const std::string & out_file_name)const {
-  std::ofstream outfile;
-  outfile.open(out_file_name.c_str(), std::ios_base::out);
+  vfs::ostream outfile;
+  outfile.open(out_file_name.c_str());
   if (outfile.is_open()) {
     outfile << "ply"
      << std::endl << "format ascii 1.0"
