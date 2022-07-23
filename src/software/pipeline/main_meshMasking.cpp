@@ -14,9 +14,9 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/sfmMvsUtils/visibility.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <memory>
 
@@ -29,25 +29,24 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 
 bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string& srcImage)
 {
     for (const auto& masksFolder_str : masksFolders)
     {
-        if (!masksFolder_str.empty() && fs::exists(masksFolder_str))
+        if (!masksFolder_str.empty() && vfs::exists(masksFolder_str))
         {
-            const auto masksFolder = fs::path(masksFolder_str);
-            const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension("png");
-            const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension("png");
+            const auto masksFolder = vfs::path(masksFolder_str);
+            const auto idMaskPath = masksFolder / vfs::path(std::to_string(viewId)).replace_extension("png");
+            const auto nameMaskPath = masksFolder / vfs::path(srcImage).filename().replace_extension("png");
 
-            if (fs::exists(idMaskPath))
+            if (vfs::exists(idMaskPath))
             {
                 image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
                 return true;
             }
-            else if (fs::exists(nameMaskPath))
+            else if (vfs::exists(nameMaskPath))
             {
                 image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
                 return true;
@@ -621,7 +620,7 @@ int main(int argc, char **argv)
     inputMesh.load(inputMeshPath);
 
     // check sfm file
-    if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !vfs::exists(sfmFilePath) && !vfs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
@@ -642,10 +641,10 @@ int main(int argc, char **argv)
     }
 
     // ensure output folder exists
-    fs::path outputDirectory = fs::path(outputMeshPath).parent_path();
-    if(!outputDirectory.empty() && !fs::exists(outputDirectory))
+    vfs::path outputDirectory = vfs::path(outputMeshPath).parent_path();
+    if (!outputDirectory.empty() && !vfs::exists(outputDirectory))
     {
-        if(!fs::create_directory(outputDirectory))
+        if (!vfs::create_directory(outputDirectory))
         {
             ALICEVISION_LOG_ERROR("Cannot create output folder");
             return EXIT_FAILURE;
