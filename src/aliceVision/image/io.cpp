@@ -5,8 +5,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "oiioProxy.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 
 #include <OpenImageIO/imageio.h>
@@ -223,7 +225,13 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
 
 oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  std::unique_ptr<VfsIOReadProxy> ioproxy;
+  if (vfs::is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<VfsIOReadProxy>(path);
+  }
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, nullptr, ioproxy.get()));
   oiio::ImageSpec spec = in->spec();
 
   if(!in)
@@ -339,7 +347,12 @@ void readImage(const std::string& path,
   configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
 #endif
 
-  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+  std::unique_ptr<VfsIOReadProxy> ioproxy;
+  if (vfs::is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<VfsIOReadProxy>(path);
+  }
+  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec, ioproxy.get());
 
   inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
@@ -435,7 +448,13 @@ void readImageNoFloat(const std::string& path,
 {
   oiio::ImageSpec configSpec;
 
-  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+  std::unique_ptr<VfsIOReadProxy> ioproxy;
+  if (vfs::is_virtual_path(path))
+  {
+    ioproxy = std::make_unique<VfsIOReadProxy>(path);
+  }
+
+  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec, ioproxy.get());
 
   inBuf.read(0, 0, true, format);
 
@@ -514,8 +533,8 @@ void writeImage(const std::string& path,
       imageSpec.set_roi_full(roi);
   }
 
-  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
-  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+  oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
+  oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
   if(imageColorSpace == EImageColorSpace::SRGB)
@@ -573,12 +592,19 @@ void writeImage(const std::string& path,
     }
   }
 
+  std::unique_ptr<VfsIOWriteProxy> ioproxy;
+  if (vfs::is_virtual_path(tmpPath))
+  {
+    ioproxy = std::make_unique<VfsIOWriteProxy>(tmpPath);
+    outBuf->set_write_ioproxy(ioproxy.get());
+  }
+
   // write image
   if(!outBuf->write(tmpPath))
     throw std::runtime_error("Can't write output image file '" + path + "'.");
 
   // rename temporary filename
-  fs::rename(tmpPath, path);
+  vfs::rename(tmpPath, path);
 }
 
 template<typename T>
@@ -588,9 +614,9 @@ void writeImageNoFloat(const std::string& path,
                 EImageColorSpace imageColorSpace,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
-  const fs::path bPath = fs::path(path);
+  const vfs::path bPath = vfs::path(path);
   const std::string extension = boost::to_lower_copy(bPath.extension().string());
-  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + vfs::unique_path().string() + extension;
   const bool isEXR = (extension == ".exr");
   //const bool isTIF = (extension == ".tif");
   const bool isJPG = (extension == ".jpg");
@@ -610,8 +636,8 @@ void writeImageNoFloat(const std::string& path,
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
   imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
 
-  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
-  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+  oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
+  oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
@@ -619,6 +645,13 @@ void writeImageNoFloat(const std::string& path,
     
     formatBuf.copy(*outBuf, typeDesc); // override format, use half instead of float
     outBuf = &formatBuf;
+  }
+
+  std::unique_ptr<VfsIOWriteProxy> ioproxy;
+  if (vfs::is_virtual_path(tmpPath))
+  {
+    ioproxy = std::make_unique<VfsIOWriteProxy>(tmpPath);
+    outBuf->set_write_ioproxy(ioproxy.get());
   }
 
   // write image
