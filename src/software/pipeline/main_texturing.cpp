@@ -19,11 +19,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <geogram/basic/common.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -32,7 +32,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char* argv[])
@@ -200,7 +199,7 @@ int aliceVision_main(int argc, char* argv[])
     mesh::Texturing mesh;
     mesh.texParams = texParams;
 
-    fs::create_directory(outputFolder);
+    vfs::create_directory(outputFolder);
 
     // load input mesh (to texture) obj file
     ALICEVISION_LOG_INFO("Load input mesh.");
