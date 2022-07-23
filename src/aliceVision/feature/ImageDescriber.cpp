@@ -12,6 +12,7 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeatFloat.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_DSPSIFT_vlfeat.hpp>
 #include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
@@ -28,12 +29,8 @@
 #include <aliceVision/feature/openCV/ImageDescriber_AKAZE_OCV.hpp>
 #endif //ALICEVISION_HAVE_OPENCV
 
-#include <boost/filesystem.hpp>
-
 #include <algorithm>
 #include <stdexcept>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision{
 namespace feature{
@@ -189,16 +186,16 @@ std::istream& operator>>(std::istream& in, EFeatureConstrastFiltering& p)
 
 void ImageDescriber::Save(const Regions* regions, const std::string& sfileNameFeats, const std::string& sfileNameDescs) const
 {
-  const fs::path bFeatsPath = fs::path(sfileNameFeats);
-  const fs::path bDescsPath = fs::path(sfileNameDescs);
-  const std::string tmpFeatsPath = (bFeatsPath.parent_path() / bFeatsPath.stem()).string() + "." + fs::unique_path().string() + bFeatsPath.extension().string();
-  const std::string tmpDescsPath = (bDescsPath.parent_path() / bDescsPath.stem()).string() + "." + fs::unique_path().string() + bDescsPath.extension().string();
+  const vfs::path bFeatsPath = vfs::path(sfileNameFeats);
+  const vfs::path bDescsPath = vfs::path(sfileNameDescs);
+  const std::string tmpFeatsPath = (bFeatsPath.parent_path() / bFeatsPath.stem()).string() + "." + vfs::unique_path().string() + bFeatsPath.extension().string();
+  const std::string tmpDescsPath = (bDescsPath.parent_path() / bDescsPath.stem()).string() + "." + vfs::unique_path().string() + bDescsPath.extension().string();
 
   regions->Save(tmpFeatsPath, tmpDescsPath);
 
   // rename temporary filenames
-  fs::rename(tmpFeatsPath, sfileNameFeats);
-  fs::rename(tmpDescsPath, sfileNameDescs);
+  vfs::rename(tmpFeatsPath, sfileNameFeats);
+  vfs::rename(tmpDescsPath, sfileNameDescs);
 }
 
 std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDescriberType)

@@ -8,10 +8,12 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <iostream>
 #include <iterator>
-#include <fstream>
 #include <string>
 #include <vector>
 #include <exception>
@@ -177,7 +179,7 @@ inline void loadDescsFromFile(
 {
   vec_desc.clear();
 
-  std::ifstream fileIn(sfileNameDescs.c_str());
+  vfs::istream fileIn(sfileNameDescs.c_str());
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load descriptor file, can't open '" + sfileNameDescs + "' !");
 
@@ -198,7 +200,7 @@ inline void saveDescsToFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
-  std::ofstream file(sfileNameDescs.c_str());
+  vfs::ostream file(sfileNameDescs.c_str());
   if(!file.is_open())
     throw std::runtime_error("Can't save descriptor file, can't open '" + sfileNameDescs + "' !");
 
@@ -261,7 +263,7 @@ inline void loadDescsFromBinFile(
   if( !append ) // for compatibility
     vec_desc.clear();
 
-  std::ifstream fileIn(sfileNameDescs.c_str(), std::ios::in | std::ios::binary);
+  vfs::istream fileIn(sfileNameDescs.c_str(), std::ios::binary);
 
   if(!fileIn.is_open())
     throw std::runtime_error("Can't load descriptor binary file, can't open '" + sfileNameDescs + "' !");
@@ -304,7 +306,7 @@ inline void saveDescsToBinFile(
 {
   typedef typename DescriptorsT::value_type VALUE;
 
-  std::ofstream file(sfileNameDescs.c_str(), std::ios::out | std::ios::binary);
+  vfs::ostream file(sfileNameDescs.c_str(), std::ios::binary);
 
   if (!file.is_open())
     throw std::runtime_error("Can't save descriptor binary file, can't open '" + sfileNameDescs + "' !");
