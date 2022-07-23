@@ -9,14 +9,14 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
 #include <boost/algorithm/string/replace.hpp>
 
 #include <queue>
 #include <iostream>
-#include <fstream>
 #include <exception>
 #include <regex>
 #include <iterator>
@@ -101,8 +101,6 @@ private:
       return false;
     }
 
-    namespace bf = boost::filesystem;
-
     // get the image
     const sfmData::View *view = _viewIterator->second.get();
     imageName = view->getImagePath();
@@ -164,12 +162,11 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
 : _isInit(false)
 , _withCalibration(false)
 {
-  namespace bf = boost::filesystem;
 //    ALICEVISION_LOG_DEBUG(imagePath);
   // if it is a json, calibPath is neglected
-  if(bf::is_regular_file(imagePath))
+  if (vfs::is_regular_file(imagePath))
   {
-    const std::string ext = bf::path(imagePath).extension().string();
+    const std::string ext = vfs::path(imagePath).extension().string();
     // if it is a sfmdata.json
     if(ext == ".json")
     {
@@ -191,14 +188,14 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     {
       // we expect a simple txt file with a list of path to images relative to the 
       // location of the txt file itself
-      std::fstream fs(imagePath, std::ios::in);
+      vfs::istream fs(imagePath);
       std::string line;
       // parse each line of the text file
       while(getline(fs, line))
       {
         // compose the file name as the base path of the inputPath and
         // the filename just read
-        const std::string filename = (bf::path(imagePath).parent_path() / line).string();
+        const std::string filename = (vfs::path(imagePath).parent_path() / line).string();
         _images.push_back(filename);
       }
       // Close file
@@ -213,16 +210,16 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
       throw std::invalid_argument("File or mode not yet implemented");
     }
   }
-  else if(bf::is_directory(imagePath) || bf::is_directory(bf::path(imagePath).parent_path()))
+  else if (vfs::is_directory(imagePath) || vfs::is_directory(vfs::path(imagePath).parent_path()))
   {
     std::string folder = imagePath;
     // Recover the pattern : img.@.png (for example)
     std::string filePattern;
     std::regex re;
-    if(!bf::is_directory(imagePath))
+    if (!vfs::is_directory(imagePath))
     {
-      filePattern = bf::path(imagePath).filename().string();
-      folder = bf::path(imagePath).parent_path().string();
+      filePattern = vfs::path(imagePath).filename().string();
+      folder = vfs::path(imagePath).parent_path().string();
       ALICEVISION_LOG_DEBUG("filePattern: " << filePattern);
       std::string regexStr = filePattern;
       re = utils::filterToRegex(regexStr);
@@ -233,14 +230,14 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     }
     ALICEVISION_LOG_DEBUG("directory feedImage");
     // if it is a directory, list all the images and add them to the list
-    bf::directory_iterator iterator(folder);
+    vfs::directory_iterator iterator(folder);
     // since some OS will provide the files in a random order, first store them
     // in a priority queue and then fill the _image queue with the alphabetical
     // order from the priority queue
     std::priority_queue<std::string, 
                     std::vector<std::string>, 
                     std::greater<std::string> > tmpSorter;
-    for(; iterator != bf::directory_iterator(); ++iterator)
+    for(; iterator != vfs::directory_iterator(); ++iterator)
     {
       // get the extension of the current file to check whether it is an image
       const std::string ext = iterator->path().extension().string();

@@ -7,8 +7,9 @@
 #include "IFeed.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 
-#include <fstream>
 #include <exception>
 
 namespace aliceVision{
@@ -25,7 +26,7 @@ namespace dataio{
 // double #k2
 void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK3 &camIntrinsics)
 {
-  std::ifstream fs(filename, std::ios::in);
+  vfs::istream fs(filename);
   if(!fs.is_open())
   {
     ALICEVISION_LOG_WARNING("Unable to open the calibration file " << filename);

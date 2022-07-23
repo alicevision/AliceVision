@@ -5,13 +5,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "FeedProvider.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
 #include <aliceVision/config.hpp>
 #include "ImageFeed.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include "VideoFeed.hpp"
 #endif
-
-#include <boost/filesystem.hpp>
 
 #include <exception>
 #include <iostream>
@@ -25,15 +24,14 @@ namespace dataio{
 FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) 
 : _isVideo(false), _isLiveFeed(false)
 {
-  namespace bf = boost::filesystem;
   if(feedPath.empty())
   {
     throw std::invalid_argument("Empty filepath.");
   }
-  if(bf::is_regular_file(bf::path(feedPath))) 
+  if (vfs::is_regular_file(vfs::path(feedPath)))
   {
     // Image or video file
-    const std::string extension = bf::path(feedPath).extension().string();
+    const std::string extension = vfs::path(feedPath).extension().string();
     if(ImageFeed::isSupported(extension))
     {
       _feeder.reset(new ImageFeed(feedPath, calibPath));
@@ -52,7 +50,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
   }
   // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
   // if the user just gives the relative path as "bar", throws invalid argument exception.
-  else if(bf::is_directory(bf::path(feedPath)) || bf::is_directory(bf::path(feedPath).parent_path()))
+  else if (vfs::is_directory(vfs::path(feedPath)) || vfs::is_directory(vfs::path(feedPath).parent_path()))
   {
     // Folder or sequence of images
     _feeder.reset(new ImageFeed(feedPath, calibPath));
