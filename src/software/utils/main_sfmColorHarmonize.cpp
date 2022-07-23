@@ -9,11 +9,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <memory>
@@ -26,7 +26,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main( int argc, char **argv )
 {
@@ -114,8 +113,8 @@ int aliceVision_main( int argc, char **argv )
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  if(!fs::exists(outputFolder))
-    fs::create_directory(outputFolder);
+  if (vfs::exists(outputFolder))
+    vfs::create_directory(outputFolder);
 
   // harmonization process
 
