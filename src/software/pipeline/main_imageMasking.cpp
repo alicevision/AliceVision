@@ -12,12 +12,12 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
 
 // These constants define the current software version.
@@ -28,7 +28,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 enum class EAlgorithm {
     HSV,
@@ -202,7 +201,7 @@ int main(int argc, char **argv)
     }
 
     // check sfm file
-    if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
+    if (!sfmFilePath.empty() && !vfs::exists(sfmFilePath) && !vfs::is_regular_file(sfmFilePath))
     {
         ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
         return EXIT_FAILURE;
@@ -223,9 +222,9 @@ int main(int argc, char **argv)
     }
 
     // ensure output folder exists
-    if(!outputFilePath.empty() && !fs::exists(outputFilePath))
+    if(!outputFilePath.empty() && !vfs::exists(outputFilePath))
     {
-        if(!fs::create_directory(outputFilePath))
+        if (!vfs::create_directory(outputFilePath))
         {
             ALICEVISION_LOG_ERROR("Cannot create output folder");
             return EXIT_FAILURE;
@@ -312,24 +311,24 @@ int main(int argc, char **argv)
             {
                 const auto pos = depthMapPath.find(k_inputFolder);
                 if(pos != std::string::npos)
-                    depthMapPath.replace(pos, k_inputFolder.size(), fs::path(imgPath).parent_path().string());
+                    depthMapPath.replace(pos, k_inputFolder.size(), vfs::path(imgPath).parent_path().string());
             }
             {
                 const auto pos = depthMapPath.find(k_filename);
                 if(pos != std::string::npos)
-                    depthMapPath.replace(pos, k_filename.size(), fs::path(imgPath).filename().string());
+                    depthMapPath.replace(pos, k_filename.size(), vfs::path(imgPath).filename().string());
             }
             {
                 const auto pos = depthMapPath.find(k_stem);
                 if(pos != std::string::npos)
-                    depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).stem().string());
+                    depthMapPath.replace(pos, k_stem.size(), vfs::path(imgPath).stem().string());
             }
             {
                 const auto pos = depthMapPath.find(k_ext);
                 if(pos != std::string::npos)
-                    depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).extension().string().substr(1));
+                    depthMapPath.replace(pos, k_stem.size(), vfs::path(imgPath).extension().string().substr(1));
             }
-            if(!fs::exists(depthMapPath))
+            if (!vfs::exists(depthMapPath))
             {
                 ALICEVISION_LOG_DEBUG("depthMapPath from expression: \"" << depthMapPath << "\" not found.");
                 depthMapPath.clear();
@@ -342,8 +341,8 @@ int main(int argc, char **argv)
         else if(!depthMapFolder.empty())
         {
             // Look for View UID
-            fs::path p = fs::path(depthMapFolder) / (std::to_string(view.getViewId()) + fs::path(imgPath).extension().string());
-            if(fs::exists(p))
+            vfs::path p = vfs::path(depthMapFolder) / (std::to_string(view.getViewId()) + vfs::path(imgPath).extension().string());
+            if (vfs::exists(p))
             {
                 depthMapPath = p.string();
                 ALICEVISION_LOG_DEBUG("depthMapPath found from folder and View UID: \"" << depthMapPath << "\".");
@@ -351,8 +350,8 @@ int main(int argc, char **argv)
             else
             {
                 // Look for an image with the same filename
-                p = fs::path(depthMapFolder) / fs::path(imgPath).filename();
-                if(fs::exists(p))
+                p = vfs::path(depthMapFolder) / vfs::path(imgPath).filename();
+                if (vfs::exists(p))
                 {
                     depthMapPath = p.string();
                     ALICEVISION_LOG_DEBUG("depthMapPath found from folder and input filename: \"" << depthMapPath << "\".");
@@ -401,8 +400,8 @@ int main(int argc, char **argv)
                 result.swap(rescaled);
             }
         }
-        const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
-        const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
+        const auto resultFilename = vfs::path(std::to_string(index)).replace_extension("png");
+        const std::string resultPath = (vfs::path(outputFilePath) / resultFilename).string();
         image::writeImage(resultPath, result, image::EImageColorSpace::LINEAR);
     }
 
