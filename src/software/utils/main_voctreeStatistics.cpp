@@ -21,7 +21,6 @@
 #include <Eigen/Core>
 
 #include <iostream>
-#include <fstream>
 #include <ostream>
 #include <string>
 #include <chrono>
