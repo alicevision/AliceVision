@@ -8,12 +8,13 @@
 #include "pairBuilder.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/algorithm/string.hpp>
 
 #include <set>
 #include <iostream>
-#include <fstream>
 #include <sstream>
 
 namespace aliceVision {
@@ -50,7 +51,7 @@ bool loadPairs(const std::string &sFileName,
                int rangeStart,
                int rangeSize)
 {
-  std::ifstream in(sFileName.c_str());
+  vfs::istream in(sFileName.c_str());
   if(!in.is_open())
   {
     ALICEVISION_LOG_WARNING("loadPairs: Impossible to read the specified file: \"" << sFileName << "\".");
@@ -108,7 +109,7 @@ bool loadPairs(const std::string &sFileName,
 
 bool savePairs(const std::string &sFileName, const PairSet & pairs)
 {
-  std::ofstream outStream(sFileName.c_str());
+  vfs::ostream outStream(sFileName.c_str());
   if(!outStream.is_open())  {
     ALICEVISION_LOG_WARNING("savePairs: Impossible to open the output specified file: \"" << sFileName << "\".");
     return false;
