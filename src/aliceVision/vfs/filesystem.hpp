@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "fwd.hpp"
 #include "path.hpp"
 #include "directory_iterator.hpp"
 

@@ -6,13 +6,12 @@
 
 #pragma once
 
+#include "fwd.hpp"
 #include "path.hpp"
 #include "directory_entry.hpp"
 
 namespace aliceVision {
 namespace vfs {
-
-class filesystem;
 
 class directory_iterator
 {

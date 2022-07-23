@@ -4,6 +4,7 @@ set(vfs_files_headers
     directory_entry.hpp
     directory_iterator.hpp
     filesystem.hpp
+    fwd.hpp
     istream.hpp
     ostream.hpp
     path.hpp
