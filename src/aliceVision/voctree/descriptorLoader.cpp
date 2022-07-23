@@ -7,7 +7,8 @@
 #include "descriptorLoader.hpp"
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
-
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace aliceVision {
@@ -15,7 +16,7 @@ namespace voctree {
 
 void getInfoBinFile(const std::string &path, int dim, std::size_t &numDescriptors, int &bytesPerElement)
 {
-  std::fstream fs;
+  vfs::istream fs;
 
   // the file is supposed to have the number of descriptors as first element and then
   // the set of descriptors of dimension dim either as chars or floats
@@ -57,8 +58,6 @@ void getInfoBinFile(const std::string &path, int dim, std::size_t &numDescriptor
 
 void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
 {
-  namespace bfs = boost::filesystem;
-
   descriptorsFiles.clear();
 
   if(sfmData.getViews().empty())
@@ -86,9 +85,9 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector
       for(const feature::EImageDescriberType descType: descTypes)
       {
         // generate the equivalent .desc file path
-        const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(descType) + ".desc")).string();
+        const std::string filepath = vfs::path(vfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(descType) + ".desc")).string();
 
-        if(bfs::exists(filepath))
+        if (vfs::exists(filepath))
         {
           descriptorsFiles[view.first] = filepath;
           found = true;

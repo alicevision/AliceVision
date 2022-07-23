@@ -6,13 +6,12 @@
 
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/progress.hpp>
 
 #include <iostream>
-#include <fstream>
 
 namespace aliceVision {
 namespace voctree {
@@ -23,7 +22,6 @@ std::size_t readDescFromFiles(const sfmData::SfMData& sfmData,
                          std::vector<DescriptorT>& descriptors,
                          std::vector<std::size_t> &numFeatures)
 {
-  namespace bfs = boost::filesystem;
   std::map<IndexT, std::string> descriptorsFiles;
   getListOfDescriptorFiles(sfmData, featuresFolders, descriptorsFiles);
   std::size_t numDescriptors = 0;
@@ -48,7 +46,7 @@ std::size_t readDescFromFiles(const sfmData::SfMData& sfmData,
     else
     {
       // get the file size in byte and estimate the number of features without opening the file
-      numDescriptors += (bfs::file_size(currentFile.second) / bytesPerElement) / DescriptorT::static_size;
+      numDescriptors += (vfs::file_size(currentFile.second) / bytesPerElement) / DescriptorT::static_size;
     }
     ++display;
   }

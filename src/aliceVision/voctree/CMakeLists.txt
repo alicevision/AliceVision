@@ -27,10 +27,11 @@ alicevision_add_library(aliceVision_voctree
     aliceVision_system
     Boost::boost
   PRIVATE_LINKS
+    aliceVision_vfs
     Boost::filesystem
 )
 
 # Unit tests
 alicevision_add_test(kmeans_test.cpp              NAME "voctree_kmeans"              LINKS aliceVision_voctree)
 alicevision_add_test(vocabularyTree_test.cpp      NAME "voctree_vocabularyTree"      LINKS aliceVision_voctree)
-alicevision_add_test(vocabularyTreeBuild_test.cpp NAME "voctree_vocabularyTreeBuild" LINKS aliceVision_voctree)
+alicevision_add_test(vocabularyTreeBuild_test.cpp NAME "voctree_vocabularyTreeBuild" LINKS aliceVision_voctree aliceVision_vfs)

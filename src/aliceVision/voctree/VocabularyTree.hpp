@@ -15,13 +15,14 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <stdint.h>
 #include <vector>
 #include <map>
 #include <cassert>
 #include <limits>
-#include <fstream>
 #include <stdexcept>
 #include <iostream>
 
@@ -282,7 +283,7 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string
   /// @todo Some identifying name for the distance used
   assert(initialized());
 
-  std::ofstream out(file.c_str(), std::ios_base::binary);
+  vfs::ostream out(file.c_str(), std::ios_base::binary);
   out.write((char*) (&k_), sizeof (uint32_t));
   out.write((char*) (&levels_), sizeof (uint32_t));
   uint32_t size = centers_.size();
@@ -296,8 +297,8 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
 {
   clear();
 
-  std::ifstream in;
-  in.exceptions(std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
+  vfs::istream in;
+  in.exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
 
   uint32_t size;
   try
@@ -311,7 +312,7 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
     in.read((char*) (&centers_[0]), centers_.size() * sizeof (Feature));
     in.read((char*) (&valid_centers_[0]), valid_centers_.size());
   }
-  catch(std::ifstream::failure& e)
+  catch(std::ios_base::failure& e)
   {
     throw std::runtime_error("Failed to load vocabulary tree file" + file);
   }

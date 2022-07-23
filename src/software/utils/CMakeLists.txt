@@ -70,7 +70,8 @@ alicevision_add_software(aliceVision_utils_importMiddlebury
 alicevision_add_software(aliceVision_utils_voctreeCreation
   SOURCE main_voctreeCreation.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
-  LINKS aliceVision_voctree
+  LINKS aliceVision_vfs
+        aliceVision_voctree
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
@@ -95,7 +96,8 @@ alicevision_add_software(aliceVision_utils_voctreeQueryUtility
 alicevision_add_software(aliceVision_utils_voctreeStatistics
   SOURCE main_voctreeStatistics.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
-  LINKS aliceVision_voctree
+  LINKS aliceVision_vfs
+        aliceVision_voctree
         aliceVision_sfmData
         aliceVision_sfmDataIO
         Boost::program_options

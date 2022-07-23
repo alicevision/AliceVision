@@ -9,7 +9,6 @@
 #include <aliceVision/voctree/SimpleKmeans.hpp>
 
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <random>
 

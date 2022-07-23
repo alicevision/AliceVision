@@ -5,11 +5,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Database.hpp"
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
 #include <boost/progress.hpp>
 #include <cmath>
-#include <fstream>
 #include <stdexcept>
 #include <boost/format.hpp>
 
@@ -146,7 +147,7 @@ void Database::computeTfIdfWeights(float default_weight)
 
 void Database::saveWeights(const std::string& file) const
 {
-  std::ofstream out(file.c_str(), std::ios_base::binary);
+  vfs::ostream out(file.c_str(), std::ios_base::binary);
   uint32_t num_words = word_weights_.size();
   out.write((char*) (&num_words), sizeof (uint32_t));
   out.write((char*) (&word_weights_[0]), num_words * sizeof (float));
@@ -154,8 +155,8 @@ void Database::saveWeights(const std::string& file) const
 
 void Database::loadWeights(const std::string& file)
 {
-  std::ifstream in;
-  in.exceptions(std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
+  vfs::istream in;
+  in.exceptions(std::ios_base::eofbit | std::ios_base::failbit | std::ios_base::badbit);
 
   try
   {
@@ -166,7 +167,7 @@ void Database::loadWeights(const std::string& file)
     word_weights_.resize(num_words);
     in.read((char*) (&word_weights_[0]), num_words * sizeof (float));
   }
-  catch(std::ifstream::failure& e)
+  catch (std::ios_base::failure& e)
   {
     throw std::runtime_error((boost::format("Failed to load vocabulary weights file '%s'") % file).str());
   }

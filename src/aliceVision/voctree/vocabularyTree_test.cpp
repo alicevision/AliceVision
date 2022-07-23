@@ -6,8 +6,6 @@
 
 #include <aliceVision/voctree/Database.hpp>
 
-#include <iostream>
-#include <fstream>
 #include <vector>
 
 #define BOOST_TEST_MODULE vocabularyTree
