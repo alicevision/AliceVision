@@ -13,9 +13,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -28,7 +28,6 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 /// Build a list of pair that share visibility content from the SfMData structure
 PairSet BuildPairsFromStructureObservations(const sfmData::SfMData& sfmData)
@@ -63,7 +62,7 @@ PairSet BuildPairsFromFrustumsIntersections(
 {
   const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
-    frustum_filter.export_Ply((fs::path(sOutDirectory) / "frustums.ply").string());
+    frustum_filter.export_Ply((vfs::path(sOutDirectory) / "frustums.ply").string());
   return frustum_filter.getFrustumIntersectionPairs();
 }
 
@@ -134,8 +133,8 @@ int aliceVision_main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // check that we can create the output folder
-  if(!fs::exists(fs::path(outputFilename).parent_path()))
-    if(!fs::exists(fs::path(outputFilename).parent_path()))
+  if (!vfs::exists(vfs::path(outputFilename).parent_path()))
+    if (!vfs::exists(vfs::path(outputFilename).parent_path()))
       return EXIT_FAILURE;
 
   // load input SfMData scene
@@ -148,7 +147,7 @@ int aliceVision_main(int argc, char **argv)
 
   aliceVision::system::Timer timer;
 
-  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, fs::path(outputFilename).parent_path().string());
+  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, vfs::path(outputFilename).parent_path().string());
   /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
 
   ALICEVISION_LOG_INFO("# pairs: " << pairs.size());
