@@ -8,10 +8,11 @@
 #include "ResidualError.hpp"
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <ceres/rotation.h>
 
-#include <fstream>
 #include <exception>
 
 #ifdef VISUAL_DEBUG_MODE
@@ -649,7 +650,7 @@ void cvpause(){
 
 bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3> &subposes)
 {
-  std::ifstream fs(filename, std::ios::in);
+  vfs::istream fs(filename, std::ios::in);
   if(!fs.is_open())
   {
     ALICEVISION_CERR("Unable to load the calibration file " << filename);
@@ -696,7 +697,7 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
 //...
 bool saveRigCalibration(const std::string &filename, const std::vector<geometry::Pose3> &subposes)
 {
-  std::ofstream fs(filename, std::ios::out);
+  vfs::ostream fs(filename, std::ios::out);
   if(!fs.is_open())
   {
     ALICEVISION_CERR("Unable to create the calibration file " << filename);
