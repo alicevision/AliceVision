@@ -8,6 +8,7 @@ alicevision_add_software(aliceVision_samples_robustEssentialSpherical
         aliceVision_feature
         aliceVision_matching
         aliceVision_system
+        aliceVision_vfs
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO

@@ -8,10 +8,12 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/algorithm/string.hpp>
 
-#include <fstream>
 #include <iterator>
 #include <set>
 #include <sstream>
@@ -64,7 +66,7 @@ inline bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
                            const std::string & sFileName,
                            bool bVerbose = true )
 {
-  std::ifstream in(sFileName.c_str());
+  vfs::istream in(sFileName.c_str());
   if(!in.is_open())
   {
     std::cerr << std::endl

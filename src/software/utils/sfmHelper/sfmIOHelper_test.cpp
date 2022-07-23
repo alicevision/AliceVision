@@ -16,7 +16,7 @@ TEST(SfMIOHelper, EmptyFile) {
   os.str("");    
 
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  vfs::ostream file(sListsFile.c_str());
   file << os.str();
   file.close();
 
@@ -37,7 +37,7 @@ TEST(SfMIOHelper, UniqueIntrinsicGroup) {
     << "0.jpg;2592;1936;2052.91;0;1278.59;0;2052.91;958.71;0;0;1";
     
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  vfs::ostream file(sListsFile.c_str());
   file << os.str();
   file.close();
 
@@ -59,7 +59,7 @@ TEST(SfMIOHelper, SameCameraDifferentFocal) {
     << "DSC00403.JPG;4912;3264;6644;EASTMAN KODAK COMPANY;KODAK Z612 ZOOM DIGITAL CAMERA";
     
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  vfs::ostream file(sListsFile.c_str());
   file << os.str();
   file.close();
 
@@ -90,7 +90,7 @@ TEST(SfMIOHelper, ManyCameraDifferentFocal) {
     << "IMG_3212.JPG;5616;3744;Xylus;Junior"; // not known camera
     
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  vfs::ostream file(sListsFile.c_str());
   file << os.str();
   file.close();
 
@@ -117,7 +117,7 @@ TEST(SfMIOHelper, KnowAndUnknowCamera) {
     << "0.jpg;4912;3264;3344.34;0;2456;0;3344.34;1632;0;0;1";
       
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  vfs::ostream file(sListsFile.c_str());
   file << os.str();
   file.close();
 
@@ -144,7 +144,7 @@ TEST(SfMIOHelper, ThreeIntrinsicGroup_KMatrix) {
     << "6.jpg;2592;1936;2044.66;0;1253.00;0;2044.66;981.52;0;0;1";
 
   const std::string sListsFile = "./lists.txt";
-  std::ofstream file(sListsFile.c_str());
+  vfs::ostream file(sListsFile.c_str());
   file << os.str();
   file.close();
 

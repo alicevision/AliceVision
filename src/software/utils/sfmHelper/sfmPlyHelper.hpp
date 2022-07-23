@@ -9,6 +9,7 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 
+#include <aliceVision/vfs/ostream.hpp>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -20,7 +21,7 @@ namespace plyHelper{
 inline bool exportToPly(const std::vector<Vec3> & vec_points,
   const std::string & sFileName)
 {
-  std::ofstream outfile;
+  vfs::ostream outfile;
   outfile.open(sFileName, std::ios_base::out);
   
   if(!outfile.is_open())
@@ -53,7 +54,7 @@ inline bool exportToPly(const std::vector<Vec3> & vec_points,
   const std::string & sFileName,
   const std::vector<Vec3> * vec_coloredPoints = NULL)
 {
-  std::ofstream outfile;
+  vfs::ostream outfile;
   outfile.open(sFileName, std::ios_base::out);
   
   if(!outfile.is_open())
