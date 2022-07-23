@@ -7,13 +7,13 @@
 #include <Eigen/Dense>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <sstream>
 
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -36,7 +36,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 using namespace aliceVision;
 
@@ -544,7 +543,7 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Analyze path
-    boost::filesystem::path path(sfmOutputDataFilepath);
+    vfs::path path(sfmOutputDataFilepath);
     std::string outputPath = path.parent_path().string();
 
     if(lensGridFilepaths.empty())
@@ -620,11 +619,11 @@ int aliceVision_main(int argc, char* argv[])
                                         << w << "x" << h << ", camera: " << cameraPinhole->w() << "x" << cameraPinhole->h());
             }
 
-            fs::copy_file(lensGridFilepath, fs::path(outputPath) / fs::path(lensGridFilepath).filename(),
-                          fs::copy_option::overwrite_if_exists);
+            vfs::copy_file(lensGridFilepath, vfs::path(outputPath) / vfs::path(lensGridFilepath).filename(),
+                         vfs::copy_option::overwrite_if_exists);
 
             const std::string checkerImagePath =
-                (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_checkerboard.exr";
+                (vfs::path(outputPath) / vfs::path(lensGridFilepath).stem()).string() + "_checkerboard.exr";
 
             // Retrieve lines
             std::vector<calibration::LineWithPoints> lineWithPoints;
@@ -755,9 +754,9 @@ int aliceVision_main(int argc, char* argv[])
             image::readImage(lensGridFilepath, input, image::EImageColorSpace::SRGB);
 
             const std::string undistortedImagePath =
-                (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_undistorted.exr";
+                (vfs::path(outputPath) / vfs::path(lensGridFilepath).stem()).string() + "_undistorted.exr";
             const std::string stMapImagePath =
-                (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_stmap.exr";
+                (vfs::path(outputPath) / vfs::path(lensGridFilepath).stem()).string() + "_stmap.exr";
 
             Vec2 offset;
             image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);

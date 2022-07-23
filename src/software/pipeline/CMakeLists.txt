@@ -229,7 +229,8 @@ if(ALICEVISION_BUILD_SFM)
   alicevision_add_software(aliceVision_distortionCalibration
     SOURCE main_distortionCalibration.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_dataio
+    LINKS aliceVision_vfs
+          aliceVision_dataio
           aliceVision_image
           aliceVision_calibration
           aliceVision_system
