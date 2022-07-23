@@ -218,6 +218,7 @@ if(ALICEVISION_BUILD_SFM)
             aliceVision_image
             aliceVision_calibration
             aliceVision_system
+            aliceVision_vfs
             Boost::program_options
             Boost::filesystem
             Boost::boost

@@ -16,11 +16,10 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -34,7 +33,6 @@
 #include <cstdio>
 #include <string>
 #include <cctype>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <exception>
@@ -46,13 +44,13 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-namespace bfs = boost::filesystem;
+namespace vfs = aliceVision::vfs;
 namespace po = boost::program_options;
 
 int aliceVision_main(int argc, char** argv)
 {
   // Command line arguments
-  bfs::path inputPath;
+  vfs::path inputPath;
   std::string outputFilename;
   std::string debugSelectedImgFolder;
   std::string debugRejectedImgFolder;
@@ -70,7 +68,7 @@ int aliceVision_main(int argc, char** argv)
   po::options_description desc("\n\nThis program is used to calibrate a camera from a dataset of images.\n");
   desc.add_options()
           ("help,h", "Produce help message.\n")
-          ("input,i", po::value<bfs::path>(&inputPath)->required(),
+          ("input,i", po::value<vfs::path>(&inputPath)->required(),
            "Input images in one of the following form:\n"
            " - folder containing images\n"
            " - image sequence like /path/to/seq.@.jpg\n"
