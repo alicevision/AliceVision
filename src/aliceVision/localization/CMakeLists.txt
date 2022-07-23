@@ -49,7 +49,11 @@ if(ALICEVISION_HAVE_OPENGV)
 endif()
 
 # Unit tests
-alicevision_add_test(LocalizationResult_test.cpp NAME "localization_localizationResult" LINKS aliceVision_localization)
+alicevision_add_test(LocalizationResult_test.cpp NAME "localization_localizationResult"
+  LINKS
+    aliceVision_vfs
+    aliceVision_localization
+)
 
 if(ALICEVISION_HAVE_OPENGV)
   alicevision_add_test(rigResection_test.cpp NAME "localization_rigResection" LINKS aliceVision_localization)

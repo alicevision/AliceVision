@@ -6,6 +6,8 @@
 
 #include "LocalizationResult.hpp"
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -166,7 +168,8 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
   bpt::ptree fileTree;
 
   // read the json file and initialize the tree
-  bpt::read_json(filename, fileTree);
+  vfs::istream in{filename};
+  bpt::read_json(in, fileTree);
 
   // version
   {
@@ -335,7 +338,8 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
   fileTree.add_child("localizationResults", localizationResultsTree);
 
   // write the json file with the tree
-  bpt::write_json(filename, fileTree);
+  vfs::ostream out{filename};
+  bpt::write_json(out, fileTree);
 }
 
 void updateRigPoses(std::vector<LocalizationResult>& vec_localizationResults,

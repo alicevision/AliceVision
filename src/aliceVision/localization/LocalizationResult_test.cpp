@@ -8,8 +8,7 @@
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <vector>
 #include <chrono>
@@ -21,7 +20,6 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
-namespace fs = boost::filesystem;
 using namespace aliceVision;
 
 sfm::ImageLocalizerMatchData generateRandomMatch_Data(std::size_t numPts)
@@ -151,6 +149,6 @@ BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
       BOOST_CHECK(matchedImagesGT[j] == matchedImages[j]);
     }
 
-    fs::remove(filename);
+    vfs::remove(filename);
   }
 }

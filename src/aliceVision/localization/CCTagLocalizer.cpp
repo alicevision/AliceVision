@@ -18,11 +18,11 @@
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <cctag/ICCTag.hpp>
 
 #include <boost/progress.hpp>
-#include <boost/filesystem.hpp>
 
 #include <algorithm>
 #include <sstream>
@@ -200,8 +200,6 @@ bool CCTagLocalizer::localize(const image::Image<float> & imageGrey,
                               LocalizationResult & localizationResult, 
                               const std::string& imagePath)
 {
-  namespace bfs = boost::filesystem;
-  
   const CCTagLocalizer::Parameters *param = static_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
@@ -231,7 +229,7 @@ bool CCTagLocalizer::localize(const image::Image<float> & imageGrey,
     matching::saveCCTag2SVG(imagePath, 
                             imageSize, 
                             cctagQueryRegions,
-                            param->_visualDebug+"/"+bfs::path(imagePath).stem().string()+".svg");
+                            param->_visualDebug + "/" + vfs::path(imagePath).stem().string()+".svg");
   }
   return localize(tmpQueryRegions,
                   imageSize,
@@ -257,8 +255,6 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
                               LocalizationResult & localizationResult,
                               const std::string& imagePath)
 {
-  namespace bfs = boost::filesystem;
-
   const CCTagLocalizer::Parameters *param = dynamic_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
@@ -316,11 +312,10 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
     if(!param->_visualDebug.empty() && !imagePath.empty())
     {
-//      namespace bfs = boost::filesystem;
 //      matching::saveFeatures2SVG(imagePath,
 //                                 imageSize,
 //                                 resectionData.pt2D,
-//                                 param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
+//                                 param._visualDebug + "/" + vfs::path(imagePath).stem().string() + ".associations.svg");
     }
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
     return localizationResult.isValid();
@@ -808,18 +803,17 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
     
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
-      namespace bfs = boost::filesystem;
       const sfmData::View *mview = _sfm_data.getViews().at(keyframeId).get();
-      const std::string queryImage = bfs::path(imagePath).stem().string();
-      const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
+      const std::string queryImage = vfs::path(imagePath).stem().string();
+      const std::string matchedImage = vfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();
 
       // the directory where to save the feature matches
-      const auto baseDir = bfs::path(param._visualDebug) / queryImage;
-      if((!bfs::exists(baseDir)))
+      const auto baseDir = vfs::path(param._visualDebug) / queryImage;
+      if (!vfs::exists(baseDir))
       {
         ALICEVISION_LOG_DEBUG("created " << baseDir.string());
-        bfs::create_directories(baseDir);
+        vfs::create_directories(baseDir);
       }
       
       // the final filename for the output svg file as a composition of the query
