@@ -9,14 +9,15 @@
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 #include "LineKernel.hpp"
 
 #include <iostream>
-#include <fstream>  
 #include <vector>
 #include <random>
 #include <algorithm>
 
+namespace vfs = aliceVision::vfs;
 
 /**
  * @brief Generate a svg file with the ground truth line, the estimated one, the
@@ -63,7 +64,7 @@ void drawTest(const std::string &outfile,
 
   //  ostringstream osSvg;
   //  osSvg << gaussianNoiseLevel << "_line_" << sqrt(errorMax) << ".svg";
-  std::ofstream svgFile(outfile);
+  vfs::ostream svgFile(outfile);
   svgFile << svgTest.closeSvgFile().str();
   svgFile.close();
 }
