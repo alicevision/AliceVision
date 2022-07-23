@@ -25,13 +25,12 @@
 #include <boost/program_options.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 // IO
-#include <fstream>
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -42,7 +41,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
-namespace fs = boost::filesystem;
 
 size_t getCompositingOptimalScale(int width, int height)
 {
@@ -81,7 +79,7 @@ std::unique_ptr<PanoramaMap> buildMap(const sfmData::SfMData & sfmData, const st
             continue;
 
         // Load mask
-        const std::string maskPath = (fs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
+        const std::string maskPath = (vfs::path(inputPath) / (std::to_string(viewIt.first) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load metadata of mask with path " << maskPath);
 
         int width = 0;
@@ -185,7 +183,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     for (IndexT viewCurrent : overlappingViews)
     {        
         // Load mask
-        const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+        const std::string maskPath = (vfs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
         ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
         image::Image<unsigned char> mask;
         image::readImageDirect(maskPath, mask);
@@ -384,13 +382,13 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             const BoundingBox & bboxIntersect = intersections[indexIntersection];
 
             // Load image
-            const std::string imagePath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
+            const std::string imagePath = (vfs::path(warpingFolder) / (std::to_string(viewCurrent) + ".exr")).string();
             ALICEVISION_LOG_TRACE("Load image with path " << imagePath);
             image::Image<image::RGBfColor> source;
             image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
             // Load mask
-            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            const std::string maskPath = (vfs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
             image::readImageDirect(maskPath, mask);
@@ -399,7 +397,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             image::Image<float> weights; 
             if (needWeights)
             {
-                const std::string weightsPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
+                const std::string weightsPath = (vfs::path(warpingFolder) / (std::to_string(viewCurrent) + "_weight.exr")).string();
                 ALICEVISION_LOG_TRACE("Load weights with path " << weightsPath);
                 image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
             }
@@ -460,7 +458,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     }
 
     const std::string viewIdStr = std::to_string(viewReference);
-    const std::string outputFilePath = (fs::path(outputFolder) / (viewIdStr + ".exr")).string();
+    const std::string outputFilePath = (vfs::path(outputFolder) / (viewIdStr + ".exr")).string();
     image::Image<image::RGBAfColor> & output = compositer->getOutput();
 
     if (storageDataType == image::EStorageDataType::HalfFinite)
@@ -498,7 +496,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
             }
 
             // Load mask
-            const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
+            const std::string maskPath = (vfs::path(warpingFolder) / (std::to_string(viewCurrent) + "_mask.exr")).string();
             ALICEVISION_LOG_TRACE("Load mask with path " << maskPath);
             image::Image<unsigned char> mask;
             image::readImageDirect(maskPath, mask);
