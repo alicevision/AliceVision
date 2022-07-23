@@ -9,9 +9,10 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/convertion.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -20,7 +21,6 @@
 #include <iterator>
 #include <iomanip>
 #include <map>
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -34,7 +34,6 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 bool exportToMatlab(
   const SfMData & sfm_data,
@@ -46,8 +45,8 @@ bool exportToMatlab(
   std::map<IndexT, std::vector<Observation> > observationsPerView;
   
   {
-    const std::string landmarksFilename = (fs::path(outDirectory) / "scene.landmarks").string();
-    std::ofstream landmarksFile(landmarksFilename);
+    const std::string landmarksFilename = (vfs::path(outDirectory) / "scene.landmarks").string();
+    vfs::ostream landmarksFile(landmarksFilename);
     landmarksFile << "# landmarkId X Y Z\n";
     for(const auto& s: sfm_data.structure)
     {
@@ -69,8 +68,8 @@ bool exportToMatlab(
     const std::vector<Observation>& viewObservations = obsPerView.second;
     const IndexT viewId = obsPerView.first;
     
-    const std::string viewFeatFilename = (fs::path(outDirectory) / (std::to_string(viewId) + ".reconstructedFeatures")).string();
-    std::ofstream viewFeatFile(viewFeatFilename);
+    const std::string viewFeatFilename = (vfs::path(outDirectory) / (std::to_string(viewId) + ".reconstructedFeatures")).string();
+    vfs::ostream viewFeatFile(viewFeatFilename);
     viewFeatFile << "# landmarkId x y\n";
     for(const Observation& obs: viewObservations)
     {
@@ -81,8 +80,8 @@ bool exportToMatlab(
   
   // Expose camera poses
   {
-    const std::string cameraPosesFilename = (fs::path(outDirectory) / "cameras.poses").string();
-    std::ofstream cameraPosesFile(cameraPosesFilename);
+    const std::string cameraPosesFilename = (vfs::path(outDirectory) / "cameras.poses").string();
+    vfs::ostream cameraPosesFile(cameraPosesFilename);
     cameraPosesFile << "# viewId R11 R12 R13 R21 R22 R23 R31 R32 R33 C1 C2 C3\n";
     for(const auto& v: sfm_data.views)
     {
@@ -112,8 +111,8 @@ bool exportToMatlab(
   // Expose camera intrinsics
   // Note: we export it per view, It is really redundant but easy to parse.
   {
-    const std::string cameraIntrinsicsFilename = (fs::path(outDirectory) / "cameras.intrinsics").string();
-    std::ofstream cameraIntrinsicsFile(cameraIntrinsicsFilename);
+    const std::string cameraIntrinsicsFilename = (vfs::path(outDirectory) / "cameras.intrinsics").string();
+    vfs::ostream cameraIntrinsicsFile(cameraIntrinsicsFilename);
     cameraIntrinsicsFile <<
       "# viewId pinhole f u0 v0\n"
       "# viewId radial1 f u0 v0 k1\n"
@@ -194,8 +193,8 @@ int aliceVision_main(int argc, char *argv[])
   // export
   {
     // Create output dir
-    if(!fs::exists(outputFolder))
-      fs::create_directory(outputFolder);
+    if (!vfs::exists(outputFolder))
+      vfs::create_directory(outputFolder);
 
     // Read the input SfM scene
     SfMData sfmData;
