@@ -9,6 +9,7 @@
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision  {
 namespace matching {
@@ -54,7 +55,7 @@ inline void PairwiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
       (NbImages)*scaleFactor - 2*scaleFactor, (NbImages+1)*scaleFactor,
       svg::svgStyle().stroke("black", 1.0));
 
-    std::ofstream svgFileStream( sOutName.c_str());
+    vfs::ostream svgFileStream(sOutName.c_str());
     svgFileStream << svgStream.closeSvgFile().str();
   }
 }

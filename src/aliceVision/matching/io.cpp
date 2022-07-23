@@ -9,31 +9,28 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
-
-#include <boost/filesystem.hpp>
-#include <boost/range/iterator_range.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <map>
-#include <fstream>
 #include <iterator>
 #include <string>
 #include <vector>
-
-namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace matching {
 
 bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
 {
-  const std::string ext = fs::extension(filepath);
+  const std::string ext = vfs::path(filepath).extension().string();
 
-  if(!fs::exists(filepath))
+  if (!vfs::exists(filepath))
     return false;
 
   if(ext == ".txt")
   {
-    std::ifstream stream(filepath.c_str());
+    vfs::istream stream(filepath.c_str());
     if (!stream.is_open())
       return false;
 
@@ -145,7 +142,7 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
     const IndexT idView = *it;
     const std::string matchFilename = std::to_string(idView) + "." + extension;
     PairwiseMatches fileMatches;
-    if(!LoadMatchFile(fileMatches, (fs::path(folder) / matchFilename).string() ))
+    if (!LoadMatchFile(fileMatches, (vfs::path(folder) / matchFilename).string() ))
     {
       #pragma omp critical
       {
@@ -177,7 +174,7 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
   std::size_t nbLoadedMatchFiles = 0;
   std::vector<std::string> matchFiles;
   // list all matches files in 'folder' matching (i.e containing) 'pattern'
-  for(const auto& entry : boost::make_iterator_range(fs::directory_iterator(folder), {}))
+  for(const auto& entry : vfs::directory_iterator(folder))
   {
     if(entry.path().string().find(pattern) != std::string::npos)
     {
@@ -236,9 +233,9 @@ bool Load(PairwiseMatches& matches,
   std::set<std::string> foldersSet;
   for(const auto& folder : folders)
   {
-    if(fs::exists(folder))
+    if (vfs::exists(folder))
     {
-      foldersSet.insert(fs::canonical(folder).string());
+      foldersSet.insert(vfs::canonical(folder).string());
     }
   }
 
@@ -288,12 +285,12 @@ private:
     const PairwiseMatches::const_iterator& matchBegin,
     const PairwiseMatches::const_iterator& matchEnd)
   {
-    const fs::path bPath = fs::path(filepath);
-    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + bPath.extension().string();
+    const vfs::path bPath = vfs::path(filepath);
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + vfs::unique_path().string() + bPath.extension().string();
 
     // write temporary file
     {
-      std::ofstream stream(tmpPath.c_str(), std::ios::out);
+      vfs::ostream stream(tmpPath.c_str(), std::ios::out);
       for(PairwiseMatches::const_iterator match = matchBegin;
         match != matchEnd;
         ++match)
@@ -312,7 +309,7 @@ private:
     }
 
     // rename temporary file
-    fs::rename(tmpPath, filepath);
+    vfs::rename(tmpPath, filepath);
   }
 
 public:
@@ -323,14 +320,14 @@ public:
     : m_matches(matches)
     , m_directory(folder)
     , m_filename(filename)
-    , m_ext(fs::extension(filename))
+    , m_ext(vfs::path(filename).extension().string())
   {}
 
   ~MatchExporter() = default;
   
   void saveGlobalFile()
   {
-    const std::string filepath = (fs::path(m_directory) / m_filename).string();
+    const std::string filepath = (vfs::path(m_directory) / m_filename).string();
 
     if(m_ext == ".txt")
       saveTxt(filepath, m_matches.begin(), m_matches.end());
@@ -354,7 +351,7 @@ public:
       PairwiseMatches::const_iterator match = matchBegin;
       while(match != matchEnd && match->first.first == key)
         ++match;
-      const std::string filepath = (fs::path(m_directory) / (std::to_string(key) + "." + m_filename)).string();
+      const std::string filepath = (vfs::path(m_directory) / (std::to_string(key) + "." + m_filename)).string();
       ALICEVISION_LOG_DEBUG("Export Matches in: " << filepath);
       
       if(m_ext == ".txt")

@@ -20,7 +20,6 @@
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/types.hpp>
 
-#include <fstream>
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -85,8 +84,8 @@ private :
 
 //=============================IO interface ======================//
 
-std::ofstream& writeDetector( std::ofstream& out, const aliceVision::feature::PointFeature& vect );
-std::ifstream& readDetector( std::ifstream& in, aliceVision::feature::PointFeature& point );
+std::ostream& writeDetector(std::ostream& out, const aliceVision::feature::PointFeature& vect);
+std::istream& readDetector(std::istream& in, aliceVision::feature::PointFeature& point);
 //======================================elemetuary operations================================//
 template < typename T >
 inline T point_distance( const T x1, const T y1, const T x2, const T y2 )

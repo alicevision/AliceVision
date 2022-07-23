@@ -8,6 +8,7 @@
 #include "svgVisualization.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
@@ -166,7 +167,7 @@ void drawMatchesSideBySide(const std::string& imagePathLeft,
   }
 
 
-  std::ofstream svgFile(outputSVGPath);
+  vfs::ostream svgFile(outputSVGPath);
   if (!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file " + outputSVGPath);
@@ -238,7 +239,7 @@ void drawHomographyMatches(const std::string& imagePathLeft,
     }
   }
 
-  std::ofstream svgFile(outFilename);
+  vfs::ostream svgFile(outFilename);
   if(!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file "+outFilename);
@@ -291,7 +292,7 @@ void saveMatches2SVG(const std::string &imagePathLeft,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath.c_str() );
+  vfs::ostream svgFile( outputSVGPath.c_str() );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -325,7 +326,7 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  vfs::ostream svgFile( outputSVGPath );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();  
 }
@@ -375,7 +376,7 @@ void drawKeypointsSideBySide(const std::string&imagePathLeft,
     svgStream.drawCircle(kpt.x()+offset, kpt.y(), (richKeypoint) ? kpt.scale()*radiusRight : radiusRight, styleRight);
   }
 
-  std::ofstream svgFile(outputSVGPath);
+  vfs::ostream svgFile(outputSVGPath);
   if(!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file " + outputSVGPath);
@@ -413,7 +414,7 @@ void saveFeatures2SVG(const std::string &inputImagePath,
     }
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  vfs::ostream svgFile( outputSVGPath );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -461,7 +462,7 @@ void saveFeatures2SVG(const std::string &inputImagePath,
     }   
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  vfs::ostream svgFile( outputSVGPath );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -617,7 +618,7 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
     svgStream.drawCircle(point(0), point(1), 3 * radius, svg::svgStyle().stroke("red", strokeWidth).fill("red"));
   }
 
-  std::ofstream svgFile(outputSVGPath.c_str());
+  vfs::ostream svgFile(outputSVGPath.c_str());
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -655,7 +656,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
 
     }
   }
-  std::ofstream svgFile(outputSVGPath.c_str());
+  vfs::ostream svgFile(outputSVGPath.c_str());
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -705,7 +706,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
       }
     }
   }
-  std::ofstream svgFile(outputSVGPath);
+  vfs::ostream svgFile(outputSVGPath);
   if(!svgFile.is_open())
   {
     ALICEVISION_CERR("Unable to open file " + outputSVGPath);
@@ -751,7 +752,7 @@ void saveCCTag2SVG(const std::string &inputImagePath,
     svgStream.drawText(kpt.x(), kpt.y(), textSize, std::to_string(cctagId), "yellow");
   }
  
-  std::ofstream svgFile( outputSVGPath );
+  vfs::ostream svgFile( outputSVGPath );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
@@ -868,7 +869,7 @@ void saveCCTagMatches2SVG(const std::string &imagePathLeft,
     }
   }
 
-  std::ofstream svgFile(outputSVGPath.c_str());
+  vfs::ostream svgFile(outputSVGPath.c_str());
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
 }
