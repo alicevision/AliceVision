@@ -57,6 +57,7 @@ alicevision_add_software(aliceVision_utils_importMiddlebury
         SOURCE main_importMiddlebury.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS
+        aliceVision_vfs
         aliceVision_numeric
         aliceVision_geometry
         aliceVision_sfmData

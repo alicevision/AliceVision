@@ -11,9 +11,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <vector>
@@ -30,8 +30,6 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace bfs = boost::filesystem;
-
 
 /*
  * This program generate an SfMData from the configuration files of the Middlebury dataset
@@ -108,14 +106,14 @@ int aliceVision_main(int argc, char** argv)
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // check input file exist
-    if(!exists(bfs::path(middleburyFile)))
+    if (!vfs::exists(vfs::path(middleburyFile)))
     {
         ALICEVISION_LOG_ERROR("File " << middleburyFile << " does not exist");
         return EXIT_FAILURE;
     }
 
     // get the base path
-    const auto basePath = bfs::path(middleburyFile).parent_path().string();
+    const auto basePath = vfs::path(middleburyFile).parent_path().string();
 
     // parse file
     const auto sfmData =
