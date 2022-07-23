@@ -255,6 +255,7 @@ alicevision_add_software(aliceVision_utils_fisheyeProjection
   SOURCE main_fisheyeProjection.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_numeric
         aliceVision_image
         ${OPENIMAGEIO_LIBRARIES}

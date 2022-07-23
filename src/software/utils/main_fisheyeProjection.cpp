@@ -13,10 +13,10 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
 
 #include <OpenImageIO/imageio.h>
@@ -26,7 +26,6 @@
 #include <string>
 #include <iostream>
 #include <iterator>
-#include <fstream>
 #include <vector>
 #include <boost/regex.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -39,7 +38,6 @@
 
 using namespace aliceVision;
 
-namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace oiio = OIIO;
 namespace bmf =  boost::math::float_constants;
@@ -211,7 +209,9 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, int nbIm
  * @param[in] rotations - contains adjustment rotations on each image set by user
  * @param[out] outputFolder - output folder path to write panorama
  */
-void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, float blurWidth, const std::array<std::vector<double>, 3>& rotations, std::string& outputPath)
+void stitchPanorama(const std::vector<std::string>& imagePaths,
+                    const std::vector<oiio::ParamValueList>& metadatas, float blurWidth,
+                    const std::array<std::vector<double>, 3>& rotations, std::string& outputPath)
 {
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
@@ -243,9 +243,9 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
   }
 
   // save equirectangular image with fisheye's metadata
-  if(fs::is_directory(fs::path(outputPath)))
+  if (vfs::is_directory(vfs::path(outputPath)))
   {
-    outputPath = (fs::path(outputPath) / ("panorama.exr")).string();
+    outputPath = (vfs::path(outputPath) / ("panorama.exr")).string();
   }
   image::writeImage(outputPath, imageOut, image::EImageColorSpace::AUTO, bufferOut.specmod().extra_attribs);
 
@@ -324,7 +324,7 @@ int aliceVision_main(int argc, char** argv)
   system::Logger::get()->setLogLevel(verboseLevel);
   
   // check output folder and update to its absolute path
-  outputFolder = fs::absolute(outputFolder).string();
+  outputFolder = vfs::absolute(outputFolder).string();
 
   std::vector<std::string> imagePaths;
   std::vector<float> times;
@@ -332,10 +332,10 @@ int aliceVision_main(int argc, char** argv)
 
   for(const std::string& entry: inputPath)
   {
-    const fs::path path = fs::absolute(entry);
-    if(fs::exists(path) && fs::is_directory(path))
+    const vfs::path path = vfs::absolute(entry);
+    if (vfs::exists(path) && vfs::is_directory(path))
     {
-      for(fs::directory_entry& file : boost::make_iterator_range(fs::directory_iterator(path), {}))
+      for (const vfs::directory_entry& file : vfs::directory_iterator(path))
       {
         if(image::isSupported(file.path().extension().string()))
         {
@@ -356,7 +356,7 @@ int aliceVision_main(int argc, char** argv)
       }
     }
 
-    else if(fs::exists(path) && image::isSupported(path.extension().string()))
+    else if (vfs::exists(path) && image::isSupported(path.extension().string()))
     {
       imagePaths.push_back(path.string());
 
