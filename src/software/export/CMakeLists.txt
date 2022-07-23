@@ -58,6 +58,7 @@ alicevision_add_software(aliceVision_exportTracks
   SOURCE main_exportTracks.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_feature
         aliceVision_sfm
         aliceVision_sfmData
