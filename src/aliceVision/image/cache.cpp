@@ -1,9 +1,9 @@
 #include "cache.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-
-#include <boost/filesystem.hpp>
-
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 namespace aliceVision
 {
@@ -44,11 +44,10 @@ void CacheManager::setInCoreMaxObjectCount(size_t max) {
 }
 
 std::string CacheManager::getPathForIndex(size_t indexId) {
-
   if (_indexPaths.find(indexId) == _indexPaths.end()) {
 
-    boost::filesystem::path path(_basePathStorage);
-    path /= boost::filesystem::unique_path();
+    vfs::path path(_basePathStorage);
+    path /= vfs::unique_path();
     path += ".idx";
 
     _indexPaths[indexId] = path.string();
@@ -62,7 +61,7 @@ void CacheManager::deleteIndexFiles() {
   std::size_t cacheSize = 0;
   for (std::pair<const size_t, std::string> & p : _indexPaths)
   {
-    const std::size_t s = boost::filesystem::file_size(p.second);
+    const std::size_t s = vfs::file_size(p.second);
     ALICEVISION_LOG_TRACE("CacheManager::deleteIndexFiles: '" << p.second << "': " << s / (1024*1024) << "MB.");
     cacheSize += s;
   }
@@ -71,8 +70,8 @@ void CacheManager::deleteIndexFiles() {
   // Remove all cache files
   for (std::pair<const size_t, std::string> & p : _indexPaths)
   {
-    boost::filesystem::path path(p.second);
-    boost::filesystem::remove(path);
+    vfs::path path(p.second);
+    vfs::remove(path);
   }
 
   // Remove list of cache files
@@ -87,10 +86,10 @@ bool CacheManager::prepareBlockGroup(size_t startBlockId, size_t blocksCount) {
   size_t len = _blockSize * blocksCount;
 
   std::string pathname = getPathForIndex(index_id);
-  boost::filesystem::path path(pathname);
+  vfs::path path(pathname);
 
-  std::ofstream file_index;
-  if (boost::filesystem::exists(path)) {
+  vfs::ostream file_index;
+  if (vfs::exists(path)) {
     file_index.open(pathname, std::ios::binary  | std::ios::out | std::ios::in);
   }
   else {
@@ -125,7 +124,7 @@ std::unique_ptr<unsigned char> CacheManager::load(size_t startBlockId, size_t bl
 
   const std::string path = getPathForIndex(indexId);
   
-  std::ifstream file_index(path, std::ios::binary);
+  vfs::istream file_index(path, std::ios::binary);
   if (!file_index.is_open()) {
     return std::unique_ptr<unsigned char>();
   }  
@@ -155,7 +154,7 @@ bool CacheManager::save(std::unique_ptr<unsigned char> && data, size_t startBloc
 
   const std::string path = getPathForIndex(indexId);
 
-  std::ofstream file_index(path, std::ios::binary | std::ios::out | std::ios::in);
+  vfs::ostream file_index(path, std::ios::binary | std::ios::out | std::ios::in);
   if (!file_index.is_open()) {
     return false;
   }
