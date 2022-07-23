@@ -337,6 +337,7 @@ alicevision_add_software(aliceVision_utils_mergeMeshes
   SOURCE main_mergeMeshes.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
+        aliceVision_vfs
         aliceVision_numeric
 	Geogram::geogram
         ${Boost_LIBRARIES}
