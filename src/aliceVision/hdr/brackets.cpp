@@ -1,8 +1,7 @@
 #include "brackets.hpp"
 
 #include <aliceVision/numeric/numeric.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
 
 namespace aliceVision {
 namespace hdr {
@@ -33,8 +32,8 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
             if(a == nullptr || b == nullptr)
                 return true;
 
-            boost::filesystem::path path_a(a->getImagePath());
-            boost::filesystem::path path_b(b->getImagePath());
+            vfs::path path_a(a->getImagePath());
+            vfs::path path_b(b->getImagePath());
 
             return (path_a.stem().string() < path_b.stem().string());
         });
