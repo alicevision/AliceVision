@@ -10,11 +10,10 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/vfs/filesystem.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-
-#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -28,7 +27,6 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -86,8 +84,8 @@ int aliceVision_main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if(!fs::exists(outDirectory))
-    fs::create_directory(outDirectory);
+  if (!vfs::exists(outDirectory))
+    vfs::create_directory(outDirectory);
 
   // Read the SfM scene
   SfMData sfm_data;
@@ -98,7 +96,7 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  std::ofstream outfile((fs::path(outDirectory) / "sceneMeshlab.mlp").string());
+  vfs::ostream outfile((vfs::path(outDirectory) / "sceneMeshlab.mlp").string());
 
   // Init mlp file
   outfile << "<!DOCTYPE MeshLabDocument>" << outfile.widen('\n')
@@ -148,7 +146,7 @@ int aliceVision_main(int argc, char **argv)
     const Vec3 optical_center = R.transpose() * t;
 
     outfile
-      << "  <MLRaster label=\"" << fs::path(view->getImagePath()).filename().string() << "\">" << std::endl
+      << "  <MLRaster label=\"" << vfs::path(view->getImagePath()).filename().string() << "\">" << std::endl
       << "   <VCGCamera TranslationVector=\""
       << optical_center[0] << " "
       << optical_center[1] << " "
