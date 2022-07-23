@@ -8,6 +8,8 @@
 
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/vfs/istream.hpp>
+#include <aliceVision/vfs/ostream.hpp>
 
 #include <array>
 
@@ -30,28 +32,28 @@ struct GC_cellInfo
     /// first full tetrahedron score: sum of weights for T1 (tetrahedron just after the point p)
     float on = 0.0f;
 
-    void fwriteinfo(FILE* f) const
+    void fwriteinfo(vfs::ostream& f) const
     {
-        fwrite(&cellSWeight, sizeof(float), 1, f);
-        fwrite(&cellTWeight, sizeof(float), 1, f);
-        fwrite(&fullnessScore, sizeof(float), 1, f);
-        fwrite(&emptinessScore, sizeof(float), 1, f);
-        fwrite(&on, sizeof(float), 1, f);
+        f.fwrite(&cellSWeight, sizeof(float), 1);
+        f.fwrite(&cellTWeight, sizeof(float), 1);
+        f.fwrite(&fullnessScore, sizeof(float), 1);
+        f.fwrite(&emptinessScore, sizeof(float), 1);
+        f.fwrite(&on, sizeof(float), 1);
 
         // fwrite(gEdgePhotoWeight,sizeof(float),4,f);
-        fwrite(&gEdgeVisWeight.front(), sizeof(float), 4, f);
+        f.fwrite(&gEdgeVisWeight.front(), sizeof(float), 4);
     }
 
-    void freadinfo(FILE* f)
+    void freadinfo(vfs::istream& f)
     {
-        fread(&cellSWeight, sizeof(float), 1, f);
-        fread(&cellTWeight, sizeof(float), 1, f);
-        fread(&fullnessScore, sizeof(float), 1, f);
-        fread(&emptinessScore, sizeof(float), 1, f);
-        fread(&on, sizeof(float), 1, f);
+        f.fread(&cellSWeight, sizeof(float), 1);
+        f.fread(&cellTWeight, sizeof(float), 1);
+        f.fread(&fullnessScore, sizeof(float), 1);
+        f.fread(&emptinessScore, sizeof(float), 1);
+        f.fread(&on, sizeof(float), 1);
 
         // fread(gEdgePhotoWeight,sizeof(float),4,f);
-        fread(&gEdgeVisWeight.front(), sizeof(float), 4, f);
+        f.fread(&gEdgeVisWeight.front(), sizeof(float), 4);
     }
 };
 
@@ -85,28 +87,28 @@ struct GC_vertexInfo
         return cams[index];
     }
 
-    void fwriteinfo(FILE* f) const
+    void fwriteinfo(vfs::ostream& f) const
     {
-        fwrite(&pixSize, sizeof(float), 1, f);
-        fwrite(&nrc, sizeof(int), 1, f);
+        f.fwrite(&pixSize, sizeof(float), 1);
+        f.fwrite(&nrc, sizeof(int), 1);
         int n = cams.size();
-        fwrite(&n, sizeof(int), 1, f);
+        f.fwrite(&n, sizeof(int), 1);
         if(n > 0)
         {
-            fwrite(&cams[0], sizeof(int), n, f);
+            f.fwrite(&cams[0], sizeof(int), n);
         }
     }
 
-    void freadinfo(FILE* f)
+    void freadinfo(vfs::istream& f)
     {
-        fread(&pixSize, sizeof(float), 1, f);
-        fread(&nrc, sizeof(int), 1, f);
+        f.fread(&pixSize, sizeof(float), 1);
+        f.fread(&nrc, sizeof(int), 1);
         int n;
-        fread(&n, sizeof(int), 1, f);
+        f.fread(&n, sizeof(int), 1);
         if(n > 0)
         {
             cams.resize(n);
-            fread(&cams[0], sizeof(int), n, f);
+            f.fread(&cams[0], sizeof(int), n);
         }
     }
 };
@@ -118,20 +120,20 @@ struct GC_camVertexInfo
     int ncams = 0;
     Point3d point;
 
-    void fwriteinfo(FILE* f)
+    void fwriteinfo(vfs::ostream& f)
     {
-        fwrite(&sim, sizeof(float), 1, f);
-        fwrite(&nrc, sizeof(int), 1, f);
-        fwrite(&ncams, sizeof(int), 1, f);
-        fwrite(&point, sizeof(Point3d), 1, f);
+        f.fwrite(&sim, sizeof(float), 1);
+        f.fwrite(&nrc, sizeof(int), 1);
+        f.fwrite(&ncams, sizeof(int), 1);
+        f.fwrite(&point, sizeof(Point3d), 1);
     }
 
-    void freadinfo(FILE* f)
+    void freadinfo(vfs::istream& f)
     {
-        fread(&sim, sizeof(float), 1, f);
-        fread(&nrc, sizeof(int), 1, f);
-        fread(&ncams, sizeof(int), 1, f);
-        fread(&point, sizeof(Point3d), 1, f);
+        f.fread(&sim, sizeof(float), 1);
+        f.fread(&nrc, sizeof(int), 1);
+        f.fread(&ncams, sizeof(int), 1);
+        f.fread(&point, sizeof(Point3d), 1);
     }
 };
 
