@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <iostream>
-#include <fstream>
+#include <aliceVision/vfs/ostream.hpp>
 #include <cstdlib>
 
 namespace aliceVision {
@@ -131,7 +130,7 @@ bool exportToGraphvizFormat_Image(
 template <typename GraphT>
 void exportToGraphvizData(const std::string& sfile, const GraphT & graph)
 {
-  std::ofstream file(sfile.c_str());
+  vfs::ostream file(sfile.c_str());
   aliceVision::graph::exportToGraphvizFormat_Nodal(graph, file);
   file.close();
 }
