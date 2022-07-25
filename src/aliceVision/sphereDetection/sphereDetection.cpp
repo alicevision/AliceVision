@@ -48,10 +48,6 @@ namespace bpt = boost::property_tree;
 
 /**
  * @brief Operator overloading for printing vectors
- * @tparam T
- * @param os
- * @param v
- * @return std::ostream&
  */
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -69,11 +65,22 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
     return os;
 }
 
+/**
+ * @brief Sigmoid activation function
+ *
+ * @param x ∈ ℝ
+ * @return sigmoid(x) ∈ [0, 1]
+ */
 float sigmoid(float x)
 {
     return 1 / (1 + exp(-x));
 }
 
+/**
+ * @brief Prints inputs and outputs of neural network, and checks the requirements.
+ *
+ * @param session the ONNXRuntime session
+ */
 void model_explore(Ort::Session& session)
 {
     // define allocator
@@ -121,6 +128,12 @@ void model_explore(Ort::Session& session)
     assert(input_count == INPUT_COUNT && output_count == OUTPUT_COUNT);
 }
 
+/**
+ * @brief Gets the image paths from the parent folder
+ *
+ * @param path_images the path to the folder containing all the images
+ * @return std::vector<std::string>, list of all image paths
+ */
 std::vector<std::string> get_images_paths(std::string path_images)
 {
     // list all jpg inside the folder
@@ -133,6 +146,12 @@ std::vector<std::string> get_images_paths(std::string path_images)
     return files;
 }
 
+/**
+ * @brief Verify all images have the same resolution
+ *
+ * @param files list of all image paths
+ * @return cv::Size, the common resolution
+ */
 cv::Size resolution_verify(std::vector<std::string> files)
 {
     cv::Mat image;
@@ -160,6 +179,14 @@ cv::Size resolution_verify(std::vector<std::string> files)
     return tmp_size;
 }
 
+/**
+ * @brief Use ONNXRuntime to make a prediction
+ *
+ * @param session
+ * @param image_path the path to the input image
+ * @param image_size the size the image should be resized to
+ * @return cv::Mat, the prediction
+ */
 cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::Size image_size)
 {
     // read image
@@ -234,6 +261,12 @@ cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::S
     return mask;
 }
 
+/**
+ * @brief Compute the new resolution such that the longest side of the image is 1024px
+ *
+ * @param original_size the original resolution of the image
+ * @return cv::Size, the new resolution
+ */
 cv::Size resolution_shrink(cv::Size original_size)
 {
     int longest_side = std::max(original_size.width, original_size.height);
@@ -247,13 +280,20 @@ cv::Size resolution_shrink(cv::Size original_size)
     return new_size;
 }
 
-cv::Mat compute_median_mask(std::vector<cv::Mat> predictions, cv::Size resized_size)
+/**
+ * @brief Compute the median mask using a list of masks
+ *
+ * @param predictions the list of predictions (masks)
+ * @param size the size of a mask
+ * @return cv::Mat, the median mask
+ */
+cv::Mat compute_median_mask(std::vector<cv::Mat> predictions, cv::Size size)
 {
-    cv::Mat median_mask = cv::Mat(resized_size, CV_32FC1);
+    cv::Mat median_mask = cv::Mat(size, CV_32FC1);
 
-    for(size_t i = 0; i < resized_size.height; i++)
+    for(size_t i = 0; i < size.height; i++)
     {
-        for(size_t j = 0; j < resized_size.width; j++)
+        for(size_t j = 0; j < size.width; j++)
         {
             // extract same pixel from all predictions
             std::vector<float> values(predictions.size());
@@ -274,11 +314,19 @@ cv::Mat compute_median_mask(std::vector<cv::Mat> predictions, cv::Size resized_s
     return median_mask;
 }
 
+/**
+ * @brief Compute the prediction mask of where the sphere are
+ *
+ * @param session the ONNXRuntime session
+ * @param files list of all image paths
+ * @param image_size the common resolution of every image
+ * @return cv::Mat
+ */
 cv::Mat compute_mask(Ort::Session& session, std::vector<std::string> files, const cv::Size image_size)
 {
     // initialize vector containing predictions
     cv::Size resized_size = resolution_shrink(image_size);
-    std::vector<cv::Mat> predictions(files.size(), cv::Mat(resized_size, CV_32FC1)); // TODO: use Mat 3D
+    std::vector<cv::Mat> predictions(files.size(), cv::Mat(resized_size, CV_32FC1));
 
     // use neural net to make predictions
     for(size_t i = 0; i < files.size(); i++)
@@ -290,6 +338,12 @@ cv::Mat compute_mask(Ort::Session& session, std::vector<std::string> files, cons
     return compute_median_mask(predictions, resized_size);
 }
 
+/**
+ * @brief Extract circles from mask
+ *
+ * @param prediction the mask to extract circles from
+ * @return std::vector<circle_info>, list of circles
+ */
 std::vector<circle_info> compute_circles(const cv::Mat prediction)
 {
     std::vector<circle_info> circles;
@@ -346,6 +400,12 @@ std::vector<circle_info> compute_circles(const cv::Mat prediction)
     return circles;
 }
 
+/**
+ * @brief Export a circle list to a JSON file
+ *
+ * @param output_path the output path to write to
+ * @param circles the list of circles to transform in JSON
+ */
 void export_json(std::string output_path, std::vector<circle_info> circles)
 {
     bpt::ptree root, spheres;
