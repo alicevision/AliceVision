@@ -12,10 +12,11 @@ using circle_info = std::pair<cv::Point2f, float>;
 
 void model_explore(Ort::Session& session);
 
-cv::Size resolution_verify(std::string path_images);
+std::vector<std::string> get_images_paths(std::string path_images);
+cv::Size resolution_verify(std::vector<std::string> files);
 
-cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size);
-cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, const cv::Size image_size);
+cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::Size image_size);
+cv::Mat compute_mask(Ort::Session& session, std::vector<std::string> files, const cv::Size image_size);
 
 std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask);
 

@@ -77,11 +77,14 @@ int aliceVision_main(int argc, char** argv)
     // check model is correct
     model_explore(session);
 
+    // get images paths
+    auto files = get_images_paths(input_image_dir_path);
+
     // verify every image in the folder are of the same resolution
-    auto size = resolution_verify(input_image_dir_path);
+    auto size = resolution_verify(files);
 
     // compute the mask
-    cv::Mat mask = compute_mask_mean(session, input_image_dir_path, size);
+    auto mask = compute_mask(session, files, size);
 
     // extract circles from mask
     auto circles = compute_circles(mask);

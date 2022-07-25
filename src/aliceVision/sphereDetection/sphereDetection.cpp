@@ -43,6 +43,7 @@ namespace bpt = boost::property_tree;
 #define INPUT_COUNT 1
 #define OUTPUT_COUNT 1
 
+// Pre-process input images
 #define MAX_SIZE 1024.0
 
 /**
@@ -120,7 +121,7 @@ void model_explore(Ort::Session& session)
     assert(input_count == INPUT_COUNT && output_count == OUTPUT_COUNT);
 }
 
-cv::Size resolution_verify(std::string path_images)
+std::vector<std::string> get_images_paths(std::string path_images)
 {
     // list all jpg inside the folder
     std::vector<cv::String> files;
@@ -129,6 +130,11 @@ cv::Size resolution_verify(std::string path_images)
 
     ALICEVISION_LOG_DEBUG("files: " << files);
 
+    return files;
+}
+
+cv::Size resolution_verify(std::vector<std::string> files)
+{
     cv::Mat image;
     cv::Size image_size;
     cv::Size tmp_size;
@@ -140,7 +146,6 @@ cv::Size resolution_verify(std::string path_images)
 
         // get the resolution
         image_size = image.size();
-        ALICEVISION_LOG_DEBUG("image resolution: " << image_size);
 
         // store the first image_size for comparison
         if(i == 0)
@@ -150,15 +155,13 @@ cv::Size resolution_verify(std::string path_images)
         assert(tmp_size == image_size);
     }
 
-    ALICEVISION_LOG_DEBUG("All images are the same resolutions !");
+    ALICEVISION_LOG_DEBUG("All images are the same resolution !");
 
     return tmp_size;
 }
 
-cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size)
+cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::Size image_size)
 {
-    ALICEVISION_LOG_TRACE("compute_mask called");
-
     // read image
     aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
     aliceVision::image::readImage(image_path, image_alice, aliceVision::image::EImageColorSpace::SRGB);
@@ -168,19 +171,15 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     // Eigen -> OpenCV
     cv::Mat image_opencv;
     cv::eigen2cv(image_alice.GetMat(), image_opencv);
-    ALICEVISION_LOG_TRACE("converted to opencv matrix");
 
     // uint8 -> float32
     image_opencv.convertTo(image_opencv, CV_32FC3, 1 / 255.0);
-    ALICEVISION_LOG_TRACE("converted to floating image");
 
     // resize image
     cv::resize(image_opencv, image_opencv, image_size, cv::INTER_LINEAR);
-    ALICEVISION_LOG_TRACE("resized the image");
 
     // HWC to CHW
     cv::dnn::blobFromImage(image_opencv, image_opencv);
-    ALICEVISION_LOG_TRACE("converted to CHW format");
 
     // inference on cpu TODO: use gpu
     Ort::MemoryInfo memory_info =
@@ -221,13 +220,9 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     std::vector<const char*> input_names{INPUT_NAME};
     std::vector<const char*> output_names{OUTPUT_NAME};
 
-    ALICEVISION_LOG_TRACE("inference ready");
-
     // run the inference
     session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), INPUT_COUNT, output_names.data(),
                 output_data.data(), OUTPUT_COUNT);
-
-    ALICEVISION_LOG_TRACE("inference done");
 
     // apply sigmoid activation to output_tensor
     std::transform(output_tensor.cbegin(), output_tensor.cend(), output_tensor.begin(), sigmoid);
@@ -235,65 +230,64 @@ cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const 
     // convert output_tensor to opencv image
     cv::Mat mask = cv::Mat(output_shape[2], output_shape[3], CV_32FC1);
     memcpy(mask.data, output_tensor.data(), output_tensor.size() * sizeof(float));
-    ALICEVISION_LOG_TRACE("converted inference output to opencv image");
 
     return mask;
 }
 
-cv::Size resolution_shrink(cv::Size size_original)
+cv::Size resolution_shrink(cv::Size original_size)
 {
-    int longest_side = std::max(size_original.width, size_original.height);
+    int longest_side = std::max(original_size.width, original_size.height);
     float factor = MAX_SIZE / longest_side;
-    cv::Size size_shrank(size_original.width * factor, size_original.height * factor);
-    ALICEVISION_LOG_DEBUG("Resized image resolution: " << size_shrank);
 
-    return size_shrank;
+    cv::Size new_size(original_size.width * factor, original_size.height * factor);
+
+    ALICEVISION_LOG_DEBUG("Resize factor: " << factor);
+    ALICEVISION_LOG_DEBUG("Resized image resolution: " << new_size);
+
+    return new_size;
 }
 
-cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, const cv::Size image_size)
+cv::Mat compute_median_mask(std::vector<cv::Mat> predictions, cv::Size resized_size)
 {
-    cv::Size resized_size = resolution_shrink(image_size);
-    cv::Mat average_mask(resized_size.height, resized_size.width, CV_32FC1);
+    cv::Mat median_mask = cv::Mat(resized_size, CV_32FC1);
 
-    std::vector<cv::String> files;
-    std::string images_glob = images_path + "/*.jpg";
-    cv::glob(images_glob, files, false);
-
-    std::vector<cv::Mat> test(files.size(), cv::Mat(resized_size.height, resized_size.width,
-                                                    CV_32FC1)); // TODO: utiliser une matrice 3D opencv
-
-    for(size_t i = 0; i < files.size(); i++)
-    {
-        cv::Mat mask = compute_mask(session, files[i], resized_size);
-        average_mask += mask;
-        test[i] = mask;
-    }
-
-    average_mask /= files.size();
-
-    ALICEVISION_LOG_DEBUG("COMPUTING MEDIAN MATRIX");
-
-    // TODO: split in function and remove mean matrix
-    cv::Mat median_mask = cv::Mat(resized_size.height, resized_size.width, CV_32FC1);
     for(size_t i = 0; i < resized_size.height; i++)
     {
         for(size_t j = 0; j < resized_size.width; j++)
         {
-            std::vector<float> values(files.size());
-            for(size_t k = 0; k < files.size(); k++)
+            // extract same pixel from all predictions
+            std::vector<float> values(predictions.size());
+            for(size_t k = 0; k < predictions.size(); k++)
             {
-                values[k] = test[k].at<float>(i, j);
+                values[k] = predictions[k].at<float>(i, j);
             }
 
+            // get the median pixel value
             std::sort(values.begin(), values.end());
-            float value = values[files.size() / 2];
+            float value = values[predictions.size() / 2];
+
+            // store value in final matrix
             median_mask.at<float>(i, j) = value;
         }
     }
 
-    ALICEVISION_LOG_DEBUG("saving average and median mask to files");
-
     return median_mask;
+}
+
+cv::Mat compute_mask(Ort::Session& session, std::vector<std::string> files, const cv::Size image_size)
+{
+    // initialize vector containing predictions
+    cv::Size resized_size = resolution_shrink(image_size);
+    std::vector<cv::Mat> predictions(files.size(), cv::Mat(resized_size, CV_32FC1)); // TODO: use Mat 3D
+
+    // use neural net to make predictions
+    for(size_t i = 0; i < files.size(); i++)
+    {
+        predictions[i] = predict(session, files[i], resized_size);
+    }
+
+    // return the median mask of the predictions
+    return compute_median_mask(predictions, resized_size);
 }
 
 std::vector<circle_info> compute_circles(const cv::Mat prediction)
@@ -301,7 +295,7 @@ std::vector<circle_info> compute_circles(const cv::Mat prediction)
     std::vector<circle_info> circles;
     cv::Mat mask;
 
-    // [0.0, 1.0] -> [0, 255]
+    // uint8 -> float32
     prediction.convertTo(mask, CV_8UC1, 255);
 
     // detect edges with canny filter
@@ -311,8 +305,8 @@ std::vector<circle_info> compute_circles(const cv::Mat prediction)
     std::vector<std::vector<cv::Point>> contours;
     findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-    // fill homes using convex hulls
-    std::vector<std::vector<cv::Point>> hulls;
+    // fill holes using convex hulls
+    std::vector<std::vector<cv::Point>> hulls(contours.size());
     for(size_t i = 0; i < contours.size(); i++)
     {
         convexHull(contours[i], hulls[i]);
