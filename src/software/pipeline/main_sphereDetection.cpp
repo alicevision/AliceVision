@@ -92,5 +92,5 @@ int aliceVision_main(int argc, char** argv)
     // convert circles to json
     export_json(output_json_path, circles);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
