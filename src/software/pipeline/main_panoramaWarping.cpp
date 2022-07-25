@@ -335,46 +335,187 @@ int aliceVision_main(int argc, char** argv)
 				//Initialize bouding box for image
 				BoundingBox globalBbox;
 				
-				std::vector<BoundingBox> boxes;
-				for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) 
 				{
+					//Search for first non empty box starting from the top
+					bool found = false;
+					
+					for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) 
+					{
+						#pragma omp parallel for
+						for (int x = 0; x < snappedCoarseBbox.width; x += tileSize) 
+						{
+							if (found)
+							{
+								continue;
+							}
+
+							BoundingBox localBbox;
+							localBbox.left = x + snappedCoarseBbox.left;
+							localBbox.top = y + snappedCoarseBbox.top;
+							localBbox.width = tileSize;
+							localBbox.height = tileSize;
+
+							localBbox.clampRight(snappedCoarseBbox.getRight());
+							localBbox.clampBottom(snappedCoarseBbox.getBottom());
+
+							// Prepare coordinates map
+							CoordinatesMap map;
+							if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
+								continue;
+							}
+							
+							#pragma omp critical 
+							{
+								if (!map.getBoundingBox().isEmpty()) 
+								{
+									globalBbox = globalBbox.unionWith(map.getBoundingBox());
+									found = true;
+								}
+							}
+						}
+
+						if (found)
+						{
+							break;
+						}
+					}
+				}
+
+				{
+					//Search for first non empty box starting from the bottom
+					bool found = false;
+					for (int y = snappedCoarseBbox.height - 1; y >= 0; y -= tileSize) 
+					{	
+						#pragma omp parallel for
+						for (int x = 0; x < snappedCoarseBbox.width; x += tileSize) 
+						{
+							if (found)
+							{
+								continue;
+							}
+
+							BoundingBox localBbox;
+							localBbox.left = x + snappedCoarseBbox.left;
+							localBbox.top = y + snappedCoarseBbox.top;
+							localBbox.width = tileSize;
+							localBbox.height = tileSize;
+
+							localBbox.clampRight(snappedCoarseBbox.getRight());
+							localBbox.clampBottom(snappedCoarseBbox.getBottom());
+
+							// Prepare coordinates map
+							CoordinatesMap map;
+							if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
+								continue;
+							}
+
+							#pragma omp critical 
+							{
+								if (!map.getBoundingBox().isEmpty()) 
+								{
+									globalBbox = globalBbox.unionWith(map.getBoundingBox());
+									found = true;
+								}
+							}
+						}
+
+						if (found)
+						{
+							break;
+						}
+					}
+				}
+
+				{
+					//Search for first non empty box starting from the left
+					bool found = false;
 					for (int x = 0; x < snappedCoarseBbox.width; x += tileSize) 
 					{
-						BoundingBox localBbox;
-						localBbox.left = x + snappedCoarseBbox.left;
-						localBbox.top = y + snappedCoarseBbox.top;
-					    localBbox.width = tileSize;
-						localBbox.height = tileSize;
+						#pragma omp parallel for
+						for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) 
+						{
+							if (found)
+							{
+								continue;
+							}
 
-						localBbox.clampRight(snappedCoarseBbox.getRight());
-						localBbox.clampBottom(snappedCoarseBbox.getBottom());
+							BoundingBox localBbox;
+							localBbox.left = x + snappedCoarseBbox.left;
+							localBbox.top = y + snappedCoarseBbox.top;
+							localBbox.width = tileSize;
+							localBbox.height = tileSize;
 
-						boxes.push_back(localBbox);
+							localBbox.clampRight(snappedCoarseBbox.getRight());
+							localBbox.clampBottom(snappedCoarseBbox.getBottom());
+
+							// Prepare coordinates map
+							CoordinatesMap map;
+							if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
+								continue;
+							}
+
+							#pragma omp critical 
+							{
+								if (!map.getBoundingBox().isEmpty()) 
+								{
+									globalBbox = globalBbox.unionWith(map.getBoundingBox());
+									found = true;
+								}
+							}
+						}
+
+						if (found)
+						{
+							break;
+						}
 					}
 				}
 
-				#pragma omp parallel for
-				for (int boxId = 0; boxId < boxes.size(); boxId++) {
-
-					BoundingBox localBbox = boxes[boxId];
-
-					// Prepare coordinates map
-					CoordinatesMap map;
-					if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
-						continue;
-					}
-
-					if (map.getBoundingBox().isEmpty()) 
+				{
+					//Search for first non empty box starting from the left
+					bool found = false;
+					for (int x = snappedCoarseBbox.width - 1; x >= 0; x -= tileSize) 
 					{
-						continue;
-					}
+						#pragma omp parallel for
+						for (int y = 0; y < snappedCoarseBbox.height; y += tileSize) 
+						{
+							if (found)
+							{
+								continue;
+							}
 
+							BoundingBox localBbox;
+							localBbox.left = x + snappedCoarseBbox.left;
+							localBbox.top = y + snappedCoarseBbox.top;
+							localBbox.width = tileSize;
+							localBbox.height = tileSize;
 
-					#pragma omp critical 
-					{
-						globalBbox = globalBbox.unionWith(map.getBoundingBox());
+							localBbox.clampRight(snappedCoarseBbox.getRight());
+							localBbox.clampBottom(snappedCoarseBbox.getBottom());
+
+							// Prepare coordinates map
+							CoordinatesMap map;
+							if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
+								continue;
+							}
+
+							#pragma omp critical 
+							{
+								if (!map.getBoundingBox().isEmpty()) 
+								{
+									globalBbox = globalBbox.unionWith(map.getBoundingBox());
+									found = true;
+								}
+							}
+						}
+
+						if (found)
+						{
+							break;
+						}
 					}
 				}
+
 
 				//Rare case ... When all boxes valid are after the loop
 				if (globalBbox.left >= panoramaSize.first)
@@ -422,9 +563,9 @@ int aliceVision_main(int argc, char** argv)
 				spec_mask.tile_height = tileSize;
 				spec_weights.tile_width = tileSize;
 				spec_weights.tile_height = tileSize;
-				spec_view.attribute("compression", "zips");
-				spec_weights.attribute("compression", "zips");
-				spec_mask.attribute("compression", "zips");
+				spec_view.attribute("compression", "zip");
+				spec_weights.attribute("compression", "zip");
+				spec_mask.attribute("compression", "zip");
 				spec_view.extra_attribs = metadata;
 				spec_mask.extra_attribs = metadata;
 				spec_weights.extra_attribs = metadata;
@@ -433,13 +574,15 @@ int aliceVision_main(int argc, char** argv)
 				out_mask->open(maskFilepath, spec_mask);
 				out_weights->open(weightFilepath, spec_weights);
 
+				
 				GaussianPyramidNoMask pyramid(source.Width(), source.Height());
 				if (!pyramid.process(source)) {
 					ALICEVISION_LOG_ERROR("Problem creating pyramid.");
 					continue;
 				}
 
-				boxes.clear();
+				
+				std::vector<BoundingBox> boxes;
 				for (int y = 0; y < globalBbox.height; y += tileSize) 
 				{
 					for (int x = 0; x < globalBbox.width; x += tileSize) 
@@ -452,6 +595,7 @@ int aliceVision_main(int argc, char** argv)
 						boxes.push_back(localBbox);
 					}
 				}
+				
 				
 				#pragma omp parallel for 
 				for (int boxId = 0; boxId < boxes.size(); boxId++) 

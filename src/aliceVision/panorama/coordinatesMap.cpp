@@ -10,9 +10,10 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
 {
 
     /* Effectively compute the warping map */
-    _coordinates = aliceVision::image::Image<Eigen::Vector2d>(coarseBbox.width, coarseBbox.height, false);
+    _coordinates = aliceVision::image::Image<Eigen::Vector2f>(coarseBbox.width, coarseBbox.height, false);
     _mask = aliceVision::image::Image<unsigned char>(coarseBbox.width, coarseBbox.height, true, 0);
 
+    
     int max_x = 0;
     int max_y = 0;
     int min_x = std::numeric_limits<int>::max();
@@ -47,7 +48,8 @@ bool CoordinatesMap::build(const std::pair<int, int>& panoramaSize, const geomet
             /**
              * Project this ray to camera pixel coordinates
              */
-            const Vec2 pix_disto = intrinsics.project(pose, ray.homogeneous(), true);
+            const Vec2 pix_disto_d = intrinsics.project(pose, ray.homogeneous(), true);
+            const Vec2f pix_disto = pix_disto_d.cast<float>();
 
             /**
              * Ignore invalid coordinates

@@ -450,6 +450,20 @@ public:
   }
 
   /**
+   * @brief Return true if these pixel coordinates should be visible in the image
+   * @param pix input pixel coordinates to check for visibility
+   * @return true if visible
+   */
+  virtual bool isVisible(const Vec2f & pix) const {
+
+    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * @brief Assuming the distortion is a function of radius, estimate the 
    * maximal undistorted radius for a range of distorted radius.
    * @param min_radius the minimal radius to consider
