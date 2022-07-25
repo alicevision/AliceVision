@@ -201,6 +201,17 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   AddCompilerFlag("-Werror=return-local-addr")
 endif()
 
+# Eigen requires overaligned buffers for maximum efficiency (e.g. on AVX512 buffers may need to
+# be aligned to 64 bytes). AliceVision currently does not support this. Fortunately this is fixed
+# in C++17. While we can't upgrade to C++17 just yet, some compilers support overaligned
+# allocation feature with a separate flag, so use it if alignment is enabled in Eigen.
+# See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
+if(NOT AV_EIGEN_NO_ALIGN)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
+    AddCompilerFlag("-faligned-new")
+  endif()
+endif()
+
 # ==============================================================================
 # Enable code coverage generation (only with GCC)
 # ==============================================================================
@@ -346,8 +357,11 @@ endif()
 find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND OR EIGEN3_FOUND)
   # message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
-  # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-  set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
+  if(AV_EIGEN_NO_ALIGN)
+    set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
+  else()
+    set(AV_EIGEN_DEFINITIONS -DALICEVISION_EIGEN_REQUIRE_ALIGNMENT=1)
+  endif()
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
 endif()

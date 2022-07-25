@@ -8,18 +8,20 @@
 
 #pragma once
 
-// AliceVision does not support Eigen with alignment,
+// AliceVision does not support Eigen with alignment, unless C++17 aligned new feature is enabled.
 // So ensure Eigen is used with the correct flags.
-#ifndef EIGEN_MAX_ALIGN_BYTES
-#error "EIGEN_MAX_ALIGN_BYTES is not defined"
-#elif EIGEN_MAX_ALIGN_BYTES != 0
-#error "EIGEN_MAX_ALIGN_BYTES is defined but not 0"
-#endif
+#ifndef ALICEVISION_EIGEN_REQUIRE_ALIGNMENT
+    #ifndef EIGEN_MAX_ALIGN_BYTES
+        #error "EIGEN_MAX_ALIGN_BYTES is not defined"
+    #elif EIGEN_MAX_ALIGN_BYTES != 0
+        #error "EIGEN_MAX_ALIGN_BYTES is defined but not 0"
+    #endif
 
-#ifndef EIGEN_MAX_STATIC_ALIGN_BYTES
-#error "EIGEN_MAX_STATIC_ALIGN_BYTES is not defined"
-#elif EIGEN_MAX_STATIC_ALIGN_BYTES != 0
-#error "EIGEN_MAX_STATIC_ALIGN_BYTES is defined but not 0"
+    #ifndef EIGEN_MAX_STATIC_ALIGN_BYTES
+        #error "EIGEN_MAX_STATIC_ALIGN_BYTES is not defined"
+    #elif EIGEN_MAX_STATIC_ALIGN_BYTES != 0
+        #error "EIGEN_MAX_STATIC_ALIGN_BYTES is defined but not 0"
+    #endif
 #endif
 
 

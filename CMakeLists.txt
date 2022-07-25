@@ -19,6 +19,7 @@ option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
 option(AV_BUILD_FFMPEG "Enable building an embedded FFMpeg" ON)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
+option(AV_EIGEN_NO_ALIGN "Disable Eigen alignment" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 
