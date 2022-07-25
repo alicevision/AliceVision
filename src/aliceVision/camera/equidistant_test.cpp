@@ -26,6 +26,8 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraEquidistant_disto_undisto_Radial)
 {
+  makeRandomOperationsReproducible();
+
   const int w = 1000;
   const int h = 800;
   const double focal = 800.0;

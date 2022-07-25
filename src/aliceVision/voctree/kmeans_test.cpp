@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/voctree/SimpleKmeans.hpp>
 
 #include <iostream>
@@ -22,6 +23,8 @@ BOOST_AUTO_TEST_CASE(kmeanInitializer)
   using namespace aliceVision;
   
   ALICEVISION_LOG_DEBUG("Testing kmeanspp Initializer...");
+
+  makeRandomOperationsReproducible();
 
   const std::size_t DIMENSION = 128;
   const std::size_t FEATURENUMBER = 500;
@@ -80,6 +83,8 @@ BOOST_AUTO_TEST_CASE(kmeanInitializerVarying)
   
   ALICEVISION_LOG_DEBUG("Testing kmeanspp Initializer with variable k and DIM...");
 
+  makeRandomOperationsReproducible();
+
   const int FEATURENUMBER = 500;
   const std::size_t numTrial = 3;
 
@@ -131,6 +136,8 @@ BOOST_AUTO_TEST_CASE(kmeanSimple)
   using namespace aliceVision;
 
   ALICEVISION_LOG_DEBUG("Testing kmeans...");
+
+  makeRandomOperationsReproducible();
 
   const std::size_t DIMENSION = 8;
   const std::size_t FEATURENUMBER = 500;
@@ -209,6 +216,8 @@ BOOST_AUTO_TEST_CASE(kmeanVarying)
 {
   using namespace aliceVision;
   ALICEVISION_LOG_DEBUG("Testing kmeans with variable k and DIM...");
+
+  makeRandomOperationsReproducible();
 
   const std::size_t FEATURENUMBER = 300;
   const std::size_t numTrial = 3;

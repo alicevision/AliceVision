@@ -22,6 +22,8 @@ BOOST_AUTO_TEST_CASE(voctreeBuilder)
 {
   using namespace aliceVision;
 
+  makeRandomOperationsReproducible();
+
   const std::string treeName = "test.tree";
 
   const std::size_t DIMENSION = 3;

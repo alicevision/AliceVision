@@ -40,6 +40,8 @@ namespace fs = boost::filesystem;
 //   - the desired number of poses are found.
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
 {
+  makeRandomOperationsReproducible();
+
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -90,6 +92,8 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
 {
+  makeRandomOperationsReproducible();
+
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -140,6 +144,8 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chordal)
 {
+  makeRandomOperationsReproducible();
+
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -190,6 +196,8 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
 {
+  makeRandomOperationsReproducible();
+
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;

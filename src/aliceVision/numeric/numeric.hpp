@@ -568,5 +568,14 @@ void SplitRange(const T range_start, const T range_end, const int nb_split,
   }
 }
 
+/**
+ * This function initializes the global state of random number generators that e.g. our tests
+ * depend on. This makes it possible to have exactly reproducible program runtime behavior
+ * without random changes. In order to introduce variation in execution,
+ * ALICEVISION_RANDOM_SEED environment variable can be set to an integer value.
+ *
+ * This function is especially useful in tests where it allows to prevent random failures.
+ */
+void makeRandomOperationsReproducible();
 
 } // namespace aliceVision

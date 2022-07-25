@@ -146,6 +146,7 @@ SfMData createTestScene(IndexT singleViewsCount,
 // - Import to .json
 //-----------------
 BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
+    makeRandomOperationsReproducible();
 
     int flags = ALL;
 

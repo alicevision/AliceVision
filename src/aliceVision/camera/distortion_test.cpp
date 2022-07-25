@@ -21,6 +21,8 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(distortion_distort_undistort)
 {
+    makeRandomOperationsReproducible();
+
     std::array<std::unique_ptr<Distortion>, 6> distortionsModels;
     distortionsModels[0].reset(new DistortionBrown(-0.25349, 0.11868, -0.00028, 0.00005, 0.0000001));
     distortionsModels[1].reset(new DistortionFisheye(0.02, -0.03, 0.1, -0.2));
