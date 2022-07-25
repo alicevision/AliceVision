@@ -392,6 +392,17 @@ namespace aliceVision
                      T( ( Z )( *this )( 2 ) * val ),
                      T( ( Z )( *this )( 3 ) * val ) );
       }
+
+      /**
+      * @brief Elementwise addition
+      * @param other the other element to substract
+      * @return Rgb color after addition
+      * @note This does not modify the Rgb value (ie: only return a modified copy)
+      */
+      inline Rgba operator +( const Rgba& other ) const
+      {
+        return Rgba( ((*this)(0) + other(0)), ((*this)(1) + other(1)), ((*this)(2) + other(2)), ((*this)(3) + other(3)));
+      }
     };
 
     typedef Rgba<unsigned char> RGBAColor;
