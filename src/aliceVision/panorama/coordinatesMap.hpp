@@ -28,7 +28,7 @@ public:
 
     BoundingBox getBoundingBox() const { return _boundingBox; }
 
-    const aliceVision::image::Image<Eigen::Vector2d>& getCoordinates() const { return _coordinates; }
+    const aliceVision::image::Image<Eigen::Vector2f>& getCoordinates() const { return _coordinates; }
 
     const aliceVision::image::Image<unsigned char>& getMask() const { return _mask; }
 
@@ -36,7 +36,7 @@ private:
     size_t _offset_x = 0;
     size_t _offset_y = 0;
 
-    aliceVision::image::Image<Eigen::Vector2d> _coordinates;
+    aliceVision::image::Image<Eigen::Vector2f> _coordinates;
     aliceVision::image::Image<unsigned char> _mask;
     BoundingBox _boundingBox;
 };
