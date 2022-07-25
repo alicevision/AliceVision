@@ -1629,7 +1629,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     Point3d tempIntersectPt;
     const Point2d triangleUv = getLineTriangleIntersectBarycCoords(&tempIntersectPt, A, B, C, &originPt, &DirVec);
 
-    if (!isnormal(tempIntersectPt.x) || !isnormal(tempIntersectPt.y) || !isnormal(tempIntersectPt.z))
+    if (!std::isnormal(tempIntersectPt.x) || !std::isnormal(tempIntersectPt.y) || !std::isnormal(tempIntersectPt.z))
     {
         // This is not suppose to happen in real life, we log a warning instead of raising an exeption if we face a border case
         // ALICEVISION_LOG_WARNING("Invalid/notNormal intersection point found during rayIntersectTriangle.");
