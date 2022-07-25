@@ -157,9 +157,13 @@ cv::Size resolution_verify(std::string path_images)
 
 cv::Mat compute_mask(Ort::Session& session, const std::string image_path, const cv::Size image_size)
 {
+    ALICEVISION_LOG_TRACE("compute_mask called");
+
     // read image
     aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
     aliceVision::image::readImage(image_path, image_alice, aliceVision::image::EImageColorSpace::SRGB);
+
+    // TODO: retry resize before cloning to opencv ?
 
     // Eigen -> OpenCV
     cv::Mat image_opencv;
@@ -255,30 +259,68 @@ cv::Mat compute_mask_mean(Ort::Session& session, const std::string images_path, 
     std::string images_glob = images_path + "/*.jpg";
     cv::glob(images_glob, files, false);
 
-    for(std::string file : files)
+    std::vector<cv::Mat> test(files.size(), cv::Mat(resized_size.height, resized_size.width,
+                                                    CV_32FC1)); // TODO: utiliser une matrice 3D opencv
+
+    for(size_t i = 0; i < files.size(); i++)
     {
-        cv::Mat mask = compute_mask(session, file, resized_size);
+        cv::Mat mask = compute_mask(session, files[i], resized_size);
         average_mask += mask;
+        test[i] = mask;
     }
 
     average_mask /= files.size();
-    return average_mask;
+
+    ALICEVISION_LOG_DEBUG("COMPUTING MEDIAN MATRIX");
+
+    // TODO: split in function and remove mean matrix
+    cv::Mat median_mask = cv::Mat(resized_size.height, resized_size.width, CV_32FC1);
+    for(size_t i = 0; i < resized_size.height; i++)
+    {
+        for(size_t j = 0; j < resized_size.width; j++)
+        {
+            std::vector<float> values(files.size());
+            for(size_t k = 0; k < files.size(); k++)
+            {
+                values[k] = test[k].at<float>(i, j);
+            }
+
+            std::sort(values.begin(), values.end());
+            float value = values[files.size() / 2];
+            median_mask.at<float>(i, j) = value;
+        }
+    }
+
+    ALICEVISION_LOG_DEBUG("saving average and median mask to files");
+
+    return median_mask;
 }
 
 std::vector<circle_info> compute_circles(const cv::Mat prediction)
 {
     std::vector<circle_info> circles;
+    cv::Mat mask;
 
     // [0.0, 1.0] -> [0, 255]
-    cv::Mat mask;
     prediction.convertTo(mask, CV_8UC1, 255);
 
     // detect edges with canny filter
-    Canny(mask, mask, 0, 255);
+    Canny(mask, mask, 250, 255);
 
     // detect contours
     std::vector<std::vector<cv::Point>> contours;
-    findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+    // fill homes using convex hulls
+    std::vector<std::vector<cv::Point>> hulls;
+    for(size_t i = 0; i < contours.size(); i++)
+    {
+        convexHull(contours[i], hulls[i]);
+        cv::drawContours(mask, hulls, i, cv::Scalar(255), cv::FILLED);
+    }
+
+    // redetect contours
+    findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
     for(size_t i = 0; i < contours.size(); i++)
     {
@@ -286,9 +328,24 @@ std::vector<circle_info> compute_circles(const cv::Mat prediction)
         circle_info circle;
         cv::minEnclosingCircle(contours[i], circle.first, circle.second);
 
-        // add circle to vector
-        circles.push_back(circle);
+        if(circle.second > 5)
+        {
+            // add circle to vector
+            circles.push_back(circle);
+        }
     }
+
+    // // distance transform
+    // cv::Mat1f dt;
+    // cv::distanceTransform(mask, dt, cv::DIST_L2, 5, cv::DIST_LABEL_PIXEL);
+
+    // // Find max value
+    // double max_val;
+    // cv::Point max_loc;
+    // cv::minMaxLoc(dt, nullptr, &max_val, nullptr, &max_loc);
+
+    // // push inscribed circle
+    // circles.push_back(std::make_pair(max_loc, max_val));
 
     ALICEVISION_LOG_DEBUG("circles: " << circles);
 
