@@ -302,8 +302,7 @@ void convolveImage(oiio::TypeDesc typeDesc,
     const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer.data()));
     oiio::ImageBuf outBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), outBuffer.data());
 
-    oiio::ImageBuf K;
-    oiio::ImageBufAlgo::make_kernel(K, kernel, kernelWidth, kernelHeight);
+    oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel(kernel, kernelWidth, kernelHeight);
 
     oiio::ImageBufAlgo::convolve(outBuf, inBuf, K);
 }
