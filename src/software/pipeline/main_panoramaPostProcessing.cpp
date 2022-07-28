@@ -147,7 +147,8 @@ int aliceVision_main(int argc, char** argv)
     std::string inputPanoramaPath;
     std::string outputPanoramaPath;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
-    const size_t maxProcessingSize = 2000;    
+    const size_t maxProcessingSize = 2000;  
+    bool fillHoles = false;  
 
     system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
 
@@ -166,7 +167,8 @@ int aliceVision_main(int argc, char** argv)
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str());
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str())
+        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles), "Execute fill holes algorithm");
     allParams.add(optionalParams);
 
     // Setup log level given command line
@@ -247,203 +249,244 @@ int aliceVision_main(int argc, char** argv)
     const int countHeight = std::ceil(double(height) / double(tileSize));
     const int rowSize = countWidth + 2;
 
-    ALICEVISION_LOG_INFO("Reduce image (" << width << "x" << height << ")");
-    
-    //Downscale such that each tile == 1 pixel
-    image::Image<image::RGBAfColor> smallImage(countWidth, countHeight);
-    bool error = false;
 
-    #pragma omp parallel for
-    for (int ty = 0; ty < countHeight; ty++)
+    if (fillHoles)
     {
-        //Build subimage
-        image::Image<image::RGBAfColor> region(rowSize * tileSize, 3 * tileSize);        
-        image::Image<image::RGBAfColor> tile(tileWidth, tileWidth);  
+        ALICEVISION_LOG_INFO("Reduce image (" << width << "x" << height << ")");
         
-        for (int ry = 0; ry < 3; ry++)
-        {
-            int dy = ry - 1;
-            
-            for (int rx = 0; rx < rowSize; rx++)
-            {
-                int dx = rx - 1;
+        //Downscale such that each tile == 1 pixel
+        image::Image<image::RGBAfColor> smallImage(countWidth, countHeight);
+        bool error = false;
 
-                if (!readFullTile(tile, panoramaInput, dx, ty + dy)) 
+        #pragma omp parallel for
+        for (int ty = 0; ty < countHeight; ty++)
+        {
+            //Build subimage
+            image::Image<image::RGBAfColor> region(rowSize * tileSize, 3 * tileSize);        
+            image::Image<image::RGBAfColor> tile(tileWidth, tileWidth);  
+            
+            for (int ry = 0; ry < 3; ry++)
+            {
+                int dy = ry - 1;
+                
+                for (int rx = 0; rx < rowSize; rx++)
                 {
-                    ALICEVISION_LOG_ERROR("Invalid tile");
-                    error = true;
-                    break;
+                    int dx = rx - 1;
+
+                    if (!readFullTile(tile, panoramaInput, dx, ty + dy)) 
+                    {
+                        ALICEVISION_LOG_ERROR("Invalid tile");
+                        error = true;
+                        break;
+                    }
+
+                    region.block(ry * tileWidth, rx * tileWidth, tileWidth, tileWidth) = tile;
                 }
 
-                region.block(ry * tileWidth, rx * tileWidth, tileWidth, tileWidth) = tile;
+                if (error)
+                {
+                    break;
+                }
             }
 
             if (error)
             {
-                break;
+                continue;
+            }
+
+            int cs = tileSize * rowSize;
+            while (cs != rowSize)
+            {
+                int ns = cs / 2;
+                image::Image<image::RGBAfColor> smaller;
+                downscaleTriangle(smaller, region);
+                region = smaller;
+                cs = ns;
+            }
+
+            for (int j = 0; j < countWidth; j++)
+            {
+                int rj = j + 1;
+                int dj = j;
+
+                smallImage(ty, dj) = region(1, rj);
             }
         }
 
         if (error)
         {
-            continue;
+            return EXIT_FAILURE;
         }
-
-        int cs = tileSize * rowSize;
-        while (cs != rowSize)
-        {
-            int ns = cs / 2;
-            image::Image<image::RGBAfColor> smaller;
-            downscaleTriangle(smaller, region);
-            region = smaller;
-            cs = ns;
-        }
-
-        for (int j = 0; j < countWidth; j++)
-        {
-            int rj = j + 1;
-            int dj = j;
-
-            smallImage(ty, dj) = region(1, rj);
-        }
-    }
-
-    if (error)
-    {
-        return EXIT_FAILURE;
-    }
-        
-    ALICEVISION_LOG_INFO("Process fill holes for reduced image (" << smallImage.Width() << "x" << smallImage.Height() << ")");
-    image::Image<image::RGBAfColor> smallFiled(smallImage.Width(), smallImage.Height());
-    oiio::ImageBuf inBuf(oiio::ImageSpec(smallImage.Width(), smallImage.Height(), 4, oiio::TypeDesc::FLOAT), smallImage.data());
-    oiio::ImageBuf outBuf(oiio::ImageSpec(smallImage.Width(), smallImage.Height(), 4, oiio::TypeDesc::FLOAT), smallFiled.data());
-    oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
-
-    //Process one full row of tiles each iteration
-    for (int ty = 0; ty < countHeight; ty++)
-    {
-        //Build subimage
-        image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);          
-        image::Image<image::RGBAfColor> subFiled(rowSize, 3, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-        image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
             
-        //Build a region           
-        for (int ry = 0; ry < 3; ry++)
+        ALICEVISION_LOG_INFO("Process fill holes for reduced image (" << smallImage.Width() << "x" << smallImage.Height() << ")");
+        image::Image<image::RGBAfColor> smallFiled(smallImage.Width(), smallImage.Height());
+        oiio::ImageBuf inBuf(oiio::ImageSpec(smallImage.Width(), smallImage.Height(), 4, oiio::TypeDesc::FLOAT), smallImage.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(smallImage.Width(), smallImage.Height(), 4, oiio::TypeDesc::FLOAT), smallFiled.data());
+        oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
+
+        ALICEVISION_LOG_INFO("Upscaling and filling holes");
+        //Process one full row of tiles each iteration
+        for (int ty = 0; ty < countHeight; ty++)
         {
-            int dy = ry - 1;
-            int cy = ty + dy;
-            
-            for (int rx = 0; rx < rowSize; rx++)
-            {
-                int dx = rx - 1;
-                int cx = dx;
-
-                image::Image<image::RGBAfColor> tile(tileSize, tileSize);
-                if (!readFullTile(tile, panoramaInput, cx, cy))
-                {
-                    ALICEVISION_LOG_ERROR("Invalid tile");
-                    return EXIT_FAILURE;
-                }
-
-                region.block(ry * tileSize, rx * tileSize, tileSize, tileSize) = tile;
-
-                if (cy < 0 || cy >= smallFiled.Height())
-                {
-                    continue;
-                }
-
-                if (cx < 0)
-                {
-                    cx = smallFiled.Width() + cx;
-                }
-
-                if (cx >= smallFiled.Width())
-                {
-                    cx = cx - smallFiled.Width();
-                }
-
-                subFiled(ry, rx) = smallFiled(cy, cx);
-            }
-        }
-
-        //First level is original image
-        std::vector<image::Image<image::RGBAfColor>> pyramid;
-        pyramid.push_back(region);
-
-        //Build pyramid for tile
-        int cs = tileSize * rowSize;
-        while (cs != rowSize)
-        {
-            int ns = cs / 2;
-            image::Image<image::RGBAfColor> smaller;
-            downscaleTriangle(smaller, region);
-            pyramid.push_back(smaller);
-            region = smaller;
-            cs = ns;
-        }
-
-            
-        pyramid[pyramid.size() - 1] = subFiled;  
-
-        for (int level = pyramid.size() - 2; level >= 0; level--)
-        {
-            const image::Image<image::RGBAfColor> & source = pyramid[level + 1];
-            
-            image::Image<image::RGBAfColor> & dest = pyramid[level];
-
-            for (int i = 0; i < source.Height(); i++)
-            {
-                int di = i * 2;
-                int pi = i - 1;
-                int ni = i + 1;
-
-                if (pi < 0) pi = -pi;
-                if (ni >= source.Height()) ni = i;
+            //Build subimage
+            image::Image<image::RGBAfColor> region(tileSize * rowSize, tileSize * 3);          
+            image::Image<image::RGBAfColor> subFiled(rowSize, 3, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+            image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
                 
-                for (int j = 0; j < source.Width(); j++)
+            //Build a region           
+            for (int ry = 0; ry < 3; ry++)
+            {
+                int dy = ry - 1;
+                int cy = ty + dy;
+                
+                #pragma omp parallel for
+                for (int rx = 0; rx < rowSize; rx++)
                 {
-                    int dj = j * 2;
-                    int pj = j - 1;
-                    int nj = j + 1;
+                    int dx = rx - 1;
+                    int cx = dx;
 
-                    if (pj < 0) pj = nj;
-                    if (nj >= source.Width()) nj = j;
+                    image::Image<image::RGBAfColor> tile(tileSize, tileSize);
+                    if (!readFullTile(tile, panoramaInput, cx, cy))
+                    {
+                        ALICEVISION_LOG_ERROR("Invalid tile");
+                        continue;
+                    }
 
-                    image::RGBAfColor c11 = source(pi, pj);
-                    image::RGBAfColor c12 = source(pi, j);
-                    image::RGBAfColor c13 = source(pi, nj);
-                    image::RGBAfColor c21 = source(i, pj);
-                    image::RGBAfColor c22 = source(i, j);
-                    image::RGBAfColor c23 = source(i, nj);
-                    image::RGBAfColor c31 = source(ni, pj);
-                    image::RGBAfColor c32 = source(ni, j);
-                    image::RGBAfColor c33 = source(ni, nj);
+                    region.block(ry * tileSize, rx * tileSize, tileSize, tileSize) = tile;
 
-                    image::RGBAfColor f1 = c12 * 0.75f + c13 * 0.25f;
-                    image::RGBAfColor f2 = c22 * 0.75f + c23 * 0.25f;
-                    image::RGBAfColor f3 = c32 * 0.75f + c33 * 0.25f;
-                    image::RGBAfColor b1 = c12 * 0.75f + c11 * 0.25f;
-                    image::RGBAfColor b2 = c22 * 0.75f + c21 * 0.25f;
-                    image::RGBAfColor b3 = c32 * 0.75f + c31 * 0.25f;
+                    if (cy < 0 || cy >= smallFiled.Height())
+                    {
+                        continue;
+                    }
 
-                    image::RGBAfColor d11 = b1 * 0.25f + b2 * 0.75f;
-                    image::RGBAfColor d21 = b3 * 0.25f + b2 * 0.75f;
-                    image::RGBAfColor d12 = f1 * 0.25f + f2 * 0.75f;
-                    image::RGBAfColor d22 = f3 * 0.25f + f2 * 0.75f;
+                    if (cx < 0)
+                    {
+                        cx = smallFiled.Width() + cx;
+                    }
 
-                    if (dest(di, dj).a() != 1.0f) dest(di, dj) = d11;
-                    if (dest(di, dj + 1).a() != 1.0f) dest(di, dj + 1) = d12;
-                    if (dest(di + 1, dj).a() != 1.0f) dest(di + 1, dj) = d21;
-                    if (dest(di + 1, dj + 1).a() != 1.0f) dest(di + 1, dj + 1) = d22;
+                    if (cx >= smallFiled.Width())
+                    {
+                        cx = cx - smallFiled.Width();
+                    }
+
+                    subFiled(ry, rx) = smallFiled(cy, cx);
                 }
             }
+
+            //First level is original image
+            std::vector<image::Image<image::RGBAfColor>> pyramid;
+            pyramid.push_back(region);
+
+            //Build pyramid for tile
+            int cs = tileSize * rowSize;
+            while (cs != rowSize)
+            {
+                int ns = cs / 2;
+                image::Image<image::RGBAfColor> smaller;
+                downscaleTriangle(smaller, region);
+                pyramid.push_back(smaller);
+                region = smaller;
+                cs = ns;
+            }
+
+                
+            pyramid[pyramid.size() - 1] = subFiled;  
+
+            for (int level = pyramid.size() - 2; level >= 0; level--)
+            {
+                const image::Image<image::RGBAfColor> & source = pyramid[level + 1];
+                
+                image::Image<image::RGBAfColor> & dest = pyramid[level];
+
+                #pragma omp parallel for
+                for (int i = 0; i < source.Height(); i++)
+                {
+                    int di = i * 2;
+                    int pi = i - 1;
+                    int ni = i + 1;
+
+                    if (pi < 0) pi = -pi;
+                    if (ni >= source.Height()) ni = i;
+                    
+                    for (int j = 0; j < source.Width(); j++)
+                    {
+                        int dj = j * 2;
+                        int pj = j - 1;
+                        int nj = j + 1;
+
+                        if (pj < 0) pj = nj;
+                        if (nj >= source.Width()) nj = j;
+
+                        image::RGBAfColor c11 = source(pi, pj);
+                        image::RGBAfColor c12 = source(pi, j);
+                        image::RGBAfColor c13 = source(pi, nj);
+                        image::RGBAfColor c21 = source(i, pj);
+                        image::RGBAfColor c22 = source(i, j);
+                        image::RGBAfColor c23 = source(i, nj);
+                        image::RGBAfColor c31 = source(ni, pj);
+                        image::RGBAfColor c32 = source(ni, j);
+                        image::RGBAfColor c33 = source(ni, nj);
+
+                        image::RGBAfColor f1 = c12 * 0.75f + c13 * 0.25f;
+                        image::RGBAfColor f2 = c22 * 0.75f + c23 * 0.25f;
+                        image::RGBAfColor f3 = c32 * 0.75f + c33 * 0.25f;
+                        image::RGBAfColor b1 = c12 * 0.75f + c11 * 0.25f;
+                        image::RGBAfColor b2 = c22 * 0.75f + c21 * 0.25f;
+                        image::RGBAfColor b3 = c32 * 0.75f + c31 * 0.25f;
+
+                        image::RGBAfColor d11 = b1 * 0.25f + b2 * 0.75f;
+                        image::RGBAfColor d21 = b3 * 0.25f + b2 * 0.75f;
+                        image::RGBAfColor d12 = f1 * 0.25f + f2 * 0.75f;
+                        image::RGBAfColor d22 = f3 * 0.25f + f2 * 0.75f;
+
+                        if (dest(di, dj).a() != 1.0f) dest(di, dj) = d11;
+                        if (dest(di, dj + 1).a() != 1.0f) dest(di, dj + 1) = d12;
+                        if (dest(di + 1, dj).a() != 1.0f) dest(di + 1, dj) = d21;
+                        if (dest(di + 1, dj + 1).a() != 1.0f) dest(di + 1, dj + 1) = d22;
+                    }
+                }
+            }
+
+            const image::Image<image::RGBAfColor> & finalTile = pyramid[0];
+            
+            final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
+
+            panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
         }
+    }
+    else 
+    {
+         //Process one full row of tiles each iteration
+        for (int ty = 0; ty < countHeight; ty++)
+        {
+            int ybegin = ty * tileSize;
+            int yend = (ty + 1) * tileSize;
 
-        const image::Image<image::RGBAfColor> & finalTile = pyramid[0];
-        
-        final.block(0, 0, tileSize, width) = finalTile.block(tileSize, tileSize, tileSize, width);
+            image::Image<image::RGBAfColor> final(width, tileSize, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+            
+            #pragma omp parallel for
+            for (int tx = 0; tx < countWidth; tx++)
+            {
+                image::Image<image::RGBAfColor> tile(tileSize, tileSize);
+                if (!panoramaInput->read_tile(tx * tileSize, ybegin, 0, oiio::TypeDesc::FLOAT, tile.data()))
+                {
+                    ALICEVISION_LOG_ERROR("Error reading from image");
+                }
 
-        panoramaOutput->write_scanlines(ty * tileSize, (ty + 1) * tileSize, 0, oiio::TypeDesc::FLOAT, final.data());
+
+                int available = width - tx*tileSize;
+                if (available < tileSize)
+                {
+                    final.block(0, tx * tileSize, tileSize, available) = tile.block(0, 0, tileSize, available);
+                }
+                else
+                {
+                    final.block(0, tx * tileSize, tileSize, tileSize) = tile;
+                }
+            }
+
+            panoramaOutput->write_scanlines(ybegin, yend, 0, oiio::TypeDesc::FLOAT, final.data());
+        }
     }
 
     panoramaInput->close();
