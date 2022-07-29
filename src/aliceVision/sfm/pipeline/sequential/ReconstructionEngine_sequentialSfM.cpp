@@ -207,6 +207,8 @@ bool ReconstructionEngine_sequentialSfM::process()
     // The optimization could allow the triangulation of new landmarks
     triangulate({}, prevReconstructedViews);
     bundleAdjustment(prevReconstructedViews);
+
+    registerChanges(prevReconstructedViews);
   }
 
   // reconstruction
@@ -325,10 +327,55 @@ void ReconstructionEngine_sequentialSfM::createInitialReconstruction(const std::
     {
       // successfully found an initial image pair
       ALICEVISION_LOG_INFO("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
+
+      std::set<IndexT> updatedViews;
+      updatedViews.insert(initialPairCandidate.first);
+      updatedViews.insert(initialPairCandidate.second);
+      registerChanges(updatedViews);
+
       return;
     }
   }
   throw std::runtime_error("Initialization failed after trying all possible initial image pairs.");
+}
+
+void ReconstructionEngine_sequentialSfM::registerChanges(const std::set<IndexT>& newReconstructedViews)
+{
+   _registeredCandidatesViews.clear();
+
+  const sfmData::Landmarks & landmarks = _sfmData.getLandmarks();
+  for (IndexT id : newReconstructedViews)
+  {
+    const track::TrackIdSet & setTracks = _map_tracksPerView[id];
+
+    for (auto idTrack : setTracks)
+    {
+      //Check that this track is indeed a landmark
+      if (landmarks.find(idTrack) == landmarks.end())
+      {
+        continue;
+      }
+
+      //Check that this view is a registered observation of this landmark (confirmed track)
+      const Landmark & l = landmarks.at(idTrack);
+      if (l.observations.find(id) == l.observations.end())
+      {
+        continue;
+      }
+
+      const track::Track & track = _map_tracks[idTrack];
+      for (const auto & pairFeat : track.featPerView)
+      {
+          IndexT oview = pairFeat.first;
+          if (oview == id)
+          {
+              continue;
+          }
+
+          _registeredCandidatesViews.insert(oview);
+      }
+    }
+  }
 }
 
 void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
@@ -393,6 +440,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
   IndexT resectionId = 0;
 
   std::set<IndexT> remainingViewIds;
+  std::set<IndexT> candidateViewIds;
   std::vector<IndexT> bestViewCandidates;
 
   // get all viewIds and max resection id
@@ -401,11 +449,14 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     IndexT viewId = viewPair.second->getViewId();
     IndexT viewResectionId = viewPair.second->getResectionId();
 
+    //Create a list of remaining views to estimate
     if(!_sfmData.isPoseAndIntrinsicDefined(viewId))
+    {
       remainingViewIds.insert(viewId);
+    }
 
-    if(viewResectionId != UndefinedIndexT &&
-       viewResectionId > resectionId)
+    //Make sure we can use the higher resectionIds
+    if(viewResectionId != UndefinedIndexT && viewResectionId > resectionId)
     {
       resectionId = viewResectionId + 1;
     }
@@ -432,11 +483,15 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
   }
 
   aliceVision::system::Timer timer;
-
   std::size_t nbValidPoses = 0;
   std::size_t globalIteration = 0;
+
   do
   {
+     //Compute intersection of available views and views with potential changes
+    candidateViewIds.clear();
+    std::set_intersection(remainingViewIds.begin(), remainingViewIds.end(), _registeredCandidatesViews.begin(), _registeredCandidatesViews.end(), std::inserter(candidateViewIds, candidateViewIds.end()));
+
     nbValidPoses = _sfmData.getPoses().size();
     ALICEVISION_LOG_INFO("Incremental Reconstruction start iteration " << globalIteration << ":" << std::endl
                          << "\t- # number of resection groups: " << resectionId << std::endl
@@ -444,8 +499,9 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
                          << "\t- # number of landmarks: " << _sfmData.structure.size() << std::endl
                          << "\t- # remaining images: " << remainingViewIds.size()
                          );
+
     // compute robust resection of remaining images
-    while(findNextBestViews(bestViewCandidates, remainingViewIds))
+    while (findNextBestViews(bestViewCandidates, candidateViewIds))
     {
       ALICEVISION_LOG_INFO("Update Reconstruction:" << std::endl
         << "\t- resection id: " << resectionId << std::endl
@@ -455,13 +511,30 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       // get reconstructed views before resection
       const std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
 
-      std::set<IndexT> newReconstructedViews = resection(resectionId, bestViewCandidates, prevReconstructedViews, remainingViewIds);
-
+      std::set<IndexT> newReconstructedViews = resection(resectionId, bestViewCandidates, prevReconstructedViews, candidateViewIds);
       if(newReconstructedViews.empty())
+      {
+        candidateViewIds.clear();
         continue;
+      }
+
 
       triangulate(prevReconstructedViews, newReconstructedViews);
       bundleAdjustment(newReconstructedViews);
+
+
+      //Erase reconstructed views from list of available views
+      for (auto v : newReconstructedViews)
+      {
+          remainingViewIds.erase(v);
+      }
+
+      //Compute the connected views to inform we have new information !
+      registerChanges(newReconstructedViews);
+
+      //Compute intersection of available views and views with potential changes
+      candidateViewIds.clear();
+      std::set_intersection(remainingViewIds.begin(), remainingViewIds.end(), _registeredCandidatesViews.begin(), _registeredCandidatesViews.end(), std::inserter(candidateViewIds, candidateViewIds.end()));
 
       // scene logging for visual debug
       if((resectionId % 3) == 0)
@@ -580,7 +653,6 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       {
         ALICEVISION_LOG_DEBUG("Resection of image " << i << " ( view id: " << viewId << " ) was not possible.");
       }
-      remainingViewIds.erase(viewId);
     }
   }
 
