@@ -319,6 +319,8 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
 template<typename TYPE, int N>
 inline REAL ComputePSNR(const Eigen::Matrix<REAL, N,1>& x0, const Eigen::Matrix<REAL, N,1>& x)
 {
+  makeRandomOperationsReproducible();
+
   REAL ret = std::numeric_limits<REAL>::infinity();
 
   REAL err = (x0 - x).squaredNorm() / N;
@@ -390,6 +392,8 @@ bool TestRobustRegressionL1PD()
 
 BOOST_AUTO_TEST_CASE ( rotationAveraging_RobustRegressionL1PD)
 {
+  makeRandomOperationsReproducible();
+
   TestRobustRegressionL1PD();
 }
 */

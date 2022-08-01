@@ -30,6 +30,8 @@ inline float zeroOneRand()
 
 BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_GT)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t sx = 4;
   const std::size_t sy = 3;
 
@@ -80,6 +82,8 @@ BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_GT)
 
 BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_noise)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t sx = 500;
   const std::size_t sy = 300;
 

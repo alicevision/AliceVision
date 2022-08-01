@@ -56,6 +56,8 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size = 
 
 BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 {
+    makeRandomOperationsReproducible();
+
     system::Logger::get()->setLogLevel(system::EVerboseLevel::Trace);
 
     const NViewDatasetConfigurator config(1000, 1000, 500, 500, 1, 0);
