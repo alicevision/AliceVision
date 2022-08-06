@@ -146,5 +146,10 @@ void conditionVocTree(const std::string& treeName, bool withWeights,
                       std::size_t numImageQuery,
                       OrderedPairList& selectedPairs);
 
+EImageMatchingMethod selectImageMatchingMethod(EImageMatchingMethod method,
+                                               const sfmData::SfMData& sfmDataA,
+                                               const sfmData::SfMData& sfmDataB,
+                                               std::size_t minNbImages);
+
 } // namespace imageMatching
 } // namespace aliceVision

@@ -454,5 +454,61 @@ void conditionVocTree(const std::string& treeName, bool withWeights,
     }
 }
 
+EImageMatchingMethod selectImageMatchingMethod(EImageMatchingMethod method,
+                                               const sfmData::SfMData& sfmDataA,
+                                               const sfmData::SfMData& sfmDataB,
+                                               std::size_t minNbImages)
+{
+    if (method == EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE)
+    {
+        // Frustum intersection is only implemented for pinhole cameras
+        bool onlyPinhole = true;
+        for (auto& cam : sfmDataA.getIntrinsics())
+        {
+            if(!camera::isPinhole(cam.second->getType()))
+            {
+                onlyPinhole = false;
+                break;
+            }
+        }
+
+        const std::size_t reconstructedViews = sfmDataA.getValidViews().size();
+        if (reconstructedViews == 0)
+        {
+            ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as there is no known pose.");
+            method = EImageMatchingMethod::VOCABULARYTREE;
+        }
+        else if (!onlyPinhole)
+        {
+            ALICEVISION_LOG_INFO(
+                "FRUSTUM_OR_VOCABULARYTREE: Use VOCABULARYTREE matching, as the scene contains non-pinhole cameras.");
+            method = EImageMatchingMethod::VOCABULARYTREE;
+        }
+        else if (reconstructedViews == sfmDataA.getViews().size())
+        {
+            ALICEVISION_LOG_INFO("FRUSTUM_OR_VOCABULARYTREE: Use FRUSTUM intersection from known poses.");
+            method = EImageMatchingMethod::FRUSTUM;
+        }
+        else
+        {
+            ALICEVISION_LOG_ERROR(reconstructedViews << " reconstructed views for " << sfmDataA.getViews().size()
+                                                     << " views.");
+            throw std::runtime_error("FRUSTUM_OR_VOCABULARYTREE: Mixing reconstructed and unreconstructed Views.");
+        }
+    }
+
+    // if not enough images to use the VOCABULARYTREE use the EXHAUSTIVE method
+    if (method == EImageMatchingMethod::VOCABULARYTREE ||
+        method == EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE)
+    {
+        if ((sfmDataA.getViews().size() + sfmDataB.getViews().size()) < minNbImages)
+        {
+            ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
+            method = EImageMatchingMethod::EXHAUSTIVE;
+        }
+    }
+    return method;
+}
+
 } // namespace imageMatching
 } // namespace aliceVision
