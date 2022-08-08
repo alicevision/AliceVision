@@ -139,6 +139,60 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
     outMatches.swap(finalMatches);
 }
 
+void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
+                                     const sfmData::SfMData& sfmData,
+                                     const feature::RegionsPerView& regionPerView,
+                                     bool useGridSort,
+                                     std::size_t numMatchesToKeep,
+                                     PairwiseMatches& outPairwiseMatches)
+{
+    for (const auto& geometricMatch: geometricMatches)
+    {
+        //Get the image pair and their matches.
+        const Pair& indexImagePair = geometricMatch.first;
+        const MatchesPerDescType& matchesPerDesc = geometricMatch.second;
+
+        for (const auto& match: matchesPerDesc)
+        {
+            const feature::EImageDescriberType descType = match.first;
+            assert(descType != feature::EImageDescriberType::UNINITIALIZED);
+            const IndMatches& inputMatches = match.second;
+
+            const feature::Regions* rRegions = &regionPerView.getRegions(indexImagePair.second, descType);
+            const feature::Regions* lRegions = &regionPerView.getRegions(indexImagePair.first, descType);
+
+            // get the regions for the current view pair:
+            if(rRegions && lRegions)
+            {
+                // sorting function:
+                aliceVision::matching::IndMatches outMatches;
+                sortMatches_byFeaturesScale(inputMatches, *lRegions, *rRegions, outMatches);
+
+                if(useGridSort)
+                {
+                    // TODO: rename as matchesGridOrdering
+                    matchesGridFiltering(*lRegions, sfmData.getView(indexImagePair.first).getImgSize(),
+                                         *rRegions, sfmData.getView(indexImagePair.second).getImgSize(),
+                                         indexImagePair, outMatches);
+                }
+
+                if (numMatchesToKeep > 0)
+                {
+                    size_t finalSize = std::min(numMatchesToKeep, outMatches.size());
+                    outMatches.resize(finalSize);
+                }
+
+                // std::cout << "Left features: " << lRegions->Features().size() << ", right features: " << rRegions->Features().size() << ", num matches: " << inputMatches.size() << ", num filtered matches: " << outMatches.size() << std::endl;
+                outPairwiseMatches[indexImagePair].insert(std::make_pair(descType, outMatches));
+            }
+            else
+            {
+              ALICEVISION_LOG_INFO("You cannot perform the grid filtering with these regions");
+            }
+        }
+    }
+}
+
 void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches,
                                 const feature::RegionsPerView& regionPerView,
                                 double minRequired2DMotion)

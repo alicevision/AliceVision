@@ -67,6 +67,13 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
                           const aliceVision::Pair& indexImagePair,
                           aliceVision::matching::IndMatches& outMatches, size_t gridSize = 3);
 
+void matchesGridFilteringForAllPairs(const PairwiseMatches& geometricMatches,
+                                     const sfmData::SfMData& sfmData,
+                                     const feature::RegionsPerView& regionPerView,
+                                     bool useGridSort, std::size_t numMatchesToKeep,
+                                     PairwiseMatches& outPairwiseMatches);
+
+
 void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches,
                                 const feature::RegionsPerView& regionPerView,
                                 double minRequired2DMotion);
