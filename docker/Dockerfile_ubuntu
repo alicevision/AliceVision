@@ -36,7 +36,9 @@ COPY src ${AV_DEV}/src
 
 WORKDIR "${AV_BUILD}"
 
-RUN cmake -DCMAKE_BUILD_TYPE=Release \
+COPY docker ${AV_DEV}/docker
+
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; cmake -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS:BOOL=ON \
         -DTARGET_ARCHITECTURE=core \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=OFF \
@@ -53,7 +55,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_EXAMPLES:BOOL=OFF \
         "${AV_DEV}" && \
-    make install -j"$(nproc)" && \
+    make install -j$((${CPU_CORES}/2)) && \
     make bundle && \
     rm -rf "${AV_BUILD}" "${AV_DEV}" && \
     echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
