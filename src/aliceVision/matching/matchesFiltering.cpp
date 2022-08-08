@@ -139,5 +139,54 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
     outMatches.swap(finalMatches);
 }
 
+void filterMatchesByMin2DMotion(PairwiseMatches& mapPutativesMatches,
+                                const feature::RegionsPerView& regionPerView,
+                                double minRequired2DMotion)
+{
+    if (minRequired2DMotion < 0.0f)
+        return;
+
+    //For each image pair
+    for (auto& imgPair: mapPutativesMatches)
+    {
+        const Pair viewPair = imgPair.first;
+        IndexT viewI = viewPair.first;
+        IndexT viewJ = viewPair.second;
+
+        //For each descriptors in this image
+        for (auto& descType: imgPair.second)
+        {
+            const feature::EImageDescriberType type = descType.first;
+
+            const feature::Regions & regions_I = regionPerView.getRegions(viewI, type);
+            const feature::Regions & regions_J = regionPerView.getRegions(viewJ, type);
+
+            const auto & features_I = regions_I.Features();
+            const auto & features_J = regions_J.Features();
+
+            IndMatches & matches = descType.second;
+            IndMatches updated_matches;
+
+            for (auto & match : matches)
+            {
+                Vec2f pi = features_I[match._i].coords();
+                Vec2f pj = features_J[match._j].coords();
+
+                float scale = std::max(features_I[match._i].scale(), features_J[match._j].scale());
+                float coeff = pow(2, scale);
+
+                if ((pi - pj).norm() < (minRequired2DMotion * coeff))
+                {
+                    continue;
+                }
+
+                updated_matches.push_back(match);
+            }
+
+            matches = updated_matches;
+        }
+    }
+}
+
 } // namespace sfm
 } // namespace aliceVision
