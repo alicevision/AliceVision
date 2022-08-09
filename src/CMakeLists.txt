@@ -369,6 +369,16 @@ else()
 endif()
 
 # ==============================================================================
+# onnxruntime
+# ==============================================================================
+find_package(onnxruntime)
+if(onnxruntime_FOUND)
+  message(STATUS " ONNXRUNTIME FOUND: ${onnxruntime_LIBRARIES}")
+else()
+  message(FATAL_ERROR " ONNXRUNTIME NOT FOUND.")
+endif()
+
+# ==============================================================================
 # Ceres
 # ==============================================================================
 # - rely on Ceres_DIR

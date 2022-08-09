@@ -13,5 +13,5 @@ alicevision_add_library(aliceVision_sphereDetection
   PUBLIC_LINKS
     ${OpenCV_LIBS}
     aliceVision_image
-    onnxruntime
+    ${onnxruntime_LIBRARY}
 )
