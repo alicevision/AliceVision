@@ -81,13 +81,35 @@ inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, i
  */
 inline void cvMatBGRToImageRGBA(const cv::Mat& img, image::Image<image::RGBAfColor>& imageOut)
 {
+    const float charToFloat = 1.0f / 255.0f;
     for(int row = 0; row < imageOut.Height(); row++)
     {
-        const cv::Vec3f* rowPtr = img.ptr<cv::Vec3f>(row);
-        for(int col = 0; col < imageOut.Width(); col++)
+        switch(img.type())
         {
-            const cv::Vec3f& matPixel = rowPtr[col];
-            imageOut(row, col) = image::RGBAfColor(matPixel[2], matPixel[1], matPixel[0], imageOut(row, col).a());
+            case CV_32FC3:
+            {
+                const cv::Vec3f* rowPtr = img.ptr<cv::Vec3f>(row);
+                for(int col = 0; col < imageOut.Width(); col++)
+                {
+                    const cv::Vec3f& matPixel = rowPtr[col];
+                    imageOut(row, col) =
+                        image::RGBAfColor(matPixel[2], matPixel[1], matPixel[0], imageOut(row, col).a());
+                }
+                break;
+            }
+            case CV_8UC3:
+            {
+                const cv::Vec3b* rowPtr = img.ptr<cv::Vec3b>(row);
+                for(int col = 0; col < imageOut.Width(); col++)
+                {
+                    const cv::Vec3b& matPixel = rowPtr[col];
+                    imageOut(row, col) = image::RGBAfColor(matPixel[2] * charToFloat, matPixel[1] * charToFloat,
+                                                           matPixel[0] * charToFloat, imageOut(row, col).a());
+                }
+                break;
+            }
+            default:
+                std::runtime_error("Cannot handle OpenCV matrix type '" + std::to_string(img.type()) + "'.");
         }
     }
 }
