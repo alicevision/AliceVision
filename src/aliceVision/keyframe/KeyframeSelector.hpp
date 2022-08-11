@@ -97,6 +97,15 @@ public:
   }
 
   /**
+   * @brief Set if the regular mode is used for keyframes selection
+   * @param[in] useRegularMode True or False
+   */
+  void useRegularMode(bool useRegularMode)
+  {
+    _useRegularMode = useRegularMode;
+  }
+
+  /**
    * @brief Set cameras informations for output keyframes
    * @param[in] cameras informations
    */
@@ -140,7 +149,7 @@ public:
    */
   void setSharpSubset(unsigned int subset)
   {
-      _sharpSubset = subset;
+    _sharpSubset = subset;
   }
 
   /**
@@ -149,7 +158,7 @@ public:
    */
   void setMinFrameStep(unsigned int frameStep)
   {
-      _minFrameStep = frameStep;
+    _minFrameStep = frameStep;
   }
 
   /**
@@ -158,7 +167,7 @@ public:
    */
   void setMaxFrameStep(unsigned int frameStep)
   {
-      _maxFrameStep = frameStep;
+    _maxFrameStep = frameStep;
   }
 
   /**
@@ -167,7 +176,25 @@ public:
    */
   void setMaxOutFrame(unsigned int nbFrame)
   {
-      _maxOutFrame = nbFrame;
+    _maxOutFrame = nbFrame;
+  }
+
+  /**
+   * @brief Set the index of the first frame to be selected as a keyframe in regular mode
+   * @param[in] startFrame index of first frame to be selected as keyframe
+   */
+  void setStartFrame(unsigned int startFrame)
+  {
+    _startFrame = startFrame;
+  }
+
+  /**
+   * @brief Set the number of frames to skip between two keyframes in regular mode
+   * @param[in] frameRange range of frames separating two keyframes
+   */
+  void setFrameRange(unsigned int frameRange)
+  {
+    _frameRange = frameRange;
   }
 
   /**
@@ -176,7 +203,7 @@ public:
    */
   unsigned int getSharpSubset() const 
   {
-      return _sharpSubset;
+    return _sharpSubset;
   }
 
   /**
@@ -185,7 +212,7 @@ public:
    */
   unsigned int getMinFrameStep() const 
   {
-      return _minFrameStep;
+    return _minFrameStep;
   }
 
   /**
@@ -194,7 +221,7 @@ public:
    */
   unsigned int getMaxFrameStep() const 
   {
-      return _maxFrameStep;
+    return _maxFrameStep;
   }
 
   /**
@@ -203,9 +230,27 @@ public:
    */
   unsigned int getMaxOutFrame() const 
   {
-      return _maxOutFrame;
+    return _maxOutFrame;
   }
-    
+
+  /**
+   * @brief Get the index of the first frame selected as a keyframe in regular mode
+   * @return index of the first frame selected as keyframe
+   */
+  unsigned int getStartFrame() const
+  {
+    return _startFrame;
+  }
+
+  /**
+   * @brief Get the number of skipped frames between two keyframes in regular mode
+   * @return range of frames separating two selected keyframes
+   */
+  unsigned int getFrameRange() const
+  {
+    return _frameRange;
+  }
+
 private:
 
   // Paths
@@ -243,6 +288,13 @@ private:
   bool _hasSharpnessSelection = true;
   /// Use sparseDistance selection
   bool _hasSparseDistanceSelection = true;
+
+  /// Use simple extraction mode
+  bool _useRegularMode = false;
+  /// Number of the frame for the first keyframe to be extracted
+  unsigned int _startFrame = 0;
+  /// Number of frames between two keyframes
+  unsigned int _frameRange = 1;
 
   /// Camera metadatas
   std::vector<CameraInfo> _cameraInfos;

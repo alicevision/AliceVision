@@ -50,6 +50,10 @@ int aliceVision_main(int argc, char** argv)
   unsigned int maxFrameStep = 36;
   unsigned int maxNbOutFrame = 0;
 
+  bool useRegularMode = false;
+  unsigned int startFrame = 0;
+  unsigned int frameRange = 100;
+
   po::options_description allParams("This program is used to extract keyframes from single camera or a camera rig");
 
   po::options_description inputParams("Required parameters");  
@@ -94,7 +98,13 @@ int aliceVision_main(int argc, char** argv)
       ("maxFrameStep", po::value<unsigned int>(&maxFrameStep)->default_value(maxFrameStep), 
         "maximum number of frames after which a keyframe can be taken")
       ("maxNbOutFrame", po::value<unsigned int>(&maxNbOutFrame)->default_value(maxNbOutFrame), 
-        "maximum number of output frames (0 = no limit)");
+        "maximum number of output frames (0 = no limit)")
+      ("useRegularMode", po::value<bool>(&useRegularMode)->default_value(useRegularMode),
+        "Use the regular mode for keyframe extraction (if enabled, overrides every other parameters)")
+      ("startFrame", po::value<unsigned int>(&startFrame)->default_value(startFrame),
+        "First frame to extract as a keyframe")
+      ("frameRange", po::value<unsigned int>(&frameRange)->default_value(frameRange),
+        "Number of frames to skip between two keyframes");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -224,6 +234,9 @@ int aliceVision_main(int argc, char** argv)
   selector.setMinFrameStep(minFrameStep);
   selector.setMaxFrameStep(maxFrameStep);
   selector.setMaxOutFrame(maxNbOutFrame);
+  selector.useRegularMode(useRegularMode);
+  selector.setStartFrame(startFrame);
+  selector.setFrameRange(frameRange);
   
   // process
   selector.process();        

@@ -166,6 +166,42 @@ void KeyframeSelector::process()
     mediaInfo.spec.attribute("Exif:FocalLength", _cameraInfos[mediaIndex].focalLength);
   }
 
+  // if the regular mode is enabled, the iteration and keyframe selection are very straightforward
+  if(_useRegularMode)
+  {
+    _keyframeIndexes.clear();
+    if(_startFrame >= _framesData.size())
+    {
+      ALICEVISION_LOG_ERROR("Start frame index " << _startFrame << " invalid, not enough frames in total (" << _framesData.size() << ")");
+      throw std::invalid_argument("Not enough frames in total, invalid start frame index " + std::to_string(_startFrame));
+    }
+
+    unsigned int frameCnt = 0;
+    std::size_t frameIndex = _startFrame;
+
+    // check at once that there are still enough frames left and the maximum number of ouptuts has not been reached
+    while(frameIndex < _framesData.size() && ((frameCnt < _maxOutFrame && _maxOutFrame > 0) || _maxOutFrame == 0))
+    {
+      // write keyframe
+      for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
+      {
+        auto& feed = *_feeds.at(mediaIndex);
+
+        feed.goToFrame(frameIndex + _cameraInfos.at(mediaIndex).frameOffset);
+
+        feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
+        writeKeyframe(image, frameIndex, mediaIndex);
+      }
+      _framesData[frameIndex].keyframe = true;
+      _keyframeIndexes.push_back(frameIndex);
+
+      frameIndex += _frameRange;
+      frameCnt++;
+    }
+
+    return;
+  }
+
   // iteration process
   _keyframeIndexes.clear();
   std::size_t currentFrameStep = _minFrameStep + 1; // start directly (dont skip minFrameStep first frames)
