@@ -98,6 +98,9 @@ void FeatureExtractor::process()
 
     std::size_t jobMaxMemoryConsuption = 0;
 
+    std::vector<ViewJob> cpuJobs;
+    std::vector<ViewJob> gpuJobs;
+
     for (auto it = itViewBegin; it != itViewEnd; ++it)
     {
         const sfmData::View& view = *(it->second.get());
@@ -107,13 +110,13 @@ void FeatureExtractor::process()
         jobMaxMemoryConsuption = std::max(jobMaxMemoryConsuption, viewJob.memoryConsuption);
 
         if (viewJob.useCPU())
-            _cpuJobs.push_back(viewJob);
+            cpuJobs.push_back(viewJob);
 
         if (viewJob.useGPU())
-            _gpuJobs.push_back(viewJob);
+            gpuJobs.push_back(viewJob);
     }
 
-    if (!_cpuJobs.empty())
+    if (!cpuJobs.empty())
     {
         system::MemoryInfo memoryInformation = system::getMemoryInfo();
 
@@ -173,19 +176,19 @@ void FeatureExtractor::process()
         nbThreads = std::min(static_cast<std::size_t>(omp_get_num_procs()), nbThreads);
 
         // nbThreads should not be higher than the number of jobs
-        nbThreads = std::min(_cpuJobs.size(), nbThreads);
+        nbThreads = std::min(cpuJobs.size(), nbThreads);
 
         ALICEVISION_LOG_INFO("# threads for extraction: " << nbThreads);
         omp_set_nested(1);
 
 #pragma omp parallel for num_threads(nbThreads)
-        for (int i = 0; i < _cpuJobs.size(); ++i)
-            computeViewJob(_cpuJobs.at(i), false);
+        for (int i = 0; i < cpuJobs.size(); ++i)
+            computeViewJob(cpuJobs.at(i), false);
     }
 
-    if (!_gpuJobs.empty())
+    if (!gpuJobs.empty())
     {
-        for (const auto& job : _gpuJobs)
+        for (const auto& job : gpuJobs)
             computeViewJob(job, true);
     }
 }

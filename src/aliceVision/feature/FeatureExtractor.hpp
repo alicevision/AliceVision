@@ -59,8 +59,6 @@ private:
     int _rangeStart = -1;
     int _rangeSize = -1;
     int _maxThreads = -1;
-    std::vector<ViewJob> _cpuJobs;
-    std::vector<ViewJob> _gpuJobs;
 };
 
 } // namespace feature
