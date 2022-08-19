@@ -11,11 +11,64 @@
 namespace aliceVision {
 namespace feature {
 
+class FeatureExtractorViewJob
+{
+public:
+    FeatureExtractorViewJob(const sfmData::View& view,
+                            const std::string& outputFolder);
+
+    ~FeatureExtractorViewJob();
+
+    bool useGPU() const
+    {
+        return !_gpuImageDescriberIndexes.empty();
+    }
+
+    bool useCPU() const
+    {
+        return !_cpuImageDescriberIndexes.empty();
+    }
+
+    std::string getFeaturesPath(feature::EImageDescriberType imageDescriberType) const
+    {
+        return _outputBasename + "." + EImageDescriberType_enumToString(imageDescriberType) + ".feat";
+    }
+
+    std::string getDescriptorPath(feature::EImageDescriberType imageDescriberType) const
+    {
+        return _outputBasename + "." + EImageDescriberType_enumToString(imageDescriberType) + ".desc";
+    }
+
+    void setImageDescribers(
+            const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers);
+
+    const sfmData::View& view() const
+    {
+        return _view;
+    }
+
+    std::size_t memoryConsuption() const
+    {
+        return _memoryConsuption;
+    }
+
+    const std::vector<std::size_t>& imageDescriberIndexes(bool useGPU) const
+    {
+        return useGPU ? _gpuImageDescriberIndexes
+                      : _cpuImageDescriberIndexes;
+    }
+
+private:
+    const sfmData::View& _view;
+    std::size_t _memoryConsuption = 0;
+    std::string _outputBasename;
+    std::vector<std::size_t> _cpuImageDescriberIndexes;
+    std::vector<std::size_t> _gpuImageDescriberIndexes;
+};
+
 class FeatureExtractor
 {
-    struct ViewJob;
-
-  public:
+public:
 
     explicit FeatureExtractor(const sfmData::SfMData& sfmData);
     ~FeatureExtractor();
@@ -50,7 +103,7 @@ class FeatureExtractor
 
 private:
 
-    void computeViewJob(const ViewJob& job, bool useGPU);
+    void computeViewJob(const FeatureExtractorViewJob& job, bool useGPU);
 
     const sfmData::SfMData& _sfmData;
     std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;

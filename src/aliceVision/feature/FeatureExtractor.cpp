@@ -16,64 +16,37 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace feature {
 
-struct FeatureExtractor::ViewJob
+FeatureExtractorViewJob::FeatureExtractorViewJob(const sfmData::View& view,
+                                                 const std::string& outputFolder) :
+    _view(view),
+    _outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
+{}
+
+FeatureExtractorViewJob::~FeatureExtractorViewJob() = default;
+
+void FeatureExtractorViewJob::setImageDescribers(
+        const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers)
 {
-    const sfmData::View& view;
-    std::size_t memoryConsuption = 0;
-    std::string outputBasename;
-    std::vector<std::size_t> cpuImageDescriberIndexes;
-    std::vector<std::size_t> gpuImageDescriberIndexes;
-
-    ViewJob(const sfmData::View& view,
-            const std::string& outputFolder) :
-        view(view),
-        outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
-    {}
-
-    ~ViewJob() = default;
-
-    bool useGPU() const
+    for (std::size_t i = 0; i < imageDescribers.size(); ++i)
     {
-        return !gpuImageDescriberIndexes.empty();
-    }
+        const std::shared_ptr<feature::ImageDescriber>& imageDescriber = imageDescribers.at(i);
+        feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
 
-    bool useCPU() const
-    {
-        return !cpuImageDescriberIndexes.empty();
-    }
-
-    std::string getFeaturesPath(feature::EImageDescriberType imageDescriberType) const
-    {
-        return outputBasename + "." + EImageDescriberType_enumToString(imageDescriberType) + ".feat";
-    }
-
-    std::string getDescriptorPath(feature::EImageDescriberType imageDescriberType) const
-    {
-        return outputBasename + "." + EImageDescriberType_enumToString(imageDescriberType) + ".desc";
-    }
-
-    void setImageDescribers(const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers)
-    {
-        for (std::size_t i = 0; i < imageDescribers.size(); ++i)
+        if (fs::exists(getFeaturesPath(imageDescriberType)) &&
+            fs::exists(getDescriptorPath(imageDescriberType)))
         {
-            const std::shared_ptr<feature::ImageDescriber>& imageDescriber = imageDescribers.at(i);
-            feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
-
-            if (fs::exists(getFeaturesPath(imageDescriberType)) &&
-                fs::exists(getDescriptorPath(imageDescriberType)))
-            {
-                continue;
-            }
-
-            memoryConsuption += imageDescriber->getMemoryConsumption(view.getWidth(), view.getHeight());
-
-            if(imageDescriber->useCuda())
-                gpuImageDescriberIndexes.push_back(i);
-            else
-                cpuImageDescriberIndexes.push_back(i);
+            continue;
         }
+
+        _memoryConsuption += imageDescriber->getMemoryConsumption(_view.getWidth(),
+                                                                  _view.getHeight());
+
+        if(imageDescriber->useCuda())
+            _gpuImageDescriberIndexes.push_back(i);
+        else
+            _cpuImageDescriberIndexes.push_back(i);
     }
-};
+}
 
 
 FeatureExtractor::FeatureExtractor(const sfmData::SfMData& sfmData) :
@@ -98,16 +71,16 @@ void FeatureExtractor::process()
 
     std::size_t jobMaxMemoryConsuption = 0;
 
-    std::vector<ViewJob> cpuJobs;
-    std::vector<ViewJob> gpuJobs;
+    std::vector<FeatureExtractorViewJob> cpuJobs;
+    std::vector<FeatureExtractorViewJob> gpuJobs;
 
     for (auto it = itViewBegin; it != itViewEnd; ++it)
     {
         const sfmData::View& view = *(it->second.get());
-        ViewJob viewJob(view, _outputFolder);
+        FeatureExtractorViewJob viewJob(view, _outputFolder);
 
         viewJob.setImageDescribers(_imageDescribers);
-        jobMaxMemoryConsuption = std::max(jobMaxMemoryConsuption, viewJob.memoryConsuption);
+        jobMaxMemoryConsuption = std::max(jobMaxMemoryConsuption, viewJob.memoryConsuption());
 
         if (viewJob.useCPU())
             cpuJobs.push_back(viewJob);
@@ -193,21 +166,21 @@ void FeatureExtractor::process()
     }
 }
 
-void FeatureExtractor::computeViewJob(const ViewJob& job, bool useGPU)
+void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool useGPU)
 {
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
     image::Image<unsigned char> mask;
 
-    image::readImage(job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
+    image::readImage(job.view().getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
 
     if (!_masksFolder.empty() && fs::exists(_masksFolder))
     {
         const auto masksFolder = fs::path(_masksFolder);
         const auto idMaskPath = masksFolder /
-                fs::path(std::to_string(job.view.getViewId())).replace_extension("png");
+                fs::path(std::to_string(job.view().getViewId())).replace_extension("png");
         const auto nameMaskPath = masksFolder /
-                fs::path(job.view.getImagePath()).filename().replace_extension("png");
+                fs::path(job.view().getImagePath()).filename().replace_extension("png");
 
         if (fs::exists(idMaskPath))
         {
@@ -219,10 +192,7 @@ void FeatureExtractor::computeViewJob(const ViewJob& job, bool useGPU)
         }
     }
 
-    const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes
-                                              : job.cpuImageDescriberIndexes;
-
-    for (const auto & imageDescriberIndex : imageDescriberIndexes)
+    for (const auto & imageDescriberIndex : job.imageDescriberIndexes(useGPU))
     {
         const auto& imageDescriber = _imageDescribers.at(imageDescriberIndex);
         const feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
@@ -231,7 +201,7 @@ void FeatureExtractor::computeViewJob(const ViewJob& job, bool useGPU)
 
         // Compute features and descriptors and export them to files
         ALICEVISION_LOG_INFO("Extracting " << imageDescriberTypeName  << " features from view '"
-                             << job.view.getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
+                             << job.view().getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
 
         std::unique_ptr<feature::Regions> regions;
         if (imageDescriber->useFloatImage())
@@ -281,7 +251,7 @@ void FeatureExtractor::computeViewJob(const ViewJob& job, bool useGPU)
                              job.getDescriptorPath(imageDescriberType));
         ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " "
                              << imageDescriberTypeName  << " features extracted from view '"
-                             << job.view.getImagePath() << "'");
+                             << job.view().getImagePath() << "'");
     }
 }
 
