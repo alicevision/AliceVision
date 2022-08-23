@@ -17,6 +17,7 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_feature
           aliceVision_sfmData
           aliceVision_sfmDataIO
+		  aliceVision_lensCorrectionProfile
           Boost::program_options
           Boost::filesystem
           Boost::boost

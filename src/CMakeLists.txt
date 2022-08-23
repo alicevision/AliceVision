@@ -336,6 +336,16 @@ else()
 endif()
 
 # ==============================================================================
+# Expat
+# ==============================================================================
+find_package(expat CONFIG REQUIRED)
+if(EXPAT_FOUND OR expat_FOUND)
+  message(STATUS "Expat found.")
+else()
+  message(SEND_ERROR "Failed to find Expat.")
+endif()
+
+# ==============================================================================
 # Mosek (linear programming interface)
 # ==============================================================================
 set(ALICEVISION_HAVE_MOSEK 0)

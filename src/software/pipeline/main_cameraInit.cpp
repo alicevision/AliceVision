@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/lensCorrectionProfile/lcp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -29,6 +30,7 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
+#include <math.h>
 #include <algorithm>
 #include <iterator>
 
@@ -133,6 +135,20 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     return in;
 }
 
+void parseLCPDatabase(const boost::filesystem::path& p, std::vector<boost::filesystem::path>& v)
+{
+    if (boost::filesystem::is_directory(p))
+    {
+        for (auto&& x : boost::filesystem::directory_iterator(p))
+            parseLCPDatabase(x.path(), v);
+    }
+    else if (boost::filesystem::is_regular_file(p) && (p.extension().string() == ".lcp"))
+    {
+        v.push_back(p);
+    }
+}
+
+
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
  * - Export a SfMData file with View & Intrinsic data
@@ -143,6 +159,7 @@ int aliceVision_main(int argc, char **argv)
   std::string sfmFilePath;
   std::string imageFolder;
   std::string sensorDatabasePath;
+  std::string lensCorrectionProfileInfo;
   std::string outputFilePath;
 
   // user optional parameters
@@ -163,6 +180,7 @@ int aliceVision_main(int argc, char **argv)
   bool allowSingleView = false;
   bool errorOnMissingColorProfile = true;
   image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+  bool enableLensCorrectionProfileSearch = false;
 
 
   po::options_description requiredParams("Required parameters");
@@ -180,6 +198,10 @@ int aliceVision_main(int argc, char **argv)
       "Camera sensor width database path.")
     ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
       "DNG Color Profiles (DCP) database path.")
+    ("lensCorrectionProfileInfo", po::value<std::string>(&lensCorrectionProfileInfo)->default_value(""),
+      "Lens Correction Profile filepath or database directory path.")
+    ("enableLensCorrectionProfileSearch", po::value<bool>(&enableLensCorrectionProfileSearch)->default_value(enableLensCorrectionProfileSearch),
+      "Enable automatic search of Lens Correction Profile in the selected database")
     ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
       "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
@@ -309,6 +331,22 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
+  std::vector<fs::path> v_lcpFilepath;
+  if (!lensCorrectionProfileInfo.empty() && !fs::is_directory(lensCorrectionProfileInfo) && !fs::is_regular_file(lensCorrectionProfileInfo))
+  {
+      ALICEVISION_LOG_ERROR("The specified lens correction profile is not valid.");
+      return EXIT_FAILURE;
+  }
+  else if (!lensCorrectionProfileInfo.empty() && fs::is_directory(lensCorrectionProfileInfo) && enableLensCorrectionProfileSearch)
+  {
+      // search all .lcp files in the directory and sub directories
+      parseLCPDatabase(lensCorrectionProfileInfo, v_lcpFilepath);
+  }
+  else if (!lensCorrectionProfileInfo.empty() && fs::is_regular_file(lensCorrectionProfileInfo) && fs::extension(lensCorrectionProfileInfo) == ".lcp")
+  {
+      v_lcpFilepath.push_back(lensCorrectionProfileInfo);
+  }
+
   camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);
 
   // use current time as seed for random generator for intrinsic Id without metadata
@@ -375,7 +413,7 @@ int aliceVision_main(int argc, char **argv)
   image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
   int viewsWithDCPMetadata = 0;
 
-  #pragma omp parallel for
+  //#pragma omp parallel for
   for (int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
@@ -423,7 +461,7 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash;
         IndexT tmpPoseID = hash(parentPath.string()); // use a temporary pose Id to group the images
 
-#pragma omp critical
+//#pragma omp critical
         {
             poseGroups[tmpPoseID].push_back(view.getViewId());
         }
@@ -501,6 +539,44 @@ int aliceVision_main(int argc, char **argv)
         if (!dcpDatabase.empty())
             ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
     }
+    // try to find an appropriate Lens Correction Profile
+    fs::path lcpFilepath = "";
+    if (v_lcpFilepath.size() == 1)
+    {
+        lcpFilepath = v_lcpFilepath.back();
+    }
+    else if (!v_lcpFilepath.empty())
+    {
+        // To do ...
+        //const std::string& LensModel = view.getMetadataLensModel();
+
+
+    }
+    // Parse the selected lcp file and extract lens information corresponding to image metadata
+    LensParam lensParam;
+    if (!lcpFilepath.empty())
+    {
+        LCPinfo lcpData(lcpFilepath.string());
+
+        settingsInfo cameraSettings;
+        cameraSettings.ApertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
+        cameraSettings.FocalLength = view.getMetadataFocalLength();
+        cameraSettings.FocusDistance = 0.f;
+
+        int iLow, iHigh;
+        float weightLow;
+        lcpData.search(cameraSettings, LCPCorrectionMode::VIGNETTE, iLow, iHigh, weightLow);
+        lcpData.combine(iLow, iHigh, weightLow, LCPCorrectionMode::VIGNETTE, lensParam);
+        lcpData.search(cameraSettings, LCPCorrectionMode::DISTORTION, iLow, iHigh, weightLow);
+        lcpData.combine(iLow, iHigh, weightLow, LCPCorrectionMode::DISTORTION, lensParam);
+
+        if (!lensParam.vignParams.isEmpty)
+        {
+            view.addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+            view.addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+            view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+        }
+    }
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -513,6 +589,26 @@ int aliceVision_main(int argc, char **argv)
         {
           // the view intrinsic is initialized
           boost::atomic_ref<std::size_t>(completeViewCount)++;
+
+          // Need to adjust the view if LCP parameters have been updated after first building of the view (how to know that ???)
+          std::shared_ptr<camera::IntrinsicBase> intrinsicBase1 = getViewIntrinsic(
+              view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView,
+              defaultFocalRatio, defaultOffsetX, defaultOffsetY,
+              defaultCameraModel, allowedCameraModels);
+          std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase1);
+          if (intrinsicDisto)
+          {
+              std::shared_ptr<camera::Distortion> distortion = intrinsicDisto->getDistortion();
+              std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
+              if (distoRadialK3)
+              {
+                  std::vector<double> p;
+                  p.push_back(lensParam.perspParams.RadialDistortParam1);
+                  p.push_back(lensParam.perspParams.RadialDistortParam2);
+                  p.push_back(lensParam.perspParams.RadialDistortParam3);
+                  intrinsicDisto->setDistortionParams(p);
+              }
+          }
 
           // don't need to build a new intrinsic
           continue;
@@ -620,6 +716,22 @@ int aliceVision_main(int argc, char **argv)
         view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView, 
         defaultFocalRatio, defaultOffsetX, defaultOffsetY, 
         defaultCameraModel, allowedCameraModels);
+
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
+    if (intrinsicDisto)
+    {
+        std::shared_ptr<camera::Distortion> distortion = intrinsicDisto->getDistortion();
+        std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
+        if (distoRadialK3)
+        {
+            std::vector<double> p;
+            p.push_back(lensParam.perspParams.RadialDistortParam1);
+            p.push_back(lensParam.perspParams.RadialDistortParam2);
+            p.push_back(lensParam.perspParams.RadialDistortParam3);
+            intrinsicDisto->setDistortionParams(p);
+        }
+    }
+
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
 
     // set initialization mode

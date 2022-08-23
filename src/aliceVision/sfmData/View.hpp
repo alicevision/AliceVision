@@ -464,12 +464,21 @@ public:
   }
 
   /**
+   * @brief Get the corresponding "LensModel" metadata value
+   * @return the metadata value string or "" if no corresponding value
+   */
+  const std::string& getMetadataLensModel() const
+  {
+      return getMetadata({ "Exif:LensModel", "lensModel", "lens model" });
+  }
+
+  /**
    * @brief Get the corresponding "LensSerialNumber" metadata value
    * @return the metadata value string or "" if no corresponding value
    */
   const std::string& getMetadataLensSerialNumber() const
   {
-    return getMetadata({"Exif:LensSerialNumber", "lensSerialNumber", "lens serial number"});
+      return getMetadata({ "Exif:LensSerialNumber", "lensSerialNumber", "lens serial number" });
   }
 
   /**
