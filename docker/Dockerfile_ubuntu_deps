@@ -63,10 +63,6 @@ WORKDIR ${AV_DEV}
 
 COPY docker ${AV_DEV}/docker/
 
-RUN ls ${AV_DEV}/docker
-
-RUN pwd
-
 RUN ./docker/fetch.sh
 
 
