@@ -56,7 +56,7 @@ RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_EXAMPLES:BOOL=OFF \
         "${AV_DEV}" && \
-    make install -j$((${CPU_CORES}/2)) && \
+    make install -j${CPU_CORES} && \
     make bundle && \
     rm -rf "${AV_BUILD}" "${AV_DEV}" && \
     echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
