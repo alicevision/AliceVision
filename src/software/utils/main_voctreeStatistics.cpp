@@ -53,17 +53,6 @@ std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatche
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document &doc)
-{
-  os << "[ ";
-  for(const aliceVision::voctree::Word &w : doc)
-  {
-    os << w << ", ";
-  }
-  os << "];\n";
-  return os;
-}
-
 static const std::string programDescription =
         "This program is used to generate some statistics.\n ";
 

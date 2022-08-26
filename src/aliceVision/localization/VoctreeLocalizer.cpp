@@ -34,17 +34,6 @@
 namespace aliceVision {
 namespace localization {
 
-std::ostream& operator<<( std::ostream& os, const voctree::Document &doc )	
-{
-  os << "[ ";
-  for( const voctree::Word &w : doc )
-  {
-          os << w << ", ";
-  }
-  os << "];\n";
-  return os;
-}
-
 std::ostream& operator<<(std::ostream& os, VoctreeLocalizer::Algorithm a)
 {
   switch(a)

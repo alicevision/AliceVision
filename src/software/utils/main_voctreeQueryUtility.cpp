@@ -58,17 +58,6 @@ std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatche
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document &doc)
-{
-  os << "[ ";
-  for(const aliceVision::voctree::Word &w : doc)
-  {
-    os << w << ", ";
-  }
-  os << "];\n";
-  return os;
-}
-
 bool saveSparseHistogramPerImage(const std::string &filename, const aliceVision::voctree::SparseHistogramPerImage &docs)
 {
   std::ofstream fileout(filename);
