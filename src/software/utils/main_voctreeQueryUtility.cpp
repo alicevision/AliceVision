@@ -47,17 +47,6 @@ using namespace aliceVision::feature;
 typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatches &matches)
-{
-  os << "[ ";
-  for(const auto &e : matches)
-  {
-    os << e.id << ", " << e.score << "; ";
-  }
-  os << "];\n";
-  return os;
-}
-
 bool saveSparseHistogramPerImage(const std::string &filename, const aliceVision::voctree::SparseHistogramPerImage &docs)
 {
   std::ofstream fileout(filename);

@@ -26,6 +26,17 @@ std::ostream& operator<<(std::ostream& os, const SparseHistogram &dv)
 	return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const DocMatches& matches)
+{
+    os << "[ ";
+    for (const auto &e : matches)
+    {
+        os << e.id << ", " << e.score << "; ";
+    }
+    os << "];\n";
+    return os;
+}
+
 Database::Database(uint32_t num_words)
 : word_files_(num_words),
 word_weights_( num_words, 1.0f ) { }
