@@ -64,13 +64,6 @@ std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document 
   return os;
 }
 
-std::string myToString(std::size_t i, std::size_t zeroPadding)
-{
-  std::stringstream ss;
-  ss << std::setw(zeroPadding) << std::setfill('0') << i;
-  return ss.str();
-}
-
 static const std::string programDescription =
         "This program is used to generate some statistics.\n ";
 
