@@ -28,6 +28,8 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
+namespace {
+
 /**
  * @brief Alignment method enum
  */
@@ -177,6 +179,7 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
     R = rotateMat; // Assign Rotation
 }
 
+} // namespace
 
 int aliceVision_main(int argc, char **argv)
 {

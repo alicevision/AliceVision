@@ -27,6 +27,7 @@ using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
 
+namespace {
 
 /**
 * @brief Alignment method enum
@@ -89,6 +90,7 @@ inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
     return os << EAlignmentMethod_enumToString(e);
 }
 
+} // namespace
 
 int aliceVision_main(int argc, char **argv)
 {

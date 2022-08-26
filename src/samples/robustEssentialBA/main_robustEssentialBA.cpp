@@ -39,11 +39,15 @@ using namespace svg;
 
 namespace fs = boost::filesystem;
 
+namespace {
+
 /// Read intrinsic K matrix from a file (ASCII)
 /// F 0 ppx
 /// 0 F ppy
 /// 0 0 1
 bool readIntrinsic(const std::string & fileName, Mat3 & K);
+
+} // namespace
 
 /// Show :
 ///  how computing an essential with know internal calibration matrix K
@@ -274,6 +278,8 @@ int main() {
   return EXIT_SUCCESS;
 }
 
+namespace {
+
 bool readIntrinsic(const std::string & fileName, Mat3 & K)
 {
   // Load the K matrix
@@ -291,3 +297,5 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K)
   }
   return true;
 }
+
+} // namespace
