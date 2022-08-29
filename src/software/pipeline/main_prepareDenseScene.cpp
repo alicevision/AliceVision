@@ -74,31 +74,6 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
   }
 }
 
-bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
-{
-  for(const auto & masksFolder_str : masksFolders)
-  {
-    if(!masksFolder_str.empty() && fs::exists(masksFolder_str))
-    {
-      const auto masksFolder = fs::path(masksFolder_str);
-      const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension("png");
-      const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension("png");
-
-      if(fs::exists(idMaskPath))
-      {
-        image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
-        return true;
-      }
-      else if(fs::exists(nameMaskPath))
-      {
-        image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 bool prepareDenseScene(const SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
                        const std::vector<std::string>& masksFolders,

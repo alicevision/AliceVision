@@ -19,6 +19,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/utils/convert.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -50,14 +51,6 @@ using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
-
-std::string myToString(std::size_t i, std::size_t zeroPadding)
-{
-  std::stringstream ss;
-  ss << std::setw(zeroPadding) << std::setfill('0') << i;
-  return ss.str();
-}
-
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -386,7 +379,8 @@ int aliceVision_main(int argc, char** argv)
     while(feed.readImage(imageGrey, *queryIntrinsics, currentImgName, hasIntrinsics))
     {
       ALICEVISION_COUT("******************************");
-      ALICEVISION_COUT("Stream " << idCamera << " Frame " << myToString(currentFrame, 4) << "/" << nbFrames << " : (" << iInputFrame << "/" << nbFramesToProcess << ")");
+      ALICEVISION_COUT("Stream " << idCamera << " Frame " << utils::toStringZeroPadded(currentFrame, 4)
+                       << "/" << nbFrames << " : (" << iInputFrame << "/" << nbFramesToProcess << ")");
       ALICEVISION_COUT("******************************");
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
@@ -408,7 +402,7 @@ int aliceVision_main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
-        exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
+        exporter.addCamera("camera"+std::to_string(idCamera)+"." + utils::toStringZeroPadded(currentFrame, 4),
                            sfmData::View(subMediaFilepath, currentFrame, currentFrame),
                            &pose,
                            queryIntrinsics);
@@ -416,7 +410,7 @@ int aliceVision_main(int argc, char** argv)
       else
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
-        exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
+        exporter.addCamera("camera"+std::to_string(idCamera)+".V." + utils::toStringZeroPadded(currentFrame, 4),
                            sfmData::View(subMediaFilepath, currentFrame, currentFrame),
                            &pose,
                            queryIntrinsics);

@@ -31,6 +31,8 @@ using namespace svg;
 
 namespace fs = boost::filesystem;
 
+namespace {
+
 /// Read intrinsic K matrix from a file (ASCII)
 /// F 0 ppx
 /// 0 F ppy
@@ -41,6 +43,8 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K);
 bool exportToPly(const std::vector<Vec3> & vec_points,
   const std::vector<Vec3> & vec_camPos,
   const std::string & sFileName);
+
+} // namespace
 
 int main() {
 
@@ -237,6 +241,8 @@ int main() {
   return EXIT_SUCCESS;
 }
 
+namespace {
+
 bool readIntrinsic(const std::string & fileName, Mat3 & K)
 {
   // Load the K matrix
@@ -288,3 +294,5 @@ bool exportToPly(const std::vector<Vec3> & vec_points,
   outfile.close();
   return bOk;
 }
+
+} // namespace

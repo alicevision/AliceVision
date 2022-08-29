@@ -42,35 +42,6 @@ namespace po = boost::program_options;
 typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatches &matches)
-{
-  os << "[ ";
-  for(const auto &e : matches)
-  {
-    os << e.id << ", " << e.score << "; ";
-  }
-  os << "];\n";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document &doc)
-{
-  os << "[ ";
-  for(const aliceVision::voctree::Word &w : doc)
-  {
-    os << w << ", ";
-  }
-  os << "];\n";
-  return os;
-}
-
-std::string myToString(std::size_t i, std::size_t zeroPadding)
-{
-  std::stringstream ss;
-  ss << std::setw(zeroPadding) << std::setfill('0') << i;
-  return ss.str();
-}
-
 static const std::string programDescription =
         "This program is used to generate some statistics.\n ";
 
