@@ -7,7 +7,6 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <boost/regex.hpp>
 #include <boost/progress.hpp>

@@ -7,7 +7,6 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <boost/progress.hpp>
 #include <boost/filesystem.hpp>

@@ -11,7 +11,6 @@
 #include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
 #include "aliceVision/matching/filters.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
-#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 

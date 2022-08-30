@@ -14,7 +14,6 @@
 #include <aliceVision/matching/kvld/kvld.h>
 #include <aliceVision/matching/kvld/kvld_draw.h>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 

@@ -13,7 +13,6 @@
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/multiview/AngularRadianErrorKernel.hpp"
-#include <aliceVision/system/main.hpp>
 
 #include "sphericalCam.hpp"
 

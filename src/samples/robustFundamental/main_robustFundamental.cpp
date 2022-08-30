@@ -13,7 +13,6 @@
 #include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/multiview/RelativePoseKernel.hpp"
-#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 

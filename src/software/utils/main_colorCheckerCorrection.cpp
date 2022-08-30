@@ -12,7 +12,6 @@
 #include <aliceVision/utils/filesIO.hpp>
 
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/filesystem.hpp>

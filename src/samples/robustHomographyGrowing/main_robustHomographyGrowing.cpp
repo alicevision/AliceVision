@@ -14,7 +14,6 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
 
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <boost/program_options.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>

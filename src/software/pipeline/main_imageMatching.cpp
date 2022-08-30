@@ -11,7 +11,6 @@
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 

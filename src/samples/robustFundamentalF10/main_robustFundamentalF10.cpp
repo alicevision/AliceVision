@@ -17,7 +17,6 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 

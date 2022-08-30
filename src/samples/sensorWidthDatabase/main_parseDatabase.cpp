@@ -8,7 +8,6 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 

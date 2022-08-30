@@ -13,7 +13,6 @@
 #include <aliceVision/multiview/relativePose/HomographyKernel.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>

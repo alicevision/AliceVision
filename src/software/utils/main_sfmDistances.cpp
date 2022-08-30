@@ -10,7 +10,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/split.hpp>

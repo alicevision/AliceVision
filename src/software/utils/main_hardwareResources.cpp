@@ -6,7 +6,6 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 #include <aliceVision/config.hpp>

@@ -10,7 +10,6 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/image/io.cpp>
 

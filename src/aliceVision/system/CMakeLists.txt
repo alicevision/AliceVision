@@ -1,7 +1,6 @@
 # Headers
 set(system_files_headers
   cpu.hpp
-  main.hpp
   MemoryInfo.hpp
   system.hpp
   Timer.hpp
@@ -17,6 +16,10 @@ set(system_files_sources
   Logger.cpp
   nvtx.cpp
 )
+
+# Note that main.hpp is not included because it's not part of aliceVision_system library, but
+# is added to all executables declared via alicevision_add_software() using CMake code in
+# alicevision_add_software() function.
 
 alicevision_add_library(aliceVision_system
   SOURCES ${system_files_headers} ${system_files_sources}

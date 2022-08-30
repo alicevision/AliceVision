@@ -7,7 +7,6 @@
 #include <aliceVision/keyframe/KeyframeSelector.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/filesystem.hpp>

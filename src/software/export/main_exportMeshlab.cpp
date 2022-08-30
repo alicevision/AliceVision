@@ -9,7 +9,6 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>

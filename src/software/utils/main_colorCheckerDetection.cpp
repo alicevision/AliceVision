@@ -9,7 +9,6 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/regexFilter.hpp>

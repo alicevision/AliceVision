@@ -16,7 +16,6 @@
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 

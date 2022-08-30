@@ -11,7 +11,6 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 

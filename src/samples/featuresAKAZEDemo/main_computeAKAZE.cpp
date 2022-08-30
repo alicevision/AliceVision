@@ -8,7 +8,6 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/feature/akaze/AKAZE.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <dependencies/cmdLine/cmdLine.h>

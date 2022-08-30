@@ -4,15 +4,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
-
 /**
  * @file \c main() function wrapper
  * Provides an implementation of \c main() that automatically catches and logs
  * otherwise unhandled exceptions.
  *
  * To use this wrapper you need to change your source file containing \c main() as such:
- * 1. Include this header
+ * 1. Include this source file to the list of files for the executable.
  * 2. Rename \c main() to \c aliceVision_main()
  */
 

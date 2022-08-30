@@ -12,7 +12,6 @@
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
-#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 

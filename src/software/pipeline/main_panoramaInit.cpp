@@ -6,7 +6,6 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
 #include <aliceVision/image/drawing.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <random>
 #include <algorithm>

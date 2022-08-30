@@ -13,7 +13,6 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/lightingEstimation/lightingEstimation.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/system/main.hpp>
 
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo_util.h>

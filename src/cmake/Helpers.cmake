@@ -167,7 +167,9 @@ function(alicevision_add_software software_name)
     list(APPEND SOFTWARE_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${software_name}_version.rc")
   endif()
 
-  add_executable(${software_name}_exe ${SOFTWARE_SOURCE})
+  add_executable(${software_name}_exe ${SOFTWARE_SOURCE}
+                 "${CMAKE_SOURCE_DIR}/src/aliceVision/system/main.cpp")
+
   set_target_properties(${software_name}_exe PROPERTIES
     OUTPUT_NAME ${software_name}
     )
