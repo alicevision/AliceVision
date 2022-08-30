@@ -167,6 +167,21 @@ function(alicevision_add_software software_name)
     list(APPEND SOFTWARE_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${software_name}_version.rc")
   endif()
 
+  # Declare a static library with all the code of the executable. End users may link this static
+  # library to their executables to use AliceVision on e.g. mobile platforms where stuff like
+  # dlopen and dlsym are not well supported.
+  add_library(${software_name}_static_lib STATIC ${SOFTWARE_SOURCE})
+
+  target_link_libraries(${software_name}_static_lib
+    PUBLIC ${SOFTWARE_LINKS}
+  )
+
+  target_include_directories(${software_name}_static_lib
+    PUBLIC ${SOFTWARE_INCLUDE_DIRS}
+  )
+
+  # The executable will depend on the static library and will only include a main() function that
+  # calls the aliceVision_main symbol.
   add_executable(${software_name}_exe ${SOFTWARE_SOURCE}
                  "${CMAKE_SOURCE_DIR}/src/aliceVision/system/main.cpp")
 
@@ -175,11 +190,7 @@ function(alicevision_add_software software_name)
     )
 
   target_link_libraries(${software_name}_exe
-    PUBLIC ${SOFTWARE_LINKS}
-  )
-
-  target_include_directories(${software_name}_exe
-    PUBLIC ${SOFTWARE_INCLUDE_DIRS}
+    PRIVATE ${software_name}_static_lib
   )
 
   set_property(TARGET ${software_name}_exe
