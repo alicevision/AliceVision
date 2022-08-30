@@ -34,6 +34,12 @@ string(TOLOWER ${DEPS_CMAKE_BUILD_TYPE} DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 
+# Enabling this one will cause an expensive link step after pretty much any
+# modification to the sources. Use it only in cases where rebuilding full project
+# e.g. in continuous integration tests.
+option(ALICEVISION_BUILD_STATIC_LIB_SYMBOL_TEST
+       "Build an internal test for checking against duplicate symbols" OFF)
+
 set(ALICEVISION_BUNDLE_PREFIX "${CMAKE_INSTALL_PREFIX}/bundle" CACHE STRING "Path for bundle installation")
 
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})

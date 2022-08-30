@@ -186,6 +186,10 @@ function(alicevision_add_software software_name)
     PUBLIC ${SOFTWARE_INCLUDE_DIRS}
   )
 
+  get_property(all_static_libs GLOBAL PROPERTY global_all_static_libs)
+  set(all_static_libs ${all_static_libs} ${software_name}_static_lib)
+  set_property(GLOBAL PROPERTY global_all_static_libs ${all_static_libs})
+
   # The executable will depend on the static library and will only include a main() function that
   # calls the aliceVision_main symbol.
   add_executable(${software_name}_exe ${SOFTWARE_SOURCE}

@@ -937,6 +937,7 @@ message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
+message("** Build AliceVision static lib symbol test: " ${ALICEVISION_BUILD_STATIC_LIB_SYMBOL_TEST})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
 message("** Build AliceVision samples programs: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPENCV})
@@ -1005,6 +1006,8 @@ add_subdirectory(dependencies)
 # AliceVision modules
 # ==============================================================================
 
+set_property(GLOBAL PROPERTY global_all_static_libs)
+
 # software(s) under patent or commercial licence
 # Included for research purpose only
 if(ALICEVISION_BUILD_SFM)
@@ -1022,6 +1025,25 @@ endif()
 # Complete software(s) build on aliceVision libraries
 if(ALICEVISION_BUILD_SOFTWARE)
   add_subdirectory(software)
+endif()
+
+# Create a unused dynamic library to ensure that there are no name clashes
+# between symbols exported from source files passed to alicevision_add_software
+#
+# Since we're using global property to collect the list of all libraries, this
+# is the only place where we can put the definition of such test.
+get_property(all_static_libs GLOBAL PROPERTY global_all_static_libs)
+if(CMAKE_COMPILER_IS_GNUCXX AND ALICEVISION_BUILD_STATIC_LIB_SYMBOL_TEST)
+    # CMake 3.24 will have cross-platform feature to force inclusion of all static
+    # library members. Until then, do this test only on GNU systems.
+    set(empty_cpp ${CMAKE_CURRENT_BINARY_DIR}/test_aliceVision_combined_library_empty.cpp)
+    if(NOT EXISTS ${empty_cpp})
+      file(WRITE ${empty_cpp} "")
+    endif()
+
+    add_executable(test_aliceVision_combined_libraries aliceVision/system/empty_main.cpp)
+    target_link_libraries(test_aliceVision_combined_libraries
+      PUBLIC -Wl,--whole-archive ${all_static_libs} -Wl,--no-whole-archive)
 endif()
 
 # ==============================================================================
