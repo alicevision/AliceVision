@@ -12,6 +12,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
@@ -78,7 +79,7 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
     // command-line parameters
     std::string sfmFilePath;

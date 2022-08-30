@@ -13,6 +13,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/lightingEstimation/lightingEstimation.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo_util.h>
@@ -262,7 +263,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
   }
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   system::Timer timer;
 

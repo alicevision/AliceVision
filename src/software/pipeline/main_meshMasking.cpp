@@ -14,6 +14,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/sfmMvsUtils/visibility.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -500,7 +501,7 @@ void meshMasking(
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
     // command-line parameters
     std::string sfmFilePath;
