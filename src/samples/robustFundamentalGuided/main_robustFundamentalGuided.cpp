@@ -14,6 +14,7 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -31,7 +32,7 @@ using namespace aliceVision::matching;
 using namespace aliceVision::robustEstimation;
 using namespace svg;
 
-int main() {
+int aliceVision_main(int argc, char** argv) {
   std::mt19937 randomNumberGenerator;
   const std::string sInputDir = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;

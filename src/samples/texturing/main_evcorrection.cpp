@@ -9,7 +9,8 @@
 #include <aliceVision/system/cmdline.hpp> 
 #include <aliceVision/image/io.hpp> 
 #include <aliceVision/image/pixelTypes.hpp> 
- 
+#include <aliceVision/system/main.hpp>
+
 #include <boost/program_options.hpp> 
 #include <boost/filesystem.hpp> 
  
@@ -30,7 +31,7 @@ namespace fs = boost::filesystem;
  
 namespace oiio = OIIO; 
  
-int main(int argc, char **argv) 
+int aliceVision_main(int argc, char **argv)
 { 
     // command-line parameters 
  

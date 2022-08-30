@@ -11,6 +11,7 @@
 #include "aliceVision/matching/matcher_brute_force.hpp"
 #include "aliceVision/matching/matching_filters.hpp"
 #include "aliceVision_Samples/siftPutativeMatches/two_view_matches.hpp"
+#include <aliceVision/system/main.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -23,7 +24,7 @@ using namespace aliceVision::matching;
 using namespace svg;
 using namespace std;
 
-int main() {
+int aliceVision_main(int argc, char** argv) {
 
   Image<RGBColor> image;
   const std::string jpg_filenameL =

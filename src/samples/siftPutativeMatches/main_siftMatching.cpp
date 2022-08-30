@@ -9,6 +9,7 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
+#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -25,7 +26,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::matching;
 using namespace svg;
 
-int main() {
+int aliceVision_main(int argc, char** argv) {
   std::mt19937 randomNumberGenerator;
   Image<RGBColor> image;
   std::string jpg_filenameL = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_0.png";

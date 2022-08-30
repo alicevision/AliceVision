@@ -14,6 +14,7 @@
 #include <aliceVision/matching/kvld/kvld.h>
 #include <aliceVision/matching/kvld/kvld_draw.h>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -37,7 +38,7 @@ using namespace aliceVision::robustEstimation;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   std::string imageAFilename;
   std::string imageBFilename;

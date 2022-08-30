@@ -11,6 +11,7 @@
 #include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
 #include "aliceVision/matching/filters.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
+#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -30,7 +31,7 @@ using namespace aliceVision::image;
 
 namespace po = boost::program_options;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   std::string jpgFilenameL;
   std::string jpgFilenameR;

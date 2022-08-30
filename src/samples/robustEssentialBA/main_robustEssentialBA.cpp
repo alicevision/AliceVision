@@ -16,6 +16,7 @@
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -54,7 +55,7 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K);
 ///  how refine the camera motion, focal and structure with Bundle Adjustment
 ///   way 1: independent cameras [R|t|f] and structure
 ///   way 2: independent cameras motion [R|t], shared focal [f] and structure
-int main() {
+int aliceVision_main(int argc, char** argv) {
   std::mt19937 randomNumberGenerator;
   const std::string sInputDir = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;

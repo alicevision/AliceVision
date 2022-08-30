@@ -17,6 +17,7 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -38,7 +39,7 @@ using namespace aliceVision::robustEstimation;
 
 namespace po = boost::program_options;
 
-int main(int argc, char **argv) 
+int aliceVision_main(int argc, char **argv)
 {
   std::string filenameLeft;
   std::string filenameRight;

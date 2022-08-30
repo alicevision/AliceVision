@@ -13,6 +13,7 @@
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/multiview/AngularRadianErrorKernel.hpp"
+#include <aliceVision/system/main.hpp>
 
 #include "sphericalCam.hpp"
 
@@ -34,7 +35,7 @@ using namespace aliceVision::matching;
 using namespace aliceVision::robustEstimation;
 using namespace svg;
 
-int main() {
+int aliceVision_main(int argc, char** argv) {
   std::mt19937 randomNumberGenerator;
   std::cout << "Compute the relative pose between two spherical image."
    << "\nUse an Acontrario robust estimation based on angular errors." << std::endl;

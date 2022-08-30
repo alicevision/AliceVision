@@ -8,6 +8,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/feature/akaze/AKAZE.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 #include <dependencies/cmdLine/cmdLine.h>
@@ -34,7 +35,7 @@ void usage( const std::string & appName )
   exit( EXIT_FAILURE ) ;
 }
 
-int main( int argc , char ** argv )
+int aliceVision_main( int argc , char ** argv )
 {
   CmdLine cmd;
 

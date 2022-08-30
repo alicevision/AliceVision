@@ -10,6 +10,7 @@
 #include <aliceVision//mvsData/Color.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -26,7 +27,7 @@ using namespace aliceVision::mesh;
 
 namespace po = boost::program_options;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

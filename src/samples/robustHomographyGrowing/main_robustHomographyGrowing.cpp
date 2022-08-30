@@ -14,6 +14,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
 
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <boost/program_options.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
@@ -121,7 +122,7 @@ void extract(std::shared_ptr<aliceVision::feature::ImageDescriber>& imageDescrib
   }
 }
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   std::string filenameLeft;
   std::string filenameRight;

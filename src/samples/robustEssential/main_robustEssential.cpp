@@ -11,6 +11,7 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -46,7 +47,7 @@ bool exportToPly(const std::vector<Vec3> & vec_points,
 
 } // namespace
 
-int main() {
+int aliceVision_main(int argc, char** argv) {
 
   std::mt19937 randomNumberGenerator;
   const std::string sInputDir = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";

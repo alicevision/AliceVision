@@ -12,6 +12,7 @@
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include <aliceVision/system/main.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -64,7 +65,7 @@ int thickness = 1;
  * Pierre Moulon, Pascal Monasse and Renaud Marlet.
  * In 11th Asian Confence on Computer Vision (ACCV 2012)
  */
-int main(int, char**)
+int aliceVision_main(int, char**)
 {
   cout << "Press:" << endl
        << " 'q' to quit." << endl;

@@ -8,6 +8,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -18,7 +19,7 @@
 
 namespace po = boost::program_options;
 
-int main(int argc, char ** argv)
+int aliceVision_main(int argc, char** argv)
 {
   std::string sensorDatabasePath;
   std::string brandName;
