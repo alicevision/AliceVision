@@ -37,45 +37,6 @@
 // namespaces
 namespace bpt = boost::property_tree;
 
-// Assumptions on model structure
-#define INPUT_NAME "input"
-#define OUTPUT_NAME "output"
-#define INPUT_COUNT 1
-#define OUTPUT_COUNT 1
-
-// Pre-process input images
-#define MAX_SIZE 1024.0
-
-/**
- * @brief Operator overloading for printing vectors
- */
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
-{
-    os << "[";
-    for(int i = 0; i < v.size(); ++i)
-    {
-        os << v[i];
-        if(i != v.size() - 1)
-        {
-            os << ", ";
-        }
-    }
-    os << "]";
-    return os;
-}
-
-/**
- * @brief Sigmoid activation function
- *
- * @param x ∈ ℝ
- * @return sigmoid(x) ∈ [0, 1]
- */
-float sigmoid(float x)
-{
-    return 1 / (1 + exp(-x));
-}
-
 /**
  * @brief Prints inputs and outputs of neural network, and checks the requirements.
  *
@@ -123,9 +84,6 @@ void model_explore(Ort::Session& session)
         ALICEVISION_LOG_DEBUG("  Shape: " << output_shape);
         ALICEVISION_LOG_DEBUG("  Size : " << output_size);
     }
-
-    // Assume model has 1 input node and 1 output node.
-    assert(input_count == INPUT_COUNT && output_count == OUTPUT_COUNT);
 }
 
 /**
@@ -187,13 +145,11 @@ cv::Size resolution_verify(std::vector<std::string> files)
  * @param image_size the size the image should be resized to
  * @return cv::Mat, the prediction
  */
-cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::Size image_size)
+prediction predict(Ort::Session& session, const std::string image_path)
 {
     // read image
     aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
     aliceVision::image::readImage(image_path, image_alice, aliceVision::image::EImageColorSpace::SRGB);
-
-    // TODO: retry resize before cloning to opencv ?
 
     // Eigen -> OpenCV
     cv::Mat image_opencv;
@@ -202,9 +158,6 @@ cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::S
     // uint8 -> float32
     image_opencv.convertTo(image_opencv, CV_32FC3, 1 / 255.0);
 
-    // resize image
-    cv::resize(image_opencv, image_opencv, image_size, cv::INTER_LINEAR);
-
     // HWC to CHW
     cv::dnn::blobFromImage(image_opencv, image_opencv);
 
@@ -212,217 +165,80 @@ cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::S
     Ort::MemoryInfo memory_info =
         Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
-    // create shapes
-    std::vector<int64_t> input_shape = {1, 3, image_size.height, image_size.width};
-    std::vector<int64_t> output_shape = {1, 1, image_size.height, image_size.width};
-
-    // compute number of pixels inside tensors
+    // intialize input tensor
+    std::vector<int64_t> input_shape = {1, 3, image_alice.Height(), image_alice.Width()};
     size_t input_size = std::accumulate(begin(input_shape), end(input_shape), 1, std::multiplies<size_t>());
-    size_t output_size = std::accumulate(begin(output_shape), end(output_shape), 1, std::multiplies<size_t>());
-
-    // intialize tensors
     std::vector<float> input_tensor(input_size);
-    std::vector<float> output_tensor(output_size);
-
-    // modify input_tensor pointer to point at image_opencv
     input_tensor.assign(image_opencv.begin<float>(), image_opencv.end<float>());
 
-    // create "data payloads" (given to onnx run function)
+    // create input data
     std::vector<Ort::Value> input_data;
-    std::vector<Ort::Value> output_data;
-
-    // insert tensors in data
-    input_data.push_back(                                                                            //
-        Ort::Value::CreateTensor<float>(                                                             //
-            memory_info, input_tensor.data(), input_size, input_shape.data(), input_shape.size()     //
-            )                                                                                        //
-    );                                                                                               //
-    output_data.push_back(                                                                           //
-        Ort::Value::CreateTensor<float>(                                                             //
-            memory_info, output_tensor.data(), output_size, output_shape.data(), output_shape.size() //
-            )                                                                                        //
-    );                                                                                               //
+    input_data.push_back(                                                                        //
+        Ort::Value::CreateTensor<float>(                                                         //
+            memory_info, input_tensor.data(), input_size, input_shape.data(), input_shape.size() //
+            )                                                                                    //
+    );                                                                                           //
 
     // select inputs and outputs
-    std::vector<const char*> input_names{INPUT_NAME};
-    std::vector<const char*> output_names{OUTPUT_NAME};
+    std::vector<const char*> input_names{"input"};
+    std::vector<const char*> output_names{"boxes", "scores", "masks"};
 
     // run the inference
-    session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), INPUT_COUNT, output_names.data(),
-                output_data.data(), OUTPUT_COUNT);
+    auto output = session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_data.data(), input_names.size(),
+                              output_names.data(), output_names.size());
 
-    // apply sigmoid activation to output_tensor
-    std::transform(output_tensor.cbegin(), output_tensor.cend(), output_tensor.begin(), sigmoid);
+    // get pointers to outputs
+    float* boxes_ptr = output.at(0).GetTensorMutableData<float>();
+    float* scores_ptr = output.at(1).GetTensorMutableData<float>();
+    float* masks_ptr = output.at(2).GetTensorMutableData<float>();
 
-    // convert output_tensor to opencv image
-    cv::Mat mask = cv::Mat(output_shape[2], output_shape[3], CV_32FC1);
-    memcpy(mask.data, output_tensor.data(), output_tensor.size() * sizeof(float));
+    // get scores
+    auto infos = output.at(1).GetTensorTypeAndShapeInfo();
+    auto len = infos.GetElementCount();
+    std::vector<float> scores = {scores_ptr, scores_ptr + len};
 
-    return mask;
-}
+    // get bboxes
+    infos = output.at(0).GetTensorTypeAndShapeInfo();
+    auto shape = infos.GetShape();
+    cv::Mat bboxes = cv::Mat(shape[0], shape[1], CV_32F, boxes_ptr);
 
-/**
- * @brief Compute the new resolution such that the longest side of the image is 1024px
- *
- * @param original_size the original resolution of the image
- * @return cv::Size, the new resolution
- */
-cv::Size resolution_shrink(cv::Size original_size)
-{
-    int longest_side = std::max(original_size.width, original_size.height);
-    float factor = MAX_SIZE / longest_side;
-
-    cv::Size new_size(original_size.width * factor, original_size.height * factor);
-
-    ALICEVISION_LOG_DEBUG("Resize factor: " << factor);
-    ALICEVISION_LOG_DEBUG("Resized image resolution: " << new_size);
-
-    return new_size;
-}
-
-/**
- * @brief Compute the median mask using a list of masks
- *
- * @param predictions the list of predictions (masks)
- * @param size the size of a mask
- * @return cv::Mat, the median mask
- */
-cv::Mat compute_median_mask(std::vector<cv::Mat> predictions, cv::Size size)
-{
-    cv::Mat median_mask = cv::Mat(size, CV_32FC1);
-
-    for(size_t i = 0; i < size.height; i++)
+    // get masks
+    infos = output.at(2).GetTensorTypeAndShapeInfo();
+    shape = infos.GetShape();
+    std::vector<cv::Mat> masks;
+    for(size_t i = 0; i < shape[0]; i++)
     {
-        for(size_t j = 0; j < size.width; j++)
-        {
-            // extract same pixel from all predictions
-            std::vector<float> values(predictions.size());
-            for(size_t k = 0; k < predictions.size(); k++)
-            {
-                values[k] = predictions[k].at<float>(i, j);
-            }
-
-            // get the median pixel value
-            std::sort(values.begin(), values.end());
-            float value = values[predictions.size() / 2];
-
-            // store value in final matrix
-            median_mask.at<float>(i, j) = value;
-        }
+        auto mask_ptr = masks_ptr + shape[2] * shape[3] * i;
+        auto mask = cv::Mat(shape[2], shape[3], CV_32FC1, mask_ptr);
+        masks.push_back(mask);
     }
 
-    return median_mask;
+    return prediction{bboxes, scores, masks};
 }
 
-/**
- * @brief Compute the prediction mask of where the sphere are
- *
- * @param session the ONNXRuntime session
- * @param files list of all image paths
- * @param image_size the common resolution of every image
- * @return cv::Mat
- */
-cv::Mat compute_mask(Ort::Session& session, std::vector<std::string> files, const cv::Size image_size)
-{
-    // initialize vector containing predictions
-    cv::Size resized_size = resolution_shrink(image_size);
-    std::vector<cv::Mat> predictions(files.size(), cv::Mat(resized_size, CV_32FC1));
+// /**
+//  * @brief Export a circle list to a JSON file
+//  *
+//  * @param output_path the output path to write to
+//  * @param circles the list of circles to transform in JSON
+//  */
+// void export_json(std::string output_path, std::vector<circle_info> circles)
+// {
+//     bpt::ptree root, spheres;
 
-    // use neural net to make predictions
-    for(size_t i = 0; i < files.size(); i++)
-    {
-        predictions[i] = predict(session, files[i], resized_size);
-    }
+//     for(auto circle : circles)
+//     {
+//         bpt::ptree sphere;
+//         sphere.put("pos_x", circle.first.x);
+//         sphere.put("pos_y", circle.first.y);
+//         sphere.put("radius", circle.second);
 
-    // return the median mask of the predictions
-    return compute_median_mask(predictions, resized_size);
-}
+//         spheres.push_back(std::make_pair("", sphere));
+//     }
 
-/**
- * @brief Extract circles from mask
- *
- * @param prediction the mask to extract circles from
- * @return std::vector<circle_info>, list of circles
- */
-std::vector<circle_info> compute_circles(const cv::Mat prediction)
-{
-    std::vector<circle_info> circles;
-    cv::Mat mask;
+//     root.add_child("Scene 1", spheres);
 
-    // uint8 -> float32
-    prediction.convertTo(mask, CV_8UC1, 255);
+//     bpt::write_json(output_path, root);
 
-    // detect edges with canny filter
-    Canny(mask, mask, 250, 255);
-
-    // detect contours
-    std::vector<std::vector<cv::Point>> contours;
-    findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-
-    // fill holes using convex hulls
-    std::vector<std::vector<cv::Point>> hulls(contours.size());
-    for(size_t i = 0; i < contours.size(); i++)
-    {
-        convexHull(contours[i], hulls[i]);
-        cv::drawContours(mask, hulls, i, cv::Scalar(255), cv::FILLED);
-    }
-
-    // redetect contours
-    findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-
-    for(size_t i = 0; i < contours.size(); i++)
-    {
-        // detect circle
-        circle_info circle;
-        cv::minEnclosingCircle(contours[i], circle.first, circle.second);
-
-        if(circle.second > 5)
-        {
-            // add circle to vector
-            circles.push_back(circle);
-        }
-    }
-
-    // // distance transform
-    // cv::Mat1f dt;
-    // cv::distanceTransform(mask, dt, cv::DIST_L2, 5, cv::DIST_LABEL_PIXEL);
-
-    // // Find max value
-    // double max_val;
-    // cv::Point max_loc;
-    // cv::minMaxLoc(dt, nullptr, &max_val, nullptr, &max_loc);
-
-    // // push inscribed circle
-    // circles.push_back(std::make_pair(max_loc, max_val));
-
-    ALICEVISION_LOG_DEBUG("circles: " << circles);
-
-    return circles;
-}
-
-/**
- * @brief Export a circle list to a JSON file
- *
- * @param output_path the output path to write to
- * @param circles the list of circles to transform in JSON
- */
-void export_json(std::string output_path, std::vector<circle_info> circles)
-{
-    bpt::ptree root, spheres;
-
-    for(auto circle : circles)
-    {
-        bpt::ptree sphere;
-        sphere.put("pos_x", circle.first.x);
-        sphere.put("pos_y", circle.first.y);
-        sphere.put("radius", circle.second);
-
-        spheres.push_back(std::make_pair("", sphere));
-    }
-
-    root.add_child("Scene 1", spheres);
-
-    bpt::write_json(output_path, root);
-
-    ALICEVISION_LOG_DEBUG("JSON exported: " << output_path);
-}
+//     ALICEVISION_LOG_DEBUG("JSON exported: " << output_path);
+// }

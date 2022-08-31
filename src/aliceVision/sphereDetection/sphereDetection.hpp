@@ -8,16 +8,17 @@
 #include <opencv2/opencv.hpp>
 #include <onnxruntime_cxx_api.h>
 
-using circle_info = std::pair<cv::Point2f, float>;
+struct prediction
+{
+    cv::Mat bboxes;
+    std::vector<float> scores;
+    std::vector<cv::Mat> masks;
+};
 
 void model_explore(Ort::Session& session);
 
 std::vector<std::string> get_images_paths(std::string path_images);
-cv::Size resolution_verify(std::vector<std::string> files);
 
-cv::Mat predict(Ort::Session& session, const std::string image_path, const cv::Size image_size);
-cv::Mat compute_mask(Ort::Session& session, std::vector<std::string> files, const cv::Size image_size);
+prediction predict(Ort::Session& session, const std::string image_path);
 
-std::vector<std::pair<cv::Point2f, float>> compute_circles(const cv::Mat mask);
-
-void export_json(std::string output_path, std::vector<circle_info> circles);
+// void export_json(std::string output_path, std::vector<circle_info> circles);

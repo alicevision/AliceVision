@@ -79,17 +79,12 @@ int aliceVision_main(int argc, char** argv)
     // get images paths
     auto files = get_images_paths(input_image_dir_path);
 
-    // verify every image in the folder are of the same resolution
-    auto size = resolution_verify(files);
-
-    // compute the mask
-    auto mask = compute_mask(session, files, size);
-
-    // extract circles from mask
-    auto circles = compute_circles(mask);
-
-    // convert circles to json
-    export_json(output_json_path, circles);
+    // use neural net to make predictions
+    std::vector<prediction> predictions;
+    for(size_t i = 0; i < files.size(); i++)
+    {
+        predictions.push_back(predict(session, files[i]));
+    }
 
     return EXIT_SUCCESS;
 }
