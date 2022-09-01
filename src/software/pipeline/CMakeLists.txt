@@ -609,6 +609,8 @@ if(ALICEVISION_HAVE_OPENCV)
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_image
           aliceVision_sphereDetection
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           Boost::program_options
           ${OpenCV_LIBRARIES}
           ${onnxruntime_LIBRARY}

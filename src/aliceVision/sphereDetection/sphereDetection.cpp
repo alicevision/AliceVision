@@ -30,11 +30,19 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+// Boost
+#include <boost/filesystem.hpp>
+
 // Boost JSON
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+// SFMData
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+
 // namespaces
+namespace fs = boost::filesystem;
 namespace bpt = boost::property_tree;
 
 /**
@@ -87,69 +95,17 @@ void model_explore(Ort::Session& session)
 }
 
 /**
- * @brief Gets the image paths from the parent folder
- *
- * @param path_images the path to the folder containing all the images
- * @return std::vector<std::string>, list of all image paths
- */
-std::vector<std::string> get_images_paths(std::string path_images)
-{
-    // list all jpg inside the folder
-    std::vector<cv::String> files;
-    std::string glob_images = path_images.append("/*.jpg");
-    cv::glob(glob_images, files, false);
-
-    ALICEVISION_LOG_DEBUG("files: " << files);
-
-    return files;
-}
-
-/**
- * @brief Verify all images have the same resolution
- *
- * @param files list of all image paths
- * @return cv::Size, the common resolution
- */
-cv::Size resolution_verify(std::vector<std::string> files)
-{
-    cv::Mat image;
-    cv::Size image_size;
-    cv::Size tmp_size;
-
-    for(size_t i = 0; i < files.size(); i++)
-    {
-        // read image
-        image = cv::imread(files[i], cv::ImreadModes::IMREAD_COLOR); // TODO: use exiv2 ?
-
-        // get the resolution
-        image_size = image.size();
-
-        // store the first image_size for comparison
-        if(i == 0)
-            tmp_size = image_size;
-
-        // check if sizes are the same
-        assert(tmp_size == image_size);
-    }
-
-    ALICEVISION_LOG_DEBUG("All images are the same resolution !");
-
-    return tmp_size;
-}
-
-/**
  * @brief Use ONNXRuntime to make a prediction
  *
  * @param session
  * @param image_path the path to the input image
- * @param image_size the size the image should be resized to
  * @return cv::Mat, the prediction
  */
-prediction predict(Ort::Session& session, const std::string image_path)
+prediction predict(Ort::Session& session, const fs::path image_path, const fs::path output_path)
 {
     // read image
     aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
-    aliceVision::image::readImage(image_path, image_alice, aliceVision::image::EImageColorSpace::SRGB);
+    aliceVision::image::readImage(image_path.string(), image_alice, aliceVision::image::EImageColorSpace::SRGB);
 
     // Eigen -> OpenCV
     cv::Mat image_opencv;
@@ -188,57 +144,134 @@ prediction predict(Ort::Session& session, const std::string image_path)
                               output_names.data(), output_names.size());
 
     // get pointers to outputs
-    float* boxes_ptr = output.at(0).GetTensorMutableData<float>();
+    float* bboxes_ptr = output.at(0).GetTensorMutableData<float>();
     float* scores_ptr = output.at(1).GetTensorMutableData<float>();
     float* masks_ptr = output.at(2).GetTensorMutableData<float>();
 
-    // get scores
-    auto infos = output.at(1).GetTensorTypeAndShapeInfo();
-    auto len = infos.GetElementCount();
-    std::vector<float> scores = {scores_ptr, scores_ptr + len};
-
     // get bboxes
-    infos = output.at(0).GetTensorTypeAndShapeInfo();
+    auto infos = output.at(0).GetTensorTypeAndShapeInfo();
     auto shape = infos.GetShape();
-    cv::Mat bboxes = cv::Mat(shape[0], shape[1], CV_32F, boxes_ptr);
+    std::vector<std::vector<float>> bboxes;
+    for(size_t i = 0; i < shape[0]; i++)
+    {
+        std::vector<float> bboxe(bboxes_ptr + 4 * i, bboxes_ptr + 4 * (i + 1));
+        bboxes.push_back(bboxe);
+    }
+
+    // get scores
+    infos = output.at(1).GetTensorTypeAndShapeInfo();
+    shape = infos.GetShape();
+    std::vector<float> scores = {scores_ptr, scores_ptr + shape[0]};
 
     // get masks
     infos = output.at(2).GetTensorTypeAndShapeInfo();
     shape = infos.GetShape();
-    std::vector<cv::Mat> masks;
+    std::vector<std::string> masks;
     for(size_t i = 0; i < shape[0]; i++)
     {
         auto mask_ptr = masks_ptr + shape[2] * shape[3] * i;
         auto mask = cv::Mat(shape[2], shape[3], CV_32FC1, mask_ptr);
-        masks.push_back(mask);
+        auto filename = fmt::format("{}_mask_{}.png", image_path.stem().string(), i);
+        auto filepath = std::string(output_path.string()).append(filename);
+        masks.push_back(filepath);
+        cv::imwrite(filepath, mask);
     }
 
     return prediction{bboxes, scores, masks};
 }
 
-// /**
-//  * @brief Export a circle list to a JSON file
-//  *
-//  * @param output_path the output path to write to
-//  * @param circles the list of circles to transform in JSON
-//  */
-// void export_json(std::string output_path, std::vector<circle_info> circles)
-// {
-//     bpt::ptree root, spheres;
+bpt::ptree build_view_tree(prediction pred, cvflann::lsh::FeatureIndex viewID)
+{
+    bpt::ptree view;
 
-//     for(auto circle : circles)
-//     {
-//         bpt::ptree sphere;
-//         sphere.put("pos_x", circle.first.x);
-//         sphere.put("pos_y", circle.first.y);
-//         sphere.put("radius", circle.second);
+    // adding viewID
+    view.put("id", viewID);
 
-//         spheres.push_back(std::make_pair("", sphere));
-//     }
+    // adding bboxes
+    bpt::ptree bboxes_node;
+    for(auto bboxe : pred.bboxes)
+    {
+        // Create an unnamed node containing the bboxe
+        bpt::ptree bboxe_node;
+        for(auto coord : bboxe)
+        {
+            // Create an unnamed node containing the coordinate
+            bpt::ptree coord_node;
+            coord_node.put("", coord);
 
-//     root.add_child("Scene 1", spheres);
+            // Add coordinate to array
+            bboxe_node.push_back(std::make_pair("", coord_node));
+        }
 
-//     bpt::write_json(output_path, root);
+        // Add bboxe to array
+        bboxes_node.push_back(std::make_pair("", bboxe_node));
+    }
+    view.add_child("bboxes", bboxes_node);
 
-//     ALICEVISION_LOG_DEBUG("JSON exported: " << output_path);
-// }
+    // adding scores
+    bpt::ptree scores_node;
+    for(auto score : pred.scores)
+    {
+        // Create an unnamed node containing the score
+        bpt::ptree score_node;
+        score_node.put("", score);
+
+        // Add score to the array
+        scores_node.push_back(std::make_pair("", score_node));
+    }
+    view.add_child("scores", scores_node);
+
+    // adding masks
+    bpt::ptree masks_node;
+    for(auto mask : pred.masks)
+    {
+        // Create an unnamed node containing the mask path
+        bpt::ptree mask_node;
+        mask_node.put("", mask);
+
+        // Add path to the array
+        masks_node.push_back(std::make_pair("", mask_node));
+    }
+    view.add_child("masks", masks_node);
+
+    return view;
+}
+
+void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path)
+{
+    // json init
+    bpt::ptree root, poses;
+
+    // split all views by pose
+    std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewPerPoseID;
+    for(auto& viewIt : sfmData.getViews())
+    {
+        viewPerPoseID[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
+    }
+
+    for(auto& poseID : viewPerPoseID)
+    {
+        ALICEVISION_LOG_DEBUG("Pose Id: " << poseID.first);
+        bpt::ptree pose, views;
+
+        std::vector<aliceVision::IndexT>& viewIDs = poseID.second;
+        for(auto& viewID : viewIDs)
+        {
+            ALICEVISION_LOG_DEBUG("View Id: " << viewID);
+
+            const fs::path image_path = fs::path(sfmData.getView(viewID).getImagePath());
+            auto pred = predict(session, image_path, output_path);
+
+            auto view = build_view_tree(pred, viewID);
+            views.push_back(std::make_pair("", view));
+        }
+
+        pose.put("id", poseID.first);
+        pose.add_child("views", views);
+
+        poses.push_back(std::make_pair("", pose));
+    }
+
+    root.add_child("poses", poses);
+    bpt::write_json(output_path.append("detection.json").string(), root);
+}

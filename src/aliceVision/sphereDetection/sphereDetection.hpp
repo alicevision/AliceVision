@@ -5,20 +5,29 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 #pragma once
 
+// OpenCV
 #include <opencv2/opencv.hpp>
+
+// ONNXRuntime
 #include <onnxruntime_cxx_api.h>
+
+// SFMData
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+
+// Boost
+#include <boost/filesystem.hpp>
+
+// namespaces
+namespace fs = boost::filesystem;
 
 struct prediction
 {
-    cv::Mat bboxes;
+    std::vector<std::vector<float>> bboxes;
     std::vector<float> scores;
-    std::vector<cv::Mat> masks;
+    std::vector<std::string> masks;
 };
 
 void model_explore(Ort::Session& session);
 
-std::vector<std::string> get_images_paths(std::string path_images);
-
-prediction predict(Ort::Session& session, const std::string image_path);
-
-// void export_json(std::string output_path, std::vector<circle_info> circles);
+void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path);
