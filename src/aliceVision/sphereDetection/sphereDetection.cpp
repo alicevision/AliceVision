@@ -111,6 +111,8 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
     cv::Mat image_opencv;
     cv::eigen2cv(image_alice.GetMat(), image_opencv);
 
+    cv::Size size = image_opencv.size();
+
     // uint8 -> float32
     image_opencv.convertTo(image_opencv, CV_32FC3, 1 / 255.0);
 
@@ -177,7 +179,7 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
         cv::imwrite(filepath, mask);
     }
 
-    return prediction{bboxes, scores, masks};
+    return prediction{bboxes, scores, masks, size};
 }
 
 bpt::ptree build_view_tree(prediction pred, cvflann::lsh::FeatureIndex viewID)
@@ -188,25 +190,24 @@ bpt::ptree build_view_tree(prediction pred, cvflann::lsh::FeatureIndex viewID)
     view.put("id", viewID);
 
     // adding bboxes
-    bpt::ptree bboxes_node;
+    bpt::ptree spheres_node;
     for(auto bboxe : pred.bboxes)
     {
-        // Create an unnamed node containing the bboxe
-        bpt::ptree bboxe_node;
-        for(auto coord : bboxe)
-        {
-            // Create an unnamed node containing the coordinate
-            bpt::ptree coord_node;
-            coord_node.put("", coord);
+        // compute sphere coords from bboxe coords
+        float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
+        float x = bboxe.at(0) + r - pred.size.width / 2;
+        float y = bboxe.at(1) + r - pred.size.height / 2;
 
-            // Add coordinate to array
-            bboxe_node.push_back(std::make_pair("", coord_node));
-        }
+        // Create an unnamed node containing the sphere
+        bpt::ptree sphere_node;
+        sphere_node.put("x", x);
+        sphere_node.put("y", y);
+        sphere_node.put("r", r);
 
-        // Add bboxe to array
-        bboxes_node.push_back(std::make_pair("", bboxe_node));
+        // Add sphere to array
+        spheres_node.push_back(std::make_pair("", sphere_node));
     }
-    view.add_child("bboxes", bboxes_node);
+    view.add_child("spheres", spheres_node);
 
     // adding scores
     bpt::ptree scores_node;

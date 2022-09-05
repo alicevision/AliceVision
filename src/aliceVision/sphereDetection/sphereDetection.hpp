@@ -26,6 +26,7 @@ struct prediction
     std::vector<std::vector<float>> bboxes;
     std::vector<float> scores;
     std::vector<std::string> masks;
+    cv::Size size;
 };
 
 void model_explore(Ort::Session& session);
