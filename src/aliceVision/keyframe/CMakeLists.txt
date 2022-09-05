@@ -1,6 +1,5 @@
 # Headers
 set(keyframe_files_headers
-  SharpnessSelectionPreset.hpp
   KeyframeSelector.hpp
 )
 
@@ -8,6 +7,8 @@ set(keyframe_files_headers
 set(keyframe_files_sources
   KeyframeSelector.cpp
 )
+
+if(ALICEVISION_HAVE_OPENCV)
 
 alicevision_add_library(aliceVision_keyframe
   SOURCES ${keyframe_files_headers} ${keyframe_files_sources}
@@ -19,5 +20,10 @@ alicevision_add_library(aliceVision_keyframe
   PRIVATE_LINKS
     aliceVision_sensorDB
     aliceVision_system
+    aliceVision_numeric
     Boost::filesystem
 )
+
+
+  target_link_libraries(aliceVision_keyframe PUBLIC ${OpenCV_LIBS})
+endif()

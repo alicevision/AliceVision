@@ -6,10 +6,8 @@
 
 #include "KeyframeSelector.hpp"
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/sensorDB/parseDatabase.hpp>
-#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/system/Logger.hpp>
-
+#include <aliceVision/dataio/FeedProvider.hpp>
 #include <boost/filesystem.hpp>
 
 #include <random>
@@ -17,11 +15,16 @@
 #include <cassert>
 #include <cstdlib>
 #include <iomanip>
+
+#include <opencv2/optflow.hpp>
+#include <opencv2/highgui.hpp>
+
 namespace fs = boost::filesystem;
 
-namespace aliceVision {
-namespace keyframe {
-
+namespace aliceVision
+{
+namespace keyframe
+{
 
 /**
  * @brief Get a random int in order to generate uid.
@@ -30,448 +33,380 @@ namespace keyframe {
  */
 int getRandomInt()
 {
-  std::random_device rd;  // will be used to obtain a seed for the random number engine
-  std::mt19937 randomTwEngine(rd()); // standard mersenne_twister_engine seeded with rd()
-  std::uniform_int_distribution<> randomDist(0, std::numeric_limits<int>::max());
-  return randomDist(randomTwEngine);
+    std::random_device rd;             // will be used to obtain a seed for the random number engine
+    std::mt19937 randomTwEngine(rd()); // standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> randomDist(0, std::numeric_limits<int>::max());
+    return randomDist(randomTwEngine);
 }
 
-KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
-                                   const std::string& sensorDbPath,
-                                   const std::string& voctreeFilePath,
-                                   const std::string& outputFolder)
-  : _mediaPaths(mediaPaths)
-  , _sensorDbPath(sensorDbPath)
-  , _voctreeFilePath(voctreeFilePath)
-  , _outputFolder(outputFolder)
+double computeSharpness(const cv::Mat& grayscaleImage, const int window_size)
 {
-  if((_maxOutFrame != 0) &&
-     !_hasSharpnessSelection &&
-     !_hasSparseDistanceSelection)
-  {
-      ALICEVISION_LOG_ERROR("KeyframeSelector needs at least one selection method if output frame limited !");
-      throw std::invalid_argument("KeyframeSelector needs at least one selection method if output frame limited !");
-  }
+    cv::Mat sum, sumsq, laplacian;
+    cv::Laplacian(grayscaleImage, laplacian, CV_64F);
+    cv::integral(laplacian, sum, sumsq);
 
-  // load vocabulary tree
-  _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
-
-  {
-      ALICEVISION_LOG_INFO("vocabulary tree loaded with :" << std::endl
-                       << "\t- " << _voctree->levels() << " levels" << std::endl
-                       << "\t- " << _voctree->splits() << " branching factor" << std::endl);
-  }
-
-  // check number of input media filePaths
-  if(mediaPaths.empty())
-  {
-    ALICEVISION_LOG_ERROR("Cannot create KeyframeSelector without a media file path !");
-    throw std::invalid_argument("Cannot create KeyframeSelector without a media file path !");
-  }
-
-  // resize mediasInfo container
-  _mediasInfo.resize(mediaPaths.size());
-
-  // create SIFT image describer
-  _imageDescriber.reset(new feature::ImageDescriber_SIFT());
-}
-
-void KeyframeSelector::process()
-{
-  // create feeds and count minimum number of frames
-  std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
-  for(std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
-  {
-    const auto& path = _mediaPaths.at(mediaIndex);
-
-    // create a feed provider per mediaPaths
-    _feeds.emplace_back(new dataio::FeedProvider(path));
-
-    const auto& feed = *_feeds.back();
-
-    // check if feed is initialized
-    if(!feed.isInit())
+    double n = window_size * window_size;
+    double maxstd = 0.0;
+    for (int i = 0; i < sum.rows - window_size; i++)
     {
-      ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
-      throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
-    }
-
-    // update minimum number of frames
-    nbFrames = std::min(nbFrames, feed.nbFrames() - static_cast<std::size_t>( _cameraInfos.at(mediaIndex).frameOffset));
-  }
-
-  // check if minimum number of frame is zero
-  if(nbFrames == 0)
-  {
-    ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty !");
-    throw std::invalid_argument("One or multiple medias can't be found or empty !");
-  }
-
-  // resize selection data vector
-  _framesData.resize(nbFrames);
-
-  // feed provider variables
-  image::Image< image::RGBColor> image;    // original image
-  camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
-  bool hasIntrinsics = false;              // true if queryIntrinsics is valid
-  std::string currentImgName;              // current image name
-
-  // process variables
-  const unsigned int frameStep = _maxFrameStep - _minFrameStep;
-  const unsigned int tileSharpSubset = (_nbTileSide * _nbTileSide) / _sharpSubset;
-
-  // create output folders
-  if(_feeds.size() > 1)
-  {
-    const std::string rigFolder = _outputFolder + "/rig/";
-    if(!fs::exists(rigFolder))
-      fs::create_directory(rigFolder);
-
-    for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
-    {
-      const std::string subPoseFolder = rigFolder + std::to_string(mediaIndex);
-      if(!fs::exists(subPoseFolder))
-        fs::create_directory(subPoseFolder);
-    }
-  }
-  
-  // feed and metadata initialization
-  for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
-  {
-    // first frame with offset
-    _feeds.at(mediaIndex)->goToFrame(_cameraInfos.at(mediaIndex).frameOffset);
-
-    if(!_feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
-    {
-      ALICEVISION_LOG_ERROR("Cannot read media first frame " << _mediaPaths[mediaIndex]);
-      throw std::invalid_argument("Cannot read media first frame " + _mediaPaths[mediaIndex]);
-    }
-
-    // define output image metadata
-    if(!_cameraInfos.at(mediaIndex).focalIsMM)
-    {
-      convertFocalLengthInMM(_cameraInfos.at(mediaIndex), image.Width());
-    }
-
-    // define media informations
-    auto& mediaInfo =  _mediasInfo.at(mediaIndex);
-    mediaInfo.tileHeight = (image.Height() / 2) / _nbTileSide;
-    mediaInfo.tileWidth = (image.Width() / 2) / _nbTileSide;
-    mediaInfo.spec = oiio::ImageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::UINT8); // always jpeg
-    mediaInfo.spec.attribute("jpeg:subsampling", "4:4:4"); // always subsampling 4:4:4
-    mediaInfo.spec.attribute("oiio:ColorSpace", "sRGB");   // always sRGB
-    mediaInfo.spec.attribute("Make",  _cameraInfos[mediaIndex].brand);
-    mediaInfo.spec.attribute("Model", _cameraInfos[mediaIndex].model);
-    mediaInfo.spec.attribute("Exif:BodySerialNumber", std::to_string(getRandomInt())); // TODO: use Exif:OriginalRawFileName instead
-    mediaInfo.spec.attribute("Exif:FocalLength", _cameraInfos[mediaIndex].focalLength);
-  }
-
-  // iteration process
-  _keyframeIndexes.clear();
-  std::size_t currentFrameStep = _minFrameStep + 1; // start directly (dont skip minFrameStep first frames)
-  
-  for(std::size_t frameIndex = 0; frameIndex < _framesData.size(); ++frameIndex)
-  {
-    ALICEVISION_LOG_INFO("frame : " << frameIndex);
-    bool frameSelected = true;
-    auto& frameData = _framesData.at(frameIndex);
-    frameData.mediasData.resize(_feeds.size());
-
-    for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
-    {
-      ALICEVISION_LOG_DEBUG("media : " << _mediaPaths.at(mediaIndex));
-      auto& feed = *_feeds.at(mediaIndex);
-
-      if(frameSelected) // false if a camera of a rig is not selected
-      {
-        if(!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+        for (int j = 0; j < sum.cols - window_size; j++)
         {
-          ALICEVISION_LOG_ERROR("Cannot read frame '" << currentImgName << "' !");
-          throw std::invalid_argument("Cannot read frame '" + currentImgName + "' !");
+            double tl = sum.at<double>(i, j);
+            double tr = sum.at<double>(i, j + window_size);
+            double bl = sum.at<double>(i + window_size, j);
+            double br = sum.at<double>(i + window_size, j + window_size);
+            double s1 = br + tl - tr - bl;
+
+            tl = sumsq.at<double>(i, j);
+            tr = sumsq.at<double>(i, j + window_size);
+            bl = sumsq.at<double>(i + window_size, j);
+            br = sumsq.at<double>(i + window_size, j + window_size);
+            double s2 = br + tl - tr - bl;
+
+            double std_2 = sqrt((s2 - (s1 * s1) / n) / n);
+
+            maxstd = std::max(maxstd, std_2);
+        }
+    }
+
+    return maxstd;
+}
+
+cv::Mat readImage(dataio::FeedProvider & feed, size_t max_width)
+{
+    image::Image<image::RGBColor> image;
+    camera::PinholeRadialK3 queryIntrinsics;
+    bool hasIntrinsics = false;
+    std::string currentImgName;
+
+    if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+    {
+        ALICEVISION_LOG_ERROR("Cannot read frame '" << currentImgName << "' !");
+        throw std::invalid_argument("Cannot read frame '" + currentImgName + "' !");
+    }
+
+    //Convert content to opencv
+    cv::Mat cvFrame(cv::Size(image.cols(), image.rows()), CV_8UC3, image.data(), image.cols() * 3);
+
+    cv::Mat cvGrayscale;
+    //Convert to grayscale
+    cv::cvtColor(cvFrame, cvGrayscale, cv::COLOR_BGR2GRAY);
+
+    //Resize to smaller size
+    cv::Mat cvRescaled;
+    if (cvGrayscale.cols > max_width)
+    {
+        cv::resize(cvGrayscale, cvRescaled, cv::Size(max_width, double(cvGrayscale.rows) * double(max_width) / double(cvGrayscale.cols)));
+    }
+    else
+    {
+        cvRescaled = cvGrayscale;
+    }
+
+    return cvRescaled;
+}
+
+double estimateFlow(const std::vector<std::unique_ptr<dataio::FeedProvider>> & feeds, size_t max_width, int previous, int current)
+{
+    auto ptrFlow = cv::optflow::createOptFlow_DeepFlow();
+
+    double minmaxflow = std::numeric_limits<double>::max();
+
+    for (auto& feed : feeds)
+    {
+        feed->goToFrame(previous);
+        cv::Mat first = readImage(*feed, max_width);
+
+        feed->goToFrame(current);
+        cv::Mat second = readImage(*feed, max_width);
+
+        cv::Mat flow;
+        ptrFlow->calc(first, second, flow);
+
+        cv::Mat sumflow;
+        cv::integral(flow, sumflow, CV_64F);
+
+        int ws = 20;
+        double n = ws * ws;
+        double maxflow = 0.0;
+        size_t count = 0;
+
+        cv::Mat matnorm(flow.size(), CV_32FC1);
+        for (int i = 10; i < flow.rows - ws - 10; i++)
+        {
+            for (int j = 10; j < flow.cols - ws - 10; j++)
+            {
+                cv::Point2d tl = sumflow.at<cv::Point2d>(i, j);
+                cv::Point2d tr = sumflow.at<cv::Point2d>(i, j + ws);
+                cv::Point2d bl = sumflow.at<cv::Point2d>(i + ws, j);
+                cv::Point2d br = sumflow.at<cv::Point2d>(i + ws, j + ws);
+                cv::Point2d s1 = br + tl - tr - bl;
+
+                cv::Point fl = flow.at<cv::Point2f>(i, j);
+
+                double norm = std::hypot(s1.x, s1.y) / n;
+                maxflow = std::max(maxflow, norm);
+            }
         }
 
-        // compute sharpness and sparse distance
-        if(!computeFrameData(image, frameIndex, mediaIndex, tileSharpSubset))
-        {
-          frameSelected = false;
-        }
-      }
-
-      feed.goToNextFrame();
+        minmaxflow = std::min(minmaxflow, maxflow);
     }
 
-    {
-      if(frameSelected)
-      {
-        ALICEVISION_LOG_INFO(" > selected" << std::endl);
-        frameData.selected = true;
-        if(_hasSharpnessSelection)
-          frameData.computeAvgSharpness();
-      }
-      else
-      {
-        ALICEVISION_LOG_INFO(" > skipped" << std::endl);
-        frameData.mediasData.clear(); // remove unselected mediasData
-      }
-    }
-
-    // selection process
-    if(currentFrameStep >= _maxFrameStep)
-    {
-      currentFrameStep = _minFrameStep;
-      bool hasKeyframe = false;
-      std::size_t keyframeIndex = 0;
-      float maxSharpness = 0;
-      float minDistScore = std::numeric_limits<float>::max();
-
-      // find the best selected frame
-      if(_hasSharpnessSelection)
-      {
-        // find the sharpest selected frame
-        for(std::size_t index = frameIndex - (frameStep - 1); index <= frameIndex; ++index)
-        {
-          if(_framesData[index].selected && (_framesData[index].avgSharpness > maxSharpness))
-          {
-            hasKeyframe = true;
-            keyframeIndex = index;
-            maxSharpness = _framesData[index].avgSharpness;
-          }
-        }
-      }
-      else if(_hasSparseDistanceSelection)
-      {
-        // find the smallest sparseDistance selected frame
-        for(std::size_t index = frameIndex - (frameStep - 1); index <= frameIndex; ++index)
-        {
-          if(_framesData[index].selected && (_framesData[index].maxDistScore < minDistScore))
-          {
-            hasKeyframe = true;
-            keyframeIndex = index;
-            minDistScore = _framesData[index].maxDistScore;
-          }
-        }
-      }
-      else
-      {
-        // use the first frame of the step
-        hasKeyframe = true;
-        keyframeIndex = frameIndex - (frameStep - 1);
-      }
-
-      // save keyframe
-      if(hasKeyframe)
-      {
-        ALICEVISION_LOG_INFO("keyframe choice : " << keyframeIndex << std::endl);
-
-        // write keyframe
-        for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
-        {
-          auto& feed = *_feeds.at(mediaIndex);
-
-          feed.goToFrame(keyframeIndex + _cameraInfos.at(mediaIndex).frameOffset);
-
-          if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
-          {
-            feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
-            writeKeyframe(image, keyframeIndex, mediaIndex);
-          }
-        }
-        _framesData[keyframeIndex].keyframe = true;
-        _keyframeIndexes.push_back(keyframeIndex);
-
-        frameIndex = keyframeIndex + _minFrameStep - 1;
-      }
-      else
-      {
-        ALICEVISION_LOG_INFO("keyframe choice : none" << std::endl);
-      }
-    }
-    ++currentFrameStep;
-  }
-
-  if(_maxOutFrame == 0) // no limit of keyframes (evaluation and write already done)
-  {
-    return;
-  }
-
-  // if limited number of keyframe, select smallest sparse distance
-  {
-    std::vector< std::tuple<float, float, std::size_t> > keyframes;
-
-    for(std::size_t i = 0; i < _framesData.size(); ++i)
-    {
-      if(_framesData[i].keyframe)
-      {
-        keyframes.emplace_back(_framesData[i].maxDistScore, 1 / _framesData[i].avgSharpness, i);
-      }
-    }
-    std::sort(keyframes.begin(), keyframes.end());
-
-    const std::size_t nbOutFrames = std::min(static_cast<std::size_t>(_maxOutFrame), keyframes.size());
-
-    for(std::size_t i = 0; i < nbOutFrames; ++i)
-    {
-      const std::size_t frameIndex = std::get<2>(keyframes.at(i));
-      for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
-      {
-        auto& feed = *_feeds.at(mediaIndex);
-        feed.goToFrame(frameIndex + _cameraInfos.at(mediaIndex).frameOffset);
-        feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
-        writeKeyframe(image, frameIndex, mediaIndex);
-      }
-    }
-  }
+    return minmaxflow;
 }
 
-float KeyframeSelector::computeSharpness(const image::Image<float>& imageGray,
-                                         const unsigned int tileHeight,
-                                         const unsigned int tileWidth,
-                                         const unsigned int tileSharpSubset) const
+void KeyframeSelector::processSimple(const std::vector<std::string>& mediaPaths)
 {
-  image::Image<float> scharrXDer;
-  image::Image<float> scharrYDer;
+    std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
+    std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
 
-  image::ImageScharrXDerivative(imageGray, scharrXDer); // normalized
-  image::ImageScharrYDerivative(imageGray, scharrYDer); // normalized
+    _selected.clear();
 
-  scharrXDer = scharrXDer.cwiseAbs(); // absolute value
-  scharrYDer = scharrYDer.cwiseAbs(); // absolute value
-
-  // image tiles
-  std::vector<float> averageTileIntensity;
-  const float tileSizeInv = 1 / static_cast<float>(tileHeight * tileWidth);
-
-  for(std::size_t y =  0; y < (_nbTileSide * tileHeight); y += tileHeight)
-  {
-    for(std::size_t x =  0; x < (_nbTileSide * tileWidth); x += tileWidth)
+    for (std::size_t mediaIndex = 0; mediaIndex < mediaPaths.size(); ++mediaIndex)
     {
-      const auto sum = scharrXDer.block(y, x, tileHeight, tileWidth).sum() + scharrYDer.block(y, x, tileHeight, tileWidth).sum();
-      averageTileIntensity.push_back(sum * tileSizeInv);
-    }
-  }
+        const auto& path = mediaPaths.at(mediaIndex);
 
-  // sort tiles average pixel intensity
-  std::sort(averageTileIntensity.begin(), averageTileIntensity.end());
+        // create a feed provider per mediaPaths
+        feeds.emplace_back(new dataio::FeedProvider(path));
 
-  // return the sum of the subset average pixel intensity
-  return std::accumulate(averageTileIntensity.end() - tileSharpSubset, averageTileIntensity.end(), 0.0f) / tileSharpSubset;
-}
+        const auto& feed = *feeds.back();
 
-
-bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& image,
-                                        std::size_t frameIndex,
-                                        std::size_t mediaIndex,
-                                        unsigned int tileSharpSubset)
-{
-  if(!_hasSharpnessSelection && !_hasSparseDistanceSelection)
-    return true; // nothing to do
-
-  image::Image<float> imageGray;           // grayscale image
-  image::Image<float> imageGrayHalfSample; // half resolution grayscale image
-  
-  const auto& currMediaInfo = _mediasInfo.at(mediaIndex);
-  auto& currframeData = _framesData.at(frameIndex);
-  auto& currMediaData = currframeData.mediasData.at(mediaIndex);
-
-  // get grayscale image and resize
-  image::ConvertPixelType(image, &imageGray);
-  image::ImageHalfSample(imageGray, imageGrayHalfSample);
-
-  // compute sharpness
-  if(_hasSharpnessSelection)
-  {
-    currMediaData.sharpness = computeSharpness(imageGrayHalfSample,
-                                               currMediaInfo.tileHeight,
-                                               currMediaInfo.tileWidth,
-                                               tileSharpSubset);
-    ALICEVISION_LOG_DEBUG( " - sharpness : " << currMediaData.sharpness);
-  }
-
-  if((currMediaData.sharpness > _sharpnessThreshold) || !_hasSharpnessSelection)
-  {
-    bool noKeyframe = (_keyframeIndexes.empty());
-
-    // compute current frame sparse histogram
-    std::unique_ptr<feature::Regions> regions;
-    _imageDescriber->describe(imageGrayHalfSample, regions);
-    currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<feature::SIFT_Regions*>(regions.get())->Descriptors()));
-
-    // compute sparseDistance
-    if(!noKeyframe && _hasSparseDistanceSelection)
-    {
-      unsigned int nbKeyframetoCompare = (_keyframeIndexes.size() < _nbKeyFrameDist)? _keyframeIndexes.size() : _nbKeyFrameDist;
-
-      for(std::size_t i = _keyframeIndexes.size() - nbKeyframetoCompare; i < _keyframeIndexes.size(); ++i)
-      {
-        for(auto& media : _framesData.at(_keyframeIndexes.at(i)).mediasData)
+        // check if feed is initialized
+        if (!feed.isInit())
         {
-          currMediaData.distScore = std::max(currMediaData.distScore, std::abs(voctree::sparseDistance(media.histogram, currMediaData.histogram, "strongCommonPoints")));
+            ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
+            throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
         }
-      }
-      currframeData.maxDistScore = std::max(currframeData.maxDistScore, currMediaData.distScore);
-      ALICEVISION_LOG_DEBUG(" - distScore : " << currMediaData.distScore);
+
+        // update minimum number of frames
+        nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
     }
 
-    if(noKeyframe || (currMediaData.distScore < _distScoreMax))
+    // check if minimum number of frame is zero
+    if (nbFrames == 0)
     {
-      return true;
+        ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty !");
+        throw std::invalid_argument("One or multiple medias can't be found or empty !");
     }
-  } 
-  return false;
+
+    int step = _minFrameStep;
+    if (_maxOutFrame > 0)
+    {
+        step = int(std::floor(double(nbFrames) / double(_maxOutFrame)));
+    }
+
+    for (int id = 0; id < nbFrames; id += step)
+    {
+        _selected.push_back(id);
+    }
 }
 
-void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image, 
-                                     std::size_t frameIndex,
-                                     std::size_t mediaIndex)
+void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
 {
-  auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  fs::path folder{_outputFolder};
+    // create feeds and count minimum number of frames
+    std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
+    std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
+    const size_t processWidth = 720;
+    const double thresholdSharpness = 10.0;
+    const double thresholdFlow = 10.0;
 
-  if(_feeds.size() > 1)
-     folder  /= fs::path("rig") / fs::path(std::to_string(mediaIndex));
+    for(std::size_t mediaIndex = 0; mediaIndex < mediaPaths.size(); ++mediaIndex)
+    {
+        const auto& path = mediaPaths.at(mediaIndex);
 
-  std::ostringstream filenameSS;
-  filenameSS << std::setw(_padding) << std::setfill('0') << frameIndex << ".jpg";
+        // create a feed provider per mediaPaths
+        feeds.emplace_back(new dataio::FeedProvider(path));
 
-  const auto filepath = (folder / fs::path(filenameSS.str())).string();
+        const auto& feed = *feeds.back();
 
-  mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(getRandomInt()));
+        // check if feed is initialized
+        if(!feed.isInit())
+        {
+            ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
+            throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
+        }
 
-  std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
-  
-  if(out.get() == nullptr)
-  {
-    throw std::invalid_argument("Cannot create image file : " + filepath);
-  }
-  
-  if(!out->open(filepath, mediaInfo.spec))
-  {
-    throw std::invalid_argument("Cannot open image file : " + filepath);
-  }
+        // update minimum number of frames
+        nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
+    }
 
-  out->write_image(oiio::TypeDesc::UINT8, image.data()); // always jpeg
-  out->close();
+    // check if minimum number of frame is zero
+    if(nbFrames == 0)
+    {
+        ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty !");
+        throw std::invalid_argument("One or multiple medias can't be found or empty !");
+    }
+
+    const int searchWindowSize = std::floor(double(nbFrames) / double(_maxOutFrame));
+
+    // feed provider variables
+    image::Image<image::RGBColor> image;     // original image
+    camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
+    bool hasIntrinsics = false;              // true if queryIntrinsics is valid
+    std::string currentImgName;              // current image name
+
+
+    // feed and metadata initialization
+    for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
+    {
+        // first frame with offset
+        feeds.at(mediaIndex)->goToFrame(0);
+
+        if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+        {
+            ALICEVISION_LOG_ERROR("Cannot read media first frame " << mediaPaths[mediaIndex]);
+            throw std::invalid_argument("Cannot read media first frame " + mediaPaths[mediaIndex]);
+        }
+    }
+
+    size_t currentFrame = 0;
+
+    std::vector<double> sharpnessScores;
+
+    while (currentFrame < nbFrames)
+    {
+        double minimalSharpness = std::numeric_limits<double>::max();
+
+        for(std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
+        {
+            ALICEVISION_LOG_DEBUG("media : " << mediaPaths.at(mediaIndex));
+            auto& feed = *feeds.at(mediaIndex);
+
+            //Resize to smaller size
+            cv::Mat cvRescaled = readImage(feed, processWidth);
+
+            double score = computeSharpness(cvRescaled, 200);
+            minimalSharpness = std::min(minimalSharpness, score);
+
+            feed.goToNextFrame();
+        }
+
+        sharpnessScores.push_back(minimalSharpness);
+        currentFrame++;
+    }
+
+
+    std::vector<unsigned int> indices;
+
+    int startPosition = 0;
+
+    while (startPosition < sharpnessScores.size())
+    {
+        int endPosition = std::min(int(sharpnessScores.size()), startPosition + searchWindowSize);
+        auto maxIter = std::max_element(sharpnessScores.begin() + startPosition, sharpnessScores.begin() + endPosition);
+        size_t index = maxIter - sharpnessScores.begin();
+        double maxval = *maxIter;
+        if (maxval < 10.0)
+        {
+            //This value means that the image is completely blurry.
+            //We consider we should not select a value here
+            startPosition += searchWindowSize;
+            continue;
+        }
+
+        startPosition = index + 1;
+
+        if (indices.size() == 0)
+        {
+            indices.push_back(index);
+            continue;
+        }
+
+        int previous = indices.back();
+
+        double flow = estimateFlow(feeds, processWidth, previous, index);
+        if (flow < thresholdFlow)
+        {
+            continue;
+        }
+
+        indices.push_back(index);
+    }
+
+    _selected = indices;
 }
 
-void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageWidth)
+bool KeyframeSelector::writeSelection(const std::string & outputFolder, const std::vector<std::string>& mediaPaths, const std::vector<std::string>& brands, const std::vector<std::string>& models, const std::vector<float>& mmFocals)
 {
-  assert(imageWidth > 0);
-  
-  sensorDB::Datasheet find;
-  std::vector<sensorDB::Datasheet> vecDatabase;
-  sensorDB::parseDatabase(_sensorDbPath, vecDatabase);
+    image::Image< image::RGBColor> image;
+    camera::PinholeRadialK3 queryIntrinsics;
+    bool hasIntrinsics = false;
+    std::string currentImgName;
 
-  if(sensorDB::getInfo(cameraInfo.brand, cameraInfo.model, vecDatabase, find))
-  {
-    cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorWidth) / imageWidth;
-    cameraInfo.focalIsMM = true;
-    ALICEVISION_LOG_INFO("Focal length converted in mm : " << cameraInfo.focalLength);
-  }
-  else
-  {
-    ALICEVISION_LOG_WARNING("Cannot convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model);
-  }
+    for (int id = 0; id < mediaPaths.size(); id++)
+    {
+        const auto& path = mediaPaths.at(id);
+
+        // create a feed provider per mediaPaths
+        dataio::FeedProvider feed(path);
+
+        // check if feed is initialized
+        if (!feed.isInit())
+        {
+            ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
+            return false;
+        }
+
+        std::string processedOutputFolder = outputFolder;
+        if (mediaPaths.size() > 1)
+        {
+            const std::string rigFolder = outputFolder + "/rig/";
+            if (!fs::exists(rigFolder))
+            {
+                fs::create_directory(rigFolder);
+            }
+
+            processedOutputFolder = rigFolder + std::to_string(id);
+            if (!fs::exists(processedOutputFolder))
+            {
+                fs::create_directory(processedOutputFolder);
+            }
+        }
+
+        for (auto pos : _selected)
+        {
+            feed.goToFrame(pos);
+
+            if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+            {
+                ALICEVISION_LOG_ERROR("Error reading image");
+                return false;
+            }
+
+            oiio::ImageSpec spec(image.Width(), image.Height(), 3, oiio::TypeDesc::UINT8);
+
+            spec.attribute("Make", brands[id]);
+            spec.attribute("Model", models[id]);
+            spec.attribute("Exif:BodySerialNumber", std::to_string(getRandomInt())); // TODO: use Exif:OriginalRawFileName instead
+            spec.attribute("Exif:FocalLength", mmFocals[id]);
+            spec.attribute("Exif:ImageUniqueID", std::to_string(getRandomInt()));
+
+            fs::path folder = outputFolder;
+            std::ostringstream filenameSS;
+            filenameSS << std::setw(5) << std::setfill('0') << pos << ".exr";
+            const auto filepath = (processedOutputFolder / fs::path(filenameSS.str())).string();
+
+
+            std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
+
+            if (out.get() == nullptr)
+            {
+                throw std::invalid_argument("Cannot create image file : " + filepath);
+            }
+
+            if (!out->open(filepath, spec))
+            {
+                throw std::invalid_argument("Cannot open image file : " + filepath);
+            }
+
+            out->write_image(oiio::TypeDesc::UINT8, image.data());
+            out->close();
+        }
+
+    }
+
+    return true;
 }
 
-} // namespace keyframe 
+} // namespace keyframe
 } // namespace aliceVision
