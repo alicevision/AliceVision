@@ -91,6 +91,12 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    if (minFrameStep <= 0)
+    {
+        ALICEVISION_LOG_ERROR("Min frame step must be at least 1");
+        return EXIT_FAILURE;
+    }
+
     if (nbCameras < 1)
     {
         ALICEVISION_LOG_ERROR("Program need at least one media path.");

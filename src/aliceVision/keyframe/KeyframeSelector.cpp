@@ -304,10 +304,10 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
             continue;
         }
 
-        startPosition = index + 1;
-
         if (indices.size() == 0)
         {
+            //No previous, so no flow check
+            startPosition = index + _minFrameStep;
             indices.push_back(index);
             continue;
         }
@@ -317,10 +317,13 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         double flow = estimateFlow(feeds, processWidth, previous, index);
         if (flow < thresholdFlow)
         {
+            //Continue with next frame
+            startPosition = index + 1;
             continue;
         }
 
         indices.push_back(index);
+        startPosition = index + _minFrameStep;
     }
 
     _selected = indices;
