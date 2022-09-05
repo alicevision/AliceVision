@@ -296,7 +296,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         auto maxIter = std::max_element(sharpnessScores.begin() + startPosition, sharpnessScores.begin() + endPosition);
         size_t index = maxIter - sharpnessScores.begin();
         double maxval = *maxIter;
-        if (maxval < 10.0)
+        if (maxval < thresholdSharpness)
         {
             //This value means that the image is completely blurry.
             //We consider we should not select a value here
@@ -307,7 +307,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         if (indices.size() == 0)
         {
             //No previous, so no flow check
-            startPosition = index + _minFrameStep;
+            startPosition = index + std::max(int(_minFrameStep), searchWindowSize);
             indices.push_back(index);
             continue;
         }
@@ -323,7 +323,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         }
 
         indices.push_back(index);
-        startPosition = index + _minFrameStep;
+        startPosition = index + std::max(int(_minFrameStep), searchWindowSize);
     }
 
     _selected = indices;
