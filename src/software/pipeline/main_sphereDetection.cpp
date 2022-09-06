@@ -75,6 +75,7 @@ int aliceVision_main(int argc, char** argv)
     // onnxruntime session setup
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "Sphere detector onnx model environment");
     Ort::SessionOptions session_options;
+    Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CUDA(session_options, 0)); // use gpu n°0
     Ort::Session session(env, input_model_path.c_str(), session_options);
 
     // DEBUG: print model I/O
