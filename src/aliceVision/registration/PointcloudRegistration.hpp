@@ -94,9 +94,9 @@ class PointcloudRegistration
 {
 public:
   
-  PointcloudRegistration();
+  PointcloudRegistration() = default;
   
-  ~PointcloudRegistration(){;}
+  ~PointcloudRegistration() = default;
   
   enum ERescaleMode {None, Manual, Auto};
   
@@ -382,23 +382,23 @@ private:
   
   // -- Data member
   /// The source cloud: mobile could
-  pcl::PointCloud<pcl::PointXYZ> sourceCloud;
+  pcl::PointCloud<pcl::PointXYZ> sourceCloud{};
   /// The target cloud: fixed cloud.
-  pcl::PointCloud<pcl::PointXYZ> targetCloud;
+  pcl::PointCloud<pcl::PointXYZ> targetCloud{};
   /// The mode used to resize the source cloud
-  ERescaleMode rescaleMode;
+  ERescaleMode rescaleMode{ERescaleMode::None};
   /// A distance in the source cloud. Must have the same unit as \c targetMeasurements.
-  float sourceMeasurements;
+  float sourceMeasurements{1.f};
   /// A distance in the target cloud. Must have the same unit as \c sourceMeasurements.
-  float targetMeasurements;
+  float targetMeasurements{1.f};
   /// The scale ratio between the source and the target clouds. Is the \c targetMeasurements / \c sourceMeasurements ratio.
-  float scaleRatio;
+  float scaleRatio{1.f};
   /// The size of the voxel grid applied on source and target clouds.
-  float voxelSize;
+  float voxelSize{0.1f};
   /// The number of closest neighbours used to compute normals.
-  int kSearchNormals;
+  int kSearchNormals{10};
   /// Is the computed transformation such as: T * sourceCloud = targetCloud/
-  Eigen::Matrix4d finalTransformation;
+  Eigen::Matrix4d finalTransformation{};
   
   struct DurationsSummary
   {

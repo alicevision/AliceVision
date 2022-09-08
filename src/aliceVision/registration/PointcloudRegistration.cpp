@@ -28,16 +28,6 @@
 namespace aliceVision {
 namespace registration {
 
-PointcloudRegistration::PointcloudRegistration()
-  : rescaleMode(ERescaleMode::None)
-  , sourceMeasurements(1.f)
-  , targetMeasurements(1.f)
-  , scaleRatio(1.f)
-  , voxelSize(0.1f)
-  , kSearchNormals(10)
-{
-}
-
 int PointcloudRegistration::loadSourceCloud(const std::string & file)
 {
   auto tic = std::chrono::steady_clock::now();
