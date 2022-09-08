@@ -9,7 +9,6 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <pcl/console/parse.h>
 
 using namespace aliceVision;
 using namespace aliceVision::registration;
