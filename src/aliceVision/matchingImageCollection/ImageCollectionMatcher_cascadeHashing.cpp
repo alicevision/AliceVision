@@ -9,9 +9,8 @@
 #include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/matching/filters.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
-
-#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -40,7 +39,7 @@ void Match
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )
 {
-  boost::progress_display my_progress_bar( pairs.size() );
+  auto my_progress_bar = system::createConsoleProgressDisplay(pairs.size(), std::cout);
 
   // Collect used view indexes
   std::set<IndexT> used_index;

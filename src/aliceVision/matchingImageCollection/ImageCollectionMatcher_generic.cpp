@@ -11,9 +11,8 @@
 #include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
-
-#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -43,7 +42,7 @@ void ImageCollectionMatcher_generic::Match(
   const bool b_multithreaded_pair_search = (_matcherType == CASCADE_HASHING_L2);
   // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher
 
-  boost::progress_display my_progress_bar( pairs.size() );
+  auto my_progress_bar = system::createConsoleProgressDisplay(pairs.size(), std::cout);
 
   // Sort pairs according the first index to minimize the MatcherT build operations
   typedef std::map<size_t, std::vector<size_t> > Map_vectorT;

@@ -12,8 +12,7 @@
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
-
-#include <boost/progress.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <vector>
 #include <map>
@@ -51,7 +50,8 @@ void robustModelEstimation(
 {
   out_geometricMatches.clear();
 
-  boost::progress_display progressBar(putativeMatches.size(), std::cout, "Robust Model Estimation\n");
+  auto progressBar = system::createConsoleProgressDisplay(putativeMatches.size(), std::cout,
+                                                          "Robust Model Estimation\n");
   
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int)putativeMatches.size(); ++i)
