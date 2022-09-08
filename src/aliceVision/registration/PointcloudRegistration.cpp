@@ -9,6 +9,7 @@
 #include "SICP.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <boost/filesystem.hpp>
 #include <pcl/Vertices.h>
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
