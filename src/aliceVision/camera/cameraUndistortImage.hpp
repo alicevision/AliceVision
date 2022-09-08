@@ -13,6 +13,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/image/io.hpp>
 
@@ -20,6 +21,60 @@
 
 namespace aliceVision {
 namespace camera {
+
+/// Undistort an image according a given camera and its distortion model
+template <typename T>
+void UndistortImage(
+  const image::Image<T>& imageIn,
+  const camera::IntrinsicBase * intrinsicSource,
+  const camera::IntrinsicBase * intrinsicOutput,
+  const camera::Undistortion * undistortionOutput,
+  image::Image<T>& image_ud,
+  T fillcolor,
+  const oiio::ROI & roi = oiio::ROI())
+{
+  if (!intrinsicSource->hasDistortion()) // no distortion, perform a direct copy
+  {
+    image_ud = imageIn;
+  }
+  else // There is distortion
+  {
+    const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
+      
+    int widthRoi = intrinsicOutput->w();
+    int heightRoi = intrinsicOutput->h();
+    int xOffset = 0;
+    int yOffset = 0;
+    if(roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    image_ud.resize(widthRoi, heightRoi, true, fillcolor);
+    const image::Sampler2d<image::SamplerLinear> sampler;
+    
+    #pragma omp parallel for
+    for (int y = 0; y < heightRoi; ++y)
+    {
+        for (int x = 0; x < widthRoi; ++x)
+        {
+            const Vec2 undisto_pix(x + xOffset, y + yOffset);
+
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicSource->cam2ima(intrinsicSource->addDistortion(intrinsicOutput->ima2cam((undistortionOutput)?undistortionOutput->inverse(undisto_pix):undisto_pix)));
+
+            // pick pixel if it is in the image domain
+            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
+            {
+                image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            }
+        }
+    }
+  }
+}
 
 /// Undistort an image according a given camera and its distortion model
 template <typename T>
@@ -66,19 +121,25 @@ void UndistortImage(
     
     
     #pragma omp parallel for
-    for(int j = 0; j < heightRoi; ++j)
-        for(int i = 0; i < widthRoi; ++i)
-        {       
-            const Vec2 undisto_pix(i + xOffset, j + yOffset); 
+    for (int y = 0; y < heightRoi; ++y)
+    {
+        for (int x = 0; x < widthRoi; ++x)
+        {
+            const Vec2 undisto_pix(x + xOffset, y + yOffset);
             // compute coordinates with distortion
             const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix + ppCorrection);
-           
+
             // pick pixel if it is in the image domain
-            if(imageIn.Contains(disto_pix(1), disto_pix(0)))
-                image_ud(j, i) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            if (imageIn.Contains(disto_pix(1), disto_pix(0)))
+            {
+                image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            }
         }
+    }
   }
 }
+
+
 
 } // namespace camera
 } // namespace aliceVision
