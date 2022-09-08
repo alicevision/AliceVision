@@ -127,11 +127,11 @@ int main(int argc, char** argv)
 
     const Eigen::Matrix4d T = reg.align(method);
 
-    ALICEVISION_LOG_WARNING("Alignment transform estimated:\n" << T);
+    ALICEVISION_LOG_INFO("Alignment transform estimated:\n" << T);
     Eigen::Affine3d transformation(T);
-    ALICEVISION_LOG_WARNING("Alignment transform rotation:\n" << transformation.rotation());
-    ALICEVISION_LOG_WARNING("Alignment transform translation:\n" << transformation.translation());
-    // ALICEVISION_LOG_WARNING("Alignment transform scale:\n" << transformation.scale());
+    ALICEVISION_LOG_INFO("Alignment transform rotation:\n" << transformation.rotation());
+    ALICEVISION_LOG_INFO("Alignment transform translation:\n" << transformation.translation());
+//    ALICEVISION_LOG_INFO("Alignment transform scale:\n" << transformation.scale());
 
     if (T.hasNaN())
     {
