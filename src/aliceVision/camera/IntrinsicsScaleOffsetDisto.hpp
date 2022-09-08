@@ -9,6 +9,7 @@
 
 #include "IntrinsicsScaleOffset.hpp"
 #include "Distortion.hpp"
+#include "Undistortion.hpp"
 #include <memory>
 
 namespace aliceVision {
@@ -43,6 +44,11 @@ public:
       if(_pDistortion != nullptr && other._pDistortion != nullptr)
           return (*_pDistortion) == (*other._pDistortion);
       return _pDistortion == other._pDistortion;
+  }
+
+  void setDistortionObject(std::shared_ptr<Distortion> object)
+  {
+      _pDistortion = object;
   }
 
   bool hasDistortion() const override
