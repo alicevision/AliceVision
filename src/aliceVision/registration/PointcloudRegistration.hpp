@@ -404,11 +404,14 @@ private:
   {
     double loadSourceCloud;
     double loadTargetCloud;
-    double coarseAlignment;  // default: match centers
+    /// default: match centers
+    double coarseAlignment;
     double rescaling;
-    double downsampling;     // default: voxel grid approach
+    /// default: voxel grid approach
+    double downsampling;
     double computeNormals;
-    double refinedAlignment; // default: generalized-icp
+    /// default: generalized-icp
+    double refinedAlignment;
   };
   
   DurationsSummary duration; // store the time spent on each step of the pipeline.
