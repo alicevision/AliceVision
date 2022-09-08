@@ -51,13 +51,13 @@ int main(int argc, char** argv)
     ("scaleRatio", po::value<float>(&scaleRatio)->default_value(scaleRatio),
       "Scale ratio between the two 3D models (= target size / source size)")
     ("sourceMeasurement", po::value<float>(&sourceMeasurement)->default_value(sourceMeasurement),
-      "Measurement made ont the source 3D model (same unit as 'targetMeasurement'). It allowes to compute the scale ratio between 3D models.")
+      "Measurement made ont the source 3D model (same unit as 'targetMeasurement'). It allows to compute the scale ratio between 3D models.")
     ("targetMeasurement", po::value<float>(&targetMeasurement)->default_value(targetMeasurement),
-      "Measurement made ont the target 3D model (same unit as 'sourceMeasurement'). It allowes to compute the scale ratio between 3D models.")
+      "Measurement made ont the target 3D model (same unit as 'sourceMeasurement'). It allows to compute the scale ratio between 3D models.")
     ("voxelSize", po::value<float>(&voxelSize)->default_value(voxelSize),
       "Size of the voxel grid applied on each 3D model to downsample them. Downsampling reduces computing duration.")
     ("showTimeline", po::value<bool>(&showTimeline)->default_value(showTimeline),
-      "To show the duration of each time of the algnment pipeline.");
+      "To show the duration of each time of the alignment pipeline.");
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   po::options_description logParams("Log parameters");
@@ -96,7 +96,7 @@ int main(int argc, char** argv)
   ALICEVISION_COUT(vm);
 
     // ===========================================================
-    // -- Run alignement
+    // -- Run alignment
     // ===========================================================
   EAlignmentMethod method = EAlignmentMethod_stringToEnum(alignmentMethodName);
   ALICEVISION_COUT("Alignment Method: " << EAlignmentMethod_enumToString(method));
