@@ -163,15 +163,15 @@ public:
   void setScaleRatio(float ratio);
   
   /**
-   * @brief To indicate the whished size of the voxel grid apply on the clouds during processing.
+   * @brief To indicate the wished size of the voxel grid apply on the clouds during processing.
    * The default value is 0.1. 
-   * You can increase the value for gain speed, but a too hight may concluded to a bad registration.
+   * You can increase the value for gain speed, but a too high may concluded to a bad registration.
    * @param[in] val The voxel grid size.
    */
   inline void setVoxelSize(float val) {voxelSize = val;}
   
   /**
-   * @brief Allowes you to choose your scaling modes: 
+   * @brief Allows you to choose your scaling modes:
    * - None: no rescale is apply on the source cloud.
    * - Manually: the source cloud is rescaled according to the scale ratio
    * (let check: \c setSourceMeasurment() \c setTargetMeasurment() and \c setScaleRatio()) 
