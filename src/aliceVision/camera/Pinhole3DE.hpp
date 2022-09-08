@@ -39,8 +39,8 @@ class Pinhole3DEAnamorphic4 : public Pinhole
 {
   public:
 
-  explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double cxx = 0.0, double cxy = 0.0, double cyx = 0.0, double cyy = 0.0)
-  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new Distortion3DEAnamorphic4(cxx, cxy, cyx, cyy)))
+  explicit Pinhole3DEAnamorphic4(int w = 0, int h = 0, double focalLengthPixX = 0.0, double focalLengthPixY = 0.0, double offsetX = 0, double offsetY = 0, double cx02 = 0.0, double cy02 = 0.0, double cx22 = 0.0, double cy22 = 0.0, double cx04 = 0.0, double cy04 = 0.0, double cx24 = 0.0, double cy24 = 0.0, double cx44 = 0.0, double cy44 = 0.0, double phi = 0.0, double sqx = 1.0, double sqy = 1.0, double ps = 1.0)
+  : Pinhole(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, std::shared_ptr<Distortion>(new Distortion3DEAnamorphic4(cx02, cy02, cx22, cy22, cx04, cy04, cx24, cy24, cx44, cy44, phi, sqx, sqy, ps)))
   {
   }
 
