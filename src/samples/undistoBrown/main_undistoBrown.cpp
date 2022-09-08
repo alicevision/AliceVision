@@ -7,9 +7,9 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <boost/regex.hpp>
-#include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   std::cout << "\nLocated " << vec_fileNames.size() << " files in " << inputImagePath
     << " with suffix " << suffix;
 
-  boost::progress_display my_progress_bar( vec_fileNames.size() );
+  auto my_progress_bar = system::createConsoleProgressDisplay(vec_fileNames.size(), std::cout);
   for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
   {
     const std::string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
