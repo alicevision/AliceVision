@@ -8,6 +8,7 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -29,8 +30,6 @@
 #include <aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
-
-#include <boost/progress.hpp>
 
 #include <numeric>
 #include <iomanip>
@@ -390,7 +389,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   std::cout << "\n\nThere is :\n" << set_indeximage.size() << " images to transform." << std::endl;
 
   //-> convert solution to gain offset and creation of the LUT per image
-  boost::progress_display my_progress_bar( set_indeximage.size() );
+  auto my_progress_bar = system::createConsoleProgressDisplay(set_indeximage.size(), std::cout);
   for (std::set<size_t>::const_iterator iterSet = set_indeximage.begin();
     iterSet != set_indeximage.end(); ++iterSet, ++my_progress_bar)
   {
