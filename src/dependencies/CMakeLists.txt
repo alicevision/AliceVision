@@ -32,7 +32,7 @@ add_subdirectory(vectorGraphics)
 if(ALICEVISION_USE_INTERNAL_FLANN)
   set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/flann/src/cpp)
   add_subdirectory(flann)
-  set_property(TARGET flann::flann_cpp_s
+  set_property(TARGET flann_cpp_s
     PROPERTY FOLDER Dependencies/Flann
   )
 endif()
