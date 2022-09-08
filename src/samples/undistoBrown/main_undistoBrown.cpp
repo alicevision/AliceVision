@@ -120,8 +120,8 @@ int main(int argc, char **argv)
   std::cout << "\nLocated " << vec_fileNames.size() << " files in " << inputImagePath
     << " with suffix " << suffix;
 
-  auto my_progress_bar = system::createConsoleProgressDisplay(vec_fileNames.size(), std::cout);
-  for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
+  auto progressDisplay = system::createConsoleProgressDisplay(vec_fileNames.size(), std::cout);
+  for (size_t j = 0; j < vec_fileNames.size(); ++j, ++progressDisplay)
   {
     const std::string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
     const std::string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();

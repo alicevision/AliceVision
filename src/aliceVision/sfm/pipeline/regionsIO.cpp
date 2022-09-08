@@ -191,8 +191,9 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
   auto last = std::unique(featuresFolders.begin(), featuresFolders.end());
   featuresFolders.erase(last, featuresFolders.end());
 
-  auto progressBar = system::createConsoleProgressDisplay(sfmData.getViews().size() * imageDescriberTypes.size(),
-                                                          std::cout, "Loading regions\n");
+  auto progressDisplay =
+          system::createConsoleProgressDisplay(sfmData.getViews().size() * imageDescriberTypes.size(),
+                                               std::cout, "Loading regions\n");
 
   std::atomic_bool invalid(false);
 
@@ -217,7 +218,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
 #pragma omp critical
            {
              regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes.at(i), regionsPtr.release());
-             ++progressBar;
+             ++progressDisplay;
            }
          }
          else
@@ -240,8 +241,8 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
   std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
 
-  auto progressBar = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
-                                                          "Loading features\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
+                                                              "Loading features\n");
 
   // read for each view the corresponding features and store them as PointFeatures
   std::atomic_bool invalid(false);
@@ -265,7 +266,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
         {
           // save loaded Features as PointFeature
           featuresPerView.addFeatures(iter->second.get()->getViewId(), imageDescriberTypes[i], regionsPtr->GetRegionsPositions());
-          ++progressBar;
+          ++progressDisplay;
         }
       }
     }

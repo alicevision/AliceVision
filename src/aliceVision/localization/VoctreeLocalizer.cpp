@@ -291,7 +291,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   // add its visual words to the database.
   // then only store the feature and descriptors that have a 3D point associated
   ALICEVISION_LOG_DEBUG("Build observations per view");
-  auto my_progress_bar =
+  auto progressDisplay =
           system::createConsoleProgressDisplay(_sfm_data.getViews().size(), std::cout,
                                                "\n- Load Features and Descriptors per view -\n");
 
@@ -375,7 +375,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
 #pragma omp critical
     {
-      ++my_progress_bar;
+      ++progressDisplay;
     }
   }
   return true;

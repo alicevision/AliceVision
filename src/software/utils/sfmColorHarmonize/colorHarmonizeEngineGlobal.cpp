@@ -389,9 +389,9 @@ bool ColorHarmonizationEngineGlobal::Process()
   std::cout << "\n\nThere is :\n" << set_indeximage.size() << " images to transform." << std::endl;
 
   //-> convert solution to gain offset and creation of the LUT per image
-  auto my_progress_bar = system::createConsoleProgressDisplay(set_indeximage.size(), std::cout);
+  auto progressDisplay = system::createConsoleProgressDisplay(set_indeximage.size(), std::cout);
   for (std::set<size_t>::const_iterator iterSet = set_indeximage.begin();
-    iterSet != set_indeximage.end(); ++iterSet, ++my_progress_bar)
+    iterSet != set_indeximage.end(); ++iterSet, ++progressDisplay)
   {
     const size_t imaNum = *iterSet;
     typedef Eigen::Matrix<double, 256, 1> Vec256;

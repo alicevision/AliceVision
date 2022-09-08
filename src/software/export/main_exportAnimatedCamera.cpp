@@ -331,13 +331,14 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_LOG_INFO("Build animated camera(s)...");
 
   image::Image<image::RGBfColor> image, image_ud;
-  auto progressBar = system::createConsoleProgressDisplay(sfmDataExport.getViews().size(), std::cout);
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmDataExport.getViews().size(),
+                                                              std::cout);
 
   for(const auto& viewPair : sfmDataExport.getViews())
   {
     const sfmData::View& view = *(viewPair.second);
 
-    ++progressBar;
+    ++progressDisplay;
 
     const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
 

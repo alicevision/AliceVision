@@ -103,8 +103,8 @@ int aliceVision_main(int argc, char **argv)
   sfmDataIO::Save(sfmData, outputFolder + "/scene.abc", sfmDataIO::ESfMData::ALL);
 
   // export undistorted images and thumbnail images
-  auto progressBar = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
-                                                          "Exporting Images for MeshroomMaya\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
+                                                              "Exporting Images for MeshroomMaya\n");
   for(auto& viewPair : sfmData.getViews())
   {
     const sfmData::View& view = *viewPair.second;
@@ -152,7 +152,7 @@ int aliceVision_main(int argc, char **argv)
     image::writeImage(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg",
                       imageThumbnail, image::EImageColorSpace::AUTO);
 
-    ++progressBar;
+    ++progressDisplay;
   }
 
   return EXIT_SUCCESS;

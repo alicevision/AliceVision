@@ -1248,7 +1248,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   bestImagePairs.reserve(_pairwiseMatches->size());
   
   // Compute the relative pose & the 'baseline score'
-  auto my_progress_bar = system::createConsoleProgressDisplay(_pairwiseMatches->size(), std::cout,
+  auto progressDisplay = system::createConsoleProgressDisplay(_pairwiseMatches->size(), std::cout,
                                                               "Automatic selection of an initial pair:\n" );
 
 #pragma omp parallel for schedule(dynamic)
@@ -1258,7 +1258,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     std::advance(iter, i);
     
 #pragma omp critical
-    ++my_progress_bar;
+    ++progressDisplay;
     
     const Pair current_pair = iter->first;
 

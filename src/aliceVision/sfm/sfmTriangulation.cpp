@@ -31,9 +31,9 @@ StructureComputation_blind::StructureComputation_blind(bool verbose)
 void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
-  system::ProgressDisplay my_progress_bar;
+  system::ProgressDisplay progressDisplay;
   if (_bConsoleVerbose)
-    my_progress_bar = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
                                                            "Blind triangulation progress:\n");
 
   #pragma omp parallel
@@ -46,7 +46,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
       if (_bConsoleVerbose)
       {
         #pragma omp critical
-        ++(my_progress_bar);
+        ++(progressDisplay);
       }
       // Triangulate each landmark
       multiview::Triangulation trianObj;
@@ -117,9 +117,9 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
 {
   std::deque<IndexT> rejectedId;
 
-  system::ProgressDisplay my_progress_bar;
+  system::ProgressDisplay progressDisplay;
   if (_bConsoleVerbose)
-    my_progress_bar = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
                                                            "Robust triangulation progress:\n");
 
   #pragma omp parallel
@@ -132,7 +132,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
       if (_bConsoleVerbose)
       {
         #pragma omp critical
-        ++(my_progress_bar);
+        ++(progressDisplay);
       }
       Vec3 X;
       if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X)) {

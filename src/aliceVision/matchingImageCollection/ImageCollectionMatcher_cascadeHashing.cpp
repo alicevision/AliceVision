@@ -39,7 +39,7 @@ void Match
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )
 {
-  auto my_progress_bar = system::createConsoleProgressDisplay(pairs.size(), std::cout);
+  auto progressDisplay = system::createConsoleProgressDisplay(pairs.size(), std::cout);
 
   // Collect used view indexes
   std::set<IndexT> used_index;
@@ -125,7 +125,7 @@ void Match
     const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
     if (regionsI.RegionCount() == 0)
     {
-      my_progress_bar += indexToCompare.size();
+      progressDisplay += indexToCompare.size();
       continue;
     }
 
@@ -144,7 +144,7 @@ void Match
           || regionsI.Type_id() != regionsJ.Type_id())
       {
         #pragma omp critical
-        ++my_progress_bar;
+        ++progressDisplay;
         continue;
       }
 
@@ -195,7 +195,7 @@ void Match
 
       #pragma omp critical
       {
-        ++my_progress_bar;
+        ++progressDisplay;
         if (!vec_putative_matches.empty())
         {
           assert(map_PutativesMatches.count(std::make_pair(I,J)) == 0);

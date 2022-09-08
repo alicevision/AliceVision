@@ -447,15 +447,15 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
     poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
-  auto progressBar = system::createConsoleProgressDisplay(poseWiseMatches.size(), std::cout,
-                                                          "\n- Relative pose computation -\n" );
+  auto progressDisplay = system::createConsoleProgressDisplay(poseWiseMatches.size(), std::cout,
+                                                              "\n- Relative pose computation -\n" );
   #pragma omp parallel for schedule(dynamic)
   // Compute the relative pose from pairwise point matches:
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
     #pragma omp critical
     {
-      ++progressBar;
+      ++progressDisplay;
     }
     {
       PoseWiseMatches::const_iterator iter (poseWiseMatches.begin());

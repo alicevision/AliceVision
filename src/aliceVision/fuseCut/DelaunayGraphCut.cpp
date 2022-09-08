@@ -1874,8 +1874,10 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
     GeometriesCount totalGeometriesIntersectedFrontCount;
     GeometriesCount totalGeometriesIntersectedBehindCount;
 
-    auto progressBar = system::createConsoleProgressDisplay(std::min(size_t(100), verticesRandIds.size()),
-                                                            std::cout, "fillGraphPartPtRc\n");
+    auto progressDisplay =
+            system::createConsoleProgressDisplay(std::min(size_t(100), verticesRandIds.size()),
+                                                 std::cout, "fillGraphPartPtRc\n");
+
     size_t progressStep = verticesRandIds.size() / 100;
     progressStep = std::max(size_t(1), progressStep);
 #pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex,totalIsRealNrc)
@@ -1884,7 +1886,7 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
         if(i % progressStep == 0)
         {
 #pragma omp critical
-            ++progressBar;
+            ++progressDisplay;
         }
 
         const int vertexIndex = verticesRandIds[i];

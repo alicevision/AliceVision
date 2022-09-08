@@ -402,7 +402,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
     aliceVision::sfm::MutexSet<myEdge> m_mutexSet;
 
-    auto my_progress_bar = system::createConsoleProgressDisplay(
+    auto progressDisplay = system::createConsoleProgressDisplay(
                 vec_edges.size(), std::cout,
                 "\nRelative translations computation (edge coverage algorithm)\n");
 
@@ -416,7 +416,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       const myEdge & edge = vec_edges[k];
       #pragma omp critical
       {
-        ++my_progress_bar;
+        ++progressDisplay;
       }
       if (m_mutexSet.count(edge) == 0 && m_mutexSet.size() != vec_edges.size())
       {

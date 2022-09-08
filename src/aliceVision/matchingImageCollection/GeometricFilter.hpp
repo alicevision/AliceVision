@@ -50,8 +50,9 @@ void robustModelEstimation(
 {
   out_geometricMatches.clear();
 
-  auto progressBar = system::createConsoleProgressDisplay(putativeMatches.size(), std::cout,
-                                                          "Robust Model Estimation\n");
+  auto progressDisplay =
+          system::createConsoleProgressDisplay(putativeMatches.size(), std::cout,
+                                               "Robust Model Estimation\n");
   
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int)putativeMatches.size(); ++i)
@@ -88,7 +89,7 @@ void robustModelEstimation(
 
 #pragma omp critical
     {
-      ++progressBar;
+      ++progressDisplay;
     }
   }
 }

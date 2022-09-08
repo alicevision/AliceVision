@@ -105,14 +105,14 @@ bool exportToMVE2Format(
     out << cameraCount << " " << featureCount << "\n";
 
     // Export (calibrated) views as undistorted images
-    auto my_progress_bar = system::createConsoleProgressDisplay(sfm_data.getViews().size(), std::cout);
+    auto progressDisplay = system::createConsoleProgressDisplay(sfm_data.getViews().size(), std::cout);
     std::pair<int,int> w_h_image_size;
     Image<RGBColor> image, image_ud, thumbnail;
     std::string sOutViewIteratorDirectory;
     std::size_t view_index = 0;
     std::map<std::size_t, IndexT> viewIdToviewIndex;
     for(Views::const_iterator iter = sfm_data.getViews().begin();
-      iter != sfm_data.getViews().end(); ++iter, ++my_progress_bar)
+      iter != sfm_data.getViews().end(); ++iter, ++progressDisplay)
     {
       const View * view = iter->second.get();
 
