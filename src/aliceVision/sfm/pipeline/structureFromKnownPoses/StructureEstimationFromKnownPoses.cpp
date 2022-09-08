@@ -14,9 +14,8 @@
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/sfmTriangulation.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
-
-#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -79,7 +78,7 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
   const feature::RegionsPerView& regionsPerView,
   double geometricErrorMax)
 {
-  boost::progress_display my_progress_bar( pairs.size(), std::cout,
+  auto my_progress_bar = system::createConsoleProgressDisplay(pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
 
   #pragma omp parallel
@@ -182,7 +181,7 @@ void StructureEstimationFromKnownPoses::filter(
   typedef std::vector< graph::Triplet > Triplets;
   const Triplets triplets = graph::tripletListing(pairs);
 
-  boost::progress_display my_progress_bar( triplets.size(), std::cout,
+  auto my_progress_bar = system::createConsoleProgressDisplay(triplets.size(), std::cout,
     "Per triplet tracks validation (discard spurious correspondences):\n" );
   #pragma omp parallel
   for( Triplets::const_iterator it = triplets.begin(); it != triplets.end(); ++it)

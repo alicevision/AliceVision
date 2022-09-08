@@ -8,12 +8,11 @@
 #include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/geometry/HalfPlane.hpp>
 #include <aliceVision/config.hpp>
-
-#include <boost/progress.hpp>
 
 #include <fstream>
 
@@ -68,9 +67,8 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
   std::transform(z_near_z_far_perView.begin(), z_near_z_far_perView.end(),
     std::back_inserter(viewIds), stl::RetrieveKey());
 
-  boost::progress_display my_progress_bar(
-    viewIds.size() * (viewIds.size()-1)/2,
-    std::cout, "\nCompute frustum intersection\n");
+  auto my_progress_bar = system::createConsoleProgressDisplay(viewIds.size() * (viewIds.size()-1)/2,
+                                                              std::cout, "\nCompute frustum intersection\n");
 
   // Exhaustive comparison (use the fact that the intersect function is symmetric)
   #pragma omp parallel for

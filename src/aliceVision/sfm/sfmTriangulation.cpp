@@ -8,9 +8,8 @@
 #include "sfmTriangulation.hpp"
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
-
-#include <boost/progress.hpp>
 
 #include <deque>
 #include <memory>
@@ -32,12 +31,11 @@ StructureComputation_blind::StructureComputation_blind(bool verbose)
 void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
-  std::unique_ptr<boost::progress_display> my_progress_bar;
+  system::ProgressDisplay my_progress_bar;
   if (_bConsoleVerbose)
-    my_progress_bar.reset( new boost::progress_display(
-    sfmData.structure.size(),
-    std::cout,
-    "Blind triangulation progress:\n" ));
+    my_progress_bar = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+                                                           "Blind triangulation progress:\n");
+
   #pragma omp parallel
   for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
     iterTracks != sfmData.structure.end();
@@ -48,7 +46,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
       if (_bConsoleVerbose)
       {
         #pragma omp critical
-        ++(*my_progress_bar);
+        ++(my_progress_bar);
       }
       // Triangulate each landmark
       multiview::Triangulation trianObj;
@@ -118,12 +116,12 @@ void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData, std::mt
 void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator) const
 {
   std::deque<IndexT> rejectedId;
-  std::unique_ptr<boost::progress_display> my_progress_bar;
-  if(_bConsoleVerbose)
-    my_progress_bar.reset( new boost::progress_display(
-    sfmData.structure.size(),
-    std::cout,
-    "Robust triangulation progress:\n" ));
+
+  system::ProgressDisplay my_progress_bar;
+  if (_bConsoleVerbose)
+    my_progress_bar = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+                                                           "Robust triangulation progress:\n");
+
   #pragma omp parallel
   for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
     iterTracks != sfmData.structure.end();
@@ -134,7 +132,7 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
       if (_bConsoleVerbose)
       {
         #pragma omp critical
-        ++(*my_progress_bar);
+        ++(my_progress_bar);
       }
       Vec3 X;
       if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X)) {
