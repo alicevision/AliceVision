@@ -296,6 +296,16 @@ public:
   }
 
   /**
+  * @brief Get the undistortion id
+  * @return undistortion id
+  */
+  IndexT getUndistortionId() const
+  {
+    return _undistortionId;
+  }
+
+
+  /**
    * @brief Get the pose id
    * @return pose id
    */
@@ -646,6 +656,16 @@ public:
   }
 
   /**
+   * @brief Set the given undistortion id
+   * @param[in] intrinsicId The given undistortion id
+   */
+  void setUndistortionId(IndexT undistortionId)
+  {
+    _undistortionId = undistortionId;
+  }
+
+
+  /**
    * @brief Set the given pose id
    * @param[in] poseId The given pose id
    */
@@ -724,6 +744,8 @@ private:
   IndexT _viewId;
   /// intrinsics id
   IndexT _intrinsicId;
+  /// Undistortion id
+  IndexT _undistortionId;
   /// either the pose of the rig or the pose of the camera if there's no rig
   IndexT _poseId;
   /// corresponding rig id or undefined

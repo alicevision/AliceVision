@@ -32,6 +32,9 @@ using Poses = HashMap<IndexT, CameraPose>;
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
 
+/// Define a collection of Undistortion objects (indexed by view.getUndistortionId())
+using Undistortions = HashMap<IndexT, std::shared_ptr<camera::Undistortion> >;
+
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = HashMap<IndexT, Landmark>;
 
@@ -61,6 +64,8 @@ public:
   Views views;
   /// Considered camera intrinsics (indexed by view.getIntrinsicId())
   Intrinsics intrinsics;
+  /// Considered camera undistortions (indexed by view.getUndistortionId())
+  Undistortions undistortions;
   /// Structure (3D points with their 2D observations)
   Landmarks structure;
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
@@ -112,6 +117,13 @@ public:
    */
   const Intrinsics& getIntrinsics() const {return intrinsics;}
   Intrinsics& getIntrinsics() {return intrinsics;}
+
+  /**
+   * @brief Get undistortions
+   * @return undistortions
+   */
+  const Undistortions& getUndistortions() const {return undistortions;}
+  Undistortions& getUndistortions() {return undistortions;}
 
   /**
    * @brief Get landmarks

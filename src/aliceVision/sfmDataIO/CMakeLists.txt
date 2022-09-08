@@ -39,6 +39,7 @@ alicevision_add_library(aliceVision_sfmDataIO
   SOURCES ${sfmDataIO_files_headers} ${sfmDataIO_files_sources}
   PUBLIC_LINKS
     aliceVision_sfmData
+    aliceVision_camera
     Boost::filesystem
   PRIVATE_LINKS
     aliceVision_image
