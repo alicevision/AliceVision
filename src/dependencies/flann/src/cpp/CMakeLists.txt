@@ -11,6 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG)
     set_target_properties(flann_cpp_s PROPERTIES COMPILE_FLAGS -fPIC)
 endif()
 SET_PROPERTY(TARGET flann_cpp_s PROPERTY COMPILE_DEFINITIONS FLANN_STATIC FLANN_USE_CUDA)
+add_library(flann::flann_cpp_s ALIAS flann_cpp_s)
 
 INSTALL(
   TARGETS flann_cpp_s
