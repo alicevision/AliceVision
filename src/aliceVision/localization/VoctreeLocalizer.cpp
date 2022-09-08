@@ -23,9 +23,9 @@
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 
-#include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
 
 #include <algorithm>
@@ -291,8 +291,9 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   // add its visual words to the database.
   // then only store the feature and descriptors that have a 3D point associated
   ALICEVISION_LOG_DEBUG("Build observations per view");
-  boost::progress_display my_progress_bar(_sfm_data.getViews().size(),
-                                     std::cout, "\n- Load Features and Descriptors per view -\n");
+  auto my_progress_bar =
+          system::createConsoleProgressDisplay(_sfm_data.getViews().size(), std::cout,
+                                               "\n- Load Features and Descriptors per view -\n");
 
   // Build observations per view
   std::map<IndexT, std::map<feature::EImageDescriberType, std::vector<feature::FeatureInImage>>> observationsPerView;
