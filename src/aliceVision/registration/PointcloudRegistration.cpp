@@ -513,7 +513,7 @@ double PointcloudRegistration::computeCloudResolution(const pcl::PointCloud<pcl:
 
   for (size_t i = 0; i < cloud->size(); ++i)
   {
-    if (!pcl_isfinite((*cloud)[i].x))
+    if (!std::isfinite((*cloud)[i].x))
     {
       continue;
     }
