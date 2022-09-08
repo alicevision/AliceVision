@@ -4,12 +4,52 @@
 #include <vector>
 #include <sstream>
 
+#include <aliceVision/image/all.hpp>
+
 enum class LCPCorrectionMode
 {
     VIGNETTE,
     DISTORTION,
     CA
 };
+
+enum class LCPReadingState
+{
+    WaitSequence,
+    FillCommonAndCameraSettings,
+    FillCameraSettings,
+    FillGeometryModel,
+    FillVignetteModel,
+    FillChromaticGreenModel,
+    FillChromaticBlueGreenModel,
+    FillChromaticRedGreenModel,
+    WaitNewModel
+};
+
+inline std::ostream& operator<<(std::ostream& os, const LCPReadingState& state)
+{
+    if (state == LCPReadingState::WaitSequence)
+        os << "WaitSequence";
+    else if (state == LCPReadingState::FillCommonAndCameraSettings)
+        os << "FillCommonAndCameraSettings";
+    else if (state == LCPReadingState::FillCameraSettings)
+        os << "FillCameraSettings";
+    else if (state == LCPReadingState::FillGeometryModel)
+        os << "FillGeometryModel";
+    else if (state == LCPReadingState::FillVignetteModel)
+        os << "FillVignetteModel";
+    else if (state == LCPReadingState::FillChromaticGreenModel)
+        os << "FillChromaticGreenModel";
+    else if (state == LCPReadingState::FillChromaticBlueGreenModel)
+        os << "FillChromaticBlueGreenModel";
+    else if (state == LCPReadingState::FillChromaticRedGreenModel)
+        os << "FillChromaticRedGreenModel";
+    else if (state == LCPReadingState::WaitNewModel)
+        os << "WaitNewModel";
+
+    return os;
+}
+
 
 struct settingsInfo
 {
@@ -25,13 +65,49 @@ struct settingsInfo
     }
 };
 
+struct RectilinearModel
+{
+    int Version = -1;
+    float FocalLengthX = 0.f;
+    float FocalLengthY = 0.f;
+    float ImageXCenter = 0.5f;
+    float ImageYCenter = 0.5f;
+    float ResidualMeanError = 0.f;
+    float ResidualStandardDeviation = 0.f;
+    float RadialDistortParam1 = 0.f;
+    float RadialDistortParam2 = 0.f;
+    float RadialDistortParam3 = 0.f;
+    float TangentialDistortParam1 = 0.f;
+    float TangentialDistortParam2 = 0.f;
+    float ScaleFactor = 1.f;
+    bool isEmpty = true;
+
+    void reset()
+    {
+        Version = -1;
+        FocalLengthX = 0.f;
+        FocalLengthY = 0.f;
+        ImageXCenter = 0.5f;
+        ImageYCenter = 0.5f;
+        ResidualMeanError = 0.f;
+        ResidualStandardDeviation = 0.f;
+        RadialDistortParam1 = 0.f;
+        RadialDistortParam2 = 0.f;
+        RadialDistortParam3 = 0.f;
+        TangentialDistortParam1 = 0.f;
+        TangentialDistortParam2 = 0.f;
+        ScaleFactor = 1.f;
+        isEmpty = true;
+    }
+};
+
 struct PerspectiveModel
 {
     int Version = -1;
     float FocalLengthX = 0.f;
     float FocalLengthY = 0.f;
-    float ImageXCenter = 0.f;
-    float ImageYCenter = 0.f;
+    float ImageXCenter = 0.5f;
+    float ImageYCenter = 0.5f;
     float ResidualMeanError = 0.f;
     float ResidualStandardDeviation = 0.f;
     float RadialDistortParam1 = 0.f;
@@ -44,8 +120,8 @@ struct PerspectiveModel
         Version = -1;
         FocalLengthX = 0.f;
         FocalLengthY = 0.f;
-        ImageXCenter = 0.f;
-        ImageYCenter = 0.f;
+        ImageXCenter = 0.5f;
+        ImageYCenter = 0.5f;
         ResidualMeanError = 0.f;
         ResidualStandardDeviation = 0.f;
         RadialDistortParam1 = 0.f;
@@ -59,6 +135,8 @@ struct VignetteModel
 {
     float FocalLengthX = 0.f;
     float FocalLengthY = 0.f;
+    float ImageXCenter = 0.5f;
+    float ImageYCenter = 0.5f;
     float VignetteModelParam1 = 0.f;
     float VignetteModelParam2 = 0.f;
     float VignetteModelParam3 = 0.f;
@@ -68,6 +146,8 @@ struct VignetteModel
     {
         FocalLengthX = 0.f;
         FocalLengthY = 0.f;
+        ImageXCenter = 0.5f;
+        ImageYCenter = 0.5f;
         VignetteModelParam1 = 0.f;
         VignetteModelParam2 = 0.f;
         VignetteModelParam3 = 0.f;
@@ -80,8 +160,8 @@ struct FisheyeModel
     int Version = -1;
     float FocalLengthX = 0.f;
     float FocalLengthY = 0.f;
-    float ImageXCenter = 0.f;
-    float ImageYCenter = 0.f;
+    float ImageXCenter = 0.5f;
+    float ImageYCenter = 0.5f;
     float ResidualMeanError = 0.f;
     float ResidualStandardDeviation = 0.f;
     float RadialDistortParam1 = 0.f;
@@ -93,8 +173,8 @@ struct FisheyeModel
         Version = -1;
         FocalLengthX = 0.f;
         FocalLengthY = 0.f;
-        ImageXCenter = 0.f;
-        ImageYCenter = 0.f;
+        ImageXCenter = 0.5f;
+        ImageYCenter = 0.5f;
         ResidualMeanError = 0.f;
         ResidualStandardDeviation = 0.f;
         RadialDistortParam1 = 0.f;
@@ -132,17 +212,41 @@ public:
     inline bool hasVignetteParams() const { return _hasVignetteParams; }
 
     /**
+     * @brief Indicate that chromatic models are avaialble
+     * @return true if chromatic models are avaialble
+     */
+    inline bool hasChromaticParams() const { return _hasChromaticParams; }
+
+    /**
     * @brief Set fisheye status
     * @param[in] fisheye status
     */
     inline void setFisheyeStatus(bool s) { _isFisheye = s; }
 
     /**
-    * @brief Set vignetting status
-    * @param[in] vignetting status
+    * @brief Set vignetting availabilty status
+    * @param[in] vignetting availabilty status
     */
     inline void setVignetteParamsStatus(bool s) { _hasVignetteParams = s; }
 
+    /**
+    * @brief Set chromatic models availabilty status
+    * @param[in] chromatic models availabilty status
+    */
+    inline void setChromaticParamsStatus(bool s) { _hasChromaticParams = s; }
+
+    /**
+    * @brief Chromatic Green model parameters
+    */
+    RectilinearModel ChromaticGreenParams;
+    /**
+    * @brief Chromatic Red/Green model parameters
+    */
+    RectilinearModel ChromaticRedGreenParams;
+    /**
+    * @brief Chromatic Blue/Green model parameters
+    */
+    RectilinearModel ChromaticBlueGreenParams;
 
     /**
     * @brief Fisheye model parameters
@@ -151,7 +255,8 @@ public:
     /**
     * @brief Pinhole model parameters
     */
-    PerspectiveModel perspParams;
+    //PerspectiveModel perspParams;
+    RectilinearModel perspParams;
     /**
     * @brief Vignetting model parameters
     */
@@ -166,6 +271,7 @@ private:
 
     bool _isFisheye = false;
     bool _hasVignetteParams = false;
+    bool _hasChromaticParams = false;
 };
 
 /**
@@ -314,6 +420,11 @@ public:
     inline void setAuthor(const std::string& str) { Author = str; }
 
     /**
+    * @brief Set profile author with current text value
+    */
+    inline void setAuthor() { Author = _currText; }
+
+    /**
     * @brief Set profile name
     * @param[in] profile name
     */
@@ -448,24 +559,138 @@ private:
     bool _getText = false;
     int _modelCount = 0;
 
+    LCPReadingState _currReadingState = LCPReadingState::WaitSequence;
+    std::string _currText = "";
+
     // Set of models contained in the LCP file
     std::vector<LensParam> v_lensParams;
 
     // Camera and Lens information, common for all models
-    std::string Author;
-    std::string Make;
-    std::string Model;
-    std::string UniqueCameraModel;
+    std::string Author = "";
+    std::string Make = "";
+    std::string Model = "";
+    std::string UniqueCameraModel = "";
     bool CameraRawProfile;
     std::vector<int> LensID;
     std::vector<std::string> Lens;
-    std::string LensInfo;
-    std::string CameraPrettyName;
-    std::string LensPrettyName;
-    std::string ProfileName;
-    float SensorFormatFactor;
-    int ImageWidth;
-    int ImageLength;
+    std::string LensInfo = "";
+    std::string CameraPrettyName = "";
+    std::string LensPrettyName = "";
+    std::string ProfileName = "";
+    float SensorFormatFactor = 1.f;
+    int ImageWidth = 0;
+    int ImageLength = 0;
+    float XResolution = 0.f;
+    float YResolution = 0.f;
+
+    void setCommonSettings(const std::string& name)
+    {
+        if (name == "stCamera:Author")
+            Author = _currText;
+        else if (name == "stCamera:ProfileName")
+            ProfileName = _currText;
+        else if (name == "stCamera:Make")
+            Make = _currText;
+        else if (name == "stCamera:Model")
+            Model = _currText;
+        else if (name == "stCamera:Lens")
+            Lens.push_back(_currText);
+        else if (name == "stCamera:LensID")
+            LensID.push_back(std::atoi(_currText.c_str()));
+        else if (name == "stCamera:LensInfo")
+            LensInfo = _currText;
+        else if (name == "stCamera:ImageWidth")
+            ImageWidth = atoi(_currText.c_str());
+        else if (name == "stCamera:ImageLength")
+            ImageLength = atoi(_currText.c_str());
+        else if (name == "stCamera:XResolution")
+            XResolution = atof(_currText.c_str());
+        else if (name == "stCamera:YResolution")
+            YResolution = atof(_currText.c_str());
+        else if (name == "stCamera:LensPrettyName")
+            LensPrettyName = _currText;
+        else if (name == "stCamera:CameraPrettyName")
+            CameraPrettyName = _currText;
+        else if (name == "stCamera:CameraRawProfile")
+            CameraRawProfile = (_currText == "true");
+        else if (name == "stCamera:SensorFormatFactor")
+            SensorFormatFactor = atof(_currText.c_str());
+    }
+
+    void setCameraSettings(const std::string& name)
+    {
+        if (name == "stCamera:FocalLength")
+            currLensParam.camData.FocalLength = atof(_currText.c_str());
+        else if (name == "stCamera:ApertureValue")
+            currLensParam.camData.ApertureValue = atof(_currText.c_str());
+        else if (name == "stCamera:FocusDistance")
+            currLensParam.camData.FocusDistance = atof(_currText.c_str());
+    }
+
+    void setRectilinearModel(RectilinearModel& model, const std::string& name)
+    {
+        model.isEmpty = false;
+        if (name == "stCamera:Version")
+            model.Version = atoi(_currText.c_str());
+        else if (name == "stCamera:FocalLengthX")
+            model.FocalLengthX = atof(_currText.c_str());
+        else if (name == "stCamera:FocalLengthY")
+            model.FocalLengthY = atof(_currText.c_str());
+        else if (name == "stCamera:ImageXCenter")
+            model.ImageXCenter = atof(_currText.c_str());
+        else if (name == "stCamera:ImageYCenter")
+            model.ImageYCenter = atof(_currText.c_str());
+        else if (name == "stCamera:RadialDistortParam1")
+            model.RadialDistortParam1 = atof(_currText.c_str());
+        else if (name == "stCamera:RadialDistortParam2")
+            model.RadialDistortParam2 = atof(_currText.c_str());
+        else if (name == "stCamera:RadialDistortParam3")
+            model.RadialDistortParam3 = atof(_currText.c_str());
+        else if (name == "stCamera:TangentiallDistortParam1")
+            model.RadialDistortParam1 = atof(_currText.c_str());
+        else if (name == "stCamera:TangentiallDistortParam2")
+            model.RadialDistortParam2 = atof(_currText.c_str());
+        else if (name == "stCamera:ScaleFactor")
+            model.ScaleFactor = atof(_currText.c_str());
+    }
+
+    void setFisheyeModel(const std::string& name)
+    {
+        currLensParam.fisheyeParams.isEmpty = false;
+        if (name == "stCamera:Version")
+            currLensParam.fisheyeParams.Version = atoi(_currText.c_str());
+        else if (name == "stCamera:FocalLengthX")
+            currLensParam.fisheyeParams.FocalLengthX = atof(_currText.c_str());
+        else if (name == "stCamera:FocalLengthY")
+            currLensParam.fisheyeParams.FocalLengthY = atof(_currText.c_str());
+        else if (name == "stCamera:ImageXCenter")
+            currLensParam.fisheyeParams.ImageXCenter = atof(_currText.c_str());
+        else if (name == "stCamera:ImageYCenter")
+            currLensParam.fisheyeParams.ImageYCenter = atof(_currText.c_str());
+        else if (name == "stCamera:RadialDistortParam1")
+            currLensParam.fisheyeParams.RadialDistortParam1 = atof(_currText.c_str());
+        else if (name == "stCamera:RadialDistortParam2")
+            currLensParam.fisheyeParams.RadialDistortParam2 = atof(_currText.c_str());
+    }
+
+    void setVignetteModel(const std::string& name)
+    {
+        currLensParam.vignParams.isEmpty = false;
+        if (name == "stCamera:FocalLengthX")
+            currLensParam.vignParams.FocalLengthX = atof(_currText.c_str());
+        else if (name == "stCamera:FocalLengthY")
+            currLensParam.vignParams.FocalLengthY = atof(_currText.c_str());
+        else if (name == "stCamera:ImageXCenter")
+            currLensParam.vignParams.ImageXCenter = atof(_currText.c_str());
+        else if (name == "stCamera:ImageYCenter")
+            currLensParam.vignParams.ImageYCenter = atof(_currText.c_str());
+        else if (name == "stCamera:VignetteModelParam1")
+            currLensParam.vignParams.VignetteModelParam1 = atof(_currText.c_str());
+        else if (name == "stCamera:VignetteModelParam2")
+            currLensParam.vignParams.VignetteModelParam2 = atof(_currText.c_str());
+        else if (name == "stCamera:VignetteModelParam3")
+            currLensParam.vignParams.VignetteModelParam3 = atof(_currText.c_str());
+    }
 };
 
 /**
@@ -500,5 +725,17 @@ bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMo
 * @return True if a file is found
 */
 bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const std::string& cameraModelOrMaker, const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel = false);
+
+
+/**
+* @brief Undistort vignetting in the given image according to the given parameters and focal info.
+* @param[in] image Image to undistort
+* @param[in] vparam Vector of 3 floating parameters as contained in a LCP file for vignetting correction
+* @param[in] focX Focal info on X axis
+* @param[in] focY Focal info on Y axis
+* @param[in] imageXCenter Principal point X coordinate
+* @param[in] imageYCenter Principal point Y coordinate
+*/
+void undistortVignetting(aliceVision::image::Image<aliceVision::image::RGBAfColor>& img, const std::vector<float>& vparam, const float focX, const float focY, const float imageXCenter = 0.5, const float imageYCenter = 0.5);
 
 

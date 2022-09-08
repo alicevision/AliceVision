@@ -370,6 +370,10 @@ int aliceVision_main(int argc, char **argv)
 
   // number of views with an initialized intrinsic
   std::size_t completeViewCount = 0;
+  // number of views with LCP data used to initialize intrinsics
+  std::size_t lcpGeometryViewCount = 0;
+  // number of views with LCP data used to add vignetting params in metadata
+  std::size_t lcpVignettingViewCount = 0;
 
   // load known informations
   if(imageFolder.empty())
@@ -422,7 +426,7 @@ int aliceVision_main(int argc, char **argv)
 
   std::map<std::string, LCPinfo> lcpStore;
 
-  #pragma omp parallel for
+  //#pragma omp parallel for
   for (int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
@@ -579,26 +583,6 @@ int aliceVision_main(int argc, char **argv)
             }
         }
     }
-    // Parse the selected lcp file and extract lens information corresponding to image metadata
-    //LensParam lensParam;
-    //if (!lcpData.isEmpty())
-    //{
-    //    //LCPinfo lcpData(lcpFilepath.string());
-
-    //    //settingsInfo cameraSettings;
-    //    float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
-    //    float focalLength = view.getMetadataFocalLength();
-    //    float focusDistance = 0.f;
-
-    //    lcpData.getDistortionParams(focalLength, focusDistance, lensParam);
-
-    //    //if (!lensParam.vignParams.isEmpty)
-    //    //{
-    //    //    view.addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
-    //    //    view.addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
-    //    //    view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
-    //    //}
-    //}
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -611,26 +595,6 @@ int aliceVision_main(int argc, char **argv)
         {
           // the view intrinsic is initialized
           boost::atomic_ref<std::size_t>(completeViewCount)++;
-
-          //// Need to adjust the view if LCP parameters have been updated after first building of the view (how to know that ???)
-          //std::shared_ptr<camera::IntrinsicBase> intrinsicBase1 = getViewIntrinsic(
-          //    view, focalLengthmm, sensorWidth, defaultFocalLength, defaultFieldOfView,
-          //    defaultFocalRatio, defaultOffsetX, defaultOffsetY,
-          //    defaultCameraModel, allowedCameraModels);
-          //std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase1);
-          //if (intrinsicDisto)
-          //{
-          //  std::shared_ptr<camera::Distortion> distortion = intrinsicDisto->getDistortion();
-          //  std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
-          //  if (distoRadialK3)
-          //  {
-          //    std::vector<double> p;
-          //    //p.push_back(lensParam.perspParams.RadialDistortParam1);
-          //    //p.push_back(lensParam.perspParams.RadialDistortParam2);
-          //    //p.push_back(lensParam.perspParams.RadialDistortParam3);
-          //    intrinsicDisto->setDistortionParams(p);
-          //  }
-          //}
 
           // don't need to build a new intrinsic
           continue;
@@ -755,9 +719,6 @@ int aliceVision_main(int argc, char **argv)
           std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
           if (distoRadialK3)
           {
-            //intrinsicDisto->setWidth(lcpData.getImageWidth()); // check instead of set ???
-            ///intrinsicDisto->setHeight(lcpData.getImageLength());
-
             const int Dmax = std::max<int>(lcpData.getImageWidth(), lcpData.getImageLength());
 
             const aliceVision::Vec2 offset((lensParam.perspParams.ImageXCenter - 0.5f) * Dmax, (lensParam.perspParams.ImageYCenter - 0.5f) * Dmax);        
@@ -768,7 +729,20 @@ int aliceVision_main(int argc, char **argv)
             p.push_back(lensParam.perspParams.RadialDistortParam2);
             p.push_back(lensParam.perspParams.RadialDistortParam3);
             intrinsicDisto->setDistortionParams(p);
+
+            ++lcpGeometryViewCount;
           }
+        }
+
+        if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty)
+        {
+            view.addMetadata("AliceVision:VignParamFocX", std::to_string(lensParam.vignParams.FocalLengthX));
+            view.addMetadata("AliceVision:VignParamFocY", std::to_string(lensParam.vignParams.FocalLengthY));
+            view.addMetadata("AliceVision:VignParam1", std::to_string(lensParam.vignParams.VignetteModelParam1));
+            view.addMetadata("AliceVision:VignParam2", std::to_string(lensParam.vignParams.VignetteModelParam2));
+            view.addMetadata("AliceVision:VignParam3", std::to_string(lensParam.vignParams.VignetteModelParam3));
+
+            ++lcpVignettingViewCount;
         }
     }
 
@@ -1030,6 +1004,9 @@ int aliceVision_main(int argc, char **argv)
                    << "\n\t   - # views with an initialized intrinsic listed: " << completeViewCount
                    << "\n\t   - # views without metadata (with a default intrinsic): " << noMetadataImagePaths.size()
                    << "\n\t   - # views with DCP metadata (raw images only): " << viewsWithDCPMetadata
+                   << "\n\t   - # views with a LCP initialized intrinsic listed: " << lcpGeometryViewCount
+                   << "\n\t   - # views with a vignetting model added in metadata: " << lcpVignettingViewCount
+                   << "\n\t   - # views without metadata (with a default intrinsic): " <<  noMetadataImagePaths.size()
                    << "\n\t- # intrinsics listed: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
