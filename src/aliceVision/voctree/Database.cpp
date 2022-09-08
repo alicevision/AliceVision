@@ -5,9 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Database.hpp"
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
-#include <boost/progress.hpp>
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
@@ -80,7 +80,7 @@ void Database::sanityCheck(std::size_t N, std::map<std::size_t, DocMatches>& mat
   matches.clear();
   // since we already know the size of the vectors, in order to parallelize the 
   // query allocate the whole memory
-  boost::progress_display display(database_.size());
+  auto display = system::createConsoleProgressDisplay(database_.size(), std::cout);
   
   //#pragma omp parallel for default(none) shared(database_)
   for(const auto &doc : database_)

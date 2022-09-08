@@ -5,11 +5,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/feature/Descriptor.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/progress.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -34,7 +34,7 @@ std::size_t readDescFromFiles(const sfmData::SfMData& sfmData,
 
   // Display infos and progress bar
   ALICEVISION_LOG_DEBUG("Pre-computing the memory needed...");
-  boost::progress_display display(descriptorsFiles.size());
+  auto display = system::createConsoleProgressDisplay(descriptorsFiles.size(), std::cout);
 
   // Read all files and get the number of descriptors to load
   for(const auto &currentFile : descriptorsFiles)

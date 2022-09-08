@@ -7,12 +7,12 @@
 #include "descriptorLoader.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/progress.hpp>
 
 #include <exception>
 #include <iostream>
@@ -34,7 +34,7 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
-  boost::progress_display display(descriptorsFiles.size());
+  auto display = system::createConsoleProgressDisplay(descriptorsFiles.size(), std::cout);
 
   // Run through the path vector and read the descriptors
   for(const auto &currentFile : descriptorsFiles)
@@ -75,7 +75,7 @@ std::size_t populateDatabase(const sfmData::SfMData& sfmData,
 
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
-  boost::progress_display display(descriptorsFiles.size());
+  auto display = system::createConsoleProgressDisplay(descriptorsFiles.size(), std::cout);
 
   // Run through the path vector and read the descriptors
   for(const auto &currentFile : descriptorsFiles)
@@ -147,7 +147,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
-  boost::progress_display display(descriptorsFiles.size());
+  auto display = system::createConsoleProgressDisplay(descriptorsFiles.size(), std::cout);
 
   #pragma omp parallel for
   // Run through the path vector and read the descriptors
