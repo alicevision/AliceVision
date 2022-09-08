@@ -381,24 +381,24 @@ private:
 #endif
   
   // -- Data member
-  
-  pcl::PointCloud<pcl::PointXYZ> sourceCloud; /**< The source cloud: mobile could.*/
-  
-  pcl::PointCloud<pcl::PointXYZ> targetCloud; /**< The target cloud: fixed cloud.*/
-  
-  ERescaleMode rescaleMode; /**< The mode used to resize the source cloud */
-  
-  float sourceMeasurements; /**< A distance in the source cloud. Must have the same unit as \c targetMeasurements. */
-  
-  float targetMeasurements; /**< A distance in the target cloud. Must have the same unit as \c sourceMeasurements. */
-  
-  float scaleRatio; /**< The scale ratio between the source and the target clouds. Is the \c targetMeasurements / \c sourceMeasurements ratio. */
-  
-  float voxelSize; /**< The size of the voxel grid applied on source and target clouds. */
-  
-  int kSearchNormals; /**< The number of closest neighbours used to compute normals. */
-  
-  Eigen::Matrix4d finalTransformation; /**< Is the computed transformation such as: T * sourceCloud = targetCloud/ */
+  /// The source cloud: mobile could
+  pcl::PointCloud<pcl::PointXYZ> sourceCloud;
+  /// The target cloud: fixed cloud.
+  pcl::PointCloud<pcl::PointXYZ> targetCloud;
+  /// The mode used to resize the source cloud
+  ERescaleMode rescaleMode;
+  /// A distance in the source cloud. Must have the same unit as \c targetMeasurements.
+  float sourceMeasurements;
+  /// A distance in the target cloud. Must have the same unit as \c sourceMeasurements.
+  float targetMeasurements;
+  /// The scale ratio between the source and the target clouds. Is the \c targetMeasurements / \c sourceMeasurements ratio.
+  float scaleRatio;
+  /// The size of the voxel grid applied on source and target clouds.
+  float voxelSize;
+  /// The number of closest neighbours used to compute normals.
+  int kSearchNormals;
+  /// Is the computed transformation such as: T * sourceCloud = targetCloud/
+  Eigen::Matrix4d finalTransformation;
   
   struct DurationsSummary
   {
