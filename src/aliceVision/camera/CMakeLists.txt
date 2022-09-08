@@ -9,6 +9,8 @@ set(camera_files_headers
 	DistortionFisheye.hpp
 	DistortionFisheye1.hpp
 	DistortionRadial.hpp
+	Undistortion.hpp
+	Undistortion3DE.hpp
 	Equidistant.hpp
 	EquidistantRadial.hpp
 	IntrinsicBase.hpp
@@ -23,9 +25,13 @@ set(camera_files_headers
 	PinholeRadial.hpp
 )
 
-alicevision_add_interface(aliceVision_camera
-  SOURCES ${camera_files_headers}
-  LINKS
+set(camera_files_sources
+	Undistortion.cpp
+)
+
+alicevision_add_library(aliceVision_camera
+  SOURCES ${camera_files_headers} ${camera_files_sources}
+  PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_geometry
     aliceVision_image
