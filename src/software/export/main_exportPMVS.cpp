@@ -8,11 +8,11 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,7 +68,8 @@ bool exportToPMVSFormat(
 
   if (bOk)
   {
-    boost::progress_display my_progress_bar( sfm_data.getViews().size()*2 );
+    auto my_progress_bar = system::createConsoleProgressDisplay(sfm_data.getViews().size() * 2,
+                                                                std::cout);
 
     // Since PMVS requires contiguous camera index, and that some views can have some missing poses,
     // we reindex the poses to ensure a contiguous pose list.
