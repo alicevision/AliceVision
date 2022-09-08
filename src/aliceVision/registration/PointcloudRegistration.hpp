@@ -144,7 +144,7 @@ public:
    * It is used to evaluate manually the scale ratio between source and target clouds.
    * @param[in] measurement The distance on the source cloud.
    */
-  void setSourceMeasurement(const float measurement);
+  void setSourceMeasurement(float measurement);
   
   /**
    * @brief To indicate a measurement made on the target point cloud.
@@ -152,7 +152,7 @@ public:
    * It is used to evaluate manually the scale ratio between source and target clouds.
    * @param[in] measurement The distance on the target cloud.
    */
-  void setTargetMeasurement(const float measurement);
+  void setTargetMeasurement(float measurement);
   
   /**
    * @brief To indicate directly the scale ratio between source and target clouds.
@@ -160,7 +160,7 @@ public:
    * @param[in] ratio The scale ratio (= targetSize / sourceSize).
    * @return EXIT_FAILURE if val <= 0, else EXIT_SUCCESS.
    */
-  void setScaleRatio(const float ratio);
+  void setScaleRatio(float ratio);
   
   /**
    * @brief To indicate the whished size of the voxel grid apply on the clouds during processing.
@@ -168,7 +168,7 @@ public:
    * You can increase the value for gain speed, but a too hight may concluded to a bad registration.
    * @param[in] val The voxel grid size.
    */
-  inline void setVoxelSize(const float val) {voxelSize = val;}
+  inline void setVoxelSize(float val) {voxelSize = val;}
   
   /**
    * @brief Allowes you to choose your scaling modes: 
@@ -276,7 +276,7 @@ private:
    * @param[in,out] cloud The downsampled pointcloud.
    * @param[in] voxelSize The size of the voxelgrid.
    */
-  static void applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & cloud, const float voxelSize);
+  static void applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & cloud, float voxelSize);
   
   /**
    * @brief Return the 4x4 transformation matrix associated to a scale value.
@@ -287,7 +287,7 @@ private:
    * @param[in] scale The scale s.
    * @return The 4x4 transformation matrix T.
    */
-  Eigen::Matrix4d getPureScaleTransformation(const float scale);
+  Eigen::Matrix4d getPureScaleTransformation(float scale);
   
   /**
    * @brief [TODO] Compute the scale ratio between the source and the target clouds using SVD (1st eigen value).

@@ -109,7 +109,7 @@ int PointcloudRegistration::tranformAndSaveCloud(
   }
 }
 
-void PointcloudRegistration::setSourceMeasurement(const float measurement)
+void PointcloudRegistration::setSourceMeasurement(float measurement)
 {
   if (scaleRatio != 1.f)
   {
@@ -123,7 +123,7 @@ void PointcloudRegistration::setSourceMeasurement(const float measurement)
   rescaleMode = ERescaleMode::Manual;
 }
 
-void PointcloudRegistration::setTargetMeasurement(const float measurement)
+void PointcloudRegistration::setTargetMeasurement(float measurement)
 {
   if (scaleRatio != 1.f)
   {
@@ -137,7 +137,7 @@ void PointcloudRegistration::setTargetMeasurement(const float measurement)
   rescaleMode = ERescaleMode::Manual;
 }
 
-void PointcloudRegistration::setScaleRatio(const float ratio)
+void PointcloudRegistration::setScaleRatio(float ratio)
 {
   assert(ratio > 0);
 
@@ -536,7 +536,7 @@ void PointcloudRegistration::estimateNormals(const pcl::PointCloud<pcl::PointXYZ
   normalEstimation.compute(normals);
 }
 
-void PointcloudRegistration::applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & cloud, const float voxelSize)
+void PointcloudRegistration::applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & cloud, float voxelSize)
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr tmpInputCloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud, *tmpInputCloud);
@@ -547,7 +547,7 @@ void PointcloudRegistration::applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & clo
   vg.filter(cloud);
 }
 
-Eigen::Matrix4d PointcloudRegistration::getPureScaleTransformation(const float scale)
+Eigen::Matrix4d PointcloudRegistration::getPureScaleTransformation(float scale)
 {
   Eigen::Matrix4d T = Eigen::Matrix4d(Eigen::Matrix4d::Identity());
   T.topLeftCorner(3, 3) *= Eigen::Matrix3d::Identity()*(scale);
