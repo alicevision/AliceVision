@@ -101,7 +101,7 @@ void model_explore(Ort::Session& session)
  * @param image_path the path to the input image
  * @return cv::Mat, the prediction
  */
-prediction predict(Ort::Session& session, const fs::path image_path, const fs::path output_path)
+prediction predict(Ort::Session& session, const fs::path image_path, const fs::path output_path, const float min_score)
 {
     // read image
     aliceVision::image::Image<aliceVision::image::RGBColor> image_alice;
@@ -110,8 +110,7 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
     // Eigen -> OpenCV
     cv::Mat image_opencv;
     cv::eigen2cv(image_alice.GetMat(), image_opencv);
-
-    cv::Size size = image_opencv.size();
+    cv::Size image_opencv_shape = image_opencv.size();
 
     // uint8 -> float32
     image_opencv.convertTo(image_opencv, CV_32FC3, 1 / 255.0);
@@ -150,76 +149,47 @@ prediction predict(Ort::Session& session, const fs::path image_path, const fs::p
     float* scores_ptr = output.at(1).GetTensorMutableData<float>();
     float* masks_ptr = output.at(2).GetTensorMutableData<float>();
 
-    // get bboxes
-    auto infos = output.at(0).GetTensorTypeAndShapeInfo();
+    // get output shape
+    auto infos = output.at(2).GetTensorTypeAndShapeInfo();
     auto shape = infos.GetShape();
+
+    // get scores of detections
+    std::vector<float> all_scores = {scores_ptr, scores_ptr + shape[0]};
+
+    // initialize arrays
     std::vector<std::vector<float>> bboxes;
-    for(size_t i = 0; i < shape[0]; i++)
-    {
-        std::vector<float> bboxe(bboxes_ptr + 4 * i, bboxes_ptr + 4 * (i + 1));
-        bboxes.push_back(bboxe);
-    }
-
-    // get scores
-    infos = output.at(1).GetTensorTypeAndShapeInfo();
-    shape = infos.GetShape();
-    std::vector<float> scores = {scores_ptr, scores_ptr + shape[0]};
-
-    // get masks
-    infos = output.at(2).GetTensorTypeAndShapeInfo();
-    shape = infos.GetShape();
     std::vector<std::string> masks;
+    std::vector<float> scores;
+
+    // filter detections and fill arrays
     for(size_t i = 0; i < shape[0]; i++)
     {
-        auto mask_ptr = masks_ptr + shape[2] * shape[3] * i;
-        auto mask = cv::Mat(shape[2], shape[3], CV_32FC1, mask_ptr);
-        auto filename = fmt::format("{}_mask_{}.png", image_path.stem().string(), i);
-        auto filepath = std::string(output_path.string()).append(filename);
-        masks.push_back(filepath);
-        cv::imwrite(filepath, mask);
+        float score = all_scores.at(i);
+        if(score > 0.9)
+        {
+            // extract bboxe
+            std::vector<float> bboxe(bboxes_ptr + 4 * i, bboxes_ptr + 4 * (i + 1));
+            bboxes.push_back(bboxe);
+
+            // extract mask
+            float* mask_ptr = masks_ptr + shape[2] * shape[3] * i;
+            cv::Mat mask = cv::Mat(shape[2], shape[3], CV_32FC1, mask_ptr);
+            std::string filename = fmt::format("{}_mask_{}.png", image_path.stem().string(), i);
+            std::string filepath = std::string(output_path.string()).append(filename);
+            masks.push_back(filepath);
+            cv::imwrite(filepath, mask);
+
+            // extract score
+            scores.push_back(score);
+        }
     }
 
-    return prediction{bboxes, scores, masks, size};
+    return prediction{bboxes, scores, masks, image_opencv_shape};
 }
 
-bpt::ptree build_view_tree(prediction pred, cvflann::lsh::FeatureIndex viewID)
+void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path,
+                     const float min_score)
 {
-    bpt::ptree view;
-
-    // adding viewID
-    view.put("id", viewID);
-
-    // adding bboxes
-    bpt::ptree spheres_node;
-    for(size_t i = 0; i < pred.scores.size(); i++)
-    {
-        // compute sphere coords from bboxe coords
-        auto bboxe = pred.bboxes.at(i);
-        float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
-        float x = bboxe.at(0) + r - pred.size.width / 2;
-        float y = bboxe.at(1) + r - pred.size.height / 2;
-
-        // Create an unnamed node containing the sphere
-        bpt::ptree sphere_node;
-        sphere_node.put("x", x);
-        sphere_node.put("y", y);
-        sphere_node.put("r", r);
-        sphere_node.put("score", pred.scores.at(i));
-        sphere_node.put("mask", pred.masks.at(i));
-
-        // Add sphere to array
-        spheres_node.push_back(std::make_pair("", sphere_node));
-    }
-    view.add_child("spheres", spheres_node);
-
-    return view;
-}
-
-void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path)
-{
-    // json init
-    bpt::ptree root, poses;
-
     // split all views by pose
     std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewPerPoseID;
     for(auto& viewIt : sfmData.getViews())
@@ -227,26 +197,67 @@ void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session&
         viewPerPoseID[viewIt.second->getPoseId()].push_back(viewIt.second->getViewId());
     }
 
+    // json init
+    bpt::ptree root;
+
+    bpt::ptree poses;
     for(auto& poseID : viewPerPoseID)
     {
         ALICEVISION_LOG_DEBUG("Pose Id: " << poseID.first);
-        bpt::ptree pose, views;
 
+        // initialize empty pose property tree
+        bpt::ptree pose;
+
+        // add poseID to pose property tree
+        pose.put("id", poseID.first);
+
+        bpt::ptree views;
         std::vector<aliceVision::IndexT>& viewIDs = poseID.second;
         for(auto& viewID : viewIDs)
         {
             ALICEVISION_LOG_DEBUG("View Id: " << viewID);
 
             const fs::path image_path = fs::path(sfmData.getView(viewID).getImagePath());
-            auto pred = predict(session, image_path, output_path);
+            auto pred = predict(session, image_path, output_path, min_score);
 
-            auto view = build_view_tree(pred, viewID);
+            // initialize empty view property tree
+            bpt::ptree view;
+
+            // add viewID to view property tree
+            view.put("id", viewID);
+
+            bpt::ptree spheres_node;
+            for(size_t i = 0; i < pred.scores.size(); i++)
+            {
+                // compute sphere coords from bboxe coords
+                auto bboxe = pred.bboxes.at(i);
+                float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
+                float x = bboxe.at(0) + r - pred.size.width / 2;
+                float y = bboxe.at(1) + r - pred.size.height / 2;
+
+                // create an unnamed node containing the sphere
+                bpt::ptree sphere_node;
+                sphere_node.put("x", x);
+                sphere_node.put("y", y);
+                sphere_node.put("r", r);
+                sphere_node.put("score", pred.scores.at(i));
+                sphere_node.put("mask", pred.masks.at(i));
+
+                // add sphere to array
+                spheres_node.push_back(std::make_pair("", sphere_node));
+            }
+
+            // add spheres (array) to view
+            view.add_child("spheres", spheres_node);
+
+            // add view n°i to array of views
             views.push_back(std::make_pair("", view));
         }
 
-        pose.put("id", poseID.first);
+        // add views to current pose
         pose.add_child("views", views);
 
+        // add current pose to poses
         poses.push_back(std::make_pair("", pose));
     }
 

@@ -31,4 +31,4 @@ struct prediction
 
 void model_explore(Ort::Session& session);
 
-void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path);
+void sphereDetection(const aliceVision::sfmData::SfMData& sfmData, Ort::Session& session, fs::path output_path, const float min_score);

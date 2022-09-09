@@ -34,11 +34,13 @@ int aliceVision_main(int argc, char** argv)
     std::string input_sfmdata_path;
     std::string input_model_path;
     std::string output_path;
+    float input_min_score;
 
     po::options_description required_parameters("Required parameters");
     required_parameters.add_options()                                                                           //
         ("input_sfmdata_path,i", po::value<std::string>(&input_sfmdata_path)->required(), "SFMData input path") //
         ("input_model_path,m", po::value<std::string>(&input_model_path)->required(), "model input path")       //
+        ("input_min_score,s", po::value<float>(&input_min_score)->required(), "minimum detection score")        //
         ("output_path,o", po::value<std::string>(&output_path)->required(), "output path")                      //
         ;                                                                                                       //
 
@@ -95,7 +97,7 @@ int aliceVision_main(int argc, char** argv)
     fs::path fs_output_path(output_path);
 
     // neural network magic
-    sphereDetection(sfmData, session, fs_output_path);
+    sphereDetection(sfmData, session, fs_output_path, input_min_score);
 
     return EXIT_SUCCESS;
 }
