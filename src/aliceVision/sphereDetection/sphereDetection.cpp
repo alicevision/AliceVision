@@ -191,9 +191,10 @@ bpt::ptree build_view_tree(prediction pred, cvflann::lsh::FeatureIndex viewID)
 
     // adding bboxes
     bpt::ptree spheres_node;
-    for(auto bboxe : pred.bboxes)
+    for(size_t i = 0; i < pred.scores.size(); i++)
     {
         // compute sphere coords from bboxe coords
+        auto bboxe = pred.bboxes.at(i);
         float r = std::min(bboxe.at(3) - bboxe.at(1), bboxe.at(2) - bboxe.at(0)) / 2;
         float x = bboxe.at(0) + r - pred.size.width / 2;
         float y = bboxe.at(1) + r - pred.size.height / 2;
@@ -203,37 +204,13 @@ bpt::ptree build_view_tree(prediction pred, cvflann::lsh::FeatureIndex viewID)
         sphere_node.put("x", x);
         sphere_node.put("y", y);
         sphere_node.put("r", r);
+        sphere_node.put("score", pred.scores.at(i));
+        sphere_node.put("mask", pred.masks.at(i));
 
         // Add sphere to array
         spheres_node.push_back(std::make_pair("", sphere_node));
     }
     view.add_child("spheres", spheres_node);
-
-    // adding scores
-    bpt::ptree scores_node;
-    for(auto score : pred.scores)
-    {
-        // Create an unnamed node containing the score
-        bpt::ptree score_node;
-        score_node.put("", score);
-
-        // Add score to the array
-        scores_node.push_back(std::make_pair("", score_node));
-    }
-    view.add_child("scores", scores_node);
-
-    // adding masks
-    bpt::ptree masks_node;
-    for(auto mask : pred.masks)
-    {
-        // Create an unnamed node containing the mask path
-        bpt::ptree mask_node;
-        mask_node.put("", mask);
-
-        // Add path to the array
-        masks_node.push_back(std::make_pair("", mask_node));
-    }
-    view.add_child("masks", masks_node);
 
     return view;
 }
