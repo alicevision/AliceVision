@@ -894,6 +894,26 @@ ExternalProject_Add(${POPSIFT_TARGET}
 set(POPSIFT_CMAKE_FLAGS -DPopSift_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/PopSift)
 endif()
 
+# Add Expat: XML parser
+set(EXPAT_TARGET expat)
+ExternalProject_Add(${EXPAT_TARGET}
+      # vfxplatform CY2022 1.8.x
+      URL https://github.com/libexpat/libexpat/releases/tag/R_2_4_8/expat-2.4.8.tar.gz
+      URL_HASH MD5=CE5FA3FA4D866D83AB0CFB00BB95B77A
+      DOWNLOAD_DIR ${BUILD_DIR}/download/expat
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/expat
+      BINARY_DIR ${BUILD_DIR}/expat_build
+      INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+      BUILD_COMMAND $(MAKE)
+      #DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${ZLIB_TARGET}
+      )
+set(EXPAT_CMAKE_FLAGS -DExpat_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Expat)
+
 if(AV_BUILD_COINUTILS)
 set(COINUTILS_TARGET coinutils)
 ExternalProject_Add(${COINUTILS_TARGET}
@@ -1106,6 +1126,7 @@ ExternalProject_Add(aliceVision
             ${OPENCV_CMAKE_FLAGS}
             ${CCTAG_CMAKE_FLAGS}
             ${APRILTAG_CMAKE_FLAGS}
+            ${EXPAT_CMAKE_FLAGS}
             ${COINUTILS_CMAKE_FLAGS} ${OSI_CMAKE_FLAGS} ${CLP_CMAKE_FLAGS}
             ${LZ4_CMAKE_FLAGS}
             ${FLANN_CMAKE_FLAGS}
