@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
+#include <random>
 
 
 namespace aliceVision {
@@ -416,12 +417,15 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
         }
     }
 
+    std::random_device randomDevice;
+    std::mt19937 rng(randomDevice());
+
     for (auto & item : counters)
     {
         if (item.second.size() > params.maxCountSample)
         {
             // Shuffle and ignore the exceeding samples
-            std::random_shuffle(item.second.begin(), item.second.end());
+            std::shuffle(item.second.begin(), item.second.end(), rng);
             item.second.resize(params.maxCountSample);
         }
 
@@ -469,6 +473,9 @@ void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuan
         }
     }
 
+    std::random_device randomDevice;
+    std::mt19937 rng(randomDevice());
+
     for (auto & item : _positions)
     {
         // TODO: expose as parameters
@@ -476,7 +483,7 @@ void Sampling::analyzeSource(std::vector<ImageSample> & samples, int channelQuan
         if(item.second.size() > maxSamples)
         {
             // Shuffle and ignore the exceeding samples
-            std::random_shuffle(item.second.begin(), item.second.end());
+            std::shuffle(item.second.begin(), item.second.end(), rng);
             item.second.resize(500);
         }
     }
@@ -488,6 +495,9 @@ void Sampling::filter(size_t maxTotalPoints)
     size_t limitPerGroup = 510;
     size_t total_points = maxTotalPoints + 1;
 
+    std::random_device randomDevice;
+    std::mt19937 rng(randomDevice());
+
     while (total_points > maxTotalPoints)
     {
         limitPerGroup = limitPerGroup - 10;
@@ -498,7 +508,7 @@ void Sampling::filter(size_t maxTotalPoints)
             if (item.second.size() > limitPerGroup)
             {
                 // Shuffle and ignore the exceeding samples
-                std::random_shuffle(item.second.begin(), item.second.end());
+                std::shuffle(item.second.begin(), item.second.end(), rng);
                 item.second.resize(limitPerGroup);
             }
 

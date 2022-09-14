@@ -15,6 +15,7 @@
 #include <boost/progress.hpp>
 
 #include <map>
+#include <random>
 #include <vector>
 #include <functional>
 namespace aliceVision {
@@ -89,10 +90,13 @@ void colorizeTracks(SfMData& sfmData)
       break;
   }
 
+  std::random_device randomDevice;
+  std::mt19937 rng(randomDevice());
+
   // create an unsorted index container
   std::vector<int> unsortedIndexes(sortedViewsCardinal.size()) ;
   std::iota(std::begin(unsortedIndexes), std::end(unsortedIndexes), 0);
-  std::random_shuffle(unsortedIndexes.begin(), unsortedIndexes.end());
+  std::shuffle(unsortedIndexes.begin(), unsortedIndexes.end(), rng);
 
   // landmark colorization
 #pragma omp parallel for
