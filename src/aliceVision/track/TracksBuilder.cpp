@@ -156,7 +156,7 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
   }
 
   std::for_each(set_classToErase.begin(), set_classToErase.end(),
-    std::bind1st(std::mem_fun(&UnionFindObject::eraseClass), _d->tracksUF.get()));
+                [&](int toErase){ _d->tracksUF->eraseClass(toErase); });
 }
 
 bool TracksBuilder::exportToStream(std::ostream& os)
