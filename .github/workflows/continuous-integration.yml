@@ -104,7 +104,7 @@ jobs:
       # tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      COMMIT_ID: 467509eb8fe938de3e5f85a6cb1b72edacb2284c
+      COMMIT_ID: 5d0956ff93bb48354cf57562aaba205ff0deb913
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -115,7 +115,7 @@ jobs:
         # Uses a specific version of vcpkg with a fix on OpenEXR/Imath portfiles
         run: |
           cd ..
-          git clone https://github.com/alicevision/vcpkg.git
+          git clone https://github.com/p12tic/vcpkg.git
           cd vcpkg
           git checkout ${{ env.COMMIT_ID }}
           cd ${{ github.workspace }}
