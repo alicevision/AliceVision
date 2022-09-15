@@ -115,6 +115,7 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 # RUN make -j"$(nproc)" popsift
 # RUN make -j"$(nproc)" ffmpeg
 # RUN make -j"$(nproc)" opencv
+# RUN make -j"$(nproc)" expat
 
 RUN cmake --build . -j "$(nproc)" && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
