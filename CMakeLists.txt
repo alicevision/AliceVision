@@ -716,7 +716,7 @@ ExternalProject_Add(${OPENCV_TARGET}
     -DWITH_CUDA=OFF
     -DWITH_OPENCL=OFF
     -DBUILD_TESTS=OFF
-    -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version,mcc
+    -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version,mcc,optflow
     <SOURCE_DIR>
   BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 )
