@@ -12,11 +12,11 @@
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <cstdlib>
 #include <limits>
@@ -331,13 +331,14 @@ int aliceVision_main(int argc, char** argv)
   ALICEVISION_LOG_INFO("Build animated camera(s)...");
 
   image::Image<image::RGBfColor> image, image_ud;
-  boost::progress_display progressBar(sfmDataExport.getViews().size());
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmDataExport.getViews().size(),
+                                                              std::cout);
 
   for(const auto& viewPair : sfmDataExport.getViews())
   {
     const sfmData::View& view = *(viewPair.second);
 
-    ++progressBar;
+    ++progressDisplay;
 
     const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
 

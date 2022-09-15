@@ -8,10 +8,10 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
 
@@ -103,7 +103,8 @@ int aliceVision_main(int argc, char **argv)
   sfmDataIO::Save(sfmData, outputFolder + "/scene.abc", sfmDataIO::ESfMData::ALL);
 
   // export undistorted images and thumbnail images
-  boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Exporting Images for MeshroomMaya\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
+                                                              "Exporting Images for MeshroomMaya\n");
   for(auto& viewPair : sfmData.getViews())
   {
     const sfmData::View& view = *viewPair.second;
@@ -151,7 +152,7 @@ int aliceVision_main(int argc, char **argv)
     image::writeImage(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg",
                       imageThumbnail, image::EImageColorSpace::AUTO);
 
-    ++progressBar;
+    ++progressDisplay;
   }
 
   return EXIT_SUCCESS;

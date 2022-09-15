@@ -19,6 +19,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include "nanoflann.hpp"
@@ -34,7 +35,6 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
-#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -1874,7 +1874,10 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
     GeometriesCount totalGeometriesIntersectedFrontCount;
     GeometriesCount totalGeometriesIntersectedBehindCount;
 
-    boost::progress_display progressBar(std::min(size_t(100), verticesRandIds.size()), std::cout, "fillGraphPartPtRc\n");
+    auto progressDisplay =
+            system::createConsoleProgressDisplay(std::min(size_t(100), verticesRandIds.size()),
+                                                 std::cout, "fillGraphPartPtRc\n");
+
     size_t progressStep = verticesRandIds.size() / 100;
     progressStep = std::max(size_t(1), progressStep);
 #pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex,totalIsRealNrc)
@@ -1883,7 +1886,7 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
         if(i % progressStep == 0)
         {
 #pragma omp critical
-            ++progressBar;
+            ++progressDisplay;
         }
 
         const int vertexIndex = verticesRandIds[i];

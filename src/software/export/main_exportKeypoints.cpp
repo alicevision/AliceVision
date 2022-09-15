@@ -12,6 +12,7 @@
 #include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/image/all.hpp>
@@ -20,7 +21,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <cstdlib>
 #include <string>
@@ -140,7 +140,7 @@ int aliceVision_main(int argc, char ** argv)
 
   fs::create_directory(outputFolder);
   ALICEVISION_LOG_INFO("Export extracted keypoints for all images");
-  boost::progress_display myProgressBar(sfmData.views.size());
+  auto myProgressBar = system::createConsoleProgressDisplay(sfmData.views.size(), std::cout);
   for(const auto &iterViews : sfmData.views)
   {
     const View * view = iterViews.second.get();

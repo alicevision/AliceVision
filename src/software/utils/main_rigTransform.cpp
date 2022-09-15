@@ -13,7 +13,6 @@
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp> 
-#include <boost/progress.hpp>
 
 #include <iostream>
 #include <string>

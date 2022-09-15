@@ -11,8 +11,7 @@
 #include <aliceVision/stl/indexedSort.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/image/io.hpp>
-
-#include <boost/progress.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <map>
 #include <vector>
@@ -22,7 +21,8 @@ namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
-  boost::progress_display progressBar(sfmData.getLandmarks().size(), std::cout, "\nCompute scene structure color\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
+                                                              "\nCompute scene structure color\n");
 
   std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
   remainingLandmarksToColor.reserve(sfmData.getLandmarks().size());
@@ -117,7 +117,7 @@ void colorizeTracks(SfMData& sfmData)
 
 #pragma omp critical
       {
-        progressBar += viewCardinal.landmarks.size();
+        progressDisplay += viewCardinal.landmarks.size();
       }
     }
   }

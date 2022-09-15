@@ -17,6 +17,7 @@
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -26,7 +27,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -169,7 +169,8 @@ int aliceVision_main(int argc, char ** argv)
 
   // for each pair, export the matches
   fs::create_directory(outputFolder);
-  boost::progress_display myProgressBar( (viewCount*(viewCount-1)) / 2.0 , std::cout, "Export pairwise tracks\n");
+  auto myProgressBar = system::createConsoleProgressDisplay((viewCount*(viewCount-1)) / 2.0,
+                                                            std::cout, "Export pairwise tracks\n");
 
   for(std::size_t I = 0; I < viewCount; ++I)
   {

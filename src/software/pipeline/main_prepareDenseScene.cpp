@@ -8,6 +8,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
@@ -15,7 +16,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -113,7 +113,8 @@ bool prepareDenseScene(const SfMData& sfmData,
                             "Choose '.exr' file type if you want AliceVision custom metadata");
 
   // export data
-  boost::progress_display progressBar(viewIds.size(), std::cout, "Exporting Scene Undistorted Images\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(viewIds.size(), std::cout,
+                                                              "Exporting Scene Undistorted Images\n");
 
   // for exposure correction
   const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
@@ -268,7 +269,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     }
 
     #pragma omp critical
-    ++progressBar;
+    ++progressDisplay;
   }
 
   return true;
