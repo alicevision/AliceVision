@@ -9,11 +9,13 @@ on:
     paths-ignore:
       - '**.md'
       - '**.rst'
+      - '**.db'
       - 'docs/**'
   pull_request:
     paths-ignore:
       - '**.md'
       - '**.rst'
+      - '**.db'
       - 'docs/**'
 
 jobs:
