@@ -399,7 +399,7 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
-  int allColorProfilesFound = 1;
+  int allColorProfilesFound = 1; // int type instead of bool to support usage of omp atomic
 
   #pragma omp parallel for
   for(int i = 0; i < sfmData.getViews().size(); ++i)
