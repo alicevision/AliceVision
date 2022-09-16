@@ -210,7 +210,8 @@ public:
         const Matrix3x4& p34 = camArr.at(index); // projection matrix (3x4) scale = getDownscaleFactor()
         const int downscale = getDownscaleFactor(index);
         p44.assign(p34.m, p34.m + 12);
-        std::transform(p44.begin(), p44.begin() + 8, p44.begin(), std::bind1st(std::multiplies<double>(),downscale));
+        std::transform(p44.begin(), p44.begin() + 8, p44.begin(),
+                       [&](double p){ return p * downscale; });
         p44.push_back(0);
         p44.push_back(0);
         p44.push_back(0);
