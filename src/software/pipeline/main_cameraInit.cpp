@@ -332,7 +332,6 @@ int aliceVision_main(int argc, char **argv)
       {
           if (fs::is_regular_file(p))
           {
-              std::cout << p.filename() << " ; " << p.generic_string() << std::endl;
               colorProfileList.emplace_back(p.generic_string());
           }
       }
@@ -400,7 +399,7 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
-  bool allColorProfilesFound = true;
+  int allColorProfilesFound = 1;
 
   #pragma omp parallel for
   for(int i = 0; i < sfmData.getViews().size(); ++i)
@@ -497,10 +496,8 @@ int aliceVision_main(int argc, char **argv)
             }
         }
 
-        #pragma omp critical
-        {
-            allColorProfilesFound &= colorProfileFound;
-        }
+        #pragma omp atomic
+        allColorProfilesFound &= static_cast<int>(colorProfileFound);
     }
 
     // check if the view intrinsic is already defined
