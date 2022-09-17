@@ -10,6 +10,7 @@ test -z "$AV_VERSION" && AV_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git re
 test -z "$CUDA_VERSION" && CUDA_VERSION=11.0
 test -z "$UBUNTU_VERSION" && UBUNTU_VERSION=20.04
 
+./docker/fetch.sh
 
 ## DEPENDENCIES
 docker build \

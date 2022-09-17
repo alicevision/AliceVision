@@ -63,6 +63,8 @@ ENV PATH="/opt/rh/devtoolset-6/root/usr/bin:${PATH}" \
     MAKE=/opt/rh/devtoolset-6/root/usr/bin/make \
     CMAKE_VERSION=3.21.3
 
+
+
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
 
@@ -78,6 +80,7 @@ RUN tar zxf /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
 
 
 COPY CMakeLists.txt ${AV_DEV}/
+COPY docker ${AV_DEV}/docker
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -116,7 +119,8 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so 
 # RUN make -j"$(nproc)" ffmpeg
 # RUN make -j"$(nproc)" opencv
 
-RUN cmake --build . -j "$(nproc)" && \
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
+    cmake --build . -j "${CPU_CORES}" && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
 
