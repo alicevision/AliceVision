@@ -125,6 +125,10 @@ if(WIN32)
   endif()
 endif()
 
+# Avoids deprecation warning caused by internals of json_parser. This is properly fixed in
+# Boost 1.76.0: https://github.com/boostorg/property_tree/commit/d1c8825a45a0717e1ad79583d3283b0e5e32831e
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS=1)
+
 # Folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_CMakePredefinedTargets")
