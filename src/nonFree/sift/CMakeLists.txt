@@ -1,5 +1,5 @@
 # libs should be static
-set(BUILD_SHARED_LIBS ON)
+set(BUILD_SHARED_LIBS OFF)
 
 # use PIC code for link into shared lib
 if(UNIX)
