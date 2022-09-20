@@ -82,20 +82,7 @@ struct RectilinearModel
 
     void reset()
     {
-        Version = -1;
-        FocalLengthX = 0.f;
-        FocalLengthY = 0.f;
-        ImageXCenter = 0.5f;
-        ImageYCenter = 0.5f;
-        ResidualMeanError = 0.f;
-        ResidualStandardDeviation = 0.f;
-        RadialDistortParam1 = 0.f;
-        RadialDistortParam2 = 0.f;
-        RadialDistortParam3 = 0.f;
-        TangentialDistortParam1 = 0.f;
-        TangentialDistortParam2 = 0.f;
-        ScaleFactor = 1.f;
-        isEmpty = true;
+        *this = RectilinearModel();
     }
 };
 
@@ -115,17 +102,7 @@ struct PerspectiveModel
 
     void reset()
     {
-        Version = -1;
-        FocalLengthX = 0.f;
-        FocalLengthY = 0.f;
-        ImageXCenter = 0.5f;
-        ImageYCenter = 0.5f;
-        ResidualMeanError = 0.f;
-        ResidualStandardDeviation = 0.f;
-        RadialDistortParam1 = 0.f;
-        RadialDistortParam2 = 0.f;
-        RadialDistortParam3 = 0.f;
-        isEmpty = true;
+        *this = PerspectiveModel();
     }
 };
 
@@ -142,14 +119,7 @@ struct VignetteModel
 
     void reset()
     {
-        FocalLengthX = 0.f;
-        FocalLengthY = 0.f;
-        ImageXCenter = 0.5f;
-        ImageYCenter = 0.5f;
-        VignetteModelParam1 = 0.f;
-        VignetteModelParam2 = 0.f;
-        VignetteModelParam3 = 0.f;
-        isEmpty = true;
+        *this = VignetteModel();
     }
 };
 
@@ -168,16 +138,7 @@ struct FisheyeModel
 
     void reset()
     {
-        Version = -1;
-        FocalLengthX = 0.f;
-        FocalLengthY = 0.f;
-        ImageXCenter = 0.5f;
-        ImageYCenter = 0.5f;
-        ResidualMeanError = 0.f;
-        ResidualStandardDeviation = 0.f;
-        RadialDistortParam1 = 0.f;
-        RadialDistortParam2 = 0.f;
-        isEmpty = true;
+        *this = FisheyeModel();
     }
 };
 
@@ -201,37 +162,37 @@ public:
      * @brief Indicate that paramaters apply for a fisheye lens
      * @return true if the fisheye model is the valid one
      */
-    inline bool isFisheye() const { return _isFisheye; }
+    bool isFisheye() const { return _isFisheye; }
 
     /**
      * @brief Indicate that a vignetting model is avaialble
      * @return true if a vignetting model is avaialble
      */
-    inline bool hasVignetteParams() const { return _hasVignetteParams; }
+    bool hasVignetteParams() const { return _hasVignetteParams; }
 
     /**
      * @brief Indicate that chromatic models are avaialble
      * @return true if chromatic models are avaialble
      */
-    inline bool hasChromaticParams() const { return _hasChromaticParams; }
+    bool hasChromaticParams() const { return _hasChromaticParams; }
 
     /**
     * @brief Set fisheye status
     * @param[in] fisheye status
     */
-    inline void setFisheyeStatus(bool s) { _isFisheye = s; }
+    void setFisheyeStatus(bool s) { _isFisheye = s; }
 
     /**
     * @brief Set vignetting availabilty status
     * @param[in] vignetting availabilty status
     */
-    inline void setVignetteParamsStatus(bool s) { _hasVignetteParams = s; }
+    void setVignetteParamsStatus(bool s) { _hasVignetteParams = s; }
 
     /**
     * @brief Set chromatic models availabilty status
     * @param[in] chromatic models availabilty status
     */
-    inline void setChromaticParamsStatus(bool s) { _hasChromaticParams = s; }
+    void setChromaticParamsStatus(bool s) { _hasChromaticParams = s; }
 
     /**
     * @brief Chromatic Green model parameters

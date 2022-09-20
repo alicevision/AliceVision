@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 
 #include "boost/filesystem.hpp"
 #include "boost/algorithm/string.hpp"
@@ -474,7 +475,8 @@ void LCPinfo::load(const std::string& filename, bool fullParsing)
 {
     XML_Parser parser = XML_ParserCreate(nullptr);
 
-    if (!parser) {
+    if (!parser)
+    {
         throw std::runtime_error("Couldn't allocate memory for XML parser");
     }
 
@@ -602,7 +604,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
                 update = (candidateAperture >= settings.ApertureValue && candidateAperture < currAperture&& currAperture > settings.ApertureValue) ||
                     (candidateAperture <= settings.ApertureValue &&
-                        (currAperture > settings.ApertureValue || fabs(settings.ApertureValue - candidateAperture) < fabs(settings.ApertureValue - currAperture)));
+                        (currAperture > settings.ApertureValue || std::fabs(settings.ApertureValue - candidateAperture) < std::fabs(settings.ApertureValue - currAperture)));
             }
             else
             {
@@ -611,7 +613,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
                 update = (candidateFocus >= settings.FocusDistance && candidateFocus < currFocus&& currFocus > settings.FocusDistance) ||
                          (candidateFocus <= settings.FocusDistance &&
-                          (currFocus > settings.FocusDistance || fabs(settings.FocusDistance - candidateFocus) < fabs(settings.FocusDistance - currFocus)));
+                          (currFocus > settings.FocusDistance || std::fabs(settings.FocusDistance - candidateFocus) < std::fabs(settings.FocusDistance - currFocus)));
             }
 
             if (update)
@@ -630,7 +632,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
                 update = (candidateAperture <= settings.ApertureValue && candidateAperture > currAperture && currAperture < settings.ApertureValue) ||
                          (candidateAperture >= settings.ApertureValue &&
-                          (currAperture < settings.ApertureValue || fabs(settings.ApertureValue - candidateAperture) < fabs(settings.ApertureValue - currAperture)));
+                          (currAperture < settings.ApertureValue || std::fabs(settings.ApertureValue - candidateAperture) < std::fabs(settings.ApertureValue - currAperture)));
             }
             else
             {
@@ -639,7 +641,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
                 update = (candidateFocus <= settings.FocusDistance && candidateFocus > currFocus && currFocus < settings.FocusDistance) ||
                          (candidateFocus >= settings.FocusDistance &&
-                          (currFocus < settings.FocusDistance || fabs(settings.FocusDistance - candidateFocus) < fabs(settings.FocusDistance - currFocus)));
+                          (currFocus < settings.FocusDistance || std::fabs(settings.FocusDistance - candidateFocus) < std::fabs(settings.FocusDistance - currFocus)));
             }
 
             if (update)
@@ -790,6 +792,33 @@ void LCPinfo::combine(size_t iLow, size_t iHigh, float weightLow, LCPCorrectionM
         }
         break;
     }
+
+    case LCPCorrectionMode::CA: {
+        pOut.ChromaticGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticGreenParams.FocalLengthX, p2.ChromaticGreenParams.FocalLengthX);
+        pOut.ChromaticGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticGreenParams.FocalLengthY, p2.ChromaticGreenParams.FocalLengthY);
+        pOut.ChromaticGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticGreenParams.ImageXCenter, p2.ChromaticGreenParams.ImageXCenter);
+        pOut.ChromaticGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticGreenParams.ImageYCenter, p2.ChromaticGreenParams.ImageYCenter);
+        pOut.ChromaticGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam1, p2.ChromaticGreenParams.RadialDistortParam1);
+        pOut.ChromaticGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam2, p2.ChromaticGreenParams.RadialDistortParam2);
+        pOut.ChromaticGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticGreenParams.RadialDistortParam3, p2.ChromaticGreenParams.RadialDistortParam3);
+        pOut.ChromaticGreenParams.isEmpty = false;
+        pOut.ChromaticBlueGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.FocalLengthX, p2.ChromaticBlueGreenParams.FocalLengthX);
+        pOut.ChromaticBlueGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.FocalLengthY, p2.ChromaticBlueGreenParams.FocalLengthY);
+        pOut.ChromaticBlueGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ImageXCenter, p2.ChromaticBlueGreenParams.ImageXCenter);
+        pOut.ChromaticBlueGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.ImageYCenter, p2.ChromaticBlueGreenParams.ImageYCenter);
+        pOut.ChromaticBlueGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam1, p2.ChromaticBlueGreenParams.RadialDistortParam1);
+        pOut.ChromaticBlueGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam2, p2.ChromaticBlueGreenParams.RadialDistortParam2);
+        pOut.ChromaticBlueGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticBlueGreenParams.RadialDistortParam3, p2.ChromaticBlueGreenParams.RadialDistortParam3);
+        pOut.ChromaticBlueGreenParams.isEmpty = false;
+        pOut.ChromaticRedGreenParams.FocalLengthX = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.FocalLengthX, p2.ChromaticRedGreenParams.FocalLengthX);
+        pOut.ChromaticRedGreenParams.FocalLengthY = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.FocalLengthY, p2.ChromaticRedGreenParams.FocalLengthY);
+        pOut.ChromaticRedGreenParams.ImageXCenter = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ImageXCenter, p2.ChromaticRedGreenParams.ImageXCenter);
+        pOut.ChromaticRedGreenParams.ImageYCenter = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.ImageYCenter, p2.ChromaticRedGreenParams.ImageYCenter);
+        pOut.ChromaticRedGreenParams.RadialDistortParam1 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam1, p2.ChromaticRedGreenParams.RadialDistortParam1);
+        pOut.ChromaticRedGreenParams.RadialDistortParam2 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam2, p2.ChromaticRedGreenParams.RadialDistortParam2);
+        pOut.ChromaticRedGreenParams.RadialDistortParam3 = interpolate<float>(weightLow, p1.ChromaticRedGreenParams.RadialDistortParam3, p2.ChromaticRedGreenParams.RadialDistortParam3);
+        pOut.ChromaticRedGreenParams.isEmpty = false;
+    }
     }
 }
 
@@ -866,7 +895,7 @@ std::string reduceString(const std::string& str)
     return localStr;
 }
 
-std::vector<std::string> reduceStrings(std::vector<std::string>& v_str)
+std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str)
 {
     std::vector<std::string> v_localStr;
     for (auto& s : v_str)
@@ -886,7 +915,13 @@ bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMo
     return findLCPInfo(v_lcpFilename, cameraModelOrMaker, lensModel, lensID, rawMode, lcpData, omitCameraModel);
 }
 
-bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const std::string& cameraModelOrMaker, const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
+bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
+                 const std::string& cameraModelOrMaker,
+                 const std::string& lensModel,
+                 const int& lensID,
+                 int rawMode,
+                 LCPinfo& lcpData,
+                 bool omitCameraModel)
 {
     std::string reducedCameraModel = reduceString(cameraModelOrMaker);
     std::string reducedLensModel = reduceString(lensModel);

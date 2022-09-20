@@ -31,7 +31,7 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <iterator>
 
@@ -343,10 +343,6 @@ int aliceVision_main(int argc, char **argv)
   }
   else if (!lensCorrectionProfileInfo.empty() && fs::is_directory(lensCorrectionProfileInfo) && enableLensCorrectionProfileSearch)
   {
-      // search all .lcp files in the directory and sub directories
-      //parseLCPDatabase(lensCorrectionProfileInfo, v_lcpFilepath);
-
-      //std::vector<std::string> v_path;
       std::vector<std::string> v_ext{ ".lcp" };
       listFiles(lensCorrectionProfileInfo, v_ext, v_lcpFilepath);
   }
