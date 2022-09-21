@@ -491,6 +491,7 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
+    bool applyToneCurve = false;
 
     ProcessingParams pParams;
 
@@ -570,6 +571,9 @@ int aliceVision_main(int argc, char * argv[])
 
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
          ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+
+        ("applyToneCurve", po::value<bool>(&applyToneCurve)->default_value(applyToneCurve),
+            "Apply color profile embedded tone curve if any.")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -684,6 +688,7 @@ int aliceVision_main(int argc, char * argv[])
             options.workingColorSpace = workingColorSpace;
             options.applyWhiteBalance = view.getApplyWhiteBalance();
             options.colorProfileFileName = view.getColorProfileFileName();
+            options.applyToneCurve = applyToneCurve;
 
             // Read original image
             image::Image<image::RGBAfColor> image;

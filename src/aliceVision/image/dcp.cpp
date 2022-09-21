@@ -1369,7 +1369,6 @@ void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
 
         if (params.use_tone_curve)
         {
-            // tone_curve.Apply(ws_rgb[0], ws_rgb[1], ws_rgb[2]);
             AS_tone_curve.Apply(ws_rgb[0], ws_rgb[1], ws_rgb[2]);
         }
 

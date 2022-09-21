@@ -395,7 +395,13 @@ void readImage(const std::string& path,
 
   ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
 
-  if (imageReadOptions.workingColorSpace != image::EImageColorSpace::NO_CONVERSION)
+      alicevision::image::DCPProfileApplyParams DCPparams;
+      DCPparams.use_tone_curve = imageReadOptions.applyToneCurve;
+
+      colorProfile.apply(inBuf, DCPparams);
+  }
+
+  if(imageReadOptions.workingColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
   {
       imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.workingColorSpace);
   }
