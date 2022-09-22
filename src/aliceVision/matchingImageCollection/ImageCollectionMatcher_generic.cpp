@@ -78,7 +78,6 @@ void ImageCollectionMatcher_generic::Match(
       if (regionsJ.RegionCount() == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-        #pragma omp critical
         ++progressDisplay;
         continue;
       }

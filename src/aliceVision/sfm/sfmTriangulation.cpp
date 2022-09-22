@@ -45,7 +45,6 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
     {
       if (_bConsoleVerbose)
       {
-        #pragma omp critical
         ++(progressDisplay);
       }
       // Triangulate each landmark
@@ -131,7 +130,6 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
     {
       if (_bConsoleVerbose)
       {
-        #pragma omp critical
         ++(progressDisplay);
       }
       Vec3 X;

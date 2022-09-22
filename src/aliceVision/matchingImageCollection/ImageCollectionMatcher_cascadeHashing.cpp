@@ -143,7 +143,6 @@ void Match
       if (!regionsPerView.viewExist(J)
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-        #pragma omp critical
         ++progressDisplay;
         continue;
       }

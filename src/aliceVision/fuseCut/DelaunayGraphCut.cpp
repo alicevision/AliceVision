@@ -1886,7 +1886,6 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
     {
         if(i % progressStep == 0)
         {
-#pragma omp critical
             ++progressDisplay;
         }
 

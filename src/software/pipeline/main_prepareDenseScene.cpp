@@ -268,7 +268,6 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
     }
 
-    #pragma omp critical
     ++progressDisplay;
   }
 

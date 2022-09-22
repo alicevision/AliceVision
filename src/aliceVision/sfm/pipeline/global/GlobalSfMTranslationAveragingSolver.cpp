@@ -414,10 +414,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
     for (int k = 0; k < vec_edges.size(); ++k)
     {
       const myEdge & edge = vec_edges[k];
-      #pragma omp critical
-      {
-        ++progressDisplay;
-      }
+      ++progressDisplay;
       if (m_mutexSet.count(edge) == 0 && m_mutexSet.size() != vec_edges.size())
       {
         // Find the triplets that support the given edge

@@ -83,11 +83,7 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
           pairs.insert(std::make_pair(viewIds[i], viewIds[j]));
         }
       }
-      // Progress bar update
-      #pragma omp critical
-      {
-        ++progressDisplay;
-      }
+      ++progressDisplay;
     }
   }
   return pairs;

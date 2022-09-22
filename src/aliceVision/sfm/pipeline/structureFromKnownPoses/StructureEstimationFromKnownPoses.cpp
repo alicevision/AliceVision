@@ -188,8 +188,7 @@ void StructureEstimationFromKnownPoses::filter(
   {
     #pragma omp single nowait
     {
-      #pragma omp critical
-      {++progressDisplay;}
+      ++progressDisplay;
 
       const graph::Triplet & triplet = *it;
       const IndexT I = triplet.i, J = triplet.j , K = triplet.k;
