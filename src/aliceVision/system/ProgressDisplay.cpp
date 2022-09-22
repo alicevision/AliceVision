@@ -6,6 +6,7 @@
 
 #include "ProgressDisplay.hpp"
 #include <boost/progress.hpp>
+#include <mutex>
 
 namespace aliceVision {
 namespace system {
@@ -43,11 +44,13 @@ public:
 
     void increment(unsigned long count) override
     {
+        std::lock_guard<std::mutex> lock{_mutex};
         _display += count;
     }
 
     unsigned long count() override
     {
+        std::lock_guard<std::mutex> lock{_mutex};
         return _display.count();
     }
 
@@ -57,6 +60,7 @@ public:
     }
 
 private:
+    std::mutex _mutex;
     boost::progress_display _display;
 };
 
