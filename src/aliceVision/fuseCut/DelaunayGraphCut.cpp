@@ -1892,6 +1892,9 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
         const int vertexIndex = verticesRandIds[i];
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
 
+        GeometriesCount subTotalGeometriesIntersectedFrontCount;
+        GeometriesCount subTotalGeometriesIntersectedBehindCount;
+
         if(v.isReal())
         {
             ++totalIsRealNrc;
@@ -1917,22 +1920,25 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
                 totalStepsBehind += stepsBehind;
                 totalRayBehind += 1;
 
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedFrontCount.facets += geometriesIntersectedFrontCount.facets;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedFrontCount.vertices += geometriesIntersectedFrontCount.vertices;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedFrontCount.edges += geometriesIntersectedFrontCount.edges;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedBehindCount.facets += geometriesIntersectedBehindCount.facets;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedBehindCount.vertices += geometriesIntersectedBehindCount.vertices;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedBehindCount.edges += geometriesIntersectedBehindCount.edges;
+                subTotalGeometriesIntersectedFrontCount += geometriesIntersectedFrontCount;
+                subTotalGeometriesIntersectedBehindCount += geometriesIntersectedBehindCount;
             } // for c
 
             totalCamHaveVisibilityOnVertex += v.cams.size();
             totalOfVertex += 1;
+
+#pragma OMP_ATOMIC_UPDATE
+            totalGeometriesIntersectedFrontCount.facets += subTotalGeometriesIntersectedFrontCount.facets;
+#pragma OMP_ATOMIC_UPDATE
+            totalGeometriesIntersectedFrontCount.vertices += subTotalGeometriesIntersectedFrontCount.vertices;
+#pragma OMP_ATOMIC_UPDATE
+            totalGeometriesIntersectedFrontCount.edges += subTotalGeometriesIntersectedFrontCount.edges;
+#pragma OMP_ATOMIC_UPDATE
+            totalGeometriesIntersectedBehindCount.facets += subTotalGeometriesIntersectedBehindCount.facets;
+#pragma OMP_ATOMIC_UPDATE
+            totalGeometriesIntersectedBehindCount.vertices += subTotalGeometriesIntersectedBehindCount.vertices;
+#pragma OMP_ATOMIC_UPDATE
+            totalGeometriesIntersectedBehindCount.edges += subTotalGeometriesIntersectedBehindCount.edges;
         }
     }
 
