@@ -36,6 +36,7 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+#include <boost/atomic/atomic_ref.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -683,11 +684,8 @@ StaticVector<int> DelaunayGraphCut::getIsUsedPerCamera() const
         for(int c = 0; c < v.cams.size(); ++c)
         {
             const int obsCam = v.cams[c];
-
-//#pragma OMP_ATOMIC_WRITE
-            {
-                cams[obsCam] = 1;
-            }
+            // boost::atomic_ref<int>(cams[obsCam]) = 1;
+            cams[obsCam] = 1;
         }
     }
 
@@ -1927,18 +1925,18 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
             totalCamHaveVisibilityOnVertex += v.cams.size();
             totalOfVertex += 1;
 
-#pragma OMP_ATOMIC_UPDATE
-            totalGeometriesIntersectedFrontCount.facets += subTotalGeometriesIntersectedFrontCount.facets;
-#pragma OMP_ATOMIC_UPDATE
-            totalGeometriesIntersectedFrontCount.vertices += subTotalGeometriesIntersectedFrontCount.vertices;
-#pragma OMP_ATOMIC_UPDATE
-            totalGeometriesIntersectedFrontCount.edges += subTotalGeometriesIntersectedFrontCount.edges;
-#pragma OMP_ATOMIC_UPDATE
-            totalGeometriesIntersectedBehindCount.facets += subTotalGeometriesIntersectedBehindCount.facets;
-#pragma OMP_ATOMIC_UPDATE
-            totalGeometriesIntersectedBehindCount.vertices += subTotalGeometriesIntersectedBehindCount.vertices;
-#pragma OMP_ATOMIC_UPDATE
-            totalGeometriesIntersectedBehindCount.edges += subTotalGeometriesIntersectedBehindCount.edges;
+            boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.facets} +=
+                    subTotalGeometriesIntersectedFrontCount.facets;
+            boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.vertices} +=
+                    subTotalGeometriesIntersectedFrontCount.vertices;
+            boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.edges} +=
+                    subTotalGeometriesIntersectedFrontCount.edges;
+            boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.facets} +=
+                    subTotalGeometriesIntersectedBehindCount.facets;
+            boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.vertices} +=
+                    subTotalGeometriesIntersectedBehindCount.vertices;
+            boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.edges} +=
+                    subTotalGeometriesIntersectedBehindCount.edges;
         }
     }
 
@@ -2038,15 +2036,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(
             if (geometry.type == EGeometryType::Facet)
             {
                 ++outFrontCount.facets;
-                {
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[geometry.facet.cellIndex].emptinessScore += weight;
-                }
+                boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].emptinessScore} += weight;
 
                 {
                     const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] += weight * dist;
+                    boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += weight * dist;
                 }
 
                 // Take the mirror facet to iterate over the next cell
@@ -2073,8 +2067,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
                 // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the current one.
                 if (previousGeometry.type == EGeometryType::Facet)
                 {
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[previousGeometry.facet.cellIndex].emptinessScore += weight;
+                    boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
                 }
 
                 if (geometry.type == EGeometryType::Vertex)
@@ -2102,8 +2095,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
             if (lastIntersectedFacet.cellIndex != GEO::NO_CELL &&
                 (_mp.CArr[cam] - intersectPt).size() < 0.2 * pointCamDistance)
             {
-    #pragma OMP_ATOMIC_WRITE
-                _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
+                boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
             }
         }
 
@@ -2115,8 +2107,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
                 // lastGeoIsVertex is supposed to be positive in almost all cases.
                 // If we do not reach the camera, we still vote on the last tetrehedra.
                 // Possible reaisons: the camera is not part of the vertices or we encounter a numerical error in intersectNextGeom
-#pragma OMP_ATOMIC_WRITE
-                _cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight = (float)maxint;
+                boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
             }
             // else
             // {
@@ -2189,15 +2180,11 @@ void DelaunayGraphCut::fillGraphPartPtRc(
                 // Vote for the first cell found (only once)
                 if (firstIteration)
                 {
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[geometry.facet.cellIndex].on += fWeight;
+                    boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].on} += fWeight;
                     firstIteration = false;
                 }
 
-                {
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[geometry.facet.cellIndex].fullnessScore += fWeight;
-                }
+                boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].fullnessScore} += fWeight;
 
                 // Take the mirror facet to iterate over the next cell
                 const Facet mFacet = mirrorFacet(geometry.facet);
@@ -2211,8 +2198,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
 
                 {
                     const float dist = distFcn(maxDist, (originPt - lastIntersectPt).size(), distFcnHeight);
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex] +=
+                    boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} +=
                         fWeight * dist;
                 }
                 if(previousGeometry.type == EGeometryType::Facet && outBehindCount.facets > 1000)
@@ -2241,8 +2227,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
 
                     for (const CellIndex& ci : neighboringCells)
                     {
-#pragma OMP_ATOMIC_UPDATE
-                        _cellsAttr[neighboringCells[0]].on += fWeight;
+                        boost::atomic_ref<float>{_cellsAttr[neighboringCells[0]].on} += fWeight;
                     }
                     firstIteration = false;
                 }
@@ -2251,8 +2236,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
                 // These geometries do not have a cellIndex, so we use the previousGeometry to retrieve the cell between the previous geometry and the current one.
                 if (previousGeometry.type == EGeometryType::Facet)
                 {
-#pragma OMP_ATOMIC_UPDATE
-                    _cellsAttr[previousGeometry.facet.cellIndex].fullnessScore += fWeight;
+                    boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].fullnessScore} += fWeight;
                 }
 
                 if (geometry.type == EGeometryType::Vertex)
@@ -2280,8 +2264,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(
         // Vote for the last intersected facet (farthest from the camera)
         if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
         {
-#pragma OMP_ATOMIC_UPDATE
-            _cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight += fWeight;
+            boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight} += fWeight;
         }
     }
 }
@@ -2466,12 +2449,12 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                     }
                 }
                 ++totalRayFront;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedFrontCount.facets += geometriesIntersectedFrontCount.facets;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedFrontCount.vertices += geometriesIntersectedFrontCount.vertices;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedFrontCount.edges += geometriesIntersectedFrontCount.edges;
+                boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.facets} +=
+                        geometriesIntersectedFrontCount.facets;
+                boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.vertices} +=
+                        geometriesIntersectedFrontCount.vertices;
+                boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.edges} +=
+                        geometriesIntersectedFrontCount.edges;
             }
             {
                 // Initialisation
@@ -2619,17 +2602,13 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                        (maxSilent < maxSilentPartRange)) // g < k_outl                  //// k_outl=100  // 400 in the paper
                         //(maxSilent-minSilent<maxSilentPartRange))
                     {
-#pragma OMP_ATOMIC_UPDATE
-                        _cellsAttr[lastIntersectedFacet.cellIndex].on += (maxJump - midSilent);
+                        boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].on} += (maxJump - midSilent);
                     }
                 }
                 ++totalRayBehind;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedBehindCount.facets += totalGeometriesIntersectedBehindCount.facets;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedBehindCount.vertices += totalGeometriesIntersectedBehindCount.vertices;
-#pragma OMP_ATOMIC_UPDATE
-                totalGeometriesIntersectedBehindCount.edges += totalGeometriesIntersectedBehindCount.edges;
+                boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.facets} += totalGeometriesIntersectedBehindCount.facets;
+                boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.vertices} += totalGeometriesIntersectedBehindCount.vertices;
+                boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.edges} += totalGeometriesIntersectedBehindCount.edges;
             }
         }
         totalCamHaveVisibilityOnVertex += v.cams.size();
@@ -2934,7 +2913,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
     // using solid angle ratio between full/empty parts.
     for(int i = 0; i < nbSolidAngleFilteringIterations; ++i)
     {
-        std::vector<bool> cellsInvertStatus(_cellIsFull.size(), false);
+        std::vector<std::uint8_t> cellsInvertStatus(_cellIsFull.size(), false);
         int toInvertCount = 0;
 
         std::vector<bool> vertexIsOnSurface;
@@ -3031,8 +3010,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
             {
                 if(_cellIsFull[ci] == invertFull)
                 {
-#pragma OMP_ATOMIC_WRITE
-                    cellsInvertStatus[ci] = true;
+                    boost::atomic_ref<std::uint8_t>{cellsInvertStatus[ci]} = true;
                     ++toInvertCount;
                 }
             }
