@@ -119,10 +119,7 @@ void colorizeTracks(SfMData& sfmData)
         landmark.rgb = image(pt.y(), pt.x());
       }
 
-#pragma omp critical
-      {
-        progressDisplay += viewCardinal.landmarks.size();
-      }
+      progressDisplay += viewCardinal.landmarks.size();
     }
   }
 }

@@ -1257,7 +1257,6 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     matching::PairwiseMatches::const_iterator iter = _pairwiseMatches->begin();
     std::advance(iter, i);
     
-#pragma omp critical
     ++progressDisplay;
     
     const Pair current_pair = iter->first;

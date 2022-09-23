@@ -373,10 +373,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
         _regionsPerView.getData()[id_view][descType] = std::move(filteredRegions);
       }
     }
-#pragma omp critical
-    {
-      ++progressDisplay;
-    }
+    ++progressDisplay;
   }
   return true;
 }

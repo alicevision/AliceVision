@@ -40,21 +40,25 @@ public:
         _impl->restart(expectedCount);
     }
 
+    // Thread safe with respect to other calls to operator++ and to calls to count()
     void operator++()
     {
         _impl->increment(1);
     }
 
+    // Thread safe with respect to other calls to operator++ and to calls to count()
     void operator+=(unsigned long increment)
     {
         _impl->increment(increment);
     }
 
+    // Thread safe with respect to calls to operator++
     unsigned long count()
     {
         return _impl->count();
     }
 
+    // Thread safe
     unsigned long expectedCount()
     {
         return _impl->expectedCount();

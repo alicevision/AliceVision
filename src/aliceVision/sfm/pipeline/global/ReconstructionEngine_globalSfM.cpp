@@ -453,10 +453,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
   // Compute the relative pose from pairwise point matches:
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
-    #pragma omp critical
-    {
-      ++progressDisplay;
-    }
+    ++progressDisplay;
     {
       PoseWiseMatches::const_iterator iter (poseWiseMatches.begin());
       std::advance(iter, i);

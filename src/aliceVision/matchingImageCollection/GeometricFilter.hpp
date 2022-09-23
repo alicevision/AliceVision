@@ -86,11 +86,7 @@ void robustModelEstimation(
 
       }
     }
-
-#pragma omp critical
-    {
-      ++progressDisplay;
-    }
+    ++progressDisplay;
   }
 }
 
