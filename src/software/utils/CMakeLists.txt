@@ -189,9 +189,9 @@ alicevision_add_software(aliceVision_utils_sfmColorHarmonize
         aliceVision_sfmData
         aliceVision_sfmDataIO
         aliceVision_colorHarmonization
-        ${CLP_LIBRARIES}
-        ${COINUTILS_LIBRARY}
-        ${OSI_LIBRARY}
+        Coin::Clp
+        Coin::CoinUtils
+        Coin::Osi
         Boost::program_options
         Boost::filesystem
         Boost::boost
