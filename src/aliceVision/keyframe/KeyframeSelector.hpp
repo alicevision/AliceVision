@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <OpenImageIO/imageio.h>
-
 #include <string>
 #include <vector>
 #include <memory>

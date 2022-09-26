@@ -8,8 +8,6 @@ set(keyframe_files_sources
   KeyframeSelector.cpp
 )
 
-if(ALICEVISION_HAVE_OPENCV)
-
 alicevision_add_library(aliceVision_keyframe
   SOURCES ${keyframe_files_headers} ${keyframe_files_sources}
   PUBLIC_LINKS
@@ -24,6 +22,6 @@ alicevision_add_library(aliceVision_keyframe
     Boost::filesystem
 )
 
-
+if(ALICEVISION_HAVE_OPENCV)
   target_link_libraries(aliceVision_keyframe PUBLIC ${OpenCV_LIBS})
 endif()

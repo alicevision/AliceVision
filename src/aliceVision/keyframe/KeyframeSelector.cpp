@@ -17,7 +17,6 @@
 #include <iomanip>
 
 #include <opencv2/optflow.hpp>
-#include <opencv2/highgui.hpp>
 
 namespace fs = boost::filesystem;
 

@@ -218,6 +218,7 @@ alicevision_add_software(aliceVision_utils_sfmLocalization
 
 # Keyframe selection
 # - export keyframes from video files / image sequence directories
+if(ALICEVISION_HAVE_OPENCV)
 alicevision_add_software(aliceVision_utils_keyframeSelection
   SOURCE main_keyframeSelection.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -227,7 +228,7 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
         Boost::program_options
         Boost::filesystem
 )
-
+endif()
 
 # Print distances between 3D objects
 alicevision_add_software(aliceVision_utils_sfmDistances
