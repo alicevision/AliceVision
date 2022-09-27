@@ -170,6 +170,12 @@ Allview;Allview X4 Soul Style;4.71;devicespecifications
 Allview;Allview X4 Xtreme;4.71;devicespecifications
 Apple;iPad 3;4.54;usercontribution
 Apple;iPad mini 4;3.6;devicespecifications
+Apple;iPhone 11 Pro;5.75;usercontribution
+Apple;iPhone 11 Pro Max;5.75;dxomark
+Apple;iPhone 12 Pro;5.75;dpreview
+Apple;iPhone 12 Pro Max;6.85;dpreview
+Apple;iPhone 13 Pro;7.76;dpreview
+Apple;iPhone 13 Pro Max;7.76;dpreview
 Apple;iPhone 3G;3.56;vfxcamdb
 Apple;iPhone 3GS;3.6;vfxcamdb
 Apple;iPhone 4;4.54;imaging-resource,devicespecifications
@@ -185,12 +191,6 @@ Apple;iPhone 7;4.89;phonearena
 Apple;iPhone 7 Plus;4.89;phonearena
 Apple;iPhone 8;4.89;phonearena
 Apple;iPhone 8 Plus;4.89;imaging-resource,phonearena
-Apple;iPhone 11 Pro;5.75;usercontribution
-Apple;iPhone 11 Pro Max;5.75;dxomark
-Apple;iPhone 12 Pro;5.75;dpreview
-Apple;iPhone 12 Pro Max;6.85;dpreview
-Apple;iPhone 13 Pro;7.76;dpreview
-Apple;iPhone 13 Pro Max;7.76;dpreview
 Apple;iPhone SE;4.89;phonearena,devicespecifications
 Apple;iPhone X;4.89;phonearena
 Apple;iPhone XR;5.60;dpreview
@@ -209,6 +209,8 @@ Archos;Archos Diamond Plus;5.95;devicespecifications
 Archos;Archos Sense 50DC;4.69;devicespecifications
 Archos;Archos Sense 55DC;4.69;devicespecifications
 Archos;Archos Sense 55s;3.67;devicespecifications
+ARRI;Alexa65 65 SXT;54.12;usercontribution
+ARRI;ARRI ALEXA LF;36.70;ARRI
 ARRI;ARRI Alexa Mini;28.25;ARRI
 ARRI;ARRI ALEXA Mini LF;36.70;ARRI
 ARRI;ARRI Alexa Plus 4:3 SXT;28.25;usercontribution
@@ -217,11 +219,9 @@ ARRI;ARRI Alexa SXT;28.25;usercontribution
 ARRI;ARRI Alexa SXT Plus;28.25;usercontribution
 ARRI;ARRI ALEXA SXT W;28.25;ARRI
 ARRI;ARRI Alexa XT;23.76;usercontribution
+ARRI;ARRI AMIRA;26.40;ARRI
 ARRI;ARRI AMIRA;28.17;ARRI
 ARRI;ARRI AMIRA Live;26.40;ARRI
-ARRI;ARRI ALEXA LF;36.70;ARRI
-ARRI;Alexa65 65 SXT;54.12;usercontribution
-ARRI;ARRI AMIRA;26.40;ARRI
 ARRI;ARRI AMIRA Live;26.40;ARRI
 Asus;Asus 2016;4.69;devicespecifications
 Asus;Asus Google Nexus 7;2.46;devicespecifications
@@ -381,16 +381,6 @@ BenQ;BenQ LM100;6.16;digicamdb
 BenQ;BenQ S1410;6.08;usercontribution
 BenQ;BenQ S1420;6.16;usercontribution
 BenQ;BenQ T1460;6.16;usercontribution
-Blackmagic Design;URSA Mini Pro 12K;27.03;usercontribution
-Blackmagic Design;URSA Mini Pro 4.6K G2;25.34;usercontribution
-Blackmagic Design;URSA Mini Pro 4.6K;25.34;usercontribution
-Blackmagic Design;URSA Mini 4.6K;25.34;usercontribution
-Blackmagic Design;URSA Broadcast;13.056;Blackmagic
-Blackmagic Design;URSA Broadcast G2;23.10;Blackmagic
-Blackmagic Design;Pocket Cinema Camera 6K Pro;23.10;usercontribution
-Blackmagic Design;Pocket Cinema Camera 6K;23.10;usercontribution
-Blackmagic Design;Pocket Cinema Camera 4K;18.96;usercontribution
-Blackmagic Design;Production Camera 4K;21.12;usercontribution
 Black fox;Black fox B3 Fox;3.67;devicespecifications
 Black fox;Black fox B3 Fox+;3.67;devicespecifications
 Black fox;Black fox B5Fox+;3.67;devicespecifications
@@ -403,9 +393,19 @@ Blackberry;Blackberry Motion;6.25;devicespecifications
 Blackberry;Blackberry Priv;0.28;devicespecifications
 Blackberry;Blackberry Q10;4.8;devicespecifications
 Blackberry;Blackberry Q5;4.8;devicespecifications
-Blackmagic;Blackmagic Studio Camera HD;12.48;usercontribution
 Blackmagic;Blackmagic Pocket Cinema Camera 4K;18.96;usercontribution
 Blackmagic;Blackmagic Pocket Cinema Camera 6K;23.10;usercontribution
+Blackmagic;Blackmagic Studio Camera HD;12.48;usercontribution
+Blackmagic Design;Pocket Cinema Camera 4K;18.96;usercontribution
+Blackmagic Design;Pocket Cinema Camera 6K;23.10;usercontribution
+Blackmagic Design;Pocket Cinema Camera 6K Pro;23.10;usercontribution
+Blackmagic Design;Production Camera 4K;21.12;usercontribution
+Blackmagic Design;URSA Broadcast;13.056;Blackmagic
+Blackmagic Design;URSA Broadcast G2;23.10;Blackmagic
+Blackmagic Design;URSA Mini 4.6K;25.34;usercontribution
+Blackmagic Design;URSA Mini Pro 12K;27.03;usercontribution
+Blackmagic Design;URSA Mini Pro 4.6K;25.34;usercontribution
+Blackmagic Design;URSA Mini Pro 4.6K G2;25.34;usercontribution
 Blackview;Blackview A10;2.8;devicespecifications
 Blackview;Blackview A20 Pro;3.67;devicespecifications
 Blackview;Blackview A30;3.67;devicespecifications
@@ -580,16 +580,12 @@ Canon;Canon EOS 1D Mark II;29.0;dxomark
 Canon;Canon EOS 1D Mark II N;28.7;dxomark
 Canon;Canon EOS 1D Mark III;28.7;dxomark
 Canon;Canon EOS 1D Mark IV;27.9;dxomark
+Canon;Canon EOS 1D X mk III;36.00;usercontribution
 Canon;Canon EOS 1Dc;36.0;dxomark
 Canon;Canon EOS 1Ds;35.8;dxomark
 Canon;Canon EOS 1Ds Mark II;36.0;dxomark
 Canon;Canon EOS 1Ds Mark III;36.0;dxomark
 Canon;Canon EOS 1Dx;36.0;dxomark
-Canon;Canon EOS 1D X mk III;36.00;usercontribution
-Canon;Canon EOS 5D mk II;36.00;usercontribution
-Canon;Canon EOS 5D mk III;36.00;usercontribution
-Canon;Canon EOS 5D mk IV;36.00;usercontribution
-Canon;Canon EOS 7D;22.30;usercontribution
 Canon;Canon EOS 2000D;22.3;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 200D;22.3;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 20D;22.5;dpreview,digicamdb,dxomark
@@ -610,6 +606,9 @@ Canon;Canon EOS 5D;36.0;dpreview,dxomark
 Canon;Canon EOS 5D Mark II;36.0;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 5D Mark III;36.0;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 5D Mark IV;36.0;dpreview,digicamdb,imaging-resource,dxomark
+Canon;Canon EOS 5D mk II;36.00;usercontribution
+Canon;Canon EOS 5D mk III;36.00;usercontribution
+Canon;Canon EOS 5D mk IV;36.00;usercontribution
 Canon;Canon EOS 5DS;36.0;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 5DS R;36.0;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 600D;22.3;dpreview,digicamdb,imaging-resource,dxomark
@@ -624,21 +623,22 @@ Canon;Canon EOS 750D;22.3;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 760D;22.3;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 77D;22.3;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 7D;22.3;dpreview,digicamdb,imaging-resource,dxomark
+Canon;Canon EOS 7D;22.30;usercontribution
 Canon;Canon EOS 7D Mark II;22.4;dpreview,digicamdb,dxomark
 Canon;Canon EOS 8000D;22.3;digicamdb
 Canon;Canon EOS 800D;22.3;digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 80D;22.5;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon EOS 9000D;22.3;digicamdb
-Canon;Canon EOS C700 FF;38.10;usercontribution
-Canon;Canon EOS C700;28.90;usercontribution
-Canon;Canon EOS C500 mk II;38.10;usercontribution
-Canon;Canon EOS C300 mk III;26.20;usercontribution
-Canon;Canon EOS C300 mk II;24.40;usercontribution
-Canon;Canon EOS C300;24.40;usercontribution
-Canon;Canon EOS C200;24.40;usercontribution
-Canon;Canon EOS C70;26.20;usercontribution
-Canon;Canon EOS C100 mk II;24.60;usercontribution
 Canon;Canon EOS C100;24.60;usercontribution
+Canon;Canon EOS C100 mk II;24.60;usercontribution
+Canon;Canon EOS C200;24.40;usercontribution
+Canon;Canon EOS C300;24.40;usercontribution
+Canon;Canon EOS C300 mk II;24.40;usercontribution
+Canon;Canon EOS C300 mk III;26.20;usercontribution
+Canon;Canon EOS C500 mk II;38.10;usercontribution
+Canon;Canon EOS C70;26.20;usercontribution
+Canon;Canon EOS C700;28.90;usercontribution
+Canon;Canon EOS C700 FF;38.10;usercontribution
 Canon;Canon EOS D30;22.7;dpreview,digicamdb
 Canon;Canon EOS D60;22.7;dpreview,digicamdb
 Canon;Canon EOS Digital Rebel;22.7;dpreview,digicamdb
@@ -1409,6 +1409,7 @@ Dexp;Dexp Ixion X355 Zenith;4.82;devicespecifications
 Dexp;Dexp Ixion XL 5;4.69;devicespecifications
 Dexp;Dexp Ixion XL140 Flash;3.67;devicespecifications
 Dexp;Dexp Ixion XL240 Triforce;3.6;devicespecifications
+DJI;DJI Ronin 4D 6K;36.00;usercontribution
 DJI;FC1102;6.17;usercontribution
 DJI;FC2103;6.17;usercontribution
 DJI;FC220;6.17;usercontribution
@@ -1433,18 +1434,18 @@ DJI;FC6520;17.3;usercontribution
 DJI;FC6540;23.5;usercontribution
 DJI;FC7203;6.16;usercontribution
 DJI;FC7303;6.16;usercontribution
+DJI;MAVIC2-ENTERPRISE-ADVANCED;4.8
+DJI;Mavic3;17.3;dji
 DJI;Phantom 4;6.3;dxomark
 DJI;Phantom 4 Pro;13.2;dxomark
 DJI;Phantom Vision FC200;6.17;usercontribution
-DJI;DJI Ronin 4D 6K;36.00;usercontribution
 DJI;Test_Pro;8.00;usercontribution
+DJI;X3;6.17;usercontribution
+DJI;X5R;17.3;usercontribution
 DJI;Zenmuse X4S;13.2;dxomark
 DJI;Zenmuse X5S;17.3;dxomark
 DJI;Zenmuse X7;23.5;dxomark
 DJI;Zenmuse Z30;5.23;usercontribution
-DJI;X3;6.17;usercontribution
-DJI;X5R;17.3;usercontribution
-DJI;Mavic3;17.3;dji
 Doogee;Doogee BL12000;4.74;devicespecifications
 Doogee;Doogee BL12000 Pro;4.74;devicespecifications
 Doogee;Doogee BL5000;4.69;devicespecifications
@@ -1563,14 +1564,22 @@ Fairphone;FP3;5.75;fairphone
 Fairphone;FP4;6.4;fairphone
 Firefly;Firefly Aurii Envy;4.69;devicespecifications
 Firefly;Firefly Aurii Secret;4.71;devicespecifications
-FLIR;BFS-U3-17S7C-C;14.4;edmundoptics
-FLIR;BFS-U3-17S7M-C;14.4;edmundoptics
 FLIR;BFS-U3-04S2C-CS;4.97;edmundoptics
 FLIR;BFS-U3-04S2M-CS;4.97;edmundoptics
+FLIR;BFS-U3-120S4C-CS;7.4;edmundoptics
+FLIR;BFS-U3-120S4M-CS;7.4;edmundoptics
+FLIR;BFS-U3-122S6C-C;14.13;edmundoptics
+FLIR;BFS-U3-122S6M-C;14.13;edmundoptics
+FLIR;BFS-U3-123S6C-C;14.13;edmundoptics
+FLIR;BFS-U3-123S6M-C;14.13;edmundoptics
 FLIR;BFS-U3-13Y3C-C;6.14;edmundoptics
 FLIR;BFS-U3-13Y3M-C;6.14;edmundoptics
 FLIR;BFS-U3-16S2C-CS;4.97;edmundoptics
 FLIR;BFS-U3-16S2M-CS;4.97;edmundoptics
+FLIR;BFS-U3-17S7C-C;14.4;edmundoptics
+FLIR;BFS-U3-17S7M-C;14.4;edmundoptics
+FLIR;BFS-U3-200S6C-C;13.13;edmundoptics
+FLIR;BFS-U3-200S6M-C;13.13;edmundoptics
 FLIR;BFS-U3-23S3C-C;6.62;edmundoptics
 FLIR;BFS-U3-23S3M-C;6.62;edmundoptics
 FLIR;BFS-U3-28S5C-C;8.71;edmundoptics
@@ -1579,28 +1588,20 @@ FLIR;BFS-U3-31S4C-C;7.07;edmundoptics
 FLIR;BFS-U3-31S4M-C;7.07;edmundoptics
 FLIR;BFS-U3-32S4C-C;7.07;edmundoptics
 FLIR;BFS-U3-32S4M-C;7.07;edmundoptics
-FLIR;BFS-U3-51S5C-C;8.45;edmundoptics
 FLIR;BFS-U3-50S5C-C;8.45;edmundoptics
-FLIR;BFS-U3-51S5M-C;8.45;edmundoptics
-FLIR;BFS-U3-51S5PC-C;8.45;edmundoptics
-FLIR;BFS-U3-51S5P-C;8.45;edmundoptics
 FLIR;BFS-U3-50S5M-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5C-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5M-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5P-C;8.45;edmundoptics
+FLIR;BFS-U3-51S5PC-C;8.45;edmundoptics
 FLIR;BFS-U3-63S4C-C;7.37;edmundoptics
 FLIR;BFS-U3-63S4M-C;7.37;edmundoptics
 FLIR;BFS-U3-70S7C-C;14.44;edmundoptics
 FLIR;BFS-U3-70S7M-C;14.44;edmundoptics
 FLIR;BFS-U3-88S6C-C;14.13;edmundoptics
-FLIR;BFS-U3-89S6C-C;14.13;edmundoptics
 FLIR;BFS-U3-88S6M-C;14.13;edmundoptics
+FLIR;BFS-U3-89S6C-C;14.13;edmundoptics
 FLIR;BFS-U3-89S6M-C;14.13;edmundoptics
-FLIR;BFS-U3-120S4C-CS;7.4;edmundoptics
-FLIR;BFS-U3-120S4M-CS;7.4;edmundoptics
-FLIR;BFS-U3-122S6C-C;14.13;edmundoptics
-FLIR;BFS-U3-123S6C-C;14.13;edmundoptics
-FLIR;BFS-U3-122S6M-C;14.13;edmundoptics
-FLIR;BFS-U3-123S6M-C;14.13;edmundoptics
-FLIR;BFS-U3-200S6C-C;13.13;edmundoptics
-FLIR;BFS-U3-200S6M-C;13.13;edmundoptics
 Fly;Fly Power Plus 2;3.67;devicespecifications
 Fly;Fly Tornado One;4.69;devicespecifications
 Fujifilm;Fujifilm A150 ;6.2;imaging-resource
@@ -2355,6 +2356,10 @@ Huawei;Huawei G Play mini;4.69;devicespecifications
 Huawei;Huawei G7 Plus;4.71;devicespecifications
 Huawei;Huawei G8;4.71;devicespecifications
 Huawei;Huawei G9 Plus;5.22;devicespecifications
+Huawei;Huawei Honor 20;6.4;kimovil
+Huawei;Huawei Honor 20 Pro;6.4;kimovil
+Huawei;Huawei Honor 20 Youth;6.4;kimovil
+Huawei;Huawei Honor 30i;6.4;kimovil
 Huawei;Huawei Honor 4C Play;4.69;devicespecifications
 Huawei;Huawei Honor 5X;4.69;devicespecifications
 Huawei;Huawei Honor 6;4.69;devicespecifications
@@ -2363,21 +2368,17 @@ Huawei;Huawei Honor 6 Plus;4.54;devicespecifications
 Huawei;Huawei Honor 6X;4.96;devicespecifications
 Huawei;Huawei Honor 7;5.99;devicespecifications
 Huawei;Huawei Honor 8 Smart;4.69;devicespecifications
-Huawei;Huawei Honor V8;4.54;devicespecifications
-Huawei;Huawei Honor V8 Standard Edition;4.54;devicespecifications
-Huawei;Huawei Honor 20;6.4;kimovil
-Huawei;Huawei Honor 20 Pro;6.4;kimovil
-Huawei;Huawei Honor 20 Youth;6.4;kimovil
-Huawei;Huawei Honor 30i;6.4;kimovil
 Huawei;Huawei Honor Play 4T;6.4;kimovil
 Huawei;Huawei Honor Play 4T Pro;6.4;kimovil
 Huawei;Huawei Honor V20 MOSCHI;6.4;kimovil
+Huawei;Huawei Honor V8;4.54;devicespecifications
+Huawei;Huawei Honor V8 Standard Edition;4.54;devicespecifications
 Huawei;Huawei Honor View 20;6.4;kimovil
 Huawei;Huawei Maimang 4;4.71;devicespecifications
 Huawei;Huawei Maimang 5;5.22;devicespecifications
-Huawei;Huawei Mate 8;5.22;devicespecifications
 Huawei;Huawei Mate 10 Pro;5.0;imaging-resource
 Huawei;Huawei Mate 30 Lite;6.4;kimovil
+Huawei;Huawei Mate 8;5.22;devicespecifications
 Huawei;Huawei Mate S;4.71;devicespecifications
 Huawei;Huawei Nexus 6P;6.25;devicespecifications
 Huawei;Huawei Nova 4;6.4;kimovil
@@ -2389,6 +2390,8 @@ Huawei;Huawei Nova 5T Pro;6.4;kimovil
 Huawei;Huawei Nova 5z;6.4;kimovil
 Huawei;Huawei Nova 6 SE;6.4;kimovil
 Huawei;Huawei Nova 7i;6.4;kimovil
+Huawei;Huawei P30 Pro;7.3;devicespecifications
+Huawei;Huawei P40 Lite;6.4;kimovil
 Huawei;Huawei P8;4.71;devicespecifications
 Huawei;Huawei P8Lite;4.82;devicespecifications
 Huawei;Huawei P8Lite ALE-L04;4.82;devicespecifications
@@ -2397,9 +2400,7 @@ Huawei;Huawei P9;4.54;devicespecifications
 Huawei;Huawei P9 Lite;4.69;devicespecifications
 Huawei;Huawei P9 Lite Premium;4.69;devicespecifications
 Huawei;Huawei P9 Premium Edition;4.54;devicespecifications
-Huawei;Huawei P40 Lite;6.4;kimovil
 Huawei;Huawei Y6 Pro 2017;3.54;devicespecifications
-Huawei;Huawei P30 Pro;7.3;devicespecifications
 HUAWEI;PCT-L29;6.4;devicespecifications
 I-mobile;I-mobile IQ X Pro 2;6.17;devicespecifications
 Iberry;Iberry Prime P8000;4.69;devicespecifications
@@ -3121,9 +3122,9 @@ LG;Lg G820V;5.64;devicespecifications,usercontribution
 LG;Lg G8s ThinQ;5.64;devicespecifications,usercontribution
 LG;Lg G8X ThinQ;5.64;devicespecifications,usercontribution
 Lg;Lg Google Nexus 5;4.54;devicespecifications
-Lg;Lg K8;4.6;devicespecifications
 Lg;Lg K12+;4.65;devicespecifications,usercontribution
 Lg;Lg K40;4.65;devicespecifications,usercontribution
+Lg;Lg K8;4.6;devicespecifications
 Lg;Lg L-41A;6.4;devicespecifications,usercontribution
 Lg;Lg Nexus 4;3.67;devicespecifications
 Lg;Lg Nexus 5X;6.25;devicespecifications
@@ -3148,24 +3149,24 @@ Lg;Lg X420EM;4.65;devicespecifications,usercontribution
 Lg;Lg X420EMW;4.65;devicespecifications,usercontribution
 Lg;Lg X6;4.65;devicespecifications,usercontribution
 Lg;Lg Zero;3.7;devicespecifications
+LG Electronics;LG-G900N;6.4;devicespecifications,usercontribution
+LG Electronics;LG-H815;5.95;devicespecifications,usercontribution
+LG Electronics;LG-H870;4.71;usercontribution
+LG Electronics;LG-H870;4.71;usercontribution
+LG Electronics;LG-H870DS;5.867;usercontribution
+LG Electronics;LG-H870DS;5.867;usercontribution
+LG Electronics;LG-H873;4.8;usercontribution
+LG Electronics;LG-H930;5.893;usercontribution
+LG Electronics;LG-H930;5.893;usercontribution
+LG Electronics;LG-H932;5.893;usercontribution
+LG Electronics;LG-H932;5.893;usercontribution
+LG Electronics;LG-V510;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G810EAW;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820N;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820QM;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G820V;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G850EM;5.64;devicespecifications,usercontribution
 LG Electronics;LM-G850UM;5.64;devicespecifications,usercontribution
-LG Electronics;LG-G900N;6.4;devicespecifications,usercontribution
-LG Electronics;LG-H815;5.95;devicespecifications,usercontribution
-LG Electronics;LG-H870;4.71;usercontribution
-LG Electronics;LG-H870;4.71;usercontribution
-LG Electronics;LG-H870DS;5.867;usercontribution
-LG Electronics;LG-H930;5.893;usercontribution
-LG Electronics;LG-H932;5.893;usercontribution
-LG Electronics;LG-H870DS;5.867;usercontribution
-LG Electronics;LG-H873;4.8;usercontribution
-LG Electronics;LG-H930;5.893;usercontribution
-LG Electronics;LG-H932;5.893;usercontribution
-LG Electronics;LG-V510;5.64;devicespecifications,usercontribution
 LG Electronics;LM-Q720CS;4.65;devicespecifications,usercontribution
 LG Electronics;LM-Q720TS;4.65;devicespecifications,usercontribution
 LG Electronics;LM-V450PM;4.03;devicespecifications,usercontribution
@@ -3203,16 +3204,22 @@ Meitu;Meitu T8;5.99;devicespecifications
 Meitu;Meitu T8s;5.99;devicespecifications
 Meitu;Meitu V4;5.9;devicespecifications
 Meitu;Meitu V4S;5.99;devicespecifications
-Meizu;Meizu Blue Charm Metal;2.95;devicespecifications
-Meizu;Meizu Blue Charm Metal Telecom;2.95;devicespecifications
 Meizu;Meizu 16S;6.4;kimovil
 Meizu;Meizu 16S Pro;6.4;kimovil
+Meizu;Meizu Blue Charm Metal;2.95;devicespecifications
+Meizu;Meizu Blue Charm Metal Telecom;2.95;devicespecifications
 Meizu;Meizu C9;3.67;devicespecifications
 Meizu;Meizu C9 Pro;4.69;devicespecifications
 Meizu;Meizu E3;5.64;devicespecifications,usercontribution
 Meizu;Meizu m1;4.69;devicespecifications
 Meizu;Meizu m1 note;4.69;devicespecifications
 Meizu;Meizu m1 note Telecom;4.69;devicespecifications
+Meizu;Meizu M16s;6.4;devicespecifications,usercontribution
+Meizu;Meizu M16s Pro;6.4;devicespecifications,usercontribution
+Meizu;Meizu M16T;5.64;devicespecifications,usercontribution
+Meizu;Meizu M16Xs;6.4;devicespecifications,usercontribution
+Meizu;Meizu M17;7.4;devicespecifications,usercontribution
+Meizu;Meizu M17T;7.4;devicespecifications,usercontribution
 Meizu;Meizu m2;4.69;devicespecifications
 Meizu;Meizu m2 note;4.69;devicespecifications
 Meizu;Meizu m3;4.71;devicespecifications
@@ -3227,12 +3234,6 @@ Meizu;Meizu M5s;4.71;devicespecifications
 Meizu;Meizu M6;4.71;devicespecifications
 Meizu;Meizu M6 note;5.64;devicespecifications,usercontribution
 Meizu;Meizu M6T;4.71;devicespecifications
-Meizu;Meizu M16s;6.4;devicespecifications,usercontribution
-Meizu;Meizu M16s Pro;6.4;devicespecifications,usercontribution
-Meizu;Meizu M16T;5.64;devicespecifications,usercontribution
-Meizu;Meizu M16Xs;6.4;devicespecifications,usercontribution
-Meizu;Meizu M17;7.4;devicespecifications,usercontribution
-Meizu;Meizu M17T;7.4;devicespecifications,usercontribution
 Meizu;Meizu MX3;4.54;devicespecifications
 Meizu;Meizu MX4;6.17;devicespecifications
 Meizu;Meizu MX4 Pro;6.17;devicespecifications
@@ -3390,7 +3391,6 @@ Motorola;Motorola 3rd Gen;4.69;devicespecifications
 Motorola;Motorola 4;6.06;usercontribution
 Motorola;Motorola Droid Maxx 2;5.99;devicespecifications
 Motorola;Motorola Droid Turbo 2;5.99;devicespecifications
-Motorola;Motorola One Fusion;6.4;usercontribution
 Motorola;Motorola Moto G;4.69;devicespecifications
 Motorola;Motorola Moto G4;3.67;devicespecifications
 Motorola;Motorola Moto G4 Plus;6.06;devicespecifications
@@ -3408,6 +3408,7 @@ Motorola;Motorola Moto Z2 Force Edition;4.96;devicespecifications
 Motorola;Motorola Moto Z2 Play;3.67;devicespecifications
 Motorola;Motorola Moto Z4;6.4;kimovil
 Motorola;Motorola Nexus 6;4.69;devicespecifications
+Motorola;Motorola One Fusion;6.4;usercontribution
 Motorola;Motorola P30;4.74;devicespecifications
 Motorola;XT1033;3.8;usercontribution
 Motorola;XT1635-02;6.06;usercontribution
@@ -3426,6 +3427,7 @@ Neo;Neo N003 Youth;4.68;devicespecifications
 Newman;Newman K18;4.69;devicespecifications
 Nibiru;Nibiru Jupiter One M1;4.82;devicespecifications
 Nibiru;Nibiru Venus J1;4.82;devicespecifications
+Nikon; Nikon Z9;35.9;usercontribution
 NIKON;E2500;5.27;usercontribution
 NIKON;E3100;5.27;usercontribution
 NIKON;E3200;5.27;usercontribution
@@ -3719,8 +3721,8 @@ Nikon;Nikon D70s;23.7;dpreview,digicamdb
 Nikon;Nikon D7100;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Nikon;Nikon D7200;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Nikon;Nikon D750;35.9;dpreview,digicamdb,imaging-resource,dxomark
-Nikon;Nikon D780;35.9;digicamdb,imaging-resource
 Nikon;Nikon D7500;23.5;dpreview,digicamdb,imaging-resource,dxomark
+Nikon;Nikon D780;35.9;digicamdb,imaging-resource
 Nikon;Nikon D80;23.6;dpreview,digicamdb,imaging-resource,dxomark
 Nikon;Nikon D800;35.9;dpreview,digicamdb,imaging-resource,dxomark
 Nikon;Nikon D800E;35.9;dpreview,digicamdb,imaging-resource,dxomark
@@ -3754,7 +3756,6 @@ Nikon;Nikon Z 6;35.9;usercontribution
 Nikon;Nikon Z 7;35.9;usercontribution
 Nikon;Nikon Z6;35.9;dpreview,digicamdb,imaging-resource
 Nikon;Nikon Z7;35.9;dpreview,digicamdb,imaging-resource
-Nikon; Nikon Z9;35.9;usercontribution
 Noa;Noa H10;4.69;devicespecifications
 Noa;Noa H10le;4.69;devicespecifications
 Noa;Noa H8;4.69;devicespecifications
@@ -4860,9 +4861,9 @@ Panasonic;Panasonic Lumix DMC-ZS8;6.08;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-ZX1;6.08;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-ZX3;6.08;dpreview,digicamdb
 Panasonic;Panasonic Lumix GH4R;17.3;dxomark
+Panasonic;Panasonic Lumix GH5;17.3;usercontribution
 Panasonic;Panasonic Lumix GH5 II;17.3;usercontribution
 Panasonic;Panasonic Lumix GH5s;17.3;usercontribution
-Panasonic;Panasonic Lumix GH5;17.3;usercontribution
 Panasonic;Panasonic Lumix S1H;35.6;usercontribution
 Panasonic;Panasonic Lumix S5;35.6;usercontribution
 Panasonic;Panasonic Lumix Smart Camera CM1;13.2;devicespecifications
@@ -5217,9 +5218,9 @@ RED;GEMINI 5K S35;30.72;usercontribution
 RED;HELIUM 8K S35;29.9;usercontribution
 RED;KOMODO 6K;27.03;usercontribution
 RED;MONSTRO 8K VV;40.96;usercontribution
-RED;RANGER MONSTRO 8K VV;40.96;usercontribution
-RED;RANGER HELIUM 8K S35;29.9;usercontribution
 RED;RANGER GEMINI 5K S35;30.72;usercontribution
+RED;RANGER HELIUM 8K S35;29.9;usercontribution
+RED;RANGER MONSTRO 8K VV;40.96;usercontribution
 Red;Red Dragon 4K HD;19.19;usercontribution
 Red;Red Helium 8K S35;29.90;usercontribution
 Red;Red Mysterium-X 4K HD;20.74;usercontribution
@@ -5229,9 +5230,9 @@ Ricoh;Pentax K-1 Mark II;35.9;dpreview,digicamdb,dxomark
 Ricoh;Pentax K-3;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Ricoh;Pentax K-3 II;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Ricoh;Pentax K-70;23.5;dpreview,digicamdb,imaging-resource,dxomark
-Ricoh;Pentax KP;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Ricoh;Pentax K-S1;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Ricoh;Pentax K-S2;23.5;dpreview,digicamdb,imaging-resource,dxomark
+Ricoh;Pentax KP;23.5;dpreview,digicamdb,imaging-resource,dxomark
 Ricoh;Ricoh Caplio 400G Wide;5.33;digicamdb
 Ricoh;Ricoh Caplio 500G;7.144;dpreview,digicamdb
 Ricoh;Ricoh Caplio 500G Wide;7.11;digicamdb
@@ -5538,12 +5539,12 @@ Samsung;Samsung EX1;7.44;dpreview,digicamdb,dxomark
 Samsung;Samsung EX2F;7.44;dpreview,digicamdb,dxomark
 Samsung;Samsung Galaxy A5;4.69;devicespecifications
 Samsung;Samsung Galaxy A5 Duos;4.69;devicespecifications
+Samsung;Samsung Galaxy A70;5.14;devicespecifications
 Samsung;Samsung Galaxy A8;5.3;devicespecifications
 Samsung;Samsung Galaxy A8 SM-A530W;5.3;devicespecifications
 Samsung;Samsung Galaxy A8 SM-A800F;5.3;devicespecifications
-Samsung;Samsung Galaxy A9;4.69;devicespecifications
-Samsung;Samsung Galaxy A70;5.14;devicespecifications
 Samsung;Samsung Galaxy A80;6.4;kimovil
+Samsung;Samsung Galaxy A9;4.69;devicespecifications
 Samsung;Samsung Galaxy C5;4.74;devicespecifications
 Samsung;Samsung Galaxy C7;4.74;devicespecifications
 Samsung;Samsung Galaxy Camera;6.17;dpreview,digicamdb
@@ -5573,22 +5574,25 @@ Samsung;Samsung Galaxy Note FE SD820;3.6;devicespecifications
 Samsung;Samsung Galaxy Note5;5.95;devicespecifications
 Samsung;Samsung Galaxy Note7 Exynos;3.6;devicespecifications
 Samsung;Samsung Galaxy Note7 SD820;3.6;devicespecifications
+Samsung;Samsung Galaxy Note8 N9500;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 N950A;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 N950P;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 N950T;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 N950V;5.75;usercontribution
-Samsung;Samsung Galaxy Note8 N9500;5.75;usercontribution
+Samsung;Samsung Galaxy Note8 SM-N9500;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 SM-N950P;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 SM-N950T;5.75;usercontribution
 Samsung;Samsung Galaxy Note8 SM-N950V;5.75;usercontribution
-Samsung;Samsung Galaxy Note8 SM-N9500;5.75;usercontribution
 Samsung;Samsung Galaxy Note9 SM-N960U;5.644;devicespecifications
 Samsung;Samsung Galaxy NX;23.5;dpreview,digicamdb
 Samsung;Samsung Galaxy Round;4.54;devicespecifications
+Samsung;Samsung Galaxy S10 Lite;6.4;kimovil
+Samsung;Samsung Galaxy S10 Plus;5.75;digicamdb
 Samsung;Samsung Galaxy S2;4.54;devicespecifications
 Samsung;Samsung Galaxy S2 AT&T;4.54;devicespecifications
 Samsung;Samsung Galaxy S2 Plus;4.54;devicespecifications
 Samsung;Samsung Galaxy S2 Skyrocket;4.54;devicespecifications
+Samsung;Samsung Galaxy S20 Ultra 5G Exynos;10.82;devicespecifications
 Samsung;Samsung Galaxy S3;4.6;devicespecifications
 Samsung;Samsung Galaxy S3 I747;4.8;devicespecifications
 Samsung;Samsung Galaxy S3 Sprint;4.8;devicespecifications
@@ -5620,9 +5624,6 @@ Samsung;Samsung Galaxy S7 Edge SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S8;5.75;usercontribution
 Samsung;Samsung Galaxy S9;5.75;usercontribution
-Samsung;Samsung Galaxy S10 Lite;6.4;kimovil
-Samsung;Samsung Galaxy S10 Plus;5.75;digicamdb
-Samsung;Samsung Galaxy S20 Ultra 5G Exynos;10.82;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 Wi-Fi;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 8.4 LTE;3.6;devicespecifications
@@ -5970,8 +5971,8 @@ Sigma;Sigma DP2s;20.7;dpreview,digicamdb,imaging-resource,dxomark
 Sigma;Sigma DP2x;20.7;dpreview,digicamdb,imaging-resource
 Sigma;Sigma DP3 Merrill;24.0;dpreview,digicamdb
 Sigma;Sigma dp3 Quattro;23.5;dpreview,imaging-resource,dxomark
-Sigma;Sigma FP L;36.0;usercontribution
 Sigma;Sigma FP;35.9;usercontribution
+Sigma;Sigma FP L;36.0;usercontribution
 Sigma;Sigma sd Quattro;23.5;dpreview,imaging-resource,dxomark
 Sigma;Sigma sd Quattro H;26.6;dpreview,imaging-resource,dxomark
 Sigma;Sigma SD1;24.0;dpreview,digicamdb
@@ -6007,14 +6008,14 @@ Smartisan;Smartisan T1;4.69;devicespecifications
 Smartisan;Smartisan T2;4.69;devicespecifications
 Smartisan;Smartisan U1;4.69;devicespecifications
 Smartron;Smartron t.phone;5.44;devicespecifications
-Sony;Alpha 7 III;35.6;usercontribution
-Sony;Alpha 7S III;35.6;usercontribution
-Sony;Alpha 7S II;35.6;usercontribution
-Sony;Alpha 7S;35.6;usercontribution
-Sony;Alpha A7 IV;35.9;usercontribution
-Sony;Alpha 7C;35.6;usercontribution
-Sony;Alpha 9 II;35.6;usercontribution
 Sony;A7SM2;35.6;usercontribution
+Sony;Alpha 7 III;35.6;usercontribution
+Sony;Alpha 7C;35.6;usercontribution
+Sony;Alpha 7S;35.6;usercontribution
+Sony;Alpha 7S II;35.6;usercontribution
+Sony;Alpha 7S III;35.6;usercontribution
+Sony;Alpha 9 II;35.6;usercontribution
+Sony;Alpha A7 IV;35.9;usercontribution
 Sony;DSC-HX60V;7.76;usercontribution
 Sony;DSC-P200;7.11;usercontribution
 Sony;DSC-RX100M4;13.2;usercontribution
@@ -6025,10 +6026,10 @@ Sony;DSC-RX10M2;13.2;usercontribution
 Sony;DSC-RX10M3;25.4;usercontribution
 Sony;DSC-RX1RM2;35.9;usercontribution
 Sony;E6653;6.17;devicespecifications
-Sony;FX3;35.6;usercontribution
-Sony;FX6;35.7;usercontribution
 Sony;FDR-AX40;7.20;usercontribution
 Sony;FDR-AXP33;7.76;usercontribution
+Sony;FX3;35.6;usercontribution
+Sony;FX6;35.7;usercontribution
 Sony;G3212;6.17;devicespecifications
 Sony;G3221;6.17;devicespecifications
 Sony;G3223;6.17;devicespecifications
@@ -6053,12 +6054,12 @@ Sony;ILCE-7S;35.6;usercontribution
 Sony;ILCE-7SM2;35.6;usercontribution
 Sony;NEX-3N;23.5;usercontribution
 Sony;NEX-FS700;24.0;usercontribution
-Sony;PXW-FX9;35.7;usercontribution
 Sony;PMW-F55;24.0;usercontribution
-Sony;PXW-FS7 II;25.5;usercontribution
-Sony;PXW-FS7;25.5;usercontribution
-Sony;PXW-FS5 II;25.50;usercontribution
 Sony;PXW-FS5;25.5;usercontribution
+Sony;PXW-FS5 II;25.50;usercontribution
+Sony;PXW-FS7;25.5;usercontribution
+Sony;PXW-FS7 II;25.5;usercontribution
+Sony;PXW-FX9;35.7;usercontribution
 Sony;SLT-A77V;23.5;usercontribution
 Sony;SLT-A99V;35.8;usercontribution
 Sony;Sony A3000;23.5;dxomark
@@ -6454,8 +6455,6 @@ Sony;Sony Cybershot DSC H70;6.16;usercontribution
 Sony;Sony Cybershot DSC H9;5.75;usercontribution
 Sony;Sony Cybershot DSC H90;6.16;usercontribution
 Sony;Sony Cybershot DSC HX1;5.9;usercontribution
-Sony;Sony Cybershot DSC-HX90;6.16;usercontribution
-Sony;Sony Cybershot DSC-HX90V;6.16;usercontribution
 Sony;Sony CyberShot DSC HX100V;6.16;usercontribution
 Sony;Sony Cybershot DSC HX10V;6.16;usercontribution
 Sony;Sony Cybershot DSC HX200V;6.16;usercontribution
@@ -6642,6 +6641,8 @@ Sony;Sony Cybershot DSC WX9;6.16;usercontribution
 Sony;Sony Cybershot DSC-HX300;6.16;usercontribution
 Sony;Sony Cybershot DSC-HX400;6.16;usercontribution
 Sony;Sony CyberShot DSC-HX7V;6.16;usercontribution
+Sony;Sony Cybershot DSC-HX90;6.16;usercontribution
+Sony;Sony Cybershot DSC-HX90V;6.16;usercontribution
 Sony;Sony Cybershot DSC-HX90V;6.16;usercontribution
 Sony;Sony Cybershot DSC-QX10;6.16;usercontribution
 Sony;Sony Cybershot DSC-QX100;13.2;usercontribution
@@ -6771,8 +6772,8 @@ Sony;Sony Xperia XZ;6.17;devicespecifications
 Sony;Sony Xperia XZ Dual;6.17;devicespecifications
 Sony;Sony Xperia XZ Premium;4.69;devicespecifications
 Sony;Sony Xperia XZ Premium Dual;4.69;devicespecifications
-Sony;Sony Xperia XZs;6.16;devicespecification
 Sony;Sony Xperia XZ2 Premium;6.16;devicespecification
+Sony;Sony Xperia XZs;6.16;devicespecification
 Sony;Sony Xperia Z;4.69;devicespecifications
 Sony;Sony Xperia Z Ultra;3.67;devicespecifications
 Sony;Sony Xperia Z Ultra C6802;3.67;devicespecifications
@@ -6965,7 +6966,6 @@ Umidigi;Umidigi A1 Pro;4.69;devicespecifications
 Umidigi;Umidigi A3;3.68;devicespecifications
 Umidigi;Umidigi A3 Pro;3.68;devicespecifications
 Umidigi;Umidigi Bison;6.4;kimovil
-Umidigi;Umidigi S3 Pro;6.4;kimovil
 Umidigi;Umidigi C Note;4.69;devicespecifications
 Umidigi;Umidigi C Note 2;4.69;devicespecifications
 Umidigi;Umidigi C2;4.69;devicespecifications
@@ -6979,6 +6979,7 @@ Umidigi;Umidigi S;4.69;devicespecifications
 Umidigi;Umidigi S2;4.71;devicespecifications
 Umidigi;Umidigi S2 Lite;4.74;devicespecifications
 Umidigi;Umidigi S2 Pro;4.71;devicespecifications
+Umidigi;Umidigi S3 Pro;6.4;kimovil
 Umidigi;Umidigi Z Pro;4.71;devicespecifications
 Umidigi;Umidigi Z1;4.69;devicespecifications
 Umidigi;Umidigi Z1 Pro;4.69;devicespecifications
@@ -7042,11 +7043,14 @@ Vivo;Vivo iQOO 3 5G;6.4;;devicespecifications,usercontribution
 Vivo;Vivo iQOO Neo 3;6.4;;devicespecifications,usercontribution
 Vivo;Vivo S5;6.4;kimovil
 Vivo;Vivo S6;6.4;;devicespecifications,usercontribution
+Vivo;Vivo V19;6.4;;devicespecifications,usercontribution
+Vivo;Vivo V1962A;6.4;;devicespecifications,usercontribution
+Vivo;Vivo V1981A;6.4;;devicespecifications,usercontribution
 Vivo;Vivo V7;4.74;devicespecifications
 Vivo;Vivo V7Plus;4.74;devicespecifications
-Vivo;Vivo V19;6.4;;devicespecifications,usercontribution
-Vivo;Vivo V1981A;6.4;;devicespecifications,usercontribution
-Vivo;Vivo V1962A;6.4;;devicespecifications,usercontribution
+Vivo;Vivo X27;6.4;kimovil
+Vivo;Vivo X27 Pro;6.4;kimovil
+Vivo;Vivo X30 Pro AW;7.4;devicespecifications,usercontribution
 Vivo;Vivo X5;4.69;devicespecifications
 Vivo;Vivo X5M;4.69;devicespecifications
 Vivo;Vivo X5Max;4.69;devicespecifications
@@ -7056,9 +7060,6 @@ Vivo;Vivo X5Max+;4.69;devicespecifications
 Vivo;Vivo X5S;4.69;devicespecifications
 Vivo;Vivo X5V;4.69;devicespecifications
 Vivo;Vivo X7 Plus;5.22;devicespecifications
-Vivo;Vivo X27;6.4;kimovil
-Vivo;Vivo X27 Pro;6.4;kimovil
-Vivo;Vivo X30 Pro AW;7.4;devicespecifications,usercontribution
 Vivo;Vivo Xplay;4.69;devicespecifications
 Vivo;Vivo Xplay 3S;4.69;devicespecifications
 Vivo;Vivo Xplay5;5.22;devicespecifications
@@ -7070,8 +7071,8 @@ Vivo;Vivo Y15;4.59;devicespecifications
 Vivo;Vivo Y29L;4.69;devicespecifications
 Vivo;Vivo Y69;4.69;devicespecifications
 Vivo;Vivo Y79;4.74;devicespecifications
-Vivo;Vivo Z6;6.4;;devicespecifications,usercontribution
 Vivo;Vivo Z10;4.74;devicespecifications
+Vivo;Vivo Z6;6.4;;devicespecifications,usercontribution
 Vkworld;Vkworld S8;4.82;devicespecifications
 Vkworld;Vkworld T1 Plus;4.71;devicespecifications
 Voto;Voto X6;4.82;devicespecifications
@@ -7113,14 +7114,14 @@ Wolder;Wolder Wiam #65;5.99;devicespecifications
 Xgody;Xgody Y20;3.68;devicespecifications
 Xiaomi;Black Shark 2 Pro;6.4;kimovil
 Xiaomi;CC9;6.4;kimovil
+Xiaomi;m2007j20cg;7.4;devicespecifications
+Xiaomi;M2102J20SG (vayu);6.4;usercontribution
+Xiaomi;MI 9;6.4;devicespecifications
+Xiaomi;Mi A1;5.11;devicespecifications
+Xiaomi;Mi A3;6.4;devicespecifications
 Xiaomi;POCOPHONE F1;5.64;deviceranks
 Xiaomi;POCOPHONE F2 Pro;7.27;usercontribution
 Xiaomi;POCOPHONE F3;6.4;usercontribution
-Xiaomi;M2102J20SG (vayu);6.4;usercontribution
-Xiaomi;m2007j20cg;7.4;devicespecifications
-Xiaomi;Mi A1;5.11;devicespecifications
-Xiaomi;Mi A3;6.4;devicespecifications
-Xiaomi;MI 9;6.4;devicespecifications
 Xiaomi;Redmi K30 Pro Zoom Edition;7.4;devicespecifications
 Xiaomi;Xiaomi Mi 3;4.69;devicespecifications
 Xiaomi;Xiaomi Mi 3 TD;4.69;devicespecifications
@@ -7142,8 +7143,8 @@ Xiaomi;Xiaomi Mi 9 Pro;6.4;kimovil
 Xiaomi;Xiaomi Mi 9 Pro 5G;6.4;kimovil
 Xiaomi;Xiaomi Mi 9 SE;6.4;kimovil
 Xiaomi;Xiaomi Mi 9T Pro;6.4;kimovil
-Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi A2;4.96;devicespecifications
+Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
 Xiaomi;Xiaomi Mi Max 2;4.96;devicespecifications
 Xiaomi;Xiaomi Mi Max SD650;4.74;devicespecifications
@@ -7171,12 +7172,12 @@ Xiaomi;Xiaomi Redmi 3 Pro;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 3S 16GB;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 3S 32GB;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 5;5.11;devicespecifications
-Xiaomi;Xiaomi Redmi 5A;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi 5 Plus;5.11;devicespecifications
+Xiaomi;Xiaomi Redmi 5A;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi 6 Pro;2.98;devicespecifications
 Xiaomi;Xiaomi Redmi 7;4.96;usercontribution,kimovil
-Xiaomi;Xiaomi Redmi 7A;4.96;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi 7 Pro;5.54;usercontribution,kimovil
+Xiaomi;Xiaomi Redmi 7A;4.96;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi K20;6.4;kimovil
 Xiaomi;Xiaomi Redmi K20 Pro;6.4;kimovil
 Xiaomi;Xiaomi Redmi Note;4.6;devicespecifications
@@ -7204,8 +7205,8 @@ Xiaomi;Xiaomi Redmi Pro Exclusive Edition;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi Pro High Edition;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi Pro Standard Edition;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi Y1 Lite;2.9;devicespecifications
-Xiaomi;YDXJ01FM;7.04;usercontribution
 Xiaomi;YDXJ 2;7.70;usercontribution
+Xiaomi;YDXJ01FM;7.04;usercontribution
 Xolo;Xolo Black 1X;4.69;devicespecifications
 Xolo;Xolo Omega 5.5;4.69;devicespecifications
 Xolo;Xolo One HD;4.59;devicespecifications
@@ -7251,8 +7252,8 @@ Yu;Yu Yureka S;4.82;devicespecifications
 Yu;Yu Yutopia;5.99;devicespecifications
 YUNEEC;CGO3+ 3.2.34(E);6.16;usercontribution
 YUNEEC;YUNEEC Breeze 4K;4.7;dxomark
-Z Cam;E2-F6;37.09;usercontribution
 Z Cam;E2;19.0;usercontribution
+Z Cam;E2-F6;37.09;usercontribution
 Z Cam;E2-M4;19.0;usercontribution
 Z Cam;E2C;17.56;usercontribution
 Zaydo;Zaydo Pulse;4.69;devicespecifications
@@ -7313,4 +7314,3 @@ Zuk;Zuk Z1;4.69;devicespecifications
 Zuk;Zuk Z2;4.61;devicespecifications
 Zuk;Zuk Z2 Pro;4.61;devicespecifications
 Zuk;Zuk Z2 Rio Edition;4.54;devicespecifications
-DJI;MAVIC2-ENTERPRISE-ADVANCED;4.8
