@@ -42,7 +42,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * CCTag (feature extraction/matching and localization on CPU or GPU)
 * Cuda >= 7.0 (feature extraction and depth map computation)
 * Magma (required for UncertaintyTE)
-* Mosek >= 5 (linear programming)
+* Mosek >= 6 (linear programming)
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * OpenGV (rig calibration and localization)
 * OpenMP (enable multi-threading)
