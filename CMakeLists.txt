@@ -451,11 +451,11 @@ endif()
 if(AV_BUILD_PNG)
 set(PNG_TARGET png)
 ExternalProject_Add(${PNG_TARGET}
-       URL https://github.com/glennrp/libpng/archive/v1.6.35.tar.gz
+       URL https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
        #    http://github.com/glennrp/libpng-releases/raw/master/libpng-1.6.34.tar.gz
        #    http://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
        #    https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
-       URL_HASH MD5=d703ed4913fcfb40021bd3d4d35e00b6
+       URL_HASH MD5=6c7519f6c75939efa0ed3053197abd54
        DOWNLOAD_DIR ${BUILD_DIR}/download/libpng
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
