@@ -23,16 +23,16 @@ namespace fuseCut {
 class Fuser
 {
 public:
-    const mvsUtils::MultiViewParams* mp;
+    const mvsUtils::MultiViewParams& _mp;
 
-    Fuser(const mvsUtils::MultiViewParams* _mp);
-    ~Fuser(void);
+    Fuser(const mvsUtils::MultiViewParams& mp);
+    ~Fuser();
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
     // pixSizeBall = default 2
-    void filterGroups(const StaticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
-    bool filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
-    void filterDepthMaps(const StaticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
+    void filterGroups(const std::vector<int>& cams, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
+    bool filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
+    void filterDepthMaps(const std::vector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize);
@@ -45,15 +45,15 @@ public:
     Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim, const sfmData::SfMData* sfmData = nullptr);
 
 private:
-    bool updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
+    bool updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
 };
 
-unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int scale);
+unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams* mp, bool addRandomNoise = false,
+std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams& mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
+void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMapsPtsSimsTmpDir);
 
 } // namespace fuseCut
 } // namespace aliceVision

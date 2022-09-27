@@ -43,8 +43,6 @@ inline void planarToSpherical(
   }
 }
 
-using namespace std;
-
 /**
  * Eight-point algorithm for solving for the essential matrix from normalized
  * image coordinates of point correspondences.
@@ -148,7 +146,7 @@ public:
       : KernelBase(x1, x2)
   {}
 
-  void fit(const vector<std::size_t>& samples, std::vector<ModelT>& models) const
+  void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const
   {
     assert(3 == KernelBase::_x1.rows());
     assert(KernelBase::getMinimumNbRequiredSamples() <= KernelBase::_x1.cols());

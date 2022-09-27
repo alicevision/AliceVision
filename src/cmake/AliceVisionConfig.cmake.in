@@ -48,6 +48,8 @@ include(CMakeFindDependencyMacro)
 set(Ceres_DIR @Ceres_DIR@)
 find_dependency(Ceres)
 
+find_dependency(OpenImageIO 2.1)
+
 # whether it is built with CCTags
 set(ALICEVISION_HAVE_CCTAG @ALICEVISION_HAVE_CCTAG@)
 
@@ -104,6 +106,10 @@ endif()
 # propagate other building options
 set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
 set(ALICEVISION_HAVE_ALEMBIC @ALICEVISION_HAVE_ALEMBIC@)
+
+if(ALICEVISION_HAVE_ALEMBIC)
+  find_dependency(Alembic)
+endif()
 
 message(STATUS "Found AliceVision version: ${@exportedProjectName@_VERSION}")
 

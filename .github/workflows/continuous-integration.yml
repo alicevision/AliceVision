@@ -9,18 +9,20 @@ on:
     paths-ignore:
       - '**.md'
       - '**.rst'
+      - '**.db'
       - 'docs/**'
   pull_request:
     paths-ignore:
       - '**.md'
       - '**.rst'
+      - '**.db'
       - 'docs/**'
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: alicevision/alicevision-deps:ci-2021-08-05-centos7-cuda10.2
+      image: alicevision/alicevision-deps:ci-2022-09-15-centos7-cuda11.3.1
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -89,7 +91,7 @@ jobs:
           git clone --branch master https://github.com/alicevision/SfM_quality_evaluation.git
           cd SfM_quality_evaluation/
           # checkout a specific commit to ensure repeatability
-          git checkout 40ad6a089969cb9426a0b9879c28fbeb08c1a24c
+          git checkout 130d12a0f59ebe1695dafdc42dfe109fe08407ea
           export LD_LIBRARY_PATH=$PWD/../../../AV_install/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           echo "ldd aliceVision_cameraInit"
           ldd $PWD/../../../AV_install/bin/aliceVision_cameraInit
@@ -101,10 +103,10 @@ jobs:
       DEPS_INSTALL_DIR: '${{ github.workspace }}/install'
       buildDir: '${{ github.workspace }}/build/'
       vcpkgDir: '${{ github.workspace }}\..\vcpkg'
-      tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
+      # tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      COMMIT_ID: 261c458af6e3eed5d099144aff95d2b5035f656b
+      COMMIT_ID: 8e8a3d7c1a6f7f587b486663b1e814911e6f2342
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -112,20 +114,19 @@ jobs:
             submodules: recursive
 
       - name: vcpkg - Clone repository
-        # Uses a specific version of vcpkg with a fix on Alemnbic portfile (to change once the PR is merged)
-        # git clone https://github.com/microsoft/vcpkg.git --branch 2021.05.12 https://github.com/DanielDelaporus/vcpkg.git --branch alembic-fix-build-types
+        # Uses a specific version of vcpkg with a fix on OpenEXR/Imath portfiles
         run: |
           cd ..
-          git clone https://github.com/microsoft/vcpkg.git
+          git clone https://github.com/alicevision/vcpkg.git
           cd vcpkg
           git checkout ${{ env.COMMIT_ID }}
           cd ${{ github.workspace }}
 
-          New-Item -Path ${{ env.tripletPath}} -ItemType File
-          "set(VCPKG_TARGET_ARCHITECTURE x64)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          "set(VCPKG_CRT_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          "set(VCPKG_LIBRARY_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
-          "set(VCPKG_BUILD_TYPE release)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # New-Item -Path ${{ env.tripletPath}} -ItemType File
+          # "set(VCPKG_TARGET_ARCHITECTURE x64)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # "set(VCPKG_CRT_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # "set(VCPKG_LIBRARY_LINKAGE dynamic)" | Out-File -FilePath ${{ env.tripletPath}} -Append
+          # "set(VCPKG_BUILD_TYPE release)" | Out-File -FilePath ${{ env.tripletPath}} -Append
 
       - name: vcpkg - Boostrap
         run: |
@@ -175,6 +176,7 @@ jobs:
                           assimp
           # without "cuda" for now
           vcpkgTriplet: x64-windows-release
+          # doNotCache: true
           # Ensure the vcpkg artifacts are cached, they are generated in the 'CMAKE_BINARY_DIR/vcpkg_installed' directory.
           additionalCachedPaths: ${{ env.buildDir }}/vcpkg_installed
 

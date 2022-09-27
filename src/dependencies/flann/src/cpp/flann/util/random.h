@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstddef>
+#include <random>
 #include <vector>
 
 #include "flann/general.h"
@@ -110,14 +111,16 @@ public:
      */
     void init(int n)
     {
-        static RandomGenerator generator;
+        std::random_device randomDevice;
+        std::mt19937 rng(randomDevice());
+
         // create and initialize an array of size n
         vals_.resize(n);
         size_ = n;
         for (int i = 0; i < size_; ++i) vals_[i] = i;
 
         // shuffle the elements in the array
-        std::random_shuffle(vals_.begin(), vals_.end(), generator);
+        std::shuffle(vals_.begin(), vals_.end(), rng);
 
         counter_ = 0;
     }

@@ -29,8 +29,17 @@ enum class EImageColorSpace
   AUTO,
   LINEAR,
   SRGB,
+  ACES,
+  ACEScg,
   NO_CONVERSION
 };
+
+std::string EImageColorSpace_informations();
+EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType);
+std::string EImageColorSpace_enumToString(const EImageColorSpace dataType);
+std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType);
+std::istream& operator>>(std::istream& in, EImageColorSpace& dataType);
+
 
 /**
  * @brief Available image file type for pipeline output
@@ -262,6 +271,9 @@ struct ColorTypeInfo<RGBAfColor>
     static const int size = 4;
     static const oiio::TypeDesc::BASETYPE typeDesc = oiio::TypeDesc::FLOAT;
 };
+
+bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
+                 const IndexT viewId, const std::string & srcImage);
 
 }  // namespace image
 }  // namespace aliceVision

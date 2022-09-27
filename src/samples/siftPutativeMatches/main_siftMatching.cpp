@@ -24,13 +24,12 @@ using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
 using namespace svg;
-using namespace std;
 
 int main() {
   std::mt19937 randomNumberGenerator;
   Image<RGBColor> image;
-  string jpg_filenameL = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
-  string jpg_filenameR = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
+  std::string jpg_filenameL = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
+  std::string jpg_filenameR = std::string("../") + std::string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
 
   Image<unsigned char> imageL, imageR;
   readImage(jpg_filenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
@@ -53,7 +52,7 @@ int main() {
   {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
-    string out_filename = "00_images.jpg";
+    std::string out_filename = "00_images.jpg";
     writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
@@ -90,7 +89,7 @@ int main() {
       vec_PutativeMatches);
 
     // Draw correspondences after Nearest Neighbor ratio filter
-    svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
+    svgDrawer svgStream(imageL.Width() + imageR.Width(), std::max(imageL.Height(), imageR.Height()));
     svgStream.drawImage(jpg_filenameL, imageL.Width(), imageL.Height());
     svgStream.drawImage(jpg_filenameR, imageR.Width(), imageR.Height(), imageL.Width());
     for (size_t i = 0; i < vec_PutativeMatches.size(); ++i) {
@@ -101,8 +100,8 @@ int main() {
       svgStream.drawCircle(L.x(), L.y(), L.scale(), svgStyle().stroke("yellow", 2.0));
       svgStream.drawCircle(R.x()+imageL.Width(), R.y(), R.scale(),svgStyle().stroke("yellow", 2.0));
     }
-    string out_filename = "02_siftMatches.svg";
-    ofstream svgFile( out_filename.c_str() );
+    std::string out_filename = "02_siftMatches.svg";
+    std::ofstream svgFile(out_filename.c_str());
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
   }

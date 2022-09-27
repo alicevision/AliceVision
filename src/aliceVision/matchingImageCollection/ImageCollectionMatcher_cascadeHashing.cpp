@@ -9,9 +9,8 @@
 #include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/matching/filters.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
-
-#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -40,7 +39,7 @@ void Match
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )
 {
-  boost::progress_display my_progress_bar( pairs.size() );
+  auto progressDisplay = system::createConsoleProgressDisplay(pairs.size(), std::cout);
 
   // Collect used view indexes
   std::set<IndexT> used_index;
@@ -126,7 +125,7 @@ void Match
     const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
     if (regionsI.RegionCount() == 0)
     {
-      my_progress_bar += indexToCompare.size();
+      progressDisplay += indexToCompare.size();
       continue;
     }
 
@@ -144,8 +143,7 @@ void Match
       if (!regionsPerView.viewExist(J)
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-        #pragma omp critical
-        ++my_progress_bar;
+        ++progressDisplay;
         continue;
       }
 
@@ -196,7 +194,7 @@ void Match
 
       #pragma omp critical
       {
-        ++my_progress_bar;
+        ++progressDisplay;
         if (!vec_putative_matches.empty())
         {
           assert(map_PutativesMatches.count(std::make_pair(I,J)) == 0);

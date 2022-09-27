@@ -16,7 +16,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
 using namespace aliceVision;
 using namespace matching;
 
@@ -50,7 +49,7 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_bruteForce_NN)
 
   const float query[] = {2};
   IndMatches vec_nIndice;
-  vector<float> vec_fDistance;
+  std::vector<float> vec_fDistance;
   BOOST_CHECK( matcher.SearchNeighbours(query,1, &vec_nIndice, &vec_fDistance, 5) );
 
   BOOST_CHECK_EQUAL( 5, vec_nIndice.size());
@@ -105,7 +104,7 @@ BOOST_AUTO_TEST_CASE(Matching_ArrayMatcher_kdtreeFlann_Simple__NN)
 
   const float query[] = {2};
   IndMatches vec_nIndice;
-  vector<float> vec_fDistance;
+  std::vector<float> vec_fDistance;
   const int NN = 5;
   BOOST_CHECK( matcher.SearchNeighbours(query, 1, &vec_nIndice, &vec_fDistance, NN) );
 

@@ -16,143 +16,153 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/FrameCacheMemory.hpp>
+#include <aliceVision/depthMap/cuda/OneTC.hpp>
+#include <aliceVision/depthMap/cuda/LRUCache.hpp>
+#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
+#ifdef TSIM_USE_FLOAT
+    using TSim = float;
+#else
+    using TSim = unsigned char;
+#endif
+
+/*********************************************************************************
+ * CamSelection
+ * Support class for operating an LRU cache of the currently selection cameras
+ *********************************************************************************/
+
+struct CamSelection : public std::pair<int,int>
+{
+    CamSelection( )
+        : std::pair<int,int>( 0, 0 )
+    { }
+
+    CamSelection( int i )
+        : std::pair<int,int>( i, i )
+    { }
+
+    CamSelection( int i, int j )
+        : std::pair<int,int>( i, j )
+    { }
+
+    CamSelection& operator=( int i )
+    {
+        this->first = this->second = i;
+        return *this;
+    }
+};
+
+bool operator==( const CamSelection& l, const CamSelection& r );
+bool operator<( const CamSelection& l, const CamSelection& r );
+
+/*********************************************************************************
+ * PlaneSweepingCuda
+ * Class for performing plane sweeping for some images on a selected GPU.
+ * There may be several instances of these class that are operating on the same
+ * GPU. It must therefore switch GPUs by ID.
+ *********************************************************************************/
 class PlaneSweepingCuda
 {
+private:
+    std::unique_ptr<FrameCacheMemory> _hidden;
+
 public:
-    struct parameters
-    {
-        int epipShift;
-        int rotX;
-        int rotY;
-        bool estimated;
-
-        parameters& operator=(const parameters& m)
-        {
-            epipShift = m.epipShift;
-            rotX = m.rotX;
-            rotY = m.rotY;
-            estimated = m.estimated;
-            return *this;
-        }
-
-        inline bool operator==(const parameters& m) const
-        {
-            return ((epipShift == m.epipShift) && (rotX == m.rotX) && (rotY == m.rotY));
-        }
-    };
-
+   
+    CameraStructBase*          _camsBasesHst;
+    std::vector<CameraStruct>  _cams;
+    LRUCache<int>              _camsHost;
+    LRUCache<CamSelection>     _cameraParamCache;
+    mvsUtils::MultiViewParams& _mp;
     const int _scales;
-    const int _nbest; // == 1
+    const int _CUDADeviceNo = 0;
+    int _nImgsInGPUAtTime = 2;
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
-    mvsUtils::MultiViewParams* mp;
+    inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    const int _CUDADeviceNo;
-    void** ps_texs_arr;
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
+    ~PlaneSweepingCuda();
 
-    StaticVector<cameraStruct*>* cams;
-    StaticVector<int>* camsRcs;
-    StaticVector<long>* camsTimes;
+    int addCam( int rc, int scale, cudaStream_t stream = 0 );
 
-    const bool _verbose;
-    bool doVizualizePartialDepthMaps;
-    const int  _nbestkernelSizeHalf;
+    void computeDepthSimMapVolume(int rc,
+        CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp, 
+        const CudaSize<3>& volDim,
+        const std::vector<int>& tCams, 
+        const std::vector<Pixel>& rcDepthsTcamsLimits,
+        const std::vector<float>& rcDepths,
+        const SgmParams& sgmParams);
 
-    bool useRcDepthsOrRcTcDepths;
-    int  minSegSize;
-    bool useSeg;
-    int  _nImgsInGPUAtTime;
-    bool subPixel;
-    int  varianceWSH;
+    bool sgmOptimizeSimVolume(int rc, 
+        CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp, 
+        const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+        const CudaSize<3>& volDim,
+        const SgmParams& sgmParams);
 
-    // float gammaC,gammaP;
-    mvsUtils::ImagesCache& _ic;
+    void sgmRetrieveBestDepth(int rc, 
+        DepthSimMap& bestDepth, 
+        const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
+        const CudaSize<3>& volDim,
+        const StaticVector<float>& rcDepths, 
+        const SgmParams& sgmParams);
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams* _mp, int scales);
-    ~PlaneSweepingCuda(void);
-
-    int addCam(int rc, float** H, int scale);
-
-    void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
-    void getAverageMinMaxdepths(float& avMinDist, float& avMaxDist);
-    StaticVector<float>* getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth, int scale,
-                                              int step, int maxDepthsHalf = 1024);
-    StaticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
-
-    bool refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRefine, StaticVector<float>* pxsdepths,
-                         StaticVector<float>* pxssims, int rc, int wsh, float igammaC, float igammaP,
-                         StaticVector<Pixel>* pixels, int scale, StaticVector<int>* tcams, float epipShift = 0.0f);
-    bool refinePixelsAllFine(StaticVector<Color>* pxsnormals, StaticVector<float>* pxsdepths,
-                             StaticVector<float>* pxssims, int rc, int wsh, float gammaC, float gammaP,
-                             StaticVector<Pixel>* pixels, int scale, StaticVector<int>* tcams, float epipShift = 0.0f);
-    bool smoothDepthMap(StaticVector<float>* depthMap, int rc, int scale, float igammaC, float igammaP, int wsh);
-    bool filterDepthMap(StaticVector<float>* depthMap, int rc, int scale, float igammaC, float minCostThr, int wsh);
-    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc, int scale,
-                          float igammaC, float igammaP, int wsh);
-    void alignSourceDepthMapToTarget(StaticVector<float>* sourceDepthMap, StaticVector<float>* targetDepthMap, int rc,
-                                     int scale, float igammaC, int wsh, float maxPixelSizeDist);
-    bool refineDepthMapReproject(StaticVector<float>* depthMap, StaticVector<float>* simMap, int rc, int tc, int wsh,
-                                 float gammaC, float gammaP, float simThr, int niters, bool moveByTcOrRc);
-    // bool computeRcTcPhotoErrMapReproject(StaticVector<Point4d>* sdpiMap, StaticVector<float>* errMap,
-    //                                      StaticVector<float>* derrMap, StaticVector<float>* rcDepthMap,
-    //                                      StaticVector<float>* tcDepthMap, int rc, int tc, int wsh, float gammaC,
-    //                                      float gammaP, float depthMapShift);
-
-    bool computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMap, StaticVector<float>* rcTcDepthMap, int rc, int tc,
-                                      int wsh, float gammaC, float gammaP, float epipShift);
-    bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>* simMap,
-                            StaticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
-                            float gammaP, float epipShift, int xFrom, int wPart);
-
-    float sweepPixelsToVolume(int nDepthsToSearch, StaticVector<unsigned char>* volume, int volDimX, int volDimY,
-                              int volDimZ, int volStepXY, int volLUX, int volLUY, int volLUZ,
-                              const std::vector<float>* depths, int rc, int wsh, float gammaC, float gammaP,
-                              StaticVector<Voxel>* pixels, int scale, int step, StaticVector<int>* tcams,
-                              float epipShift);
-    bool SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume, int volDimX, int volDimY, int volDimZ,
-                              int volStepXY, int volLUX, int volLUY, int scale, unsigned char P1, unsigned char P2);
     Point3d getDeviceMemoryInfo();
-    bool transposeVolume(StaticVector<unsigned char>* volume, const Voxel& dimIn, const Voxel& dimTrn, Voxel& dimOut);
 
-    bool computeRcVolumeForRcTcsDepthSimMaps(StaticVector<unsigned int>* volume,
-                                             StaticVector<StaticVector<Point2d>*>* rcTcsDepthSimMaps, int volDimX,
-                                             int volDimY, int volDimZ, int volStepXY, StaticVector<float>* depths,
-                                             int scale, int step, StaticVector<int>* rtcams,
-                                             StaticVector<Point2d>* rtCamsMinMaxFpDepths,
-                                             const float maxTcRcPixSizeInVoxRatio,
-                                             bool considerNegativeDepthAsInfinity);
+    bool refineRcTcDepthMap(int rc, int tc, 
+                            StaticVector<float>& inout_depthMap, 
+                            StaticVector<float>& out_simMap,
+                            const RefineParams& refineParams,
+                            int xFrom, int wPart);
 
-    bool filterRcIdDepthMapByTcDepthMaps(StaticVector<unsigned short>* nModalsMap,
-                                         StaticVector<unsigned short>* rcIdDepthMap,
-                                         StaticVector<StaticVector<float>*>* tcDepthMaps, int volDimX, int volDimY,
-                                         int volDimZ, int volStepXY, StaticVector<float>* depths, int scale, int step,
-                                         StaticVector<int>* rtcams, int distLimit);
-    bool SGGCoptimizeSimVolume(StaticVector<unsigned short>* ftidMap, StaticVector<unsigned int>* ivolume, int _volDimX,
-                               int volDimY, int volDimZ, int xFrom, int xTo, int K);
+    bool fuseDepthSimMapsGaussianKernelVoting(int wPart, int hPart, 
+                                              StaticVector<DepthSim>& out_depthSimMap,
+                                              const StaticVector<StaticVector<DepthSim>*>& dataMaps,
+                                              const RefineParams& refineParams);
 
-    bool fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim> *oDepthSimMap,
-                                              const StaticVector<StaticVector<DepthSim> *> *dataMaps, int nSamplesHalf,
-                                              int nDepthsToRefine, float sigma);
-    bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim> *oDepthSimMap,
-                                            StaticVector<StaticVector<DepthSim> *> *dataMaps, int rc, int nSamplesHalf,
-                                            int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
-    bool computeDP1Volume(StaticVector<int>* ovolume, StaticVector<unsigned int>* ivolume, int _volDimX, int volDimY,
-                          int volDimZ, int xFrom, int xTo);
+    bool optimizeDepthSimMapGradientDescent(int rc, 
+                                            StaticVector<DepthSim>& out_depthSimMapOptimized,
+                                            const StaticVector<DepthSim>& depthSimMapSgmUpscale,
+                                            const StaticVector<DepthSim>& depthSimMapRefinedFused,
+                                            const RefineParams& refineParams,
+                                            int yFrom, int hPart);
 
-    bool computeSimMapReprojectByDepthMapMovedByStep(StaticVector<float>* osimMap, StaticVector<float>* iodepthMap,
-                                                     int rc, int tc, int _wsh, float _gammaC, float _gammaP,
-                                                     bool moveByTcOrRc, float moveStep);
-    bool computeRcTcdepthMap(StaticVector<float>* iRcDepthMap_oRcTcDepthMap, StaticVector<float>* tcDdepthMap, int rc,
-                             int tc, float pixSizeRatioThr);
+    /* create object to store intermediate data for repeated use */
+    NormalMapping* createNormalMapping();
+
+    /* delete object to store intermediate data for repeated use */
+    void deleteNormalMapping( NormalMapping* m );
+
+    bool computeNormalMap( NormalMapping* mapping,
+                           const std::vector<float>& depthMap,
+                           std::vector<ColorRGBf>&   normalMap,
+                           int rc, int scale,
+                           float igammaC, float igammaP, int wsh);
+
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
+
+private:
+    /* Support function for addCam that loads cameraStructs into the GPU constant
+     * memory if necessary.
+     * Returns the index in the constant cache. */
+    CamCacheIdx loadCameraParam( int global_cam_id, int scale, cudaStream_t stream );
+
+    /* Compute the number of images that can be stored in the current GPU. Called only by
+     * the constructor. */
+    static int imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int scales );
+
 };
 
 int listCUDADevices(bool verbose);
+
 
 } // namespace depthMap
 } // namespace aliceVision

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cmath>
+#include <iostream>
 
 namespace aliceVision {
 
@@ -122,5 +123,11 @@ struct Voxel
         return (x != param.x) || (y != param.y) || (z != param.z);
     }
 };
+
+inline std::ostream& operator<<(std::ostream& out, const Voxel& v)
+{
+    out << v.x << "," << v.y << "," << v.z;
+    return out;
+}
 
 } // namespace aliceVision

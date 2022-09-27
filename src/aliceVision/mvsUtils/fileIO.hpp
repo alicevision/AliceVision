@@ -16,6 +16,7 @@
 #include <aliceVision/mvsData/imageIO.hpp>
 
 #include <fstream>
+#include <string>
 
 #include <OpenImageIO/paramlist.h>
 
@@ -24,17 +25,17 @@ namespace oiio = OIIO;
 namespace aliceVision {
 namespace mvsUtils {
 
-bool FileExists(const std::string& filePath);
-bool FolderExists(const std::string& folderPath);
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
 
-std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileType fileType, int scale = 0);
-std::string getFileNameFromIndex(const MultiViewParams* mp, int index, EFileType mv_file_type, int scale = 0);
-FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite);
-Matrix3x4 load3x4MatrixFromFile(FILE* fi);
-void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img,
-                                 imageIO::EImageColorSpace colorspace, ImagesCache::ECorrectEV correctEV);
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType fileType, int scale = 0, const std::string& customSuffix = "");
 
-bool DeleteDirectory(const std::string& sPath);
+FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite);
+Matrix3x4 load3x4MatrixFromFile(std::istream& in);
+
+
+template<class Image>
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
+    imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

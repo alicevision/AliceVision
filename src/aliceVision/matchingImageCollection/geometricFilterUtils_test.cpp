@@ -11,7 +11,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
 using namespace aliceVision;
 
 void meanAndStd(const Eigen::Matrix2Xf& points2d, Vec2f& mean, Vec2f& stdDev)
@@ -23,6 +22,8 @@ void meanAndStd(const Eigen::Matrix2Xf& points2d, Vec2f& mean, Vec2f& stdDev)
 
 BOOST_AUTO_TEST_CASE(matchingImageCollection_centerMatrix)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t numPoints{100};
   const std::size_t numTrials{100};
   const float threshold{0.0001f};
@@ -49,6 +50,8 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_centerMatrix)
 
 BOOST_AUTO_TEST_CASE(matchingImageCollection_similarityEstimation)
 {
+  makeRandomOperationsReproducible();
+
   // same point should give the identity matrix
   const feature::PointFeature feat1 {1.0f, 5.0f, 1.0f, 0.1f};
   Mat3 S;

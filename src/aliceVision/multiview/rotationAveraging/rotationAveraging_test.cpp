@@ -64,8 +64,6 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_ClosestSVDRotationMatrixNoisy )
 //     1
 BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
 {
-  using namespace std;
-
   //--
   // Setup 3 camera that have a relative orientation of 120deg
   // Set Z axis as UP Vector for the rotation
@@ -106,8 +104,6 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
 
 BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_SimpleTriplet)
 {
-  using namespace std;
-
   //--
   // Setup 3 camera that have a relative orientation of 120deg
   // Set Z axis as UP Vector for the rotation
@@ -323,6 +319,8 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
 template<typename TYPE, int N>
 inline REAL ComputePSNR(const Eigen::Matrix<REAL, N,1>& x0, const Eigen::Matrix<REAL, N,1>& x)
 {
+  makeRandomOperationsReproducible();
+
   REAL ret = std::numeric_limits<REAL>::infinity();
 
   REAL err = (x0 - x).squaredNorm() / N;
@@ -394,6 +392,8 @@ bool TestRobustRegressionL1PD()
 
 BOOST_AUTO_TEST_CASE ( rotationAveraging_RobustRegressionL1PD)
 {
+  makeRandomOperationsReproducible();
+
   TestRobustRegressionL1PD();
 }
 */

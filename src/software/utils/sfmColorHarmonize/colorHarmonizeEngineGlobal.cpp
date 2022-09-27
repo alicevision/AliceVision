@@ -8,6 +8,7 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -30,8 +31,6 @@
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/progress.hpp>
-
 #include <numeric>
 #include <iomanip>
 #include <iterator>
@@ -51,13 +50,13 @@ using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
 
 typedef feature::PointFeature FeatureT;
-typedef vector<FeatureT> featsT;
+typedef std::vector<FeatureT> featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
-    const string& sfmDataFilename,
+    const std::string& sfmDataFilename,
     const std::vector<std::string>& featuresFolders,
     const std::vector<std::string>& matchesFolders,
-    const string& outputDirectory,
+    const std::string& outputDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
     int selectionMethod,
     int imgRef)
@@ -73,23 +72,23 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   // choose image reference
   while(imgRef < 0 || imgRef >= _fileNames.size())
   {
-      cout << "Choose your reference image:\n";
+      std::cout << "Choose your reference image:\n";
       for( int i = 0; i < _fileNames.size(); ++i )
       {
-        cout << "id: " << i << "\t" << _fileNames[ i ] << endl;
+        std::cout << "id: " << i << "\t" << _fileNames[ i ] << std::endl;
       }
-      cin >> imgRef;
+      std::cin >> imgRef;
   }
   _imgRef = imgRef;
 
   // choose selection method
   while(selectionMethod < 0 || selectionMethod > 2)
   {
-    cout << "Choose your selection method:\n"
+    std::cout << "Choose your selection method:\n"
       << "- FullFrame: 0\n"
       << "- Matched Points: 1\n"
       << "- VLD Segment: 2\n";
-    cin >> selectionMethod;
+    std::cin >> selectionMethod;
   }
   _selectionMethod = static_cast<EHistogramSelectionMethod>(selectionMethod);
 
@@ -101,7 +100,7 @@ ColorHarmonizationEngineGlobal::~ColorHarmonizationEngineGlobal()
 inline void pauseProcess()
 {
   unsigned char i;
-  cout << "\nPause : type key and press enter: ";
+  std::cout << "\nPause : type key and press enter: ";
   std::cin >> i;
 }
 
@@ -120,7 +119,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     return false;
   if( _pairwiseMatches.empty() )
   {
-    cout << endl << "Matches file is empty" << endl;
+    std::cout << std::endl << "Matches file is empty" << std::endl;
     return false;
   }
 
@@ -270,16 +269,16 @@ bool ColorHarmonizationEngineGlobal::Process()
     bool bExportMask = false;
     if (bExportMask)
     {
-      string sEdge = _fileNames[ viewI ] + "_" + _fileNames[ viewJ ];
+      std::string sEdge = _fileNames[ viewI ] + "_" + _fileNames[ viewJ ];
       sEdge = (fs::path(_outputDirectory) / sEdge ).string();
 
       if( !fs::exists(sEdge) )
         fs::create_directory(sEdge);
 
-      string out_filename_I = "00_mask_I.png";
+      std::string out_filename_I = "00_mask_I.png";
       out_filename_I = (fs::path(sEdge) / out_filename_I).string();
 
-      string out_filename_J = "00_mask_J.png";
+      std::string out_filename_J = "00_mask_J.png";
       out_filename_J = (fs::path(sEdge) / out_filename_J).string();
       writeImage(out_filename_I, maskI, image::EImageColorSpace::AUTO);
       writeImage(out_filename_J, maskJ, image::EImageColorSpace::AUTO);
@@ -390,9 +389,9 @@ bool ColorHarmonizationEngineGlobal::Process()
   std::cout << "\n\nThere is :\n" << set_indeximage.size() << " images to transform." << std::endl;
 
   //-> convert solution to gain offset and creation of the LUT per image
-  boost::progress_display my_progress_bar( set_indeximage.size() );
+  auto progressDisplay = system::createConsoleProgressDisplay(set_indeximage.size(), std::cout);
   for (std::set<size_t>::const_iterator iterSet = set_indeximage.begin();
-    iterSet != set_indeximage.end(); ++iterSet, ++my_progress_bar)
+    iterSet != set_indeximage.end(); ++iterSet, ++progressDisplay)
   {
     const size_t imaNum = *iterSet;
     typedef Eigen::Matrix<double, 256, 1> Vec256;

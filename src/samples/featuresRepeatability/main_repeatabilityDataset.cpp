@@ -31,7 +31,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace svg;
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;

@@ -11,10 +11,10 @@
 #include <aliceVision/stl/indexedSort.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/image/io.hpp>
-
-#include <boost/progress.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <map>
+#include <random>
 #include <vector>
 #include <functional>
 namespace aliceVision {
@@ -22,7 +22,8 @@ namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
-  boost::progress_display progressBar(sfmData.getLandmarks().size(), std::cout, "\nCompute scene structure color\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
+                                                              "\nCompute scene structure color\n");
 
   std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
   remainingLandmarksToColor.reserve(sfmData.getLandmarks().size());
@@ -89,10 +90,13 @@ void colorizeTracks(SfMData& sfmData)
       break;
   }
 
+  std::random_device randomDevice;
+  std::mt19937 rng(randomDevice());
+
   // create an unsorted index container
   std::vector<int> unsortedIndexes(sortedViewsCardinal.size()) ;
   std::iota(std::begin(unsortedIndexes), std::end(unsortedIndexes), 0);
-  std::random_shuffle(unsortedIndexes.begin(), unsortedIndexes.end());
+  std::shuffle(unsortedIndexes.begin(), unsortedIndexes.end(), rng);
 
   // landmark colorization
 #pragma omp parallel for
@@ -115,10 +119,7 @@ void colorizeTracks(SfMData& sfmData)
         landmark.rgb = image(pt.y(), pt.x());
       }
 
-#pragma omp critical
-      {
-        progressBar += viewCardinal.landmarks.size();
-      }
+      progressDisplay += viewCardinal.landmarks.size();
     }
   }
 }

@@ -92,6 +92,7 @@ int aliceVision_main(int argc, char **argv)
   int maxNbMatches = 0;
   int minNbMatches = 0;
   bool useOnlyMatchesFromInputFolder = false;
+  bool computeStructureColor = true;
 
   int randomSeed = std::mt19937::default_seed;
 
@@ -105,8 +106,7 @@ int aliceVision_main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfM)->required(),
-      "Path to the output SfMData file.")
-    ;
+      "Path to the output SfMData file.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -179,6 +179,8 @@ int aliceVision_main(int argc, char **argv)
       "Lock/Unlock scene previously reconstructed.\n")
     ("observationConstraint", po::value<EFeatureConstraint>(&sfmParams.featureConstraint)->default_value(sfmParams.featureConstraint),
       "Use of an observation constraint : basic, scale the observation or use of the covariance.\n")
+    ("computeStructureColor", po::value<bool>(&computeStructureColor)->default_value(computeStructureColor),
+      "Compute each 3D point color.\n")
     ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ;
@@ -332,7 +334,9 @@ int aliceVision_main(int argc, char **argv)
   }
 
   // get the color for the 3D points
-  sfmEngine.colorize();
+  if(computeStructureColor)
+    sfmEngine.colorize();
+
   sfmEngine.retrieveMarkersId();
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));

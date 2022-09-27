@@ -69,6 +69,8 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
 
 BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
 {
+  makeRandomOperationsReproducible();
+
   const double threshold = 1e-10;
   const std::size_t numResults = 10;
   const std::string filename = "test_localizationResults.json";

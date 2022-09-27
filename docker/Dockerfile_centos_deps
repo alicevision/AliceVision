@@ -60,17 +60,18 @@ RUN $YUM_INSTALL centos-release-scl-rh && \
 # SHELL [ "/usr/bin/scl", "enable", "devtoolset-6" ]
 ENV PATH="/opt/rh/devtoolset-6/root/usr/bin:${PATH}" \
     LD_LIBRARY_PATH="/opt/rh/devtoolset-6/root/usr/lib:/opt/rh/devtoolset-6/root/usr/lib64:/opt/rh/devtoolset-6/root/usr/lib64/dyninst:${LD_LIBRARY_PATH}" \
-    MAKE=/opt/rh/devtoolset-6/root/usr/bin/make
+    MAKE=/opt/rh/devtoolset-6/root/usr/bin/make \
+    CMAKE_VERSION=3.21.3
 
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
 
-# Manually install cmake 3.16
+# Manually install cmake
 WORKDIR /opt
-COPY dl/cmake-3.16.3.tar.gz /tmp
-RUN tar zxf /tmp/cmake-3.16.3.tar.gz && \
-    rm /tmp/cmake-3.16.3.tar.gz && \
-    cd cmake-3.16.3 && \
+COPY dl/cmake-${CMAKE_VERSION}.tar.gz /tmp
+RUN tar zxf /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
+    rm /tmp/cmake-${CMAKE_VERSION}.tar.gz && \
+    cd cmake-${CMAKE_VERSION} && \
     ./bootstrap --parallel="$(nproc)" --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
     make -j"$(nproc)" && \
     make install
@@ -91,28 +92,30 @@ RUN cmake "${AV_DEV}" \
 RUN mkdir -p "${AV_INSTALL}/lib" && \
 	ln -s lib "${AV_INSTALL}/lib64"
 
-#RUN make -j"$(nproc)" zlib
-#RUN make -j"$(nproc)" geogram
-#RUN make -j"$(nproc)" tbb
-#RUN make -j"$(nproc)" eigen
-#RUN make -j"$(nproc)" opengv
-#RUN make -j"$(nproc)" lapack
-
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib64/libcublas.so /usr/local/cuda/lib64/libcublas.so
-#RUN make -j"$(nproc)" suitesparse
-#RUN make -j"$(nproc)" ceres
-#RUN make -j"$(nproc)" openexr
-#RUN make -j"$(nproc)" tiff
-#RUN make -j"$(nproc)" png
-#RUN make -j"$(nproc)" turbojpeg
-#RUN make -j"$(nproc)" libraw
-#RUN make -j"$(nproc)" boost
-#RUN make -j"$(nproc)" openimageio
-#RUN make -j"$(nproc)" alembic
-#RUN make -j"$(nproc)" popsift
-#RUN make -j"$(nproc)" ffmpeg
-#RUN make -j"$(nproc)" opencv
-#RUN make -j"$(nproc)" cctag
+
+# RUN make -j"$(nproc)" cctag
+# RUN make -j"$(nproc)" openexr
+# RUN make -j"$(nproc)" tbb
+# RUN make -j"$(nproc)" assimp
+# RUN make -j"$(nproc)" zlib
+# RUN make -j"$(nproc)" geogram
+# RUN make -j"$(nproc)" eigen
+# RUN make -j"$(nproc)" opengv
+# RUN make -j"$(nproc)" lapack
+# RUN make -j"$(nproc)" suitesparse
+# RUN make -j"$(nproc)" ceres
+# RUN make -j"$(nproc)" tiff
+# RUN make -j"$(nproc)" png
+# RUN make -j"$(nproc)" turbojpeg
+# RUN make -j"$(nproc)" libraw
+# RUN make -j"$(nproc)" boost
+# RUN make -j"$(nproc)" openimageio
+# RUN make -j"$(nproc)" alembic
+# RUN make -j"$(nproc)" popsift
+# RUN make -j"$(nproc)" ffmpeg
+# RUN make -j"$(nproc)" opencv
+# RUN make -j"$(nproc)" expat
 
 RUN cmake --build . -j "$(nproc)" && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \

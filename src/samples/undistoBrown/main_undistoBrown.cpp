@@ -7,9 +7,9 @@
 
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <boost/regex.hpp>
-#include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
@@ -21,7 +21,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
@@ -121,11 +120,11 @@ int main(int argc, char **argv)
   std::cout << "\nLocated " << vec_fileNames.size() << " files in " << inputImagePath
     << " with suffix " << suffix;
 
-  boost::progress_display my_progress_bar( vec_fileNames.size() );
-  for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
+  auto progressDisplay = system::createConsoleProgressDisplay(vec_fileNames.size(), std::cout);
+  for (size_t j = 0; j < vec_fileNames.size(); ++j, ++progressDisplay)
   {
-    const string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
-    const string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
+    const std::string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
+    const std::string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
 
     Image<RGBColor> image, imageUd;
     readImage(inFileName, image, image::EImageColorSpace::NO_CONVERSION);

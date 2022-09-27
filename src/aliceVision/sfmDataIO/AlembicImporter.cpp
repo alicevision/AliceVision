@@ -11,6 +11,8 @@
 #include <Alembic/AbcCoreFactory/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 
+#include <aliceVision/version.hpp>
+
 namespace aliceVision {
 namespace sfmDataIO {
 
@@ -26,6 +28,18 @@ void getAbcArrayProp(ICompoundProperty& userProps, const std::string& id, index_
   sample_ptr_type sample;
   prop.get(sample, ISampleSelector(sampleFrame));
   outputArray.assign(sample->get(), sample->get()+sample->size());
+}
+
+void getAbcArrayProp_uint(ICompoundProperty& userProps, const std::string& id, index_t sampleFrame, std::vector<unsigned int>& outputArray)
+{
+  try
+  {
+    getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, id, sampleFrame, outputArray);
+  }
+  catch(Alembic::Util::Exception&)
+  {
+    getAbcArrayProp<Alembic::Abc::IInt32ArrayProperty>(userProps, id, sampleFrame, outputArray);
+  }
 }
 
 /**
@@ -63,7 +77,17 @@ typename AbcProperty::traits_type::value_type getAbcProp(ICompoundProperty& user
   }
 }
 
-
+std::size_t getAbcProp_uint(ICompoundProperty& userProps, const Alembic::Abc::PropertyHeader& propHeader, const std::string& id, index_t sampleFrame)
+{
+  try
+  {
+    return getAbcProp<Alembic::Abc::IUInt32Property>(userProps, propHeader, id, sampleFrame);
+  }
+  catch(Alembic::Util::Exception&)
+  {
+    return getAbcProp<Alembic::Abc::IInt32Property>(userProps, propHeader, id, sampleFrame);
+  }
+}
 template<class ABCSCHEMA>
 inline ICompoundProperty getAbcUserProperties(ABCSCHEMA& schema)
 {
@@ -76,7 +100,62 @@ inline ICompoundProperty getAbcUserProperties(ABCSCHEMA& schema)
 }
 
 
-bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
+struct AV_UInt32ArraySamplePtr
+{
+  bool _isUnsigned = true;
+  UInt32ArraySamplePtr _v_uint;
+  Int32ArraySamplePtr _v_int;
+
+  AV_UInt32ArraySamplePtr() = default;
+  template<typename T>
+  AV_UInt32ArraySamplePtr(const T& userProps, const char* s)
+  {
+    read(userProps, s);
+  }
+
+  template<typename T>
+  void read(const T& userProps, const char* s)
+  {
+    try {
+      IUInt32ArrayProperty propVisibilitySize_uint(userProps, s);
+      propVisibilitySize_uint.get(_v_uint);
+    }
+    catch(Alembic::Util::Exception&)
+    {
+      _isUnsigned = false;
+      IInt32ArrayProperty propVisibilitySize_int(userProps, s);
+      propVisibilitySize_int.get(_v_int);
+    }
+  }
+
+  std::size_t size() const
+  {
+    return _isUnsigned ? _v_uint->size() : _v_int->size();
+  }
+
+  std::size_t operator[](const std::size_t& i)
+  {
+    return _isUnsigned ? (*_v_uint)[i] : (*_v_int)[i];
+  }
+
+  void reset()
+  {
+    if(_isUnsigned)
+    {
+      _v_uint->reset();
+    }
+    else
+    {
+      _v_int->reset();
+    }
+  }
+  operator bool() const
+  {
+    return _isUnsigned ? bool(_v_uint) : bool(_v_int);
+  }
+};
+
+bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
 {
   using namespace aliceVision::geometry;
 
@@ -99,14 +178,13 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
     }
   }
 
-  UInt32ArraySamplePtr sampleDescs;
+  AV_UInt32ArraySamplePtr sampleDescs;
   if(userProps && userProps.getPropertyHeader("mvg_describerType"))
   {
-    IUInt32ArrayProperty propDesc(userProps, "mvg_describerType");
-    propDesc.get(sampleDescs);
-    if(sampleDescs->size() != positions->size())
+    sampleDescs.read(userProps, "mvg_describerType");
+    if(sampleDescs.size() != positions->size())
     {
-      ALICEVISION_LOG_WARNING("[Alembic Importer] Describer type will be ignored. describerType vector size: " << sampleDescs->size() << ", positions vector size: " << positions->size());
+      ALICEVISION_LOG_WARNING("[Alembic Importer] Describer type will be ignored. describerType vector size: " << sampleDescs.size() << ", positions vector size: " << positions->size());
       sampleDescs.reset();
     }
   }
@@ -118,7 +196,19 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       ++point3d_i)
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
-    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
+
+
+    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+    
+    if (abcVersion < Version(1, 2, 3))
+    {
+      landmark = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    }
+    else
+    {
+      // convert from computer graphics convention (opengl-like) to computer vision
+      landmark = sfmData::Landmark(Vec3(pos_i.x, -pos_i.y, -pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    }
 
     if(sampleColors)
     {
@@ -131,7 +221,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
 
     if(sampleDescs)
     {
-      const UInt32ArraySamplePtr::element_type::value_type & descType_i = sampleDescs->get()[point3d_i];
+      const std::size_t descType_i = sampleDescs[point3d_i];
       landmark.descType = static_cast<feature::EImageDescriberType>(descType_i);
     }
   }
@@ -143,29 +233,24 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
      userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
      (flags_part & ESfMData::OBSERVATIONS || flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES))
   {
-    IUInt32ArrayProperty propVisibilitySize(userProps, "mvg_visibilitySize");
-    UInt32ArraySamplePtr sampleVisibilitySize;
-    propVisibilitySize.get(sampleVisibilitySize);
+    AV_UInt32ArraySamplePtr sampleVisibilitySize(userProps, "mvg_visibilitySize");
+    AV_UInt32ArraySamplePtr sampleVisibilityIds(userProps, "mvg_visibilityIds");
 
-    IUInt32ArrayProperty propVisibilityIds(userProps, "mvg_visibilityIds");
-    UInt32ArraySamplePtr sampleVisibilityIds;
-    propVisibilityIds.get(sampleVisibilityIds);
-
-    IFloatArrayProperty propFeatPos2d(userProps, "mvg_visibilityFeatPos");
     FloatArraySamplePtr sampleFeatPos2d;
+    IFloatArrayProperty propFeatPos2d(userProps, "mvg_visibilityFeatPos");
     propFeatPos2d.get(sampleFeatPos2d);
 
-    if( positions->size() != sampleVisibilitySize->size() )
+    if(positions->size() != sampleVisibilitySize.size())
     {
       ALICEVISION_LOG_ERROR("Alembic Error: number of observations per 3D point should be identical to the number of 2D features.\n"
-                            "# observations per 3D point: " << sampleVisibilitySize->size() << ".\n"
+                            "# observations per 3D point: " << sampleVisibilitySize.size() << ".\n"
                             "# 3D points: " << positions->size() << ".");
       return false;
     }
-    if( sampleVisibilityIds->size() != sampleFeatPos2d->size() )
+    if(sampleVisibilityIds.size() != sampleFeatPos2d->size())
     {
       ALICEVISION_LOG_ERROR("Alembic Error: visibility Ids and features 2D pos should have the same size.\n"
-                            "# visibility Ids: " << sampleVisibilityIds->size() << ".\n"
+                            "# visibility Ids: " << sampleVisibilityIds.size() << ".\n"
                             "# features 2D pos: " << sampleFeatPos2d->size() << ".");
       return false;
     }
@@ -177,15 +262,15 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
     {
       sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
       // Number of observation for this 3d point
-      const std::size_t visibilitySize = (*sampleVisibilitySize)[point3d_i];
+      const std::size_t visibilitySize = sampleVisibilitySize[point3d_i];
 
       for(std::size_t obs_i = 0;
           obs_i < visibilitySize*2;
           obs_i+=2, obsGlobal_i+=2)
       {
 
-        const int viewID = (*sampleVisibilityIds)[obsGlobal_i];
-        const int featID = (*sampleVisibilityIds)[obsGlobal_i+1];
+        const int viewID = sampleVisibilityIds[obsGlobal_i];
+        const int featID = sampleVisibilityIds[obsGlobal_i+1];
         sfmData::Observation& observations = landmark.observations[viewID];
         observations.id_feat = featID;
 
@@ -202,24 +287,18 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
      userProps.getPropertyHeader("mvg_visibilityViewId") &&
      (flags_part & ESfMData::OBSERVATIONS || flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES))
   {
-    IUInt32ArrayProperty propVisibilitySize(userProps, "mvg_visibilitySize");
-    UInt32ArraySamplePtr sampleVisibilitySize;
-    propVisibilitySize.get(sampleVisibilitySize);
+    AV_UInt32ArraySamplePtr sampleVisibilitySize(userProps, "mvg_visibilitySize");
+    AV_UInt32ArraySamplePtr sampleVisibilityViewId(userProps, "mvg_visibilityViewId");
 
-    IUInt32ArrayProperty propVisibilityViewId(userProps, "mvg_visibilityViewId");
-    UInt32ArraySamplePtr sampleVisibilityViewId;
-    propVisibilityViewId.get(sampleVisibilityViewId);
-
-
-    if(positions->size() != sampleVisibilitySize->size())
+    if(positions->size() != sampleVisibilitySize.size())
     {
       ALICEVISION_LOG_ERROR("Alembic Error: number of observations per 3D point should be identical to the number of 2D features.\n"
-                            "# observations per 3D point: " << sampleVisibilitySize->size() << ".\n"
+                            "# observations per 3D point: " << sampleVisibilitySize.size() << ".\n"
                             "# 3D points: " << positions->size() << ".");
       return false;
     }
 
-    UInt32ArraySamplePtr sampleVisibilityFeatId;
+    AV_UInt32ArraySamplePtr sampleVisibilityFeatId;
     FloatArraySamplePtr sampleVisibilityFeatPos;
     FloatArraySamplePtr sampleVisibilityFeatScale;
 
@@ -227,8 +306,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
        userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
        flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES)
     {
-      IUInt32ArrayProperty propVisibilityFeatId(userProps, "mvg_visibilityFeatId");
-      propVisibilityFeatId.get(sampleVisibilityFeatId);
+      sampleVisibilityFeatId.read(userProps, "mvg_visibilityFeatId");
 
       IFloatArrayProperty propVisibilityFeatPos(userProps, "mvg_visibilityFeatPos");
       propVisibilityFeatPos.get(sampleVisibilityFeatPos);
@@ -239,12 +317,12 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
           propVisibilityFeatScale.get(sampleVisibilityFeatScale);
       }
 
-      if(sampleVisibilityViewId->size() != sampleVisibilityFeatId->size() ||
-         2*sampleVisibilityViewId->size() != sampleVisibilityFeatPos->size())
+      if(sampleVisibilityViewId.size() != sampleVisibilityFeatId.size() ||
+         2*sampleVisibilityViewId.size() != sampleVisibilityFeatPos->size())
       {
         ALICEVISION_LOG_ERROR("Alembic Error: visibility Ids and features id / 2D pos should have the same size.\n"
-                              "# view Ids: " << sampleVisibilityViewId->size() << ".\n"
-                              "# features id: " << sampleVisibilityFeatId->size() << ".\n"
+                              "# view Ids: " << sampleVisibilityViewId.size() << ".\n"
+                              "# features id: " << sampleVisibilityFeatId.size() << ".\n"
                               "# features 2D pos: " << sampleVisibilityFeatPos->size() << ".");
         return false;
       }
@@ -258,7 +336,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
                                 );
     }
 
-    const bool hasFeatures = (sampleVisibilityFeatId != nullptr) && (sampleVisibilityFeatId->size() > 0);
+    const bool hasFeatures = bool(sampleVisibilityFeatId) && (sampleVisibilityFeatId.size() > 0);
 
     std::size_t obsGlobalIndex = 0;
     for(std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
@@ -267,15 +345,15 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       sfmData::Landmark& landmark = sfmdata.structure[landmarkId];
 
       // Number of observation for this 3d point
-      const std::size_t visibilitySize = (*sampleVisibilitySize)[point3d_i];
+      const std::size_t visibilitySize = sampleVisibilitySize[point3d_i];
 
       for(std::size_t obs_i = 0; obs_i < visibilitySize; ++obs_i, ++obsGlobalIndex)
       {
-        const int viewId = (*sampleVisibilityViewId)[obsGlobalIndex];
+        const int viewId = sampleVisibilityViewId[obsGlobalIndex];
 
         if(hasFeatures)
         {
-          const int featId = (*sampleVisibilityFeatId)[obsGlobalIndex];
+          const std::size_t featId = sampleVisibilityFeatId[obsGlobalIndex];
           sfmData::Observation& observation = landmark.observations[viewId];
           observation.id_feat = featId;
 
@@ -323,7 +401,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
-  double initialFocalLengthPix = -1;
+  Vec2 initialFocalLengthPix = {-1, -1};
   double fisheyeCenterX = 0.0;
   double fisheyeCenterY = 0.0;
   double fisheyeRadius = 1.0;
@@ -338,6 +416,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   bool intrinsicLocked = false;
   bool poseLocked = false;
   bool poseIndependant = true;
+  bool lockRatio = true;
 
   if(userProps)
   {
@@ -348,84 +427,39 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
 
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_viewId"))
       {
-        try
-        {
-          viewId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          viewId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
-        }
+        viewId = getAbcProp_uint(userProps, *propHeader, "mvg_viewId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseId"))
       {
-        try
-        {
-          poseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          poseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
-        }
+        poseId = getAbcProp_uint(userProps, *propHeader, "mvg_poseId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicId"))
       {
-        try
-        {
-          intrinsicId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          intrinsicId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
-        }
+        intrinsicId = getAbcProp_uint(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_rigId"))
       {
-        try
-        {
-          rigId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          rigId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
-        }
+        rigId = getAbcProp_uint(userProps, *propHeader, "mvg_rigId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_subPoseId"))
       {
-        try
-        {
-          subPoseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          subPoseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
-        }
+        subPoseId = getAbcProp_uint(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_frameId"))
       {
-        try
-        {
-          frameId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_frameId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          frameId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_frameId", sampleFrame);
-        }
+        frameId = getAbcProp_uint(userProps, *propHeader, "mvg_frameId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_resectionId"))
       {
-        try
-        {
-          resectionId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
-        }
-        catch(Alembic::Util::Exception&)
-        {
-          resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
-        }
+        resectionId = getAbcProp_uint(userProps, *propHeader, "mvg_resectionId", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicLocked"))
       {
         intrinsicLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicLocked", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicPixelRatioLocked"))
+      {
+        lockRatio = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicPixelRatioLocked", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
       {
@@ -438,26 +472,29 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       if(userProps.getPropertyHeader("mvg_metadata"))
       {
         getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_metadata", sampleFrame, rawMetadata);
-        assert(rawMetadata.size() % 2 == 0);
+        if(rawMetadata.size() % 2 != 0)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'metadata' property is supposed to be key/values. Number of values is " + std::to_string(rawMetadata.size()) + ".");
+        }
       }
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
-        try
+        getAbcArrayProp_uint(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
+        if(sensorSize_pix.size() != 2)
         {
-          getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
+          ALICEVISION_THROW_ERROR("[Alembic] 'sensorSizePix' property is supposed to be 2 values. Number of values is " + std::to_string(sensorSize_pix.size()) + ".");
         }
-        catch(Alembic::Util::Exception&)
-        {
-          getAbcArrayProp<Alembic::Abc::IInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
-        }
-        assert(sensorSize_pix.size() == 2);
       }
       if(userProps.getPropertyHeader("mvg_sensorSizeMm"))
       {
         getAbcArrayProp<Alembic::Abc::IDoubleArrayProperty>(userProps, "mvg_sensorSizeMm", sampleFrame, sensorSize_mm);
-        assert(sensorSize_mm.size() == 2);
+        if(sensorSize_mm.size() != 2)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'sensorSizeMm' property is supposed to be 2 values. Number of values is " + std::to_string(sensorSize_mm.size()) + ".");
+        }
       }
-      else {
+      else
+      {
         sensorSize_mm = {24.0, 36.0};
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
@@ -468,9 +505,14 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       {
         mvg_intrinsicInitializationMode = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicInitializationMode", sampleFrame);
       }
+      // For compatibility with versions < 1.2 (value was in pixels)
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
       {
-        initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+        initialFocalLengthPix(0) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLength"))
+      {
+        initialFocalLengthPix(0) = (sensorSize_pix.at(0) / sensorSize_mm[0]) * getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLength", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterX"))
       {
@@ -516,12 +558,17 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-    if (intrinsicScale) {
+    if (intrinsicScale)
+    {
+      // fy_pix = fx_pix * fy/fx
+      initialFocalLengthPix(1) = (initialFocalLengthPix(0) > 0)? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
       intrinsicScale->setInitialScale(initialFocalLengthPix);
+      intrinsicScale->setRatioLocked(lockRatio);
     }
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-    if (casted) {
+    if (casted)
+    {
       casted->setCircleCenterX(fisheyeCenterX);
       casted->setCircleCenterY(fisheyeCenterY);
       casted->setCircleRadius(fisheyeRadius);
@@ -561,28 +608,31 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   if((flagsPart & ESfMData::EXTRINSICS) &&
      isReconstructed)
   {
-    // camera
-    Mat3 camR;
-    camR(0,0) = mat[0][0];
-    camR(0,1) = mat[0][1];
-    camR(0,2) = mat[0][2];
-    camR(1,0) = mat[1][0];
-    camR(1,1) = mat[1][1];
-    camR(1,2) = mat[1][2];
-    camR(2,0) = mat[2][0];
-    camR(2,1) = mat[2][1];
-    camR(2,2) = mat[2][2];
+    Mat4 T = Mat4::Identity();
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        T(i, j) = mat[j][i];
+      }
+    }
+    
+    // convert from computer graphics convention (opengl-like) to computer vision
+    Mat4 M = Mat4::Identity();
+    M(1, 1) = -1.0;
+    M(2, 2) = -1.0;
 
-    Vec3 camT;
-    camT(0) = mat[3][0];
-    camT(1) = mat[3][1];
-    camT(2) = mat[3][2];
+    Mat4 T2;
+    if (abcVersion < Version(1, 2, 3))
+    {
+      T2 = (T * M).inverse();
+    }
+    else 
+    {
+      T2 = (M * T * M).inverse();
+    }
 
-    // correct camera orientation from alembic
-    const Mat3 scale = Vec3(1,-1,-1).asDiagonal();
-    camR = scale * camR;
-
-    Pose3 pose(camR, camT);
+    Pose3 pose(T2.block<3, 4>(0, 0));
 
     if(view->isPartOfRig() && !view->isPoseIndependant())
     {
@@ -690,26 +740,36 @@ bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::Sf
 
   if((flagsPart & ESfMData::EXTRINSICS) && isReconstructed)
   {
-    Mat3 matR;
-    matR(0,0) = mat[0][0];
-    matR(0,1) = mat[0][1];
-    matR(0,2) = mat[0][2];
-    matR(1,0) = mat[1][0];
-    matR(1,1) = mat[1][1];
-    matR(1,2) = mat[1][2];
-    matR(2,0) = mat[2][0];
-    matR(2,1) = mat[2][1];
-    matR(2,2) = mat[2][2];
+      Mat4 T = Mat4::Identity();
+      for (int i = 0; i < 4; i++)
+      {
+          for (int j = 0; j < 4; j++)
+          {
+              T(i, j) = mat[j][i];
+          }
+      }
 
-    Vec3 matT;
-    matT(0) = mat[3][0];
-    matT(1) = mat[3][1];
-    matT(2) = mat[3][2];
 
-    Pose3 pose(matR, matT);
+      Mat4 M = Mat4::Identity();
+      M(1, 1) = -1.0;
+      M(2, 2) = -1.0;
 
-    if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
-      sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+      Mat4 T2;
+      if (abcVersion < Version(1, 2, 3))
+      {
+          T2 = T.inverse();
+      }
+      else
+      {
+          T2 = (M * T * M).inverse();
+      }
+
+      Pose3 pose(T2.block<3, 4>(0, 0));
+
+      if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
+      {
+          sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+      }
   }
 
   if((rigId != UndefinedIndexT) && sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
@@ -730,7 +790,7 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
   const MetaData& md = iObj.getMetaData();
   if(IPoints::matches(md) && (flagsPart & ESfMData::STRUCTURE))
   {
-    readPointCloud(iObj, mat, sfmdata, flagsPart);
+    readPointCloud(abcVersion, iObj, mat, sfmdata, flagsPart);
   }
   else if(IXform::matches(md))
   {
@@ -796,7 +856,7 @@ void AlembicImporter::populateSfM(sfmData::SfMData& sfmdata, ESfMData flagsPart)
 
   if(const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_ABC_version"))
   {
-    getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_ABC_version", sampleFrame, vecAbcVersion);
+    getAbcArrayProp_uint(userProps, "mvg_ABC_version", sampleFrame, vecAbcVersion);
   }
   // Old versions were using only major,minor
   if(vecAbcVersion.size() < 3)

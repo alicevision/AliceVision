@@ -35,44 +35,45 @@ LargeScale::~LargeScale()
 
 bool LargeScale::isSpaceSaved()
 {
-    return mvsUtils::FileExists(spaceFileName);
+    return bfs::exists(spaceFileName);
 }
 
 void LargeScale::saveSpaceToFile()
 {
-    FILE* f = fopen(spaceFileName.c_str(), "w");
-    fprintf(f, "%lf %lf %lf %lf %lf %lf %lf %lf\n", space[0].x, space[1].x, space[2].x, space[3].x, space[4].x,
-            space[5].x, space[6].x, space[7].x);
-    fprintf(f, "%lf %lf %lf %lf %lf %lf %lf %lf\n", space[0].y, space[1].y, space[2].y, space[3].y, space[4].y,
-            space[5].y, space[6].y, space[7].y);
-    fprintf(f, "%lf %lf %lf %lf %lf %lf %lf %lf\n", space[0].z, space[1].z, space[2].z, space[3].z, space[4].z,
-            space[5].z, space[6].z, space[7].z);
-    fprintf(f, "%i %i %i\n", dimensions.x, dimensions.y, dimensions.z);
-    fprintf(f, "%i\n", maxOcTreeDim);
-    fclose(f);
+    std::ofstream out(spaceFileName);
+    out << space[0].x << " " << space[1].x << " " << space[2].x << " " << space[3].x << " "
+        << space[4].x << " " << space[5].x << " " << space[6].x << " " << space[7].x << "\n";
+
+    out << space[0].y << " " << space[1].y << " " << space[2].y << " " << space[3].y << " "
+        << space[4].y << " " << space[5].y << " " << space[6].y << " " << space[7].y << "\n";
+
+    out << space[0].z << " " << space[1].z << " " << space[2].z << " " << space[3].z << " "
+        << space[4].z << " " << space[5].z << " " << space[6].z << " " << space[7].z << "\n";
+
+    out << dimensions.x << " " << dimensions.y << " " << dimensions.z << "\n";
+    out << maxOcTreeDim << "\n";
 }
 
 void LargeScale::loadSpaceFromFile()
 {
-    FILE* f = fopen(spaceFileName.c_str(), "r");
-    fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf\n",
-           &space[0].x, &space[1].x, &space[2].x, &space[3].x,
-           &space[4].x, &space[5].x, &space[6].x, &space[7].x);
-    fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf\n",
-           &space[0].y, &space[1].y, &space[2].y, &space[3].y,
-           &space[4].y, &space[5].y, &space[6].y, &space[7].y);
-    fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf\n",
-           &space[0].z, &space[1].z, &space[2].z, &space[3].z,
-           &space[4].z, &space[5].z, &space[6].z, &space[7].z);
-    fscanf(f, "%i %i %i\n", &dimensions.x, &dimensions.y, &dimensions.z);
-    fscanf(f, "%i\n", &maxOcTreeDim);
-    fclose(f);
+    std::ifstream in(spaceFileName);
+    in >> space[0].x >> space[1].x >> space[2].x >> space[3].x
+       >> space[4].x >> space[5].x >> space[6].x >> space[7].x;
+
+    in >> space[0].y >> space[1].y >> space[2].y >> space[3].y
+       >> space[4].y >> space[5].y >> space[6].y >> space[7].y;
+
+    in >> space[0].z >> space[1].z >> space[2].z >> space[3].z
+       >> space[4].z >> space[5].z >> space[6].z >> space[7].z;
+
+    in >> dimensions.x >> dimensions.y >> dimensions.z;
+    in >> maxOcTreeDim;
 }
 
 void LargeScale::initialEstimateSpace(int maxOcTreeDim)
 {
     float minPixSize;
-    Fuser* fs = new Fuser(mp);
+    Fuser* fs = new Fuser(*mp);
     fs->divideSpaceFromDepthMaps(&space[0], minPixSize);
     dimensions = fs->estimateDimensions(&space[0], &space[0], 0, maxOcTreeDim);
     delete fs;
@@ -161,7 +162,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
             (float)mp->userParams.get<int>("LargeScale.addRandomNoiseNoisPixSizeDistHalfThr", 10);
 
         std::string depthMapsPtsSimsTmpDir = generateTempPtsSimsFiles(
-            spaceFolderName, mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
+            spaceFolderName, *mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
 
         ALICEVISION_LOG_INFO("Creating tracks: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z);
         StaticVector<Point3d>* ReconstructionPlan = new StaticVector<Point3d>();
@@ -172,17 +173,14 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, tmpdir, doVisualize);
         int maxlevel = 0;
         vg->generateTracksForEachVoxel(ReconstructionPlan, maxOcTreeDim, maxPts, 1, maxlevel, depthMapsPtsSimsTmpDir);
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("max rec level: " << maxlevel);
+        ALICEVISION_LOG_DEBUG("max rec level: " << maxlevel);
         for(int i = 1; i < maxlevel; i++)
         {
             dimensions = dimensions * 2;
             maxOcTreeDim = maxOcTreeDim / 2;
-            if(mp->verbose)
-                ALICEVISION_LOG_DEBUG("dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
+            ALICEVISION_LOG_DEBUG("dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
         }
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("final dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
+        ALICEVISION_LOG_DEBUG("final dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
 
         VoxelsGrid* vgnew = new VoxelsGrid(dimensions, &space[0], mp, spaceVoxelsFolderName, doVisualize);
         vg->generateSpace(vgnew, Voxel(0, 0, 0), dimensions, depthMapsPtsSimsTmpDir);
@@ -193,9 +191,9 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         delete vgnew;
         delete vg;
 
-        mvsUtils::DeleteDirectory(tmpdir);
+        bfs::remove_all(tmpdir);
 
-        deleteTempPtsSimsFiles(mp, depthMapsPtsSimsTmpDir);
+        deleteTempPtsSimsFiles(*mp, depthMapsPtsSimsTmpDir);
 
         saveArrayToFile<Point3d>(spaceFolderName + "spacePatitioning.bin", ReconstructionPlan);
         delete ReconstructionPlan;

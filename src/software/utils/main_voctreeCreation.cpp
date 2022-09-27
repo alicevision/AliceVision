@@ -31,7 +31,6 @@
 
 static const int DIMENSION = 128;
 
-using namespace std;
 using namespace aliceVision;
 
 //using namespace boost::accumulators;
@@ -64,8 +63,8 @@ int aliceVision_main(int argc, char** argv)
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "a SfMData file.")
-    ("weights,w", po::value<string>(&weightName)->required(), "Output name for the weight file")
-    ("tree,t", po::value<string>(&treeName)->required(), "Output name for the tree file");
+    ("weights,w", po::value<std::string>(&weightName)->required(), "Output name for the weight file")
+    ("tree,t", po::value<std::string>(&treeName)->required(), "Output name for the tree file");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -229,7 +228,7 @@ int aliceVision_main(int argc, char** argv)
 			  << " took " << detect_elapsed.count()
 			  << " ms and has " << matches.size() 
 			  << " matches\tBest " << matches[0].id 
-			  << " with score " << matches[0].score << endl);
+              << " with score " << matches[0].score << std::endl);
       // for each found match print the score, ideally the first one should be the document itself
       for(size_t j = 0; j < matches.size(); ++j)
       {

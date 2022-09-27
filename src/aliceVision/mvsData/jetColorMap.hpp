@@ -29,6 +29,6 @@ rgb getRGBFromJetColorMap(float value);
  *          - 'value' <= 0.0f: black
  *          - 'value' >= 1.0f: white
  */
-Color getColorFromJetColorMap(float value);
+ColorRGBf getColorFromJetColorMap(float value);
 
 } // namespace aliceVision
