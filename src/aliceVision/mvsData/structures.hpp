@@ -27,7 +27,7 @@ struct ImageParams
     int size;
     std::string path;
 
-    ImageParams(IndexT _viewId, int _width, int _height, std::string _path)
+    ImageParams(IndexT _viewId, int _width, int _height, const std::string& _path)
       : viewId(_viewId)
       , width(_width)
       , height(_height)

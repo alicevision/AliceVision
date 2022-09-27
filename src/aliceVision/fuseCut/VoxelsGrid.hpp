@@ -48,10 +48,10 @@ public:
     void vizualize();
 
     void cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpace);
-    VoxelsGrid* cloneSpace(int numSubVoxs, std::string newSpaceRootDir);
+    VoxelsGrid* cloneSpace(int numSubVoxs, const std::string& newSpaceRootDir);
 
     void copySpaceVoxel(int voxelId, VoxelsGrid* newSpace);
-    VoxelsGrid* copySpace(std::string newSpaceRootDir);
+    VoxelsGrid* copySpace(const std::string& newSpaceRootDir);
 
     void getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi);
 };
