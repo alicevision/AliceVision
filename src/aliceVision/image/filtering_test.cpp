@@ -16,7 +16,6 @@
 
 using namespace aliceVision;
 using namespace aliceVision::image;
-using namespace std;
 
 BOOST_AUTO_TEST_CASE(Image_Convolution)
 {

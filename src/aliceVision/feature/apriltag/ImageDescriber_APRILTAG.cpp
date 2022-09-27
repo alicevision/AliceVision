@@ -80,7 +80,7 @@ bool ImageDescriber_APRILTAG::describe(const image::Image<unsigned char>& image,
         ((tl[0]*br[1] - tl[1]*br[0]) * (bl[1]-tr[1]) - (tl[1]-br[1]) * (bl[0]*tr[1] - bl[1]*tr[0])) / denominator
       );
       Vec2 points[5] = { center, tl, bl, br, tr };
-      std::size_t indices[5] = { det->id, 30 + det->id, 60 + det->id, 90 + det->id, 120 + det->id};
+      int indices[5] = { det->id, 30 + det->id, 60 + det->id, 90 + det->id, 120 + det->id};
       // compute scale from max side length and diagonals (divided by sqare root of 2):
       const double scale = 0.5 * std::max({(tl-bl).norm(), (bl-br).norm(), (br-tr).norm(), (tr-tl).norm(), 0.707*(tl-br).norm(), 0.707*(tr-bl).norm()});
       ALICEVISION_LOG_DEBUG(" New AprilTag: Id " << det->id << " ; Center location ( " << center[0] << " , " << center[1] << " ) ; Scale " << scale);

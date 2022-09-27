@@ -15,7 +15,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
 using namespace aliceVision::voctree;
 
 BOOST_AUTO_TEST_CASE(database)
@@ -24,7 +23,7 @@ BOOST_AUTO_TEST_CASE(database)
   const int cardWords = 12;
 
   // Create a documents vector
-  vector<vector<Word>> documentsToInsert;
+  std::vector<std::vector<Word>> documentsToInsert;
   documentsToInsert.resize(cardDocuments);
   for(int i = 0; i < documentsToInsert.size(); ++i)
   {
@@ -51,7 +50,7 @@ BOOST_AUTO_TEST_CASE(database)
   for(int i = 0; i < documentsToInsert.size(); i++)
   {
     // Create match vectors
-    vector<DocMatch> match(1);
+    std::vector<DocMatch> match(1);
     // Query both databases with the same document
     db.find(documentsToInsert[i], 1, match, "classic");
     // Check the matches scores are 0 (or near)

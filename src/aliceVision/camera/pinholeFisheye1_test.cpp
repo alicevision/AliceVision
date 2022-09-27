@@ -26,6 +26,7 @@ using namespace aliceVision::camera;
 //-----------------
 BOOST_AUTO_TEST_CASE(cameraPinholeFisheye_disto_undisto_Fisheye1)
 {
+  makeRandomOperationsReproducible();
   const PinholeFisheye1 cam(1000, 1000, 1000, 1000, 0, 0,
                                     0.1); // K1
 

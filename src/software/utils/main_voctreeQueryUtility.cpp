@@ -16,6 +16,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/types.hpp>
+#include <aliceVision/utils/convert.hpp>
 
 #include <Eigen/Core>
 
@@ -37,7 +38,6 @@
 
 static const int DIMENSION = 128;
 
-using namespace std;
 using namespace boost::accumulators;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -46,35 +46,6 @@ using namespace aliceVision::feature;
 
 typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
-
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatches &matches)
-{
-  os << "[ ";
-  for(const auto &e : matches)
-  {
-    os << e.id << ", " << e.score << "; ";
-  }
-  os << "];\n";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document &doc)
-{
-  os << "[ ";
-  for(const aliceVision::voctree::Word &w : doc)
-  {
-    os << w << ", ";
-  }
-  os << "];\n";
-  return os;
-}
-
-std::string myToString(std::size_t i, std::size_t zeroPadding)
-{
-  stringstream ss;
-  ss << std::setw(zeroPadding) << std::setfill('0') << i;
-  return ss.str();
-}
 
 bool saveSparseHistogramPerImage(const std::string &filename, const aliceVision::voctree::SparseHistogramPerImage &docs)
 {
@@ -345,7 +316,7 @@ int aliceVision_main(int argc, char** argv)
   std::ofstream fileout;
   if(withOutput)
   {
-    fileout.open(outfile, ofstream::out);
+    fileout.open(outfile, std::ofstream::out);
   }
 
   std::map<std::size_t, voctree::SparseHistogram> histograms;
@@ -496,7 +467,8 @@ int aliceVision_main(int argc, char** argv)
         if(it != sfmData.getViews().end())
         {
           absoluteFilename = it->second->getImagePath();
-          sylinkName = fs::path(myToString(j, 4) + "." + std::to_string(matches[j].score) + "." + absoluteFilename.filename().string());
+          sylinkName = fs::path(utils::toStringZeroPadded(j, 4) + "." + std::to_string(matches[j].score) +
+                                "." + absoluteFilename.filename().string());
         }
         else
         {
@@ -520,8 +492,8 @@ int aliceVision_main(int argc, char** argv)
   }
 
 #ifdef ALICEVISION_DEBUG_MATCHING
-  std::cout << " ---------------------------- \n" << endl;
-  std::cout << "Matching distances - Histogram: \n" << endl;
+  std::cout << " ---------------------------- \n" << std::endl;
+  std::cout << "Matching distances - Histogram: \n" << std::endl;
   std::map<int,int> stats;
   for( const auto& imgMatches: allMatches)
   {

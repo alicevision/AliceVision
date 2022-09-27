@@ -14,8 +14,11 @@
 
 namespace aliceVision {
 
+template<typename ColorT>
 class Image
 {
+public:
+    using Color = ColorT;
 private:
     std::vector<Color> _data;
     int _width{0};
@@ -89,27 +92,56 @@ public:
     const Color& at(int x, int y) const { return _data[y * _width + x]; }
     Color& at(int x, int y) { return _data[y * _width + x]; }
 
-    Color getInterpolateColor(const Point2d& pix) const;
-    Color getNearestPixelColor(const Point2d& pix) const;
+    Color getInterpolateColor(const Point2d& pix) const
+    {
+        const int xp = std::min(static_cast<int>(pix.x), _width - 2);
+        const int yp = std::min(static_cast<int>(pix.y), _height - 2);
 
-    /**
-     * @brief Calculate the difference between images of different sizes
-     * @param [inImgDownscaled] the smaller image
-     * @param [outImg] the difference
-     * @param [downscale] the downscale coefficient between image sizes
-     */
-    void imageDiff(const Image& inImgDownscaled, Image& outImg, unsigned int downscale) const;
+        // precision to 4 decimal places
+        const float ui = pix.x - static_cast<float>(xp);
+        const float vi = pix.y - static_cast<float>(yp);
 
-    /**
-    * @brief Calculate the laplacian pyramid of a given image,
-    *        ie. its decomposition in frequency bands
-    * @param [out_pyramidL] the laplacian pyramid
-    * @param [nbBand] the number of frequency bands
-    * @param [downscale] the downscale coefficient between floors of the pyramid
-    */
-    void laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsigned int downscale) const;
+        const Color lu = _data.at(yp * _width + xp);
+        const Color ru = _data.at(yp * _width + (xp + 1));
+        const Color rd = _data.at((yp + 1) * _width + (xp + 1));
+        const Color ld = _data.at((yp + 1) * _width + xp);
 
+        // bilinear interpolation of the pixel intensity value
+        const Color u = lu + (ru - lu) * ui;
+        const Color d = ld + (rd - ld) * ui;
+        const Color out = u + (d - u) * vi;
+        return out;
+    }
 
+    Color getNearestPixelColor(const Point2d& pix) const
+    {
+        const int xp = std::min(static_cast<int>(pix.x), _width - 1);
+        const int yp = std::min(static_cast<int>(pix.y), _height - 1);
+        const Color lu = _data.at(yp * _width + xp);
+        return lu;
+    }
 };
 
+using ImageRGBf = Image<ColorRGBf>;
+using ImageRGBAf = Image<ColorRGBAf>;
+
+
+/**
+* @brief Calculate the difference between images of different sizes
+* @param [inImgDownscaled] the smaller image
+* @param [outImg] the difference
+* @param [downscale] the downscale coefficient between image sizes
+*/
+void imageDiff(const ImageRGBf& inImg, const ImageRGBf& inImgDownscaled, ImageRGBf& outImg, unsigned int downscale);
+
+/**
+* @brief Calculate the laplacian pyramid of a given image,
+*        ie. its decomposition in frequency bands
+* @param [out_pyramidL] the laplacian pyramid
+* @param [nbBand] the number of frequency bands
+* @param [downscale] the downscale coefficient between floors of the pyramid
+*/
+void laplacianPyramid(std::vector<ImageRGBf>& out_pyramidL, const ImageRGBf& image, int nbBand, unsigned int downscale);
+
 }
+

@@ -114,8 +114,8 @@ void Mesh::save(const std::string& filepath)
     for (const auto & p : pts)
     {
         aimesh->mVertices[index].x = p.x;
-        aimesh->mVertices[index].y = p.y;
-        aimesh->mVertices[index].z = p.z;
+        aimesh->mVertices[index].y = -p.y;
+        aimesh->mVertices[index].z = -p.z;
 
         ++index;
     }
@@ -2455,7 +2455,7 @@ void Mesh::load(const std::string& filepath)
                 map_indices[idPoint] = pts.size();
 
                 const aiVector3D v = mesh->mVertices[idPoint];
-                pts.push_back(Point3d(v.x, v.y, v.z));
+                pts.push_back(Point3d(v.x, -v.y, -v.z));
 
                 if (mesh->HasVertexColors(0))
                 {
@@ -2475,7 +2475,7 @@ void Mesh::load(const std::string& filepath)
                 if (mesh->HasNormals())
                 {
                     const aiVector3D n = mesh->mNormals[idPoint];
-                    normals.push_back(Point3d(n.x, n.y, n.z));      
+                    normals.push_back(Point3d(n.x, -n.y, -n.z));      
                 }
             }
 

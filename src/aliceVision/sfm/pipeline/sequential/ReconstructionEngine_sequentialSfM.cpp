@@ -24,6 +24,7 @@
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cpu.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
@@ -32,7 +33,6 @@
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
-#include <boost/progress.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -197,7 +197,8 @@ bool ReconstructionEngine_sequentialSfM::process()
   }
   else
   {
-    // Optimize input before starting adding new views
+    // If we don't have any landmark, we need to triangulate them from the known poses.
+    // But even if we already have landmarks, we need to try to triangulate new points with the current set of parameters.
     std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
 
     triangulate({}, prevReconstructedViews);
@@ -1247,8 +1248,8 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   bestImagePairs.reserve(_pairwiseMatches->size());
   
   // Compute the relative pose & the 'baseline score'
-  boost::progress_display my_progress_bar( _pairwiseMatches->size(),
-    std::cout,"Automatic selection of an initial pair:\n" );
+  auto progressDisplay = system::createConsoleProgressDisplay(_pairwiseMatches->size(), std::cout,
+                                                              "Automatic selection of an initial pair:\n" );
 
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < _pairwiseMatches->size(); ++i)
@@ -1256,8 +1257,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     matching::PairwiseMatches::const_iterator iter = _pairwiseMatches->begin();
     std::advance(iter, i);
     
-#pragma omp critical
-    ++my_progress_bar;
+    ++progressDisplay;
     
     const Pair current_pair = iter->first;
 

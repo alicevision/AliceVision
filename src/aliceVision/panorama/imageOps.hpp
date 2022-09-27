@@ -1,11 +1,10 @@
 #pragma once
 
-#include <aliceVision/image/all.hpp>
 #include "cachedImage.hpp"
-#include <OpenEXR/half.h>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/half.hpp>
 
-namespace aliceVision
-{
+namespace aliceVision {
 
 template <class T>
 bool downscale(aliceVision::image::Image<T>& outputColor, const aliceVision::image::Image<T>& inputColor)

@@ -155,5 +155,18 @@ bool exportMatToTextFile(const Mat & mat, const std::string & filename,
   return bOk;
 }
 
+void makeRandomOperationsReproducible()
+{
+  unsigned seed = 1234567;
+
+  const char* seed_string = std::getenv("ALICEVISION_RANDOM_SEED");
+  if (seed_string != nullptr) {
+    seed = std::stol(seed_string);
+  }
+
+  // Eigen uses std::rand in its Random() member functions.
+  std::srand(seed);
+}
+
 }  // namespace aliceVision
 

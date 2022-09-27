@@ -10,8 +10,6 @@
 namespace aliceVision {
 namespace feature {
 
-using namespace std;
-
 bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
                                     std::unique_ptr<Regions>& regions,
                                     const image::Image<unsigned char>* mask)

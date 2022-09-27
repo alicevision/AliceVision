@@ -255,7 +255,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
 {
   using namespace aliceVision::sfm;
 
-  const Vec3i version = {1, 0, 0};
+  const Vec3i version = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
 
   // main tree
   bpt::ptree fileTree;

@@ -10,6 +10,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include <fstream>
+
 namespace aliceVision {
 namespace sfmDataIO {
 

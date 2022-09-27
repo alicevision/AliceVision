@@ -18,7 +18,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
 using namespace aliceVision;
 
 // Check pairs follow a weak ordering pair.first < pair.second

@@ -204,7 +204,7 @@ public:
         }
     };
 
-    mvsUtils::MultiViewParams* mp;
+    mvsUtils::MultiViewParams& _mp;
 
     GEO::Delaunay_var _tetrahedralization;
     /// 3D points coordinates
@@ -223,7 +223,7 @@ public:
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(mvsUtils::MultiViewParams* _mp);
+    DelaunayGraphCut(mvsUtils::MultiViewParams& mp);
     virtual ~DelaunayGraphCut();
 
     /**

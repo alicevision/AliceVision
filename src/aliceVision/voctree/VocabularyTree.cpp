@@ -11,6 +11,17 @@
 namespace aliceVision {
 namespace voctree {
 
+std::ostream& operator<<(std::ostream& os, const Document& doc)
+{
+  os << "[ ";
+  for (const auto &w : doc)
+  {
+    os << w << ", ";
+  }
+  os << "];\n";
+  return os;
+}
+
 float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod, const std::vector<float>& word_weights)
 {
 

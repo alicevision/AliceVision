@@ -17,8 +17,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
-using namespace std;
-using std::string;
 using namespace aliceVision;
 using namespace aliceVision::feature;
 

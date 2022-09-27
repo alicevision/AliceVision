@@ -17,7 +17,6 @@
 
 using namespace aliceVision;
 using namespace aliceVision::geometry::halfPlane;
-using namespace std;
 
 BOOST_AUTO_TEST_CASE(ExistingSubspace) {
 

@@ -9,7 +9,6 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
-#include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
 #include <boost/algorithm/string/case_conv.hpp> 

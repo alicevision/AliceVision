@@ -85,8 +85,8 @@ public:
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
-    _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[1]);
-    _intrinsic->setOffset(parameter_intrinsics[2], parameter_intrinsics[3]);
+    _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
+    _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
     _intrinsic->setDistortionParams({parameter_intrinsics[4], parameter_intrinsics[5], parameter_intrinsics[6]});
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
@@ -163,8 +163,8 @@ public:
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
-    _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[1]);
-    _intrinsic->setOffset(parameter_intrinsics[2], parameter_intrinsics[3]);
+    _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
+    _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
 
     std::vector<double> distortion_params;
     size_t params_size = _intrinsic->getParams().size();

@@ -46,8 +46,8 @@ public:
         const int distortionSize = _camera->getDistortionParams().size();
 
         //Read parameters and update camera
-        _camera->setScale(parameter_scale[0], parameter_scale[1]);
-        _camera->setOffset(parameter_center[0], parameter_center[1]);
+        _camera->setScale({parameter_scale[0], parameter_scale[1]});
+        _camera->setOffset({parameter_center[0], parameter_center[1]});
         std::vector<double> cameraDistortionParams = _camera->getDistortionParams();
 
         for (int idParam = 0; idParam < distortionSize; idParam++)
@@ -151,8 +151,8 @@ public:
         const int distortionSize = _camera->getDistortionParams().size();
 
         //Read parameters and update camera
-        _camera->setScale(parameter_scale[0], parameter_scale[1]);
-        _camera->setOffset(parameter_center[0], parameter_center[1]);
+        _camera->setScale({parameter_scale[0], parameter_scale[1]});
+        _camera->setOffset({parameter_center[0], parameter_center[1]});
         std::vector<double> cameraDistortionParams = _camera->getDistortionParams();
 
         for (int idParam = 0; idParam < distortionSize; idParam++)

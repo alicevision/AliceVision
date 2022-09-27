@@ -16,8 +16,6 @@
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
-using namespace std;
-
 
 BOOST_AUTO_TEST_CASE ( conversionTest )
 {

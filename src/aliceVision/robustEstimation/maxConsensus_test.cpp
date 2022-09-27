@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
 
   //-- Add some noise (for the asked percentage amount)
   int nbPtToNoise = (int) numPoints * outlierRatio;
-  vector<std::size_t> vec_samples; // Fit with unique random index
+  std::vector<std::size_t> vec_samples; // Fit with unique random index
   uniformSample(randomNumberGenerator, nbPtToNoise, numPoints, vec_samples);
   for(std::size_t i = 0; i <vec_samples.size(); ++i)
   {

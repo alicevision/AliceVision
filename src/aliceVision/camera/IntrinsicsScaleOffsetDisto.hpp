@@ -32,9 +32,22 @@ public:
     *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
   }
 
+  bool operator==(const IntrinsicBase& otherBase) const override
+  {
+      if(!IntrinsicsScaleOffset::operator==(otherBase))
+          return false;
+      if(typeid(*this) != typeid(otherBase))
+          return false;
+      const IntrinsicsScaleOffsetDisto& other = static_cast<const IntrinsicsScaleOffsetDisto&>(otherBase);
+
+      if(_pDistortion != nullptr && other._pDistortion != nullptr)
+          return (*_pDistortion) == (*other._pDistortion);
+      return _pDistortion == other._pDistortion;
+  }
+
   bool hasDistortion() const override
   {
-    return !(_pDistortion == nullptr);
+    return _pDistortion != nullptr;
   }
 
   Vec2 addDistortion(const Vec2& p) const override

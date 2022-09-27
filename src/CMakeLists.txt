@@ -125,6 +125,10 @@ if(WIN32)
   endif()
 endif()
 
+# Avoids deprecation warning caused by internals of json_parser. This is properly fixed in
+# Boost 1.76.0: https://github.com/boostorg/property_tree/commit/d1c8825a45a0717e1ad79583d3283b0e5e32831e
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS=1)
+
 # Folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_CMakePredefinedTargets")
@@ -201,6 +205,25 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   AddCompilerFlag("-Werror=return-local-addr")
 endif()
 
+# Eigen requires overaligned buffers for maximum efficiency (e.g. on AVX512 buffers may need to
+# be aligned to 64 bytes). AliceVision currently does not support this. Fortunately this is fixed
+# in C++17. While we can't upgrade to C++17 just yet, some compilers support overaligned
+# allocation feature with a separate flag, so use it if alignment is enabled in Eigen.
+# See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
+if(AV_EIGEN_MEMORY_ALIGNMENT)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
+    AddCompilerFlag("-faligned-new")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
+    AddCompilerFlag("-faligned-new")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
+    AddCompilerFlag("-faligned-new")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.12)
+    AddCompilerFlag("/Zc:alignedNew")
+  else()
+    message(FATAL_ERROR "AV_EIGEN_MEMORY_ALIGNMENT is only supported starting GCC 7.1, Clang 6.0 and MSVC 2017 15.5")
+  endif()
+endif()
+
 # ==============================================================================
 # Enable code coverage generation (only with GCC)
 # ==============================================================================
@@ -261,8 +284,15 @@ else()
   message(SEND_ERROR "${Boost_ERROR_REASON}")
 endif()
 
-# Disable BOOST autolink
-add_definitions(-DBOOST_ALL_NO_LIB)
+
+if(WIN32)
+  # Disable BOOST autolink
+  add_definitions(-DBOOST_ALL_NO_LIB)
+
+  #To be removed later, a bug to make things work with current vcpkg
+  #https://github.com/microsoft/vcpkg/issues/22495
+  add_definitions(-DBOOST_USE_WINAPI_VERSION=BOOST_WINAPI_VERSION_WIN7)
+endif()
 
 if(BUILD_SHARED_LIBS)
   # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
@@ -281,20 +311,17 @@ endif()
 
 
 # ==============================================================================
-# OpenEXR
+# OpenEXR >= 2.5
 # ==============================================================================
-find_package(OpenEXR)
-if(TARGET OpenEXR::IlmImf)
-  message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
-else()
-  # fallback for old openexr versions (<2.5)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/openexr)
-  find_package(OpenEXR REQUIRED)
-  if(OPENEXR_FOUND)
-    message(STATUS "OpenEXR found (without config). (Version ${OPENEXR_VERSION})")
+find_package(OpenEXR REQUIRED)
+if(TARGET OpenEXR::OpenEXR OR TARGET IlmBase::Half)
+  if(OpenEXR_VERSION VERSION_GREATER_EQUAL 2.5)
+    message(STATUS "OpenEXR found. (Version ${OpenEXR_VERSION})")
   else()
-    message(SEND_ERROR "Failed to find OpenEXR.")
+    message(SEND_ERROR "OpenEXR: Version found is ${OpenEXR_VERSION}, the minimal version required is 2.5.")
   endif()
+else()
+  message(SEND_ERROR "Failed to find OpenEXR.")
 endif()
 
 # ==============================================================================
@@ -342,8 +369,11 @@ endif()
 find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND OR EIGEN3_FOUND)
   # message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
-  # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-  set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
+  if(AV_EIGEN_MEMORY_ALIGNMENT)
+    set(AV_EIGEN_DEFINITIONS -DALICEVISION_EIGEN_REQUIRE_ALIGNMENT=1)
+  else()
+    set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
+  endif()
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
 endif()

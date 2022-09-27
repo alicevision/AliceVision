@@ -38,6 +38,8 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <random>
+
 #include <limits.h>
 // TODO as soon as we use C++0x, use the code in USE_UNORDERED_MAP
 #if USE_UNORDERED_MAP
@@ -357,6 +359,9 @@ private:
 template<>
 inline LshTable<unsigned char>::LshTable(unsigned int feature_size, unsigned int subsignature_size)
 {
+    std::random_device randomDevice;
+    std::mt19937 rng(randomDevice());
+
     initialize(subsignature_size);
     // Allocate the mask
     mask_ = std::vector<size_t>((size_t)ceil((float)(feature_size * sizeof(char)) / (float)sizeof(size_t)), 0);
@@ -364,7 +369,7 @@ inline LshTable<unsigned char>::LshTable(unsigned int feature_size, unsigned int
     // A bit brutal but fast to code
     std::vector<size_t> indices(feature_size * CHAR_BIT);
     for (size_t i = 0; i < feature_size * CHAR_BIT; ++i) indices[i] = i;
-    std::random_shuffle(indices.begin(), indices.end());
+    std::shuffle(indices.begin(), indices.end(), rng);
 
     // Generate a random set of order of subsignature_size_ bits
     for (unsigned int i = 0; i < key_size_; ++i) {

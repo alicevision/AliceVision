@@ -89,7 +89,7 @@ struct TexturingParams
 
     imageIO::EImageFileType textureFileType = imageIO::EImageFileType::NONE;
     imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
-    mvsUtils::ImagesCache::ECorrectEV correctEV{mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION};
+    mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
@@ -167,7 +167,7 @@ public:
     // Create buffer for the set of output textures
     struct AccuImage
     {
-        Image img;
+        ImageRGBf img;
         std::vector<float> imgCount;
 
         void resize(int width, int height)
@@ -194,14 +194,14 @@ public:
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache,
+                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 
     void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
                                      const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
-                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache& imageCache,
+                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
                                       const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     ///Fill holes and write texture files for the given texture atlas

@@ -22,9 +22,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/utils/convert.hpp>
 
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 #include <boost/program_options.hpp> 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -53,13 +53,6 @@ using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
-
-std::string myToString(std::size_t i, std::size_t zeroPadding)
-{
-  std::stringstream ss;
-  ss << std::setw(zeroPadding) << std::setfill('0') << i;
-  return ss.str();
-}
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -418,7 +411,7 @@ int aliceVision_main(int argc, char** argv)
   while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
   {
     ALICEVISION_COUT("******************************");
-    ALICEVISION_COUT("FRAME " << myToString(frameCounter,4));
+    ALICEVISION_COUT("FRAME " << utils::toStringZeroPadded(frameCounter, 4));
     ALICEVISION_COUT("******************************");
     localization::LocalizationResult localizationResult;
     auto detect_start = std::chrono::steady_clock::now();

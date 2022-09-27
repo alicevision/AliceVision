@@ -22,7 +22,6 @@
 
 using namespace aliceVision;
 using namespace svg;
-using namespace std;
 
 // Implementation of the prolem found here :
 // digilander.libero.it/foxes/optimiz/Optimiz1.htm

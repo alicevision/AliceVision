@@ -43,7 +43,7 @@ inline float sigmoidInv(float zeroVal, float endVal, float sigwidth, float sigMi
 }
 
 void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
-                        const std::vector<float> &times,
+                        const std::vector<double> &times,
                         const rgbCurve &weight,
                         const rgbCurve &response,
                         image::Image<image::RGBfColor> &radiance,
@@ -144,7 +144,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
 }
 
 void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
-    const std::vector<float> &times,
+    const std::vector<double> &times,
     const rgbCurve &weight,
     const rgbCurve &response,
     image::Image<image::RGBfColor> &radiance,

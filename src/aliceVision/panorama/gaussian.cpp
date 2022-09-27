@@ -44,8 +44,7 @@ bool GaussianPyramidNoMask::process(const image::Image<image::RGBfColor>& input)
     /**
      * Kernel
      */
-    oiio::ImageBuf K;
-    oiio::ImageBufAlgo::make_kernel(K, "gaussian", 5, 5);
+    oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", 5, 5);
 
     /**
      * Build pyramid

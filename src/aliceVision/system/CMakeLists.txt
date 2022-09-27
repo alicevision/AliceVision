@@ -6,6 +6,7 @@ set(system_files_headers
   system.hpp
   Timer.hpp
   Logger.hpp
+  ProgressDisplay.hpp
   nvtx.hpp
 )
 
@@ -15,6 +16,7 @@ set(system_files_sources
   MemoryInfo.cpp
   Timer.cpp
   Logger.cpp
+  ProgressDisplay.cpp
   nvtx.cpp
 )
 

@@ -14,7 +14,7 @@
 namespace aliceVision {
 
 //-- A slow but accurate way to draw K-VLD lines
-void getKVLDMask(
+inline void getKVLDMask(
   image::Image< unsigned char > *maskL,
   image::Image< unsigned char > *maskR,
   const std::vector< feature::PointFeature > &vec_F1,

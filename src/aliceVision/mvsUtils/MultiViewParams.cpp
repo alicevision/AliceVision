@@ -39,8 +39,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& depthMapsFolder,
                                  const std::string& depthMapsFilterFolder,
                                  bool readFromDepthMaps,
-                                 int downscale,
-                                 StaticVector<CameraMatrices>* cameras)
+                                 int downscale)
     : _sfmData(sfmData)
     , _imagesFolder(imagesFolder + "/")
     , _depthMapsFolder(depthMapsFolder + "/")
@@ -69,7 +68,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
               // use output of DepthMapFilter if scale==0
               // use output of DepthMap if scale==1
               const int scale = (depthMapsFolder.empty() ? 0 : 1);
-              path = getFileNameFromViewId(this, view.getViewId(), mvsUtils::EFileType::depthMap, scale);
+              path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap, scale);
           }
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
@@ -155,19 +154,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         FocK1K2Arr.at(i) = Point3d(-1.0, -1.0, -1.0);
 
         // load camera matrices
-        if(cameras != nullptr)
-        {
-            // use constructor cameras input parameter
-            camArr.at(i) = (*cameras)[i].P;
-            KArr.at(i) = (*cameras)[i].K;
-            RArr.at(i) = (*cameras)[i].R;
-            CArr.at(i) = (*cameras)[i].C;
-            iKArr.at(i) = (*cameras)[i].iK;
-            iRArr.at(i) = (*cameras)[i].iR;
-            iCamArr.at(i) = (*cameras)[i].iCam;
-            FocK1K2Arr.at(i) = Point3d((*cameras)[i].f, (*cameras)[i].k1, (*cameras)[i].k2);
-        }
-        else if(pIt != metadata.end() && pIt->type() == oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44))
+        if(pIt != metadata.end() && pIt->type() == oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44))
         {
             ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from image metadata.");
             loadMatricesFromRawProjectionMatrix(i, static_cast<const double*>(pIt->data()));
@@ -175,8 +162,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         else
         {
             // use P matrix file
-            const std::string fileNameP = getFileNameFromIndex(this, i, EFileType::P);
-            const std::string fileNameD = getFileNameFromIndex(this, i, EFileType::D);
+            const std::string fileNameP = getFileNameFromIndex(*this, i, EFileType::P);
+            const std::string fileNameD = getFileNameFromIndex(*this, i, EFileType::D);
 
             if(fs::exists(fileNameP) && fs::exists(fileNameD))
             {
@@ -235,8 +222,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         }
 
         // find max width and max height
-        _maxImageWidth = std::max(_maxImageWidth, imgParams.width);
-        _maxImageHeight = std::max(_maxImageHeight, imgParams.height);
+        _maxImageWidth = std::max(_maxImageWidth, imgParams.width / _imagesScale.at(i));
+        _maxImageHeight = std::max(_maxImageHeight, imgParams.height / _imagesScale.at(i));
     }
 
     ALICEVISION_LOG_INFO("Overall maximum dimension: [" << _maxImageWidth << "x" << _maxImageHeight << "]");
@@ -245,31 +232,30 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
 void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& fileNameP, const std::string& fileNameD)
 {
-    if(!FileExists(fileNameP))
+    if (!fs::exists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
 
-    FILE* f = fopen(fileNameP.c_str(), "r");
+    std::ifstream in{fileNameP};
     char fc;
-    fscanf(f, "%c", &fc);
+    in >> fc;
     if(fc == 'C') // FURUKAWA'S PROJCTION MATRIX FILE FORMAT
     {
-        fscanf(f, "%c", &fc);   // O
-        fscanf(f, "%c", &fc);   // N
-        fscanf(f, "%c", &fc);   // T
-        fscanf(f, "%c", &fc);   // O
-        fscanf(f, "%c", &fc);   // U
-        fscanf(f, "%c\n", &fc); // R
+        in >> fc; // O
+        in >> fc; // N
+        in >> fc; // T
+        in >> fc; // O
+        in >> fc; // U
+        in >> fc; // R
     }
     else
     {
-        fclose(f);
-        f = fopen(fileNameP.c_str(), "r");
+        in.close();
+        in.open(fileNameP);
     }
 
     Matrix3x4& pMatrix = camArr.at(index);
 
-    pMatrix = load3x4MatrixFromFile(f);
-    fclose(f);
+    pMatrix = load3x4MatrixFromFile(in);
 
     // apply scale to camera matrix (camera matrix is scale 1)
     const int imgScale = _imagesScale.at(index) * _processDownscale;
@@ -281,11 +267,10 @@ void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& file
     iRArr[index] = RArr[index].inverse();
     iCamArr[index] = iRArr[index] * iKArr[index];
 
-    if(FileExists(fileNameD))
+    if (fs::exists(fileNameD))
     {
-        FILE* f = fopen(fileNameD.c_str(), "r");
-        fscanf(f, "%f %f %f", &FocK1K2Arr[index].x, &FocK1K2Arr[index].y, &FocK1K2Arr[index].z);
-        fclose(f);
+        std::ifstream inD{fileNameD};
+        inD >> FocK1K2Arr[index].x >> FocK1K2Arr[index].y >> FocK1K2Arr[index].z;
     }
 }
 
@@ -295,9 +280,9 @@ void MultiViewParams::loadMatricesFromRawProjectionMatrix(int index, const doubl
   std::copy_n(rawProjMatix, 12, pMatrix.m);
 
   // apply scale to camera matrix (camera matrix is scale 1)
-  const int imgScale = _imagesScale.at(index) * _processDownscale;
+  const double imgScale = double(_imagesScale.at(index) * _processDownscale);
   for(int i = 0; i < 8; ++i)
-      pMatrix.m[i] /= static_cast<double>(imgScale);
+      pMatrix.m[i] /= imgScale;
 
   pMatrix.decomposeProjectionMatrix(KArr.at(index), RArr.at(index), CArr.at(index));
   iKArr.at(index) = KArr.at(index).inverse();
@@ -471,7 +456,7 @@ double MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, fl
     getPixelFor3DPoint(&rpix, p, rc);
 
     Point2d pFromTar, pToTar;
-    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rpix, rc, tc, this);
+    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rpix, rc, tc, *this);
     // A vector of 1 pixel length on the epipolar line in tc camera
     // of the 3D point p projected in camera rc.
     Point2d pixelVect = ((pToTar - pFromTar).normalize()) * d;
@@ -481,7 +466,7 @@ double MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, fl
     // tpix1 is tpix with an offset of d pixels along the epipolar line
     Point2d tpix1 = tpix + pixelVect * d;
 
-    if(!triangulateMatch(p1, rpix, tpix1, rc, tc, this))
+    if(!triangulateMatch(p1, rpix, tpix1, rc, tc, *this))
     {
         // Fallback to compute the pixel size using only the rc camera
         return getCamPixelSize(p, rc, d);
@@ -519,7 +504,7 @@ double MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc,
     return avmax;
 }
 
-double MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const
+double MultiViewParams::getCamsMinPixelSize(const Point3d& x0, const StaticVector<int>& tcams) const
 {
     if(tcams.empty())
     {

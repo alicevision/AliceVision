@@ -95,6 +95,8 @@ BOOST_AUTO_TEST_CASE(TriangulateNViewAlgebraic_FiveViews) {
 // is considered).
 BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_WithWeights)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t nbViews = 20;
   const std::size_t nbOutliers = 8;
   
@@ -174,6 +176,8 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_FiveViews)
 //// is considered).
 BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)
 {
+  makeRandomOperationsReproducible();
+
   std::mt19937 randomNumberGenerator;
   
   const std::size_t numTrials = 100;

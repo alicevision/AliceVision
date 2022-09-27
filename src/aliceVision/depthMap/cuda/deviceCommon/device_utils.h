@@ -42,6 +42,21 @@ private:
     const int            _pitch;
 };
 
+
+template <typename T>
+static inline
+T* get3DBufferAt_h(T* ptr, int spitch, int pitch, int x, int y, int z)
+{
+    return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
+}
+
+template <typename T>
+static inline
+const T* get3DBufferAt_h(const T* ptr, int spitch, int pitch, int x, int y, int z)
+{
+    return ((const T*)(((const char*)ptr) + z * spitch + y * pitch)) + x;
+}
+
 } // namespace depthMap
 } // namespace aliceVision
 

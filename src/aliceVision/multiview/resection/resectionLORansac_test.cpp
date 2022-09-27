@@ -223,11 +223,12 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     ALICEVISION_LOG_DEBUG("Angular error: " << angError);
     ALICEVISION_LOG_DEBUG("Baseline error: " << (Test - Tgt).squaredNorm());
 
+    camera::Pinhole camera{0, 0, 1, 1, 0, 0};
     geometry::Pose3 pose = geometry::poseFromRT(Rest, Test);
     refinePoseAsItShouldbe(pts3D,
                            pts2Dnorm,
                            inliers,
-                           new camera::Pinhole(0, 0, 1, 1, 0, 0),
+                           &camera,
                            pose,
                            true,
                            false );

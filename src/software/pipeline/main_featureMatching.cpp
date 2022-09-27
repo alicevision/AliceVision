@@ -52,7 +52,6 @@ using namespace aliceVision::robustEstimation;
 using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
 using namespace aliceVision::matchingImageCollection;
-using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -119,6 +118,7 @@ int aliceVision_main(int argc, char **argv)
   bool matchFromKnownCameraPoses = false;
   const std::string fileExtension = "txt";
   int randomSeed = std::mt19937::default_seed;
+  double minRequired2DMotion = -1.0;
 
   po::options_description allParams(
      "Compute corresponding features between a series of views:\n"
@@ -181,6 +181,8 @@ int aliceVision_main(int argc, char **argv)
       "Maximum number of iterations allowed in ransac step.")
     ("useGridSort", po::value<bool>(&useGridSort)->default_value(useGridSort),
       "Use matching grid sort.")
+    ("minRequired2DMotion", po::value<double>(&minRequired2DMotion)->default_value(minRequired2DMotion),
+      "A match is invalid if the 2d motion between the 2 points is less than a threshold (or -1 to disable this filter).")
     ("exportDebugFiles", po::value<bool>(&exportDebugFiles)->default_value(exportDebugFiles),
       "Export debug files (svg, dot).")
     ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
@@ -381,6 +383,51 @@ int aliceVision_main(int argc, char **argv)
 
   }
 
+  if (minRequired2DMotion >= 0.0f)
+  {
+    //For each image pair
+    for (auto& imgPair: mapPutativesMatches)
+    {
+      const Pair viewPair = imgPair.first;
+      IndexT viewI = viewPair.first;
+      IndexT viewJ = viewPair.second;
+
+      //For each descriptors in this image
+      for (auto& descType: imgPair.second)
+      {
+        const feature::EImageDescriberType type = descType.first;
+
+        const feature::Regions & regions_I = regionPerView.getRegions(viewI, type);
+        const feature::Regions & regions_J = regionPerView.getRegions(viewJ, type);
+
+        const auto & features_I = regions_I.Features();        
+        const auto & features_J = regions_J.Features();        
+        
+        IndMatches & matches = descType.second;
+        IndMatches updated_matches;
+
+        for (auto & match : matches)
+        {
+          
+          Vec2f pi = features_I[match._i].coords();
+          Vec2f pj = features_J[match._j].coords();
+
+          float scale = std::max(features_I[match._i].scale(), features_J[match._j].scale());
+          float coeff = pow(2, scale);
+
+          if ((pi - pj).norm() < (minRequired2DMotion * coeff))
+          {
+            continue;
+          }
+
+          updated_matches.push_back(match);
+        }
+
+        matches = updated_matches;
+      }
+    }
+  }
+
   if(mapPutativesMatches.empty())
   {
     ALICEVISION_LOG_INFO("No putative feature matches.");
@@ -455,6 +502,7 @@ int aliceVision_main(int argc, char **argv)
   //    - Use an upper bound for the a contrario estimated threshold
 
   timer.reset();
+  
 
   matching::PairwiseMatches geometricMatches;
 

@@ -98,6 +98,7 @@ double EvalPolynomial(Vec p, double x, double y, double z)
 BOOST_AUTO_TEST_CASE(o1_Evaluation)
 {
   using namespace aliceVision::multiview::relativePose;
+  makeRandomOperationsReproducible();
 
   Vec p1 = Vec::Zero(20), p2 = Vec::Zero(20);
 
@@ -121,6 +122,7 @@ BOOST_AUTO_TEST_CASE(o1_Evaluation)
 BOOST_AUTO_TEST_CASE(o2_Evaluation)
 {
   using namespace aliceVision::multiview::relativePose;
+  makeRandomOperationsReproducible();
 
   Vec p1 = Vec::Zero(20), p2 = Vec::Zero(20);
 

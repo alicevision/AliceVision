@@ -21,7 +21,6 @@
 
 #include <cctag/ICCTag.hpp>
 
-#include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
 
 #include <algorithm>
