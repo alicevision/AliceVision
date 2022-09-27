@@ -55,7 +55,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
     
     std::vector<std::shared_ptr<sfmData::View>> group;
-    std::vector<float> exposures;
+    std::vector<double> exposures;
     for(auto& view : viewsOrderedByName)
     {
         if (countBrackets > 0)
@@ -70,7 +70,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         else
         {
             // Automatically determines the number of brackets
-            float exp = view->getCameraExposureSetting();
+            double exp = view->getCameraExposureSetting().getExposure();
             if(!exposures.empty() && exp != exposures.back() && exp == exposures.front())
             {
                 groups.push_back(group);
@@ -94,7 +94,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
                   [](const std::shared_ptr<sfmData::View>& a, const std::shared_ptr<sfmData::View>& b) -> bool {
                       if(a == nullptr || b == nullptr)
                           return true;
-                      return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
+                      return (a->getCameraExposureSetting().getExposure() < b->getCameraExposureSetting().getExposure());
                   });
     }
 

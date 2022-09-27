@@ -14,6 +14,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -21,7 +22,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <cstdlib>
 #include <string>
@@ -182,7 +182,7 @@ int aliceVision_main(int argc, char ** argv)
   fs::create_directory(outputFolder);
   ALICEVISION_LOG_INFO("Export pairwise matches");
   const PairSet pairs = matching::getImagePairs(pairwiseMatches);
-  boost::progress_display myProgressBar(pairs.size());
+  auto myProgressBar = system::createConsoleProgressDisplay(pairs.size(), std::cout);
   for (PairSet::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter, ++myProgressBar)
   {
     const std::size_t I = iter->first;

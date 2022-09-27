@@ -16,7 +16,7 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <OpenEXR/half.h>
+#include <aliceVision/half.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -433,7 +433,7 @@ void writeImage(const std::string& path,
     if(!outBuf->write(tmpPath))
       throw std::runtime_error("Can't write output image file '" + path + "'.");
 
-    // rename temporay filename
+    // rename temporary filename
     fs::rename(tmpPath, path);
 }
 

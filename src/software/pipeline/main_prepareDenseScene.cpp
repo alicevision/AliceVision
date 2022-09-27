@@ -8,6 +8,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
@@ -15,7 +16,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,6 +24,7 @@
 #include <set>
 #include <iterator>
 #include <iomanip>
+#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -73,31 +74,6 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
   }
 }
 
-bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
-{
-  for(const auto & masksFolder_str : masksFolders)
-  {
-    if(!masksFolder_str.empty() && fs::exists(masksFolder_str))
-    {
-      const auto masksFolder = fs::path(masksFolder_str);
-      const auto idMaskPath = masksFolder / fs::path(std::to_string(viewId)).replace_extension("png");
-      const auto nameMaskPath = masksFolder / fs::path(srcImage).filename().replace_extension("png");
-
-      if(fs::exists(idMaskPath))
-      {
-        image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
-        return true;
-      }
-      else if(fs::exists(nameMaskPath))
-      {
-        image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 bool prepareDenseScene(const SfMData& sfmData,
                        const std::vector<std::string>& imagesFolders,
                        const std::vector<std::string>& masksFolders,
@@ -137,11 +113,12 @@ bool prepareDenseScene(const SfMData& sfmData,
                             "Choose '.exr' file type if you want AliceVision custom metadata");
 
   // export data
-  boost::progress_display progressBar(viewIds.size(), std::cout, "Exporting Scene Undistorted Images\n");
+  auto progressDisplay = system::createConsoleProgressDisplay(viewIds.size(), std::cout,
+                                                              "Exporting Scene Undistorted Images\n");
 
   // for exposure correction
-  const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
-  ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0f/medianCameraExposure));
+  const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
+  ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0/medianCameraExposure));
 
 #pragma omp parallel for num_threads(3)
   for(int i = 0; i < viewIds.size(); ++i)
@@ -255,10 +232,10 @@ bool prepareDenseScene(const SfMData& sfmData,
       const IntrinsicBase* cam = iterIntrinsic->second.get();
 
       // add exposure values to images metadata
-      float cameraExposure = view->getCameraExposureSetting();
-      float ev = std::log2(1.0 / cameraExposure);
-      float exposureCompensation = medianCameraExposure / cameraExposure;
-      metadata.push_back(oiio::ParamValue("AliceVision:EV", ev));
+      const double cameraExposure = view->getCameraExposureSetting().getExposure();
+      const double ev = std::log2(1.0 / cameraExposure);
+      const float exposureCompensation = float(medianCameraExposure / cameraExposure);
+      metadata.push_back(oiio::ParamValue("AliceVision:EV", float(ev)));
       metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
 
       if(evCorrection)
@@ -291,8 +268,7 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
     }
 
-    #pragma omp critical
-    ++progressBar;
+    ++progressDisplay;
   }
 
   return true;

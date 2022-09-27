@@ -665,22 +665,6 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
     return camsPts;
 }
 
-int computeStep(const MultiViewParams& mp, int scale, int maxWidth, int maxHeight)
-{
-    int step = 1;
-    int ow = mp.getMaxImageWidth() / scale;
-    int oh = mp.getMaxImageHeight() / scale;
-    int g_Width = mp.getMaxImageWidth() / scale;
-    int g_Height = mp.getMaxImageHeight() / scale;
-    while((g_Width > maxWidth) || (g_Height > maxHeight))
-    {
-        step++;
-        g_Width = ow / step;
-        g_Height = oh / step;
-    }
-    return step;
-}
-
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions)
 {
     float voxelDimX = (float)dimensions.x;

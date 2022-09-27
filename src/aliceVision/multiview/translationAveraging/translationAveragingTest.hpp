@@ -27,7 +27,6 @@
 using namespace aliceVision;
 using namespace aliceVision::graph;
 
-using namespace std;
 using namespace svg;
 
 int modifiedMod

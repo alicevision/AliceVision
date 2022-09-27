@@ -8,17 +8,18 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
 #include <iterator>
 #include <iomanip>
+#include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -104,14 +105,14 @@ bool exportToMVE2Format(
     out << cameraCount << " " << featureCount << "\n";
 
     // Export (calibrated) views as undistorted images
-    boost::progress_display my_progress_bar(sfm_data.getViews().size());
+    auto progressDisplay = system::createConsoleProgressDisplay(sfm_data.getViews().size(), std::cout);
     std::pair<int,int> w_h_image_size;
     Image<RGBColor> image, image_ud, thumbnail;
     std::string sOutViewIteratorDirectory;
     std::size_t view_index = 0;
     std::map<std::size_t, IndexT> viewIdToviewIndex;
     for(Views::const_iterator iter = sfm_data.getViews().begin();
-      iter != sfm_data.getViews().end(); ++iter, ++my_progress_bar)
+      iter != sfm_data.getViews().end(); ++iter, ++progressDisplay)
     {
       const View * view = iter->second.get();
 

@@ -149,7 +149,6 @@ private:
  * #include <algorithm>
  * #include "lrucache.hpp"
  * 
- * using namespace std;
  * using namespace aliceVision::depthMap;
  * 
  * int main()
@@ -157,16 +156,16 @@ private:
  *     LRUCache<int> cache(10);
  *     int oldValue, position;
  * 
- *     vector<int> v(100);
+ *     std::vector<int> v(100);
  *     generate( v.begin(), v.end(), [](){ return (int)(rand()%20); } );
  * 
  *     for( auto newValue : v ) {
  *         if( cache.insert( newValue, position, oldValue ) ) {
  *             cout << newValue << " inserted at " << position;
  *             if( oldValue != -1 ) cout << " removed oldValue " << oldValue;
- *             cout << endl;
+ *             std::cout << std::endl;
  *         } else
- *             cout << newValue << " cached at " << position << endl;
+ *             std::cout << newValue << " cached at " << position << std::endl;
  *         cache.dump(cout) << endl;
  *     }
  * }

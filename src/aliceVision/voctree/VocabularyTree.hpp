@@ -37,6 +37,8 @@ typedef std::vector<Word> Document;
 typedef std::map<Word, std::vector<IndexT> > SparseHistogram;
 typedef std::map<DocId, SparseHistogram> SparseHistogramPerImage;
 
+std::ostream& operator<<(std::ostream& os, const Document &doc);
+
 /**
  * Given a list of visual words associated to the features of a document it computes the 
  * vector of unique weighted visual words

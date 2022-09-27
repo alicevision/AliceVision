@@ -40,6 +40,5 @@ RUN make -j"$(nproc)" && \
     make install && \
     make bundle && \
     rm -rf "${AV_DEV}" "${AV_BUILD}" && \
-    echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh
-
-
+    echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
+	echo "export ALICEVISION_ROOT=${AV_BUNDLE}" >> /etc/profile.d/alicevision.sh

@@ -257,7 +257,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
 
-        if(!mvsUtils::FileExists(filePtsCamsFromDCTName))
+        if (!bfs::exists(filePtsCamsFromDCTName))
         {
             delete ptsCamsFromDct;
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
@@ -281,7 +281,7 @@ void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVecto
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
 
-        if(!mvsUtils::FileExists(filePtsCamsFromDCTName))
+        if (!bfs::exists(filePtsCamsFromDCTName))
         {
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
@@ -324,7 +324,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if(mvsUtils::FileExists(fileName))
+        if (bfs::exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -360,7 +360,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if(mvsUtils::FileExists(fileName))
+        if (bfs::exists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -376,7 +376,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 
             ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
-            if(mvsUtils::FileExists(fileName))
+            if (bfs::exists(fileName))
             {
                 StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
                 StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);

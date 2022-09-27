@@ -36,7 +36,7 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>

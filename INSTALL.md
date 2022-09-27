@@ -32,7 +32,7 @@ AliceVision depends on external libraries:
 * [Ceres >= 1.10.0](https://github.com/ceres-solver/ceres-solver)
 * [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
 * [Geogram >= 1.7.5](https://gforge.inria.fr/frs/?group_id=5833)
-* [OpenEXR >= 2.4.0](https://github.com/AcademySoftwareFoundation/openexr)
+* [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
 * [OpenImageIO >= 2.1.0](https://github.com/OpenImageIO/oiio)
 * [zlib](https://www.zlib.net)
 
@@ -42,7 +42,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * CCTag (feature extraction/matching and localization on CPU or GPU)
 * Cuda >= 7.0 (feature extraction and depth map computation)
 * Magma (required for UncertaintyTE)
-* Mosek >= 5 (linear programming)
+* Mosek >= 6 (linear programming)
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * OpenGV (rig calibration and localization)
 * OpenMP (enable multi-threading)
@@ -61,8 +61,14 @@ AliceVision also depends on some embedded libraries:
 
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
-[Vcpkg](https://github.com/Microsoft/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
-AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/Microsoft/vcpkg/blob/master/README.md#quick-start) to setup vcpkg.
+[Vcpkg](https://github.com/alicevision/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
+AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
+
+```bash
+git clone https://github.com/alicevision/vcpkg --branch alicevision_master
+cd vcpkg
+.\bootstrap-vcpkg.bat
+```
 
 **Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
 
@@ -113,6 +119,13 @@ vcpkg install ^
 # With VCPKG_ROOT being the path to the root of vcpkg installation
 cd /path/to/aliceVision/
 mkdir build && cd build
+
+
+# Windows: CUDA >= 10.0 + Visual 2022 + Powershell
+cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
+
+# Windows: CUDA >= 10.0 + Visual 2022
+cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
 
 # Windows: CUDA >= 10.0 + Visual 2017
 cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T host=x64
@@ -224,9 +237,6 @@ CMake Options
   Build with Alembic file format support (required version >= 1.7).
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
-
-* `ALICEVISION_USE_OPENMP` (default: `AUTO`)
-  Enable OpenMP parallelization
 
 * `ALICEVISION_USE_CUDA` (default: `ON`)
   Enable build with CUDA (for feature extraction and depth map computation)
@@ -420,4 +430,9 @@ To retrieve the generated files:
 # Create an instance of the image, copy the files and remove the temporary docker instance.
 CID=$(docker create alicevision:centos7-cuda9.2) && docker cp ${CID}:/opt/AliceVision_install . && docker cp ${CID}:/opt/AliceVision_bundle . && docker rm ${CID}
 ```
+
+Environment variable
+--------------------
+
+Whatever the way AliceVision has been installed, before using it, an environment variable named ALICEVISION_ROOT must be created and set with the local installation directory. 
 

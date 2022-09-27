@@ -18,6 +18,7 @@
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
 #include <aliceVision/multiview/essential.hpp>
@@ -29,8 +30,6 @@
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>
-
-#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -403,10 +402,9 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
     aliceVision::sfm::MutexSet<myEdge> m_mutexSet;
 
-    boost::progress_display my_progress_bar(
-      vec_edges.size(),
-      std::cout,
-      "\nRelative translations computation (edge coverage algorithm)\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(
+                vec_edges.size(), std::cout,
+                "\nRelative translations computation (edge coverage algorithm)\n");
 
     // set number of threads, 1 if openMP is not enabled  
     std::vector<translationAveraging::RelativeInfoVec> initial_estimates(omp_get_max_threads());
@@ -416,10 +414,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
     for (int k = 0; k < vec_edges.size(); ++k)
     {
       const myEdge & edge = vec_edges[k];
-      #pragma omp critical
-      {
-        ++my_progress_bar;
-      }
+      ++progressDisplay;
       if (m_mutexSet.count(edge) == 0 && m_mutexSet.size() != vec_edges.size())
       {
         // Find the triplets that support the given edge

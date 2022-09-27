@@ -196,7 +196,7 @@ void ImageDescriber::Save(const Regions* regions, const std::string& sfileNameFe
 
   regions->Save(tmpFeatsPath, tmpDescsPath);
 
-  // rename temporay filenames
+  // rename temporary filenames
   fs::rename(tmpFeatsPath, sfileNameFeats);
   fs::rename(tmpDescsPath, sfileNameDescs);
 }

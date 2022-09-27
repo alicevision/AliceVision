@@ -86,13 +86,13 @@ public:
 class DepthSimMap
 {
 public:
-    mvsUtils::MultiViewParams& _mp;
+    const mvsUtils::MultiViewParams& _mp;
     const int _scale;
     const int _step;
     int _rc, _w, _h;
     StaticVector<DepthSim> _dsm; //< depth similarity map
 
-    DepthSimMap(int rc, mvsUtils::MultiViewParams& mp, int scale, int step);
+    DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step);
     ~DepthSimMap();
 
     void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);

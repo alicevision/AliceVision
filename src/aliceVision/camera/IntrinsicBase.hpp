@@ -26,8 +26,8 @@ namespace camera {
 class IntrinsicBase
 {
 public:
-
-  explicit IntrinsicBase(unsigned int width = 0, unsigned int height = 0, const std::string& serialNumber = "")
+  IntrinsicBase() = default;
+  explicit IntrinsicBase(unsigned int width, unsigned int height, const std::string& serialNumber = "")
     : _w(width)
     , _h(height)
     , _serialNumber(serialNumber)
@@ -103,7 +103,7 @@ public:
    * @param[in] other
    * @return True if equals
    */
-  inline bool operator==(const IntrinsicBase& other) const
+  virtual bool operator==(const IntrinsicBase& other) const
   {
       if(getParams().size() != other.getParams().size())
       {
@@ -111,19 +111,18 @@ public:
       }
       for(int i = 0; i < getParams().size(); i++)
       {
-          const double diff = getParams()[i] - other.getParams()[i];
-          if(std::abs(diff) > 1e-8)
+          if(!isSimilar(getParams()[i], other.getParams()[i]))
           {
               return false;
           }
       }
-    return _w == other._w &&
-           _h == other._h &&
-           _sensorWidth == other._sensorWidth &&
-           _sensorHeight == other._sensorHeight &&
-           _serialNumber == other._serialNumber &&
-           _initializationMode == other._initializationMode &&
-           getType() == other.getType();
+      return _w == other._w &&
+             _h == other._h &&
+             _sensorWidth == other._sensorWidth &&
+             _sensorHeight == other._sensorHeight &&
+             _serialNumber == other._serialNumber &&
+             _initializationMode == other._initializationMode &&
+             getType() == other.getType();
   }
 
   inline bool operator!=(const IntrinsicBase& other) const

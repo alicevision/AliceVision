@@ -84,7 +84,7 @@ public:
         return *this;
     }
 
-    inline bool operator==(const Point3d& param)
+    inline bool operator==(const Point3d& param) const
     {
         return (x == param.x) && (y == param.y) && (z == param.z);
     }

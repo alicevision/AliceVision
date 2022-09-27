@@ -27,7 +27,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace svg;
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
@@ -104,7 +103,7 @@ int main(int argc, char **argv)
   {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
-    string out_filename = "01_concat.jpg";
+    std::string out_filename = "01_concat.jpg";
     writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
@@ -122,7 +121,7 @@ int main(int argc, char **argv)
       const PointFeature point = regionsR->Features()[i];
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
-    string out_filename = "02_features.jpg";
+    std::string out_filename = "02_features.jpg";
     writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
@@ -138,7 +137,7 @@ int main(int argc, char **argv)
       vec_PutativeMatches);
 
     // Draw correspondences after Nearest Neighbor ratio filter
-    svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
+    svgDrawer svgStream(imageL.Width() + imageR.Width(), std::max(imageL.Height(), imageR.Height()));
     svgStream.drawImage(jpgFilenameL, imageL.Width(), imageL.Height());
     svgStream.drawImage(jpgFilenameR, imageR.Width(), imageR.Height(), imageL.Width());
     for (size_t i = 0; i < vec_PutativeMatches.size(); ++i) 
@@ -150,8 +149,8 @@ int main(int argc, char **argv)
       svgStream.drawCircle(L.x(), L.y(), L.scale(), svgStyle().stroke("yellow", 2.0));
       svgStream.drawCircle(R.x()+imageL.Width(), R.y(), R.scale(),svgStyle().stroke("yellow", 2.0));
     }
-    const string out_filename = "03_siftMatches.svg";
-    ofstream svgFile( out_filename.c_str() );
+    const std::string out_filename = "03_siftMatches.svg";
+    std::ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
   }
@@ -201,7 +200,7 @@ int main(int argc, char **argv)
 
       //Show fundamental validated point and compute residuals
       std::vector<double> vec_residuals(vec_inliers.size(), 0.0);
-      svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
+      svgDrawer svgStream(imageL.Width() + imageR.Width(), std::max(imageL.Height(), imageR.Height()));
       svgStream.drawImage(jpgFilenameL, imageL.Width(), imageL.Height());
       svgStream.drawImage(jpgFilenameR, imageR.Width(), imageR.Height(), imageL.Width());
       for ( size_t i = 0; i < vec_inliers.size(); ++i)  
@@ -216,8 +215,8 @@ int main(int argc, char **argv)
         // residual computation
         vec_residuals[i] = std::sqrt(KernelType::ErrorT().error(F, LL.coords().cast<double>(), RR.coords().cast<double>()));
       }
-      const string out_filename = "04_ACRansacFundamental.svg";
-      ofstream svgFile( out_filename.c_str() );
+      const std::string out_filename = "04_ACRansacFundamental.svg";
+      std::ofstream svgFile( out_filename.c_str() );
       svgFile << svgStream.closeSvgFile().str();
       svgFile.close();
 

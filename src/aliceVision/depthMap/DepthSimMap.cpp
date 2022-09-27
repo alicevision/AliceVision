@@ -22,7 +22,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-DepthSimMap::DepthSimMap(int rc, mvsUtils::MultiViewParams& mp, int scale, int step)
+DepthSimMap::DepthSimMap(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step)
     : _scale(scale)
     , _step(step)
     , _mp(mp)

@@ -8,7 +8,7 @@ test -e docker/fetch.sh || {
 }
 
 test -z "$AV_VERSION" && AV_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
-test -z "$CUDA_VERSION" && CUDA_VERSION=10.2
+test -z "$CUDA_VERSION" && CUDA_VERSION=11.3.1
 test -z "$CENTOS_VERSION" && CENTOS_VERSION=7
  
 echo "AV_VERSION: $AV_VERSION"

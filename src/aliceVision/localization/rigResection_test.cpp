@@ -221,6 +221,8 @@ void generateRandomExperiment(std::size_t numCameras,
 
 BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseNoOutliers)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t numCameras = 3;
   const std::size_t numPoints = 10;
   const std::size_t numTrials = 10;
@@ -330,6 +332,8 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseNoOutliers)
 
 BOOST_AUTO_TEST_CASE(rigResection_simpleWithNoiseNoOutliers)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t numCameras = 3;
   const std::size_t numPoints = 10;
   const std::size_t numTrials = 10;
@@ -412,6 +416,8 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleWithNoiseNoOutliers)
 /*
 BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
 {
+  makeRandomOperationsReproducible();
+
   const std::size_t numCameras = 3;
   const std::size_t numPoints = 10;
   const std::size_t numTrials = 10;

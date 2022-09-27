@@ -6,14 +6,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/utils/alignment.hpp>
+#include <aliceVision/sfm/liealgebra.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 #include <aliceVision/stl/regex.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/min.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <boost/algorithm/string/split.hpp>
@@ -488,36 +486,163 @@ bool computeSimilarityFromCommonMarkers(
     return true;
 }
 
+/**
+ * Image orientation CCW
+ */
+double orientationToRotationDegree(sfmData::EEXIFOrientation orientation)
+{
+    switch(orientation)
+    {
+        case sfmData::EEXIFOrientation::RIGHT: // 8
+            return 90.0; // CCW
+        case sfmData::EEXIFOrientation::LEFT: // 6
+            return 270.0; // CCW
+        case sfmData::EEXIFOrientation::UPSIDEDOWN: // 3
+            return 180.0;
+        case sfmData::EEXIFOrientation::NONE:
+        default:
+            return 0.0;
+    }
+    return 0.0;
+}
+
+void computeNewCoordinateSystemFromCamerasXAxis(const sfmData::SfMData& sfmData,
+                                           double& out_S,
+                                           Mat3& out_R,
+                                           Vec3& out_t)
+{
+    out_S = 1.0;
+    out_R = Mat3::Identity();
+    out_t = Vec3::Zero();
+
+    // mean of the camera centers
+    Vec3 meanCameraCenter = Vec3::Zero(3, 1);
+    // Compute mean of the rotation X component
+    Eigen::Vector3d meanRx = Eigen::Vector3d::Zero();
+    Eigen::Vector3d meanRy = Eigen::Vector3d::Zero();
+
+    std::size_t validPoses = 0;
+    for(auto& viewIt : sfmData.getViews())
+    {
+        const sfmData::View& view = *viewIt.second.get();
+
+        if(sfmData.isPoseAndIntrinsicDefined(&view))
+        {
+            const sfmData::EEXIFOrientation orientation = view.getMetadataOrientation();
+            const sfmData::CameraPose camPose = sfmData.getPose(view);
+            const geometry::Pose3& p = camPose.getTransform();
+
+            // Rotation of image
+            Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            
+            Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
+            Eigen::Vector3d oriented_Y = R_image * Eigen::Vector3d::UnitY();
+
+            //The X direction is in the "viewed" image
+            //If we use the raw X, it will be in the image without the orientation 
+            //We need to use this orientation to make sure the X spans the horizontal plane.
+            const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
+
+            meanRx += rX;
+            meanRy += oriented_Y;
+
+            meanCameraCenter += p.center();
+            ++validPoses;
+        }
+    }
+    if(validPoses == 0)
+    {
+        return;
+    }
+
+    meanRx /= validPoses;
+    meanRy /= validPoses;
+    meanCameraCenter /= validPoses;
+
+    double rms = 0.0;
+    // Compute covariance matrix of the rotation X component
+    Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
+    for(auto& viewIt : sfmData.getViews())
+    {
+        const sfmData::View& view = *viewIt.second.get();
+
+        if(sfmData.isPoseAndIntrinsicDefined(&view))
+        {
+            const sfmData::EEXIFOrientation orientation = view.getMetadataOrientation();
+            const sfmData::CameraPose camPose = sfmData.getPose(view);
+            const geometry::Pose3& p = camPose.getTransform();
+
+            Mat3 R_image = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)).toRotationMatrix();
+            Eigen::Vector3d oriented_X = R_image * Eigen::Vector3d::UnitX();
+
+            const Eigen::Vector3d rX = p.rotation().transpose() * oriented_X;
+            C += (rX - meanRx) * (rX - meanRx).transpose();
+        }
+    }
+
+    Eigen::EigenSolver<Eigen::Matrix3d> solver(C, true);
+    
+    //Warning, eigenvalues are not sorted ...
+    Vec3 evalues = solver.eigenvalues().real();
+    Vec3 aevalues = evalues.cwiseAbs();
+    IndexT minCol = 0;
+    double minVal = aevalues[0];
+    if (aevalues[1] < minVal)
+    {
+        minVal = aevalues[1];
+        minCol = 1;
+    }
+    if (aevalues[2] < minVal)
+    {
+        minVal = aevalues[2];
+        minCol = 2;
+    }
+
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvalues: " << solver.eigenvalues());
+    ALICEVISION_LOG_DEBUG("computeNewCoordinateSystemFromCamerasXAxis: eigenvectors: " << solver.eigenvectors());
+
+    // We assume that the X axis of all or majority of the cameras are on a plane.
+    // The covariance is a flat ellipsoid and the min axis is our candidate Y axis.
+    Eigen::Vector3d nullestSpace = solver.eigenvectors().col(minCol).real();
+    const Eigen::Vector3d referenceAxis = Eigen::Vector3d::UnitY();    
+
+    const double d = nullestSpace.dot(meanRy);
+    const bool inverseDirection = (d < 0.0);
+    // We have an ambiguity on the Y direction, so if our Y axis is not aligned with the Y axis of the scene
+    // we inverse the axis.
+    if(inverseDirection)
+    {
+        nullestSpace = -nullestSpace;
+    }
+
+
+    // Compute the rotation which rotates nullestSpace onto unitY
+    out_R = Matrix3d(Quaterniond().setFromTwoVectors(nullestSpace, referenceAxis));
+    out_S = 1.0;
+    out_t = -out_R * meanCameraCenter;
+}
+
 void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
                                            double& out_S,
                                            Mat3& out_R,
                                            Vec3& out_t)
 {
-  Mat3X vX(3, sfmData.getLandmarks().size());
-
-  std::size_t i = 0;
-  for(const auto& landmark : sfmData.getLandmarks())
-  {
-    vX.col(i) = landmark.second.X;
-    ++i;
-  }
-
   const std::size_t nbCameras = sfmData.getPoses().size();
   Mat3X vCamCenter(3,nbCameras);
 
   // Compute the mean of the point cloud
-  Vec3 meanPoints = Vec3::Zero(3,1);
-  i=0;
+  Vec3 meanCameraCenter = Vec3::Zero(3, 1);
+  std::size_t i = 0;
 
   for(const auto & pose : sfmData.getPoses())
   {
     const Vec3 center = pose.second.getTransform().center();
     vCamCenter.col(i) = center;
-    meanPoints +=  center;
+    meanCameraCenter +=  center;
     ++i;
   }
 
-  meanPoints /= nbCameras;
+  meanCameraCenter /= nbCameras;
 
   std::vector<Mat3> vCamRotation; // Camera rotations
   vCamRotation.reserve(nbCameras);
@@ -525,14 +650,14 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   double rms = 0;
   for(const auto & pose : sfmData.getPoses())
   {
-    Vec3 camCenterMean = vCamCenter.col(i) - meanPoints;
+    Vec3 camCenterMean = vCamCenter.col(i) - meanCameraCenter;
     rms += camCenterMean.transpose() * camCenterMean; // squared dist to the mean of camera centers
 
     vCamRotation.push_back(pose.second.getTransform().rotation().transpose()); // Rotation in the world coordinate system
     ++i;
   }
   rms /= nbCameras;
-  rms = sqrt(rms);
+  rms = std::sqrt(rms);
 
   // Perform an svd over vX*vXT (var-covar)
   Mat3 dum = vCamCenter * vCamCenter.transpose();
@@ -555,9 +680,10 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   }
 
   out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(1,0,0)) * out_R;
+  out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
   out_S = 1.0 / rms;
 
-  out_t = - out_S * out_R * meanPoints;
+  out_t = - out_S * out_R * meanCameraCenter;
 }
 
 IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::string & camName)
@@ -637,34 +763,11 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
   ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
-  const sfmData::View& view = sfmData.getView(viewId);
-  switch(orientation)
-  {
-    case sfmData::EEXIFOrientation::RIGHT:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: RIGHT");
-          out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
-                  * sfmData.getPose(view).getTransform().rotation();
-          break;
-    case sfmData::EEXIFOrientation::LEFT:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: LEFT");
-          out_R = Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
-                  * sfmData.getPose(view).getTransform().rotation();
-          break;
-    case sfmData::EEXIFOrientation::UPSIDEDOWN:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: UPSIDEDOWN");
-          out_R = sfmData.getPose(view).getTransform().rotation();
-          break;
-    case sfmData::EEXIFOrientation::NONE:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
-          out_R = sfmData.getPose(view).getTransform().rotation();
-          break;
-    default:
-          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
-          out_R = sfmData.getPose(view).getTransform().rotation();
-          break;
-  }
+  out_R = Eigen::AngleAxisd(degreeToRadian(orientationToRotationDegree(orientation)), Vec3(0, 0, 1)) *
+          sfmData.getAbsolutePose(viewId).getTransform().rotation();
 
-  out_t = - out_R * sfmData.getPose(view).getTransform().center();
+  out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * out_R; // Y UP
+  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();
   out_S = 1.0;
 }
 
@@ -674,47 +777,43 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                     Mat3& out_R,
                                     Vec3& out_t)
 {
-    const std::size_t nbLandmarks = sfmData.getLandmarks().size();
+    Mat3X vX(3, sfmData.getLandmarks().size());
 
-    Mat3X vX(3,nbLandmarks);
-
-    std::size_t i = 0;
+    std::size_t landmarksCount = 0;
 
     Vec3 meanPoints = Vec3::Zero(3,1);
     std::size_t nbMeanLandmarks = 0;
 
-    bacc::accumulator_set<double, bacc::stats<bacc::tag::min, bacc::tag::max> > accX, accY, accZ;
-
     for(const auto& landmark : sfmData.getLandmarks())
     {
-      const Vec3& position = landmark.second.X;
-
-      vX.col(i) = position;
-
-      // Compute the mean of the point cloud
-      if(imageDescriberTypes.empty() ||
-         std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmark.second.descType) != imageDescriberTypes.end())
-      {
+        if(!imageDescriberTypes.empty() &&
+            std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(),
+                      landmark.second.descType) == imageDescriberTypes.end())
+        {
+            continue;
+        }
+        const Vec3& position = landmark.second.X;
+        vX.col(landmarksCount++) = position;
         meanPoints += position;
-        ++nbMeanLandmarks;
-      }
-
-      accX(position(0));
-      accY(position(1));
-      accZ(position(2));
-      ++i;
     }
+    vX.conservativeResize(3, landmarksCount);
+    meanPoints /= landmarksCount;
 
-    meanPoints /= nbMeanLandmarks;
+    const std::size_t cacheSize = 10000;
+    const double percentile = 0.99;
+    using namespace boost::accumulators;
+    using AccumulatorMax = accumulator_set<double, stats<tag::tail_quantile<right>>>;
+    AccumulatorMax accDist(tag::tail<right>::cache_size = cacheSize);
 
     // Center the point cloud in [0;0;0]
-    for(int i=0 ; i < nbLandmarks ; ++i)
+    for(int i = 0; i < landmarksCount; ++i)
     {
       vX.col(i) -= meanPoints;
+      accDist(vX.col(i).norm());
     }
 
     // Perform an svd over vX*vXT (var-covar)
-    Mat3 dum = vX.leftCols(nbMeanLandmarks) * vX.leftCols(nbMeanLandmarks).transpose();
+    const Mat3 dum = vX.leftCols(nbMeanLandmarks) * vX.leftCols(nbMeanLandmarks).transpose();
     Eigen::JacobiSVD<Mat3> svd(dum,Eigen::ComputeFullV|Eigen::ComputeFullU);
     Mat3 U = svd.matrixU();
 
@@ -725,7 +824,9 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
       U.col(2) = -U.col(2);
     }
 
-    out_S = 1.0 / std::max({bacc::max(accX) - bacc::min(accX), bacc::max(accY) - bacc::min(accY), bacc::max(accZ) - bacc::min(accZ)});
+    const double distMax = quantile(accDist, quantile_probability = percentile);
+
+    out_S = (distMax > 0.00001 ? 1.0 / distMax : 1.0);
     out_R = U.transpose();
     out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(1,0,0)) * out_R;
     out_t = - out_S * out_R * meanPoints;

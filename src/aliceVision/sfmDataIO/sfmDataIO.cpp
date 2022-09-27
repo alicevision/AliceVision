@@ -166,7 +166,7 @@ bool Save(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData
     return false;
   }
 
-  // rename temporay filename
+  // rename temporary filename
   if(status)
     fs::rename(tmpPath, filename);
 

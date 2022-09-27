@@ -11,6 +11,8 @@
 #include <Alembic/AbcCoreFactory/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 
+#include <aliceVision/version.hpp>
+
 namespace aliceVision {
 namespace sfmDataIO {
 
@@ -153,7 +155,7 @@ struct AV_UInt32ArraySamplePtr
   }
 };
 
-bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
+bool readPointCloud(const Version & abcVersion, IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData flags_part)
 {
   using namespace aliceVision::geometry;
 
@@ -194,7 +196,19 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       ++point3d_i)
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
-    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
+
+
+    sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+    
+    if (abcVersion < Version(1, 2, 3))
+    {
+      landmark = sfmData::Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    }
+    else
+    {
+      // convert from computer graphics convention (opengl-like) to computer vision
+      landmark = sfmData::Landmark(Vec3(pos_i.x, -pos_i.y, -pos_i.z), feature::EImageDescriberType::UNKNOWN);
+    }
 
     if(sampleColors)
     {
@@ -387,7 +401,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
-  double initialFocalLengthPix = -1;
+  Vec2 initialFocalLengthPix = {-1, -1};
   double fisheyeCenterX = 0.0;
   double fisheyeCenterY = 0.0;
   double fisheyeRadius = 1.0;
@@ -402,6 +416,7 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   bool intrinsicLocked = false;
   bool poseLocked = false;
   bool poseIndependant = true;
+  bool lockRatio = true;
 
   if(userProps)
   {
@@ -442,6 +457,10 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       {
         intrinsicLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicLocked", sampleFrame);
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicPixelRatioLocked"))
+      {
+        lockRatio = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicPixelRatioLocked", sampleFrame);
+      }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
       {
         poseLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseLocked", sampleFrame);
@@ -453,19 +472,29 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       if(userProps.getPropertyHeader("mvg_metadata"))
       {
         getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_metadata", sampleFrame, rawMetadata);
-        assert(rawMetadata.size() % 2 == 0);
+        if(rawMetadata.size() % 2 != 0)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'metadata' property is supposed to be key/values. Number of values is " + std::to_string(rawMetadata.size()) + ".");
+        }
       }
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
         getAbcArrayProp_uint(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
-        assert(sensorSize_pix.size() == 2);
+        if(sensorSize_pix.size() != 2)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'sensorSizePix' property is supposed to be 2 values. Number of values is " + std::to_string(sensorSize_pix.size()) + ".");
+        }
       }
       if(userProps.getPropertyHeader("mvg_sensorSizeMm"))
       {
         getAbcArrayProp<Alembic::Abc::IDoubleArrayProperty>(userProps, "mvg_sensorSizeMm", sampleFrame, sensorSize_mm);
-        assert(sensorSize_mm.size() == 2);
+        if(sensorSize_mm.size() != 2)
+        {
+          ALICEVISION_THROW_ERROR("[Alembic] 'sensorSizeMm' property is supposed to be 2 values. Number of values is " + std::to_string(sensorSize_mm.size()) + ".");
+        }
       }
-      else {
+      else
+      {
         sensorSize_mm = {24.0, 36.0};
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
@@ -476,9 +505,14 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
       {
         mvg_intrinsicInitializationMode = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicInitializationMode", sampleFrame);
       }
+      // For compatibility with versions < 1.2 (value was in pixels)
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
       {
-        initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+        initialFocalLengthPix(0) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLength"))
+      {
+        initialFocalLengthPix(0) = (sensorSize_pix.at(0) / sensorSize_mm[0]) * getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLength", sampleFrame);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterX"))
       {
@@ -524,12 +558,17 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-    if (intrinsicScale) {
+    if (intrinsicScale)
+    {
+      // fy_pix = fx_pix * fy/fx
+      initialFocalLengthPix(1) = (initialFocalLengthPix(0) > 0)? initialFocalLengthPix(0) * mvg_intrinsicParams[1] / mvg_intrinsicParams[0] : -1;
       intrinsicScale->setInitialScale(initialFocalLengthPix);
+      intrinsicScale->setRatioLocked(lockRatio);
     }
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-    if (casted) {
+    if (casted)
+    {
       casted->setCircleCenterX(fisheyeCenterX);
       casted->setCircleCenterY(fisheyeCenterY);
       casted->setCircleRadius(fisheyeRadius);
@@ -569,28 +608,31 @@ bool readCamera(const Version & abcVersion, const ICamera& camera, const M44d& m
   if((flagsPart & ESfMData::EXTRINSICS) &&
      isReconstructed)
   {
-    // camera
-    Mat3 camR;
-    camR(0,0) = mat[0][0];
-    camR(0,1) = mat[0][1];
-    camR(0,2) = mat[0][2];
-    camR(1,0) = mat[1][0];
-    camR(1,1) = mat[1][1];
-    camR(1,2) = mat[1][2];
-    camR(2,0) = mat[2][0];
-    camR(2,1) = mat[2][1];
-    camR(2,2) = mat[2][2];
+    Mat4 T = Mat4::Identity();
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        T(i, j) = mat[j][i];
+      }
+    }
+    
+    // convert from computer graphics convention (opengl-like) to computer vision
+    Mat4 M = Mat4::Identity();
+    M(1, 1) = -1.0;
+    M(2, 2) = -1.0;
 
-    Vec3 camT;
-    camT(0) = mat[3][0];
-    camT(1) = mat[3][1];
-    camT(2) = mat[3][2];
+    Mat4 T2;
+    if (abcVersion < Version(1, 2, 3))
+    {
+      T2 = (T * M).inverse();
+    }
+    else 
+    {
+      T2 = (M * T * M).inverse();
+    }
 
-    // correct camera orientation from alembic
-    const Mat3 scale = Vec3(1,-1,-1).asDiagonal();
-    camR = scale * camR;
-
-    Pose3 pose(camR, camT);
+    Pose3 pose(T2.block<3, 4>(0, 0));
 
     if(view->isPartOfRig() && !view->isPoseIndependant())
     {
@@ -698,26 +740,36 @@ bool readXform(const Version & abcVersion, IXform& xform, M44d& mat, sfmData::Sf
 
   if((flagsPart & ESfMData::EXTRINSICS) && isReconstructed)
   {
-    Mat3 matR;
-    matR(0,0) = mat[0][0];
-    matR(0,1) = mat[0][1];
-    matR(0,2) = mat[0][2];
-    matR(1,0) = mat[1][0];
-    matR(1,1) = mat[1][1];
-    matR(1,2) = mat[1][2];
-    matR(2,0) = mat[2][0];
-    matR(2,1) = mat[2][1];
-    matR(2,2) = mat[2][2];
+      Mat4 T = Mat4::Identity();
+      for (int i = 0; i < 4; i++)
+      {
+          for (int j = 0; j < 4; j++)
+          {
+              T(i, j) = mat[j][i];
+          }
+      }
 
-    Vec3 matT;
-    matT(0) = mat[3][0];
-    matT(1) = mat[3][1];
-    matT(2) = mat[3][2];
 
-    Pose3 pose(matR, matT);
+      Mat4 M = Mat4::Identity();
+      M(1, 1) = -1.0;
+      M(2, 2) = -1.0;
 
-    if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
-      sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+      Mat4 T2;
+      if (abcVersion < Version(1, 2, 3))
+      {
+          T2 = T.inverse();
+      }
+      else
+      {
+          T2 = (M * T * M).inverse();
+      }
+
+      Pose3 pose(T2.block<3, 4>(0, 0));
+
+      if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
+      {
+          sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+      }
   }
 
   if((rigId != UndefinedIndexT) && sfmData.getRigs().find(rigId) == sfmData.getRigs().end())
@@ -738,7 +790,7 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
   const MetaData& md = iObj.getMetaData();
   if(IPoints::matches(md) && (flagsPart & ESfMData::STRUCTURE))
   {
-    readPointCloud(iObj, mat, sfmdata, flagsPart);
+    readPointCloud(abcVersion, iObj, mat, sfmdata, flagsPart);
   }
   else if(IXform::matches(md))
   {

@@ -17,10 +17,10 @@
 
 using namespace aliceVision;
 using namespace aliceVision::geometry;
-using namespace std;
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleOnly)
 {
+  makeRandomOperationsReproducible();
 
   const std::size_t nbPoints = 10;
   Mat x1 = Mat::Random(3, nbPoints);
@@ -51,6 +51,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleOnly)
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleAndRot)
 {
+  makeRandomOperationsReproducible();
 
   const std::size_t nbPoints = 10;
   Mat x1 = Mat::Random(3, nbPoints);
@@ -88,6 +89,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleAndRot)
 
 BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleRotTranslation)
 {
+  makeRandomOperationsReproducible();
 
   const std::size_t nbPoints = 10;
   Mat x1 = Mat::Random(3, nbPoints);
@@ -125,6 +127,8 @@ BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleRotTranslation)
 
 BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
 {
+  makeRandomOperationsReproducible();
+
   std::mt19937 randomNumberGenerator;
   const std::size_t nbPoints = 100;
   Mat x1 = Mat::Random(3, nbPoints);
@@ -180,6 +184,8 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
 
 BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
 {
+  makeRandomOperationsReproducible();
+
   std::mt19937 randomNumberGenerator;
   // it generates some points x1, it only generates the corresponding 
   // transformed points x2 for nbPoints-nbShuffles of them while the rest

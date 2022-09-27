@@ -51,6 +51,8 @@ struct DocMatch
 
 typedef std::vector<DocMatch> DocMatches;
 
+std::ostream& operator<<(std::ostream& os, const DocMatches& matches);
+
 /**
  * @brief Class for efficiently matching a bag-of-words representation of a document (image) against
  * a database of known documents.

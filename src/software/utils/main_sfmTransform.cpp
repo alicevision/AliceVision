@@ -28,14 +28,17 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
+namespace {
+
 /**
  * @brief Alignment method enum
  */
-enum class EAlignmentMethod: unsigned char
+enum class EAlignmentMethod : unsigned char
 {
-  TRANSFORMATION = 0
-  , MANUAL
-  , AUTO_FROM_CAMERAS,
+    TRANSFORMATION = 0,
+    MANUAL,
+    AUTO_FROM_CAMERAS,
+    AUTO_FROM_CAMERAS_X_AXIS,
     AUTO_FROM_LANDMARKS,
     FROM_SINGLE_CAMERA,
     FROM_CENTER_CAMERA,
@@ -55,6 +58,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::TRANSFORMATION:      return "transformation";
     case EAlignmentMethod::MANUAL:              return "manual";
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
+    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:   return "auto_from_cameras_x_axis";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
     case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
     case EAlignmentMethod::FROM_CENTER_CAMERA:  return "from_center_camera";
@@ -77,6 +81,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if(method == "transformation")      return EAlignmentMethod::TRANSFORMATION;
   if(method == "manual")              return EAlignmentMethod::MANUAL;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
+  if(method == "auto_from_cameras_x_axis")   return EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
   if(method == "from_single_camera")  return EAlignmentMethod::FROM_SINGLE_CAMERA;
   if(method == "from_center_camera")  return EAlignmentMethod::FROM_CENTER_CAMERA;
@@ -177,6 +182,7 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
     R = rotateMat; // Assign Rotation
 }
 
+} // namespace
 
 int aliceVision_main(int argc, char **argv)
 {
@@ -216,6 +222,7 @@ int aliceVision_main(int argc, char **argv)
         "\t- transformation: Apply a given transformation\n"
         "\t- manual: Apply the gizmo transformation\n"
         "\t- auto_from_cameras: Use cameras\n"
+        "\t- auto_from_cameras_x_axis: Use cameras X axis\n"
         "\t- auto_from_landmarks: Use landmarks\n"
         "\t- from_single_camera: Use camera specified by --tranformation\n"
         "\t- from_markers: Use markers specified by --markers\n"
@@ -333,6 +340,10 @@ int aliceVision_main(int argc, char **argv)
       sfm::computeNewCoordinateSystemFromCameras(sfmData, S, R, t);
     break;
 
+    case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
+        sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
+        break;
+
     case EAlignmentMethod::AUTO_FROM_LANDMARKS:
       sfm::computeNewCoordinateSystemFromLandmarks(sfmData, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
     break;
@@ -411,24 +422,32 @@ int aliceVision_main(int argc, char **argv)
       }
   }
 
-  // apply user scale
-  S *= userScale;
-  t *= userScale;
-
-  if (!applyScale)
+  if(!applyRotation)
   {
-      if (applyTranslation)
-          t = t / S;
-      S = 1;
-  }
-  if (!applyRotation)
-  {
-      if (applyTranslation)
-          t = R.inverse() * t;
+      // remove rotation from translation
+      t = R.transpose() * t;
+      // remove rotation
       R = Mat3::Identity();
+  }
+  if(applyScale)
+  {
+      // apply user scale
+      S *= userScale;
+      t *= userScale;
+  }
+  else
+  {
+      // remove scale from translation
+      if(std::abs(S) > 0.00001)
+      {
+          t /= S;
+      }
+      // reset scale to 1
+      S = 1.0;
   }
   if (!applyTranslation)
   {
+      // remove translation
       t = Vec3::Zero();
   }
 

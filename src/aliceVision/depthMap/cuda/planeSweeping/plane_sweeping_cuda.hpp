@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
-#include <aliceVision/depthMap/cuda/tcinfo.hpp>
+#include <aliceVision/depthMap/cuda/OneTC.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -31,11 +33,10 @@ namespace ps
 class SimilarityVolume
 {
 public:
-    SimilarityVolume( int volDimX, int volDimY, int volDimZ,
+    SimilarityVolume( const CudaSize<3>& volDim,
                       int volStepXY,
                       int scale,
-                      const std::vector<float>& depths_h,
-                      bool verbose );
+                      const std::vector<float>& depths_h);
     ~SimilarityVolume( );
 
     void initOutputVolumes(
@@ -49,15 +50,15 @@ public:
           const CameraStruct& rcam, int rcWidth, int rcHeight,
           const CameraStruct& tcams, int tcWidth, int tcHeight,
           const OneTC&  cell,
-          int wsh, float gammaC, float gammaP,
+          const SgmParams& sgmParams,
           int streamIndex );
 
-    inline int DimX()      const { return _dimX; }
-    inline int DimY()      const { return _dimY; }
-    inline int DimZ()      const { return _dimZ; }
-    inline int StepXY()    const { return _stepXY; }
-    inline int Scale()     const { return _scale; }
-    inline int PrevScale() const { return _scale-1; }
+    inline int dimX()      const { return _dimX; }
+    inline int dimY()      const { return _dimY; }
+    inline int dimZ()      const { return _dimZ; }
+    inline int stepXY()    const { return _stepXY; }
+    inline int scale()     const { return _scale; }
+    inline int prevScale() const { return _scale-1; }
 
     cudaStream_t SweepStream( int offset );
     void WaitSweepStream( int offset );
@@ -68,8 +69,6 @@ private:
     const int  _dimZ;
     const int  _stepXY;
     const int  _scale;
-
-    const bool _verbose;
 
     const CudaDeviceMemory<float> _depths_d;
 
@@ -87,24 +86,20 @@ private:
 };
 }; // namespace ps
 
-void ps_SGMoptimizeSimVolume(
-    const CameraStruct& rccam,
-    const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
-    int volDimX, int volDimY, int volDimZ,
-    const std::string& filteringAxes,
-    bool verbose,
-    float P1, float P2,
-    int scale, int step,
-    int CUDAdeviceNo,
-    int ncamsAllocated);
+void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
+                            const CudaDeviceMemoryPitched<TSim, 3>& d_volSim, 
+                            const CudaSize<3>& volDim,
+                            const CudaSize<3>& axisT, cudaTextureObject_t rc_tex, 
+                            const SgmParams& sgmParams,
+                            bool invY, int filteringIndex);
 
-  void ps_SGMretrieveBestDepth(
-    CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
-    int rc_cam_cache_id,
-    const CudaDeviceMemory<float>& depths_d,
-    CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate);
+void ps_SGMretrieveBestDepth(int rcamCacheId, 
+                            CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
+                            CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
+                            const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, 
+                            const CudaSize<3>& volDim, 
+                            const CudaDeviceMemory<float>& depths_d, 
+                            int scaleStep, bool interpolate);
 
 int ps_listCUDADevices(bool verbose);
 
@@ -126,42 +121,28 @@ void ps_device_fillPyramidFromHostFrame(
     int scales, int w, int h,
     cudaStream_t stream );
 
-void ps_refineRcDepthMap(
-    float* out_osimMap_hmh,
-    float* inout_rcDepthMap_hmh,
-    int ntcsteps,
-    CameraStruct& rc_cam,
-    CameraStruct& tc_cam,
-    int width, int height,
-    int rcWidth, int rcHeight,
-    int tcWidth, int tcHeight,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    bool verbose,
-    int wsh,
-    float gammaC, float gammaP,
-    bool moveByTcOrRc,
-    int xFrom);
+void ps_refineRcDepthMap(const CameraStruct& rcam, 
+                         const CameraStruct& tcam, 
+                         float* inout_depthMap_hmh,
+                         float* out_simMap_hmh, 
+                         int rcWidth, int rcHeight, 
+                         int tcWidth, int tcHeight,
+                         const RefineParams& refineParams, 
+                         int xFrom, int wPart, int CUDAdeviceNo);
 
-void ps_fuseDepthSimMapsGaussianKernelVoting(
-    CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-    std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
-    int ndepthSimMaps,
-    int nSamplesHalf,
-    int nDepthsToRefine,
-    float sigma,
-    int width, int height,
-    bool verbose);
+void ps_fuseDepthSimMapsGaussianKernelVoting(int width, int height,
+                                            CudaHostMemoryHeap<float2, 2>* out_depthSimMap_hmh,
+                                            std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
+                                            int ndepthSimMaps, 
+                                            const RefineParams& refineParams);
 
-void ps_optimizeDepthSimMapGradientDescent(
-    CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
-    const CudaHostMemoryHeap<float2, 2>& sgmDepthSimMap_hmh,
-    const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
-    int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
-    CameraStruct& rc_cam,
-    int width, int height, int scale,
-    int CUDAdeviceNo, int ncamsAllocated, bool verbose, int yFrom);
+void ps_optimizeDepthSimMapGradientDescent(const CameraStruct& rcam,
+                                           CudaHostMemoryHeap<float2, 2>& out_optimizedDepthSimMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
+                                           const CudaSize<2>& depthSimMapPartDim, 
+                                           const RefineParams& refineParams,
+                                           int CUDAdeviceNo, int nbCamsAllocated, int yFrom);
 
 void ps_getSilhoueteMap(
     CudaHostMemoryHeap<bool, 2>* omap_hmh,

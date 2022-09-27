@@ -24,7 +24,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace svg;
-using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 
@@ -205,7 +204,7 @@ int main(int argc, char **argv)
   // Display images sides by side with extracted features
   //--
   {
-    const string out_filename = "01.features."+describerTypesName+".svg";
+    const std::string out_filename = "01.features."+describerTypesName+".svg";
     matching::drawKeypointsSideBySide(filenameLeft,
                             imageLeftSize,
                             regions_perImage.at(0).get()->Features(),

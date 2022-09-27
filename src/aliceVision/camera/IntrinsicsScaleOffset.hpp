@@ -35,18 +35,26 @@ public:
     *this = other;
   }
 
-  void setScale(double x, double y)
+  bool operator==(const IntrinsicBase& otherBase) const override
   {
-    _scale(0) = x;
-    _scale(1) = y;
+      if(!IntrinsicBase::operator==(otherBase))
+          return false;
+      if(typeid(*this) != typeid(otherBase))
+          return false;
+      const IntrinsicsScaleOffset& other = static_cast<const IntrinsicsScaleOffset&>(otherBase);
+      return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
+  }
+
+  void setScale(const Vec2& scale)
+  {
+    _scale = scale;
   }
 
   inline Vec2 getScale() const { return _scale; }
 
-  void setOffset(double offset_x, double offset_y)
+  void setOffset(const Vec2& offset)
   {
-    _offset(0) = offset_x;
-    _offset(1) = offset_y;
+    _offset = offset;
   }
 
   inline Vec2 getOffset() const 
@@ -209,7 +217,7 @@ public:
   /**
    * @brief Set initial Scale (for constraining minimization)
    */
-  inline void setInitialScale(double initialScale)
+  inline void setInitialScale(const Vec2 & initialScale)
   {
     _initialScale = initialScale;
   }
@@ -218,15 +226,30 @@ public:
    * @brief Get the intrinsic initial scale
    * @return The intrinsic initial scale
    */
-  inline double initialScale() const
+  inline Vec2 getInitialScale() const
   {
     return _initialScale;
+  }
+
+  /**
+   * @brief lock the ratio between fx and fy
+   * @param lock is the ratio locked
+   */
+  void setRatioLocked(bool lock) 
+  {
+    _ratioLocked = lock;
+  }
+
+  bool isRatioLocked() const
+  {
+    return _ratioLocked;
   }
 
 protected:
   Vec2 _scale{1.0, 1.0};
   Vec2 _offset{0.0, 0.0};
-  double _initialScale{-1};
+  Vec2 _initialScale{-1.0, -1.0};
+  bool _ratioLocked{true};
 };
 
 } // namespace camera

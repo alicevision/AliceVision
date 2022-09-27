@@ -1125,8 +1125,8 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
             int uvId = p.first.second;
 
             aimesh->mVertices[index].x = mesh->pts[vertexId].x;
-            aimesh->mVertices[index].y = mesh->pts[vertexId].y;
-            aimesh->mVertices[index].z = mesh->pts[vertexId].z;
+            aimesh->mVertices[index].y = -mesh->pts[vertexId].y;
+            aimesh->mVertices[index].z = -mesh->pts[vertexId].z;
 
             aimesh->mTextureCoords[0][index].x = mesh->uvCoords[uvId].x;
             aimesh->mTextureCoords[0][index].y = mesh->uvCoords[uvId].y;

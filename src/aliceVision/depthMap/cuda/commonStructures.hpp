@@ -131,6 +131,9 @@ class CudaSize<2>: public CudaSizeBase<2>
 public:
     CudaSize() {}
     CudaSize(size_t s0, size_t s1) { size[0] = s0; size[1] = s1; }
+
+    inline size_t x() const { return size[0]; }
+    inline size_t y() const { return size[1]; }
 };
 
 template <>
@@ -139,6 +142,10 @@ class CudaSize<3>: public CudaSizeBase<3>
 public:
     CudaSize() {}
     CudaSize(size_t s0, size_t s1, size_t s2) { size[0] = s0; size[1] = s1; size[2] = s2; }
+
+    inline size_t x() const { return size[0]; }
+    inline size_t y() const { return size[1]; }
+    inline size_t z() const { return size[2]; }
 };
 
 template <unsigned Dim>

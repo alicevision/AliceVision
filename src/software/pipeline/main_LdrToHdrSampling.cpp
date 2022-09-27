@@ -35,6 +35,8 @@
 
 #include <sstream>
 
+#include <fstream>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -173,6 +175,10 @@ int aliceVision_main(int argc, char** argv)
         else
         {
             ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
+            for(auto& group : groupedViews)
+            {
+                ALICEVISION_LOG_ERROR(" * " << group.size());
+            }
             return EXIT_FAILURE;
         }
     }
@@ -202,21 +208,28 @@ int aliceVision_main(int argc, char** argv)
     for(std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
     {
         auto & group = groupedViews[groupIdx];
+        ALICEVISION_LOG_INFO("Extracting samples from group " << groupIdx);
 
         std::vector<std::string> paths;
-        std::vector<float> exposures;
+        std::vector<sfmData::ExposureSetting> exposuresSetting;
 
         bool applyWhiteBalance = true;
 
         for (auto & v : group)
         {
             paths.push_back(v->getImagePath());
-            exposures.push_back(v->getCameraExposureSetting());
+            exposuresSetting.push_back(v->getCameraExposureSetting());
 
-            applyWhiteBalance = applyWhiteBalance && v->getApplyWhiteBalance();
+            applyWhiteBalance &= v->getApplyWhiteBalance();
+
+            ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", applyWhiteBalance: " << v->getApplyWhiteBalance());
         }
+        if(!sfmData::hasComparableExposures(exposuresSetting))
+        {
+            ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
+        }
+        std::vector<double> exposures = getExposures(exposuresSetting);
 
-        ALICEVISION_LOG_INFO("Extracting samples from group " << groupIdx);
         std::vector<hdr::ImageSample> out_samples;
         const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB, applyWhiteBalance, params);
         if (!res)

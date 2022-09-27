@@ -37,8 +37,6 @@
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
-#include <boost/progress.hpp>
-
 #ifdef _MSC_VER
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
 #endif
@@ -654,9 +652,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           
           if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
-            std::cout << view_I->getImagePath() << std::endl;
-            std::cout << view_J->getImagePath() << std::endl;
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
+            ALICEVISION_LOG_INFO("I: " << view_I->getImagePath() << ", J: " << view_J->getImagePath());
             continue;
           }
 

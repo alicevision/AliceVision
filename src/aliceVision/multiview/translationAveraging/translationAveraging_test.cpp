@@ -22,7 +22,6 @@
 
 using namespace aliceVision;
 using namespace aliceVision::translationAveraging;
-using namespace std;
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_softL1_Ceres) {
 
@@ -123,6 +122,7 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_softl1_Ceres) {
 }
 
 BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_l2_chordal) {
+  makeRandomOperationsReproducible();
 
   const int focal = 1000;
   const int principal_Point = 500;

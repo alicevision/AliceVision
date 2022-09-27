@@ -151,6 +151,8 @@ void CreateCameraSystem(const Mat3& KK,
 
 
 BOOST_AUTO_TEST_CASE(EuclideanResection_Points6AllRandomInput) {
+  makeRandomOperationsReproducible();
+
   Mat3 KK;
   KK << 2796, 0,    800,
         0 ,   2796, 600,

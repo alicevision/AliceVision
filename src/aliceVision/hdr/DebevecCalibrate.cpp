@@ -24,7 +24,7 @@ namespace hdr {
 
 
 bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-                               const std::vector<std::vector<float>>& times, const std::size_t channelQuantization,
+                               const std::vector<std::vector<double>>& times, const std::size_t channelQuantization,
                                const rgbCurve& weight, float lambda, rgbCurve& response)
 {
     // Always 3 channels for the input images
@@ -68,7 +68,7 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
         {
             /*Process a group of brackets*/
             const std::vector<ImageSample>& group = ldrSamples[groupId];
-            const std::vector<float> & local_times = times[groupId];
+            const std::vector<double> & local_times = times[groupId];
 
             for (size_t sampleId = 0; sampleId < group.size(); sampleId++) {
                 

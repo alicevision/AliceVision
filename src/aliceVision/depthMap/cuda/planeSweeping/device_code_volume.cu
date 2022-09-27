@@ -155,17 +155,16 @@ __device__ float depthPlaneToDepth(
 
 
 __global__ void volume_retrieveBestZ_kernel(
-  int cam_cache_idx,
+  int rcamCacheId,
   float* bestDepthM, int bestDepthM_s,
   float* bestSimM, int bestSimM_s,
-  const float* depths_d,
   const TSim* simVolume, int simVolume_s, int simVolume_p,
   int volDimX, int volDimY, int volDimZ,
-  int scaleStep,
-  bool interpolate)
+  const float* depths_d,
+  int scaleStep, bool interpolate)
 {
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
+  const int x = blockIdx.x * blockDim.x + threadIdx.x;
+  const int y = blockIdx.y * blockDim.y + threadIdx.y;
   
   if(x >= volDimX || y >= volDimY)
     return;
@@ -191,18 +190,18 @@ __global__ void volume_retrieveBestZ_kernel(
       return;
   }
 
-  float2 pix{float(x * scaleStep), float(y * scaleStep)};
+  const float2 pix{float(x * scaleStep), float(y * scaleStep)};
   // Without depth interpolation (for debug purpose only)
   if(!interpolate)
   {
-    *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(cam_cache_idx, pix, depths_d[bestZIdx]);
+    *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(rcamCacheId, pix, depths_d[bestZIdx]);
     *get2DBufferAt(bestSimM, bestSimM_s, x, y) = (bestSim / 255.0f) * 2.0f - 1.0f; // convert from (0, 255) to (-1, +1)
     return;
   }
 
   // With depth/sim interpolation
-  int bestZIdx_m1 = max(0, bestZIdx - 1);
-  int bestZIdx_p1 = min(volDimZ-1, bestZIdx + 1);
+  const int bestZIdx_m1 = max(0, bestZIdx - 1);
+  const int bestZIdx_p1 = min(volDimZ-1, bestZIdx + 1);
 
   float3 depths;
   depths.x = depths_d[bestZIdx_m1];
@@ -222,7 +221,7 @@ __global__ void volume_retrieveBestZ_kernel(
   // Interpolation between the 3 depth planes candidates
   const float refinedDepth = refineDepthSubPixel(depths, sims);
 
-  *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(cam_cache_idx, pix, refinedDepth);
+  *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(rcamCacheId, pix, refinedDepth);
   *get2DBufferAt(bestSimM, bestSimM_s, x, y) = sims.y;
 }
 
@@ -231,8 +230,8 @@ __global__ void volume_retrieveBestZ_kernel(
 template <typename T>
 __global__ void volume_initVolumeYSlice_kernel(T* volume, int volume_s, int volume_p, const int3 volDim, const int3 axisT, int y, T cst)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int z = blockIdx.y * blockDim.y + threadIdx.y;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int z = blockIdx.y * blockDim.y + threadIdx.y;
 
     int3 v;
     (&v.x)[axisT.x] = x;
@@ -251,8 +250,8 @@ __global__ void volume_getVolumeXZSlice_kernel(T1* slice, int slice_p,
                                                const T2* volume, int volume_s, int volume_p,
                                                const int3 volDim, const int3 axisT, int y)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int z = blockIdx.y * blockDim.y + threadIdx.y;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int z = blockIdx.y * blockDim.y + threadIdx.y;
 
     int3 v;
     (&v.x)[axisT.x] = x;
@@ -269,7 +268,7 @@ __global__ void volume_getVolumeXZSlice_kernel(T1* slice, int slice_p,
 
 __global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice, int xzSlice_p, TSimAcc* ySliceBestInColCst, int volDimX, int volDimZ)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(x >= volDimX)
         return;
@@ -302,8 +301,8 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
             int y, float _P1, float _P2,
             int ySign, int filteringIndex)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int z = blockIdx.y * blockDim.y + threadIdx.y;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int z = blockIdx.y * blockDim.y + threadIdx.y;
 
     int3 v;
     (&v.x)[axisT.x] = x;

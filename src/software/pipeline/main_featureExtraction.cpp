@@ -25,7 +25,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include <string>
 #include <fstream>
@@ -34,6 +33,7 @@
 #include <functional>
 #include <memory>
 #include <limits>
+#include <iomanip>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

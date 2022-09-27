@@ -13,7 +13,7 @@ namespace aliceVision {
 inline std::regex simpleFilterToRegex(const std::string& simpleFilter)
 {
     std::string filterToRegex = simpleFilter;
-    filterToRegex = std::regex_replace(filterToRegex, std::regex("\/"), std::string("\\\/"));
+    filterToRegex = std::regex_replace(filterToRegex, std::regex("/"), std::string("\\/"));
     filterToRegex = std::regex_replace(filterToRegex, std::regex("\\*"), std::string(".*"));
     filterToRegex = std::regex_replace(filterToRegex, std::regex("\\?"), std::string("."));
     filterToRegex = std::regex_replace(filterToRegex, std::regex("\\@"), std::string("[0-9]+")); // one @ correspond to one or more digits
