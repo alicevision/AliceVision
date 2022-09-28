@@ -925,9 +925,9 @@ if(ALICEVISION_BUILD_SFM)
     message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
   endif()
 
-  message(STATUS "CLP: " ${CLP_VERSION} "")
-  message(STATUS "COINUTILS: " ${COINUTILS_VERSION} "")
-  message(STATUS "OSI: " ${OSI_VERSION} "")
+  message(STATUS "CLP: " ${Clp_VERSION} "")
+  message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
+  message(STATUS "OSI: " ${Osi_VERSION} "")
 
   if(ALICEVISION_USE_INTERNAL_LEMON)
     message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")
