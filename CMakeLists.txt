@@ -457,27 +457,29 @@ endif()
 
 # Add LibPng
 if(AV_BUILD_PNG)
-set(PNG_TARGET png)
-ExternalProject_Add(${PNG_TARGET}
-       URL https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
-       #    http://github.com/glennrp/libpng-releases/raw/master/libpng-1.6.34.tar.gz
-       #    http://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
-       #    https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
-       URL_HASH MD5=6c7519f6c75939efa0ed3053197abd54
-       DOWNLOAD_DIR ${BUILD_DIR}/download/libpng
-       PREFIX ${BUILD_DIR}
-       BUILD_IN_SOURCE 0
-       BUILD_ALWAYS 0
-       UPDATE_COMMAND ""
-       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
-       BINARY_DIR ${BUILD_DIR}/png_build
-       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       # CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
-       CONFIGURE_COMMAND ${CMAKE_COMMAND} -DPNG_ARM_NEON=off ${CMAKE_CORE_BUILD_FLAGS} ${ZLIB_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
-       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-       DEPENDS ${ZLIB_TARGET}
-       )
-SET(PNG_CMAKE_FLAGS -DPNG_LIBRARY=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libpng${CMAKE_SHARED_LIBRARY_SUFFIX} -DPNG_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include)
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm") 
+        set(AV_PNG_ARM_NEON on)
+    else()
+        set(AV_PNG_ARM_NEON off)
+    endif()
+    set(PNG_TARGET png)
+    ExternalProject_Add(${PNG_TARGET}
+           URL https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
+           URL_HASH MD5=6c7519f6c75939efa0ed3053197abd54
+           DOWNLOAD_DIR ${BUILD_DIR}/download/libpng
+           PREFIX ${BUILD_DIR}
+           BUILD_IN_SOURCE 0
+           BUILD_ALWAYS 0
+           UPDATE_COMMAND ""
+           SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
+           BINARY_DIR ${BUILD_DIR}/png_build
+           INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+           # CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+           CONFIGURE_COMMAND ${CMAKE_COMMAND} -DPNG_ARM_NEON=${AV_PNG_ARM_NEON} ${CMAKE_CORE_BUILD_FLAGS} ${ZLIB_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> <SOURCE_DIR>
+           BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+           DEPENDS ${ZLIB_TARGET}
+           )
+    SET(PNG_CMAKE_FLAGS -DPNG_LIBRARY=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libpng${CMAKE_SHARED_LIBRARY_SUFFIX} -DPNG_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include)
 endif()
 
 if(AV_BUILD_JPEG)
