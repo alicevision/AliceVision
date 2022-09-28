@@ -22,6 +22,7 @@ ENV AV_DEV=/opt/AliceVision_git \
 
 COPY CMakeLists.txt *.md ${AV_DEV}/
 COPY src ${AV_DEV}/src
+COPY docker ${AV_DEV}/docker
 
 WORKDIR "${AV_BUILD}"
 
@@ -36,7 +37,8 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release \
       -DALICEVISION_USE_POPSIFT=ON -DALICEVISION_USE_CUDA=ON -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF \
       "${AV_DEV}" || (cat "${AV_BUILD}/CMakeFiles/CMakeOutput.log" "${AV_BUILD}/CMakeFiles/CMakeError.log" && false)
 
-RUN make -j"$(nproc)" && \
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
+    make -j"${CPU_CORES}" && \
     make install && \
     make bundle && \
     rm -rf "${AV_DEV}" "${AV_BUILD}" && \

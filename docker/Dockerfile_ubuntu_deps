@@ -52,6 +52,7 @@ COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" > /etc/profile.d/alicevision.sh
 
 COPY CMakeLists.txt ${AV_DEV}/
+COPY docker ${AV_DEV}/docker
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
@@ -89,7 +90,8 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 #RUN make -j"$(nproc)" opencv
 #RUN make -j"$(nproc)" cctag
 
-RUN cmake --build . -j "$(nproc)" && \
+RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
+	cmake --build . -j${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
 
