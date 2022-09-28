@@ -10,11 +10,7 @@
 
 NPROC=$(nproc)
 
-FREE_MEM=$(free -g | grep Mem | awk '
-{
-print $7
-}
-' | sed "s/Gi//")
+FREE_RAM=$(awk '/^MemAvailable:/{printf("%d",$2/1024/1024)}' /proc/meminfo)
 
 >&2 echo "THe amount of available memory on the system is ${FREE_MEM} GB" 
 
