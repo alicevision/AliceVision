@@ -236,7 +236,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         throw std::invalid_argument("One or multiple medias can't be found or empty !");
     }
 
-    const int searchWindowSize = std::floor(double(nbFrames) / double(_maxOutFrame));
+    const int searchWindowSize = (_maxOutFrame <= 0) ? 1 : std::floor(double(nbFrames) / double(_maxOutFrame));
 
     // feed provider variables
     image::Image<image::RGBColor> image;     // original image
