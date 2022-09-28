@@ -171,7 +171,7 @@ endmacro(add_target_properties)
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -346,12 +346,7 @@ set(ALICEVISION_HAVE_MOSEK 0)
 if(ALICEVISION_BUILD_SFM)
   find_package(Mosek)
   if(MOSEK_FOUND)
-    set(ALICEVISION_HAVE_MOSEK 1)
-    set(LP_INCLUDE_DIRS
-      ${MOSEK_INCLUDE}
-      ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Osi/src/OsiMsk/
-    )
-    include_directories(${LP_INCLUDE_DIRS})
+    find_package(Coin::OsiMsk)
   endif()
 
   #Install RULES
@@ -435,72 +430,12 @@ if(ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
-# CoinUtils
-# ==============================================================================
-# - internal by default (CoinUtils),
-# - external if COINUTILS_INCLUDE_DIR_HINTS and a valid CoinUtils setup is found
+# CoinUtils, Clp, Osi
 # ==============================================================================
 if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED COINUTILS_INCLUDE_DIR_HINTS)
-    set(COINUTILS_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils/src/)
-    set(ALICEVISION_USE_INTERNAL_COINUTILS ON)
-  endif()
-  find_package(CoinUtils QUIET)
-  if(NOT COINUTILS_FOUND OR ALICEVISION_USE_INTERNAL_COINUTILS)
-    set(COINUTILS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils/src/)
-    set(COINUTILS_LIBRARY lib_CoinUtils)
-  endif()
-endif()
-
-## ==============================================================================
-## Clp
-## ==============================================================================
-## - internal by default (Clp),
-## - external if CLP_INCLUDE_DIR_HINTS and a valid Clp setup is found
-## ==============================================================================
-if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED CLP_INCLUDE_DIR_HINTS)
-    set(CLP_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Clp/src/)
-    set(ALICEVISION_USE_INTERNAL_CLP ON)
-  endif()
-  find_package(Clp QUIET)
-  if(NOT CLP_FOUND OR ALICEVISION_USE_INTERNAL_CLP)
-    set(CLP_INCLUDE_DIRS
-       ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Clp/src/
-       ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Clp/src/OsiClp/)
-    set(CLP_LIBRARIES lib_clp lib_OsiClpSolver)
-  endif()
-endif()
-
-# ==============================================================================
-# Osi
-# ==============================================================================
-# - internal by default (Osi),
-# - external if OSI_INCLUDE_DIR_HINTS and a valid Osi setup is found
-# ==============================================================================
-if(ALICEVISION_BUILD_SFM)
-  if(NOT DEFINED OSI_INCLUDE_DIR_HINTS)
-    set(OSI_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Osi/src/)
-    set(ALICEVISION_USE_INTERNAL_OSI ON)
-  endif()
-  find_package(Osi QUIET)
-  if(NOT OSI_FOUND OR ALICEVISION_USE_INTERNAL_OSI)
-    set(OSI_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Osi/src/Osi/)
-    set(OSI_LIBRARY lib_Osi)
-  endif()
-endif()
-
-# ==============================================================================
-# Internal CLP/OSI/COINUTILS libraries
-# ==============================================================================
-if(ALICEVISION_BUILD_SFM)
-  if(ALICEVISION_USE_INTERNAL_OSI AND ALICEVISION_USE_INTERNAL_CLP AND ALICEVISION_USE_INTERNAL_COINUTILS)
-    add_subdirectory(dependencies/osi_clp/)
-    set_property(TARGET lib_clp PROPERTY FOLDER Dependencies/Lib_clp)
-    set_property(TARGET lib_CoinUtils PROPERTY FOLDER Dependencies/Lib_CoinUtils)
-    set_property(TARGET lib_Osi PROPERTY FOLDER Dependencies/Lib_Osi)
-    set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER Dependencies/Lib_OsiClpSolver)
-  endif()
+  find_package(CoinUtils REQUIRED)
+  find_package(Clp REQUIRED)
+  find_package(Osi REQUIRED)
 endif()
 
 # ==============================================================================
@@ -990,23 +925,9 @@ if(ALICEVISION_BUILD_SFM)
     message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
   endif()
 
-  if(ALICEVISION_USE_INTERNAL_CLP)
-    message(STATUS "CLP: " ${CLP_VERSION} " (internal)")
-  else()
-    message(STATUS "CLP: " ${CLP_VERSION} " (external)")
-  endif()
-
-  if(ALICEVISION_USE_INTERNAL_COINUTILS)
-    message(STATUS "COINUTILS: " ${COINUTILS_VERSION} " (internal)")
-  else()
-    message(STATUS "COINUTILS: " ${COINUTILS_VERSION} " (external)")
-  endif()
-
-  if(ALICEVISION_USE_INTERNAL_OSI)
-    message(STATUS "OSI: " ${OSI_VERSION} " (internal)")
-  else()
-    message(STATUS "OSI: " ${OSI_VERSION} " (external)")
-  endif()
+  message(STATUS "CLP: " ${Clp_VERSION} "")
+  message(STATUS "COINUTILS: " ${CoinUtils_VERSION} "")
+  message(STATUS "OSI: " ${Osi_VERSION} "")
 
   if(ALICEVISION_USE_INTERNAL_LEMON)
     message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")

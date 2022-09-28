@@ -111,6 +111,7 @@ vcpkg install ^
           cuda ^
           tbb ^
           assimp ^
+          clp ^
           --triplet x64-windows
 ```
 
