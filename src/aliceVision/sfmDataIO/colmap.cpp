@@ -77,7 +77,7 @@ CompatibleList getColmapCompatibleViews(const sfmData::SfMData& sfmData)
         {
             continue;
         }
-        if(compatibleIntrinsics.find(view->getIntrinsicId()) != compatibleViews.end())
+        if(compatibleIntrinsics.count(view->getIntrinsicId()) > 0)
         {
             compatibleViews.insert(viewID);
         }
