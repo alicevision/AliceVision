@@ -82,7 +82,7 @@ endif()
 
 
 alicevision_add_test(middlebury_test.cpp
-        NAME "middlebury"
+        NAME "sfmDataIO_middlebury"
         LINKS aliceVision_sfmData
         aliceVision_numeric
         aliceVision_sfmDataIO
