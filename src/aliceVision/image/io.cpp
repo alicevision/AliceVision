@@ -257,13 +257,6 @@ oiio::ParamValueList readImageMetadata(const std::string& path)
     return readImageSpec(path).extra_attribs;
 }
 
-// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
-void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
-{
-  oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
-  metadata = getMapFromMetadata(oiioMetadadata);
-}
-
 void readImageSize(const std::string& path, int& width, int& height)
 {
     const auto spec = readImageSpec(path);

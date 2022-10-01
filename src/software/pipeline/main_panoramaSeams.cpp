@@ -292,7 +292,7 @@ int aliceVision_main(int argc, char** argv)
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
         int width, height;
-        image::readImageMetadata(maskPath, width, height);
+        image::readImageSize(maskPath, width, height);
         width /= downscaleFactor;
         height /= downscaleFactor;
 
