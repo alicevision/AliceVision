@@ -1622,7 +1622,7 @@ DelaunayGraphCut::GeometryIntersection DelaunayGraphCut::rayIntersectTriangle(co
     const double BCSize = (*B - *C).size();
     const double ACSize = (*A - *C).size();
 
-    const double marginEpsilon = std::min(std::min(ABSize, BCSize), ACSize) * epsilonFactor;
+    const double marginEpsilon = std::min({ABSize, BCSize, ACSize}) * epsilonFactor;
     const double ambiguityEpsilon = (ABSize + BCSize + ACSize) / 3.0 * 1.0e-2;
 
     Point3d tempIntersectPt;

@@ -1297,17 +1297,17 @@ Point3d Mesh::computeTriangleCenterOfGravity(int idTri) const
 double Mesh::computeTriangleMaxEdgeLength(int idTri) const
 {
     const Mesh::triangle& t = tris[idTri];
-    return std::max(std::max((pts[t.v[0]] - pts[t.v[1]]).size(),
-                             (pts[t.v[1]] - pts[t.v[2]]).size()),
-                             (pts[t.v[2]] - pts[t.v[0]]).size());
+    return std::max({(pts[t.v[0]] - pts[t.v[1]]).size(),
+                     (pts[t.v[1]] - pts[t.v[2]]).size(),
+                     (pts[t.v[2]] - pts[t.v[0]]).size()});
 }
 
 double Mesh::computeTriangleMinEdgeLength(int idTri) const
 {
     const Mesh::triangle& t = tris[idTri];
-    return std::min(std::min((pts[t.v[0]] - pts[t.v[1]]).size(),
-                             (pts[t.v[1]] - pts[t.v[2]]).size()),
-                             (pts[t.v[2]] - pts[t.v[0]]).size());
+    return std::min({(pts[t.v[0]] - pts[t.v[1]]).size(),
+                     (pts[t.v[1]] - pts[t.v[2]]).size(),
+                     (pts[t.v[2]] - pts[t.v[0]]).size()});
 }
 
 void Mesh::computeNormalsForPts(StaticVector<Point3d>& out_nms)
