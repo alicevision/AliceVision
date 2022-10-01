@@ -233,36 +233,28 @@ std::map<std::string, std::string> getMapFromMetadata(const oiio::ParamValueList
 
 oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
 {
+    const auto spec = readImageSpec(path);
+    width = spec.width;
+    height = spec.height;
+    return spec.extra_attribs;
+}
+
+oiio::ImageSpec readImageSpec(const std::string& path)
+{
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
   oiio::ImageSpec spec = in->spec();
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
-#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
-  const std::string formatStr = in->format_name();
-  if(formatStr == "raw")
-  {
-    // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
-    spec.attribute("oiio:ColorSpace", "Linear");
-    ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
-  }
-#endif
-
-  width = spec.width;
-  height = spec.height;
-
-  oiio::ParamValueList metadata = spec.extra_attribs;
-
   in->close();
 
-  return metadata;
+  return spec;
 }
 
 oiio::ParamValueList readImageMetadata(const std::string& path)
 {
-  int w, h;
-  return readImageMetadata(path, w, h);
+    return readImageSpec(path).extra_attribs;
 }
 
 // Warning: type conversion problems from string to param value, we may lose some metadata with string maps
@@ -274,8 +266,9 @@ void readImageMetadata(const std::string& path, int& width, int& height, std::ma
 
 void readImageSize(const std::string& path, int& width, int& height)
 {
-    std::map<std::string, std::string> metadata;
-    readImageMetadata(path, width, height, metadata);
+    const auto spec = readImageSpec(path);
+    width = spec.width;
+    height = spec.height;
 }
 
 template<typename T>
