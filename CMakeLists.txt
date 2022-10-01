@@ -397,7 +397,7 @@ endif()
 set(CERES_TARGET ceres)
 ExternalProject_Add(${CERES_TARGET}
        GIT_REPOSITORY https://github.com/ceres-solver/ceres-solver
-       GIT_TAG 31008453fe979f947e594df15a7e254d6631881b  # 2021/10/06
+       GIT_TAG 2.1.0
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
