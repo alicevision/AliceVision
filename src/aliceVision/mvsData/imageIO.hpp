@@ -171,13 +171,6 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 void readImageSpec(const std::string& path, int& width, int& height, int& nchannels);
 
 /**
- * @brief read image metadata from a given path
- * @param[in] path The given path to the image
- * @param[out] metadata The image metadata
- */
-void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata);
-
-/**
  * @brief Test if the extension is supported for undistorted images.
  * @param[in] ext The extension with the dot (eg ".png")
  * @return \p true if the extension is supported.

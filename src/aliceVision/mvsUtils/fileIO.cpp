@@ -6,6 +6,7 @@
 
 #include "fileIO.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>
@@ -340,8 +341,7 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         imageIO::readImage(path, img, imageIO::EImageColorSpace::LINEAR);
         checkImageSize();
 
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(path, metadata);
+        const auto metadata = image::readImageMetadata(path);
 
         float exposureCompensation = metadata.get_float("AliceVision:EVComp", -1);
 
