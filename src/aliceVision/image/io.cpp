@@ -463,8 +463,7 @@ void readImageNoFloat(const std::string& path,
 
 bool containsHalfFloatOverflow(const oiio::ImageBuf& image)
 {
-    oiio::ImageBufAlgo::PixelStats stats;
-    oiio::ImageBufAlgo::computePixelStats(stats, image);
+    auto stats = oiio::ImageBufAlgo::computePixelStats(image);
 
     for(auto maxValue: stats.max)
     {
