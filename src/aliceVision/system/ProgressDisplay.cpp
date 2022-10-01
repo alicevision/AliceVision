@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ProgressDisplay.hpp"
-#include <boost/progress.hpp>
+#include <boost/timer/progress_display.hpp>
 #include <mutex>
 
 namespace aliceVision {
@@ -61,7 +61,7 @@ public:
 
 private:
     std::mutex _mutex;
-    boost::progress_display _display;
+    boost::timer::progress_display _display;
 };
 
 
