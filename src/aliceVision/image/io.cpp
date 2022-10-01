@@ -221,6 +221,16 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
+std::map<std::string, std::string> getMapFromMetadata(const oiio::ParamValueList& metadata)
+{
+    std::map<std::string, std::string> metadataMap;
+
+    for (const auto& param : metadata)
+        metadataMap.emplace(param.name().string(), param.get_string());
+
+    return metadataMap;
+}
+
 oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
@@ -259,9 +269,7 @@ oiio::ParamValueList readImageMetadata(const std::string& path)
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
   oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
-
-  for(const auto& param : oiioMetadadata)
-    metadata.emplace(param.name().string(), param.get_string());
+  metadata = getMapFromMetadata(oiioMetadadata);
 }
 
 void readImageSize(const std::string& path, int& width, int& height)

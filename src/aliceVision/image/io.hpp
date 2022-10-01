@@ -147,6 +147,13 @@ std::istream& operator>>(std::istream& in, EStorageDataType& dataType);
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap);
 
 /**
+ * @brief convert an oiio::ParamValueList into metadata string map
+ * @param[in] metadata An instance of oiio::ParamValueList
+ * @return std::map Metadata string map
+ */
+std::map<std::string, std::string> getMapFromMetadata(const oiio::ParamValueList& metadata);
+
+/**
  * @brief extract metadata from an image for a given path
  * @param[in] path The given path to the image
  * @param[out] width The image header width
