@@ -222,12 +222,7 @@ void readImage(const std::string& path,
     configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
     configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
     configSpec.attribute("raw:use_camera_matrix", 3); // want to use embeded color profile
-#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
-    // In these previous versions of oiio, there was no Linear option
-    configSpec.attribute("raw:ColorSpace", "sRGB");   // want colorspace sRGB
-#else
     configSpec.attribute("raw:ColorSpace", "Linear");   // want linear colorspace with sRGB primaries
-#endif
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
@@ -236,25 +231,7 @@ void readImage(const std::string& path,
     if(!inBuf.initialized())
         throw std::runtime_error("Cannot find/open image file '" + path + "'.");
 
-#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
-    // Workaround for bug in RAW colorspace management in previous versions of OIIO:
-    //     When asking sRGB we got sRGB primaries with linear gamma,
-    //     but oiio::ColorSpace was wrongly set to sRGB.
-    oiio::ImageSpec inSpec = inBuf.spec();
-    if(inSpec.get_string_attribute("oiio:ColorSpace", "") == "sRGB")
-    {
-        const auto in = oiio::ImageInput::open(path, nullptr);
-        const std::string formatStr = in->format_name();
-        if(formatStr == "raw")
-        {
-            // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
-            inSpec.attribute("oiio:ColorSpace", "Linear");
-            ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
-        }
-    }
-#else
     const oiio::ImageSpec& inSpec = inBuf.spec();
-#endif
 
     // check picture channels number
     if (inSpec.nchannels == 0)
