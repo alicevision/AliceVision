@@ -137,8 +137,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         else if(fileExists)
         {
             // use image dimension
-            int w, h, channels;
-            imageIO::readImageSpec(imgParams.path, w, h, channels);
+            int w, h;
+            image::readImageSize(imgParams.path, w, h);
             const int widthScale = imgParams.width / w;
             const int heightScale = imgParams.height / h;
 
