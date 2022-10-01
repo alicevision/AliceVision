@@ -14,6 +14,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/image/io.cpp>
 
+#include <boost/atomic/atomic_ref.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -481,8 +482,7 @@ int aliceVision_main(int argc, char **argv)
         if(intrinsic->getFocalLengthPixX() > 0)
         {
           // the view intrinsic is initialized
-          #pragma omp atomic
-          ++completeViewCount;
+          boost::atomic_ref<std::size_t>(completeViewCount)++;
 
           // don't need to build a new intrinsic
           continue;
@@ -616,8 +616,7 @@ int aliceVision_main(int argc, char **argv)
     if(intrinsic && intrinsic->isValid())
     {
       // the view intrinsic is initialized
-      #pragma omp atomic
-      ++completeViewCount;
+      boost::atomic_ref<std::size_t>(completeViewCount)++;
     }
 
     // Create serial number if not already filled
