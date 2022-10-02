@@ -530,8 +530,13 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     // subset parametrization
     if(!constantExtrinsic.empty())
     {
+#if ALICEVISION_CERES_HAS_MANIFOLD
+      auto* subsetManifold = new ceres::SubsetManifold(6, constantExtrinsic);
+      problem.SetManifold(poseBlockPtr, subsetManifold);
+#else
       ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(6, constantExtrinsic);
       problem.SetParameterization(poseBlockPtr, subsetParameterization);
+#endif
     }
 
     _statistics.addState(EParameter::POSE, EParameterState::REFINED);
