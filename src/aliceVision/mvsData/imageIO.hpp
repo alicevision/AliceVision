@@ -24,18 +24,6 @@ using ImageRGBAf = Image<ColorRGBAf>;
 namespace imageIO {
 
 /**
- * @brief Available image file types for pipeline output
- */
-enum class EImageFileType
-{
-  JPEG,
-  PNG,
-  TIFF,
-  EXR,
-  NONE
-};
-
-/**
  * @brief Available image color space for pipeline input / output
  */
 enum class EImageColorSpace
@@ -124,42 +112,6 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
  * @return oiio::ParamValueList
  */
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap);
-
-/**
- * @brief get informations about each image file type
- * @return String
- */
-std::string EImageFileType_informations();
-
-/**
- * @brief returns the EImageFileType enum from a string.
- * @param[in] imageFileType the input string.
- * @return the associated EImageFileType enum.
- */
-EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType);
-
-/**
- * @brief converts an EImageFileType enum to a string.
- * @param[in] imageFileType the EImageFileType enum to convert.
- * @return the string associated to the EImageFileType enum.
- */
-std::string EImageFileType_enumToString(const EImageFileType imageFileType);
-
-/**
- * @brief write an EImageFileType enum into a stream by converting it to a string.
- * @param[in] os the stream where to write the imageType.
- * @param[in] imageFileType the EImageFileType enum to write.
- * @return the modified stream.
- */
-std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
-
-/**
- * @brief read a EImageFileType enum from a stream.
- * @param[in] in the stream from which the enum is read.
- * @param[out] imageFileType the EImageFileType enum read from the stream.
- * @return the modified stream without the read enum.
- */
-std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
 /**
  * @brief read image dimension from a given path
