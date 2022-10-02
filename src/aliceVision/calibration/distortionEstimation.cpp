@@ -8,6 +8,7 @@
 
 #include <ceres/ceres.h>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/CeresUtils.hpp>
 
 
 namespace aliceVision {
@@ -243,8 +244,13 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     }
     else
     {
-        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});   
+#if ALICEVISION_CERES_HAS_MANIFOLD
+        auto* subsetManifold = new ceres::SubsetManifold(2, {1});
+        problem.SetManifold(scale, subsetManifold);
+#else
+        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});
         problem.SetParameterization(scale, subsetParameterization);
+#endif
     }
 
     //Add off center parameter
@@ -286,8 +292,13 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
 
         if (!constantDistortions.empty())
         {
-            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
+#if ALICEVISION_CERES_HAS_MANIFOLD
+            auto* subsetManifold = new ceres::SubsetManifold(countDistortionParams, constantDistortions);
+            problem.SetManifold(distortionParameters, subsetManifold);
+#else
+            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);
             problem.SetParameterization(distortionParameters, subsetParameterization);
+#endif
         }
     }
     
@@ -388,8 +399,13 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
     }
     else
     {
-        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});   
+#if ALICEVISION_CERES_HAS_MANIFOLD
+        auto* subsetManifold = new ceres::SubsetManifold(2, {1});
+        problem.SetManifold(scale, subsetManifold);
+#else
+        ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(2, {1});
         problem.SetParameterization(scale, subsetParameterization);
+#endif
     }
     
 
@@ -432,8 +448,13 @@ bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & 
         
         if (!constantDistortions.empty())
         {
-            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);   
+#if ALICEVISION_CERES_HAS_MANIFOLD
+            auto* subsetManifold = new ceres::SubsetManifold(countDistortionParams, constantDistortions);
+            problem.SetManifold(distortionParameters, subsetManifold);
+#else
+            ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(countDistortionParams, constantDistortions);
             problem.SetParameterization(distortionParameters, subsetParameterization);
+#endif
         }
     }
     
