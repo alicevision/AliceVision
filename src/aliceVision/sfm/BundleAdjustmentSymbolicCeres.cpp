@@ -296,7 +296,12 @@ void BundleAdjustmentSymbolicCeres::addPose(const sfmData::CameraPose& cameraPos
 
   if (refineRotation && refineTranslation)
   {
-    problem.SetParameterization(poseBlockPtr, new SE3::LocalParameterization(refineRotation, refineTranslation));
+#if ALICEVISION_CERES_HAS_MANIFOLD
+    problem.SetManifold(poseBlockPtr, new SE3::Manifold(refineRotation, refineTranslation));
+#else
+    problem.SetParameterization(poseBlockPtr, new utils::ManifoldToParameterizationWrapper(
+                                    new SE3::Manifold(refineRotation, refineTranslation)));
+#endif
   }
   else
   {

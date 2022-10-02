@@ -238,9 +238,9 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1> & algebra){
 }
 
 
-class LocalParameterization : public ceres::LocalParameterization {
+class Manifold : public utils::CeresManifold {
 public:
-  LocalParameterization(bool refineRotation, bool refineTranslation) :
+  Manifold(bool refineRotation, bool refineTranslation) :
   _refineRotation(refineRotation), 
   _refineTranslation(refineTranslation)
   {
@@ -259,7 +259,7 @@ public:
     return true;
   }
 
-  bool ComputeJacobian(const double * x, double* jacobian) const override {
+  bool PlusJacobian(const double * x, double* jacobian) const override {
 
     Eigen::Map<Eigen::Matrix<double, 16, 6, Eigen::RowMajor>> J(jacobian);
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T(x);
@@ -288,11 +288,19 @@ public:
     return true;
   }
 
-  int GlobalSize() const override {
+  bool Minus(const double* y, const double* x, double* delta) const override {
+    throw std::invalid_argument("SE3::Manifold::Minus() should never be called");
+  }
+
+  bool MinusJacobian(const double* x, double* jacobian) const override {
+    throw std::invalid_argument("SE3::Manifold::MinusJacobian() should never be called");
+  }
+
+  int AmbientSize() const override {
     return 16;
   }
 
-  int LocalSize() const override {
+  int TangentSize() const override {
     return 6;
   }
 
