@@ -41,13 +41,27 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
 {
     switch(colorSpace)
     {
-    case EImageColorSpace::SRGB: return "sRGB"; // WARNING: string should match with OIIO definitions or implemented conversion
+    case EImageColorSpace::SRGB: return "sRGB";
     case EImageColorSpace::LINEAR: return "Linear";
     case EImageColorSpace::LAB: return "LAB";
     case EImageColorSpace::XYZ: return "XYZ";
     default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
+}
+
+std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
+{
+    switch(colorSpace)
+    {
+        case EImageColorSpace::SRGB: return "sRGB"; // WARNING: string should match with OIIO definitions or implemented conversion
+        case EImageColorSpace::LINEAR: return "Linear";
+        case EImageColorSpace::LAB: return "LAB";
+        case EImageColorSpace::XYZ: return "XYZ";
+        default: ;
+    }
+    throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " +
+                            std::to_string(int(colorSpace)));
 }
 
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace)
