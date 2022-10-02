@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/image/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 
 namespace aliceVision {

@@ -7,7 +7,7 @@
 #include "imageIO.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/image/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageAlgo.hpp>

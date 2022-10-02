@@ -6,9 +6,9 @@
 
 #include "DepthSimMap.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/Color.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>

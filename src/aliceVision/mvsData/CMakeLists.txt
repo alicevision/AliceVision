@@ -1,6 +1,5 @@
 # Headers
 set(mvsData_files_headers
-  Color.hpp
   Image.hpp
   geometry.hpp
   geometryTriTri.hpp
