@@ -333,7 +333,7 @@ inline Eigen::Matrix2d expm(double algebra){
 }
 
 
-class LocalParameterization : public ceres::LocalParameterization {
+class Manifold : public utils::CeresManifold {
 public:
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
 
@@ -347,7 +347,7 @@ public:
     return true;
   }
 
-  bool ComputeJacobian(const double * x, double* jacobian) const override {
+  bool PlusJacobian(const double * x, double* jacobian) const override {
 
     Eigen::Map<Eigen::Matrix<double, 4, 1>> J(jacobian);
 
@@ -359,11 +359,19 @@ public:
     return true;
   }
 
-  int GlobalSize() const override {
+  bool Minus(const double* y, const double* x, double* delta) const override {
+    throw std::invalid_argument("SO3::Manifold::Minus() should never be called");
+  }
+
+  bool MinusJacobian(const double* x, double* jacobian) const override {
+    throw std::invalid_argument("SO3::Manifold::MinusJacobian() should never be called");
+  }
+
+  int AmbientSize() const override {
     return 4;
   }
 
-  int LocalSize() const override {
+  int TangentSize() const override {
     return 1;
   }
 };
