@@ -412,7 +412,11 @@ void BundleAdjustmentPanoramaCeres::addExtrinsicsToProblem(const sfmData::SfMDat
     double* poseBlockPtr = poseBlock.data();
 
     /*Define rotation parameterization*/
-    problem.AddParameterBlock(poseBlockPtr, 9, new SO3::LocalParameterization);
+#if ALICEVISION_CERES_HAS_MANIFOLD
+    problem.AddParameterBlock(poseBlockPtr, 9, new SO3::Manifold);
+#else
+    problem.AddParameterBlock(poseBlockPtr, 9, new utils::ManifoldToParameterizationWrapper(new SO3::Manifold));
+#endif
 
     // keep the camera extrinsics constants
     if(cameraPose.isLocked() || isConstant || !refineRotation)
