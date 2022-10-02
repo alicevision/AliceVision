@@ -150,14 +150,6 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   return in;
 }
 
-oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
-{
-  oiio::ParamValueList metadata;
-  for(const auto& metadataPair : metadataMap)
-    metadata.push_back(oiio::ParamValue(metadataPair.first, metadataPair.second));
-  return metadata;
-}
-
 bool isSupportedUndistortFormat(const std::string &ext)
 {
   static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"};

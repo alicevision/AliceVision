@@ -6,6 +6,7 @@
 
 #include "DepthSimMap.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/Color.hpp>
@@ -421,7 +422,7 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
     const int width = _mp.getWidth(_rc) / scaleStep;
     const int height = _mp.getHeight(_rc) / scaleStep;
 
-    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(_rc));
+    auto metadata = image::getMetadataFromMap(_mp.getMetadata(_rc));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * scaleStep));
 
     double s = scaleStep;
