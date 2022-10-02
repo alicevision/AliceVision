@@ -27,9 +27,10 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-class IntrinsicsManifold : public utils::CeresManifold {
+class IntrinsicsManifoldSymbolic : public utils::CeresManifold {
  public:
-  explicit IntrinsicsManifold(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+  explicit IntrinsicsManifoldSymbolic(size_t parametersSize, double focalRatio, bool lockFocal,
+                                      bool lockFocalRatio, bool lockCenter, bool lockDistortion)
   : _ambientSize(parametersSize),
     _focalRatio(focalRatio),
     _lockFocal(lockFocal),
@@ -63,7 +64,7 @@ class IntrinsicsManifold : public utils::CeresManifold {
     }
   }
 
-  virtual ~IntrinsicsManifold() = default;
+  virtual ~IntrinsicsManifoldSymbolic() = default;
 
 
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
@@ -672,7 +673,7 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       lockDistortion = true;
     }
 
-    IntrinsicsManifold* subsetManifold = new IntrinsicsManifold(intrinsicBlock.size(), focalRatio,
+    IntrinsicsManifoldSymbolic* subsetManifold = new IntrinsicsManifoldSymbolic(intrinsicBlock.size(), focalRatio,
                                                                 lockFocal, lockRatio, lockCenter, lockDistortion);
 #if ALICEVISION_CERES_HAS_MANIFOLD
     problem.SetManifold(intrinsicBlockPtr, subsetManifold);
