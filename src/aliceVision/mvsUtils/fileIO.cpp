@@ -314,7 +314,8 @@ Matrix3x4 load3x4MatrixFromFile(std::istream& in)
 }
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
+               image::EImageColorSpace colorspace, ECorrectEV correctEV)
 {
     // check image size
     auto checkImageSize = [&path, &mp, camId, &img](){
@@ -337,7 +338,7 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
     // if exposure correction, apply it in linear colorspace and then convert colorspace
     else
     {
-        imageIO::readImage(path, img, imageIO::EImageColorSpace::LINEAR);
+        imageIO::readImage(path, img, image::EImageColorSpace::LINEAR);
         checkImageSize();
 
         oiio::ParamValueList metadata;
@@ -357,7 +358,7 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
             for(int pix = 0; pix < img.size(); ++pix)
                 img[pix] = img[pix] * exposureCompensation;
 
-            imageAlgo::colorconvert(img, imageIO::EImageColorSpace::LINEAR, colorspace);
+            imageAlgo::colorconvert(img, image::EImageColorSpace::LINEAR, colorspace);
         }
     }
 
@@ -373,8 +374,10 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
     }
 }
 
-template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
-template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId,
+                                   ImageRGBf& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId,
+                                    ImageRGBAf& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

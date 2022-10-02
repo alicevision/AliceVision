@@ -109,9 +109,11 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
     processImage(dst, pixelFunc);
 }
 
-void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
 {
     using namespace imageIO;
+    using image::EImageColorSpace;
 
     if(fromColorSpace == toColorSpace)
         return;
@@ -168,7 +170,8 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
     ALICEVISION_LOG_TRACE("Convert image from " << EImageColorSpace_enumToString(fromColorSpace) << " to " << EImageColorSpace_enumToString(toColorSpace));
 }
 
-void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
 {
     oiio::ImageSpec imageSpec(image.width(), image.height(), 3, oiio::TypeDesc::FLOAT);
     std::vector<ColorRGBf>& buffer = image.data();
@@ -177,7 +180,8 @@ void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, im
     colorconvert(imageBuf, fromColorSpace, toColorSpace);
 }
 
-void colorconvert(ImageRGBAf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
 {
     oiio::ImageSpec imageSpec(image.width(), image.height(), 4, oiio::TypeDesc::FLOAT);
     std::vector<ColorRGBAf>& buffer = image.data();
@@ -186,7 +190,8 @@ void colorconvert(ImageRGBAf& image, imageIO::EImageColorSpace fromColorSpace, i
     colorconvert(imageBuf, fromColorSpace, toColorSpace);
 }
 
-void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
+                  image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace)
 {
     dst.copy(src);
     colorconvert(dst, fromColorSpace, toColorSpace);

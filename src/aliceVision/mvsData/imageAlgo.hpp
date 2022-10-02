@@ -39,10 +39,14 @@ void LABtoRGB(oiio::ImageBuf::Iterator<float>& pixel);
 void processImage(oiio::ImageBuf& image, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
 void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
 
-void colorconvert(oiio::ImageBuf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
-void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
-void colorconvert(ImageRGBAf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
-void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
+void colorconvert(oiio::ImageBuf& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace);
+void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace);
+void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace);
+void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
+                  image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace);
 
 /**
  * @brief transpose a given image buffer
