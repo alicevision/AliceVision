@@ -14,13 +14,7 @@ namespace aliceVision {
 class ColorRGBf
 {
 public:
-    union {
-        struct
-        {
-            float r, g, b;
-        };
-        float m[3];
-    };
+    float r, g, b;
 
     inline ColorRGBf()
     {
@@ -103,13 +97,7 @@ public:
 class ColorRGBAf
 {
 public:
-    union {
-        struct
-        {
-            float r, g, b, a;
-        };
-        float m[4];
-    };
+    float r, g, b, a;
 
     inline ColorRGBAf()
     {
