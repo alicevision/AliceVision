@@ -18,7 +18,7 @@ template<typename ColorT>
 class LegacyImage
 {
 public:
-    using T = ColorT;
+    using Tpixel = ColorT;
     using Color = ColorT;
 private:
     std::vector<Color> _data;
