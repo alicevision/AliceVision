@@ -818,6 +818,40 @@ void writeImage(const std::string& path, const Image<RGBColor>& image, EImageCol
                OutputFileColorSpace{EImageColorSpace::LINEAR, imageColorSpace}, metadata);
 }
 
+void writeImage(const std::string& path, const Image<float>& image, OutputFileColorSpace colorspace,
+                const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+{
+    writeImage(path, oiio::TypeDesc::FLOAT, 1, image, colorspace, metadata,roi);
+}
+
+void writeImage(const std::string& path, const Image<RGBAfColor>& image,
+                OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata,
+                const oiio::ROI& roi)
+{
+    writeImage(path, oiio::TypeDesc::FLOAT, 4, image, colorspace, metadata,roi);
+}
+
+void writeImage(const std::string& path, const Image<RGBAColor>& image,
+                OutputFileColorSpace colorspace,
+                const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::UINT8, 4, image, colorspace, metadata);
+}
+
+void writeImage(const std::string& path, const Image<RGBfColor>& image,
+                OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata,
+                const oiio::ROI& roi)
+{
+    writeImage(path, oiio::TypeDesc::FLOAT, 3, image, colorspace, metadata, roi);
+}
+
+void writeImage(const std::string& path, const Image<RGBColor>& image,
+                OutputFileColorSpace colorspace,
+                const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::UINT8, 3, image, colorspace, metadata);
+}
+
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
                  const IndexT viewId, const std::string & srcImage)
 {
