@@ -541,7 +541,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
         // Calculate laplacianPyramid
         std::vector<image::Image<image::RGBfColor>> pyramidL; //laplacian pyramid
-        laplacianPyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
+        imageAlgo::laplacianPyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
 
         // for each output texture file
         for(const auto& c : cameraContributions)

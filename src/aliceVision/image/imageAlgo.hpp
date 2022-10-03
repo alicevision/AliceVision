@@ -114,6 +114,26 @@ void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBu
                const std::vector<float>& alphaBuffer);
 void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer);
 
+/**
+* @brief Calculate the difference between images of different sizes
+* @param [inImgDownscaled] the smaller image
+* @param [outImg] the difference
+* @param [downscale] the downscale coefficient between image sizes
+*/
+void imageDiff(const image::Image<image::RGBfColor>& inImg,
+               const image::Image<image::RGBfColor>& inImgDownscaled,
+               image::Image<image::RGBfColor>& outImg, unsigned int downscale);
+
+/**
+* @brief Calculate the laplacian pyramid of a given image,
+*        ie. its decomposition in frequency bands
+* @param [out_pyramidL] the laplacian pyramid
+* @param [nbBand] the number of frequency bands
+* @param [downscale] the downscale coefficient between floors of the pyramid
+*/
+void laplacianPyramid(std::vector<image::Image<image::RGBfColor>>& out_pyramidL,
+                      const image::Image<image::RGBfColor>& image, int nbBand, unsigned int downscale);
+
 
 }
 }
