@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
   ALICEVISION_LOG_INFO("Load input image.");
   //Load input image
-  Image inImg;
+  LegacyImage inImg;
   int w, h;
   imageIO::readImage(inputImgPath, w, h, inImg.data(), imageIO::EImageColorSpace::SRGB);
   ALICEVISION_LOG_INFO("Input image loaded: " << inImg.data().size());
@@ -105,12 +105,12 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Compute MBB.");
   //Calculate bands
   MultiBandBlending multiBandBlending;
-  std::vector<Image> pyramidL; //laplacian pyramid
+  std::vector<LegacyImage> pyramidL; //laplacian pyramid
   multiBandBlending.laplacianDownscalePyramid(pyramidL, inImg, nbBand, downscaleMBB);
 
   ALICEVISION_LOG_INFO("Write bands");
   //Write bands + reconstitution
-  Image outImg(inImg.width(), inImg.height());
+  LegacyImage outImg(inImg.width(), inImg.height());
   for(int b = 0; b < nbBand; ++b)
   {
       ALICEVISION_LOG_INFO("Writing band :" + std::to_string(b));

@@ -15,7 +15,7 @@
 namespace aliceVision {
 
 template<typename ColorT>
-class Image
+class LegacyImage
 {
 public:
     using Color = ColorT;
@@ -25,22 +25,22 @@ private:
     int _height{0};
 
 public:
-    Image() = default;
+    LegacyImage() = default;
 
-    Image(int width, int height)
+    LegacyImage(int width, int height)
         : _width(width)
         , _height(height)
     {
         _data.resize(width*height);
     }
 
-    Image(Color* data, int  width, int  height) : Image(width, height)
+    LegacyImage(Color* data, int  width, int  height) : LegacyImage(width, height)
     {
         for(int i = 0; i < _width*_height; ++i)
             _data[i] = data[i];
     }
 
-    Image(const Image& other)
+    LegacyImage(const LegacyImage& other)
      : _width(other._width)
      , _height(other._height)
      , _data(other._data)
@@ -60,14 +60,14 @@ public:
         }
     }
 
-    void swap(Image& other)
+    void swap(LegacyImage& other)
     {
         std::swap(_width, other._width);
         std::swap(_height, other._height);
         _data.swap(other._data);
     }
 
-    Image& operator=(const Image& param)
+    LegacyImage& operator=(const LegacyImage& param)
     {
         _width = param._width;
         _height = param._height;
@@ -122,8 +122,8 @@ public:
     }
 };
 
-using ImageRGBf = Image<ColorRGBf>;
-using ImageRGBAf = Image<ColorRGBAf>;
+using ImageRGBf = LegacyImage<ColorRGBf>;
+using ImageRGBAf = LegacyImage<ColorRGBAf>;
 
 
 /**

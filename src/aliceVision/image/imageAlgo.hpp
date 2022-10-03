@@ -15,8 +15,8 @@ namespace aliceVision
 
 class rgb;
 class ColorRGBf;
-template<typename Color> class Image;
-using ImageRGBf = Image<ColorRGBf>;
+template<typename Color> class LegacyImage;
+using ImageRGBf = LegacyImage<ColorRGBf>;
 
 
 namespace imageAlgo
