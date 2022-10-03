@@ -107,6 +107,37 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
     processImage(dst, pixelFunc);
 }
 
+void colorconvert(oiio::ImageBuf& imgBuf, const std::string& fromColorSpaceOIIOName,
+                  image::EImageColorSpace toColorSpace)
+{
+    using image::EImageColorSpace;
+
+    if (fromColorSpaceOIIOName == image::EImageColorSpace_enumToOIIOString(toColorSpace))
+        return;
+
+    if (!image::EImageColorSpace_isSupportedOIIOstring(fromColorSpaceOIIOName))
+    {
+        if (!EImageColorSpace_isSupportedOIIOEnum(toColorSpace))
+        {
+            // We don't know about OIIO format and OIIO does not know about the destination format.
+            // Convert to LINEAR and then do conversion as usual (colorconvert will handle
+            // formats unknown to OIIO)
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, fromColorSpaceOIIOName,
+                                             image::EImageColorSpace_enumToOIIOString(EImageColorSpace::LINEAR));
+            colorconvert(imgBuf, EImageColorSpace::LINEAR, toColorSpace);
+            return;
+        }
+        // We don't know about OIIO format, but OIIO knows about the destination format
+        oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, fromColorSpaceOIIOName,
+                                         image::EImageColorSpace_enumToOIIOString(toColorSpace));
+    }
+    else
+    {
+        auto fromColorSpace = image::EImageColorSpace_OIIOstringToEnum(fromColorSpaceOIIOName);
+        colorconvert(imgBuf, fromColorSpace, toColorSpace);
+    }
+}
+
 void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace)
 {

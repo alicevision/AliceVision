@@ -47,6 +47,8 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType);
 std::string EImageColorSpace_enumToString(const EImageColorSpace dataType);
 std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace);
 EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace);
+bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace);
+bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace);
 std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType);
 std::istream& operator>>(std::istream& in, EImageColorSpace& dataType);
 

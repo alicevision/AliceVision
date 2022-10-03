@@ -38,6 +38,8 @@ void LABtoRGB(oiio::ImageBuf::Iterator<float>& pixel);
 void processImage(oiio::ImageBuf& image, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
 void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
 
+void colorconvert(oiio::ImageBuf& image, const std::string& fromColorSpaceOIIOName,
+                  image::EImageColorSpace toColorSpace);
 void colorconvert(oiio::ImageBuf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace);
 void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
