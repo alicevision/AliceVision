@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/image/Color.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -143,7 +143,7 @@ public:
 
     bool computeNormalMap( NormalMapping* mapping,
                            const std::vector<float>& depthMap,
-                           std::vector<ColorRGBf>&   normalMap,
+                           std::vector<image::RGBfColor>& normalMap,
                            int rc, int scale,
                            float igammaC, float igammaP, int wsh);
 

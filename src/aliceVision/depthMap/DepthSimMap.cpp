@@ -7,7 +7,7 @@
 #include "DepthSimMap.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/Color.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
@@ -358,7 +358,7 @@ void DepthSimMap::getSimMap(StaticVector<float>& out_simMap) const
 void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 {
     const int bufferWidth = 2 * _w;
-    std::vector<ColorRGBf> colorBuffer(bufferWidth * _h);
+    std::vector<image::RGBfColor> colorBuffer(bufferWidth * _h);
 
     try
     {

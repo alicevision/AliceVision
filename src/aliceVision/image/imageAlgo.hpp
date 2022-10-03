@@ -14,9 +14,8 @@ namespace aliceVision
 {
 
 class rgb;
-class ColorRGBf;
 template<typename Color> class LegacyImage;
-using ImageRGBf = LegacyImage<ColorRGBf>;
+using ImageRGBf = LegacyImage<image::RGBfColor>;
 
 
 namespace imageAlgo
@@ -57,7 +56,7 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
 void transposeImage(int width, int height, std::vector<unsigned char>& buffer);
 void transposeImage(int width, int height, std::vector<rgb>& buffer);
 void transposeImage(int width, int height, std::vector<float>& buffer);
-void transposeImage(int width, int height, std::vector<ColorRGBf>& buffer);
+void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer);
 void transposeImage(ImageRGBf& image);
 
 /**
@@ -75,7 +74,10 @@ void transposeImage(ImageRGBf& image);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<ColorRGBf>& inBuffer, std::vector<ColorRGBf>& outBuffer, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int inWidth, int inHeight, int downscale,
+                 const std::vector<image::RGBfColor>& inBuffer,
+                 std::vector<image::RGBfColor>& outBuffer,
+                 const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const ImageRGBf& inImage, ImageRGBf& outImage, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const ImageRGBAf& inImage, ImageRGBAf& outImage, const std::string& filter = "", float filterSize = 0);
 
@@ -94,7 +96,10 @@ void resizeImage(int downscale, const ImageRGBAf& inImage, ImageRGBAf& outImage,
 void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<ColorRGBf>& inBuffer, std::vector<ColorRGBf>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor>& inBuffer,
+                   std::vector<image::RGBfColor>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(const ImageRGBf& inImage, ImageRGBf& outImage, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
 /**
@@ -104,7 +109,8 @@ void convolveImage(const ImageRGBf& inImage, ImageRGBf& outImage, const std::str
  * @param[in,out] colorBuffer The image buffer to fill
  * @param[in] alphaBuffer The input alpha buffer containing 0.0/1.0 for empty/valid pixels
  */
-void fillHoles(int inWidth, int inHeight, std::vector<ColorRGBf>& colorBuffer, const std::vector<float>& alphaBuffer);
+void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
+               const std::vector<float>& alphaBuffer);
 void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer);
 
 

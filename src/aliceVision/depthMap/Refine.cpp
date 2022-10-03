@@ -79,9 +79,9 @@ void Refine::filterMaskedPixels(DepthSimMap& out_depthSimMap)
     {
         for(int x = 0; x < w; ++x)
         {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
+            const image::RGBAfColor& floatRGBA = img->at(x, y);
 
-            if(floatRGBA.a < 0.1f)
+            if (floatRGBA.a() < 0.1f)
             {
                 DepthSim& depthSim = out_depthSimMap._dsm[y * w + x];
 

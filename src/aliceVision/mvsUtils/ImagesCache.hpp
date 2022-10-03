@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <aliceVision/image/Color.hpp>
 #include <aliceVision/image/LegacyImage.hpp>
 #include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>

@@ -86,12 +86,12 @@ void FrameCacheEntry::fillHostFrameFromImageCache(mvsUtils::ImagesCache<ImageRGB
     {
         for(int x = 0; x < w; ++x)
         {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
+            const image::RGBAfColor& floatRGBA = img->at(x, y);
             CudaRGBA& pix_rgba = (*hostFrame)(x, y);
-            pix_rgba.x = floatRGBA.r * 255.0f;
-            pix_rgba.y = floatRGBA.g * 255.0f;
-            pix_rgba.z = floatRGBA.b * 255.0f;
-            pix_rgba.w = floatRGBA.a * 255.0f;
+            pix_rgba.x = floatRGBA.r() * 255.0f;
+            pix_rgba.y = floatRGBA.g() * 255.0f;
+            pix_rgba.z = floatRGBA.b() * 255.0f;
+            pix_rgba.w = floatRGBA.a() * 255.0f;
         }
     }
     ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -b- Copy to HMH elapsed time: " << timer.elapsedMs() << " ms.");

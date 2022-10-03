@@ -10,9 +10,9 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
-#include <aliceVision/image/Color.hpp>
 #include <aliceVision/image/LegacyImage.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -312,9 +312,11 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 
     //calculate the maximum number of atlases in memory in MB
     system::MemoryInfo memInfo = system::getMemoryInfo();
-    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(ColorRGBf) / std::pow(2,20); //MB
+    const std::size_t imageMaxMemSize =
+            mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(image::RGBfColor) / std::pow(2,20); //MB
     const std::size_t imagePyramidMaxMemSize = texParams.nbBand * imageMaxMemSize;
-    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(ColorRGBf)+sizeof(float)) / std::pow(2,20); //MB
+    const std::size_t atlasContribMemSize =
+            texParams.textureSide * texParams.textureSide * (sizeof(image::RGBfColor)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
     const int availableRam = int(memInfo.availableRam / std::pow(2,20));
@@ -628,7 +630,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                continue;
 
                            // If the color is pure zero (ie. no contributions), we consider it as an invalid pixel.
-                           if(camImg.getInterpolateColor(pixRC) == ColorRGBf(0.f, 0.f, 0.f))
+                           if(camImg.getInterpolateColor(pixRC) == image::RGBfColor(0.f, 0.f, 0.f))
                                continue;
 
                            // Fill the accumulated pyramid for this pixel
@@ -1281,7 +1283,7 @@ inline Eigen::Matrix3d computeTriangleTransform(const Mesh& mesh, int f, const P
 
 inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f,
                                 const Eigen::Matrix3d& m, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB,
-                                float& out_height, ColorRGBf& out_normal)
+                                float& out_height, image::RGBfColor& out_normal)
 {
     GEO::vec3 intersectionPoint = t * qB + (1.0 - t) * qA;
     out_height = q.distance(intersectionPoint) * orientation;
@@ -1293,7 +1295,7 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 
     Eigen::Vector3d dNormal = m * toEigen(denseMeshNormal);
     dNormal.normalize();
-    out_normal = ColorRGBf(dNormal(0), dNormal(1), dNormal(2));
+    out_normal = image::RGBfColor(dNormal(0), dNormal(1), dNormal(2));
 }
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
@@ -1304,7 +1306,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
 
-    std::vector<ColorRGBf> normalMap(texParams.textureSide * texParams.textureSide);
+    std::vector<image::RGBfColor> normalMap(texParams.textureSide * texParams.textureSide);
     std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
     const auto& triangles = _atlases[atlasID];
 
@@ -1419,7 +1421,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                     else
                     {
                         heightMap[xyoffset] = 0.0f;
-                        normalMap[xyoffset] = ColorRGBf(0.0f, 0.0f, 0.0f);
+                        normalMap[xyoffset] = image::RGBfColor(0.0f, 0.0f, 0.0f);
                     }
                 }
             }
@@ -1434,7 +1436,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         if(texParams.downscale > 1)
         {
             ALICEVISION_LOG_INFO("Downscaling normal map (" << texParams.downscale << "x).");
-            std::vector<ColorRGBf> resizedBuffer;
+            std::vector<image::RGBfColor> resizedBuffer;
             outTextureSide = texParams.textureSide / texParams.downscale;
             // use nearest-neighbor interpolation to avoid meaningless interpolation of normals on edges.
             const std::string interpolation = "box";
@@ -1448,10 +1450,13 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // Y: -1 to +1 : Green : 0 to 255
         // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
         for(unsigned int i = 0; i < normalMap.size(); ++i)
-            // normalMap[i] = ColorRGBf(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B:
+            // normalMap[i] = image::RGBfColor(normalMap[i].r * 0.5 + 0.5,
+            //                                 normalMap[i].g * 0.5 + 0.5,
+            //                                 normalMap[i].b); // B:
             // 0:+1 => 0-255
-            normalMap[i] = ColorRGBf(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5,
-                                    normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
+            normalMap[i] = image::RGBfColor(normalMap[i].r() * 0.5 + 0.5,
+                                            normalMap[i].g() * 0.5 + 0.5,
+                                            normalMap[i].b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
         const std::string name = "Normal_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
         bfs::path normalMapPath = outPath / name;

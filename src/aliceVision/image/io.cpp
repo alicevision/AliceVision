@@ -942,13 +942,13 @@ void readImage(const std::string& path, int& width, int& height, std::vector<flo
     readImage(path, oiio::TypeDesc::FLOAT, 1, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer,
+void readImage(const std::string& path, int& width, int& height, std::vector<RGBfColor>& buffer,
                image::EImageColorSpace toColorSpace)
 {
     readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBAf>& buffer,
+void readImage(const std::string& path, int& width, int& height, std::vector<RGBAfColor>& buffer,
                image::EImageColorSpace toColorSpace)
 {
     readImage(path, oiio::TypeDesc::FLOAT, 4, width, height, buffer, toColorSpace);
@@ -1059,7 +1059,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
     writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<ColorRGBf>& buffer,
+void writeImage(const std::string& path, int width, int height, const std::vector<RGBfColor>& buffer,
                 EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
                 const oiio::ParamValueList& metadata)
 {

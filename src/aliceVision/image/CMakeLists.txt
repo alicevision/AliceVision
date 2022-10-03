@@ -3,7 +3,6 @@ add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 # Headers
 set(image_files_headers
   all.hpp
-  Color.hpp
   Image.hpp
   LegacyImage.hpp
   imageAlgo.hpp

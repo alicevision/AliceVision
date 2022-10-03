@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/image/Color.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 
@@ -122,8 +122,8 @@ public:
     }
 };
 
-using ImageRGBf = LegacyImage<ColorRGBf>;
-using ImageRGBAf = LegacyImage<ColorRGBAf>;
+using ImageRGBf = LegacyImage<image::RGBfColor>;
+using ImageRGBAf = LegacyImage<image::RGBAfColor>;
 
 
 /**
