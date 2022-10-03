@@ -68,7 +68,9 @@ enum class EImageQuality
 };
 
 std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace);
+std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace);
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace);
+EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace);
 
 /**
  * @brief get informations about each image quality

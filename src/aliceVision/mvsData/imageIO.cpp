@@ -41,13 +41,27 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
 {
     switch(colorSpace)
     {
-    case EImageColorSpace::SRGB: return "sRGB"; // WARNING: string should match with OIIO definitions or implemented conversion
+    case EImageColorSpace::SRGB: return "sRGB";
     case EImageColorSpace::LINEAR: return "Linear";
     case EImageColorSpace::LAB: return "LAB";
     case EImageColorSpace::XYZ: return "XYZ";
     default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
+}
+
+std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
+{
+    switch(colorSpace)
+    {
+        case EImageColorSpace::SRGB: return "sRGB"; // WARNING: string should match with OIIO definitions or implemented conversion
+        case EImageColorSpace::LINEAR: return "Linear";
+        case EImageColorSpace::LAB: return "LAB";
+        case EImageColorSpace::XYZ: return "XYZ";
+        default: ;
+    }
+    throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " +
+                            std::to_string(int(colorSpace)));
 }
 
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace)
@@ -60,6 +74,15 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace)
     throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
 
+EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace)
+{
+    if (colorspace == "Linear") return EImageColorSpace::LINEAR;
+    if (colorspace == "sRGB") return EImageColorSpace::SRGB;
+    if (colorspace == "LAB") return  EImageColorSpace::LAB;
+    if (colorspace == "XYZ") return EImageColorSpace::XYZ;
+
+    throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
+}
 
 std::string EImageQuality_informations()
 {
@@ -156,7 +179,7 @@ void readImage(const std::string& path,
 
     const std::string& fromColorSpaceName = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
-    const EImageColorSpace fromColorSpace = EImageColorSpace_stringToEnum(fromColorSpaceName);
+    const EImageColorSpace fromColorSpace = EImageColorSpace_OIIOstringToEnum(fromColorSpaceName);
 
     if(toColorSpace != EImageColorSpace::NO_CONVERSION)
         imageAlgo::colorconvert(inBuf, fromColorSpace, toColorSpace);
