@@ -6,11 +6,11 @@
 
 #include "fileIO.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/LegacyImage.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/image/imageAlgo.hpp>
-#include <aliceVision/mvsData/Image.hpp>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

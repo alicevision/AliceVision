@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "Image.hpp"
+#include "LegacyImage.hpp"
 
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>

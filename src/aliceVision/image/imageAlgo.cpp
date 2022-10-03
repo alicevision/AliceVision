@@ -2,8 +2,8 @@
 
 
 #include <aliceVision/image/Color.hpp>
+#include <aliceVision/image/LegacyImage.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
-#include <aliceVision/mvsData/Image.hpp>
 
 
 #include <OpenImageIO/imageio.h>

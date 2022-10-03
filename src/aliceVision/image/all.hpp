@@ -13,6 +13,7 @@
 #endif
 
 #include "aliceVision/image/Image.hpp"
+#include "aliceVision/image/LegacyImage.hpp"
 #include "aliceVision/image/pixelTypes.hpp"
 #include "aliceVision/image/convertion.hpp"
 #include "aliceVision/image/drawing.hpp"

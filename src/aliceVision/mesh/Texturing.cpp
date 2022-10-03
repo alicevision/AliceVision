@@ -11,10 +11,10 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/image/Color.hpp>
+#include <aliceVision/image/LegacyImage.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 
