@@ -112,14 +112,6 @@ public:
         const Color out = u + (d - u) * vi;
         return out;
     }
-
-    Color getNearestPixelColor(const Point2d& pix) const
-    {
-        const int xp = std::min(static_cast<int>(pix.x), _width - 1);
-        const int yp = std::min(static_cast<int>(pix.y), _height - 1);
-        const Color lu = _data.at(yp * _width + xp);
-        return lu;
-    }
 };
 
 using ImageRGBf = LegacyImage<image::RGBfColor>;
