@@ -89,7 +89,7 @@ struct TexturingParams
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
 
     image::EImageFileType textureFileType = image::EImageFileType::NONE;
-    imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
+    image::EImageColorSpace processColorspace = image::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
     mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity

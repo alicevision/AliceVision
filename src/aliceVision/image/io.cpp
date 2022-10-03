@@ -36,6 +36,8 @@ std::string EImageColorSpace_informations()
            EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::ACES) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::LAB) + ", " +
+           EImageColorSpace_enumToString(EImageColorSpace::XYZ) + ", " +
            EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
 }
 
@@ -53,6 +55,10 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
         return EImageColorSpace::ACES;
     if(type == "acescg")
         return EImageColorSpace::ACEScg;
+    if(type == "lab")
+        return EImageColorSpace::LAB;
+    if(type == "xyz")
+        return EImageColorSpace::XYZ;
     if(type == "no_conversion")
         return EImageColorSpace::NO_CONVERSION;
 
@@ -73,10 +79,39 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
             return "aces";
         case EImageColorSpace::ACEScg:
             return "acescg";
+        case EImageColorSpace::LAB:
+            return "lab";
+        case EImageColorSpace::XYZ:
+            return "xyz";
         case EImageColorSpace::NO_CONVERSION:
             return "no_conversion";
     }
     throw std::out_of_range("Invalid EImageColorSpace enum");
+}
+
+std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
+{
+     // WARNING: string should match with OIIO definitions or implemented conversion
+    switch(colorSpace)
+    {
+        case EImageColorSpace::SRGB: return "sRGB";
+        case EImageColorSpace::LINEAR: return "Linear";
+        case EImageColorSpace::LAB: return "LAB";
+        case EImageColorSpace::XYZ: return "XYZ";
+        default: ;
+    }
+    throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " +
+                            std::to_string(int(colorSpace)));
+}
+
+EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace)
+{
+    if (colorspace == "Linear") return EImageColorSpace::LINEAR;
+    if (colorspace == "sRGB") return EImageColorSpace::SRGB;
+    if (colorspace == "LAB") return  EImageColorSpace::LAB;
+    if (colorspace == "XYZ") return EImageColorSpace::XYZ;
+
+    throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
 
 std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType)

@@ -53,12 +53,17 @@ private:
 
     std::list<std::future<void>> _asyncObjects;
 
-    imageIO::EImageColorSpace _colorspace{imageIO::EImageColorSpace::AUTO};
+    image::EImageColorSpace _colorspace{image::EImageColorSpace::AUTO};
     ECorrectEV _correctEV{ECorrectEV::NO_CORRECTION};
 
 public:
-    ImagesCache( const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
-    ImagesCache( const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+                ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+
+    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+                std::vector<std::string>& imagesNames,
+                ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+
     void initIC( std::vector<std::string>& imagesNames );
     void setCacheSize(int nbPreload);
     void setCorrectEV(const ECorrectEV correctEV) { _correctEV = correctEV; }

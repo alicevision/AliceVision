@@ -53,7 +53,7 @@ int aliceVision_main(int argc, char* argv[])
 
     std::string outputFolder;
     std::string imagesFolder;
-    std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
+    std::string processColorspaceName = image::EImageColorSpace_enumToString(image::EImageColorSpace::SRGB);
     bool flipNormals = false;
     bool correctEV = false;
 
@@ -182,7 +182,7 @@ int aliceVision_main(int argc, char* argv[])
     GEO::initialize();
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
-    texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
+    texParams.processColorspace = image::EImageColorSpace_stringToEnum(processColorspaceName);
 
     texParams.correctEV = mvsUtils::ECorrectEV::NO_CORRECTION;
     if(correctEV) { texParams.correctEV = mvsUtils::ECorrectEV::APPLY_CORRECTION; }

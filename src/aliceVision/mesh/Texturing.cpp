@@ -305,7 +305,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     }
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    ALICEVISION_LOG_INFO("Texturing in " + imageIO::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
+    ALICEVISION_LOG_INFO("Texturing in " + image::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
     mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, texParams.processColorspace, texParams.correctEV);
     imageCache.setCacheSize(2);
     ALICEVISION_LOG_INFO("Images loaded from cache with: " + ECorrectEV_enumToString(texParams.correctEV));
@@ -758,7 +758,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
     toGeoMesh(*mesh, geoSparseMesh);
     GEO::compute_normals(geoSparseMesh);
 
-    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, imageIO::EImageColorSpace::NO_CONVERSION);
+    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, image::EImageColorSpace::NO_CONVERSION);
     
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, bumpMappingParams);
@@ -902,7 +902,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
-    OutputFileColorSpace colorspace(texParams.processColorspace, EImageColorSpace::AUTO);
+    OutputFileColorSpace colorspace(texParams.processColorspace, image::EImageColorSpace::AUTO);
     writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
@@ -1458,7 +1458,8 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
-        imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::NO_CONVERSION,imageIO::EImageColorSpace::NO_CONVERSION);
+        imageIO::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::NO_CONVERSION,
+                                                       image::EImageColorSpace::NO_CONVERSION);
         imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
     }
 
@@ -1486,7 +1487,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         //}
 
         // Save Bump Map
-        imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::AUTO);
+        imageIO::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::AUTO);
         if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);

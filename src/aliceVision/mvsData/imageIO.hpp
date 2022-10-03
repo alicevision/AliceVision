@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <string>
-
+#include <aliceVision/image/io.hpp>
 #include <OpenImageIO/paramlist.h>
+#include <string>
 
 namespace oiio = OIIO;
 
@@ -23,34 +23,20 @@ using ImageRGBAf = Image<ColorRGBAf>;
 
 namespace imageIO {
 
-/**
- * @brief Available image color space for pipeline input / output
- */
-enum class EImageColorSpace
-{
-  AUTO,
-  LINEAR,
-  SRGB,
-  LAB,
-  XYZ,
-  NO_CONVERSION
-};
-
-
 struct OutputFileColorSpace
 {
-    EImageColorSpace from{EImageColorSpace::LINEAR};
-    EImageColorSpace to{EImageColorSpace::AUTO};
+    image::EImageColorSpace from{image::EImageColorSpace::LINEAR};
+    image::EImageColorSpace to{image::EImageColorSpace::AUTO};
 
-    OutputFileColorSpace(EImageColorSpace from_, EImageColorSpace to_)
+    OutputFileColorSpace(image::EImageColorSpace from_, image::EImageColorSpace to_)
         : from(from_)
         , to(to_)
     {
     }
     /// @brief Assumes that @p from is LINEAR
-    explicit OutputFileColorSpace(EImageColorSpace to_)
+    explicit OutputFileColorSpace(image::EImageColorSpace to_)
     {
-        if(to_ == EImageColorSpace::NO_CONVERSION)
+        if(to_ == image::EImageColorSpace::NO_CONVERSION)
             to = from;
         else
             to = to_;
@@ -66,11 +52,6 @@ enum class EImageQuality
   OPTIMIZED,
   LOSSLESS
 };
-
-std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace);
-std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace);
-EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace);
-EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace);
 
 /**
  * @brief get informations about each image quality
@@ -123,14 +104,20 @@ bool isSupportedUndistortFormat(const std::string &ext);
  * @param[out] buffer The output image buffer
  * @param[in] image color space
  */
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBAf>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer,
+               image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer,
+               image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer,
+               image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer,
+               image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer,
+               image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBAf>& buffer,
+               image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, ImageRGBf& image, image::EImageColorSpace toColorSpace);
+void readImage(const std::string& path, ImageRGBAf& image, image::EImageColorSpace toColorSpace);
 
 /**
  * @brief write an image with a given path and buffer
