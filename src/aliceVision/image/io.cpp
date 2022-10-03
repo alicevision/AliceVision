@@ -413,8 +413,13 @@ void readImage(const std::string& path,
                Image<T>& image,
                const ImageReadOptions & imageReadOptions)
 {
-  // check requested channels number
-  assert(nchannels == 1 || nchannels >= 3);
+    ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
+
+    // check requested channels number
+    if (nchannels == 0)
+        throw std::runtime_error("Requested channels is 0. Image file: '" + path + "'.");
+    if (nchannels == 2)
+        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
   if(!fs::exists(path))
     ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
@@ -436,33 +441,25 @@ void readImage(const std::string& path,
   if(!inBuf.initialized())
     ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
 
-  // check picture channels number
-  if(inBuf.spec().nchannels != 1 && inBuf.spec().nchannels < 3)
-    ALICEVISION_THROW_ERROR("Can't load channels of image file: '" << path << "', nchannels=" << inBuf.spec().nchannels);
+    // check picture channels number
+    if (inBuf.spec().nchannels == 0)
+        throw std::runtime_error("No channel in the input image file: '" + path + "'.");
+    if (inBuf.spec().nchannels == 2)
+        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
-  // color conversion
-  if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
-    throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
+    // color conversion
+    if (imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
+        throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
 
-  const std::string& colorSpace = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
-  ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
+    // Get color space name. Default image color space is sRGB
+    const std::string& fromColorSpaceName = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB");
 
-  if(imageReadOptions.outputColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
-  {
-    if (colorSpace != "sRGB")
+    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
+
+    if (imageReadOptions.outputColorSpace != image::EImageColorSpace::NO_CONVERSION)
     {
-      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
-      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
+        imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.outputColorSpace);
     }
-  }
-  else if(imageReadOptions.outputColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
-  {
-    if (colorSpace != "Linear")
-    {
-      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
-      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
-    }
-  }
 
   // convert to grayscale if needed
   if(nchannels == 1 && inBuf.spec().nchannels >= 3)
