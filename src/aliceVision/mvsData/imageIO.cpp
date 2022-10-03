@@ -178,19 +178,6 @@ void readImageSpec(const std::string& path,
   in->close();
 }
 
-void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata)
-{
-  ALICEVISION_LOG_DEBUG("[IO] Read Image Metadata: " << path);
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
-
-  if(!in)
-    throw std::runtime_error("Can't find/open image file '" + path + "'.");
-
-  metadata = in->spec().extra_attribs;
-
-  in->close();
-}
-
 bool isSupportedUndistortFormat(const std::string &ext)
 {
   static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"};

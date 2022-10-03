@@ -7,6 +7,7 @@
 #include "MultiViewParams.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -122,7 +123,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         const bool fileExists = fs::exists(imgParams.path);
         if(fileExists)
         {
-            imageIO::readImageMetadata(imgParams.path, metadata);
+            metadata = image::readImageMetadata(imgParams.path);
             scaleIt = metadata.find("AliceVision:downscale");
             pIt = metadata.find("AliceVision:P");
         }
@@ -653,8 +654,7 @@ StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point
     tcams.reserve(getNbCameras());
     for(int rc = 0; rc < getNbCameras(); rc++)
     {
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(getImagePath(rc), metadata);
+        const auto metadata = image::readImageMetadata(getImagePath(rc));
 
         const float minDepth = metadata.get_float("AliceVision:minDepth", -1);
         const float maxDepth = metadata.get_float("AliceVision:maxDepth", -1);

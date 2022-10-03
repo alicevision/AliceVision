@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Fuser.hpp"
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
@@ -35,8 +36,7 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
     for(int rc = 0; rc < mp.ncams; rc++)
     {
         const std::string filename = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale);
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(filename, metadata);
+        const auto metadata = image::readImageMetadata(filename);
         int nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
         if(nbDepthValues < 0)
