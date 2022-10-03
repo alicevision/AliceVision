@@ -21,6 +21,7 @@
 #include "aliceVision/image/resampling.hpp"
 #include "aliceVision/image/diffusion.hpp"
 #include "aliceVision/image/concat.hpp"
+#include <aliceVision/image/imageAlgo.hpp>
 #include "aliceVision/image/io.hpp"
 #include "aliceVision/image/convolutionBase.hpp"
 #include "aliceVision/image/convolution.hpp"

@@ -9,7 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/depthMap/Refine.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/Sgm.hpp>
@@ -109,8 +109,6 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
 
 void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
 {
-    using namespace imageIO;
-    
     const float gammaC = 1.0f;
     const float gammaP = 1.0f;
     const int wsh = 3;
@@ -136,9 +134,9 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
             normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
 
             cps.computeNormalMap(mapping, depthMap, normalMap, rc, 1, gammaC, gammaP, wsh);
-            writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap,
-                       EImageQuality::LOSSLESS,
-                       OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION));
+            image::writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap,
+                              image::EImageQuality::LOSSLESS,
+                              image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION));
         }
     }
     cps.deleteNormalMapping(mapping);

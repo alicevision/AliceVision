@@ -333,13 +333,13 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
 
     if(correctEV == ECorrectEV::NO_CORRECTION)
     {
-        imageIO::readImage(path, img, colorspace);
+        image::readImage(path, img, colorspace);
         checkImageSize();
     }
     // if exposure correction, apply it in linear colorspace and then convert colorspace
     else
     {
-        imageIO::readImage(path, img, image::EImageColorSpace::LINEAR);
+        image::readImage(path, img, image::EImageColorSpace::LINEAR);
         checkImageSize();
 
         const auto metadata = image::readImageMetadata(path);

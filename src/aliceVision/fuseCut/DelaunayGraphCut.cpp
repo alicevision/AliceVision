@@ -17,7 +17,7 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/alicevision_omp.hpp>
@@ -300,8 +300,8 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         int width, height;
         {
             const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
-            imageIO::readImage(depthMapFilepath, width, height, depthMap,
-                               image::EImageColorSpace::NO_CONVERSION);
+            image::readImage(depthMapFilepath, width, height, depthMap,
+                             image::EImageColorSpace::NO_CONVERSION);
             if(depthMap.empty())
             {
                 ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -313,8 +313,8 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             // else init with a constant value.
             if(boost::filesystem::exists(simMapFilepath))
             {
-                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap,
-                                   image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(simMapFilepath, wTmp, hTmp, simMap,
+                                 image::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath +
                                              ", " + depthMapFilepath);
@@ -952,8 +952,8 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
             int width, height;
             {
                 const std::string depthMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap,
-                                   image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(depthMapFilepath, width, height, depthMap,
+                                 image::EImageColorSpace::NO_CONVERSION);
                 if(depthMap.empty())
                 {
                     ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -1095,7 +1095,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             int width, height;
             {
                 const std::string depthMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap, image::EImageColorSpace::NO_CONVERSION);
+                image::readImage(depthMapFilepath, width, height, depthMap,
+                                 image::EImageColorSpace::NO_CONVERSION);
                 if(depthMap.empty())
                 {
                     ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -1107,7 +1108,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 // else init with a constant value.
                 if(boost::filesystem::exists(simMapFilepath))
                 {
-                    imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, image::EImageColorSpace::NO_CONVERSION);
+                    image::readImage(simMapFilepath, wTmp, hTmp, simMap,
+                                     image::EImageColorSpace::NO_CONVERSION);
                     if(wTmp != width || hTmp != height)
                         throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
                     {
@@ -1127,8 +1129,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 // else init with a constant value.
                 if(boost::filesystem::exists(nmodMapFilepath))
                 {
-                    imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
-                                       image::EImageColorSpace::NO_CONVERSION);
+                    image::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
+                                     image::EImageColorSpace::NO_CONVERSION);
                     if(wTmp != width || hTmp != height)
                         throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
                 }

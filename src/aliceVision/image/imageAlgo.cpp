@@ -112,7 +112,6 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
 void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace)
 {
-    using namespace imageIO;
     using image::EImageColorSpace;
 
     if(fromColorSpace == toColorSpace)

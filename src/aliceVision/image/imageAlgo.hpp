@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/imagebufalgo_util.h>

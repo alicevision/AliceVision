@@ -11,10 +11,10 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/utils/filesIO.hpp>
@@ -77,7 +77,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder, 
                 [&view](const fs::path& path) 
                 {
-                    return (path.stem() == std::to_string(view.getViewId()) && (imageIO::isSupportedUndistortFormat(path.extension().string())));
+                    return (path.stem() == std::to_string(view.getViewId()) &&
+                            (image::isSupportedUndistortFormat(path.extension().string())));
                 }
             );
 

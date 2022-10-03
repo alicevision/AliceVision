@@ -6,7 +6,7 @@
 
 #include <aliceVision/mesh/MultiBandBlending.hpp>
 #include <aliceVision/mvsData/Image.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision//mvsData/Color.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>

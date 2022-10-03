@@ -6,7 +6,7 @@
 
 #include "LegacyImage.hpp"
 
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 
 

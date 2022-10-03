@@ -12,10 +12,10 @@
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/image/Color.hpp>
 #include <aliceVision/image/LegacyImage.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 
 #include <geogram/basic/common.h>
@@ -901,9 +901,8 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
-    using namespace imageIO;
-    OutputFileColorSpace colorspace(texParams.processColorspace, image::EImageColorSpace::AUTO);
-    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
+    image::OutputFileColorSpace colorspace(texParams.processColorspace, image::EImageColorSpace::AUTO);
+    image::writeImage(texturePath.string(), atlasTexture.img, image::EImageQuality::OPTIMIZED, colorspace);
 }
 
 
@@ -1458,9 +1457,10 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
-        imageIO::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::NO_CONVERSION,
-                                                       image::EImageColorSpace::NO_CONVERSION);
-        imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+        image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::NO_CONVERSION,
+                                                     image::EImageColorSpace::NO_CONVERSION);
+        image::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap,
+                          image::EImageQuality::OPTIMIZED, outputColorSpace);
     }
 
     // Save Height Maps
@@ -1487,13 +1487,14 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         //}
 
         // Save Bump Map
-        imageIO::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::AUTO);
+        image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::AUTO);
         if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
             bfs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
-            imageIO::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+            image::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap,
+                              image::EImageQuality::OPTIMIZED, outputColorSpace);
         }
         // Save Displacement Map
         if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
@@ -1501,7 +1502,8 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
             bfs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
-            imageIO::writeImage(dispMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+            image::writeImage(dispMapPath.string(), outTextureSide, outTextureSide, heightMap,
+                              image::EImageQuality::OPTIMIZED, outputColorSpace);
         }
     }
 }
