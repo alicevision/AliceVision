@@ -102,54 +102,6 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
   return in;
 }
 
-std::string EImageFileType_informations()
-{
-  return "Image file type :\n"
-         "* jpg \n"
-         "* png \n"
-         "* tif \n"
-         "* exr (half)";
-}
-
-EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
-{
-  std::string type = imageFileType;
-  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
-
-  if(type == "jpg" || type == "jpeg") return EImageFileType::JPEG;
-  if(type == "png")                   return EImageFileType::PNG;
-  if(type == "tif" || type == "tiff") return EImageFileType::TIFF;
-  if(type == "exr")                   return EImageFileType::EXR;
-
-  throw std::out_of_range("Invalid image file type : " + imageFileType);
-}
-
-std::string EImageFileType_enumToString(const EImageFileType imageFileType)
-{
-  switch(imageFileType)
-  {
-    case EImageFileType::JPEG:  return "jpg";
-    case EImageFileType::PNG:   return "png";
-    case EImageFileType::TIFF:  return "tif";
-    case EImageFileType::EXR:   return "exr";
-    case EImageFileType::NONE:  return "none";
-  }
-  throw std::out_of_range("Invalid EImageType enum");
-}
-
-std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType)
-{
-  return os << EImageFileType_enumToString(imageFileType);
-}
-
-std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
-{
-  std::string token;
-  in >> token;
-  imageFileType = EImageFileType_stringToEnum(token);
-  return in;
-}
-
 bool isSupportedUndistortFormat(const std::string &ext)
 {
   static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"};

@@ -285,7 +285,8 @@ void Texturing::updateAtlases()
 }
 
 void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
-                                 const boost::filesystem::path& outPath, imageIO::EImageFileType textureFileType)
+                                 const boost::filesystem::path& outPath,
+                                 image::EImageFileType textureFileType)
 {
     // Ensure that contribution levels do not contain 0 and are sorted (as each frequency band contributes to lower bands).
     auto& m = texParams.multiBandNbContrib;
@@ -369,7 +370,10 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 }
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache, const bfs::path& outPath, imageIO::EImageFileType textureFileType)
+                                       const std::vector<size_t>& atlasIDs,
+                                       mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                       const bfs::path& outPath,
+                                       image::EImageFileType textureFileType)
 {
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
@@ -763,7 +767,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
 
 
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
-                             imageIO::EImageFileType textureFileType, const int level)
+                             image::EImageFileType textureFileType, const int level)
 {
     unsigned int outTextureSide = texParams.textureSide;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
@@ -893,7 +897,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
-    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + imageIO::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + image::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
@@ -1025,7 +1029,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
 
 void Texturing::saveAs(const bfs::path& dir, const std::string& basename, 
     EFileType meshFileType, 
-    imageIO::EImageFileType textureFileType,
+    image::EImageFileType textureFileType,
     const BumpMappingParams& bumpMappingParams)
 {
     const std::string meshFileTypeStr = EFileType_enumToString(meshFileType);
@@ -1054,7 +1058,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     {      
         // starts at '1001' for UDIM compatibility
         const std::size_t textureId = 1001 + atlasId;
-        const std::string texturePath = "texture_" + std::to_string(textureId) + "." + imageIO::EImageFileType_enumToString(textureFileType);
+        const std::string texturePath = "texture_" + std::to_string(textureId) + "." + image::EImageFileType_enumToString(textureFileType);
 
         //Set material for this atlas
         const aiVector3D valcolor(0.6, 0.6, 0.6);
@@ -1072,26 +1076,26 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
         scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
 
         // Color Mapping
-        if(textureFileType != imageIO::EImageFileType::NONE)
+        if(textureFileType != image::EImageFileType::NONE)
         {
             const aiString texFile(texturePath);
             scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
         }
 
         // Displacement Mapping
-        if(bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
         {
             const aiString texFileHeightMap("Displacement_" + std::to_string(textureId) + "." +EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_DISPLACEMENT(0));
         }
         
         // Bump Mapping
-        if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
         {
             const aiString texFileNormalMap("Normal_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileNormalMap, AI_MATKEY_TEXTURE_NORMALS(0));
         }
-        else if(bumpMappingParams.bumpType == EBumpMappingType::Height && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+        else if(bumpMappingParams.bumpType == EBumpMappingType::Height && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
         {
             const aiString texFileHeightMap("Bump_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_HEIGHT(0));
@@ -1424,7 +1428,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     }
 
     // Save Normal Map
-    if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+    if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         // downscale texture if required
@@ -1459,7 +1463,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     }
 
     // Save Height Maps
-    if(bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE || bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
+    if(bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE || bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         if(texParams.downscale > 1)
@@ -1474,7 +1478,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
 
         // Height maps are only in .EXR at this time, so this will never be executed.
         // 
-        //if(bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::EXR)
+        //if(bumpMappingParams.bumpMappingFileType != image::EImageFileType::EXR)
         //{
         //    // Y: [-1, 0, +1] => [0, 128, 255]
         //    for(unsigned int i = 0; i < heightMap.size(); ++i)
@@ -1491,7 +1495,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             imageIO::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
         }
         // Save Displacement Map
-        if(bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
         {
             const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
             bfs::path dispMapPath = outPath / dispName;
