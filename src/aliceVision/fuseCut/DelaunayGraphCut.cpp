@@ -18,7 +18,7 @@
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 

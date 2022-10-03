@@ -9,7 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 
 #include <boost/filesystem/operations.hpp>

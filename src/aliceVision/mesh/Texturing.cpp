@@ -16,7 +16,7 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>

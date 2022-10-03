@@ -10,7 +10,7 @@
 #include <aliceVision/image/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/Image.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
