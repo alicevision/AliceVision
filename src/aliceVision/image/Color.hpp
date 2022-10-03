@@ -97,47 +97,7 @@ public:
         b /= d;
         return *this;
     }
-
-    inline ColorRGBf normalize() const
-    {
-        float d = std::sqrt(r * r + g * g + b * b);
-        return ColorRGBf(r / d, g / d, b / d);
-    }
-
-    inline float size() const
-    {
-        float d = r * r + g * g + b * b;
-        if(d == 0.0)
-        {
-            return 0.0;
-        }
-
-        return sqrt(d);
-    }
-
-    inline float size2() const
-    {
-        return r * r + g * g + b * b;
-    }
-
-    friend float dot(const ColorRGBf& p1, const ColorRGBf& p2);
-    friend ColorRGBf cross(const ColorRGBf& a, const ColorRGBf& b);
 };
-
-inline float dot(const ColorRGBf& p1, const ColorRGBf& p2)
-{
-    return p1.r * p2.r + p1.g * p2.g + p1.b * p2.b;
-}
-
-inline ColorRGBf cross(const ColorRGBf& a, const ColorRGBf& b)
-{
-    ColorRGBf vc;
-    vc.r = a.g * b.b - a.b * b.g;
-    vc.g = a.b * b.r - a.r * b.b;
-    vc.b = a.r * b.g - a.g * b.r;
-
-    return vc;
-}
 
 
 class ColorRGBAf
@@ -228,22 +188,6 @@ public:
         g /= d;
         b /= d;
         return *this;
-    }
-
-    inline float size() const
-    {
-        float d = r * r + g * g + b * b;
-        if (d == 0.0)
-        {
-            return 0.0;
-        }
-
-        return sqrt(d);
-    }
-
-    inline float size2() const
-    {
-        return r * r + g * g + b * b;
     }
 };
 
