@@ -158,26 +158,6 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
-void readImageSpec(const std::string& path,
-                   int& width,
-                   int& height,
-                   int& nchannels)
-{
-  ALICEVISION_LOG_DEBUG("[IO] Read Image Spec: " << path);
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
-
-  if(!in)
-    throw std::runtime_error("Can't find/open image file '" + path + "'.");
-
-  const oiio::ImageSpec &spec = in->spec();
-
-  width = spec.width;
-  height = spec.height;
-  nchannels = spec.nchannels;
-
-  in->close();
-}
-
 bool isSupportedUndistortFormat(const std::string &ext)
 {
   static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"};

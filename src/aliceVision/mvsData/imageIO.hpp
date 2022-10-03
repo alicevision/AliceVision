@@ -162,15 +162,6 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
 /**
- * @brief read image dimension from a given path
- * @param[in] path The given path to the image
- * @param[out] width The image width
- * @param[out] height The image height
- * @param[out] nchannels The image channel number
- */
-void readImageSpec(const std::string& path, int& width, int& height, int& nchannels);
-
-/**
  * @brief Test if the extension is supported for undistorted images.
  * @param[in] ext The extension with the dot (eg ".png")
  * @return \p true if the extension is supported.
