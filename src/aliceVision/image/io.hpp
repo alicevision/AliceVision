@@ -22,7 +22,6 @@ namespace aliceVision {
 
 class rgb;
 template<typename Color> class LegacyImage;
-using ImageRGBf = LegacyImage<image::RGBfColor>;
 using ImageRGBAf = LegacyImage<image::RGBAfColor>;
 
 namespace image {
@@ -360,7 +359,6 @@ void readImage(const std::string& path, int& width, int& height, std::vector<RGB
                EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<RGBAfColor>& buffer,
                EImageColorSpace toColorSpace);
-void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace);
 
 /**
@@ -384,9 +382,6 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<RGBfColor>& buffer,
                 EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, ImageRGBf& image, EImageQuality imageQuality,
-                const OutputFileColorSpace& colorspace,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 template <typename T>

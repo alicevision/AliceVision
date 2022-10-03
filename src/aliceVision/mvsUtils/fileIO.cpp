@@ -388,8 +388,6 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
     }
 }
 
-template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId,
-                                   ImageRGBf& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
 template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId,
                                     ImageRGBAf& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
 template void loadImage<image::Image<image::RGBfColor>>(const std::string& path, const MultiViewParams& mp, int camId,

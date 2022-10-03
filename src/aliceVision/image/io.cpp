@@ -1022,14 +1022,6 @@ void readImage(const std::string& path, int& width, int& height, std::vector<RGB
     readImage(path, oiio::TypeDesc::FLOAT, 4, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, ImageRGBf& image, image::EImageColorSpace toColorSpace)
-{
-    int width, height;
-    readImage(path, width, height, image.data(), toColorSpace);
-    image.setWidth(width);
-    image.setHeight(height);
-}
-
 void readImage(const std::string& path, ImageRGBAf& image, image::EImageColorSpace toColorSpace)
 {
     int width, height;
@@ -1132,12 +1124,6 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
                 const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
-}
-
-void writeImage(const std::string &path, ImageRGBf &image, EImageQuality imageQuality,
-                const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
-{
-    writeImage(path, oiio::TypeDesc::FLOAT, image.Width(), image.Height(), 3, image.data(), imageQuality, colorspace, metadata);
 }
 
 static std::string aliceVisionRootOverride;

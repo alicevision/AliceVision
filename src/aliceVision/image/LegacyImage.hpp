@@ -116,7 +116,6 @@ public:
     }
 };
 
-using ImageRGBf = LegacyImage<image::RGBfColor>;
 using ImageRGBAf = LegacyImage<image::RGBAfColor>;
 
 

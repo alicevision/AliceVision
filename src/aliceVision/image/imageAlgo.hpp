@@ -15,7 +15,6 @@ namespace aliceVision
 
 class rgb;
 template<typename Color> class LegacyImage;
-using ImageRGBf = LegacyImage<image::RGBfColor>;
 
 
 namespace imageAlgo
@@ -42,8 +41,6 @@ void colorconvert(oiio::ImageBuf& image, const std::string& fromColorSpaceOIIONa
                   image::EImageColorSpace toColorSpace);
 void colorconvert(oiio::ImageBuf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace);
-void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
-                  image::EImageColorSpace toColorSpace);
 void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace);
 void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace fromColorSpace,
@@ -63,7 +60,6 @@ void transposeImage(int width, int height, std::vector<unsigned char>& buffer);
 void transposeImage(int width, int height, std::vector<rgb>& buffer);
 void transposeImage(int width, int height, std::vector<float>& buffer);
 void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer);
-void transposeImage(ImageRGBf& image);
 
 /**
  * @brief resize a given image buffer
@@ -84,7 +80,6 @@ void resizeImage(int inWidth, int inHeight, int downscale,
                  const std::vector<image::RGBfColor>& inBuffer,
                  std::vector<image::RGBfColor>& outBuffer,
                  const std::string& filter = "", float filterSize = 0);
-void resizeImage(int downscale, const ImageRGBf& inImage, ImageRGBf& outImage, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const ImageRGBAf& inImage, ImageRGBAf& outImage, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const image::Image<image::RGBfColor>& inImage,
                  image::Image<image::RGBfColor>& outImage,
@@ -112,7 +107,6 @@ void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor
                    std::vector<image::RGBfColor>& outBuffer,
                    const std::string& kernel = "gaussian",
                    float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(const ImageRGBf& inImage, ImageRGBf& outImage, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
 /**
  * @brief fill holes in a given image buffer with plausible values
@@ -123,7 +117,6 @@ void convolveImage(const ImageRGBf& inImage, ImageRGBf& outImage, const std::str
  */
 void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
                const std::vector<float>& alphaBuffer);
-void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer);
 void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer);
 
 
