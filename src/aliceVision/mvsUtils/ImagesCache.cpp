@@ -154,6 +154,7 @@ void ImagesCache<Image>::refreshImages_async(const std::vector<int>& camIds)
 
 template class ImagesCache<ImageRGBAf>;
 template class ImagesCache<image::Image<image::RGBfColor>>;
+template class ImagesCache<image::Image<image::RGBAfColor>>;
 
 } // namespace mvsUtils
 } // namespace aliceVision

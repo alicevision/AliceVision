@@ -175,8 +175,8 @@ bool operator<(const CamSelection& l, const CamSelection& r)
  * PlaneSweepingCuda
  *********************************************************************************/
 
-PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
-                                      mvsUtils::ImagesCache<ImageRGBAf>&     ic,
+PlaneSweepingCuda::PlaneSweepingCuda(int CUDADeviceNo,
+                                      mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& ic,
                                       mvsUtils::MultiViewParams& mp,
                                       int scales )
     : _scales( scales )

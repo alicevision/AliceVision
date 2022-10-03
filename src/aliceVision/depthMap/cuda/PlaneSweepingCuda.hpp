@@ -84,11 +84,12 @@ public:
     const int _scales;
     const int _CUDADeviceNo = 0;
     int _nImgsInGPUAtTime = 2;
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& _ic,
+                      mvsUtils::MultiViewParams& _mp, int scales);
     ~PlaneSweepingCuda();
 
     int addCam( int rc, int scale, cudaStream_t stream = 0 );

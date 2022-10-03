@@ -54,7 +54,8 @@ int FrameCacheEntry::getPyramidMem() const
     return _memBytes;
 }
 
-void FrameCacheEntry::fillFrame(int global_cam_id, mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+void FrameCacheEntry::fillFrame(int global_cam_id,
+                                mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache,
                                 mvsUtils::MultiViewParams& mp, cudaStream_t stream)
 {
     ALICEVISION_LOG_TRACE(__FUNCTION__ << ": camera:" << global_cam_id << " " << mp.getWidth(global_cam_id) << "x"
@@ -70,13 +71,13 @@ void FrameCacheEntry::fillFrame(int global_cam_id, mvsUtils::ImagesCache<ImageRG
                                        mp.getHeight(global_cam_id), stream);
 }
 
-void FrameCacheEntry::fillHostFrameFromImageCache(mvsUtils::ImagesCache<ImageRGBAf>& ic,
+void FrameCacheEntry::fillHostFrameFromImageCache(mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& ic,
                                                   CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame, int c,
                                                   mvsUtils::MultiViewParams& mp)
 {
     system::Timer timer;
 
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync(c);
+    auto img = ic.getImg_sync(c);
     ALICEVISION_LOG_TRACE(__FUNCTION__ << ": " << c << " -a- Retrieve from ImagesCache elapsed time: " << timer.elapsedMs() << " ms.");
     timer.reset();
 
@@ -86,7 +87,7 @@ void FrameCacheEntry::fillHostFrameFromImageCache(mvsUtils::ImagesCache<ImageRGB
     {
         for(int x = 0; x < w; ++x)
         {
-            const image::RGBAfColor& floatRGBA = img->at(x, y);
+            const image::RGBAfColor& floatRGBA = (*img)(y, x);
             CudaRGBA& pix_rgba = (*hostFrame)(x, y);
             pix_rgba.x = floatRGBA.r() * 255.0f;
             pix_rgba.y = floatRGBA.g() * 255.0f;
@@ -142,7 +143,7 @@ FrameCacheMemory::~FrameCacheMemory()
 }
 
 void FrameCacheMemory::fillFrame(int cache_frame_id, int global_cam_id, 
-                                 mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                                 mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache,
                                  mvsUtils::MultiViewParams& mp, 
                                  cudaStream_t stream)
 {

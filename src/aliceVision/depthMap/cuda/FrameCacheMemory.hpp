@@ -52,7 +52,7 @@ public:
     int getPyramidMem() const;
 
     void fillFrame(int global_cam_id, 
-                   mvsUtils::ImagesCache<ImageRGBAf>& imageCache, 
+                   mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache,
                    mvsUtils::MultiViewParams& mp,
                    cudaStream_t stream);
 
@@ -61,7 +61,7 @@ public:
     int getLocalCamId() const;
 
 private:
-    static void fillHostFrameFromImageCache(mvsUtils::ImagesCache<ImageRGBAf>& ic,
+    static void fillHostFrameFromImageCache(mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& ic,
                                             CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame, int c,
                                             mvsUtils::MultiViewParams& mp);
 };
@@ -85,7 +85,7 @@ public:
     inline Pyramid* getPyramidPtr(int camera) { return _v[camera]->getPyramidPtr(); }
 
     void fillFrame(int cache_id, int global_cam_id, 
-                   mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                   mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache,
                    mvsUtils::MultiViewParams& mp, 
                    cudaStream_t stream);
 
