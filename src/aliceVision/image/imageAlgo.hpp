@@ -82,6 +82,12 @@ void resizeImage(int inWidth, int inHeight, int downscale,
                  const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const ImageRGBf& inImage, ImageRGBf& outImage, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const ImageRGBAf& inImage, ImageRGBAf& outImage, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, const image::Image<image::RGBfColor>& inImage,
+                 image::Image<image::RGBfColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
+                 image::Image<image::RGBAfColor>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
 
 /**
  * @brief convolve a given image buffer

@@ -271,6 +271,25 @@ template<typename T>
 void resizeImage(oiio::TypeDesc typeDesc,
                  int inWidth,
                  int inHeight,
+                 int outWidth,
+                 int outHeight,
+                 int nchannels,
+                 const T* inBuffer,
+                 T* outBuffer,
+                 const std::string& filter,
+                 float filterSize)
+{
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc),
+                               const_cast<T*>(inBuffer));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer);
+
+    oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
+}
+
+template<typename T>
+void resizeImage(oiio::TypeDesc typeDesc,
+                 int inWidth,
+                 int inHeight,
                  int nchannels,
                  int downscale,
                  const std::vector<T>& inBuffer,
@@ -280,13 +299,9 @@ void resizeImage(oiio::TypeDesc typeDesc,
 {
     const int outWidth = inWidth / downscale;
     const int outHeight = inHeight / downscale;
-
     outBuffer.resize(outWidth * outHeight);
-
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer.data()));
-    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer.data());
-
-    oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
+    resizeImage(typeDesc, inWidth, inHeight, outWidth, outHeight, nchannels,
+                inBuffer.data(), outBuffer.data(), filter, filterSize);
 }
 
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter, float filterSize)
@@ -324,6 +339,28 @@ void resizeImage(int downscale, const ImageRGBAf &inImage, ImageRGBAf &outImage,
     resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 4, downscale, inImage.data(), outImage.data(), filter, filterSize);
     outImage.setHeight(inImage.height() / downscale);
     outImage.setWidth(inImage.width() / downscale);
+}
+
+void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
+                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(int downscale, const image::Image<image::RGBAfColor> &inImage,
+                 image::Image<image::RGBAfColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 4,
+                inImage.data(), outImage.data(), filter, filterSize);
 }
 
 template<typename T>
