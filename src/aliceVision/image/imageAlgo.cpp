@@ -198,16 +198,6 @@ void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace
     ALICEVISION_LOG_TRACE("Convert image from " << EImageColorSpace_enumToString(fromColorSpace) << " to " << EImageColorSpace_enumToString(toColorSpace));
 }
 
-void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
-                  image::EImageColorSpace toColorSpace)
-{
-    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 4, oiio::TypeDesc::FLOAT);
-    auto& buffer = image.data();
-    oiio::ImageBuf imageBuf(imageSpec, buffer.data());
-
-    colorconvert(imageBuf, fromColorSpace, toColorSpace);
-}
-
 void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace)
 {
@@ -330,13 +320,6 @@ void resizeImage(int inWidth, int inHeight, int downscale,
                  const std::string& filter, float filterSize)
 {
     resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int downscale, const ImageRGBAf &inImage, ImageRGBAf &outImage, const std::string &filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), 4, downscale, inImage.data(), outImage.data(), filter, filterSize);
-    outImage.setHeight(inImage.Height() / downscale);
-    outImage.setWidth(inImage.Width() / downscale);
 }
 
 void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,

@@ -1022,14 +1022,6 @@ void readImage(const std::string& path, int& width, int& height, std::vector<RGB
     readImage(path, oiio::TypeDesc::FLOAT, 4, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, ImageRGBAf& image, image::EImageColorSpace toColorSpace)
-{
-    int width, height;
-    readImage(path, width, height, image.data(), toColorSpace);
-    image.setWidth(width);
-    image.setHeight(height);
-}
-
 template<typename T>
 void writeImage(const std::string& path,
                 oiio::TypeDesc typeDesc,

@@ -22,7 +22,6 @@ namespace aliceVision {
 
 class rgb;
 template<typename Color> class LegacyImage;
-using ImageRGBAf = LegacyImage<image::RGBAfColor>;
 
 namespace image {
 
@@ -359,7 +358,6 @@ void readImage(const std::string& path, int& width, int& height, std::vector<RGB
                EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<RGBAfColor>& buffer,
                EImageColorSpace toColorSpace);
-void readImage(const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace);
 
 /**
  * @brief write an image with a given path and buffer

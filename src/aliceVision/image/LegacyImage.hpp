@@ -116,9 +116,6 @@ public:
     }
 };
 
-using ImageRGBAf = LegacyImage<image::RGBAfColor>;
-
-
 /**
 * @brief Calculate the difference between images of different sizes
 * @param [inImgDownscaled] the smaller image

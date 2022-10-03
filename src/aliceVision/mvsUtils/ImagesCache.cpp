@@ -152,7 +152,6 @@ void ImagesCache<Image>::refreshImages_async(const std::vector<int>& camIds)
     _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache<Image>::refreshImages_sync, this, camIds));
 }
 
-template class ImagesCache<ImageRGBAf>;
 template class ImagesCache<image::Image<image::RGBfColor>>;
 template class ImagesCache<image::Image<image::RGBAfColor>>;
 
