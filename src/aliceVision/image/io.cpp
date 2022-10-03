@@ -1137,7 +1137,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
 void writeImage(const std::string &path, ImageRGBf &image, EImageQuality imageQuality,
                 const OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, image.Width(), image.Height(), 3, image.data(), imageQuality, colorspace, metadata);
 }
 
 static std::string aliceVisionRootOverride;

@@ -18,6 +18,7 @@ template<typename ColorT>
 class LegacyImage
 {
 public:
+    using T = ColorT;
     using Color = ColorT;
 private:
     std::vector<Color> _data;
@@ -77,8 +78,8 @@ public:
     }
 
 
-    int width() const { return _width; }
-    int height() const { return _height; }
+    int Width() const { return _width; }
+    int Height() const { return _height; }
 
     void setWidth(int width) { _width = width; }
     void setHeight(int height) { _height = height; }

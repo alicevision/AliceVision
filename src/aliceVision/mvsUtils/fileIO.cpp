@@ -320,13 +320,13 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
 {
     // check image size
     auto checkImageSize = [&path, &mp, camId, &img](){
-        if((mp.getOriginalWidth(camId) != img.width()) || (mp.getOriginalHeight(camId) != img.height()))
+        if((mp.getOriginalWidth(camId) != img.Width()) || (mp.getOriginalHeight(camId) != img.Height()))
         {
             std::stringstream s;
             s << "Bad image dimension for camera : " << camId << "\n";
             s << "\t- image path : " << path << "\n";
             s << "\t- expected dimension : " << mp.getOriginalWidth(camId) << "x" << mp.getOriginalHeight(camId) << "\n";
-            s << "\t- real dimension : " << img.width() << "x" << img.height() << "\n";
+            s << "\t- real dimension : " << img.Width() << "x" << img.Height() << "\n";
             throw std::runtime_error(s.str());
         }
     };

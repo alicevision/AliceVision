@@ -201,7 +201,7 @@ void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace
 void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace)
 {
-    oiio::ImageSpec imageSpec(image.width(), image.height(), 3, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::FLOAT);
     auto& buffer = image.data();
     oiio::ImageBuf imageBuf(imageSpec, buffer.data());
 
@@ -211,7 +211,7 @@ void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
 void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace)
 {
-    oiio::ImageSpec imageSpec(image.width(), image.height(), 4, oiio::TypeDesc::FLOAT);
+    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 4, oiio::TypeDesc::FLOAT);
     auto& buffer = image.data();
     oiio::ImageBuf imageBuf(imageSpec, buffer.data());
 
@@ -264,7 +264,7 @@ void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer
 
 void transposeImage(ImageRGBf &image)
 {
-    transposeImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data());
+    transposeImage(oiio::TypeDesc::FLOAT, image.Width(), image.Height(), 3, image.data());
 }
 
 template<typename T>
@@ -329,16 +329,16 @@ void resizeImage(int inWidth, int inHeight, int downscale,
 
 void resizeImage(int downscale, const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &filter, float filterSize)
 {
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
-    outImage.setHeight(inImage.height() / downscale);
-    outImage.setWidth(inImage.width() / downscale);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
+    outImage.setHeight(inImage.Height() / downscale);
+    outImage.setWidth(inImage.Width() / downscale);
 }
 
 void resizeImage(int downscale, const ImageRGBAf &inImage, ImageRGBAf &outImage, const std::string &filter, float filterSize)
 {
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 4, downscale, inImage.data(), outImage.data(), filter, filterSize);
-    outImage.setHeight(inImage.height() / downscale);
-    outImage.setWidth(inImage.width() / downscale);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), 4, downscale, inImage.data(), outImage.data(), filter, filterSize);
+    outImage.setHeight(inImage.Height() / downscale);
+    outImage.setWidth(inImage.Width() / downscale);
 }
 
 void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
@@ -409,9 +409,9 @@ void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor
 
 void convolveImage(const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &kernel, float kernelWidth, float kernelHeight)
 {
-    convolveImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, inImage.data(), outImage.data(), kernel, kernelWidth, kernelHeight);
-    outImage.setHeight(inImage.height());
-    outImage.setWidth(inImage.width());
+    convolveImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), 3, inImage.data(), outImage.data(), kernel, kernelWidth, kernelHeight);
+    outImage.setHeight(inImage.Height());
+    outImage.setWidth(inImage.Width());
 }
 
 void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
@@ -437,7 +437,7 @@ void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBu
 
 void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer)
 {
-    fillHoles(image.width(), image.height(), image.data(), alphaBuffer);
+    fillHoles(image.Width(), image.Height(), image.data(), alphaBuffer);
 }
 
 
