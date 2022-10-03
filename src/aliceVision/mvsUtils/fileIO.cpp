@@ -314,6 +314,21 @@ Matrix3x4 load3x4MatrixFromFile(std::istream& in)
     return m;
 }
 
+template<class T>
+void compensateExposure(LegacyImage<T>& image, float exposureCompensation)
+{
+    for(int pix = 0; pix < image.size(); ++pix)
+        image[pix] = image[pix] * exposureCompensation;
+}
+
+template<class T>
+void compensateExposure(image::Image<T>& image, float exposureCompensation)
+{
+    auto* data = image.data();
+    for (std::size_t i = 0; i < image.Width() * image.Height(); ++i, ++data)
+        *data = *data * exposureCompensation;
+}
+
 template<class Image>
 void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
                image::EImageColorSpace colorspace, ECorrectEV correctEV)
@@ -355,8 +370,7 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         {
             ALICEVISION_LOG_INFO("  exposure compensation for image " << camId + 1 << ": " << exposureCompensation);
 
-            for(int pix = 0; pix < img.size(); ++pix)
-                img[pix] = img[pix] * exposureCompensation;
+            compensateExposure(img, exposureCompensation);
 
             imageAlgo::colorconvert(img, image::EImageColorSpace::LINEAR, colorspace);
         }
@@ -378,6 +392,12 @@ template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParam
                                    ImageRGBf& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
 template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId,
                                     ImageRGBAf& img, image::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<image::Image<image::RGBfColor>>(const std::string& path, const MultiViewParams& mp, int camId,
+                                                        image::Image<image::RGBfColor>& img,
+                                                        image::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<image::Image<image::RGBAfColor>>(const std::string& path, const MultiViewParams& mp, int camId,
+                                                         image::Image<image::RGBAfColor>& img,
+                                                         image::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision
