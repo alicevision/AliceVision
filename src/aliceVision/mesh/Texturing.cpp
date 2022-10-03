@@ -10,7 +10,6 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
-#include <aliceVision/image/LegacyImage.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/numeric/numeric.hpp>

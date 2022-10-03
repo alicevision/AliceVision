@@ -1,7 +1,8 @@
 #include "imageAlgo.hpp"
 
-#include <aliceVision/image/LegacyImage.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/Rgb.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 
 #include <OpenImageIO/imageio.h>

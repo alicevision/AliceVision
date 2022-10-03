@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
   ALICEVISION_LOG_INFO("Load input image.");
   //Load input image
-  LegacyImage inImg;
+  Image inImg;
   int w, h;
   imageIO::readImage(inputImgPath, w, h, inImg.data(), imageIO::EImageColorSpace::SRGB);
   ALICEVISION_LOG_INFO("Input image loaded: " << inImg.data().size());

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/image/LegacyImage.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/pixelTypes.hpp>

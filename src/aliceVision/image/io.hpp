@@ -21,7 +21,6 @@ namespace oiio = OIIO;
 namespace aliceVision {
 
 class rgb;
-template<typename Color> class LegacyImage;
 
 namespace image {
 
