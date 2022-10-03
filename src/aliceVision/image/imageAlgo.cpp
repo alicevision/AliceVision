@@ -434,10 +434,10 @@ void convolveImage(const ImageRGBf &inImage, ImageRGBf &outImage, const std::str
     outImage.setWidth(inImage.Width());
 }
 
-void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
+void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer,
                const std::vector<float>& alphaBuffer)
 {
-    oiio::ImageBuf rgbBuf(oiio::ImageSpec(inWidth, inHeight, 3, oiio::TypeDesc::FLOAT), colorBuffer.data());
+    oiio::ImageBuf rgbBuf(oiio::ImageSpec(inWidth, inHeight, 3, oiio::TypeDesc::FLOAT), colorBuffer);
     const oiio::ImageBuf alphaBuf(oiio::ImageSpec(inWidth, inHeight, 1, oiio::TypeDesc::FLOAT), const_cast<float*>(alphaBuffer.data()));
 
     // Create RGBA ImageBuf from source buffers with correct channel names
@@ -455,7 +455,18 @@ void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBu
     oiio::ImageBufAlgo::copy(rgbBuf, filledBuf);
 }
 
+void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
+               const std::vector<float>& alphaBuffer)
+{
+    fillHoles(inWidth, inHeight, colorBuffer.data(), alphaBuffer);
+}
+
 void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer)
+{
+    fillHoles(image.Width(), image.Height(), image.data().data(), alphaBuffer);
+}
+
+void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer)
 {
     fillHoles(image.Width(), image.Height(), image.data(), alphaBuffer);
 }

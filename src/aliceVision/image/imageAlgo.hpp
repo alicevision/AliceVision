@@ -124,6 +124,7 @@ void convolveImage(const ImageRGBf& inImage, ImageRGBf& outImage, const std::str
 void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
                const std::vector<float>& alphaBuffer);
 void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer);
+void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer);
 
 
 }
