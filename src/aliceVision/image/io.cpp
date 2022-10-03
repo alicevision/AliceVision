@@ -95,6 +95,8 @@ std::string EImageColorSpace_enumToOIIOString(const EImageColorSpace colorSpace)
     {
         case EImageColorSpace::SRGB: return "sRGB";
         case EImageColorSpace::LINEAR: return "Linear";
+        case EImageColorSpace::ACES: return "aces";
+        case EImageColorSpace::ACEScg: return "ACEScg";
         default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace to OIIO conversion: " +
@@ -105,6 +107,8 @@ EImageColorSpace EImageColorSpace_OIIOstringToEnum(const std::string& colorspace
 {
     if (colorspace == "Linear") return EImageColorSpace::LINEAR;
     if (colorspace == "sRGB") return EImageColorSpace::SRGB;
+    if (colorspace == "aces") return EImageColorSpace::ACES;
+    if (colorspace == "ACEScg") return EImageColorSpace::ACEScg;
 
     throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
@@ -115,6 +119,8 @@ bool EImageColorSpace_isSupportedOIIOEnum(const EImageColorSpace& colorspace)
     {
         case EImageColorSpace::SRGB: return true;
         case EImageColorSpace::LINEAR: return true;
+        case EImageColorSpace::ACES: return true;
+        case EImageColorSpace::ACEScg: return true;
         default: return false;
     }
 }
@@ -123,6 +129,8 @@ bool EImageColorSpace_isSupportedOIIOstring(const std::string& colorspace)
 {
     if (colorspace == "Linear") return true;
     if (colorspace == "sRGB") return true;
+    if (colorspace == "aces") return true;
+    if (colorspace == "ACEScg") return true;
     return false;
 }
 
@@ -570,7 +578,7 @@ void writeImage(const std::string& path,
                 oiio::TypeDesc typeDesc,
                 int nchannels,
                 const Image<T>& image,
-                EImageColorSpace imageColorSpace,
+                OutputFileColorSpace colorspace,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
                 const oiio::ROI& roi = oiio::ROI())
 {
@@ -582,13 +590,19 @@ void writeImage(const std::string& path,
   const bool isJPG = (extension == ".jpg");
   const bool isPNG = (extension == ".png");
 
-  if(imageColorSpace == EImageColorSpace::AUTO)
-  {
-    if(isJPG || isPNG)
-      imageColorSpace = EImageColorSpace::SRGB;
-    else
-      imageColorSpace = EImageColorSpace::LINEAR;
-  }
+    if (colorspace.to == EImageColorSpace::AUTO)
+    {
+        if (isJPG || isPNG)
+            colorspace.to = EImageColorSpace::SRGB;
+        else
+            colorspace.to = EImageColorSpace::LINEAR;
+    }
+
+
+    ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << "\n"
+                       << "\t- width: " << image.Width() << "\n"
+                       << "\t- height: " << image.Height() << "\n"
+                       << "\t- channels: " << nchannels);
 
   oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
   imageSpec.extra_attribs = metadata; // add custom metadata
@@ -604,25 +618,31 @@ void writeImage(const std::string& path,
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
-  if(imageColorSpace == EImageColorSpace::SRGB)
-  {
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
-      outBuf = &colorspaceBuf;
-  }
-  else if((imageColorSpace != EImageColorSpace::LINEAR) && (imageColorSpace != EImageColorSpace::NO_CONVERSION)) // ACES or ACEScg
-  {
-      const auto colorConfigPath = getAliceVisionOCIOConfig();
-      if (colorConfigPath.empty())
-      {
-          throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-      }
+    if (colorspace.from == colorspace.to)
+    {
+        // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
+        // even if no conversion is needed.
+    }
+    else if((colorspace.to == EImageColorSpace::ACES) || (colorspace.to == EImageColorSpace::ACEScg))
+    {
+        const auto colorConfigPath = getAliceVisionOCIOConfig();
+        if (colorConfigPath.empty())
+        {
+            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
+        }
 
-      oiio::ColorConfig colorConfig(colorConfigPath);
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",
-                                       (imageColorSpace != EImageColorSpace::ACES) ? "aces" : "ACEScg", true, "", "",
-                                       &colorConfig);
-      outBuf = &colorspaceBuf;
-  }
+        oiio::ColorConfig colorConfig(colorConfigPath);
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf,
+                                         EImageColorSpace_enumToOIIOString(colorspace.from),
+                                         EImageColorSpace_enumToOIIOString(colorspace.to), true, "", "",
+                                         &colorConfig);
+        outBuf = &colorspaceBuf;
+    }
+    else
+    {
+        imageAlgo::colorconvert(colorspaceBuf, *outBuf, colorspace.from, colorspace.to);
+        outBuf = &colorspaceBuf;
+    }
 
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
@@ -770,27 +790,32 @@ void writeImage(const std::string& path, const Image<IndexT>& image, EImageColor
 
 void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 4, image,
+               OutputFileColorSpace{EImageColorSpace::LINEAR, imageColorSpace}, metadata,roi);
 }
 
 void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UINT8, 4, image,
+               OutputFileColorSpace{EImageColorSpace::LINEAR, imageColorSpace}, metadata);
 }
 
 void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI &roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 3, image,
+               OutputFileColorSpace{EImageColorSpace::LINEAR, imageColorSpace}, metadata,roi);
 }
 
 void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 1, image,
+               OutputFileColorSpace{EImageColorSpace::LINEAR, imageColorSpace}, metadata,roi);
 }
 
 void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UINT8, 3, image,
+               OutputFileColorSpace{EImageColorSpace::LINEAR, imageColorSpace}, metadata);
 }
 
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
