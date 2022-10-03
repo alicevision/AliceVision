@@ -170,6 +170,13 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
 oiio::ParamValueList readImageMetadata(const std::string& path);
 
 /**
+ * @brief extract entire image specification from an image for a given path
+ * @param[in] path The given path to the image
+ * @return imageSpec Specification describing the image
+ */
+oiio::ImageSpec readImageSpec(const std::string& path);
+
+/**
  * @brief extract metadata from an image for a given path
  * @param[in] path The given path to the image
  * @param[out] width The image header width
