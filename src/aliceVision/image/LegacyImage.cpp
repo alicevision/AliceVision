@@ -13,27 +13,32 @@
 namespace aliceVision{
 
 
-void imageDiff(const ImageRGBf& inImg, const ImageRGBf& inImgDownscaled, ImageRGBf& outImg, unsigned int downscale)
+void imageDiff(const image::Image<image::RGBfColor>& inImg,
+               const image::Image<image::RGBfColor>& inImgDownscaled,
+               image::Image<image::RGBfColor>& outImg, unsigned int downscale)
 {
     outImg.resize(inImg.Width(), inImg.Height());
-    for(int i = 0; i < inImg.Width()*inImg.Height(); ++i)
-    {
-        Point2d pix(i%inImg.Width(), static_cast<int>(i/ inImg.Width()));
-        Point2d pixd = pix/downscale;
 
-        outImg[i] = inImg[i] - inImgDownscaled.getInterpolateColor(pixd);
+    for (int iy = 0; iy < inImg.Height(); iy++)
+    {
+        for (int ix = 0; ix < inImg.Width(); ix++)
+        {
+            outImg(iy, ix) = inImg(iy, ix) - getInterpolateColor(inImgDownscaled,
+                                                                 iy / downscale, ix / downscale);
+        }
     }
 }
 
-void laplacianPyramid(std::vector<ImageRGBf>& out_pyramidL, const ImageRGBf& image, int nbBand, unsigned int downscale)
+void laplacianPyramid(std::vector<image::Image<image::RGBfColor>>& out_pyramidL,
+                      const image::Image<image::RGBfColor>& image, int nbBand, unsigned int downscale)
 {
     assert(nbBand >= 1);
 
-    ImageRGBf img(image);
+    image::Image<image::RGBfColor> img(image);
     int outW = static_cast<int>(img.Width()/downscale);
     int outH = static_cast<int>(img.Height()/downscale);
 
-    ImageRGBf imgDownscaled(outW, outH);
+    image::Image<image::RGBfColor> imgDownscaled(outW, outH);
     out_pyramidL.resize(nbBand);
 
     //Create Laplacian pyramid
@@ -51,7 +56,8 @@ void laplacianPyramid(std::vector<ImageRGBf>& out_pyramidL, const ImageRGBf& ima
     out_pyramidL[nbBand-1] = img;
 
     for(std::size_t i = 0; i < out_pyramidL.size(); ++i)
-        ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : " << out_pyramidL[i].Width() << "x" << out_pyramidL[i].Height());
+        ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : "
+                              << out_pyramidL[i].Width() << "x" << out_pyramidL[i].Height());
 }
 
 

@@ -306,7 +306,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     std::partial_sum(m.begin(), m.end(), m.begin());
 
     ALICEVISION_LOG_INFO("Texturing in " + image::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
-    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, texParams.processColorspace, texParams.correctEV);
+    mvsUtils::ImagesCache<image::Image<image::RGBfColor>> imageCache(
+                mp, texParams.processColorspace, texParams.correctEV);
+
     imageCache.setCacheSize(2);
     ALICEVISION_LOG_INFO("Images loaded from cache with: " + ECorrectEV_enumToString(texParams.correctEV));
 
@@ -373,7 +375,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                        const std::vector<size_t>& atlasIDs,
-                                       mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                       mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
                                        const bfs::path& outPath,
                                        image::EImageFileType textureFileType)
 {
@@ -535,11 +537,11 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") with contributions to " << cameraContributions.size() << " texture files:");
 
         // Load camera image from cache
-        mvsUtils::ImagesCache<ImageRGBf>::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
-        const ImageRGBf& camImg = *imgPtr;
+        auto imgPtr = imageCache.getImg_sync(camId);
+        const image::Image<image::RGBfColor>& camImg = *imgPtr;
 
         // Calculate laplacianPyramid
-        std::vector<ImageRGBf> pyramidL; //laplacian pyramid
+        std::vector<image::Image<image::RGBfColor>> pyramidL; //laplacian pyramid
         laplacianPyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
 
         // for each output texture file
@@ -630,7 +632,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                continue;
 
                            // If the color is pure zero (ie. no contributions), we consider it as an invalid pixel.
-                           if(camImg.getInterpolateColor(pixRC) == image::RGBfColor(0.f, 0.f, 0.f))
+                           if (getInterpolateColor(camImg, pixRC.y, pixRC.x) == image::RGBfColor(0.f, 0.f, 0.f))
                                continue;
 
                            // Fill the accumulated pyramid for this pixel
@@ -642,7 +644,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                AccuImage& accuImage = accuPyramid.pyramid[bandContrib];
 
                                // fill the accumulated color map for this pixel
-                               accuImage.img[xyoffset] += pyramidL[bandContrib].getInterpolateColor(pixRC/downscaleCoef) * triangleScore;
+                               const auto pixDownscaled = pixRC / downscaleCoef;
+                               accuImage.img(xyoffset) += getInterpolateColor(pyramidL[bandContrib], pixDownscaled.y, pixDownscaled.x) * triangleScore;
                                accuImage.imgCount[xyoffset] += triangleScore;
                            }
                        }
@@ -707,13 +710,13 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 if(atlasTexture.imgCount[xyoffset] == 0)
                     continue;
 
-                atlasTexture.img[xyoffset] /= atlasTexture.imgCount[xyoffset];
+                atlasTexture.img(xyoffset) /= atlasTexture.imgCount[xyoffset];
                 atlasTexture.imgCount[xyoffset] = 1;
 
                 for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
                 {
                     AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
-                    atlasLevelTexture.img[xyoffset] /= atlasLevelTexture.imgCount[xyoffset];
+                    atlasLevelTexture.img(xyoffset) /= atlasLevelTexture.imgCount[xyoffset];
                 }
             }
         }
@@ -740,7 +743,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
                 {
                     AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
-                    atlasTexture.img[xyoffset] += atlasLevelTexture.img[xyoffset];
+                    atlasTexture.img(xyoffset) += atlasLevelTexture.img(xyoffset);
                 }
             }
         }
@@ -760,7 +763,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
     toGeoMesh(*mesh, geoSparseMesh);
     GEO::compute_normals(geoSparseMesh);
 
-    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, image::EImageColorSpace::NO_CONVERSION);
+    mvsUtils::ImagesCache<image::Image<image::RGBfColor>> imageCache(mp, image::EImageColorSpace::NO_CONVERSION);
     
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, bumpMappingParams);
@@ -806,23 +809,23 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 //if pixel on the edge of a chart
                 if(leftCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - 1);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if(upCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - outTextureSide);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 //
                 else if (leftCount < 0 && - leftCount < padding && (upCount == 0 || leftCount > upCount))
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - 1);
                     atlasTexture.imgCount[xyoffset] = leftCount - 1;
                 }
                 else if (upCount < 0 && - upCount < padding)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - outTextureSide);
                     atlasTexture.imgCount[xyoffset] = upCount - 1;
                 }
             }
@@ -844,12 +847,12 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 const int leftCount = atlasTexture.imgCount[xyoffset - 1];
                 if(rightCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + 1);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if(downCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + outTextureSide);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if ((rightCount < 0 && - rightCount < padding) &&
@@ -857,14 +860,14 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                          (downCount == 0 || rightCount >= downCount)
                          )
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + 1);
                     atlasTexture.imgCount[xyoffset] = rightCount - 1;
                 }
                 else if ((downCount < 0 && - downCount < padding) &&
                          (upCount == 0 || downCount > upCount)
                          )
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + outTextureSide);
                     atlasTexture.imgCount[xyoffset] = downCount - 1;
                 }
             }
@@ -892,7 +895,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     // downscale texture if required
     if(texParams.downscale > 1)
     {
-        ImageRGBf resizedColorBuffer;
+        image::Image<image::RGBfColor> resizedColorBuffer;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
         imageAlgo::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
@@ -904,7 +907,10 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     image::OutputFileColorSpace colorspace(texParams.processColorspace, image::EImageColorSpace::AUTO);
-    image::writeImage(texturePath.string(), atlasTexture.img, image::EImageQuality::OPTIMIZED, colorspace);
+    oiio::ParamValueList metadata;
+    metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
+                                        EStorageDataType_enumToString(image::EStorageDataType::Half)));
+    image::writeImage(texturePath.string(), atlasTexture.img, colorspace, metadata);
 }
 
 
@@ -1300,7 +1306,8 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                              const GEO::MeshFacetsAABB& denseMeshAABB, const GEO::Mesh& sparseMesh,
-                                             size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                             size_t atlasID,
+                                             mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
                                              const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
 {
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("

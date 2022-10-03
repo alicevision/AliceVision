@@ -168,7 +168,7 @@ public:
     // Create buffer for the set of output textures
     struct AccuImage
     {
-        ImageRGBf img;
+        image::Image<image::RGBfColor> img;
         std::vector<float> imgCount;
 
         void resize(int width, int height)
@@ -196,7 +196,8 @@ public:
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                const std::vector<size_t>& atlasIDs,
+                                mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
                                 const bfs::path &outPath,
                                 image::EImageFileType textureFileType = image::EImageFileType::PNG);
 
@@ -204,7 +205,8 @@ public:
                                      const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
-                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                      const GEO::Mesh& sparseMesh, size_t atlasID,
+                                      mvsUtils::ImagesCache<image::Image<image::RGBfColor> >& imageCache,
                                       const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     ///Fill holes and write texture files for the given texture atlas

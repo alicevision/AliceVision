@@ -33,7 +33,7 @@ template<typename Image>
 class ImagesCache
 {
 public:
-    using Color = typename Image::Color;
+    using Color = typename Image::Tpixel;
     using ImgSharedPtr = std::shared_ptr<Image>;
 
 private:

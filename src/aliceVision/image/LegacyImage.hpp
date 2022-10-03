@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
@@ -125,7 +126,9 @@ using ImageRGBAf = LegacyImage<image::RGBAfColor>;
 * @param [outImg] the difference
 * @param [downscale] the downscale coefficient between image sizes
 */
-void imageDiff(const ImageRGBf& inImg, const ImageRGBf& inImgDownscaled, ImageRGBf& outImg, unsigned int downscale);
+void imageDiff(const image::Image<image::RGBfColor>& inImg,
+               const image::Image<image::RGBfColor>& inImgDownscaled,
+               image::Image<image::RGBfColor>& outImg, unsigned int downscale);
 
 /**
 * @brief Calculate the laplacian pyramid of a given image,
@@ -134,7 +137,8 @@ void imageDiff(const ImageRGBf& inImg, const ImageRGBf& inImgDownscaled, ImageRG
 * @param [nbBand] the number of frequency bands
 * @param [downscale] the downscale coefficient between floors of the pyramid
 */
-void laplacianPyramid(std::vector<ImageRGBf>& out_pyramidL, const ImageRGBf& image, int nbBand, unsigned int downscale);
+void laplacianPyramid(std::vector<image::Image<image::RGBfColor>>& out_pyramidL,
+                      const image::Image<image::RGBfColor>& image, int nbBand, unsigned int downscale);
 
 }
 
