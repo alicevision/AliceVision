@@ -119,13 +119,6 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 
 /**
- * @brief convert a metadata string map into an oiio::ParamValueList
- * @param[in] metadataMap string map
- * @return oiio::ParamValueList
- */
-oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap);
-
-/**
  * @brief get informations about each image file type
  * @return String
  */
