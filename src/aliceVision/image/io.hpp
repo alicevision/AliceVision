@@ -151,6 +151,7 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
  * @param[in] metadata An instance of oiio::ParamValueList
  * @return std::map Metadata string map
  */
+// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 std::map<std::string, std::string> getMapFromMetadata(const oiio::ParamValueList& metadata);
 
 /**
@@ -175,15 +176,6 @@ oiio::ParamValueList readImageMetadata(const std::string& path);
  * @return imageSpec Specification describing the image
  */
 oiio::ImageSpec readImageSpec(const std::string& path);
-
-/**
- * @brief extract metadata from an image for a given path
- * @param[in] path The given path to the image
- * @param[out] width The image header width
- * @param[out] height The image header height
- * @param[out] metadata All metadata find in the image
- */
-void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata);
 
 /**
  * @brief return the size of the image for a given path
