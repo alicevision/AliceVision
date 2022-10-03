@@ -46,6 +46,10 @@ void colorconvert(ImageRGBf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace);
 void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
                   image::EImageColorSpace toColorSpace);
+void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace);
+void colorconvert(image::Image<image::RGBAfColor>& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace);
 void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
                   image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace);
 

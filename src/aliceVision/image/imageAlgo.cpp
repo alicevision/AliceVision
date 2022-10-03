@@ -218,6 +218,26 @@ void colorconvert(ImageRGBAf& image, image::EImageColorSpace fromColorSpace,
     colorconvert(imageBuf, fromColorSpace, toColorSpace);
 }
 
+void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
+{
+    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::FLOAT);
+    auto* buffer = image.data();
+    oiio::ImageBuf imageBuf(imageSpec, buffer->data());
+
+    colorconvert(imageBuf, fromColorSpace, toColorSpace);
+}
+
+void colorconvert(image::Image<image::RGBAfColor>& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
+{
+    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 4, oiio::TypeDesc::FLOAT);
+    auto* buffer = image.data();
+    oiio::ImageBuf imageBuf(imageSpec, buffer->data());
+
+    colorconvert(imageBuf, fromColorSpace, toColorSpace);
+}
+
 void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
                   image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace)
 {
