@@ -3,7 +3,7 @@
 
 #include <aliceVision/image/Color.hpp>
 #include <aliceVision/image/LegacyImage.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/image/Rgb.hpp>
 
 
 #include <OpenImageIO/imageio.h>

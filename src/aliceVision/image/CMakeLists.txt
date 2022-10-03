@@ -18,6 +18,7 @@ set(image_files_headers
   resampling.hpp
   warping.hpp
   pixelTypes.hpp
+  Rgb.hpp
   Sampler.hpp
   cache.hpp
 )

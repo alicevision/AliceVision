@@ -8,8 +8,8 @@
 
 #include <aliceVision/image/Color.hpp>
 #include <aliceVision/image/LegacyImage.hpp>
+#include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>

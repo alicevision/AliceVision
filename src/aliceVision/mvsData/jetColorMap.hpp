@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/image/Color.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/image/Rgb.hpp>
 
 namespace aliceVision {
 
