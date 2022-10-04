@@ -116,6 +116,7 @@ int aliceVision_main(int argc, char** argv)
 
     bool first = true;
     image::Image<image::RGBAfColor> panorama;
+    std::string colorSpace;
 
     for (auto viewItem : sfmData.getViews())
     {
@@ -136,6 +137,7 @@ int aliceVision_main(int argc, char** argv)
         if (first) 
         {
             panorama = image::Image<image::RGBAfColor>(panoramaWidth, panoramaHeight, true, image::RGBAfColor(0.0f, 0.0f, 0.f, 0.0f));
+            colorSpace = metadata.find("AliceVision:ColorSpace")->get_string();
             first = false;
         }
 
@@ -162,9 +164,12 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    image::EImageColorSpace outputColorSpace = colorSpace.empty() ? image::EImageColorSpace::AUTO : image::EImageColorSpace_stringToEnum(colorSpace);
+
     oiio::ParamValueList targetMetadata;
     targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
-    image::writeImage(outputPanoramaPath, panorama, image::EImageColorSpace::AUTO, targetMetadata);
+    targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", colorSpace = colorSpace.empty() ? "Linear" : colorSpace));
+    image::writeImage(outputPanoramaPath, panorama, outputColorSpace, targetMetadata);
 
     return EXIT_SUCCESS;
 }

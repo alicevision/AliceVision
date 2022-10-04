@@ -348,6 +348,12 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
 
     bool hasFailed = false;
 
+    // Load metadata to get image color space
+    std::string colorSpace;
+    const std::string firstImagePath = (fs::path(warpingFolder) / (std::to_string(overlappingViews[0]) + ".exr")).string();
+    oiio::ParamValueList srcMetadata = image::readImageMetadata(firstImagePath);
+    colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
+
     #pragma omp parallel for
     for (int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
     {
@@ -538,8 +544,9 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     metadata.push_back(oiio::ParamValue("AliceVision:offsetY", int(referenceBoundingBox.top)));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", int(panoramaMap.getWidth())));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", int(panoramaMap.getHeight())));
+    metadata.push_back(oiio::ParamValue("AliceVision:ColorSpace", colorSpace));
 
-    image::writeImage(outputFilePath, output, image::EImageColorSpace::LINEAR, metadata);
+    image::writeImage(outputFilePath, output, image::EImageColorSpace_stringToEnum(colorSpace), metadata);
 
     return true;
 }
