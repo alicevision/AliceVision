@@ -74,10 +74,10 @@ void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
                           const aliceVision::Pair& indexImagePair,
                           aliceVision::matching::IndMatches& outMatches, size_t gridSize)
 {
-    const size_t leftCellWidth = std::ceil(lImgSize.first / (float)gridSize);
-    const size_t leftCellHeight = std::ceil(lImgSize.second / (float)gridSize);
-    const size_t rightCellWidth = std::ceil(rImgSize.first / (float)gridSize);
-    const size_t rightCellHeight = std::ceil(rImgSize.second / (float)gridSize);
+    const size_t leftCellWidth = divideRoundUp(lImgSize.first, gridSize);
+    const size_t leftCellHeight = divideRoundUp(lImgSize.second, gridSize);
+    const size_t rightCellWidth = divideRoundUp(rImgSize.first, gridSize);
+    const size_t rightCellHeight = divideRoundUp(rImgSize.second, gridSize);
 
     std::vector<aliceVision::matching::IndMatches> completeGrid(gridSize * gridSize * 2);
     // Reserve all cells

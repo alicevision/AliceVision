@@ -266,7 +266,7 @@ int aliceVision_main(int argc, char** argv)
 
         if(maxPanoramaWidth > 0 && panoramaSize.first > maxPanoramaWidth)
         {
-            downscaleFactor = std::ceil(panoramaSize.first / double(maxPanoramaWidth));
+            downscaleFactor = divideRoundUp(panoramaSize.first, maxPanoramaWidth);
         }
 
         ALICEVISION_LOG_INFO("Input panorama size is " << panoramaSize.first << "x" << panoramaSize.second);

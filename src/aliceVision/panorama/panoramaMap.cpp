@@ -172,7 +172,7 @@ bool PanoramaMap::getIntersectionsList(std::vector<BoundingBox> & intersections,
 bool PanoramaMap::optimizeChunks(std::vector<std::vector<IndexT>> & chunks, int chunkSize) {
 
     int countViews = _map.size();
-    int countChunks =  int(std::ceil(double(countViews) / double(chunkSize)));
+    int countChunks = divideRoundUp(countViews, chunkSize);
 
     chunks.clear();
     chunks.resize(countChunks);

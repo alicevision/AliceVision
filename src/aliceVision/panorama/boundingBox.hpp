@@ -1,5 +1,6 @@
 #pragma once
 
+#include <aliceVision/numeric/numeric.hpp>
 #include <algorithm>
 #include <stdint.h>
 #include <cmath>
@@ -56,8 +57,8 @@ struct BoundingBox
 
         int leftBounded = int(std::floor(double(left) / double(gridSize))) * int(gridSize);
         int topBounded = int(std::floor(double(top) / double(gridSize))) * int(gridSize);
-        int widthBounded = int(std::ceil(double(right - leftBounded + 1) / double(gridSize))) * int(gridSize);
-        int heightBounded = int(std::ceil(double(bottom - topBounded + 1) / double(gridSize))) * int(gridSize);
+        int widthBounded = divideRoundUp<int>(right - leftBounded + 1, gridSize) * int(gridSize);
+        int heightBounded = divideRoundUp<int>(bottom - topBounded + 1, gridSize) * int(gridSize);
 
         left = leftBounded;
         top = topBounded;

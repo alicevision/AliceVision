@@ -652,7 +652,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        int countIterations = int(std::ceil(double(viewsCount) / double(rangeSize)));
+        int countIterations = divideRoundUp(viewsCount, rangeSize);
        
         if(rangeIteration >= countIterations)
         {
