@@ -293,7 +293,6 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         image.swap(rescaled);
     }
     
-    #if OIIO_VERSION >= (10000 * 2 + 100 * 0 + 0) // OIIO_VERSION >= 2.0.0
     if (pParams.contrast != 1.0f)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
@@ -303,7 +302,6 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
 
         image.swap(filtered);
     }
-    #endif
     if (pParams.medianFilter >= 3)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
