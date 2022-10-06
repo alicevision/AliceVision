@@ -621,7 +621,7 @@ int aliceVision_main(int argc, char* argv[])
             }
 
             fs::copy_file(lensGridFilepath, fs::path(outputPath) / fs::path(lensGridFilepath).filename(),
-                          fs::copy_option::overwrite_if_exists);
+                          fs::copy_options::overwrite_existing);
 
             const std::string checkerImagePath =
                 (fs::path(outputPath) / fs::path(lensGridFilepath).stem()).string() + "_checkerboard.exr";

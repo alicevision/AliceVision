@@ -114,7 +114,8 @@ int aliceVision_main( int argc, char** argv )
     if(ext == ".feat")
     {
       // just copy the file into the output folder
-      fs::copy_file(iterator->path(), fs::path(outputFolder)/fs::path(filename), fs::copy_option::overwrite_if_exists);
+      fs::copy_file(iterator->path(), fs::path(outputFolder) / fs::path(filename),
+                    fs::copy_options::overwrite_existing);
       
       ++countFeat;
     }
