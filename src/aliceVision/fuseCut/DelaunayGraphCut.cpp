@@ -958,8 +958,8 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
                 }
             }
 
-            int syMax = std::ceil(height / step);
-            int sxMax = std::ceil(width / step);
+            int syMax = divideRoundUp(height, step);
+            int sxMax = divideRoundUp(width, step);
 
             for(int sy = 0; sy < syMax; ++sy)
             {
@@ -1063,7 +1063,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     {
         const auto& imgParams = _mp.getImageParams(i);
         startIndex[i] = realMaxVertices;
-        realMaxVertices += std::ceil(imgParams.width / step) * std::ceil(imgParams.height / step);
+        realMaxVertices += divideRoundUp(imgParams.width, step) *
+                           divideRoundUp(imgParams.height, step);
     }
     std::vector<Point3d> verticesCoordsPrepare(realMaxVertices);
     std::vector<double> pixSizePrepare(realMaxVertices);
@@ -1135,8 +1136,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
             }
 
-            int syMax = std::ceil(height/step);
-            int sxMax = std::ceil(width/step);
+            int syMax = divideRoundUp(height, step);
+            int sxMax = divideRoundUp(width, step);
             #pragma omp parallel for
             for(int sy = 0; sy < syMax; ++sy)
             {

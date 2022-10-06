@@ -570,6 +570,20 @@ void SplitRange(const T range_start, const T range_end, const int nb_split,
   }
 }
 
+template<class T>
+constexpr T divideRoundUp(T x, T y)
+{
+    static_assert(std::is_integral<T>::value, "divideRoundUp only works with integer arguments");
+    const auto xPos = x >= 0;
+    const auto yPos = y >= 0;
+    if (xPos == yPos) {
+        return x / y + T((x % y) != 0);
+    } else {
+        // negative result, rounds towards zero anyways
+        return x / y;
+    }
+}
+
 /**
  * This function initializes the global state of random number generators that e.g. our tests
  * depend on. This makes it possible to have exactly reproducible program runtime behavior
