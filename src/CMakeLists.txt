@@ -205,6 +205,12 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   AddCompilerFlag("-Werror=return-local-addr")
 endif()
 
+# MSVC has a limit of around 65k functions in an object file by default. This is already exceeded
+# in debug mode, thus the following is needed to increase the limit.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  AddCompilerFlag("/bigobj")
+endif()
+
 # Eigen requires overaligned buffers for maximum efficiency (e.g. on AVX512 buffers may need to
 # be aligned to 64 bytes). AliceVision currently does not support this. Fortunately this is fixed
 # in C++17. While we can't upgrade to C++17 just yet, some compilers support overaligned
