@@ -610,7 +610,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
   qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
 
   // ensure the ideal number of target cameras is not superior to the actual number of cameras
-  const int maxTc = std::min(std::min(getNbCameras(), nbNearestCams), static_cast<int>(ids.size()));
+  const int maxTc = std::min({getNbCameras(), nbNearestCams, static_cast<int>(ids.size())});
   out.reserve(maxTc);
 
   for(int i = 0; i < maxTc; ++i)

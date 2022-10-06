@@ -1665,6 +1665,45 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
   }
 }
 
+namespace {
+
+struct ObservationData
+{
+    std::shared_ptr<camera::Pinhole> cam;
+    Pose3 pose;
+    Mat34 P;
+    Vec2 x;
+    Vec2 xUd;
+
+    bool isEmpty() const { return cam == nullptr; }
+};
+
+ObservationData getObservationData(const SfMData& scene,
+                                   feature::FeaturesPerView* featuresPerView,
+                                   IndexT viewId, const track::Track& track)
+{
+    const View* view = scene.getViews().at(viewId).get();
+
+    std::shared_ptr<camera::IntrinsicBase> cam = scene.getIntrinsics().at(view->getIntrinsicId());
+    std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+
+    if (!camPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        return {nullptr, {}, {}, {}, {}};
+    }
+
+    Pose3 pose = scene.getPose(*view).getTransform();
+    Mat34 P = camPinHole->getProjectiveEquivalent(pose);
+
+    const auto& feature = featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)];
+    Vec2 x = feature.coords().cast<double>();
+    Vec2 xUd = cam->get_ud_pixel(x); // undistorted 2D point
+
+    return {camPinHole, pose, P, x, xUd};
+}
+
+} // namespace
+
 void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {
   ALICEVISION_LOG_DEBUG("Triangulating (mode: multi-view LO-RANSAC)... ");
@@ -1706,34 +1745,16 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       // -- Prepare:
       IndexT I =  *(observations.begin());
       IndexT J =  *(observations.rbegin());
-      const View* viewI = scene.getViews().at(I).get();
-      const View* viewJ = scene.getViews().at(J).get();
 
-      std::shared_ptr<camera::IntrinsicBase> camI = scene.getIntrinsics().at(viewI->getIntrinsicId());
-      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camI);
-      if (!camIPinHole) {
-        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+      const auto oi = getObservationData(scene, _featuresPerView, I, track);
+      const auto oj = getObservationData(scene, _featuresPerView, J, track);
+
+      if (oi.isEmpty() || oj.isEmpty()) {
         continue;
       }
 
-      std::shared_ptr<camera::IntrinsicBase> camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId());
-      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camJ);
-      if (!camJPinHole) {
-        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
-        continue;
-      }
-
-      const Pose3 poseI = scene.getPose(*viewI).getTransform();
-      const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
-      const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
-      const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
-  
       // -- Triangulate:
-      multiview::TriangulateDLT(camIPinHole->getProjectiveEquivalent(poseI),
-                     camI->get_ud_pixel(xI),
-                     camJPinHole->getProjectiveEquivalent(poseJ),
-                     camI->get_ud_pixel(xJ),
-                     &X_euclidean);
+      multiview::TriangulateDLT(oi.P, oi.xUd, oj.P, oj.xUd, &X_euclidean);
 
       // -- Check:
       //  - angle (small angle leads imprecise triangulation)
@@ -1745,11 +1766,11 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ) < _params.minAngleForTriangulation ||
-          poseI.depth(X_euclidean) < 0 || 
-          poseJ.depth(X_euclidean) < 0 || 
-          camI->residual(poseI, X_euclidean.homogeneous(), xI).norm() > acThresholdI || 
-          camJ->residual(poseJ, X_euclidean.homogeneous(), xJ).norm() > acThresholdJ)
+      if (angleBetweenRays(oi.pose, oi.cam.get(), oj.pose, oj.cam.get(), oi.x, oj.x) < _params.minAngleForTriangulation ||
+          oi.pose.depth(X_euclidean) < 0 ||
+          oj.pose.depth(X_euclidean) < 0 ||
+          oi.cam->residual(oi.pose, X_euclidean.homogeneous(), oi.x).norm() > acThresholdI ||
+          oj.cam->residual(oj.pose, X_euclidean.homogeneous(), oj.x).norm() > acThresholdJ)
         isValidTrack = false;
     }
     else 
@@ -1767,19 +1788,15 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
         int i = 0;
         for (const IndexT& viewId : observations)
         {
-          const View* view = scene.getViews().at(viewId).get();
-  
-          std::shared_ptr<camera::IntrinsicBase> cam = scene.getIntrinsics().at(view->getIntrinsicId());
-          std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
-          if (!camPinHole) {
-            ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+          const auto o = getObservationData(scene, _featuresPerView, viewId, track);
+
+          if (o.isEmpty()) {
             continue;
           }
 
-          const Vec2 x_ud = cam->get_ud_pixel(_featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>()); // undistorted 2D point
-          features(0,i) = x_ud(0); 
-          features(1,i) = x_ud(1);  
-          Ps.push_back(camPinHole->getProjectiveEquivalent(scene.getPose(*view).getTransform()));
+          features(0,i) = o.xUd(0);
+          features(1,i) = o.xUd(1);
+          Ps.push_back(o.P);
           i++;
         }
       }

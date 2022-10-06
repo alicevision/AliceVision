@@ -1,6 +1,3 @@
-[submodule "src/dependencies/osi_clp"]
-	path = src/dependencies/osi_clp
-	url = https://github.com/alicevision/osi_clp.git
 [submodule "src/dependencies/MeshSDFilter"]
 	path = src/dependencies/MeshSDFilter
 	url = https://github.com/alicevision/MeshSDFilter.git

@@ -560,8 +560,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     // compute the Bottom-Left minima of the current UDIM for [0,1] range remapping
                     Point2d udimBL;
                     StaticVector<Point2d>& uvCoords = mesh->uvCoords;
-                    udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
-                    udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
+                    udimBL.x = std::floor(std::min({uvCoords[triangleUvIds[0]].x,
+                                                    uvCoords[triangleUvIds[1]].x,
+                                                    uvCoords[triangleUvIds[2]].x}));
+                    udimBL.y = std::floor(std::min({uvCoords[triangleUvIds[0]].y,
+                                                    uvCoords[triangleUvIds[1]].y,
+                                                    uvCoords[triangleUvIds[2]].y}));
 
                     for(int k = 0; k < 3; ++k)
                     {
@@ -579,10 +583,10 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     // min values: floor(value)
                     // max values: ceil(value)
                     Pixel LU, RD;
-                    LU.x = static_cast<int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-                    LU.y = static_cast<int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
-                    RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-                    RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+                    LU.x = static_cast<int>(std::floor(std::min({triPixs[0].x, triPixs[1].x, triPixs[2].x})));
+                    LU.y = static_cast<int>(std::floor(std::min({triPixs[0].y, triPixs[1].y, triPixs[2].y})));
+                    RD.x = static_cast<int>(std::ceil(std::max({triPixs[0].x, triPixs[1].x, triPixs[2].x})));
+                    RD.y = static_cast<int>(std::ceil(std::max({triPixs[0].y, triPixs[1].y, triPixs[2].y})));
 
                     // sanity check: clamp values to [0; textureSide]
                     int texSide = static_cast<int>(texParams.textureSide);
@@ -1319,8 +1323,12 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // compute the Bottom-Left minima of the current UDIM for [0,1] range remapping
         Point2d udimBL;
         StaticVector<Point2d>& uvCoords = mesh->uvCoords;
-        udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x),uvCoords[triangleUvIds[2]].x));
-        udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y),uvCoords[triangleUvIds[2]].y));
+        udimBL.x = std::floor(std::min({uvCoords[triangleUvIds[0]].x,
+                                        uvCoords[triangleUvIds[1]].x,
+                                        uvCoords[triangleUvIds[2]].x}));
+        udimBL.y = std::floor(std::min({uvCoords[triangleUvIds[0]].y,
+                                        uvCoords[triangleUvIds[1]].y,
+                                        uvCoords[triangleUvIds[2]].y}));
 
         for(int k = 0; k < 3; k++)
         {
@@ -1339,10 +1347,10 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // min values: floor(value)
         // max values: ceil(value)
         Pixel LU, RD;
-        LU.x = static_cast<int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-        LU.y = static_cast<int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
-        RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-        RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+        LU.x = static_cast<int>(std::floor(std::min({triPixs[0].x, triPixs[1].x, triPixs[2].x})));
+        LU.y = static_cast<int>(std::floor(std::min({triPixs[0].y, triPixs[1].y, triPixs[2].y})));
+        RD.x = static_cast<int>(std::ceil(std::max({triPixs[0].x, triPixs[1].x, triPixs[2].x})));
+        RD.y = static_cast<int>(std::ceil(std::max({triPixs[0].y, triPixs[1].y, triPixs[2].y})));
 
         // sanity check: clamp values to [0; textureSide]
         int texSide = static_cast<int>(texParams.textureSide);

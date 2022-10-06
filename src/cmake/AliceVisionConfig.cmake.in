@@ -103,6 +103,13 @@ if(BOOST_NO_CXX11)
  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
 
+set(ALICEVISION_BUILD_SFM @ALICEVISION_BUILD_SFM@)
+if(ALICEVISION_BUILD_SFM)
+  find_package(CoinUtils REQUIRED)
+  find_package(Clp REQUIRED)
+  find_package(Osi REQUIRED)
+endif()
+
 # propagate other building options
 set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
 set(ALICEVISION_HAVE_ALEMBIC @ALICEVISION_HAVE_ALEMBIC@)

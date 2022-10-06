@@ -493,7 +493,7 @@ OctreeTracks::OctreeTracks(const Point3d* voxel_, mvsUtils::MultiViewParams* mp_
     minNumOfConsistentCams = _mp.userParams.get<int>("filter.minNumOfConsistentCams", 2);
     simWspThr = (float)_mp.userParams.get<double>("LargeScale.simWspThr", -0.0f);
 
-    int maxNumSubVoxs = std::max(std::max(numSubVoxsX, numSubVoxsY), numSubVoxsZ);
+    int maxNumSubVoxs = std::max({numSubVoxsX, numSubVoxsY, numSubVoxsZ});
     size_ = 2;
     while(size_ < maxNumSubVoxs)
     {
