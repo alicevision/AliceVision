@@ -10,6 +10,7 @@
 #include <aliceVision/sfm/ResidualErrorConstraintFunctor.hpp>
 #include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/utils/CeresUtils.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
@@ -30,48 +31,48 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-class IntrinsicsParameterization : public ceres::LocalParameterization {
+class IntrinsicsManifold : public utils::CeresManifold {
  public:
-  explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
-  : _globalSize(parametersSize),
+  explicit IntrinsicsManifold(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+  : _ambientSize(parametersSize),
     _focalRatio(focalRatio),
     _lockFocal(lockFocal),
     _lockFocalRatio(lockFocalRatio),
     _lockCenter(lockCenter),
     _lockDistortion(lockDistortion)
   {
-    _distortionSize = _globalSize - 4;
-    _localSize = 0;
+    _distortionSize = _ambientSize - 4;
+    _tangentSize = 0;
 
     if (!_lockFocal)
     {
       if (_lockFocalRatio)
       {
-        _localSize += 1;
+        _tangentSize += 1;
       }
       else
       {
-        _localSize += 2;
+        _tangentSize += 2;
       }
     }
 
     if (!_lockCenter)
     {
-      _localSize += 2;
+      _tangentSize += 2;
     }
 
     if (!_lockDistortion)
     {
-      _localSize += _distortionSize;
+      _tangentSize += _distortionSize;
     }
   }
 
-  virtual ~IntrinsicsParameterization() = default;
+  virtual ~IntrinsicsManifold() = default;
 
 
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
   {
-    for (int i = 0; i < _globalSize; i++)
+    for (int i = 0; i < _ambientSize; i++)
     {
       x_plus_delta[i] = x[i];
     }
@@ -115,9 +116,9 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  bool ComputeJacobian(const double* x, double* jacobian) const override
+  bool PlusJacobian(const double* x, double* jacobian) const override
   {    
-    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, AmbientSize(), TangentSize());
 
     J.fill(0);
 
@@ -160,20 +161,28 @@ class IntrinsicsParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  int GlobalSize() const override 
-  {
-    return _globalSize;
+  bool Minus(const double* y, const double* x, double* delta) const override {
+    throw std::invalid_argument("IntrinsicsManifold::Minus() should never be called");
   }
 
-  int LocalSize() const override 
+  bool MinusJacobian(const double* x, double* jacobian) const override {
+    throw std::invalid_argument("IntrinsicsManifold::MinusJacobian() should never be called");
+  }
+
+  int AmbientSize() const override
+  {
+    return _ambientSize;
+  }
+
+  int TangentSize() const override
   { 
-    return _localSize; 
+    return _tangentSize;
   }
 
  private:
   size_t _distortionSize;
-  size_t _globalSize;
-  size_t _localSize;
+  size_t _ambientSize;
+  size_t _tangentSize;
   double _focalRatio;
   bool _lockFocal;
   bool _lockFocalRatio;
@@ -521,8 +530,13 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     // subset parametrization
     if(!constantExtrinsic.empty())
     {
+#if ALICEVISION_CERES_HAS_MANIFOLD
+      auto* subsetManifold = new ceres::SubsetManifold(6, constantExtrinsic);
+      problem.SetManifold(poseBlockPtr, subsetManifold);
+#else
       ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(6, constantExtrinsic);
       problem.SetParameterization(poseBlockPtr, subsetParameterization);
+#endif
     }
 
     _statistics.addState(EParameter::POSE, EParameterState::REFINED);
@@ -699,8 +713,13 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     }
 
     
-    IntrinsicsParameterization * subsetParameterization = new IntrinsicsParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
-    problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
+    IntrinsicsManifold* subsetManifold = new IntrinsicsManifold(intrinsicBlock.size(), focalRatio,
+                                                                lockFocal, lockRatio, lockCenter, lockDistortion);
+#if ALICEVISION_CERES_HAS_MANIFOLD
+    problem.SetManifold(intrinsicBlockPtr, subsetManifold);
+#else
+    problem.SetParameterization(intrinsicBlockPtr, new utils::ManifoldToParameterizationWrapper(subsetManifold));
+#endif
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }

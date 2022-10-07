@@ -7,6 +7,7 @@
 
 #include <aliceVision/sfm/BundleAdjustmentPanoramaCeres.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/utils/CeresUtils.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
@@ -412,7 +413,11 @@ void BundleAdjustmentPanoramaCeres::addExtrinsicsToProblem(const sfmData::SfMDat
     double* poseBlockPtr = poseBlock.data();
 
     /*Define rotation parameterization*/
-    problem.AddParameterBlock(poseBlockPtr, 9, new SO3::LocalParameterization);
+#if ALICEVISION_CERES_HAS_MANIFOLD
+    problem.AddParameterBlock(poseBlockPtr, 9, new SO3::Manifold);
+#else
+    problem.AddParameterBlock(poseBlockPtr, 9, new utils::ManifoldToParameterizationWrapper(new SO3::Manifold));
+#endif
 
     // keep the camera extrinsics constants
     if(cameraPose.isLocked() || isConstant || !refineRotation)
@@ -555,8 +560,13 @@ void BundleAdjustmentPanoramaCeres::addIntrinsicsToProblem(const sfmData::SfMDat
 
     if(!constantIntrinisc.empty())
     {
+#if ALICEVISION_CERES_HAS_MANIFOLD
+      auto* subsetManifold = new ceres::SubsetManifold(intrinsicBlock.size(), constantIntrinisc);
+      problem.SetManifold(intrinsicBlockPtr, subsetManifold);
+#else
       ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(intrinsicBlock.size(), constantIntrinisc);
       problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
+#endif
     }
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);

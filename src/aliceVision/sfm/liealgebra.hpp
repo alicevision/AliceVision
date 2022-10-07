@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <unsupported/Eigen/KroneckerProduct>
+#include <aliceVision/utils/CeresUtils.hpp>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
@@ -142,9 +143,9 @@ inline Eigen::Matrix<double, 3, 9, Eigen::RowMajor> dlogmdr(const Eigen::Matrix3
     return dpdmat * scale + resnoscale * dscaledmat;
 }
 
-class LocalParameterization : public ceres::LocalParameterization {
+class Manifold : public utils::CeresManifold {
  public:
-  ~LocalParameterization() override = default;
+  ~Manifold() override = default;
 
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
  
@@ -170,7 +171,7 @@ class LocalParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  bool ComputeJacobian(const double* /*x*/, double* jacobian) const override {
+  bool PlusJacobian(const double* /*x*/, double* jacobian) const override {
     
     Eigen::Map<Eigen::Matrix<double, 9, 3, Eigen::RowMajor>> J(jacobian);
     //Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> R(x);
@@ -187,9 +188,17 @@ class LocalParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  int GlobalSize() const override { return 9; }
+  bool Minus(const double* y, const double* x, double* delta) const override {
+    throw std::invalid_argument("SO3::Manifold::Minus() should never be called");
+  }
 
-  int LocalSize() const override { return 3; }
+  bool MinusJacobian(const double* x, double* jacobian) const override {
+    throw std::invalid_argument("SO3::Manifold::MinusJacobian() should never be called");
+  }
+
+  int AmbientSize() const override { return 9; }
+
+  int TangentSize() const override { return 3; }
 };
 
 }
@@ -229,9 +238,9 @@ inline Eigen::Matrix4d expm(const Eigen::Matrix<double, 6, 1> & algebra){
 }
 
 
-class LocalParameterization : public ceres::LocalParameterization {
+class Manifold : public utils::CeresManifold {
 public:
-  LocalParameterization(bool refineRotation, bool refineTranslation) :
+  Manifold(bool refineRotation, bool refineTranslation) :
   _refineRotation(refineRotation), 
   _refineTranslation(refineTranslation)
   {
@@ -250,7 +259,7 @@ public:
     return true;
   }
 
-  bool ComputeJacobian(const double * x, double* jacobian) const override {
+  bool PlusJacobian(const double * x, double* jacobian) const override {
 
     Eigen::Map<Eigen::Matrix<double, 16, 6, Eigen::RowMajor>> J(jacobian);
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T(x);
@@ -279,11 +288,19 @@ public:
     return true;
   }
 
-  int GlobalSize() const override {
+  bool Minus(const double* y, const double* x, double* delta) const override {
+    throw std::invalid_argument("SE3::Manifold::Minus() should never be called");
+  }
+
+  bool MinusJacobian(const double* x, double* jacobian) const override {
+    throw std::invalid_argument("SE3::Manifold::MinusJacobian() should never be called");
+  }
+
+  int AmbientSize() const override {
     return 16;
   }
 
-  int LocalSize() const override {
+  int TangentSize() const override {
     return 6;
   }
 
@@ -316,7 +333,7 @@ inline Eigen::Matrix2d expm(double algebra){
 }
 
 
-class LocalParameterization : public ceres::LocalParameterization {
+class Manifold : public utils::CeresManifold {
 public:
   bool Plus(const double* x, const double* delta, double* x_plus_delta) const override {
 
@@ -330,7 +347,7 @@ public:
     return true;
   }
 
-  bool ComputeJacobian(const double * x, double* jacobian) const override {
+  bool PlusJacobian(const double * x, double* jacobian) const override {
 
     Eigen::Map<Eigen::Matrix<double, 4, 1>> J(jacobian);
 
@@ -342,11 +359,19 @@ public:
     return true;
   }
 
-  int GlobalSize() const override {
+  bool Minus(const double* y, const double* x, double* delta) const override {
+    throw std::invalid_argument("SO3::Manifold::Minus() should never be called");
+  }
+
+  bool MinusJacobian(const double* x, double* jacobian) const override {
+    throw std::invalid_argument("SO3::Manifold::MinusJacobian() should never be called");
+  }
+
+  int AmbientSize() const override {
     return 4;
   }
 
-  int LocalSize() const override {
+  int TangentSize() const override {
     return 1;
   }
 };
