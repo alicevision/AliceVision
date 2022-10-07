@@ -333,8 +333,8 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_DEBUG("nbAtlasMax: " << nbAtlasMax);
 
     // Add rounding to have a uniform repartition between chunks (avoid a small chunk at the end)
-    const int nChunks = std::ceil(nbAtlas / double(nbAtlasMax));
-    nbAtlasMax = std::ceil(nbAtlas / double(nChunks));
+    const int nChunks = divideRoundUp(nbAtlas, nbAtlasMax);
+    nbAtlasMax = divideRoundUp(nbAtlas, nChunks);
     ALICEVISION_LOG_DEBUG("nChunks: " << nChunks);
     ALICEVISION_LOG_INFO("nbAtlasMax (after rounding): " << nbAtlasMax);
 

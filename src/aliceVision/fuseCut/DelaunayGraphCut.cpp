@@ -1049,7 +1049,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     // and iterate to fuse points until we get the right amount of points.
 
     // unsigned long nbValidDepths = computeNumberOfAllPoints(mp, 0);
-    // int stepPts = std::ceil((double)nbValidDepths / (double)maxPoints);
+    // int stepPts = divideRoundUp(nbValidDepths, maxPoints);
     std::size_t nbPixels = 0;
     for(const auto& imgParams: _mp.getImagesParams())
     {
