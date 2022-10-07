@@ -113,10 +113,20 @@ double estimateFlow(const std::vector<std::unique_ptr<dataio::FeedProvider>> & f
 
     for (auto& feed : feeds)
     {
-        feed->goToFrame(previous);
+        if (!feed->goToFrame(previous))
+        {
+            ALICEVISION_LOG_ERROR("Invalid frame position. Ignoring this frame.");
+            return 0.0;
+        }
+
         cv::Mat first = readImage(*feed, max_width);
 
-        feed->goToFrame(current);
+        if (!feed->goToFrame(current))
+        {
+            ALICEVISION_LOG_ERROR("Invalid frame position. Ignoring this frame.");
+            return 0.0;
+        }
+
         cv::Mat second = readImage(*feed, max_width);
 
         cv::Mat flow;
@@ -367,7 +377,11 @@ bool KeyframeSelector::writeSelection(const std::string & outputFolder, const st
 
         for (auto pos : _selected)
         {
-            feed.goToFrame(pos);
+            if (!feed.goToFrame(pos))
+            {   
+                ALICEVISION_LOG_ERROR("Invalid frame position. Ignoring this frame.");
+                continue;
+            }
 
             if (!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
             {
