@@ -509,13 +509,13 @@ void writeImage(const std::string& path,
   }
   else if((imageColorSpace != EImageColorSpace::LINEAR) && (imageColorSpace != EImageColorSpace::NO_CONVERSION)) // ACES or ACEScg
   {
-      const auto& root = getAliceVisionRoot();
-      if (root.empty())
+      const auto colorConfigPath = getAliceVisionOCIOConfig();
+      if (colorConfigPath.empty())
       {
           throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
       }
 
-      oiio::ColorConfig colorConfig(root + "/share/aliceVision/config.ocio");
+      oiio::ColorConfig colorConfig(colorConfigPath);
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",
                                        (imageColorSpace != EImageColorSpace::ACES) ? "aces" : "ACEScg", true, "", "",
                                        &colorConfig);
@@ -725,6 +725,13 @@ std::string getAliceVisionRoot()
         return aliceVisionRootOverride;
     const char* value = std::getenv("ALICEVISION_ROOT");
     return value ? value : "";
+}
+
+std::string getAliceVisionOCIOConfig()
+{
+    if (!getAliceVisionRoot().empty())
+        return getAliceVisionRoot() + "/share/aliceVision/config.ocio";
+    return {};
 }
 
 void setAliceVisionRootOverride(const std::string& value)
