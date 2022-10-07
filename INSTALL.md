@@ -46,6 +46,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * OpenGV (rig calibration and localization)
 * OpenMP (enable multi-threading)
+* PCL (Point Cloud Library) >= 1.12.1 for the registration module
 * PopSift (feature extraction on GPU)
 * UncertaintyTE (Uncertainty computation)
 
@@ -111,6 +112,7 @@ vcpkg install ^
           cuda ^
           tbb ^
           assimp ^
+          pcl ^
           clp ^
           --triplet x64-windows
 ```
