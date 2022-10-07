@@ -201,6 +201,7 @@ jobs:
           cmakeAppendedArgs: -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                              -DBUILD_SHARED_LIBS:BOOL=ON
                              -DTARGET_ARCHITECTURE=core
+                             -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
                              -DALICEVISION_BUILD_TESTS:BOOL=ON
                              -DALICEVISION_BUILD_EXAMPLES:BOOL=ON
                              -DALICEVISION_USE_OPENCV:BOOL=ON
