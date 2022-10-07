@@ -509,15 +509,13 @@ void writeImage(const std::string& path,
   }
   else if((imageColorSpace != EImageColorSpace::LINEAR) && (imageColorSpace != EImageColorSpace::NO_CONVERSION)) // ACES or ACEScg
   {
-      char const* val = getenv("ALICEVISION_ROOT");
-      if (val == NULL)
+      const auto& root = getAliceVisionRoot();
+      if (root.empty())
       {
           throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
       }
-      std::string configOCIOFilePath = std::string(val);
-      configOCIOFilePath.append("/share/aliceVision/config.ocio");
 
-      oiio::ColorConfig colorConfig(configOCIOFilePath);
+      oiio::ColorConfig colorConfig(root + "/share/aliceVision/config.ocio");
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",
                                        (imageColorSpace != EImageColorSpace::ACES) ? "aces" : "ACEScg", true, "", "",
                                        &colorConfig);
@@ -717,6 +715,21 @@ bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& mas
         }
     }
     return false;
+}
+
+static std::string aliceVisionRootOverride;
+
+std::string getAliceVisionRoot()
+{
+    if (!aliceVisionRootOverride.empty())
+        return aliceVisionRootOverride;
+    const char* value = std::getenv("ALICEVISION_ROOT");
+    return value ? value : "";
+}
+
+void setAliceVisionRootOverride(const std::string& value)
+{
+    aliceVisionRootOverride = value;
 }
 
 }  // namespace image
