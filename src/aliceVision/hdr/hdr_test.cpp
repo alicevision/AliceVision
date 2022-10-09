@@ -19,7 +19,102 @@
 using namespace aliceVision;
 namespace fs = boost::filesystem;
 
-bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, const hdr::rgbCurve& gt_response)
+bool extractSamplesGroups(std::vector<std::vector<hdr::ImageSample>>& out_samples,
+                          const std::vector<std::vector<std::string>>& imagePaths,
+                          const std::vector<std::vector<double>>& times,
+                          const size_t channelQuantization)
+{
+    std::vector<std::vector<hdr::ImageSample>> nonFilteredSamples;
+    out_samples.resize(imagePaths.size());
+
+    using SampleRef = std::pair<int, int>;
+    using SampleRefList = std::vector<SampleRef>;
+    using MapSampleRefList = std::map<hdr::UniqueDescriptor, SampleRefList>;
+
+    MapSampleRefList mapSampleRefList;
+
+    for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++)
+    {
+
+        int width = 0;
+        int height = 0;
+        image::readImageSize(imagePaths[idGroup][0], width, height);
+
+        std::vector<hdr::ImageSample> groupSamples;
+        if (!hdr::Sampling::extractSamplesFromImages(groupSamples, imagePaths[idGroup],
+                                                     times[idGroup], width, height,
+                                                     channelQuantization,
+                                                     image::EImageColorSpace::LINEAR, true,
+                                                     hdr::Sampling::Params{}))
+        {
+            return false;
+        }
+
+        nonFilteredSamples.push_back(groupSamples);
+    }
+
+    for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++)
+    {
+
+        std::vector<hdr::ImageSample>& groupSamples = nonFilteredSamples[idGroup];
+
+        for (int idSample = 0; idSample < groupSamples.size(); idSample++) {
+
+            SampleRef s;
+            s.first = idGroup;
+            s.second = idSample;
+
+            const hdr::ImageSample& sample = groupSamples[idSample];
+
+            for (int idDesc = 0; idDesc < sample.descriptions.size(); idDesc++)
+            {
+
+                hdr::UniqueDescriptor desc;
+                desc.exposure = sample.descriptions[idDesc].exposure;
+
+                for (int channel = 0; channel < 3; channel++) {
+
+                    desc.channel = channel;
+
+                    /* Get quantized value */
+                    desc.quantizedValue = int(std::round(sample.descriptions[idDesc].mean(channel) *
+                                                         (channelQuantization - 1)));
+                    if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization)
+                    {
+                        continue;
+                    }
+
+                    mapSampleRefList[desc].push_back(s);
+                }
+            }
+        }
+    }
+
+    const size_t maxCountSample = 100;
+    for (auto & list : mapSampleRefList)
+    {
+        if (list.second.size() > maxCountSample)
+        {
+             /*Shuffle and ignore the exceeding samples*/
+            std::random_shuffle(list.second.begin(), list.second.end());
+            list.second.resize(maxCountSample);
+        }
+
+        for (auto & item : list.second)
+        {
+            if (nonFilteredSamples[item.first][item.second].descriptions.size() > 0)
+            {
+                out_samples[item.first].push_back(nonFilteredSamples[item.first][item.second]);
+                nonFilteredSamples[item.first][item.second].descriptions.clear();
+            }
+        }
+    }
+
+    return true;
+}
+
+bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times,
+                   const hdr::rgbCurve& gt_response)
 {
     /* Exposure time for each bracket */
     times = {0.05f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f};
@@ -88,7 +183,7 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<float>& times, c
 BOOST_AUTO_TEST_CASE(hdr_laguerre)
 {
     std::vector<std::string> paths;
-    std::vector<float> times;
+    std::vector<double> times;
 
     const size_t quantization = pow(2, 10);
     hdr::rgbCurve gt_curve(quantization);
@@ -106,11 +201,14 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
 
     std::vector<std::vector<std::string>> all_paths;
     all_paths.push_back(paths);
-    std::vector<std::vector<float>> exposures;
+    std::vector<std::vector<double>> exposures;
     exposures.push_back(times);
     hdr::LaguerreBACalibration calib;
     hdr::rgbCurve response(quantization);
-    calib.process(all_paths, quantization, exposures, false, response);
+
+    std::vector<std::vector<hdr::ImageSample>> samples;
+    extractSamplesGroups(samples, all_paths, exposures, quantization);
+    calib.process(samples, exposures, quantization, false, response);
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {
@@ -156,7 +254,7 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
 BOOST_AUTO_TEST_CASE(hdr_debevec)
 {
     std::vector<std::string> paths;
-    std::vector<float> times;
+    std::vector<double> times;
 
     const size_t quantization = pow(2, 10);
     hdr::rgbCurve gt_curve(quantization);
@@ -175,7 +273,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
     std::vector<std::vector<std::string>> all_paths;
     all_paths.push_back(paths);
 
-    std::vector<std::vector<float>> exposures;
+    std::vector<std::vector<double>> exposures;
     exposures.push_back(times);
 
     hdr::DebevecCalibrate calib;
@@ -183,7 +281,10 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
     hdr::rgbCurve calibrationWeight(quantization);
 
     calibrationWeight.setTriangular();
-    calib.process(all_paths, quantization, exposures, calibrationWeight, 0.001, response);
+
+    std::vector<std::vector<hdr::ImageSample>> samples;
+    extractSamplesGroups(samples, all_paths, exposures, quantization);
+    calib.process(samples, exposures, quantization, calibrationWeight, 0.001, response);
     response.exponential();
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
@@ -231,7 +332,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
 BOOST_AUTO_TEST_CASE(hdr_grossberg)
 {
     std::vector<std::string> paths;
-    std::vector<float> times;
+    std::vector<double> times;
 
     const size_t quantization = pow(2, 10);
     hdr::rgbCurve gt_curve(quantization);
@@ -259,7 +360,7 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     buildBrackets(paths, times, gt_curve);
 
     std::vector<std::vector<std::string>> all_paths;
-    std::vector<std::vector<float>> exposures;
+    std::vector<std::vector<double>> exposures;
 
     all_paths.push_back(paths);
     exposures.push_back(times);
@@ -267,7 +368,9 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     hdr::GrossbergCalibrate calib(9);
     hdr::rgbCurve response(quantization);
 
-    calib.process(all_paths, quantization, exposures, response);
+    std::vector<std::vector<hdr::ImageSample>> samples;
+    extractSamplesGroups(samples, all_paths, exposures, quantization);
+    calib.process(samples, exposures, quantization, response);
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)
     {

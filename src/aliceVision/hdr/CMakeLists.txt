@@ -37,4 +37,6 @@ alicevision_add_library(aliceVision_hdr
 )
 
 # Unit tests
-#alicevision_add_test(hdr_test.cpp      NAME "hdr"            LINKS aliceVision_image aliceVision_hdr)
+alicevision_add_test(hdr_test.cpp
+    NAME "hdr"
+    LINKS aliceVision_image aliceVision_hdr)
