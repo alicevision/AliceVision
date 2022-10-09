@@ -181,6 +181,9 @@ jobs:
           # doNotCache: true
           # Ensure the vcpkg artifacts are cached, they are generated in the 'CMAKE_BINARY_DIR/vcpkg_installed' directory.
           additionalCachedPaths: ${{ env.buildDir }}/vcpkg_installed
+          # This is used to unbreak cached artifacts if for some reason dependencies fail to build,
+          # the action does not notice it and saves broken artifacts.
+          appendedCacheKey: cache1
 
       - name: vcpkg - Display installed packages
         run:
