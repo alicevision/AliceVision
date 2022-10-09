@@ -350,6 +350,84 @@ std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     return in;
 }
 
+void BuildViewIntrinsicsReport::merge(const BuildViewIntrinsicsReport& other)
+{
+    unknownSensors.insert(other.unknownSensors.begin(), other.unknownSensors.end());
+    unsureSensors.insert(other.unsureSensors.begin(), other.unsureSensors.end());
+    missingDeviceUID.insert(missingDeviceUID.end(),
+                            other.missingDeviceUID.begin(), other.missingDeviceUID.end());
+    noMetadataImagePaths.insert(noMetadataImagePaths.end(),
+                                other.noMetadataImagePaths.begin(), other.noMetadataImagePaths.end());
+    intrinsicsSetFromFocal35mm.insert(other.intrinsicsSetFromFocal35mm.begin(),
+                                      other.intrinsicsSetFromFocal35mm.end());
+}
+
+void BuildViewIntrinsicsReport::reportToLog()
+{
+    if (!noMetadataImagePaths.empty())
+    {
+        std::stringstream ss;
+        ss << "No metadata in image(s):\n";
+        for(const auto& imagePath : noMetadataImagePaths)
+            ss << "\t- '" << imagePath << "'\n";
+        ALICEVISION_LOG_DEBUG(ss.str());
+    }
+
+    if (!missingDeviceUID.empty())
+    {
+        ALICEVISION_LOG_WARNING(
+            "Some image(s) have no serial number to identify the camera/lens device.\n"
+            "This makes it impossible to correctly group the images by device if you have used \n"
+            "multiple identical (same model) camera devices. The reconstruction will assume that \n"
+            "only one device has been used, so if 2 images share the same focal length \n"
+            "approximation they will share the same internal camera parameters.\n"
+            << missingDeviceUID.size() << " image(s) are concerned.");
+        ALICEVISION_LOG_DEBUG("The following images are concerned:\n");
+        ALICEVISION_LOG_DEBUG(boost::algorithm::join(missingDeviceUID, "\n"));
+    }
+
+    if (!unsureSensors.empty())
+    {
+        ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
+        for (const auto& unsureSensor : unsureSensors)
+            ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'\n"
+                          << "\t- image camera brand: " << unsureSensor.first.first << "\n"
+                          << "\t- image camera model: " << unsureSensor.first.second << "\n"
+                          << "\t- database camera brand: " << unsureSensor.second.second._brand << "\n"
+                          << "\t- database camera model: " << unsureSensor.second.second._model << "\n"
+                          << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
+        ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database.\n");
+    }
+
+    if (!unknownSensors.empty())
+    {
+        std::stringstream ss;
+        ss << "Sensor width doesn't exist in the database for image(s):\n";
+        for (const auto& unknownSensor : unknownSensors)
+        {
+            ss << "\t- camera brand: " << unknownSensor.first.first << "\n"
+               << "\t- camera model: " << unknownSensor.first.second << "\n"
+               << "\t   - image: " << fs::path(unknownSensor.second).filename().string() << "\n";
+        }
+        ss << "Please add camera model(s) and sensor width(s) in the database.";
+
+        ALICEVISION_LOG_WARNING(ss.str());
+    }
+
+    if (!intrinsicsSetFromFocal35mm.empty())
+    {
+        std::stringstream ss;
+        ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image(s):\n";
+        for (const auto& intrinsicSetFromFocal35mm : intrinsicsSetFromFocal35mm)
+        {
+            ss << "\t- image: " << fs::path(intrinsicSetFromFocal35mm.first).filename().string() << "\n"
+               << "\t   - sensor width: " << intrinsicSetFromFocal35mm.second.first  << "\n"
+               << "\t   - focal length: " << intrinsicSetFromFocal35mm.second.second << "\n";
+        }
+        ALICEVISION_LOG_DEBUG(ss.str());
+    }
+}
+
 std::shared_ptr<camera::IntrinsicBase>
     buildViewIntrinsic(sfmData::View& view,
                        const std::vector<sensorDB::Datasheet>& sensorDatabase,
@@ -358,11 +436,7 @@ std::shared_ptr<camera::IntrinsicBase>
                        camera::EINTRINSIC defaultCameraModel,
                        camera::EINTRINSIC allowedCameraModels,
                        EGroupCameraFallback groupCameraFallback,
-                       UnknownSensorsMap& unknownSensors,
-                       UnsureSensorsMap& unsureSensors,
-                       std::vector<std::string>& missingDeviceUID,
-                       std::vector<std::string>& noMetadataImagePaths,
-                       IntrinsicsFromFocal35mmMap& intrinsicsSetFromFocal35mm)
+                       BuildViewIntrinsicsReport& report)
 {
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
@@ -402,7 +476,8 @@ std::shared_ptr<camera::IntrinsicBase>
             if (datasheet._model != model)
             {
                 // the camera model in database is slightly different
-                unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
+                report.unsureSensors.emplace(std::make_pair(make, model),
+                                             std::make_pair(view.getImagePath(), datasheet));
             }
 
             sensorWidth = datasheet._sensorWidth;
@@ -437,8 +512,8 @@ std::shared_ptr<camera::IntrinsicBase>
                 sensorWidthSource = ESensorWidthSource::UNKNOWN;
             }
 
-            intrinsicsSetFromFocal35mm.emplace(view.getImagePath(),
-                                               std::make_pair(sensorWidth, focalLengthmm));
+            report.intrinsicsSetFromFocal35mm.emplace(view.getImagePath(),
+                                                      std::make_pair(sensorWidth, focalLengthmm));
             intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
         }
         else if (sensorWidth > 0 && focalLengthmm <= 0)
@@ -450,8 +525,8 @@ std::shared_ptr<camera::IntrinsicBase>
 
             focalLengthmm = (sensorDiag * focalIn35mm) / diag24x36;
 
-            intrinsicsSetFromFocal35mm.emplace(view.getImagePath(),
-                                               std::make_pair(sensorWidth, focalLengthmm));
+            report.intrinsicsSetFromFocal35mm.emplace(view.getImagePath(),
+                                                      std::make_pair(sensorWidth, focalLengthmm));
             intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
         }
     }
@@ -461,14 +536,13 @@ std::shared_ptr<camera::IntrinsicBase>
     {
         if (hasCameraMetadata)
         {
-            // Sensor is not in the database. This will throw a warning at the end
-            unknownSensors.emplace(std::make_pair(make, model), view.getImagePath());
+            // Sensor is not in the database.
+            report.unknownSensors.emplace(std::make_pair(make, model), view.getImagePath());
         }
         else
         {
             // No metadata 'Make' and 'Model' can't find sensor width.
-            // This will throw a warning message at the end
-            noMetadataImagePaths.emplace_back(view.getImagePath());
+            report.noMetadataImagePaths.emplace_back(view.getImagePath());
         }
     }
     else
@@ -536,8 +610,7 @@ std::shared_ptr<camera::IntrinsicBase>
         else
         {
             // We have no way to identify a camera device correctly.
-            // will throw a warning message at the end
-             missingDeviceUID.emplace_back(view.getImagePath());
+            report.missingDeviceUID.emplace_back(view.getImagePath());
 
             // To avoid stopping the process, we fallback to a solution selected by the user:
             if (groupCameraFallback == EGroupCameraFallback::FOLDER)

@@ -118,17 +118,6 @@ bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number,
  */
 bool viewHasDefinedIntrinsic(const sfmData::SfMData& sfmData, const sfmData::View& view);
 
-// key (make,model), value (first imagePath)
-using UnknownSensorsMap = std::map<std::pair<std::string, std::string>, std::string>;
-
-// key (make,model), value (first imagePath,datasheet)
-using UnsureSensorsMap = std::map<std::pair<std::string, std::string>,
-                                  std::pair<std::string, sensorDB::Datasheet>>;
-
-// key imagePath value (sensor width, focal length)
-using IntrinsicsFromFocal35mmMap = std::map<std::string, std::pair<double, double>>;
-
-
 enum class EGroupCameraFallback {
     GLOBAL,
     FOLDER,
@@ -140,10 +129,29 @@ EGroupCameraFallback EGroupCameraFallback_stringToEnum(const std::string& strate
 std::ostream& operator<<(std::ostream& os, EGroupCameraFallback s);
 std::istream& operator>>(std::istream& in, EGroupCameraFallback& s);
 
+struct BuildViewIntrinsicsReport
+{
+    // key (make,model), value (first imagePath)
+    std::map<std::pair<std::string, std::string>, std::string> unknownSensors;
+    // key (make,model), value (first imagePath,datasheet)
+    std::map<std::pair<std::string, std::string>,
+             std::pair<std::string, sensorDB::Datasheet>> unsureSensors;
+
+    std::vector<std::string> missingDeviceUID;
+    std::vector<std::string> noMetadataImagePaths;
+
+    // key imagePath value (sensor width, focal length)
+    std::map<std::string, std::pair<double, double>> intrinsicsSetFromFocal35mm;
+
+    void merge(const BuildViewIntrinsicsReport& other);
+    void reportToLog();
+};
+
 /**
  * @brief Build intrinsic for a view.
  * @param[in] view View to build intrinsic for
  * @param[in] sensorDatabase The sensor database to fetch sensor from
+ * @param[out] report Any warnings that have arisen during processing will be added to this variable.
  */
 std::shared_ptr<camera::IntrinsicBase>
     buildViewIntrinsic(sfmData::View& view,
@@ -153,11 +161,7 @@ std::shared_ptr<camera::IntrinsicBase>
                        camera::EINTRINSIC defaultCameraModel,
                        camera::EINTRINSIC allowedCameraModels,
                        EGroupCameraFallback groupCameraFallback,
-                       UnknownSensorsMap& unknownSensors,
-                       UnsureSensorsMap& unsureSensors,
-                       std::vector<std::string>& missingDeviceUID,
-                       std::vector<std::string>& noMetadataImagePaths,
-                       IntrinsicsFromFocal35mmMap& intrinsicsSetFromFocal35mm);
+                       BuildViewIntrinsicsReport& report);
 
 } // namespace sfmDataIO
 } // namespace aliceVision

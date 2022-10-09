@@ -295,11 +295,6 @@ int aliceVision_main(int argc, char **argv)
   // use current time as seed for random generator for intrinsic Id without metadata
   std::srand(std::time(0));
 
-  std::vector<std::string> noMetadataImagePaths; // imagePaths
-  IntrinsicsFromFocal35mmMap intrinsicsSetFromFocal35mm;
-  std::vector<std::string> missingDeviceUID;
-  UnknownSensorsMap unknownSensors;
-  UnsureSensorsMap unsureSensors;
   std::map<IndexT, std::map<int, std::size_t>> detectedRigs; // key rigId, value (subPoseId, nbPose)
 
   sfmData::SfMData sfmData;
@@ -351,6 +346,7 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractComposedNumberRegex("\\d+(?:[\\-\\:\\_\\.]\\d+)*");
   boost::regex extractNumberRegex("\\d+");
 
+  BuildViewIntrinsicsReport intrinsicsReport;
   std::map<IndexT, std::vector<IndexT>> poseGroups;
 
   #pragma omp parallel for
@@ -419,20 +415,14 @@ int aliceVision_main(int argc, char **argv)
         continue;
     }
 
-    UnknownSensorsMap viewUnknownSensors;
-    UnsureSensorsMap viewUnsureSensors;
-    std::vector<std::string> viewMissingDeviceUID;
-    std::vector<std::string> viewNoMetadataImagePaths;
-    IntrinsicsFromFocal35mmMap viewIntrinsicsSetFromFocal35mm;
+    BuildViewIntrinsicsReport viewIntrinsicsReport;
+
 
     auto intrinsicBase = buildViewIntrinsic(view, sensorDatabase,
                                             defaultFocalLength, defaultFieldOfView,
                                             defaultFocalRatio, defaultOffsetX, defaultOffsetY,
                                             defaultCameraModel, allowedCameraModels,
-                                            groupCameraFallback,
-                                            viewUnknownSensors, viewUnsureSensors,
-                                            viewMissingDeviceUID, viewNoMetadataImagePaths,
-                                            viewIntrinsicsSetFromFocal35mm);
+                                            groupCameraFallback, viewIntrinsicsReport);
 
     if (intrinsicBase && intrinsicBase->isValid())
     {
@@ -443,14 +433,7 @@ int aliceVision_main(int argc, char **argv)
     #pragma omp critical
     {
       sfmData.getIntrinsics().emplace(view.getIntrinsicId(), intrinsicBase);
-      unknownSensors.insert(viewUnknownSensors.begin(), viewUnknownSensors.end());
-      unsureSensors.insert(viewUnsureSensors.begin(), viewUnsureSensors.end());
-      missingDeviceUID.insert(missingDeviceUID.end(),
-                              viewMissingDeviceUID.begin(), viewMissingDeviceUID.end());
-      noMetadataImagePaths.insert(noMetadataImagePaths.end(),
-                                  viewNoMetadataImagePaths.begin(), viewNoMetadataImagePaths.end());
-      intrinsicsSetFromFocal35mm.insert(viewIntrinsicsSetFromFocal35mm.begin(),
-                                        viewIntrinsicsSetFromFocal35mm.end());
+      intrinsicsReport.merge(viewIntrinsicsReport);
     }
   }
 
@@ -515,67 +498,7 @@ int aliceVision_main(int argc, char **argv)
       }
   }
 
-  if(!noMetadataImagePaths.empty())
-  {
-    std::stringstream ss;
-    ss << "No metadata in image(s):\n";
-    for(const auto& imagePath : noMetadataImagePaths)
-      ss << "\t- '" << imagePath << "'\n";
-    ALICEVISION_LOG_DEBUG(ss.str());
-  }
-
-  if(!missingDeviceUID.empty())
-  {
-      ALICEVISION_LOG_WARNING(
-                  "Some image(s) have no serial number to identify the camera/lens device.\n"
-                  "This makes it impossible to correctly group the images by device if you have used multiple identical (same model) camera devices.\n"
-                  "The reconstruction will assume that only one device has been used, "
-                  "so if 2 images share the same focal length approximation they will share the same internal camera parameters.\n"
-                  << missingDeviceUID.size() << " image(s) are concerned.");
-      ALICEVISION_LOG_DEBUG("The following images are concerned:\n");
-      ALICEVISION_LOG_DEBUG(boost::algorithm::join(missingDeviceUID, "\n"));
-  }
-
-  if(!unsureSensors.empty())
-  {
-    ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
-    for(const auto& unsureSensor : unsureSensors)
-      ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
-                        << "\t- image camera brand: " << unsureSensor.first.first <<  std::endl
-                        << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
-                        << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
-                        << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
-    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
-  }
-
-  if(!unknownSensors.empty())
-  {
-    std::stringstream ss;
-    ss << "Sensor width doesn't exist in the database for image(s):\n";
-    for(const auto& unknownSensor : unknownSensors)
-    {
-      ss << "\t- camera brand: " << unknownSensor.first.first << "\n"
-         << "\t- camera model: " << unknownSensor.first.second << "\n"
-         << "\t   - image: " << fs::path(unknownSensor.second).filename().string() << "\n";
-    }
-    ss << "Please add camera model(s) and sensor width(s) in the database.";
-
-    ALICEVISION_LOG_WARNING(ss.str());
-  }
-
-  if(!intrinsicsSetFromFocal35mm.empty())
-  {
-    std::stringstream ss;
-    ss << "Intrinsic(s) initialized from 'FocalLengthIn35mmFilm' exif metadata in image(s):\n";
-    for(const auto& intrinsicSetFromFocal35mm : intrinsicsSetFromFocal35mm)
-    {
-      ss << "\t- image: " << fs::path(intrinsicSetFromFocal35mm.first).filename().string() << "\n"
-         << "\t   - sensor width: " << intrinsicSetFromFocal35mm.second.first  << "\n"
-         << "\t   - focal length: " << intrinsicSetFromFocal35mm.second.second << "\n";
-    }
-    ALICEVISION_LOG_DEBUG(ss.str());
-  }
+  intrinsicsReport.reportToLog();
 
   if(completeViewCount < 1 || (completeViewCount < 2 && !allowSingleView))
   {
@@ -603,7 +526,8 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("CameraInit report:"
                    << "\n\t- # views listed: " << sfmData.getViews().size()
                    << "\n\t   - # views with an initialized intrinsic listed: " << completeViewCount
-                   << "\n\t   - # views without metadata (with a default intrinsic): " <<  noMetadataImagePaths.size()
+                   << "\n\t   - # views without metadata (with a default intrinsic): "
+                   << intrinsicsReport.noMetadataImagePaths.size()
                    << "\n\t- # intrinsics listed: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
