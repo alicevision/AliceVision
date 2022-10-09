@@ -471,22 +471,11 @@ int aliceVision_main(int argc, char **argv)
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
     camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
 
-    // check if the view intrinsic is already defined
-    if(intrinsicId != UndefinedIndexT)
+    if (sfmDataIO::viewHasDefinedIntrinsic(sfmData, view))
     {
-      camera::IntrinsicBase* intrinsicBase = sfmData.getIntrinsicPtr(view.getIntrinsicId());
-      camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
-      if(intrinsic != nullptr)
-      {
-        if(intrinsic->getFocalLengthPixX() > 0)
-        {
-          // the view intrinsic is initialized
-          boost::atomic_ref<std::size_t>(completeViewCount)++;
-
-          // don't need to build a new intrinsic
-          continue;
-        }
-      }
+        // don't need to build a new intrinsic
+        boost::atomic_ref<std::size_t>(completeViewCount)++;
+        continue;
     }
 
     // try to find in the sensor width in the database

@@ -292,5 +292,23 @@ bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number,
     return containsNumber;
 }
 
+bool viewHasDefinedIntrinsic(const sfmData::SfMData& sfmData, const sfmData::View& view)
+{
+    auto intrinsicId = view.getIntrinsicId();
+    if (intrinsicId == UndefinedIndexT)
+        return false;
+
+
+    auto* intrinsicBase = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+    auto* intrinsic = dynamic_cast<const camera::Pinhole*>(intrinsicBase);
+    if (intrinsic == nullptr)
+        return false;
+
+    if (intrinsic->getFocalLengthPixX() <= 0)
+        return false;
+
+    return true;
+}
+
 } // namespace sfmDataIO
 } // namespace aliceVision

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
@@ -109,6 +110,8 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
 * @return true if the image filename (stripped of its extension) contains a number
 */
 bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number, std::string& prefix, std::string& suffix);
+
+bool viewHasDefinedIntrinsic(const sfmData::SfMData& sfmData, const sfmData::View& view);
 
 } // namespace sfmDataIO
 } // namespace aliceVision
