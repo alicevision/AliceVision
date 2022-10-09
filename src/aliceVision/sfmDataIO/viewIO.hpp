@@ -113,5 +113,16 @@ bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number,
 
 bool viewHasDefinedIntrinsic(const sfmData::SfMData& sfmData, const sfmData::View& view);
 
+
+enum class EGroupCameraFallback {
+    GLOBAL,
+    FOLDER,
+    IMAGE
+};
+
+std::string EGroupCameraFallback_enumToString(EGroupCameraFallback strategy);
+EGroupCameraFallback EGroupCameraFallback_stringToEnum(const std::string& strategy);
+std::ostream& operator<<(std::ostream& os, EGroupCameraFallback s);
+std::istream& operator>>(std::istream& in, EGroupCameraFallback& s);
 } // namespace sfmDataIO
 } // namespace aliceVision

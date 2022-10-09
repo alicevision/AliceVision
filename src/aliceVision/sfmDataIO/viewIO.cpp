@@ -310,5 +310,43 @@ bool viewHasDefinedIntrinsic(const sfmData::SfMData& sfmData, const sfmData::Vie
     return true;
 }
 
+
+std::string EGroupCameraFallback_enumToString(EGroupCameraFallback strategy)
+{
+    switch(strategy)
+    {
+    case EGroupCameraFallback::GLOBAL:
+        return "global";
+    case EGroupCameraFallback::FOLDER:
+        return "folder";
+    case EGroupCameraFallback::IMAGE:
+        return "image";
+    }
+    throw std::out_of_range("Invalid GroupCameraFallback type Enum: " + std::to_string(int(strategy)));
+}
+
+EGroupCameraFallback EGroupCameraFallback_stringToEnum(const std::string& strategy)
+{
+    if (strategy == "global")
+        return EGroupCameraFallback::GLOBAL;
+    if (strategy == "folder")
+        return EGroupCameraFallback::FOLDER;
+    if (strategy == "image")
+        return EGroupCameraFallback::IMAGE;
+    throw std::out_of_range("Invalid GroupCameraFallback type string " + strategy);
+}
+
+std::ostream& operator<<(std::ostream& os, EGroupCameraFallback s)
+{
+    return os << EGroupCameraFallback_enumToString(s);
+}
+
+std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
+{
+    std::string token;
+    in >> token;
+    s = EGroupCameraFallback_stringToEnum(token);
+    return in;
+}
 } // namespace sfmDataIO
 } // namespace aliceVision
