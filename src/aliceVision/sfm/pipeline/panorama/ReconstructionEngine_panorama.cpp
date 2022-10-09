@@ -611,7 +611,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
-      relativePose_info.initial_residual_tolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
+      relativePose_info.initial_residual_tolerance =
+              std::sqrt(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5));
 
       // Since we use normalized features, we will use unit image size and intrinsic matrix:
       const std::pair<size_t, size_t> imageSize(1., 1.);
@@ -631,7 +632,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         case RELATIVE_ROTATION_FROM_H:
         {
           RelativeRotationInfo relativeRotation_info;
-          relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
+          relativeRotation_info._initialResidualTolerance =
+                  std::sqrt(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5));
           
           if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
@@ -648,7 +650,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         case RELATIVE_ROTATION_FROM_R:
         {
           RelativeRotationInfo relativeRotation_info;
-          relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
+          relativeRotation_info._initialResidualTolerance =
+                  std::sqrt(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5));
           
           if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, _randomNumberGenerator, relativeRotation_info))
           {
