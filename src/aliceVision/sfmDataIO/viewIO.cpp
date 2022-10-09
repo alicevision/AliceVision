@@ -7,6 +7,7 @@
 #include "viewIO.hpp"
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/sfmData/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/image/io.hpp>
@@ -348,5 +349,247 @@ std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     s = EGroupCameraFallback_stringToEnum(token);
     return in;
 }
+
+std::shared_ptr<camera::IntrinsicBase>
+    buildViewIntrinsic(sfmData::View& view,
+                       const std::vector<sensorDB::Datasheet>& sensorDatabase,
+                       double defaultFocalLength, double defaultFieldOfView,
+                       double defaultFocalRatio, double defaultOffsetX, double defaultOffsetY,
+                       camera::EINTRINSIC defaultCameraModel,
+                       camera::EINTRINSIC allowedCameraModels,
+                       EGroupCameraFallback groupCameraFallback,
+                       UnknownSensorsMap& unknownSensors,
+                       UnsureSensorsMap& unsureSensors,
+                       std::vector<std::string>& missingDeviceUID,
+                       std::vector<std::string>& noMetadataImagePaths,
+                       IntrinsicsFromFocal35mmMap& intrinsicsSetFromFocal35mm)
+{
+    IndexT intrinsicId = view.getIntrinsicId();
+    double sensorWidth = -1;
+    double sensorHeight = -1;
+    enum class ESensorWidthSource {
+        FROM_DB,
+        FROM_METADATA_ESTIMATION,
+        UNKNOWN
+    } sensorWidthSource = ESensorWidthSource::UNKNOWN;
+
+    double focalLengthmm = view.getMetadataFocalLength();
+    const std::string& make = view.getMetadataMake();
+    const std::string& model = view.getMetadataModel();
+    const bool hasCameraMetadata = (!make.empty() || !model.empty());
+    const bool hasFocalIn35mmMetadata = view.hasDigitMetadata({"Exif:FocalLengthIn35mmFilm",
+                                                               "FocalLengthIn35mmFilm"});
+    const double focalIn35mm = hasFocalIn35mmMetadata
+            ? view.getDoubleMetadata({"Exif:FocalLengthIn35mmFilm", "FocalLengthIn35mmFilm"})
+            : -1.0;
+
+    const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+    const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
+    camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
+
+    // try to find in the sensor width in the database
+    if (hasCameraMetadata)
+    {
+        sensorDB::Datasheet datasheet;
+        if (sensorDB::getInfo(make, model, sensorDatabase, datasheet))
+        {
+            // sensor is in the database
+            ALICEVISION_LOG_TRACE("Sensor width found in database: " << std::endl
+                                  << "\t- brand: " << make << std::endl
+                                  << "\t- model: " << model << std::endl
+                                  << "\t- sensor width: " << datasheet._sensorWidth << " mm");
+
+            if (datasheet._model != model)
+            {
+                // the camera model in database is slightly different
+                unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
+            }
+
+            sensorWidth = datasheet._sensorWidth;
+            sensorWidthSource = ESensorWidthSource::FROM_DB;
+
+            if (focalLengthmm > 0.0)
+            {
+                intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+            }
+        }
+    }
+
+    // try to find / compute with 'FocalLengthIn35mmFilm' metadata
+    if (hasFocalIn35mmMetadata)
+    {
+        if (sensorWidth == -1.0)
+        {
+            const double invRatio = 1.0 / imageRatio;
+
+            if (focalLengthmm > 0.0)
+            {
+                // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce sensorWith approximation
+                const double sensorDiag = (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
+                sensorWidth = sensorDiag * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+                sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
+            }
+            else
+            {
+                // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWith as 35mm
+                sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+                focalLengthmm = sensorWidth * (focalIn35mm ) / 36.0;
+                sensorWidthSource = ESensorWidthSource::UNKNOWN;
+            }
+
+            intrinsicsSetFromFocal35mm.emplace(view.getImagePath(),
+                                               std::make_pair(sensorWidth, focalLengthmm));
+            intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        }
+        else if (sensorWidth > 0 && focalLengthmm <= 0)
+        {
+            // valid sensorWidth and valid focalLengthIn35mm but no focalLength, so convert
+            // focalLengthIn35mm to the actual width of the sensor
+            const double sensorDiag = std::sqrt(std::pow(sensorWidth, 2) +
+                                                std::pow(sensorWidth / imageRatio, 2));
+
+            focalLengthmm = (sensorDiag * focalIn35mm) / diag24x36;
+
+            intrinsicsSetFromFocal35mm.emplace(view.getImagePath(),
+                                               std::make_pair(sensorWidth, focalLengthmm));
+            intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        }
+    }
+
+    // error handling
+    if (sensorWidth == -1.0)
+    {
+        if (hasCameraMetadata)
+        {
+            // Sensor is not in the database. This will throw a warning at the end
+            unknownSensors.emplace(std::make_pair(make, model), view.getImagePath());
+        }
+        else
+        {
+            // No metadata 'Make' and 'Model' can't find sensor width.
+            // This will throw a warning message at the end
+            noMetadataImagePaths.emplace_back(view.getImagePath());
+        }
+    }
+    else
+    {
+        // We have a valid sensorWidth information, so se store it into the metadata (where it would have been nice to have it in the first place)
+        if (sensorWidthSource == ESensorWidthSource::FROM_DB)
+        {
+            view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
+        }
+        else if (sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+        {
+            view.addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
+        }
+    }
+
+    if (sensorWidth < 0)
+    {
+      ALICEVISION_LOG_WARNING("Sensor size is unknown");
+      ALICEVISION_LOG_WARNING("Use default sensor size (36 mm)");
+      sensorWidth = 36.0;
+    }
+
+    // build intrinsic
+    auto intrinsicBase = getViewIntrinsic(view, focalLengthmm, sensorWidth, defaultFocalLength,
+                                          defaultFieldOfView, defaultFocalRatio,
+                                          defaultOffsetX, defaultOffsetY,
+                                          defaultCameraModel, allowedCameraModels);
+    auto intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
+
+    // set initialization mode
+    intrinsic->setInitializationMode(intrinsicInitMode);
+
+    // Set sensor size
+    if (sensorHeight > 0.0)
+    {
+        intrinsicBase->setSensorWidth(sensorWidth);
+        intrinsicBase->setSensorHeight(sensorHeight);
+    }
+    else
+    {
+        if (imageRatio > 1.0)
+        {
+            intrinsicBase->setSensorWidth(sensorWidth);
+            intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+        }
+        else
+        {
+            intrinsicBase->setSensorWidth(sensorWidth);
+            intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
+        }
+    }
+
+    // Create serial number if not already filled
+    if (intrinsic->serialNumber().empty())
+    {
+        // Create custom serial number
+        const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
+        const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
+
+        if (!bodySerialNumber.empty() || !lensSerialNumber.empty())
+        {
+            // We can identify the device based on a unique ID.
+            intrinsic->setSerialNumber(bodySerialNumber + "_" + lensSerialNumber);
+        }
+        else
+        {
+            // We have no way to identify a camera device correctly.
+            // will throw a warning message at the end
+             missingDeviceUID.emplace_back(view.getImagePath());
+
+            // To avoid stopping the process, we fallback to a solution selected by the user:
+            if (groupCameraFallback == EGroupCameraFallback::FOLDER)
+            {
+                // when we don't have a serial number, the folder will become part of the device ID.
+                // This means that 2 images in different folder will NOT share intrinsics.
+                intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
+            }
+            else if (groupCameraFallback == EGroupCameraFallback::IMAGE)
+            {
+                // If no serial number, each view will get its own camera intrinsic parameters.
+                intrinsic->setSerialNumber(view.getImagePath());
+            }
+            else if (groupCameraFallback == EGroupCameraFallback::GLOBAL)
+            {
+                // if no serial number, images with the same make/model/focal or no make/model/focal
+                // will be considered as a single group of camera intrinsics.
+            }
+
+            if (!make.empty() || !model.empty())
+            {
+                // We have no correct way to identify a camera device, we fallback on the camera
+                // make/model. If you use multiple identical devices, they will be fused together
+                // incorrectly.
+                intrinsic->setSerialNumber(intrinsic->serialNumber() + "_" + make + "_" + model);
+            }
+
+            if (view.isPartOfRig())
+            {
+                // when we have no unique camera identifier, so for rig images, we ensure that each
+                // camera of the rig have different serial numbers.
+                intrinsic->setSerialNumber(intrinsic->serialNumber() + "_rig_" + std::to_string(view.getRigId()) + "_" + std::to_string(view.getSubPoseId()));
+            }
+        }
+
+        // If we have not managed to initialize the focal length, we need to use the focalLength in mm
+        if (intrinsic->getScale()(0) <= 0 && focalLengthmm > 0)
+        {
+            intrinsic->setSerialNumber(intrinsic->serialNumber() + "_FocalLengthMM_" +
+                                       std::to_string(focalLengthmm));
+        }
+    }
+
+    // create intrinsic id
+    // group camera that share common properties (leads to more faster & stable BA).
+    if(intrinsicId == UndefinedIndexT)
+    {
+      intrinsicId = intrinsic->hashValue();
+    }
+    view.setIntrinsicId(intrinsicId);
+    return intrinsicBase;
+}
+
 } // namespace sfmDataIO
 } // namespace aliceVision
