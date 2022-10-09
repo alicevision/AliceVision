@@ -275,5 +275,18 @@ struct ColorTypeInfo<RGBAfColor>
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
                  const IndexT viewId, const std::string & srcImage);
 
+/**
+ * Returns the value of ALICEVISION_ROOT environmental variable, or empty string if it is not
+ * defined. The returned value can be overridden by `setAliceVisionRootOverride` if needed, for
+ * example in tests.
+ */
+// TODO: use std::optional when the C++ standard version is upgraded to C++17
+std::string getAliceVisionRoot();
+
+/// Returns path to OpenColorIO config that is shipped with aliceVision
+std::string getAliceVisionOCIOConfig();
+
+void setAliceVisionRootOverride(const std::string& value);
+
 }  // namespace image
 }  // namespace aliceVision
