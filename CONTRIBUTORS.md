@@ -26,6 +26,7 @@ Individuals
 - Simone Gasparini
 - Théo Leplomb
 - Tomas Pajdla
+- Vincent Demoulin
 - Yann Lanthony
 - Zeljko Vrba
 
