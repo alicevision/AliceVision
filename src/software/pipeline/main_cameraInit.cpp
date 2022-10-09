@@ -471,7 +471,12 @@ int aliceVision_main(int argc, char **argv)
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
     camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
 
-    if (sfmDataIO::viewHasDefinedIntrinsic(sfmData, view))
+    bool hasDefinedIntrinsic = false;
+    #pragma omp critical
+    {
+        hasDefinedIntrinsic = sfmDataIO::viewHasDefinedIntrinsic(sfmData, view);
+    }
+    if (hasDefinedIntrinsic)
     {
         // don't need to build a new intrinsic
         boost::atomic_ref<std::size_t>(completeViewCount)++;
