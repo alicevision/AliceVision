@@ -15,7 +15,7 @@
 
 // Image
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 // System
 #include <aliceVision/system/MemoryInfo.hpp>

@@ -274,5 +274,26 @@ namespace aliceVision
       return Image<T1>( imgA.Image<T1>::operator-( imgB ) ) ;
     }
 
+    template< typename T >
+    T getInterpolateColor(const Image<T>& img, double y, double x)
+    {
+        const int xp = std::min(static_cast<int>(x), img.Width() - 2);
+        const int yp = std::min(static_cast<int>(y), img.Height() - 2);
+
+        // precision to 4 decimal places
+        const float ui = x - static_cast<float>(xp);
+        const float vi = y - static_cast<float>(yp);
+
+        const T lu = img(yp, xp);
+        const T ru = img(yp, (xp + 1));
+        const T rd = img((yp + 1), (xp + 1));
+        const T ld = img((yp + 1), xp);
+
+        // bilinear interpolation of the pixel intensity value
+        const T u = lu + (ru - lu) * ui;
+        const T d = ld + (rd - ld) * ui;
+        const T out = u + (d - u) * vi;
+        return out;
+    }
   } // namespace image
 } // namespace aliceVision

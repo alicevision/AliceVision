@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -64,8 +65,8 @@ std::ostream& operator<<(std::ostream& os, EBumpMappingType meshFileType);
 
 struct BumpMappingParams
 {
-    imageIO::EImageFileType bumpMappingFileType = imageIO::EImageFileType::NONE;
-    imageIO::EImageFileType displacementFileType = imageIO::EImageFileType::NONE;
+    image::EImageFileType bumpMappingFileType = image::EImageFileType::NONE;
+    image::EImageFileType displacementFileType = image::EImageFileType::NONE;
 
     EBumpMappingType bumpType = EBumpMappingType::Normal;
 };
@@ -87,8 +88,8 @@ struct TexturingParams
     double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
 
-    imageIO::EImageFileType textureFileType = imageIO::EImageFileType::NONE;
-    imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
+    image::EImageFileType textureFileType = image::EImageFileType::NONE;
+    image::EImageColorSpace processColorspace = image::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
     mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
@@ -167,7 +168,7 @@ public:
     // Create buffer for the set of output textures
     struct AccuImage
     {
-        ImageRGBf img;
+        image::Image<image::RGBfColor> img;
         std::vector<float> imgCount;
 
         void resize(int width, int height)
@@ -190,28 +191,32 @@ public:
 
     /// Generate texture files for all texture atlases
     void generateTextures(const mvsUtils::MultiViewParams& mp,
-                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
+                          const bfs::path &outPath,
+                          image::EImageFileType textureFileType = image::EImageFileType::PNG);
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
-                         const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
+                                const std::vector<size_t>& atlasIDs,
+                                mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
+                                const bfs::path &outPath,
+                                image::EImageFileType textureFileType = image::EImageFileType::PNG);
 
     void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const Mesh& denseMesh,
                                      const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp, const GEO::MeshFacetsAABB& denseMeshAABB,
-                                      const GEO::Mesh& sparseMesh, size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                      const GEO::Mesh& sparseMesh, size_t atlasID,
+                                      mvsUtils::ImagesCache<image::Image<image::RGBfColor> >& imageCache,
                                       const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams);
 
     ///Fill holes and write texture files for the given texture atlas
     void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
-                      imageIO::EImageFileType textureFileType, const int level);
+                      image::EImageFileType textureFileType, const int level);
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAs(const bfs::path& dir, const std::string& basename,
                 aliceVision::mesh::EFileType meshFileType = aliceVision::mesh::EFileType::OBJ,
-                imageIO::EImageFileType textureFileType = imageIO::EImageFileType::EXR,
+                image::EImageFileType textureFileType = image::EImageFileType::EXR,
                 const BumpMappingParams& bumpMappingParams = BumpMappingParams());
 };
 

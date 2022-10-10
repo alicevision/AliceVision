@@ -6,7 +6,7 @@
 
 #include "ReconstructionPlan.hpp"
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>

@@ -16,7 +16,7 @@
 
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -70,7 +70,7 @@ void Refine::upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMa
 
 void Refine::filterMaskedPixels(DepthSimMap& out_depthSimMap)
 {
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = _cps._ic.getImg_sync(_rc);
+    auto img = _cps._ic.getImg_sync(_rc);
 
     const int h = _mp.getHeight(_rc);
     const int w = _mp.getWidth(_rc);
@@ -79,9 +79,9 @@ void Refine::filterMaskedPixels(DepthSimMap& out_depthSimMap)
     {
         for(int x = 0; x < w; ++x)
         {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
+            const image::RGBAfColor& floatRGBA = (*img)(y, x);
 
-            if(floatRGBA.a < 0.1f)
+            if (floatRGBA.a() < 0.1f)
             {
                 DepthSim& depthSim = out_depthSimMap._dsm[y * w + x];
 

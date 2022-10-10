@@ -7,13 +7,14 @@
 #include "MultiViewParams.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/utils/filesIO.hpp>
@@ -76,7 +77,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             std::vector<std::string> paths = utils::getFilesPathsFromFolder(_imagesFolder, 
                 [&view](const fs::path& path) 
                 {
-                    return (path.stem() == std::to_string(view.getViewId()) && (imageIO::isSupportedUndistortFormat(path.extension().string())));
+                    return (path.stem() == std::to_string(view.getViewId()) &&
+                            (image::isSupportedUndistortFormat(path.extension().string())));
                 }
             );
 
@@ -122,7 +124,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         const bool fileExists = fs::exists(imgParams.path);
         if(fileExists)
         {
-            imageIO::readImageMetadata(imgParams.path, metadata);
+            metadata = image::readImageMetadata(imgParams.path);
             scaleIt = metadata.find("AliceVision:downscale");
             pIt = metadata.find("AliceVision:P");
         }
@@ -136,8 +138,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         else if(fileExists)
         {
             // use image dimension
-            int w, h, channels;
-            imageIO::readImageSpec(imgParams.path, w, h, channels);
+            int w, h;
+            image::readImageSize(imgParams.path, w, h);
             const int widthScale = imgParams.width / w;
             const int heightScale = imgParams.height / h;
 
@@ -653,8 +655,7 @@ StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point
     tcams.reserve(getNbCameras());
     for(int rc = 0; rc < getNbCameras(); rc++)
     {
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(getImagePath(rc), metadata);
+        const auto metadata = image::readImageMetadata(getImagePath(rc));
 
         const float minDepth = metadata.get_float("AliceVision:minDepth", -1);
         const float maxDepth = metadata.get_float("AliceVision:maxDepth", -1);

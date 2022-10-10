@@ -4,6 +4,7 @@ add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 set(image_files_headers
   all.hpp
   Image.hpp
+  imageAlgo.hpp
   concat.hpp
   convertion.hpp
   convolutionBase.hpp
@@ -15,6 +16,7 @@ set(image_files_headers
   resampling.hpp
   warping.hpp
   pixelTypes.hpp
+  Rgb.hpp
   Sampler.hpp
   cache.hpp
 )
@@ -24,6 +26,7 @@ set(image_files_sources
   convolution.cpp
   filtering.cpp
   io.cpp
+  imageAlgo.cpp
   cache.cpp
 )
 

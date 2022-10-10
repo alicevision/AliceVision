@@ -10,13 +10,12 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/Image.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -285,7 +284,8 @@ void Texturing::updateAtlases()
 }
 
 void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
-                                 const boost::filesystem::path& outPath, imageIO::EImageFileType textureFileType)
+                                 const boost::filesystem::path& outPath,
+                                 image::EImageFileType textureFileType)
 {
     // Ensure that contribution levels do not contain 0 and are sorted (as each frequency band contributes to lower bands).
     auto& m = texParams.multiBandNbContrib;
@@ -304,16 +304,20 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     }
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    ALICEVISION_LOG_INFO("Texturing in " + imageIO::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
-    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, texParams.processColorspace, texParams.correctEV);
+    ALICEVISION_LOG_INFO("Texturing in " + image::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
+    mvsUtils::ImagesCache<image::Image<image::RGBfColor>> imageCache(
+                mp, texParams.processColorspace, texParams.correctEV);
+
     imageCache.setCacheSize(2);
     ALICEVISION_LOG_INFO("Images loaded from cache with: " + ECorrectEV_enumToString(texParams.correctEV));
 
     //calculate the maximum number of atlases in memory in MB
     system::MemoryInfo memInfo = system::getMemoryInfo();
-    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(ColorRGBf) / std::pow(2,20); //MB
+    const std::size_t imageMaxMemSize =
+            mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(image::RGBfColor) / std::pow(2,20); //MB
     const std::size_t imagePyramidMaxMemSize = texParams.nbBand * imageMaxMemSize;
-    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(ColorRGBf)+sizeof(float)) / std::pow(2,20); //MB
+    const std::size_t atlasContribMemSize =
+            texParams.textureSide * texParams.textureSide * (sizeof(image::RGBfColor)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
     const int availableRam = int(memInfo.availableRam / std::pow(2,20));
@@ -369,7 +373,10 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 }
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache, const bfs::path& outPath, imageIO::EImageFileType textureFileType)
+                                       const std::vector<size_t>& atlasIDs,
+                                       mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
+                                       const bfs::path& outPath,
+                                       image::EImageFileType textureFileType)
 {
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
@@ -529,12 +536,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") with contributions to " << cameraContributions.size() << " texture files:");
 
         // Load camera image from cache
-        mvsUtils::ImagesCache<ImageRGBf>::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
-        const ImageRGBf& camImg = *imgPtr;
+        auto imgPtr = imageCache.getImg_sync(camId);
+        const image::Image<image::RGBfColor>& camImg = *imgPtr;
 
         // Calculate laplacianPyramid
-        std::vector<ImageRGBf> pyramidL; //laplacian pyramid
-        laplacianPyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
+        std::vector<image::Image<image::RGBfColor>> pyramidL; //laplacian pyramid
+        imageAlgo::laplacianPyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
@@ -624,7 +631,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                continue;
 
                            // If the color is pure zero (ie. no contributions), we consider it as an invalid pixel.
-                           if(camImg.getInterpolateColor(pixRC) == ColorRGBf(0.f, 0.f, 0.f))
+                           if (getInterpolateColor(camImg, pixRC.y, pixRC.x) == image::RGBfColor(0.f, 0.f, 0.f))
                                continue;
 
                            // Fill the accumulated pyramid for this pixel
@@ -636,7 +643,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                AccuImage& accuImage = accuPyramid.pyramid[bandContrib];
 
                                // fill the accumulated color map for this pixel
-                               accuImage.img[xyoffset] += pyramidL[bandContrib].getInterpolateColor(pixRC/downscaleCoef) * triangleScore;
+                               const auto pixDownscaled = pixRC / downscaleCoef;
+                               accuImage.img(xyoffset) += getInterpolateColor(pyramidL[bandContrib], pixDownscaled.y, pixDownscaled.x) * triangleScore;
                                accuImage.imgCount[xyoffset] += triangleScore;
                            }
                        }
@@ -701,13 +709,13 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 if(atlasTexture.imgCount[xyoffset] == 0)
                     continue;
 
-                atlasTexture.img[xyoffset] /= atlasTexture.imgCount[xyoffset];
+                atlasTexture.img(xyoffset) /= atlasTexture.imgCount[xyoffset];
                 atlasTexture.imgCount[xyoffset] = 1;
 
                 for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
                 {
                     AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
-                    atlasLevelTexture.img[xyoffset] /= atlasLevelTexture.imgCount[xyoffset];
+                    atlasLevelTexture.img(xyoffset) /= atlasLevelTexture.imgCount[xyoffset];
                 }
             }
         }
@@ -734,7 +742,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
                 {
                     AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
-                    atlasTexture.img[xyoffset] += atlasLevelTexture.img[xyoffset];
+                    atlasTexture.img(xyoffset) += atlasLevelTexture.img(xyoffset);
                 }
             }
         }
@@ -754,7 +762,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
     toGeoMesh(*mesh, geoSparseMesh);
     GEO::compute_normals(geoSparseMesh);
 
-    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, imageIO::EImageColorSpace::NO_CONVERSION);
+    mvsUtils::ImagesCache<image::Image<image::RGBfColor>> imageCache(mp, image::EImageColorSpace::NO_CONVERSION);
     
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, bumpMappingParams);
@@ -763,7 +771,7 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
 
 
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
-                             imageIO::EImageFileType textureFileType, const int level)
+                             image::EImageFileType textureFileType, const int level)
 {
     unsigned int outTextureSide = texParams.textureSide;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
@@ -800,23 +808,23 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 //if pixel on the edge of a chart
                 if(leftCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - 1);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if(upCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - outTextureSide);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 //
                 else if (leftCount < 0 && - leftCount < padding && (upCount == 0 || leftCount > upCount))
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - 1);
                     atlasTexture.imgCount[xyoffset] = leftCount - 1;
                 }
                 else if (upCount < 0 && - upCount < padding)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset - outTextureSide);
                     atlasTexture.imgCount[xyoffset] = upCount - 1;
                 }
             }
@@ -838,12 +846,12 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 const int leftCount = atlasTexture.imgCount[xyoffset - 1];
                 if(rightCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + 1);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if(downCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + outTextureSide);
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if ((rightCount < 0 && - rightCount < padding) &&
@@ -851,14 +859,14 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                          (downCount == 0 || rightCount >= downCount)
                          )
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + 1];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + 1);
                     atlasTexture.imgCount[xyoffset] = rightCount - 1;
                 }
                 else if ((downCount < 0 && - downCount < padding) &&
                          (upCount == 0 || downCount > upCount)
                          )
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSide];
+                    atlasTexture.img(xyoffset) = atlasTexture.img(xyoffset + outTextureSide);
                     atlasTexture.imgCount[xyoffset] = downCount - 1;
                 }
             }
@@ -886,20 +894,22 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     // downscale texture if required
     if(texParams.downscale > 1)
     {
-        ImageRGBf resizedColorBuffer;
+        image::Image<image::RGBfColor> resizedColorBuffer;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
         imageAlgo::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
-    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + imageIO::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + image::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
-    using namespace imageIO;
-    OutputFileColorSpace colorspace(texParams.processColorspace, EImageColorSpace::AUTO);
-    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
+    image::OutputFileColorSpace colorspace(texParams.processColorspace, image::EImageColorSpace::AUTO);
+    oiio::ParamValueList metadata;
+    metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
+                                        EStorageDataType_enumToString(image::EStorageDataType::Half)));
+    image::writeImage(texturePath.string(), atlasTexture.img, colorspace, metadata);
 }
 
 
@@ -1025,7 +1035,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
 
 void Texturing::saveAs(const bfs::path& dir, const std::string& basename, 
     EFileType meshFileType, 
-    imageIO::EImageFileType textureFileType,
+    image::EImageFileType textureFileType,
     const BumpMappingParams& bumpMappingParams)
 {
     const std::string meshFileTypeStr = EFileType_enumToString(meshFileType);
@@ -1054,7 +1064,7 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
     {      
         // starts at '1001' for UDIM compatibility
         const std::size_t textureId = 1001 + atlasId;
-        const std::string texturePath = "texture_" + std::to_string(textureId) + "." + imageIO::EImageFileType_enumToString(textureFileType);
+        const std::string texturePath = "texture_" + std::to_string(textureId) + "." + image::EImageFileType_enumToString(textureFileType);
 
         //Set material for this atlas
         const aiVector3D valcolor(0.6, 0.6, 0.6);
@@ -1072,26 +1082,26 @@ void Texturing::saveAs(const bfs::path& dir, const std::string& basename,
         scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
 
         // Color Mapping
-        if(textureFileType != imageIO::EImageFileType::NONE)
+        if(textureFileType != image::EImageFileType::NONE)
         {
             const aiString texFile(texturePath);
             scene.mMaterials[atlasId]->AddProperty(&texFile, AI_MATKEY_TEXTURE_DIFFUSE(0));
         }
 
         // Displacement Mapping
-        if(bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
         {
             const aiString texFileHeightMap("Displacement_" + std::to_string(textureId) + "." +EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_DISPLACEMENT(0));
         }
         
         // Bump Mapping
-        if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
         {
             const aiString texFileNormalMap("Normal_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileNormalMap, AI_MATKEY_TEXTURE_NORMALS(0));
         }
-        else if(bumpMappingParams.bumpType == EBumpMappingType::Height && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+        else if(bumpMappingParams.bumpType == EBumpMappingType::Height && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
         {
             const aiString texFileHeightMap("Bump_" + std::to_string(textureId) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType));
             scene.mMaterials[atlasId]->AddProperty(&texFileHeightMap, AI_MATKEY_TEXTURE_HEIGHT(0));
@@ -1278,7 +1288,7 @@ inline Eigen::Matrix3d computeTriangleTransform(const Mesh& mesh, int f, const P
 
 inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f,
                                 const Eigen::Matrix3d& m, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB,
-                                float& out_height, ColorRGBf& out_normal)
+                                float& out_height, image::RGBfColor& out_normal)
 {
     GEO::vec3 intersectionPoint = t * qB + (1.0 - t) * qA;
     out_height = q.distance(intersectionPoint) * orientation;
@@ -1290,18 +1300,19 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 
     Eigen::Vector3d dNormal = m * toEigen(denseMeshNormal);
     dNormal.normalize();
-    out_normal = ColorRGBf(dNormal(0), dNormal(1), dNormal(2));
+    out_normal = image::RGBfColor(dNormal(0), dNormal(1), dNormal(2));
 }
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
                                              const GEO::MeshFacetsAABB& denseMeshAABB, const GEO::Mesh& sparseMesh,
-                                             size_t atlasID, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
+                                             size_t atlasID,
+                                             mvsUtils::ImagesCache<image::Image<image::RGBfColor>>& imageCache,
                                              const bfs::path& outPath, const mesh::BumpMappingParams& bumpMappingParams)
 {
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
 
-    std::vector<ColorRGBf> normalMap(texParams.textureSide * texParams.textureSide);
+    std::vector<image::RGBfColor> normalMap(texParams.textureSide * texParams.textureSide);
     std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
     const auto& triangles = _atlases[atlasID];
 
@@ -1416,7 +1427,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                     else
                     {
                         heightMap[xyoffset] = 0.0f;
-                        normalMap[xyoffset] = ColorRGBf(0.0f, 0.0f, 0.0f);
+                        normalMap[xyoffset] = image::RGBfColor(0.0f, 0.0f, 0.0f);
                     }
                 }
             }
@@ -1424,14 +1435,14 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     }
 
     // Save Normal Map
-    if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE)
+    if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         // downscale texture if required
         if(texParams.downscale > 1)
         {
             ALICEVISION_LOG_INFO("Downscaling normal map (" << texParams.downscale << "x).");
-            std::vector<ColorRGBf> resizedBuffer;
+            std::vector<image::RGBfColor> resizedBuffer;
             outTextureSide = texParams.textureSide / texParams.downscale;
             // use nearest-neighbor interpolation to avoid meaningless interpolation of normals on edges.
             const std::string interpolation = "box";
@@ -1445,21 +1456,26 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // Y: -1 to +1 : Green : 0 to 255
         // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
         for(unsigned int i = 0; i < normalMap.size(); ++i)
-            // normalMap[i] = ColorRGBf(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B:
+            // normalMap[i] = image::RGBfColor(normalMap[i].r * 0.5 + 0.5,
+            //                                 normalMap[i].g * 0.5 + 0.5,
+            //                                 normalMap[i].b); // B:
             // 0:+1 => 0-255
-            normalMap[i] = ColorRGBf(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5,
-                                    normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
+            normalMap[i] = image::RGBfColor(normalMap[i].r() * 0.5 + 0.5,
+                                            normalMap[i].g() * 0.5 + 0.5,
+                                            normalMap[i].b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
         const std::string name = "Normal_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
-        imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::NO_CONVERSION,imageIO::EImageColorSpace::NO_CONVERSION);
-        imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+        image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::NO_CONVERSION,
+                                                     image::EImageColorSpace::NO_CONVERSION);
+        image::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap,
+                          image::EImageQuality::OPTIMIZED, outputColorSpace);
     }
 
     // Save Height Maps
-    if(bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::NONE || bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
+    if(bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE || bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
     {
         unsigned int outTextureSide = texParams.textureSide;
         if(texParams.downscale > 1)
@@ -1474,7 +1490,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
 
         // Height maps are only in .EXR at this time, so this will never be executed.
         // 
-        //if(bumpMappingParams.bumpMappingFileType != imageIO::EImageFileType::EXR)
+        //if(bumpMappingParams.bumpMappingFileType != image::EImageFileType::EXR)
         //{
         //    // Y: [-1, 0, +1] => [0, 128, 255]
         //    for(unsigned int i = 0; i < heightMap.size(); ++i)
@@ -1482,21 +1498,23 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         //}
 
         // Save Bump Map
-        imageIO::OutputFileColorSpace outputColorSpace(imageIO::EImageColorSpace::AUTO);
+        image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::AUTO);
         if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
             bfs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
-            imageIO::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+            image::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap,
+                              image::EImageQuality::OPTIMIZED, outputColorSpace);
         }
         // Save Displacement Map
-        if(bumpMappingParams.displacementFileType != imageIO::EImageFileType::NONE)
+        if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
         {
             const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
             bfs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
-            imageIO::writeImage(dispMapPath.string(), outTextureSide, outTextureSide, heightMap, imageIO::EImageQuality::OPTIMIZED, outputColorSpace);
+            image::writeImage(dispMapPath.string(), outTextureSide, outTextureSide, heightMap,
+                              image::EImageQuality::OPTIMIZED, outputColorSpace);
         }
     }
 }

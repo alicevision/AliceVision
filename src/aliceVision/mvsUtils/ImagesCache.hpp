@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/Rgb.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
-#include <aliceVision/mvsData/Image.hpp>
 
 #include <future>
 #include <mutex>
@@ -33,7 +33,7 @@ template<typename Image>
 class ImagesCache
 {
 public:
-    using Color = typename Image::Color;
+    using Color = typename Image::Tpixel;
     using ImgSharedPtr = std::shared_ptr<Image>;
 
 private:
@@ -53,12 +53,17 @@ private:
 
     std::list<std::future<void>> _asyncObjects;
 
-    imageIO::EImageColorSpace _colorspace{imageIO::EImageColorSpace::AUTO};
+    image::EImageColorSpace _colorspace{image::EImageColorSpace::AUTO};
     ECorrectEV _correctEV{ECorrectEV::NO_CORRECTION};
 
 public:
-    ImagesCache( const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
-    ImagesCache( const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+                ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+
+    ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+                std::vector<std::string>& imagesNames,
+                ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+
     void initIC( std::vector<std::string>& imagesNames );
     void setCacheSize(int nbPreload);
     void setCorrectEV(const ECorrectEV correctEV) { _correctEV = correctEV; }

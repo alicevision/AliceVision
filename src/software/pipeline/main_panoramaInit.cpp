@@ -4,7 +4,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/image/drawing.hpp>
 
 #include <random>

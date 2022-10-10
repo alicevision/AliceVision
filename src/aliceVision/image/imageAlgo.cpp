@@ -1,9 +1,8 @@
 #include "imageAlgo.hpp"
 
-
-#include <aliceVision/mvsData/Color.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
-#include <aliceVision/mvsData/Image.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/Rgb.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 
 #include <OpenImageIO/imageio.h>
@@ -109,9 +108,41 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
     processImage(dst, pixelFunc);
 }
 
-void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(oiio::ImageBuf& imgBuf, const std::string& fromColorSpaceOIIOName,
+                  image::EImageColorSpace toColorSpace)
 {
-    using namespace imageIO;
+    using image::EImageColorSpace;
+
+    if (fromColorSpaceOIIOName == image::EImageColorSpace_enumToOIIOString(toColorSpace))
+        return;
+
+    if (!image::EImageColorSpace_isSupportedOIIOstring(fromColorSpaceOIIOName))
+    {
+        if (!EImageColorSpace_isSupportedOIIOEnum(toColorSpace))
+        {
+            // We don't know about OIIO format and OIIO does not know about the destination format.
+            // Convert to LINEAR and then do conversion as usual (colorconvert will handle
+            // formats unknown to OIIO)
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, fromColorSpaceOIIOName,
+                                             image::EImageColorSpace_enumToOIIOString(EImageColorSpace::LINEAR));
+            colorconvert(imgBuf, EImageColorSpace::LINEAR, toColorSpace);
+            return;
+        }
+        // We don't know about OIIO format, but OIIO knows about the destination format
+        oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, fromColorSpaceOIIOName,
+                                         image::EImageColorSpace_enumToOIIOString(toColorSpace));
+    }
+    else
+    {
+        auto fromColorSpace = image::EImageColorSpace_OIIOstringToEnum(fromColorSpaceOIIOName);
+        colorconvert(imgBuf, fromColorSpace, toColorSpace);
+    }
+}
+
+void colorconvert(oiio::ImageBuf& imgBuf, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
+{
+    using image::EImageColorSpace;
 
     if(fromColorSpace == toColorSpace)
         return;
@@ -120,7 +151,8 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
     {
         if(fromColorSpace == EImageColorSpace::SRGB)
             oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
-                                             EImageColorSpace_enumToString(EImageColorSpace::SRGB), EImageColorSpace_enumToString(EImageColorSpace::LINEAR));
+                                             EImageColorSpace_enumToOIIOString(EImageColorSpace::SRGB),
+                                             EImageColorSpace_enumToOIIOString(EImageColorSpace::LINEAR));
         else if(fromColorSpace == EImageColorSpace::XYZ)
             processImage(imgBuf, &XYZtoRGB);
         else if(fromColorSpace == EImageColorSpace::LAB)
@@ -133,7 +165,8 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
         else if(fromColorSpace == EImageColorSpace::LAB)
             processImage(imgBuf, &LABtoRGB);
         oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
-                                         EImageColorSpace_enumToString(EImageColorSpace::LINEAR), EImageColorSpace_enumToString(EImageColorSpace::SRGB));
+                                         EImageColorSpace_enumToOIIOString(EImageColorSpace::LINEAR),
+                                         EImageColorSpace_enumToOIIOString(EImageColorSpace::SRGB));
     }
     else if(toColorSpace == EImageColorSpace::XYZ)
     {
@@ -142,7 +175,8 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
         else if(fromColorSpace == EImageColorSpace::SRGB)
         {
             oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
-                                             EImageColorSpace_enumToString(EImageColorSpace::SRGB), EImageColorSpace_enumToString(EImageColorSpace::LINEAR));
+                                             EImageColorSpace_enumToOIIOString(EImageColorSpace::SRGB),
+                                             EImageColorSpace_enumToOIIOString(EImageColorSpace::LINEAR));
             processImage(imgBuf, &RGBtoXYZ);
         }
         else if(fromColorSpace == EImageColorSpace::LAB)
@@ -155,7 +189,8 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
         else if(fromColorSpace == EImageColorSpace::SRGB)
         {
             oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
-                                             EImageColorSpace_enumToString(EImageColorSpace::SRGB), EImageColorSpace_enumToString(EImageColorSpace::LINEAR));
+                                             EImageColorSpace_enumToOIIOString(EImageColorSpace::SRGB),
+                                             EImageColorSpace_enumToOIIOString(EImageColorSpace::LINEAR));
             processImage(imgBuf, &RGBtoLAB);
         }
         else if(fromColorSpace == EImageColorSpace::XYZ)
@@ -164,25 +199,28 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
     ALICEVISION_LOG_TRACE("Convert image from " << EImageColorSpace_enumToString(fromColorSpace) << " to " << EImageColorSpace_enumToString(toColorSpace));
 }
 
-void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(image::Image<image::RGBfColor>& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
 {
-    oiio::ImageSpec imageSpec(image.width(), image.height(), 3, oiio::TypeDesc::FLOAT);
-    std::vector<ColorRGBf>& buffer = image.data();
-    oiio::ImageBuf imageBuf(imageSpec, buffer.data());
+    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::FLOAT);
+    auto* buffer = image.data();
+    oiio::ImageBuf imageBuf(imageSpec, buffer->data());
 
     colorconvert(imageBuf, fromColorSpace, toColorSpace);
 }
 
-void colorconvert(ImageRGBAf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(image::Image<image::RGBAfColor>& image, image::EImageColorSpace fromColorSpace,
+                  image::EImageColorSpace toColorSpace)
 {
-    oiio::ImageSpec imageSpec(image.width(), image.height(), 4, oiio::TypeDesc::FLOAT);
-    std::vector<ColorRGBAf>& buffer = image.data();
-    oiio::ImageBuf imageBuf(imageSpec, buffer.data());
+    oiio::ImageSpec imageSpec(image.Width(), image.Height(), 4, oiio::TypeDesc::FLOAT);
+    auto* buffer = image.data();
+    oiio::ImageBuf imageBuf(imageSpec, buffer->data());
 
     colorconvert(imageBuf, fromColorSpace, toColorSpace);
 }
 
-void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
+                  image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace)
 {
     dst.copy(src);
     colorconvert(dst, fromColorSpace, toColorSpace);
@@ -220,14 +258,28 @@ void transposeImage(int width, int height, std::vector<float>& buffer)
     transposeImage(oiio::TypeDesc::FLOAT, width, height, 1, buffer);
 }
 
-void transposeImage(int width, int height, std::vector<ColorRGBf>& buffer)
+void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer)
 {
     transposeImage(oiio::TypeDesc::FLOAT, width, height, 3, buffer);
 }
 
-void transposeImage(ImageRGBf &image)
+template<typename T>
+void resizeImage(oiio::TypeDesc typeDesc,
+                 int inWidth,
+                 int inHeight,
+                 int outWidth,
+                 int outHeight,
+                 int nchannels,
+                 const T* inBuffer,
+                 T* outBuffer,
+                 const std::string& filter,
+                 float filterSize)
 {
-    transposeImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data());
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc),
+                               const_cast<T*>(inBuffer));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer);
+
+    oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
 }
 
 template<typename T>
@@ -243,13 +295,9 @@ void resizeImage(oiio::TypeDesc typeDesc,
 {
     const int outWidth = inWidth / downscale;
     const int outHeight = inHeight / downscale;
-
     outBuffer.resize(outWidth * outHeight);
-
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer.data()));
-    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer.data());
-
-    oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
+    resizeImage(typeDesc, inWidth, inHeight, outWidth, outHeight, nchannels,
+                inBuffer.data(), outBuffer.data(), filter, filterSize);
 }
 
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter, float filterSize)
@@ -267,23 +315,34 @@ void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<flo
     resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<ColorRGBf>& inBuffer, std::vector<ColorRGBf>& outBuffer, const std::string& filter, float filterSize)
+void resizeImage(int inWidth, int inHeight, int downscale,
+                 const std::vector<image::RGBfColor>& inBuffer,
+                 std::vector<image::RGBfColor>& outBuffer,
+                 const std::string& filter, float filterSize)
 {
     resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
-void resizeImage(int downscale, const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &filter, float filterSize)
+void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
+                 image::Image<image::RGBfColor> &outImage, const std::string &filter,
+                 float filterSize)
 {
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
-    outImage.setHeight(inImage.height() / downscale);
-    outImage.setWidth(inImage.width() / downscale);
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
 }
 
-void resizeImage(int downscale, const ImageRGBAf &inImage, ImageRGBAf &outImage, const std::string &filter, float filterSize)
+void resizeImage(int downscale, const image::Image<image::RGBAfColor> &inImage,
+                 image::Image<image::RGBAfColor> &outImage, const std::string &filter,
+                 float filterSize)
 {
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 4, downscale, inImage.data(), outImage.data(), filter, filterSize);
-    outImage.setHeight(inImage.height() / downscale);
-    outImage.setWidth(inImage.width() / downscale);
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 4,
+                inImage.data(), outImage.data(), filter, filterSize);
 }
 
 template<typename T>
@@ -323,21 +382,17 @@ void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer
   convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
 }
 
-void convolveImage(int inWidth, int inHeight, const std::vector<ColorRGBf>& inBuffer, std::vector<ColorRGBf>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
+void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor>& inBuffer,
+                   std::vector<image::RGBfColor>& outBuffer, const std::string& kernel,
+                   float kernelWidth, float kernelHeight)
 {
   convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
 }
 
-void convolveImage(const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &kernel, float kernelWidth, float kernelHeight)
+void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer,
+               const std::vector<float>& alphaBuffer)
 {
-    convolveImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, inImage.data(), outImage.data(), kernel, kernelWidth, kernelHeight);
-    outImage.setHeight(inImage.height());
-    outImage.setWidth(inImage.width());
-}
-
-void fillHoles(int inWidth, int inHeight, std::vector<ColorRGBf>& colorBuffer, const std::vector<float>& alphaBuffer)
-{
-    oiio::ImageBuf rgbBuf(oiio::ImageSpec(inWidth, inHeight, 3, oiio::TypeDesc::FLOAT), colorBuffer.data());
+    oiio::ImageBuf rgbBuf(oiio::ImageSpec(inWidth, inHeight, 3, oiio::TypeDesc::FLOAT), colorBuffer);
     const oiio::ImageBuf alphaBuf(oiio::ImageSpec(inWidth, inHeight, 1, oiio::TypeDesc::FLOAT), const_cast<float*>(alphaBuffer.data()));
 
     // Create RGBA ImageBuf from source buffers with correct channel names
@@ -355,11 +410,63 @@ void fillHoles(int inWidth, int inHeight, std::vector<ColorRGBf>& colorBuffer, c
     oiio::ImageBufAlgo::copy(rgbBuf, filledBuf);
 }
 
-void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer)
+void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
+               const std::vector<float>& alphaBuffer)
 {
-    fillHoles(image.width(), image.height(), image.data(), alphaBuffer);
+    fillHoles(inWidth, inHeight, colorBuffer.data(), alphaBuffer);
 }
 
+void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer)
+{
+    fillHoles(image.Width(), image.Height(), image.data(), alphaBuffer);
+}
+
+void imageDiff(const image::Image<image::RGBfColor>& inImg,
+               const image::Image<image::RGBfColor>& inImgDownscaled,
+               image::Image<image::RGBfColor>& outImg, unsigned int downscale)
+{
+    outImg.resize(inImg.Width(), inImg.Height());
+
+    for (int iy = 0; iy < inImg.Height(); iy++)
+    {
+        for (int ix = 0; ix < inImg.Width(); ix++)
+        {
+            outImg(iy, ix) = inImg(iy, ix) - getInterpolateColor(inImgDownscaled,
+                                                                 iy / downscale, ix / downscale);
+        }
+    }
+}
+
+void laplacianPyramid(std::vector<image::Image<image::RGBfColor>>& out_pyramidL,
+                      const image::Image<image::RGBfColor>& image, int nbBand, unsigned int downscale)
+{
+    assert(nbBand >= 1);
+
+    image::Image<image::RGBfColor> img(image);
+    int outW = static_cast<int>(img.Width()/downscale);
+    int outH = static_cast<int>(img.Height()/downscale);
+
+    image::Image<image::RGBfColor> imgDownscaled(outW, outH);
+    out_pyramidL.resize(nbBand);
+
+    //Create Laplacian pyramid
+    for(int b = 0; b < nbBand-1; ++b)
+    {
+        imageAlgo::resizeImage(static_cast<int>(downscale), img, imgDownscaled, "gaussian");
+        imageDiff(img, imgDownscaled, out_pyramidL[b], downscale);
+        img.swap(imgDownscaled);
+/*
+        outW = static_cast<int>(outW/downscale);
+        outH = static_cast<int>(outH/downscale);
+        imgDownscaled.resize(outW, outH);
+*/
+    }
+    out_pyramidL[nbBand-1] = img;
+
+    for(std::size_t i = 0; i < out_pyramidL.size(); ++i)
+        ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : "
+                              << out_pyramidL[i].Width() << "x" << out_pyramidL[i].Height());
+}
 
 } // namespace imageAlgo
 } // namspace aliceVision

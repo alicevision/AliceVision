@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/Point4d.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
@@ -84,11 +84,12 @@ public:
     const int _scales;
     const int _CUDADeviceNo = 0;
     int _nImgsInGPUAtTime = 2;
-    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& _ic,
+                      mvsUtils::MultiViewParams& _mp, int scales);
     ~PlaneSweepingCuda();
 
     int addCam( int rc, int scale, cudaStream_t stream = 0 );
@@ -143,7 +144,7 @@ public:
 
     bool computeNormalMap( NormalMapping* mapping,
                            const std::vector<float>& depthMap,
-                           std::vector<ColorRGBf>&   normalMap,
+                           std::vector<image::RGBfColor>& normalMap,
                            int rc, int scale,
                            float igammaC, float igammaP, int wsh);
 
