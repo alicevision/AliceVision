@@ -15,6 +15,7 @@
 #include <boost/foreach.hpp>
 
 #include <algorithm>
+#include <mutex>
 #include <numeric>
 #include <vector>
 #include <limits>
@@ -422,6 +423,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
 
   std::vector<std::size_t> new_center_counts(k);
   std::vector<Feature, FeatureAllocator> new_centers(k);
+  std::vector<std::mutex> centersLocks(k);
   squared_distance_type max_center_shift = std::numeric_limits<squared_distance_type>::max();
 
   if(verbose_ > 0) ALICEVISION_LOG_DEBUG("Iterations");
@@ -472,8 +474,8 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
       // Accumulate the cluster center and its membership count
       //	  printf("\t nearest %d\n", nearest);
       //			checkElements(*features[i], "feat");
-      #pragma omp critical
       {
+        std::lock_guard<std::mutex> lock{centersLocks[nearest]};
         new_centers[nearest] += *features[i];
         //			checkElements(new_centers[nearest], "sum");
         //	  printf("\t new_centers[nearest] += *features[i];\n");
