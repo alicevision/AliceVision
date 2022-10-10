@@ -438,9 +438,14 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
     assert(checkVectorElements(new_centers, "newcenters init"));
     bool is_stable = true;
 
+    // On small problems enabling multithreading does much more harm than good because thread
+    // creation is relatively expensive.
+    // TODO: Ideally a thread pool would be created before the first iteration and the iterations
+    // would reuse the existing threads.
+    bool enableMultithreading = features.size() * k > 1000000;
 
     // Assign data objects to current centers
-    #pragma omp parallel for shared( new_centers, new_center_counts, features, centers, membership)
+    #pragma omp parallel for shared( new_centers, new_center_counts, features, centers, membership) if(enableMultithreading)
     for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(features.size()); ++i)
     {
       squared_distance_type d_min = std::numeric_limits<squared_distance_type>::max();
