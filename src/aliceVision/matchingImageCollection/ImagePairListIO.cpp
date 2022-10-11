@@ -72,10 +72,28 @@ bool loadPairs(std::istream& stream,
 
 void savePairs(std::ostream& stream, const PairSet & pairs)
 {
-    for (PairSet::const_iterator iterP = pairs.begin(); iterP != pairs.end(); ++iterP)
+    if (pairs.empty())
     {
-        stream << iterP->first << ' ' << iterP->second << '\n';
+        return;
     }
+    stream << pairs.begin()->first << " " << pairs.begin()->second;
+    IndexT previousIndex = pairs.begin()->first;
+
+    // Pairs is sorted so we will always receive elements with the same first pair ID in
+    // continuous blocks.
+    for (auto it = std::next(pairs.begin()); it != pairs.end(); ++it)
+    {
+        if (it->first == previousIndex)
+        {
+            stream << " " << it->second;
+        }
+        else
+        {
+            stream << "\n" << it->first << " " << it->second;
+            previousIndex = it->first;
+        }
+    }
+    stream << "\n";
 }
 
 bool loadPairsFromFile(const std::string& sFileName, // filename of the list file,
