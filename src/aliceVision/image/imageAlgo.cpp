@@ -296,37 +296,6 @@ void convolveImage(oiio::TypeDesc typeDesc,
     oiio::ImageBufAlgo::convolve(outBuf, inBuf, K);
 }
 
-
-void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-    outBuffer.resize(inBuffer.size());
-    convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, inBuffer.data(), outBuffer.data(),
-                  kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-    outBuffer.resize(inBuffer.size());
-    convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, inBuffer.data(), outBuffer.data(),
-                  kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-    outBuffer.resize(inBuffer.size());
-    convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, inBuffer.data(), outBuffer.data(),
-                  kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor>& inBuffer,
-                   std::vector<image::RGBfColor>& outBuffer, const std::string& kernel,
-                   float kernelWidth, float kernelHeight)
-{
-    outBuffer.resize(inBuffer.size());
-    convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer.data(), outBuffer.data(),
-                  kernel, kernelWidth, kernelHeight);
-}
-
 void convolveImage(const image::Image<unsigned char>& inBuffer,
                    image::Image<unsigned char>& outBuffer,
                    const std::string& kernel, float kernelWidth, float kernelHeight)

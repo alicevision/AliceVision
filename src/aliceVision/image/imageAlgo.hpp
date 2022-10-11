@@ -68,8 +68,6 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
 
 /**
  * @brief convolve a given image buffer
- * @param[in] inWidth The input image buffer width
- * @param[in] inHeight The input image buffer heightt
  * @param[in] inBuffer The input image buffer
  * @param[out] outBuffer outBuffer The output image buffer
  * @param[in] kernel The kernel name, can be "gaussian", "sharp-gaussian", "box", ...
@@ -78,14 +76,6 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
  * @param[in] kernelWidth The kernel width
  * @param[in] kernelHeight The kernal height
  */
-void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor>& inBuffer,
-                   std::vector<image::RGBfColor>& outBuffer,
-                   const std::string& kernel = "gaussian",
-                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-
 void convolveImage(const image::Image<unsigned char>& inBuffer,
                    image::Image<unsigned char>& outBuffer,
                    const std::string& kernel = "gaussian",
