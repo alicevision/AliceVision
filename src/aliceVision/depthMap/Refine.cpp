@@ -9,6 +9,7 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <aliceVision/depthMap/RefineParams.hpp>
@@ -189,14 +190,13 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, 
 
             const StaticVector<DepthSim>& dsm = dataMaps[i]->_dsm;
 
-#pragma omp parallel for
-            for(int y = 0; y < hPartHeight; y++)
+            system::parallelFor(0, hPartHeight, [&](int y)
             {
                 for(int x = 0; x < w; x++)
                 {
                     (*dataMapHPart)[y * w + x] = dsm[(y + hPart * hPartHeightGlob) * w + x];
                 }
-            }
+            });
 
             dataMapsHPart.push_back(dataMapHPart);
         }
@@ -209,14 +209,13 @@ void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, 
                                                   dataMapsHPart, 
                                                   _refineParams);
 
-#pragma omp parallel for
-        for(int y = 0; y < hPartHeight; ++y)
+        system::parallelFor(0, hPartHeight, [&](int y)
         {
             for(int x = 0; x < w; ++x)
             {
                 out_depthSimMapRefinedFused._dsm[(y + hPart * hPartHeightGlob) * w + x] = depthSimMapFusedHPart[y * w + x];
             }
-        }
+        });
 
         deleteAllPointers(dataMapsHPart);
     }
