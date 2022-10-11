@@ -155,7 +155,8 @@ std::string EStorageDataType_informations()
     return EStorageDataType_enumToString(EStorageDataType::Float) + ", " +
         EStorageDataType_enumToString(EStorageDataType::Half) + ", " +
         EStorageDataType_enumToString(EStorageDataType::HalfFinite) + ", " +
-        EStorageDataType_enumToString(EStorageDataType::Auto);
+        EStorageDataType_enumToString(EStorageDataType::Auto) + ", " +
+        EStorageDataType_enumToString(EStorageDataType::Undefined);
 }
 
 EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType)
@@ -167,6 +168,7 @@ EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType)
     if (type == "half") return EStorageDataType::Half;
     if (type == "halffinite") return EStorageDataType::HalfFinite;
     if (type == "auto") return EStorageDataType::Auto;
+    if (type == "undefined") return EStorageDataType::Undefined;
 
     throw std::out_of_range("Invalid EStorageDataType: " + dataType);
 }
@@ -179,6 +181,7 @@ std::string EStorageDataType_enumToString(const EStorageDataType dataType)
     case EStorageDataType::Half:   return "half";
     case EStorageDataType::HalfFinite:  return "halfFinite";
     case EStorageDataType::Auto:   return "auto";
+    case EStorageDataType::Undefined: return "undefined";
     }
     throw std::out_of_range("Invalid EStorageDataType enum");
 }
@@ -586,7 +589,7 @@ void writeImage(const std::string& path,
     // Storage data type may be saved as attributes to formats that support it and then come back
     // as metadata to this function. Therefore we store the storage data type to attributes if it
     // is set and load it from attributes if it isn't set.
-    if (options.isStorageDataTypeSet())
+    if (options.getStorageDataType() != EStorageDataType::Undefined)
     {
         imageSpec.attribute("AliceVision:storageDataType",
                             EStorageDataType_enumToString(options.getStorageDataType()));
