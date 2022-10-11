@@ -106,6 +106,25 @@ void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor
                    const std::string& kernel = "gaussian",
                    float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
+void convolveImage(const image::Image<unsigned char>& inBuffer,
+                   image::Image<unsigned char>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+void convolveImage(const image::Image<rgb>& inBuffer, image::Image<rgb>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+void convolveImage(const image::Image<float>& inBuffer, image::Image<float>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+void convolveImage(const image::Image<image::RGBfColor>& inBuffer,
+                   image::Image<image::RGBfColor>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+
 /**
  * @brief fill holes in a given image buffer with plausible values
  * @param[in] inWidth The input image buffer width

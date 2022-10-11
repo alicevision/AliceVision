@@ -405,6 +405,44 @@ void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor
                   kernel, kernelWidth, kernelHeight);
 }
 
+void convolveImage(const image::Image<unsigned char>& inBuffer,
+                   image::Image<unsigned char>& outBuffer,
+                   const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    convolveImage(oiio::TypeDesc::UCHAR, inBuffer.Width(), inBuffer.Height(), 1,
+                  inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
+}
+
+void convolveImage(const image::Image<rgb>& inBuffer, image::Image<rgb>& outBuffer,
+                   const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    convolveImage(oiio::TypeDesc::UCHAR, inBuffer.Width(), inBuffer.Height(), 3,
+                  inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
+}
+
+void convolveImage(const image::Image<float>& inBuffer, image::Image<float>& outBuffer,
+                   const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    convolveImage(oiio::TypeDesc::FLOAT, inBuffer.Width(), inBuffer.Height(), 1,
+                  inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
+}
+
+void convolveImage(const image::Image<image::RGBfColor>& inBuffer,
+                   image::Image<image::RGBfColor>& outBuffer,
+                   const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+    outBuffer.resize(inBuffer.Width(), inBuffer.Height());
+    convolveImage(oiio::TypeDesc::FLOAT, inBuffer.Width(), inBuffer.Height(), 3,
+                  inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
+}
+
 void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer,
                const std::vector<float>& alphaBuffer)
 {
