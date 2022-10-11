@@ -31,4 +31,5 @@ BOOST_AUTO_TEST_CASE(read_write_pairs_to_file)
     PairSet loaded_Pairs;
     BOOST_CHECK(loadPairsFromFile("pairsT_IO.txt", loaded_Pairs));
     BOOST_CHECK( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
+    std::remove("pairsT_IO.txt");
 }
