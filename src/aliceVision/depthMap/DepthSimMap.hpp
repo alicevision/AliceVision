@@ -97,8 +97,9 @@ public:
 
     void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
     void initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim);
-    void initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
-                                     int depthSimMapsScale);
+    void initFromDepthMapAndSimMap(const std::vector<float>& depthMapT,
+                                   const std::vector<float>& simMapT,
+                                   int depthSimMapsScale);
 
     void initFromSmaller(const DepthSimMap& depthSimMap);
     void init(const DepthSimMap& depthSimMap);
@@ -107,10 +108,10 @@ public:
     Point2d getMaxMinSim() const;
 
     float getPercentileDepth(float perc) const;
-    void getDepthMapStep1(StaticVector<float>& out_depthMap) const;
-    void getSimMapStep1(StaticVector<float>& out_simMap) const;
-    void getDepthMap(StaticVector<float>& out_depthMap) const;
-    void getSimMap(StaticVector<float>& out_simMap) const;
+    void getDepthMapStep1(std::vector<float>& out_depthMap) const;
+    void getSimMapStep1(std::vector<float>& out_simMap) const;
+    void getDepthMap(std::vector<float>& out_depthMap) const;
+    void getSimMap(std::vector<float>& out_simMap) const;
 
     void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
     void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
