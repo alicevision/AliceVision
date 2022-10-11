@@ -6,6 +6,10 @@ set(system_files_headers
   system.hpp
   Timer.hpp
   Logger.hpp
+  ParallelFor.hpp
+  ParallelismBackend.hpp
+  ParallelismBackendOpenMP.hpp
+  ParallelSettings.hpp
   ProgressDisplay.hpp
   nvtx.hpp
 )
@@ -16,6 +20,8 @@ set(system_files_sources
   MemoryInfo.cpp
   Timer.cpp
   Logger.cpp
+  ParallelismBackend.cpp
+  ParallelismBackendOpenMP.cpp
   ProgressDisplay.cpp
   nvtx.cpp
 )
