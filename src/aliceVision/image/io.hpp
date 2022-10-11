@@ -334,6 +334,24 @@ void writeImage(const std::string& path, const Image<RGBColor>& image, const Ima
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 /**
+ * @brief write an image with a given path and buffer, converting to float as necessary to perform
+ * intermediate calculations.
+ * @param[in] path The given path to the image
+ * @param[in] image The output image buffer
+ */
+void writeImageWithFloat(const std::string& path, const Image<unsigned char>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+void writeImageWithFloat(const std::string& path, const Image<int>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+void writeImageWithFloat(const std::string& path, const Image<IndexT>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+/**
  * @brief read an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[out] width The output image width

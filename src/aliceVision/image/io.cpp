@@ -770,6 +770,25 @@ void writeImage(const std::string& path, const Image<RGBColor>& image,
     writeImage(path, oiio::TypeDesc::UINT8, 3, image, options, metadata);
 }
 
+void writeImageWithFloat(const std::string& path, const Image<unsigned char>& image,
+                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::UINT8, 1, image, options, metadata);
+}
+
+void writeImageWithFloat(const std::string& path, const Image<int>& image,
+                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::INT32, 1, image, options, metadata);
+}
+
+void writeImageWithFloat(const std::string& path, const Image<IndexT>& image,
+                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::UINT32, 1, image, options, metadata);
+}
+
+
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
                  const IndexT viewId, const std::string & srcImage)
 {
