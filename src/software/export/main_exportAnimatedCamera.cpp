@@ -7,6 +7,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
@@ -283,8 +284,7 @@ int aliceVision_main(int argc, char** argv)
           // UV Map: Undistort
           {
               // flip and normalize as UVMap
-    #pragma omp parallel for
-              for(int y = 0; y < int(intrinsic.h()); ++y)
+              system::parallelFor<int>(0, intrinsic.h(), [&](int y)
               {
                   for(int x = 0; x < int(intrinsic.w()); ++x)
                   {
@@ -295,7 +295,7 @@ int aliceVision_main(int argc, char** argv)
                       image_dist(y, x).r() = float((disto_pix[0]) / (intrinsic.w() - 1));
                       image_dist(y, x).g() = float((intrinsic.h() - 1 - disto_pix[1]) / (intrinsic.h() - 1));
                   }
-              }
+              });
 
               const std::string dstImage =
                   (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
@@ -306,8 +306,7 @@ int aliceVision_main(int argc, char** argv)
           // UV Map: Distort
           {
               // flip and normalize as UVMap
-    #pragma omp parallel for
-              for(int y = 0; y < int(intrinsic.h()); ++y)
+              system::parallelFor<int>(0, intrinsic.h(), [&](int y)
               {
                   for(int x = 0; x < int(intrinsic.w()); ++x)
                   {
@@ -318,7 +317,7 @@ int aliceVision_main(int argc, char** argv)
                       image_dist(y, x).r() = float((undisto_pix[0]) / (intrinsic.w() - 1));
                       image_dist(y, x).g() = float((intrinsic.h() - 1 - undisto_pix[1]) / (intrinsic.h() - 1));
                   }
-              }
+              });
 
               const std::string dstImage =
                   (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
