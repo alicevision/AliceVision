@@ -11,6 +11,7 @@
 #include <aliceVision/stl/indexedSort.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <map>
@@ -99,8 +100,7 @@ void colorizeTracks(SfMData& sfmData)
   std::shuffle(unsortedIndexes.begin(), unsortedIndexes.end(), rng);
 
   // landmark colorization
-#pragma omp parallel for
-  for(int i = 0; i < unsortedIndexes.size(); ++i)
+  system::parallelFor<int>(0, unsortedIndexes.size(), [&](int i)
   {
     const ViewInfo& viewCardinal = sortedViewsCardinal.at(unsortedIndexes.at(i));
     if(!viewCardinal.landmarks.empty())
@@ -121,7 +121,7 @@ void colorizeTracks(SfMData& sfmData)
 
       progressDisplay += viewCardinal.landmarks.size();
     }
-  }
+  });
 }
 
 } // namespace sfm

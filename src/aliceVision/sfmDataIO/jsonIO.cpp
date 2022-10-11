@@ -7,6 +7,7 @@
 #include "jsonIO.hpp"
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
 
@@ -568,8 +569,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
       }
 
       // update incomplete views
-      #pragma omp parallel for
-      for(int i = 0; i < incompleteViews.size(); ++i)
+      system::parallelFor<int>(0, incompleteViews.size(), [&](int i)
       {
         sfmData::View& v = incompleteViews.at(i);
 
@@ -591,7 +591,7 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
           v.setHeight(intrinsics->h());
         }
         updateIncompleteView(incompleteViews.at(i), viewIdMethod, viewIdRegex);
-      }
+      });
 
       // copy complete views in the SfMData views map
       for(const sfmData::View& view : incompleteViews)
