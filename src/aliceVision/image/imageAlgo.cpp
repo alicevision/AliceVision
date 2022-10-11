@@ -227,43 +227,6 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
 }
 
 template<typename T>
-void transposeImage(oiio::TypeDesc typeDesc,
-                    int width,
-                    int height,
-                    int nchannels,
-                    std::vector<T>& buffer)
-{
-    oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
-
-    oiio::ImageBuf inBuf(imageSpec, buffer.data());
-    oiio::ImageBuf transposeBuf;
-
-    oiio::ImageBufAlgo::transpose(transposeBuf, inBuf, oiio::ROI::All());
-
-    transposeBuf.get_pixels(oiio::ROI::All(), typeDesc, buffer.data());
-}
-
-void transposeImage(int width, int height, std::vector<unsigned char>& buffer)
-{
-    transposeImage(oiio::TypeDesc::UCHAR, width, height, 1, buffer);
-}
-
-void transposeImage(int width, int height, std::vector<rgb>& buffer)
-{
-    transposeImage(oiio::TypeDesc::UCHAR, width, height, 3, buffer);
-}
-
-void transposeImage(int width, int height, std::vector<float>& buffer)
-{
-    transposeImage(oiio::TypeDesc::FLOAT, width, height, 1, buffer);
-}
-
-void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer)
-{
-    transposeImage(oiio::TypeDesc::FLOAT, width, height, 3, buffer);
-}
-
-template<typename T>
 void resizeImage(oiio::TypeDesc typeDesc,
                  int inWidth,
                  int inHeight,

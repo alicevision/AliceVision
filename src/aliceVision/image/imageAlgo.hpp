@@ -47,17 +47,6 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
                   image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace);
 
 /**
- * @brief transpose a given image buffer
- * @param[in] width The image buffer width
- * @param[in] height The image buffer height
- * @param[in,out] buffer The image buffer
- */
-void transposeImage(int width, int height, std::vector<unsigned char>& buffer);
-void transposeImage(int width, int height, std::vector<rgb>& buffer);
-void transposeImage(int width, int height, std::vector<float>& buffer);
-void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer);
-
-/**
  * @brief resize a given image buffer
  * @param[in] inWidth The input image buffer width
  * @param[in] inHeight The input image buffer height
