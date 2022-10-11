@@ -401,7 +401,7 @@ void readImage(const std::string& path,
       colorProfile.apply(inBuf, DCPparams);
   }
 
-  if(imageReadOptions.workingColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
+  if(imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION)
   {
       imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.workingColorSpace);
   }
