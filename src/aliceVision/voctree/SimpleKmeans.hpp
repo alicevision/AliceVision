@@ -11,6 +11,7 @@
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
@@ -81,15 +82,18 @@ struct InitKmeanspp
     centers.clear();
     centers.resize(k);
 
-    auto threadCount = std::min(numTrials, omp_get_max_threads());
+    auto threadCount = std::min(numTrials, system::getMaxParallelThreadCount());
+    auto subTrialThreadCount = system::getMaxParallelThreadCount() / threadCount;
 
     std::vector<squared_distance_type> dists(features.size(), std::numeric_limits<squared_distance_type>::max());
     std::vector<squared_distance_type> distsTempBest(features.size(), std::numeric_limits<squared_distance_type>::max());
-    std::vector<std::vector<squared_distance_type>> threadDistsTemp(threadCount);
-    for (int i = 0; i < threadCount; ++i)
+    std::vector<std::vector<squared_distance_type>> trialDistsTemp(numTrials);
+    std::vector<std::vector<squared_distance_type>> trialThreadDistSum(numTrials);
+    for (int i = 0; i < numTrials; ++i)
     {
         // Data will be overwritten, can be initialized to anything.
-        threadDistsTemp[i].resize(features.size());
+        trialDistsTemp[i].resize(features.size());
+        trialThreadDistSum[i].resize(system::getMaxParallelThreadCount());
     }
 
     typename std::vector<squared_distance_type>::iterator dstiter;
@@ -129,8 +133,8 @@ struct InitKmeanspp
 
       //make it a little bit more robust and try several guesses
       // choose the one with the global minimal distance
-#pragma omp parallel for num_threads(threadCount)
-      for(int j = 0; j < numTrials; ++j)
+      system::parallelFor(0, numTrials, system::ParallelSettings().setThreadCount(threadCount),
+                          [&](int j)
       {
         // draw an element from 0 to currSum
         // in order to choose a point with a probability proportional to D(x)^2
@@ -142,7 +146,7 @@ struct InitKmeanspp
         squared_distance_type partial = (squared_distance_type)(currSum * perc);
         // look for the element that cap the partial sum that has been
         // drawn
-        dstiter = dists.begin();
+        auto dstiter = dists.begin();
         while((partial > 0) && (dstiter != dists.end()))
         {
           assert(dstiter != dists.end());
@@ -166,17 +170,23 @@ struct InitKmeanspp
           featidx = dstiter - dists.begin();
 
         // 2. compute the distance of each feature from the current center
-        squared_distance_type distSum = 0;
-
-        auto& distsTemp = threadDistsTemp[omp_get_thread_num()];
+        auto& distsTemp = trialDistsTemp[j];
+        auto& threadDistSum = trialThreadDistSum[j];
+        std::fill(threadDistSum.begin(), threadDistSum.end(), 0);
 
         Feature newCenter = *features[ featidx ];
-        #pragma omp parallel for reduction(+:distSum) num_threads(omp_get_max_threads() / threadCount)
-        for(ptrdiff_t it = 0; it < static_cast<ptrdiff_t>(features.size()); ++it)
+        system::parallelForWithPerThreadData<std::ptrdiff_t>(
+                    0, features.size(), threadDistSum,
+                    system::ParallelSettings().setThreadCount(subTrialThreadCount),
+                    [&](std::ptrdiff_t it, squared_distance_type& threadSum)
         {
           distsTemp[it] = std::min(distance(*(features[it]), newCenter), dists[it]);
-          distSum += distsTemp[it];
-        }
+          threadSum += distsTemp[it];
+        });
+
+        squared_distance_type distSum = std::accumulate(threadDistSum.begin(), threadDistSum.end(),
+                                                        squared_distance_type{0});
+
         if(verbose > 2) ALICEVISION_LOG_DEBUG("trial " << j << " found feat " << featidx << ": " << *features[ featidx ] << " with sum: " << distSum);
 
         {
@@ -190,7 +200,7 @@ struct InitKmeanspp
             }
         }
 
-      }
+      });
       if(verbose > 2) ALICEVISION_LOG_DEBUG("feature found feat " << bestCenter << ": " << *features[ bestCenter ]);
 
       // 3. add new data
@@ -469,8 +479,10 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
     bool enableMultithreading = features.size() * k > 1000000;
 
     // Assign data objects to current centers
-    #pragma omp parallel for shared( new_centers, new_center_counts, features, centers, membership) if(enableMultithreading)
-    for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(features.size()); ++i)
+    std::mutex centersMutex;
+    system::parallelFor<std::ptrdiff_t>(0, features.size(),
+                                        system::ParallelSettings().setEnableMultithreading(enableMultithreading),
+                                        [&](std::ptrdiff_t i)
     {
       squared_distance_type d_min = std::numeric_limits<squared_distance_type>::max();
       unsigned int nearest = 0;
@@ -511,7 +523,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
         ++new_center_counts[nearest];
         //	  printf("\taccumulate\n");
       }
-    }//for
+    });
 
     if(is_stable) break;
 

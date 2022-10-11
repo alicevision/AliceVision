@@ -15,6 +15,7 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <stdint.h>
 #include <vector>
@@ -230,12 +231,11 @@ std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(
   std::vector<Word> imgVisualWords(features.size(), 0);
 
   // quantize the features
-  #pragma omp parallel for
-  for(ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(features.size()); ++j)
+  system::parallelFor<std::ptrdiff_t>(0, features.size(), [&](std::ptrdiff_t j)
   {
     // store the visual word associated to the feature in the temporary list
     imgVisualWords[j] = quantize<DescriptorT>(features[j]);
-  }
+  });
 
   // add the vector to the documents
   return imgVisualWords;

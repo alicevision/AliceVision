@@ -7,6 +7,7 @@
 #include "descriptorLoader.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/config.hpp>
@@ -149,9 +150,9 @@ void queryDatabase(const sfmData::SfMData& sfmData,
   ALICEVISION_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   auto display = system::createConsoleProgressDisplay(descriptorsFiles.size(), std::cout);
 
-  #pragma omp parallel for
   // Run through the path vector and read the descriptors
-  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
+  std::mutex documentsMutex;
+  system::parallelFor<std::ptrdiff_t>(0, descriptorsFiles.size(), [&](std::ptrdiff_t i)
   {
     std::map<IndexT, std::string>::const_iterator currentFileIt = descriptorsFiles.cbegin();
     std::advance(currentFileIt, i);
@@ -166,8 +167,8 @@ void queryDatabase(const sfmData::SfMData& sfmData,
     aliceVision::voctree::DocMatches docMatches;
     // query the database
     db.find(query, numResults, docMatches, distanceMethod);
-    #pragma omp critical
     {
+      std::lock_guard<std::mutex> lock{documentsMutex};
       // add the vector to the documents
       documents[currentFileIt->first] = query;
 
@@ -176,7 +177,7 @@ void queryDatabase(const sfmData::SfMData& sfmData,
 
       ++display;
     }
-  }
+  });
 }
 
 template<class DescriptorT, class VocDescriptorT>
