@@ -263,52 +263,58 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     int w = _mp.getWidth(rc);
     int h = _mp.getHeight(rc);
 
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
-    std::vector<unsigned char> numOfModalsMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
+    image::Image<unsigned char> numOfModalsMap;
 
     {
         int width, height;
 
         image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1),
-                         width, height, depthMap, image::EImageColorSpace::NO_CONVERSION);
+                         depthMap, image::EImageColorSpace::NO_CONVERSION);
         image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1),
-                         width, height, simMap, image::EImageColorSpace::NO_CONVERSION);
+                         simMap, image::EImageColorSpace::NO_CONVERSION);
         image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap),
-                         width, height, numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
+                         numOfModalsMap, image::EImageColorSpace::NO_CONVERSION);
+    }
+
+    if (depthMap.Width() != simMap.Width() || depthMap.Width() != numOfModalsMap.Width() ||
+        depthMap.Height() != simMap.Height() || depthMap.Height() != numOfModalsMap.Height())
+    {
+        throw std::invalid_argument("depthMap, simMap and numOfModalsMap must have same size");
     }
 
     int nbDepthValues = 0;
 
-    for(int i = 0; i < w * h; i++)
+    for(int i = 0; i < depthMap.size(); i++)
     {
         // if the point is part of a mask (alpha) skip
-        if(depthMap.at(i) <= -2.0f)
+        if (depthMap(i) <= -2.0f)
             continue;
 
         // if the reference point is consistent in three target cameras and is denoted as weakly supported point
         // make him strongly supported
-        if((numOfModalsMap.at(i) >= minNumOfModalsWSP2SSP - 1) && (simMap.at(i) >= 1.0f))
+        if ((numOfModalsMap(i) >= minNumOfModalsWSP2SSP - 1) && (simMap(i) >= 1.0f))
         {
-            simMap[i] = simMap[i] - 2.0f;
+            simMap(i) = simMap(i) - 2.0f;
         }
 
         // if it is conistent in only one camera and is weakly supported then remove him
         // weakly supported point must be consisten in at least two cameras
-        if((numOfModalsMap.at(i) <= 1) && (simMap.at(i) >= 1.0f))
+        if ((numOfModalsMap(i) <= 1) && (simMap(i) >= 1.0f))
         {
-            depthMap[i] = -1.0f;
-            simMap[i] = 1.0f;
+            depthMap(i) = -1.0f;
+            simMap(i) = 1.0f;
         }
 
         // if it is not conistent in minimal number of cameras and is strongly supported then remove him
-        if((numOfModalsMap.at(i) < minNumOfModals - 1) && (simMap.at(i) < 1.0f))
+        if((numOfModalsMap(i) < minNumOfModals - 1) && (simMap(i) < 1.0f))
         {
-            depthMap[i] = -1.0f;
-            simMap[i] = 1.0f;
+            depthMap(i) = -1.0f;
+            simMap(i) = 1.0f;
         }
 
-        if(depthMap[i] > 0.0f)
+        if(depthMap(i) > 0.0f)
           ++nbDepthValues;
     }
 
@@ -329,11 +335,15 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
       metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap,
-                      image::EImageQuality::LOSSLESS,
+    metadata.add_or_replace(oiio::ParamValue("AliceVision:storageDataType",
+                                             EStorageDataType_enumToString(image::EStorageDataType::Float)));
+    image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), depthMap,
                       image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
-    image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap,
-                      image::EImageQuality::OPTIMIZED,
+
+    // overwrite metadata
+    metadata.add_or_replace(oiio::ParamValue("AliceVision:storageDataType",
+                                             EStorageDataType_enumToString(image::EStorageDataType::Half)));
+    image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), simMap,
                       image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
 
     ALICEVISION_LOG_DEBUG(rc << " solved.");
