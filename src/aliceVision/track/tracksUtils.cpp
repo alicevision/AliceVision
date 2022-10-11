@@ -7,6 +7,7 @@
 
 #include "tracksUtils.hpp"
 
+#include <aliceVision/system/ParallelFor.hpp>
 #include <iterator>
 
 
@@ -185,13 +186,12 @@ void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
   }
 
   // sort tracks Ids in each view
-#pragma omp parallel for
-  for(int i = 0; i < tracksPerView.size(); ++i)
+  system::parallelFor<int>(0, tracksPerView.size(), [&](int i)
   {
     TracksPerView::iterator it = tracksPerView.begin();
     std::advance(it, i);
     std::sort(it->second.begin(), it->second.end());
-  }
+  });
 }
 
 void getTracksIdVector(const TracksMap& tracks,
