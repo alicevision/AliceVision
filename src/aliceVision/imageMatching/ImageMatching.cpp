@@ -24,20 +24,6 @@ std::ostream& operator<<(std::ostream& os, const PairList& pl)
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const OrderedPairList & pl)
-{
-  for(OrderedPairList::const_iterator plIter = pl.begin(); plIter != pl.end(); ++plIter)
-  {
-    os << plIter->first;
-    for(ImageID id : plIter->second)
-    {
-      os << " " << id;
-    }
-    os << "\n";
-  }
-  return os;
-}
-
 std::string EImageMatchingMethod_enumToString(EImageMatchingMethod m)
 {
     switch(m)

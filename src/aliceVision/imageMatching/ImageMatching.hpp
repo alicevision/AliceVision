@@ -46,14 +46,6 @@ using OrderedPairList = std::map<ImageID, OrderedListOfImageID>;
 std::ostream& operator<<(std::ostream& os, const PairList& pl);
 
 /**
- * @brief Function that prints a OrderedPairList
- * @param os The stream on which to print
- * @param pl The pair list
- * @return the stream
- */
-std::ostream& operator<<(std::ostream& os, const OrderedPairList & pl);
-
-/**
  * @brief Mode to select the type of image matching
  */
 enum class EImageMatchingMethod

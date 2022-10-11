@@ -6,6 +6,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
 #include <aliceVision/imageMatching/ImageMatching.hpp>
 #include <aliceVision/voctree/descriptorLoader.hpp>
 #include <aliceVision/sfm/FrustumFilter.hpp>
@@ -300,10 +301,13 @@ int aliceVision_main(int argc, char** argv)
   }
 
   // write it to file
-  std::ofstream fileout;
-  fileout.open(outputFile, std::ofstream::out);
-  fileout << selectedPairs;
-  fileout.close();
+  PairSet selectedPairsSet;
+  for (const auto& imagePairs : selectedPairs) {
+      for (const auto& index : imagePairs.second) {
+          selectedPairsSet.emplace(imagePairs.first, index);
+      }
+  }
+  savePairsToFile(outputFile, selectedPairsSet);
 
   ALICEVISION_LOG_INFO("pairList exported in: " << outputFile);
 
