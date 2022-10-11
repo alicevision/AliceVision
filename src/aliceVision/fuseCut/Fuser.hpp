@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -46,7 +47,7 @@ public:
 
 private:
     bool updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
-                      const std::vector<float>& depthMap, const std::vector<float>& simMap, int scale);
+                      const image::Image<float>& depthMap, const image::Image<float>& simMap, int scale);
 };
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);

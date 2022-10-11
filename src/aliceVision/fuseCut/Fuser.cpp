@@ -84,7 +84,7 @@ Fuser::~Fuser()
  */
 bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc,
                          StaticVector<int>* numOfPtsMap,
-                         const std::vector<float>& depthMap, const std::vector<float>& simMap,
+                         const image::Image<float>& depthMap, const image::Image<float>& simMap,
                            int scale)
 {
     int w =_mp.getWidth(rc) / scale;
@@ -105,7 +105,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
 
     int d = pixSizeBall;
 
-    float sim = simMap[cell.y * w + cell.x];
+    float sim = simMap(cell.y * w + cell.x);
     if(sim >= 1.0f)
     {
         d = pixSizeBallWSP;
@@ -120,7 +120,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
         for(ncell.y = std::max(0, cell.y - d); ncell.y <= std::min(h - 1, cell.y + d); ncell.y++)
         {
             // printf("%i %i %i %i %i %i %i %i\n",ncell.x,ncell.y,w,h,w*h,depthMap->size(),cam,scale);
-            float depth = depthMap[ncell.y * w + ncell.x];
+            float depth = depthMap(ncell.y * w + ncell.x);
             // Point3d p1 = _mp.CArr[rc] +
             // (_mp.iCamArr[rc]*Point2d((float)ncell.x*(float)scale,(float)ncell.y*(float)scale)).normalize()*depth;
             // if ( (p1-p).size() < pixSize ) {
@@ -161,23 +161,17 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
     int w = _mp.getWidth(rc);
     int h = _mp.getHeight(rc);
 
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
 
-    {
-        int width, height;
+    image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1),
+                     depthMap, image::EImageColorSpace::NO_CONVERSION);
+    image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1),
+                     simMap, image::EImageColorSpace::NO_CONVERSION);
 
-        image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1),
-                         width, height, depthMap,
-                         image::EImageColorSpace::NO_CONVERSION);
-        image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1),
-                         width, height, simMap,
-                         image::EImageColorSpace::NO_CONVERSION);
-    }
+    image::Image<unsigned char> numOfModalsMap(w, h, true, 0);
 
-    std::vector<unsigned char> numOfModalsMap(w * h, 0);
-
-    if((depthMap.empty()) || (simMap.empty()) || (depthMap.size() != w * h) || (simMap.size() != w * h))
+    if ((depthMap.size() != w * h) || (simMap.size() != w * h))
     {
         std::stringstream s;
         s << "filterGroupsRC: bad image dimension for camera: " << _mp.getViewId(rc) << "\n";
@@ -196,22 +190,18 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
         numOfPtsMap->resize_with(w * h, 0);
         int tc = tcams[c];
 
-        std::vector<float> tcdepthMap;
+        image::Image<float> tcdepthMap;
 
-        {
-            int width, height;
-            image::readImage(getFileNameFromIndex(_mp, tc, mvsUtils::EFileType::depthMap, 1),
-                             width, height, tcdepthMap,
-                             image::EImageColorSpace::NO_CONVERSION);
-        }
+        image::readImage(getFileNameFromIndex(_mp, tc, mvsUtils::EFileType::depthMap, 1),
+                         tcdepthMap, image::EImageColorSpace::NO_CONVERSION);
 
-        if(!tcdepthMap.empty())
+        if (tcdepthMap.Height() > 0 && tcdepthMap.Width() > 0)
         {
             for(int y = 0; y < h; ++y)
             {
                 for(int x = 0; x < w; ++x)
                 {
-                    float depth = tcdepthMap[y * w + x];
+                    float depth = tcdepthMap(y, x);
                     if(depth > 0.0f)
                     {
                       Point3d p = _mp.CArr[tc] + (_mp.iCamArr[tc] * Point2d((float)x, (float)y)).normalize() * depth;
@@ -222,17 +212,15 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
             for(int i = 0; i < w * h; i++)
             {
-                numOfModalsMap.at(i) += static_cast<int>((*numOfPtsMap)[i] > 0);
+                numOfModalsMap(i) += static_cast<int>((*numOfPtsMap)[i] > 0);
             }
         }
     }
 
-    {
-        image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), w, h,
-                          numOfModalsMap,
-                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
-                                                    .storageDataType(image::EStorageDataType::Float));
-    }
+    image::writeImageWithFloat(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap),
+                               numOfModalsMap,
+                               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                         .storageDataType(image::EStorageDataType::Float));
 
     delete numOfPtsMap;
 
