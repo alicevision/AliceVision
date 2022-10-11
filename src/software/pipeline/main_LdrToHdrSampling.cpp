@@ -272,7 +272,7 @@ int aliceVision_main(int argc, char** argv)
             metadata.push_back(oiio::ParamValue("AliceVision:medianNbUsedBrackets", extract::median(acc_nbUsedBrackets)));
 
             image::writeImage((fs::path(outputFolder) / (std::to_string(groupIdx) + "_selectedPixels.png")).string(),
-                              selectedPixels, image::EImageColorSpace::AUTO, metadata);
+                              selectedPixels, image::ImageWriteOptions(), metadata);
 
         }
 

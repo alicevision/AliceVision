@@ -300,7 +300,7 @@ int aliceVision_main(int argc, char** argv)
               const std::string dstImage =
                   (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Undistort." +
                                                   image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+              image::writeImage(dstImage, image_dist, image::ImageWriteOptions());
           }
 
           // UV Map: Distort
@@ -323,7 +323,7 @@ int aliceVision_main(int argc, char** argv)
               const std::string dstImage =
                   (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_UVMap_Distort." +
                                                   image::EImageFileType_enumToString(outputMapFileType))).string();
-              image::writeImage(dstImage, image_dist, image::EImageColorSpace::AUTO);
+              image::writeImage(dstImage, image_dist, image::ImageWriteOptions());
           }
       }
   }
@@ -375,18 +375,18 @@ int aliceVision_main(int argc, char** argv)
                                   std::to_string(rod.ybegin) + ";" + std::to_string(rod.yend));
             camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint, rod);
             const oiio::ROI roi = convertRodToRoi(cam, rod);
-            writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
+            writeImage(dstImage, image_ud, image::ImageWriteOptions(), oiio::ParamValueList(), roi);
         }
         else
         {
             camera::UndistortImage(image, cam, image_ud, image::FBLACK, correctPrincipalPoint);
-            image::writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+            image::writeImage(dstImage, image_ud, image::ImageWriteOptions(), metadata);
         }
       }
       else // (no distortion)
       {
         // copy the image since there is no distortion
-        image::writeImage(dstImage, image, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(dstImage, image, image::ImageWriteOptions(), metadata);
       }
     }
 

@@ -465,18 +465,21 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     {
         image::Image<float> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
+        image::writeImage(outputPath, outputImage,
+                          image::ImageWriteOptions().toColorSpace(outputColorSpace), metadata);
     }
     else if(outputFormat == EImageFormat::RGB)
     {
         image::Image<image::RGBfColor> outputImage;
         image::ConvertPixelType(image, &outputImage);
-        image::writeImage(outputPath, outputImage, outputColorSpace, metadata);
+        image::writeImage(outputPath, outputImage,
+                          image::ImageWriteOptions().toColorSpace(outputColorSpace), metadata);
     }
     else 
     {
         // Already in RGBAf
-        image::writeImage(outputPath, image, outputColorSpace, metadata);
+        image::writeImage(outputPath, image,
+                          image::ImageWriteOptions().toColorSpace(outputColorSpace), metadata);
     }
 }
 

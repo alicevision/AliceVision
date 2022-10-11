@@ -126,7 +126,7 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
 
-    image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+    image::writeImage(outputPath, image, image::ImageWriteOptions(), metadata);
 }
 
 

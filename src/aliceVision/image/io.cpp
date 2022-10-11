@@ -724,41 +724,6 @@ void writeImage(const std::string& path, const Image<IndexT>& image, EImageColor
   writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, outputImageColorSpace, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
-{
-    writeImage(path, oiio::TypeDesc::FLOAT, 4, image,
-               ImageWriteOptions().fromColorSpace(EImageColorSpace::LINEAR)
-                                  .toColorSpace(outputImageColorSpace), metadata,roi);
-}
-
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata)
-{
-    writeImage(path, oiio::TypeDesc::UINT8, 4, image,
-               ImageWriteOptions().fromColorSpace(EImageColorSpace::LINEAR)
-                                  .toColorSpace(outputImageColorSpace), metadata);
-}
-
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI &roi)
-{
-    writeImage(path, oiio::TypeDesc::FLOAT, 3, image,
-               ImageWriteOptions().fromColorSpace(EImageColorSpace::LINEAR)
-                                  .toColorSpace(outputImageColorSpace), metadata,roi);
-}
-
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
-{
-    writeImage(path, oiio::TypeDesc::FLOAT, 1, image,
-               ImageWriteOptions().fromColorSpace(EImageColorSpace::LINEAR)
-                                  .toColorSpace(outputImageColorSpace), metadata,roi);
-}
-
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata)
-{
-    writeImage(path, oiio::TypeDesc::UINT8, 3, image,
-               ImageWriteOptions().fromColorSpace(EImageColorSpace::LINEAR)
-                                  .toColorSpace(outputImageColorSpace), metadata);
-}
-
 void writeImage(const std::string& path, const Image<float>& image,
                 const ImageWriteOptions& options, const oiio::ParamValueList& metadata,
                 const oiio::ROI& roi)

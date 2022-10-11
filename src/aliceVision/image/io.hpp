@@ -289,14 +289,9 @@ void readImageDirect(const std::string& path, Image<unsigned char>& image);
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
 void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 void writeImage(const std::string& path, const Image<float>& image, const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),

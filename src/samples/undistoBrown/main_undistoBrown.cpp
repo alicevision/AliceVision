@@ -132,7 +132,8 @@ int main(int argc, char **argv)
     const PinholeRadialK3 cam(image.Width(), image.Height(), f, c(0), c(1), k(0), k(1), k(2));
 
     UndistortImage(image, &cam, imageUd, BLACK);
-    writeImage(outFileName, imageUd, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(outFileName, imageUd,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 
   } //end loop for each file
   return EXIT_SUCCESS;

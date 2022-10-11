@@ -605,6 +605,18 @@ public:
     image::writeImage(filepath.string(), toSave, image::EImageColorSpace::AUTO);
   }
 
+  void debugImage(const image::Image<float>& toSave, const std::string& name,
+                  int pyramid_id, int level)
+  {
+      // Only export debug image if there is an debug output folder defined.
+      if(_debugDirectory.empty())
+          return;
+
+      boost::filesystem::path filepath = boost::filesystem::path(_debugDirectory) /
+              (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
+      image::writeImage(filepath.string(), toSave, image::ImageWriteOptions());
+  }
+
 private:
   std::vector<PyramidFloat> _pyramids;
   image::Image<float> _gradientImage;

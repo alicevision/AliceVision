@@ -432,7 +432,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       fs::create_directory(out_folder);
     const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
 
-    writeImage(out_filename, image_c , image::EImageColorSpace::AUTO);
+    writeImage(out_filename, image_c , image::ImageWriteOptions());
   }
   return true;
 }

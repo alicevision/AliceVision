@@ -196,13 +196,13 @@ int main() {
       //---------------------------------------
       // reread right image that will be warped to fit left image
       readImage(jpg_filenameR, image, image::EImageColorSpace::NO_CONVERSION);
-      writeImage("query.png", image, image::EImageColorSpace::NO_CONVERSION);
+      writeImage("query.png", image, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 
       // Create and fill the output image
       Image<RGBColor> imaOut(imageL.Width(), imageL.Height());
       image::Warp(image, H.getMatrix(), imaOut);
       const std::string imageNameOut = "query_warped.png";
-      writeImage(imageNameOut, imaOut, image::EImageColorSpace::NO_CONVERSION);
+      writeImage(imageNameOut, imaOut, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
     }
     else  {
       std::cout << "ACRANSAC was unable to estimate a rigid homography"

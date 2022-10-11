@@ -167,7 +167,8 @@ bool buildBrackets(std::vector<std::string>& paths, std::vector<double>& times,
 
         ALICEVISION_LOG_INFO("writing to " << temp.string());
 
-        image::writeImage(temp.string(), img_bracket, image::EImageColorSpace::LINEAR);
+        image::writeImage(temp.string(), img_bracket,
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
         paths.push_back(temp.string());
     }
 

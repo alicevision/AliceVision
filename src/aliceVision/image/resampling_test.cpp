@@ -105,7 +105,8 @@ void ImageRotation(
 
     std::stringstream str ;
     str << "test_ressample_"<< samplerString <<"_rotate_" << id_rot << ".png" ;
-    writeImage(str.str(), imageOut, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(str.str(), imageOut,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
     image = imageOut ;
   }
 }

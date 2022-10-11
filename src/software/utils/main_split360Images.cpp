@@ -132,7 +132,7 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 
     boost::filesystem::path path(imagePath);
     image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
-                      imageOut, image::EImageColorSpace::AUTO, image::readImageMetadata(imagePath));
+                      imageOut, image::ImageWriteOptions(), image::readImageMetadata(imagePath));
   }
   ALICEVISION_LOG_INFO(imagePath + " successfully split");
   return true;
@@ -198,7 +198,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
     boost::filesystem::path path(imagePath);
     image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
-                      imaOut, image::EImageColorSpace::AUTO, outMetadataSpec.extra_attribs);
+                      imaOut, image::ImageWriteOptions(), outMetadataSpec.extra_attribs);
 
     ++index;
   }
