@@ -229,7 +229,7 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
     {
         image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), w, h,
                           numOfModalsMap, image::EImageQuality::LOSSLESS,
-                          image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION));
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
     }
 
     delete numOfPtsMap;
@@ -338,13 +338,13 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     metadata.add_or_replace(oiio::ParamValue("AliceVision:storageDataType",
                                              EStorageDataType_enumToString(image::EStorageDataType::Float)));
     image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), depthMap,
-                      image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
 
     // overwrite metadata
     metadata.add_or_replace(oiio::ParamValue("AliceVision:storageDataType",
                                              EStorageDataType_enumToString(image::EStorageDataType::Half)));
     image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), simMap,
-                      image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
 
     ALICEVISION_LOG_DEBUG(rc << " solved.");
     mvsUtils::printfElapsedTime(t1);

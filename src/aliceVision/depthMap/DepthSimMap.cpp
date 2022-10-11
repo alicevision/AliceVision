@@ -395,7 +395,8 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
         metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
                                             EStorageDataType_enumToString(image::EStorageDataType::Float)));
         image::writeImage(filename, colorBuffer,
-                          image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR),
+                          metadata);
     }
     catch (...)
     {
@@ -463,10 +464,10 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 
     image::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix),
                       width, height, depthMap.getDataWritable(), image::EImageQuality::LOSSLESS,
-                      image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
     image::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix),
                       width, height, simMap.getDataWritable(), image::EImageQuality::OPTIMIZED,
-                      image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
 }
 
 void DepthSimMap::load(int fromScale)

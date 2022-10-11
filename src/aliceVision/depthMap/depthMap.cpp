@@ -136,7 +136,8 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
             cps.computeNormalMap(mapping, depthMap, normalMap, rc, 1, gammaC, gammaP, wsh);
             image::writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap,
                               image::EImageQuality::LOSSLESS,
-                              image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION));
+                              image::ImageWriteOptions().fromColorSpace(image::EImageColorSpace::LINEAR)
+                                                        .toColorSpace(image::EImageColorSpace::LINEAR));
         }
     }
     cps.deleteNormalMapping(mapping);

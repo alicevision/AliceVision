@@ -905,11 +905,12 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
-    image::OutputFileColorSpace colorspace(texParams.processColorspace, image::EImageColorSpace::AUTO);
     oiio::ParamValueList metadata;
     metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
                                         EStorageDataType_enumToString(image::EStorageDataType::Half)));
-    image::writeImage(texturePath.string(), atlasTexture.img, colorspace, metadata);
+    image::writeImage(texturePath.string(), atlasTexture.img,
+                      image::ImageWriteOptions().fromColorSpace(texParams.processColorspace)
+                                                .toColorSpace(image::EImageColorSpace::AUTO), metadata);
 }
 
 
@@ -1467,13 +1468,13 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         bfs::path normalMapPath = outPath / name;
         ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
 
-        image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::NO_CONVERSION,
-                                                     image::EImageColorSpace::NO_CONVERSION);
-
         oiio::ParamValueList metadata;
         metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
                                             EStorageDataType_enumToString(image::EStorageDataType::Half)));
-        image::writeImage(normalMapPath.string(), normalMap, outputColorSpace, metadata);
+        image::writeImage(normalMapPath.string(), normalMap,
+                          image::ImageWriteOptions().fromColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                                                    .toColorSpace(image::EImageColorSpace::NO_CONVERSION),
+                          metadata);
     }
 
     // Save Height Maps
@@ -1499,7 +1500,6 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         //}
 
         // Save Bump Map
-        image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::AUTO);
         if(bumpMappingParams.bumpType == EBumpMappingType::Height)
         {
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
@@ -1509,7 +1509,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             oiio::ParamValueList metadata;
             metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
                                                 EStorageDataType_enumToString(image::EStorageDataType::Half)));
-            image::writeImage(bumpMapPath.string(), heightMap, outputColorSpace, metadata);
+            image::writeImage(bumpMapPath.string(), heightMap, image::ImageWriteOptions(), metadata);
         }
         // Save Displacement Map
         if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
@@ -1521,7 +1521,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             oiio::ParamValueList metadata;
             metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
                                                 EStorageDataType_enumToString(image::EStorageDataType::Half)));
-            image::writeImage(dispMapPath.string(), heightMap, outputColorSpace, metadata);
+            image::writeImage(dispMapPath.string(), heightMap, image::ImageWriteOptions(), metadata);
         }
     }
 }
