@@ -20,6 +20,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include "nanoflann.hpp"
@@ -164,18 +165,17 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vec
 #endif
     ALICEVISION_LOG_INFO("KdTree created for " << verticesCoordsPrepare.size() << " points.");
 
-    #pragma omp parallel for
-    for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
+    system::parallelFor<int>(0, verticesCoordsPrepare.size(), [&](int vIndex)
     {
         if(pixSizePrepare[vIndex] == -1.0)
         {
-            continue;
+            return;
         }
         const double pixSizeScore = pixSizeMarginCoef * simScorePrepare[vIndex] * pixSizePrepare[vIndex] * pixSizePrepare[vIndex];
         if(pixSizeScore < std::numeric_limits<double>::epsilon())
         {
             pixSizePrepare[vIndex] = -1.0;
-            continue;
+            return;
         }
 #ifdef USE_GEOGRAM_KDTREE
         static const std::size_t nbNeighbors = 20;
@@ -213,7 +213,7 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vec
         if(resultSet.found)
             pixSizePrepare[vIndex] = -1.0;
 #endif
-    }
+    });
     ALICEVISION_LOG_INFO("Filtering done.");
 }
 
@@ -286,13 +286,10 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
     // std::vector<Point3d> newVerticesCoordsPrepare(verticesCoordsPrepare.size());
     // std::vector<float> newSimScorePrepare(simScorePrepare.size());
     // std::vector<double> newPixSizePrepare(pixSizePrepare.size());
-    std::vector<omp_lock_t> locks(verticesCoordsPrepare.size());
-    for (auto& lock: locks)
-        omp_init_lock(&lock);
+    std::vector<std::mutex> mutexes(verticesCoordsPrepare.size());
 
     omp_set_nested(1);
-    #pragma omp parallel for num_threads(3)
-    for(int c = 0; c < cams.size(); ++c)
+    system::parallelFor(0, cams.size(), system::ParallelSettings().setThreadCount(3), [&](int c)
     {
         ALICEVISION_LOG_INFO("Create visibilities (" << c << "/" << cams.size() << ")");
         std::vector<float> depthMap;
@@ -305,7 +302,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             if(depthMap.empty())
             {
                 ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
-                continue;
+                return;
             }
             int wTmp, hTmp;
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
@@ -333,8 +330,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
 
         }
         // Add visibility
-        #pragma omp parallel for
-        for(int y = 0; y < height; ++y)
+        system::parallelFor(0, height, system::ParallelSettings().setDynamicScheduling(), [&](int y)
         {
             for(int x = 0; x < width; ++x)
             {
@@ -373,11 +369,11 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                     // interpretation is [goodSimilarity;badSimilarity]
                     const float simScore = simValue < -1.0f ? 1.0f : 1.0f + (1.0f + simValue) * simFactor;
 
-                    // Custom locks to limit it to the index: nearestVertexIndex
-                    // to avoid using "omp critical"
-                    omp_lock_t* lock = &locks[nearestVertexIndex];
-                    omp_set_lock(lock);
+                    // Custom locks to limit it to the index: nearestVertexIndex to reduce contention
+                    auto& mutex = mutexes[nearestVertexIndex];
                     {
+                        std::lock_guard<std::mutex> lock{mutex};
+
                         va.cams.push_back_distinct(c);
                         if(dist < contributeMarginFactor * pixSizeScoreV)
                         {
@@ -388,23 +384,17 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                             va.nrc += 1;
                         }
                     }
-                    omp_unset_lock(lock);
                 }
             }
-        }
-    }
-    omp_set_nested(0);
-
-    for(auto& lock: locks)
-        omp_destroy_lock(&lock);
+        });
+    });
 
     // compute pixSize
-    #pragma omp parallel for
-    for(int vi = 0; vi < verticesAttrPrepare.size(); ++vi)
+    system::parallelFor<int>(0, verticesAttrPrepare.size(), [&](int vi)
     {
         GC_vertexInfo& v = verticesAttrPrepare[vi];
         v.pixSize = mp.getCamsMinPixelSize(verticesCoordsPrepare[vi], v.cams);
-    }
+    });
 
 //    verticesCoordsPrepare.swap(newVerticesCoordsPrepare);
 //    simScorePrepare.swap(newSimScorePrepare);
@@ -679,7 +669,9 @@ StaticVector<int> DelaunayGraphCut::getIsUsedPerCamera() const
     StaticVector<int> cams;
     cams.resize_with(_mp.getNbCameras(), 0);
 
-//#pragma omp parallel for
+    // system::parallelFor<int>(0, _verticesAttr.size(), [&](int vi)
+    // If parallelization is enabled, no additional synchronization is needed as long as each
+    // element of `cams` is written at most once.
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
     {
         const GC_vertexInfo& v = _verticesAttr[vi];
@@ -1085,9 +1077,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
     ALICEVISION_LOG_INFO("Load depth maps and add points.");
     {
-        omp_set_nested(1);
-        #pragma omp parallel for num_threads(3)
-        for(int c = 0; c < cams.size(); c++)
+        system::parallelFor<int>(0, cams.size(), system::ParallelSettings().setThreadCount(3), [&](int c)
         {
             std::vector<float> depthMap;
             std::vector<float> simMap;
@@ -1100,7 +1090,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 if(depthMap.empty())
                 {
                     ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
-                    continue;
+                    return;
                 }
                 int wTmp, hTmp;
                 const std::string simMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::simMap, 0);
@@ -1143,8 +1133,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
             int syMax = divideRoundUp(height, step);
             int sxMax = divideRoundUp(width, step);
-            #pragma omp parallel for
-            for(int sy = 0; sy < syMax; ++sy)
+            system::parallelFor(0, syMax, system::ParallelSettings().setDynamicScheduling(), [&](int sy)
             {
                 for(int sx = 0; sx < sxMax; ++sx)
                 {
@@ -1218,9 +1207,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                         }
                     }
                 }
-            }
-        }
-        omp_set_nested(0);
+            });
+        });
     }
 
     ALICEVISION_LOG_INFO("Filter initial 3D points by pixel size to remove duplicates.");
@@ -1252,15 +1240,13 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 #ifdef FUSE_COMPUTE_ANGLE_STATS
     double stat_minAngle = std::numeric_limits<double>::max(), stat_maxAngle = 0.0;
     double stat_minAngleScore = std::numeric_limits<double>::max(), stat_maxAngleScore = 0.0;
-    #pragma omp parallel for reduction(max: stat_maxAngle,stat_maxAngleScore) reduction(min: stat_minAngle,stat_minAngleScore)
-#else
-#pragma omp parallel for
+    std::mutex statsMutex;
 #endif
-    for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
+    system::parallelFor<int>(0, verticesCoordsPrepare.size(), [&](int vIndex)
     {
         if(pixSizePrepare[vIndex] == -1.0)
         {
-            continue;
+            return;
         }
         const std::vector<int>& visCams = verticesAttrPrepare[vIndex].cams.getData();
         if(visCams.empty())
@@ -1282,14 +1268,14 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         if(maxAngle < params.minAngleThreshold)
         {
             pixSizePrepare[vIndex] = -1;
-            continue;
+            return;
         }
         // Filter points based on their number of observations
         if(visCams.size() < params.minVis)
         {
             pixSizePrepare[vIndex] = -1;
             minVisCounter += 1;
-            continue;
+            return;
         }
 
         const double angleScore = 1.0 + params.angleFactor / maxAngle;
@@ -1297,13 +1283,17 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         simScorePrepare[vIndex] = simScorePrepare[vIndex] * angleScore;
 
 #ifdef FUSE_COMPUTE_ANGLE_STATS
-        stat_minAngle = std::min(stat_minAngle, maxAngle);
-        stat_maxAngle = std::max(stat_maxAngle, maxAngle);
+        {
+            std::lock_guard<std::mutex> lock{statsMutex};
+            stat_minAngle = std::min(stat_minAngle, maxAngle);
+            stat_maxAngle = std::max(stat_maxAngle, maxAngle);
 
-        stat_minAngleScore = std::min(stat_minAngleScore, angleScore);
-        stat_maxAngleScore = std::max(stat_maxAngleScore, angleScore);
+            stat_minAngleScore = std::min(stat_minAngleScore, angleScore);
+            stat_maxAngleScore = std::max(stat_maxAngleScore, angleScore);
+        }
 #endif
-    }
+    });
+
 #ifdef FUSE_COMPUTE_ANGLE_STATS
     ALICEVISION_LOG_INFO("Angle min: " << stat_minAngle << ", max: " << stat_maxAngle << ".");
     ALICEVISION_LOG_INFO("Angle score min: " << stat_minAngleScore << ", max: " << stat_maxAngleScore << ".");
@@ -1885,8 +1875,9 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
 
     size_t progressStep = verticesRandIds.size() / 100;
     progressStep = std::max(size_t(1), progressStep);
-#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind,totalCamHaveVisibilityOnVertex,totalOfVertex,totalIsRealNrc)
-    for(int i = 0; i < verticesRandIds.size(); i++)
+
+    std::mutex progressMutex;
+    system::parallelFor<int>(0, verticesRandIds.size(), [&](int i)
     {
         if(i % progressStep == 0)
         {
@@ -1901,7 +1892,8 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
 
         if(v.isReal())
         {
-            ++totalIsRealNrc;
+            boost::atomic_ref<std::size_t>{totalIsRealNrc}++;
+
             // "weight" is called alpha(p) in the paper
             const float weight = weightFcn((float)v.nrc, labatutWeights, v.getNbCameras()); // number of cameras
 
@@ -1919,17 +1911,17 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
                                   nPixelSizeBehind,
                                   fillOut, distFcnHeight);
 
-                totalStepsFront += stepsFront;
-                totalRayFront += 1;
-                totalStepsBehind += stepsBehind;
-                totalRayBehind += 1;
+                boost::atomic_ref<std::int64_t>{totalStepsFront} += stepsFront;
+                boost::atomic_ref<std::int64_t>{totalRayFront} += 1;
+                boost::atomic_ref<std::int64_t>{totalStepsBehind} += stepsBehind;
+                boost::atomic_ref<std::int64_t>{totalRayBehind} += 1;
 
                 subTotalGeometriesIntersectedFrontCount += geometriesIntersectedFrontCount;
                 subTotalGeometriesIntersectedBehindCount += geometriesIntersectedBehindCount;
             } // for c
 
-            totalCamHaveVisibilityOnVertex += v.cams.size();
-            totalOfVertex += 1;
+            boost::atomic_ref<std::size_t>{totalCamHaveVisibilityOnVertex} += v.cams.size();
+            boost::atomic_ref<std::size_t>{totalOfVertex} += 1;
 
             boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.facets} +=
                     subTotalGeometriesIntersectedFrontCount.facets;
@@ -1944,7 +1936,7 @@ void DelaunayGraphCut::fillGraph(double nPixelSizeBehind, bool labatutWeights, b
             boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.edges} +=
                     subTotalGeometriesIntersectedBehindCount.edges;
         }
-    }
+    });
 
     ALICEVISION_LOG_DEBUG("_verticesAttr.size(): " << _verticesAttr.size() << "(" << verticesRandIds.size() << ")");
     ALICEVISION_LOG_DEBUG("totalIsRealNrc: " << totalIsRealNrc);
@@ -2325,13 +2317,12 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
     GeometriesCount totalGeometriesIntersectedFrontCount;
     GeometriesCount totalGeometriesIntersectedBehindCount;
 
-#pragma omp parallel for reduction(+:totalStepsFront,totalRayFront,totalStepsBehind,totalRayBehind)
-    for(int i = 0; i < verticesRandIds.size(); ++i)
+    system::parallelFor<int>(0, verticesRandIds.size(), [&](int i)
     {
         const int vertexIndex = verticesRandIds[i];
         const GC_vertexInfo& v = _verticesAttr[vertexIndex];
         if(v.isVirtual())
-            continue;
+            return;
 
         ++totalVertexIsVirtual;
         const Point3d& originPt = _verticesCoords[vertexIndex];
@@ -2372,7 +2363,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 #ifdef ALICEVISION_DEBUG_VOTE
                     history.append(geometry, intersectPt);
 #endif
-                    ++totalStepsFront;
+                    boost::atomic_ref<std::size_t>{totalStepsFront}++;
 
                     geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
@@ -2454,7 +2445,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         }
                     }
                 }
-                ++totalRayFront;
+                boost::atomic_ref<std::size_t>{totalRayFront}++;
                 boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.facets} +=
                         geometriesIntersectedFrontCount.facets;
                 boost::atomic_ref<std::size_t>{totalGeometriesIntersectedFrontCount.vertices} +=
@@ -2487,7 +2478,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 #ifdef ALICEVISION_DEBUG_VOTE
                     history.append(geometry, intersectPt);
 #endif
-                    ++totalStepsBehind;
+                    boost::atomic_ref<std::size_t>{totalStepsBehind}++;
 
                     geometry = intersectNextGeom(previousGeometry, originPt, dirVect, intersectPt, marginEpsilonFactor, lastIntersectPt);
 
@@ -2611,7 +2602,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].on} += (maxJump - midSilent);
                     }
                 }
-                ++totalRayBehind;
+                boost::atomic_ref<std::size_t>{totalRayBehind}++;
                 boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.facets} += totalGeometriesIntersectedBehindCount.facets;
                 boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.vertices} += totalGeometriesIntersectedBehindCount.vertices;
                 boost::atomic_ref<std::size_t>{totalGeometriesIntersectedBehindCount.edges} += totalGeometriesIntersectedBehindCount.edges;
@@ -2619,7 +2610,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(float nPixelSizeBehind)
         }
         totalCamHaveVisibilityOnVertex += v.cams.size();
         totalOfVertex += 1;
-    }
+    });
 
     for(GC_cellInfo& c: _cellsAttr)
     {
@@ -2925,11 +2916,10 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
         std::vector<bool> vertexIsOnSurface;
         const int nbSurfaceFacets = computeIsOnSurface(vertexIsOnSurface);
 
-#pragma omp parallel for reduction(+ : toInvertCount)
-        for(int vi = 0; vi < _neighboringCellsPerVertex.size(); ++vi)
+        system::parallelFor<int>(0, _neighboringCellsPerVertex.size(), [&](int vi)
         {
             if(!vertexIsOnSurface[vi])
-                continue;
+                return;
             // ALICEVISION_LOG_INFO("vertex is on surface: " << vi);
             const std::vector<CellIndex>& neighboringCells = _neighboringCellsPerVertex[vi];
             std::vector<Facet> neighboringFacets;
@@ -2975,7 +2965,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
             if(borderCase)
             {
                 // we cannot compute empty/full ratio if we have undefined cells
-                continue;
+                return;
             }
             bool invert = false;
             bool invertFull = false;
@@ -2992,7 +2982,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 invertFull = false; // we want to invert the EMPTY cells
             }
             if(!invert)
-                continue;
+                return;
 
             // Ensure that we do not increase inconsitencies (like holes).
             // Check the status coherency with neighbor cells if we swap the cells status.
@@ -3009,7 +2999,7 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 }
             }
             if(borderCase)
-                continue;
+                return;
 
             // Invert some cells
             for(CellIndex ci : neighboringCells)
@@ -3017,10 +3007,11 @@ void DelaunayGraphCut::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFil
                 if(_cellIsFull[ci] == invertFull)
                 {
                     boost::atomic_ref<std::uint8_t>{cellsInvertStatus[ci]} = true;
-                    ++toInvertCount;
+                    boost::atomic_ref<int>{toInvertCount}++;
                 }
             }
-        }
+        });
+
         if(toInvertCount == 0)
             break;
         int movedToEmpty = 0;

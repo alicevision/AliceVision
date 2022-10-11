@@ -7,6 +7,7 @@
 #include "Fuser.hpp"
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -17,6 +18,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 
+#include <boost/atomic/atomic_ref.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -32,8 +34,7 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
 {
     unsigned long npts = 0;
 
-#pragma omp parallel for reduction(+:npts)
-    for(int rc = 0; rc < mp.ncams; rc++)
+    system::parallelFor(0, mp.ncams, [&](int rc)
     {
         const std::string filename = mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale);
         const auto metadata = image::readImageMetadata(filename);
@@ -55,8 +56,8 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
                 nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
         }
 
-        npts += nbDepthValues;
-    }
+        boost::atomic_ref<unsigned long>{npts} += nbDepthValues;
+    });
     return npts;
 }
 
@@ -138,12 +139,11 @@ void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor,
 {
     ALICEVISION_LOG_INFO("Precomputing groups.");
     long t1 = clock();
-#pragma omp parallel for
-    for(int c = 0; c < cams.size(); c++)
+    system::parallelFor<int>(0, cams.size(), [&](int c)
     {
         int rc = cams[c];
         filterGroupsRC(rc, pixToleranceFactor, pixSizeBall, pixSizeBallWSP, nNearestCams);
-    }
+    });
 
     mvsUtils::printfElapsedTime(t1);
 }
@@ -246,12 +246,11 @@ void Fuser::filterDepthMaps(const std::vector<int>& cams, int minNumOfModals, in
     ALICEVISION_LOG_INFO("Filtering depth maps.");
     long t1 = clock();
 
-#pragma omp parallel for
-    for(int c = 0; c < cams.size(); c++)
+    system::parallelFor<int>(0, cams.size(), [&](int c)
     {
         int rc = cams[c];
         filterDepthMapsRC(rc, minNumOfModals, minNumOfModalsWSP2SSP);
-    }
+    });
 
     mvsUtils::printfElapsedTime(t1);
 }
@@ -766,8 +765,7 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
         minMaxDepths->reserve(mp.ncams);
         minMaxDepths->resize_with(mp.ncams, Point2d(-1.0, -1.0));
 
-#pragma omp parallel for
-        for(int rc = 0; rc < mp.ncams; rc++)
+        system::parallelFor(0, mp.ncams, [&](int rc)
         {
             int w = mp.getWidth(rc) / scaleuse;
             int h = mp.getHeight(rc) / scaleuse;
@@ -910,7 +908,7 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
             saveArrayToFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp.getViewId(rc)) + "sims.bin", sims);
             delete pts;
             delete sims;
-        }
+        });
 
         saveArrayToFile<Point2d>(depthMapsPtsSimsTmpDir + "minMaxDepths.bin", minMaxDepths);
         delete minMaxDepths;

@@ -6,6 +6,7 @@
 
 #include "VoxelsGrid.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
@@ -269,8 +270,9 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
     StaticVector<int>* toRecurse = new StaticVector<int>();
     toRecurse->reserve(nvoxs);
 
-#pragma omp parallel for
-    for(int i = 0; i < nvoxs; i++)
+    std::mutex toRecurseMutex;
+    std::mutex reconstructionPlanMutex;
+    system::parallelFor(0, nvoxs, [&](int i)
     {
         // printf("GENERATING TRIANGLUATION FOR %i-th VOXEL OF %i\n",i,nvoxs);
 
@@ -288,8 +290,8 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
             delete ott;
             if(mp->verbose)
                 ALICEVISION_LOG_DEBUG("deleted " << i);
-#pragma omp critical
             {
+                std::lock_guard<std::mutex> lock{toRecurseMutex};
                 toRecurse->push_back(i);
             }
         }
@@ -300,7 +302,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
             {
                 if(ReconstructionPlan != nullptr)
                 {
-#pragma omp critical
+                    std::lock_guard<std::mutex> lock{reconstructionPlanMutex};
                     {
                         for(int k = 0; k < 8; k++)
                         {
@@ -326,7 +328,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
             if(mp->verbose)
                 ALICEVISION_LOG_DEBUG("deleted " << i);
         }
-    }
+    });
 
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("toRecurse " << toRecurse->size());
@@ -590,8 +592,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
             StaticVector<StaticVector<Pixel>*>* camsTracksPoints =
                 convertObjectsCamsToCamsObjects(*mp, tracksPointsCams);
 
-#pragma omp parallel for
-            for(int c = 0; c < cams->size(); c++)
+            system::parallelFor(0, cams->size(), [&](int c)
             {
                 int rc = (*cams)[c];
 
@@ -611,7 +612,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                     p.fwriteinfo(fin);
                 }
                 fclose(fin);
-            } // for cams
+            });
 
             delete cams;
             delete tracksPoints;
