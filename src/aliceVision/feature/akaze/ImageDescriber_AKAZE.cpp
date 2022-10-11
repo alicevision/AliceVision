@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImageDescriber_AKAZE.hpp"
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision {
 namespace feature {
@@ -40,8 +41,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
       regionsCasted->Features().resize(keypoints.size());
       regionsCasted->Descriptors().resize(keypoints.size());
 
-#pragma omp parallel for
-      for(int i = 0; i < static_cast<int>(keypoints.size()); ++i)
+      system::parallelFor<int>(0, keypoints.size(), [&](int i)
       {
         AKAZEKeypoint point = keypoints.at(i);
 
@@ -50,7 +50,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         {
           const image::Image<unsigned char>& maskIma = *mask;
           if(maskIma(point.y, point.x) > 0)
-            continue;
+            return;
         }
 
         const AKAZE::TEvolution& cur_slice = akaze.getSlices()[point.class_id];
@@ -66,7 +66,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         ComputeMSURFDescriptor(cur_slice.Lx, cur_slice.Ly, point.octave,
           regionsCasted->Features()[i],
           regionsCasted->Descriptors()[i]);
-      }
+      });
     }
     break;
     case AKAZE_LIOP:
@@ -79,8 +79,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
       // init LIOP extractor
       DescriptorExtractor_LIOP liop_extractor;
 
-#pragma omp parallel for
-      for(int i = 0; i < static_cast<int>(keypoints.size()); ++i)
+      system::parallelFor<int>(0, keypoints.size(), [&](int i)
       {
         AKAZEKeypoint point = keypoints[i];
 
@@ -89,7 +88,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         {
           const image::Image<unsigned char>& maskIma = *mask;
           if(maskIma(point.y, point.x) > 0)
-            continue;
+            return;
         }
 
         const AKAZE::TEvolution& cur_slice = akaze.getSlices()[point.class_id];
@@ -111,7 +110,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         liop_extractor.extract(image, fp, desc);
         for(int j=0; j < 144; ++j)
           regionsCasted->Descriptors()[i][j] = static_cast<unsigned char>(desc[j] * 255.f + .5f);
-      }
+      });
     }
     break;
     case AKAZE_MLDB:
@@ -121,8 +120,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
       regionsCasted->Features().resize(keypoints.size());
       regionsCasted->Descriptors().resize(keypoints.size());
 
-#pragma omp parallel for
-      for (int i = 0; i < static_cast<int>(keypoints.size()); ++i)
+      system::parallelFor<int>(0, keypoints.size(), [&](int i)
       {
         AKAZEKeypoint point = keypoints[i];
 
@@ -131,7 +129,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         {
           const image::Image<unsigned char> & maskIma = *mask;
           if (maskIma(point.y, point.x) > 0)
-            continue;
+            return;
         }
 
         const AKAZE::TEvolution& cur_slice = akaze.getSlices()[point.class_id];
@@ -158,7 +156,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
             *ptr |= desc[j*8+iBit] << iBit;
           }
         }
-      }
+      });
     }
     break;
   }

@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SIFT.hpp"
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision {
 namespace feature {
@@ -370,8 +371,8 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
 
         std::vector<std::vector<double>> anglesPerKeypoint(filteredKeypointsIndex.size());
 
-#pragma omp parallel for
-        for(int ii = 0; ii < filteredKeypointsIndex.size(); ++ii)
+        std::mutex resultMutex;
+        system::parallelFor<int>(0, filteredKeypointsIndex.size(), [&](int ii)
         {
             const int i = filteredKeypointsIndex[ii];
 
@@ -392,14 +393,14 @@ bool extractSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& reg
                 vl_sift_calc_keypoint_descriptor(filt, &vlFeatDescriptor[0], keys + i, angles[q]);
                 convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._rootSift);
 
-#pragma omp critical
                 {
+                    std::lock_guard<std::mutex> lock{resultMutex};
                     regionsCasted->Descriptors().push_back(descriptor);
                     regionsCasted->Features().push_back(fp);
                     featuresPeakValue.push_back(keys[i].peak_value);
                 }
             }
-        }
+        });
 
         if(vl_sift_process_next_octave(filt))
             break; // Last octave

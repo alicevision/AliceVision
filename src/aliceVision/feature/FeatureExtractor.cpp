@@ -7,7 +7,7 @@
 #include "FeatureExtractor.hpp"
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
-#include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <boost/filesystem.hpp>
 #include <iomanip>
 
@@ -146,17 +146,20 @@ void FeatureExtractor::process()
           nbThreads = std::min(static_cast<std::size_t>(_maxThreads), nbThreads);
 
         // nbThreads should not be higher than the core number
-        nbThreads = std::min(static_cast<std::size_t>(omp_get_num_procs()), nbThreads);
+        nbThreads = std::min(static_cast<std::size_t>(system::getMaxParallelThreadCount()), nbThreads);
 
         // nbThreads should not be higher than the number of jobs
         nbThreads = std::min(cpuJobs.size(), nbThreads);
 
         ALICEVISION_LOG_INFO("# threads for extraction: " << nbThreads);
-        omp_set_nested(1);
 
-#pragma omp parallel for num_threads(nbThreads)
-        for (int i = 0; i < cpuJobs.size(); ++i)
+        system::parallelFor<int>(0, cpuJobs.size(),
+                                 system::ParallelSettings().setThreadCount(nbThreads)
+                                                           .setEnableNested(true),
+                                 [&](int i)
+        {
             computeViewJob(cpuJobs.at(i), false);
+        });
     }
 
     if (!gpuJobs.empty())

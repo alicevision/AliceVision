@@ -10,6 +10,7 @@
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/feature/sift/SIFT.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 extern "C" {
 #include <nonFree/sift/vl/covdet.h>
@@ -315,7 +316,8 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
             dspNumScales = params.dspNumScales;
         }
 
-#pragma omp parallel
+        system::parallelBlockedFor<std::int64_t>(0, indexSort.size(),
+                                                [&](std::size_t lowerBound, std::size_t upperBound)
         {
             VlCovDetBuffer internalBuffer;
             vl_covdetbuffer_init(&internalBuffer);
@@ -323,8 +325,7 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
             std::vector<float> patch(kPatchSide * kPatchSide);
             std::vector<float> patchXY(2 * kPatchSide * kPatchSide);
 
-#pragma omp for
-            for(int oIndex = 0; oIndex < indexSort.size(); ++oIndex)
+            for(int oIndex = lowerBound; oIndex < upperBound; ++oIndex)
             {
                 const int iIndex = indexSort[oIndex];
                 const auto& inFeat = features[iIndex];
@@ -365,7 +366,7 @@ bool extractDSPSIFT(const image::Image<float>& image, std::unique_ptr<Regions>& 
             }
 
             vl_covdetbuffer_clear(&internalBuffer);
-        }
+        });
     }
 
     return true;

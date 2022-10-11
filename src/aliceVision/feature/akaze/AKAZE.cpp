@@ -8,6 +8,7 @@
 #include <aliceVision/feature/akaze/AKAZE.hpp>
 #include <aliceVision/feature/imageStats.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/config.hpp>
 
 namespace aliceVision {
@@ -228,8 +229,8 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
 {
   std::vector<std::vector<std::pair<AKAZEKeypoint, bool>>> ptsPerSlice(_options.nbOctaves * _options.nbSlicePerOctave);
 
-  #pragma omp parallel for schedule(dynamic)
-  for(int p = 0 ; p < _options.nbOctaves ; ++p)
+  system::parallelFor(0, _options.nbOctaves, system::ParallelSettings().setDynamicScheduling(),
+                      [&](int p)
   {
     const float ratio = static_cast<float>(1 << p);
 
@@ -272,7 +273,7 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
         }
       }
     }
-  }
+  });
 
   // filter duplicates
   detectDuplicates(ptsPerSlice[0], ptsPerSlice[0]);
@@ -389,16 +390,17 @@ void AKAZE::subpixelRefinement(std::vector<AKAZEKeypoint>& keypoints) const
   in_keypoints.swap(keypoints);
   keypoints.reserve(in_keypoints.size());
 
-  #pragma omp parallel for schedule(dynamic)
-  for(int i = 0; i < static_cast<int>(in_keypoints.size()); ++i)
+  std::mutex keypointsMutex;
+  system::parallelFor<int>(0, in_keypoints.size(), system::ParallelSettings().setDynamicScheduling(),
+                           [&](int i)
   {
     AKAZEKeypoint& point = in_keypoints[i];
     if(subpixelRefinement(point, this->_evolution[point.class_id].Lhess))
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock{keypointsMutex};
       keypoints.emplace_back(point);
     }
-  }
+  });
 }
 
 /// This function computes the angle from the vector given by (X Y). From 0 to 2*Pi
