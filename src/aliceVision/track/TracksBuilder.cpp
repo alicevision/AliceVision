@@ -7,6 +7,7 @@
 
 #include "TracksBuilder.hpp"
 
+#include <aliceVision/system/ParallelFor.hpp>
 #include <lemon/list_graph.h>
 #include <lemon/unionfind.h>
 
@@ -134,26 +135,29 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
 
   std::set<int> set_classToErase;
 
-#pragma omp parallel if(multithreaded)
-  for(lemon::UnionFindEnum<IndexMap>::ClassIt cit(*_d->tracksUF); cit != INVALID; ++cit)
-  {
-
-#pragma omp single nowait
+    std::mutex set_classToEraseMutex;
+    system::parallelLoop(system::ParallelSettings().setEnableMultithreading(multithreaded),
+                         [&](auto& manager)
     {
-      std::size_t cpt = 0;
-      std::set<std::size_t> myset;
-      for(lemon::UnionFindEnum<IndexMap>::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
-      {
-        myset.insert(_d->map_nodeToIndex[iit].first);
-        ++cpt;
-      }
-      if((clearForks && myset.size() != cpt) || myset.size() < minTrackLength)
-      {
-#pragma omp critical
-        set_classToErase.insert(cit.operator int());
-      }
-    }
-  }
+        for(lemon::UnionFindEnum<IndexMap>::ClassIt cit(*_d->tracksUF); cit != INVALID; ++cit)
+        {
+            manager.submit([&, cit]()
+            {
+                std::size_t cpt = 0;
+                std::set<std::size_t> myset;
+                for (lemon::UnionFindEnum<IndexMap>::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
+                {
+                    myset.insert(_d->map_nodeToIndex[iit].first);
+                    ++cpt;
+                }
+                if ((clearForks && myset.size() != cpt) || myset.size() < minTrackLength)
+                {
+                    std::lock_guard<std::mutex> lock{set_classToEraseMutex};
+                    set_classToErase.insert(cit.operator int());
+                }
+            });
+        }
+    });
 
   std::for_each(set_classToErase.begin(), set_classToErase.end(),
                 [&](int toErase){ _d->tracksUF->eraseClass(toErase); });
