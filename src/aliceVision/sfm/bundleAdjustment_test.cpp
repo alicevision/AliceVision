@@ -8,6 +8,7 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -340,13 +341,12 @@ track::TracksPerView getTracksPerViews(const SfMData& sfmData)
   }
 
   // sort tracks Ids in each view
-  #pragma omp parallel for
-  for(int i = 0; i < tracksPerView.size(); ++i)
+  system::parallelFor<int>(0, tracksPerView.size(), [&](int i)
   {
     track::TracksPerView::iterator it = tracksPerView.begin();
     std::advance(it, i);
     std::sort(it->second.begin(), it->second.end());
-  }
+  });
 
   return tracksPerView;
 }

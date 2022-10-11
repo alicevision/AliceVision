@@ -24,6 +24,7 @@
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cpu.hpp>
@@ -520,8 +521,8 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
   auto chrono_start = std::chrono::steady_clock::now();
 
   // add images to the 3D reconstruction
-#pragma omp parallel for
-  for(int i = 0; i < bestViewIds.size(); ++i)
+  std::mutex sceneMutex;
+  system::parallelFor<int>(0, bestViewIds.size(), [&](int i)
   {
     const IndexT viewId = bestViewIds.at(i);
     const View& view = *_sfmData.getViews().at(viewId);
@@ -537,10 +538,10 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
           << "\t- rig id: " << view.getRigId() << std::endl
           << "\t- sub-pose id: " << view.getSubPoseId());
 
-#pragma omp critical
+        std::lock_guard<std::mutex> lock{sceneMutex};
         remainingViewIds.erase(viewId);
 
-        continue;
+        return;
       }
 
       // we cannot localize a view if it is part of an initialized rig with unknown rig pose and unknown sub-pose
@@ -556,10 +557,10 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
           << "\t- rig id: " << view.getRigId() << std::endl
           << "\t- sub-pose id: " << view.getSubPoseId());
 
-#pragma omp critical
+        std::lock_guard<std::mutex> lock{sceneMutex};
         remainingViewIds.erase(viewId);
 
-        continue;
+        return;
       }
     }
 
@@ -568,8 +569,8 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     newResectionData.max_iteration = _params.localizerEstimatorMaxIterations;
     const bool hasResected = computeResection(viewId, newResectionData);
 
-#pragma omp critical
     {
+      std::lock_guard<std::mutex> lock{sceneMutex};
       if(hasResected)
       {
         updateScene(viewId, newResectionData);
@@ -582,7 +583,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       }
       remainingViewIds.erase(viewId);
     }
-  }
+  });
 
   ALICEVISION_LOG_DEBUG("Resection of " << bestViewIds.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 
@@ -880,8 +881,8 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
   const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
 
-#pragma omp parallel for
-  for(int i = 0; i < remainingViewIds.size(); ++i)
+  std::mutex viewsMutex;
+  system::parallelFor<int>(0, remainingViewIds.size(), [&](int i)
   {
     std::set<IndexT>::const_iterator iter = remainingViewIds.cbegin();
     std::advance(iter, i);
@@ -892,7 +893,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
     // Compute 2D - 3D possible content
     const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewId);
     if (set_tracksIds.empty())
-      continue;
+      return;
 
     // Check if the view is part of a rig
     {
@@ -903,7 +904,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
         // Some views can become indirectly localized when the sub-pose becomes defined
         if(_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
         {
-          continue;
+          return;
         }
 
         // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
@@ -915,7 +916,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
            !knownPose &&
            (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
         {
-          continue;
+          return;
         }
       }
     }
@@ -931,11 +932,11 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
     // Compute an image score based on the number of matches to the 3D scene
     // and the repartition of these features in the image.
     std::size_t score = computeCandidateImageScore(viewId, vec_trackIdForResection);
-#pragma omp critical
     {
+      std::lock_guard<std::mutex> lock{viewsMutex};
       out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
     }
-  }
+  });
 
   // Sort by the image score
   std::sort(out_connectedViews.begin(), out_connectedViews.end(),
@@ -1251,8 +1252,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   auto progressDisplay = system::createConsoleProgressDisplay(_pairwiseMatches->size(), std::cout,
                                                               "Automatic selection of an initial pair:\n" );
 
-#pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < _pairwiseMatches->size(); ++i)
+  std::mutex pairsMutex;
+  system::parallelFor<int>(0, _pairwiseMatches->size(),
+                           system::ParallelSettings().setDynamicScheduling(),
+                           [&](int i)
   {
     matching::PairwiseMatches::const_iterator iter = _pairwiseMatches->begin();
     std::advance(iter, i);
@@ -1265,10 +1268,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     const IndexT J = std::max(current_pair.first, current_pair.second);
 
     if (filterViewId != UndefinedIndexT && filterViewId != I && filterViewId != J)
-      continue;
+      return;
 
     if (!valid_views.count(I) || !valid_views.count(J))
-      continue;
+      return;
     
     const View* viewI = _sfmData.getViews().at(I).get();
     const Intrinsics::const_iterator iterIntrinsic_I = _sfmData.getIntrinsics().find(viewI->getIntrinsicId());
@@ -1278,7 +1281,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     const Pinhole* camI = dynamic_cast<const Pinhole*>(iterIntrinsic_I->second.get());
     const Pinhole* camJ = dynamic_cast<const Pinhole*>(iterIntrinsic_J->second.get());
     if (camI == nullptr || camJ == nullptr)
-      continue;
+      return;
 
     aliceVision::track::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
@@ -1357,10 +1360,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
           scoring_angle > fLimit_max_angle)
         score = - 1.0 / score;
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock{pairsMutex};
       bestImagePairs.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
     }
-  }
+  });
   // We print the N best scores and return the best one.
   const std::size_t nBestScores = std::min(std::size_t(50), bestImagePairs.size());
   std::sort(bestImagePairs.begin(), bestImagePairs.end(), std::greater<ImagePairScore>());
@@ -1719,8 +1722,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
                  std::inserter(setTracksId, setTracksId.begin()),
                  stl::RetrieveKey());
 
-#pragma omp parallel for 
-  for (int i = 0; i < setTracksId.size(); i++) // each track (already reconstructed or not)
+  std::mutex sceneMutex;
+  system::parallelFor<int>(0, setTracksId.size(), [&](int i) // each track (already reconstructed or not)
   {
     const IndexT trackId = setTracksId.at(i);
     bool isValidTrack = true;
@@ -1729,7 +1732,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
     
     // The track needs to be seen by a min. number of views to be triangulated
     if (observations.size() < _params.minNbObservationsForTriangulation)
-      continue;
+      return;
     
     Vec3 X_euclidean = Vec3::Zero();
     std::set<IndexT> inliers;
@@ -1749,9 +1752,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const auto oi = getObservationData(scene, _featuresPerView, I, track);
       const auto oj = getObservationData(scene, _featuresPerView, J, track);
 
-      if (oi.isEmpty() || oj.isEmpty()) {
-        continue;
-      }
+      if (oi.isEmpty() || oj.isEmpty())
+        return;
 
       // -- Triangulate:
       multiview::TriangulateDLT(oi.P, oi.xUd, oj.P, oj.xUd, &X_euclidean);
@@ -1836,20 +1838,18 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
         const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p.scale();
         landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId), scale);
       }
-#pragma omp critical
       {
+        std::lock_guard<std::mutex> lock{sceneMutex};
         scene.structure[trackId] = landmark;
       }      
     }
     else
     {
-#pragma omp critical
-      {
+        std::lock_guard<std::mutex> lock{sceneMutex};
         if (scene.structure.find(trackId) != scene.structure.end()) 
           scene.structure.erase(trackId);
-      }
     }
-  } // for all shared tracks 
+  }); // for all shared tracks
 }
 
 void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
@@ -1870,8 +1870,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
   allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
   allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
 
-#pragma omp parallel for schedule(dynamic)
-  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
+  std::mutex sceneMutex;
+  system::parallelFor<std::ptrdiff_t>(0, allReconstructedViews.size(), [&](std::ptrdiff_t i)
   {
     std::set<IndexT>::const_iterator iter = allReconstructedViews.begin();
     std::advance(iter, i);
@@ -1924,15 +1924,15 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
         const feature::PointFeature& featJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)];
         // test if the track already exists in 3D
         bool trackIdExists;
-#pragma omp critical
         {
+          std::lock_guard<std::mutex> lock{sceneMutex};
           trackIdExists = scene.structure.find(trackId) != scene.structure.end();
         }
         if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
-#pragma omp critical
-          {
+            std::lock_guard<std::mutex> lock{sceneMutex};
+
             Landmark& landmark = scene.structure.at(trackId);
             if (landmark.observations.count(I) == 0)
             {
@@ -1961,13 +1961,13 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
                 ++extented_track;
               }
             }
-          }
+
         }
         else
         {
           // A new 3D point must be added
-#pragma omp critical
           {
+            std::lock_guard<std::mutex> lock{sceneMutex};
             ++new_putative_track;
           }
           
@@ -2001,8 +2001,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               residualI.norm() < acThresholdI &&
               residualJ.norm() < acThresholdJ)
           {
-#pragma omp critical
-            {
+              std::lock_guard<std::mutex> lock{sceneMutex};
               // Add a new track
               Landmark & landmark = scene.structure[trackId];
               landmark.X = X_euclidean;
@@ -2014,21 +2013,20 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               landmark.observations[J] = Observation(xJ, track.featPerView.at(J), scaleJ);
               
               ++new_added_track;
-            } // critical
           } // 3D point is valid
         } // else (New 3D point)
       }// for all correspondences
     }
 
-//  #pragma omp critical
 //  if (!map_tracksCommonIJ.empty())
 //  {
+//    std::lock_guard<std::mutex> lock{sceneMutex};
 //    ALICEVISION_LOG_DEBUG("--Triangulated 3D points [" << I << "-" << J << "]:\n"
 //                      "\t#Track extented: " << extented_track << "\n"
 //                      "\t#Validated/#Possible: " << new_added_track << "/" << new_putative_track << "\n"
 //                      "\t#3DPoint for the entire scene: " << scene.getLandmarks().size());
 //  }
-  }
+  });
 }
 
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers()

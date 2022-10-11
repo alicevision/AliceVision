@@ -9,6 +9,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <iterator>
@@ -71,9 +72,8 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
   std::transform(sfmData.structure.cbegin(), sfmData.structure.cend(), std::back_inserter(v_keys), stl::RetrieveKey());
 
   LandmarksKeysVec toErase;
-
-  #pragma omp parallel for
-  for (int landmarkIndex = 0; landmarkIndex < v_keys.size(); ++landmarkIndex)
+  std::mutex toEraseMutex;
+  system::parallelFor<int>(0, v_keys.size(), [&](int landmarkIndex)
   {
     const sfmData::Observations &observations = sfmData.structure.at(v_keys[landmarkIndex]).observations;
 
@@ -114,7 +114,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     // early exit, acceptable angle found
     if (itObs != observations.end())
     {
-      continue;
+      return;
     }
 
     // Switch to O(n^2) exhaustive search.
@@ -139,10 +139,10 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
     // acceptable angle not found
     if (i == 0)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock{toEraseMutex};
       toErase.push_back(v_keys[landmarkIndex]);
     }
-  }
+  });
 
   for (IndexT key : toErase)
   {

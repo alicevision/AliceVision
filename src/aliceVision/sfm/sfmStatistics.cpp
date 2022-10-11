@@ -10,6 +10,7 @@
 
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 
 
@@ -338,14 +339,13 @@ void computeResidualsPerView(const sfmData::SfMData& sfmData, int& nbViews, std:
     for(const auto& v: sfmData.getViews())
         viewKeys.push_back(v.first);
 
-    #pragma omp parallel for
-    for(int viewIdx = 0; viewIdx < nbViews; ++viewIdx)
+    system::parallelFor(0, nbViews, [&](int viewIdx)
     {
         const IndexT viewId = viewKeys[viewIdx];
 
         const auto it = residualsPerView.find(viewId);
         if(it == residualsPerView.end())
-            continue;
+            return;
         const std::vector<double>& residuals = it->second;
         BoxStats<double> residualStats(residuals.begin(), residuals.end());
         utils::Histogram<double> residual_histogram = utils::Histogram<double>(residualStats.min, residualStats.max+1, residualStats.max - residualStats.min +1);
@@ -357,8 +357,7 @@ void computeResidualsPerView(const sfmData::SfMData& sfmData, int& nbViews, std:
         nbResidualsPerViewMedian[viewIdx] = residualStats.median;
         nbResidualsPerViewFirstQuartile[viewIdx] = residualStats.firstQuartile;
         nbResidualsPerViewThirdQuartile[viewIdx] = residualStats.thirdQuartile;
-    }
-
+    });
 }
 
 void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbObservationsLengthsPerViewMin,
@@ -393,8 +392,7 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData, int& nbV
     for(const auto& v: sfmData.getViews())
         viewKeys.push_back(v.first);
 
-    #pragma omp parallel for
-    for(int viewIdx = 0; viewIdx < nbViews; ++viewIdx)
+    system::parallelFor(0, nbViews, [&](int viewIdx)
     {
         const IndexT viewId = viewKeys[viewIdx];
         const std::vector<int>& nbObservations = observationLengthsPerView[viewId];
@@ -408,8 +406,7 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData, int& nbV
         nbObservationsLengthsPerViewMedian[viewIdx] = observationsLengthsStats.median;
         nbObservationsLengthsPerViewFirstQuartile[viewIdx] = observationsLengthsStats.firstQuartile;
         nbObservationsLengthsPerViewThirdQuartile[viewIdx] = observationsLengthsStats.thirdQuartile;
-    }
-
+    });
 }
 
 }

@@ -745,8 +745,6 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
               }
           }
       }
-
-      // #pragma omp critical
       {
         // Add the relative rotation to the relative 'rotation' pose graph
         using namespace aliceVision::rotationAveraging;

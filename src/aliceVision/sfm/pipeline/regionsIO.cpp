@@ -7,6 +7,7 @@
 
 #include "regionsIO.hpp"
 
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <boost/filesystem.hpp>
 
@@ -163,8 +164,7 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
     std::vector<std::unique_ptr<feature::Regions>>& featuresPerView = featuresPerDescPerView.at(descIdx);
     featuresPerView.resize(viewIds.size());
 
-#pragma omp parallel for
-    for(int viewIdx = 0; viewIdx < viewIds.size(); ++viewIdx)
+    system::parallelFor<int>(0, viewIds.size(), [&](int viewIdx)
     {
       try
       {
@@ -174,7 +174,7 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
       {
         loadingSuccess = false;
       }
-    }
+    });
   }
 
   return loadingSuccess;

@@ -11,6 +11,7 @@
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/stl/stl.hpp>
@@ -449,9 +450,11 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
 
   auto progressDisplay = system::createConsoleProgressDisplay(poseWiseMatches.size(), std::cout,
                                                               "\n- Relative pose computation -\n" );
-  #pragma omp parallel for schedule(dynamic)
   // Compute the relative pose from pairwise point matches:
-  for (int i = 0; i < poseWiseMatches.size(); ++i)
+  std::mutex relativesMutex;
+  system::parallelFor<int>(0, poseWiseMatches.size(),
+                           system::ParallelSettings().setDynamicScheduling(),
+                           [&](int i)
   {
     ++progressDisplay;
     {
@@ -464,14 +467,14 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       // If a pair has the same ID, discard it
       if (relative_pose_pair.first == relative_pose_pair.second)
       {
-        continue;
+        return;
       }
 
       // Select common bearing vectors
       if (match_pairs.size() > 1)
       {
         ALICEVISION_LOG_WARNING("Compute relative pose between more than two view is not supported");
-        continue;
+        return;
       }
 
       const Pair pairIterator = *(match_pairs.begin());
@@ -485,7 +488,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       // Check that valid cameras are existing for the pair of view
       if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 ||
         _sfmData.getIntrinsics().count(view_J->getIntrinsicId()) == 0)
-        continue;
+        return;
 
       // Setup corresponding bearing vector
       const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
@@ -512,14 +515,14 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam_I);
       if (!camIPinHole) {
         ALICEVISION_LOG_ERROR("Camera is not pinhole in Compute_Relative_Rotations");
-        continue;
+        return;
       }
 
       std::shared_ptr<camera::IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
       std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam_J);
       if (!camJPinHole) {
         ALICEVISION_LOG_ERROR("Camera is not pinhole in Compute_Relative_Rotations");
-        continue;
+        return;
       }
 
       RelativePoseInfo relativePose_info;
@@ -535,7 +538,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
 
       if(!robustRelativePose(K, K, x1, x2, _randomNumberGenerator, relativePose_info, imageSize, imageSize, 256))
       {
-        continue;
+        return;
       }
 
       const bool refineUsingBA = true;
@@ -614,16 +617,16 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
         }
       }
-      #pragma omp critical
       {
         // Add the relative rotation to the relative 'rotation' pose graph
+        std::lock_guard<std::mutex> lock{relativesMutex};
         using namespace aliceVision::rotationAveraging;
           vec_relatives_R.emplace_back(
             relative_pose_pair.first, relative_pose_pair.second,
             relativePose_info.relativePose.rotation(), relativePose_info.vec_inliers.size());
       }
     }
-  } // for all relative pose
+  }); // for all relative pose
 
   // Re-weight rotation in [0,1]
   if (vec_relatives_R.size() > 1)

@@ -8,6 +8,7 @@
 #include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/types.hpp>
@@ -71,21 +72,19 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
                                                               std::cout, "\nCompute frustum intersection\n");
 
   // Exhaustive comparison (use the fact that the intersect function is symmetric)
-  #pragma omp parallel for
-  for (int i = 0; i < (int)viewIds.size(); ++i)
+  std::mutex pairsMutex;
+  system::parallelFor<int>(0, viewIds.size(), [&](int i)
   {
     for (size_t j = i+1; j < viewIds.size(); ++j)
     {
       if (frustum_perView.at(viewIds[i]).intersect(frustum_perView.at(viewIds[j])))
       {
-        #pragma omp critical
-        {
+          std::lock_guard<std::mutex> lock{pairsMutex};
           pairs.insert(std::make_pair(viewIds[i], viewIds[j]));
-        }
       }
       ++progressDisplay;
     }
-  }
+  });
   return pairs;
 }
 

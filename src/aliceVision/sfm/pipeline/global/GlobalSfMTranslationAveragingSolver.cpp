@@ -18,6 +18,7 @@
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
@@ -352,8 +353,10 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
     //-- precompute the number of track per triplet:
     HashMap<IndexT, IndexT> map_tracksPerTriplets;
 
-    #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int)vec_triplets.size(); ++i)
+    std::mutex tracksMutex;
+    system::parallelFor<int>(0, vec_triplets.size(),
+                             system::ParallelSettings().setDynamicScheduling(),
+                             [&](int i)
     {
       // List matches that belong to the triplet of poses
       const graph::Triplet & triplet = vec_triplets[i];
@@ -379,10 +382,10 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
         tracksBuilder.build(map_triplet_matches);
         tracksBuilder.filter(true,3);
 
-        #pragma omp critical
+        std::lock_guard<std::mutex> lock{tracksMutex};
         map_tracksPerTriplets[i] = tracksBuilder.nbTracks(); //count the # of matches in the UF tree
       }
-    }
+    });
 
     typedef Pair myEdge;
 
@@ -408,8 +411,10 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
     const bool bVerbose = false;
 
-    #pragma omp parallel for schedule(dynamic)
-    for (int k = 0; k < vec_edges.size(); ++k)
+    std::mutex matchesMutex;
+    system::parallelFor<int>(0, vec_edges.size(),
+                             system::ParallelSettings().setDynamicScheduling(),
+                             [&](int k)
     {
       const myEdge & edge = vec_edges[k];
       ++progressDisplay;
@@ -501,8 +506,8 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
               relativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
               //--- ATOMIC
-              #pragma omp critical
               {
+                std::lock_guard<std::mutex> lock{matchesMutex};
                 vec_initialEstimates.insert(vec_initialEstimates.end(),
                                             {
                                                 {{triplet.i, triplet.j}, {Rij, tij}},
@@ -551,7 +556,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
           }
         }
       }
-    }
+    });
   }
 
 
