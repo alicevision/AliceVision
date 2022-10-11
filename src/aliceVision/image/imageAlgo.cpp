@@ -360,16 +360,14 @@ void convolveImage(oiio::TypeDesc typeDesc,
                    int inWidth,
                    int inHeight,
                    int nchannels,
-                   const std::vector<T>& inBuffer,
-                   std::vector<T>& outBuffer,
+                   const T* inBuffer,
+                   T* outBuffer,
                    const std::string& kernel,
                    float kernelWidth,
                    float kernelHeight)
 {
-    outBuffer.resize(inBuffer.size());
-
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer.data()));
-    oiio::ImageBuf outBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), outBuffer.data());
+    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer));
+    oiio::ImageBuf outBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), outBuffer);
 
     oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel(kernel, kernelWidth, kernelHeight);
 
@@ -379,24 +377,32 @@ void convolveImage(oiio::TypeDesc typeDesc,
 
 void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
 {
-  convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+    outBuffer.resize(inBuffer.size());
+    convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
 }
 
 void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
 {
-  convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+    outBuffer.resize(inBuffer.size());
+    convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
 }
 
 void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
 {
-  convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+    outBuffer.resize(inBuffer.size());
+    convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
 }
 
 void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor>& inBuffer,
                    std::vector<image::RGBfColor>& outBuffer, const std::string& kernel,
                    float kernelWidth, float kernelHeight)
 {
-  convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+    outBuffer.resize(inBuffer.size());
+    convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer.data(), outBuffer.data(),
+                  kernel, kernelWidth, kernelHeight);
 }
 
 void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer,
