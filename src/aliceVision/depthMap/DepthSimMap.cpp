@@ -318,8 +318,8 @@ void DepthSimMap::initJustFromDepthMap(const DepthSimMap& depthSimMap, float def
     }
 }
 
-void DepthSimMap::initFromDepthMapAndSimMap(const std::vector<float>& depthMapT,
-                                            const std::vector<float>& simMapT,
+void DepthSimMap::initFromDepthMapAndSimMap(const image::Image<float>& depthMapT,
+                                            const image::Image<float>& simMapT,
     int depthSimMapsScale)
 {
     int wdm = _mp.getWidth(_rc) / depthSimMapsScale;
@@ -332,8 +332,8 @@ void DepthSimMap::initFromDepthMapAndSimMap(const std::vector<float>& depthMapT,
         if ((x < wdm) && (y < hdm))
         {
             int index = y * wdm + x;
-            _dsm[i].depth = depthMapT[index];
-            _dsm[i].sim = simMapT[index];
+            _dsm[i].depth = depthMapT(index);
+            _dsm[i].sim = simMapT(index);
         }
     }
 }
@@ -468,15 +468,13 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 
 void DepthSimMap::load(int fromScale)
 {
-    int width, height;
-
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
 
     image::readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, fromScale),
-                     width, height, depthMap, image::EImageColorSpace::NO_CONVERSION);
+                     depthMap, image::EImageColorSpace::NO_CONVERSION);
     image::readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, fromScale),
-                     width, height, simMap, image::EImageColorSpace::NO_CONVERSION);
+                     simMap, image::EImageColorSpace::NO_CONVERSION);
 
     initFromDepthMapAndSimMap(depthMap, simMap, fromScale);
 }

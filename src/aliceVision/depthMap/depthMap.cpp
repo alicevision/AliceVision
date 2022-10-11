@@ -124,10 +124,8 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
 
         if (!fs::exists(normalMapFilepath))
         {
-            std::vector<float> depthMap;
-            int w = 0;
-            int h = 0;
-            readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap,
+            image::Image<float> depthMap;
+            readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), depthMap,
                       image::EImageColorSpace::NO_CONVERSION);
 
             image::Image<image::RGBfColor> normalMap(mp.getWidth(rc), mp.getHeight(rc));

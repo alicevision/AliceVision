@@ -98,8 +98,8 @@ public:
 
     void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
     void initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim);
-    void initFromDepthMapAndSimMap(const std::vector<float>& depthMapT,
-                                   const std::vector<float>& simMapT,
+    void initFromDepthMapAndSimMap(const image::Image<float>& depthMapT,
+                                   const image::Image<float>& simMapT,
                                    int depthSimMapsScale);
 
     void initFromSmaller(const DepthSimMap& depthSimMap);

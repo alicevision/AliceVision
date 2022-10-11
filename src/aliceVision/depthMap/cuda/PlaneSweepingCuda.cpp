@@ -679,7 +679,7 @@ void PlaneSweepingCuda::deleteNormalMapping( NormalMapping* m )
 
 bool PlaneSweepingCuda::computeNormalMap(
     NormalMapping*            mapping,
-    const std::vector<float>& depthMap,
+    const image::Image<float>& depthMap,
     image::Image<image::RGBfColor>& normalMap,
     int rc, int scale,
     float igammaC, float igammaP, int wsh)
@@ -696,7 +696,7 @@ bool PlaneSweepingCuda::computeNormalMap(
   cps_host_fillCamera( *mapping->camsBasesHst, rc, _mp, scale );
   mapping->loadCameraParameters();
   mapping->allocHostMaps( w, h );
-  mapping->copyDepthMap( depthMap );
+  mapping->copyDepthMap(depthMap.data(), depthMap.size());
 
   ps_computeNormalMap( mapping,
                        w, h, scale - 1,
