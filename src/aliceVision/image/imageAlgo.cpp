@@ -323,6 +323,16 @@ void resizeImage(int inWidth, int inHeight, int downscale,
     resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
+void resizeImage(int downscale, const image::Image<float>& inImage,
+                 image::Image<float>& outImage, const std::string& filter, float filterSize)
+{
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
 void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
                  image::Image<image::RGBfColor> &outImage, const std::string &filter,
                  float filterSize)

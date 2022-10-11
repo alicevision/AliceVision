@@ -76,6 +76,9 @@ void resizeImage(int inWidth, int inHeight, int downscale,
                  const std::vector<image::RGBfColor>& inBuffer,
                  std::vector<image::RGBfColor>& outBuffer,
                  const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, const image::Image<float>& inImage,
+                 image::Image<float>& outImage,
+                 const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const image::Image<image::RGBfColor>& inImage,
                  image::Image<image::RGBfColor>& outImage,
                  const std::string& filter = "", float filterSize = 0);
