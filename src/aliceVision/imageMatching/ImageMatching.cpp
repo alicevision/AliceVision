@@ -6,6 +6,7 @@
 
 #include "ImageMatching.hpp"
 #include <aliceVision/voctree/databaseIO.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision {
 namespace imageMatching {
@@ -272,8 +273,8 @@ void generateFromVoctree(PairList& allMatches,
     }
 
     // query each document
-#pragma omp parallel for
-    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
+    system::parallelFor<std::ptrdiff_t>(0, descriptorsFiles.size(), system::ParallelSettings(),
+                                        [&](auto i)
     {
         auto itA = descriptorsFiles.cbegin();
         std::advance(itA, i);
@@ -307,7 +308,7 @@ void generateFromVoctree(PairList& allMatches,
         {
             imgMatches.push_back(m.id);
         }
-    }
+    });
 }
 
 void conditionVocTree(const std::string& treeName, bool withWeights,
