@@ -24,6 +24,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterType.hpp>
+#include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/system/main.hpp>
