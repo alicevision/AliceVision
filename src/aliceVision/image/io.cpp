@@ -583,6 +583,15 @@ void writeImage(const std::string& path,
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
   {
+    // Storage data type may be saved as attributes to formats that support it and then come back
+    // as metadata to this function. Therefore we store the storage data type to attributes if it
+    // is set and load it from attributes if it isn't set.
+    if (options.isStorageDataTypeSet())
+    {
+        imageSpec.attribute("AliceVision:storageDataType",
+                            EStorageDataType_enumToString(options.getStorageDataType()));
+    }
+
     const std::string storageDataTypeStr = imageSpec.get_string_attribute("AliceVision:storageDataType", EStorageDataType_enumToString(EStorageDataType::HalfFinite));
     EStorageDataType storageDataType  = EStorageDataType_stringToEnum(storageDataTypeStr);
 

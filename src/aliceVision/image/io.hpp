@@ -182,6 +182,8 @@ public:
 
     EImageColorSpace getFromColorSpace() const { return _fromColorSpace; }
     EImageColorSpace getToColorSpace() const { return _toColorSpace; }
+    EStorageDataType getStorageDataType() const { return _storageDataType; }
+    bool isStorageDataTypeSet() const { return _storageDataTypeSet; }
 
     ImageWriteOptions& fromColorSpace(EImageColorSpace colorSpace)
     {
@@ -195,9 +197,18 @@ public:
         return *this;
     }
 
+    ImageWriteOptions& storageDataType(EStorageDataType storageDataType)
+    {
+        _storageDataType = storageDataType;
+        _storageDataTypeSet = true;
+        return *this;
+    }
+
 private:
     EImageColorSpace _fromColorSpace{EImageColorSpace::LINEAR};
     EImageColorSpace _toColorSpace{EImageColorSpace::AUTO};
+    EStorageDataType _storageDataType{EStorageDataType::HalfFinite};
+    bool _storageDataTypeSet = false;
 };
 
 /**
