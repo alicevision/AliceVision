@@ -13,21 +13,15 @@
 
 namespace aliceVision {
 
-bool loadPairs(const std::string &sFileName,
+bool loadPairs(std::istream& stream,
                PairSet & pairs,
                int rangeStart,
                int rangeSize)
 {
-    std::ifstream in(sFileName.c_str());
-    if (!in.is_open())
-    {
-        ALICEVISION_LOG_WARNING("loadPairs: Impossible to read the specified file: \"" << sFileName << "\".");
-        return false;
-    }
     std::size_t nbLine = 0;
     std::string sValue;
 
-    for (; std::getline( in, sValue ); ++nbLine)
+    for (; std::getline(stream, sValue); ++nbLine)
     {
         if (rangeStart != -1 && rangeSize != 0)
         {
@@ -44,7 +38,7 @@ bool loadPairs(const std::string &sFileName,
         const size_t str_size = vec_str.size();
         if (str_size < 2)
         {
-            ALICEVISION_LOG_WARNING("loadPairs: Invalid input file: \"" << sFileName << "\".");
+            ALICEVISION_LOG_WARNING("loadPairs: Invalid input file.");
             return false;
         }
         std::stringstream oss;
@@ -58,38 +52,66 @@ bool loadPairs(const std::string &sFileName,
             if( I == J )
             {
                 ALICEVISION_LOG_WARNING("loadPairs: Invalid input file. Image " << I
-                                        << " see itself. File: \"" << sFileName << "\".");
+                                        << " sees itself.");
                 return false;
             }
             Pair pairToInsert = (I < J) ? std::make_pair(I, J) : std::make_pair(J, I);
             if(pairs.find(pairToInsert) != pairs.end())
             {
-                // There is no reason to have the same image pair twice in the list of image pairs to match.
+                // There is no reason to have the same image pair twice in the list of image pairs
+                //to match.
                 ALICEVISION_LOG_WARNING("loadPairs: image pair (" << I << ", " << J
-                                        << ") already added. File: \"" << sFileName << "\".");
+                                        << ") already added.");
             }
-            ALICEVISION_LOG_INFO("loadPairs: image pair (" << I << ", " << J << ") added. File: \"" << sFileName << "\".");
+            ALICEVISION_LOG_INFO("loadPairs: image pair (" << I << ", " << J << ") added.");
             pairs.insert(pairToInsert);
         }
     }
-    in.close();
     return true;
 }
 
-bool savePairs(const std::string &sFileName, const PairSet & pairs)
+void savePairs(std::ostream& stream, const PairSet & pairs)
 {
-    std::ofstream outStream(sFileName.c_str());
-    if(!outStream.is_open())
-    {
-        ALICEVISION_LOG_WARNING("savePairs: Impossible to open the output specified file: \"" << sFileName << "\".");
-        return false;
-    }
     for (PairSet::const_iterator iterP = pairs.begin(); iterP != pairs.end(); ++iterP)
     {
-        outStream << iterP->first << ' ' << iterP->second << '\n';
+        stream << iterP->first << ' ' << iterP->second << '\n';
     }
-    bool bOk = !outStream.bad();
-    outStream.close();
-    return bOk;
 }
+
+bool loadPairsFromFile(const std::string& sFileName, // filename of the list file,
+                       PairSet& pairs,
+                       int rangeStart,
+                       int rangeSize)
+{
+    std::ifstream in(sFileName.c_str());
+    if (!in.is_open())
+    {
+        ALICEVISION_LOG_WARNING("loadPairsFromFile: Impossible to read the specified file: \""
+                                << sFileName << "\".");
+        return false;
+    }
+
+    if (!loadPairs(in, pairs, rangeStart, rangeSize))
+    {
+        ALICEVISION_LOG_WARNING("loadPairsFromFile: Failed to read file: \"" << sFileName << "\".");
+        return false;
+    }
+    return true;
+}
+
+bool savePairsToFile(const std::string& sFileName, const PairSet& pairs)
+{
+    std::ofstream outStream(sFileName);
+    if (!outStream.is_open())
+    {
+        ALICEVISION_LOG_WARNING("savePairsToFile: Impossible to open the output specified file: \""
+                                << sFileName << "\".");
+        return false;
+    }
+
+    savePairs(outStream, pairs);
+
+    return !outStream.bad();
+}
+
 } // namespace aliceVision

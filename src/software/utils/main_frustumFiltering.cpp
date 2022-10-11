@@ -155,7 +155,7 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Pair filtering took: " << timer.elapsed() << " s");
 
   // export pairs on disk
-  if(savePairs(outputFilename, pairs))
+  if (savePairsToFile(outputFilename, pairs))
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;
