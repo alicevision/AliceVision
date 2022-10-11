@@ -9,7 +9,6 @@
 
 #include <aliceVision/matching/ArrayMatcher.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include "flann/flann.hpp"
 

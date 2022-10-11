@@ -11,7 +11,6 @@
 #include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/utils/CeresUtils.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
 

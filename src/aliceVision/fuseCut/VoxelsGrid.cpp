@@ -11,7 +11,6 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
 

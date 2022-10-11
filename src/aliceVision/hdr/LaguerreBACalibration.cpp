@@ -7,7 +7,6 @@
 #include "LaguerreBACalibration.hpp"
 #include "sampling.hpp"
 
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <Eigen/Dense>

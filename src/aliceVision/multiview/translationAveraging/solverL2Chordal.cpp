@@ -9,7 +9,6 @@
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include "ceres/ceres.h"

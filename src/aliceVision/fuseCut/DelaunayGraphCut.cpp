@@ -21,7 +21,6 @@
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/ParallelFor.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include "nanoflann.hpp"
 

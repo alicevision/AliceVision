@@ -7,7 +7,6 @@
 
 #include "aliceVision/multiview/rotationAveraging/l2.hpp"
 #include <aliceVision/config.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <vector>

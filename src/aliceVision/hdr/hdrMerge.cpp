@@ -11,7 +11,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ParallelFor.hpp>
 

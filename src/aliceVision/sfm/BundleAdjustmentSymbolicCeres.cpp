@@ -7,7 +7,6 @@
 
 #include <aliceVision/sfm/BundleAdjustmentSymbolicCeres.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
 #include <aliceVision/utils/CeresUtils.hpp>

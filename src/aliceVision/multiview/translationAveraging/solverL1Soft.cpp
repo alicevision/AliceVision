@@ -10,7 +10,6 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include "ceres/ceres.h"

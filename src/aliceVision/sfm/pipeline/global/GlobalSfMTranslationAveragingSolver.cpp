@@ -28,7 +28,6 @@
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>
 
