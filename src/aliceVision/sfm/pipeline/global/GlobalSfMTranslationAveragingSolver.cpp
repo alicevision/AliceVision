@@ -406,8 +406,6 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
                 vec_edges.size(), std::cout,
                 "\nRelative translations computation (edge coverage algorithm)\n");
 
-    // set number of threads, 1 if openMP is not enabled  
-    std::vector<translationAveraging::RelativeInfoVec> initial_estimates(omp_get_max_threads());
     const bool bVerbose = false;
 
     #pragma omp parallel for schedule(dynamic)
@@ -502,19 +500,16 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
               Vec3 tik;
               relativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
-              // set number of threads, 1 if openMP is not enabled
-              const int thread_id = omp_get_thread_num();
-
-              initial_estimates[thread_id].emplace_back(
-                std::make_pair(triplet.i, triplet.j), std::make_pair(Rij, tij));
-              initial_estimates[thread_id].emplace_back(
-                std::make_pair(triplet.j, triplet.k), std::make_pair(Rjk, tjk));
-              initial_estimates[thread_id].emplace_back(
-                std::make_pair(triplet.i, triplet.k), std::make_pair(Rik, tik));
-
               //--- ATOMIC
               #pragma omp critical
               {
+                vec_initialEstimates.insert(vec_initialEstimates.end(),
+                                            {
+                                                {{triplet.i, triplet.j}, {Rij, tij}},
+                                                {{triplet.j, triplet.k}, {Rjk, tjk}},
+                                                {{triplet.i, triplet.k}, {Rik, tik}}
+                                            });
+
                 // Add inliers as valid pairwise matches
                 for (std::vector<size_t>::const_iterator iterInliers = vec_inliers.begin();
                   iterInliers != vec_inliers.end(); ++iterInliers)
@@ -555,14 +550,6 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
             break;
           }
         }
-      }
-    }
-    // Merge thread estimates
-    for(const auto vec : initial_estimates)
-    {
-      for(const auto val : vec)
-      {
-        vec_initialEstimates.emplace_back(val);
       }
     }
   }
