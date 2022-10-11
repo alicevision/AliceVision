@@ -292,7 +292,7 @@ int main(int argc, char **argv)
 
     bool useDepthMap = !depthMapExp.empty() || !depthMapFolder.empty();
 
-    // #pragma omp parallel for
+    // system::parallelFor(0, size, [&](int i)
     for(int i = 0; i < size; ++i)
     {
         const auto& item = std::next(viewPairItBegin, rangeStart + i);

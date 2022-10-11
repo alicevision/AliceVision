@@ -7,6 +7,7 @@
 // Reading command line options
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -318,28 +319,28 @@ int aliceVision_main(int argc, char** argv)
 					}
 				}
 
-				#pragma omp parallel for
-				for (int boxId = 0; boxId < boxes.size(); boxId++) {
-
+                std::mutex bboxMutex;
+                system::parallelFor<int>(0, boxes.size(), [&](int boxId)
+                {
 					BoundingBox localBbox = boxes[boxId];
 
 					// Prepare coordinates map
 					CoordinatesMap map;
-					if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) {
-						continue;
+                    if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox))
+                    {
+                        return;
 					}
 
 					if (map.getBoundingBox().isEmpty()) 
 					{
-						continue;
+                        return;
 					}
 
-
-					#pragma omp critical 
 					{
+                        std::lock_guard<std::mutex> lock{bboxMutex};
 						globalBbox = globalBbox.unionWith(map.getBoundingBox());
 					}
-				}
+                });
 
 				//Rare case ... When all boxes valid are after the loop
 				if (globalBbox.left >= panoramaSize.first)
@@ -424,9 +425,8 @@ int aliceVision_main(int argc, char** argv)
 					}
 				}
 
-				
-				#pragma omp parallel for 
-				for (int boxId = 0; boxId < boxes.size(); boxId++) 
+                std::mutex outMutex;
+                system::parallelFor<int>(0, boxes.size(), [&](int boxId)
 				{
 					BoundingBox localBbox = boxes[boxId];
 
@@ -437,39 +437,29 @@ int aliceVision_main(int argc, char** argv)
 					CoordinatesMap map;
 					if (!map.build(panoramaSize, camPose, *(intrinsic.get()), localBbox)) 
 					{
-						continue;
+                        return;
 					}
 
 					// Warp image
 					GaussianWarper warper;
 					if (!warper.warp(map, pyramid, clampHalf)) {
-						continue;
+                        return;
 					}
 
 					// Alpha mask
 					aliceVision::image::Image<float> weights;
 					if (!distanceToCenter(weights, map, intrinsic->w(), intrinsic->h())) {
-						continue;
+                        return;
 					}
 
 					// Store
-					#pragma omp critical 
+                    std::lock_guard<std::mutex> lock{outMutex};
 					{
 						out_view->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, warper.getColor().data());
+                        out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
+                        out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
 					}
-
-					// Store
-					#pragma omp critical 
-					{
-						out_mask->write_tile(x, y, 0, oiio::TypeDesc::UCHAR, warper.getMask().data());
-					}
-
-					// Store
-					#pragma omp critical 
-					{
-						out_weights->write_tile(x, y, 0, oiio::TypeDesc::FLOAT, weights.data());
-					}
-				}
+                });
 
 				out_view->close();
 				out_mask->close();

@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -368,13 +369,12 @@ int aliceVision_main(int argc, char **argv)
     {
       std::vector<sfmData::View> incompleteViews(imagePaths.size());
 
-      #pragma omp parallel for
-      for(int i = 0; i < incompleteViews.size(); ++i)
+      system::parallelFor<int>(0, incompleteViews.size(), [&](int i)
       {
         sfmData::View& view = incompleteViews.at(i);
         view.setImagePath(imagePaths.at(i));
         updateIncompleteView(view, viewIdMethod, viewIdRegex);
-      }
+      });
 
       for(const auto& view : incompleteViews)
         views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
@@ -398,8 +398,8 @@ int aliceVision_main(int argc, char **argv)
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
 
-  #pragma omp parallel for
-  for(int i = 0; i < sfmData.getViews().size(); ++i)
+  std::mutex loopMutex;
+  system::parallelFor<int>(0, sfmData.getViews().size(), [&](int i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
 
@@ -420,8 +420,10 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
 
-        #pragma omp critical
-        detectedRigs[view.getRigId()][view.getSubPoseId()]++;
+        {
+            std::lock_guard<std::mutex> lock{loopMutex};
+            detectedRigs[view.getRigId()][view.getSubPoseId()]++;
+        }
       }
       catch(std::exception& e)
       {
@@ -446,8 +448,8 @@ int aliceVision_main(int argc, char **argv)
         std::hash<std::string> hash;
         IndexT tmpPoseID = hash(parentPath.string()); // use a temporary pose Id to group the images
 
-#pragma omp critical
         {
+            std::lock_guard<std::mutex> lock{loopMutex};
             poseGroups[tmpPoseID].push_back(view.getViewId());
         }
     }
@@ -484,7 +486,7 @@ int aliceVision_main(int argc, char **argv)
           boost::atomic_ref<std::size_t>(completeViewCount)++;
 
           // don't need to build a new intrinsic
-          continue;
+          return;
         }
       }
     }
@@ -554,7 +556,7 @@ int aliceVision_main(int argc, char **argv)
     // error handling
     if(sensorWidth == -1.0)
     {
-  #pragma omp critical
+      std::lock_guard<std::mutex> lock{loopMutex};
       if(hasCameraMetadata)
       {
         // sensor is not in the database
@@ -633,8 +635,8 @@ int aliceVision_main(int argc, char **argv)
       else
       {
         // We have no way to identify a camera device correctly.
-#pragma omp critical
         {
+          std::lock_guard<std::mutex> lock{loopMutex};
           missingDeviceUID.emplace_back(view.getImagePath()); // will throw a warning message at the end
         }
 
@@ -684,12 +686,12 @@ int aliceVision_main(int argc, char **argv)
       intrinsicId = intrinsic->hashValue();
     }
 
-    #pragma omp critical
     {
+      std::lock_guard<std::mutex> lock{loopMutex};
       view.setIntrinsicId(intrinsicId);
       sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);
     }
-  }
+  });
 
   // create detected rigs structures
   if(!detectedRigs.empty())

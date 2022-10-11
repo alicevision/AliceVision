@@ -8,6 +8,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
@@ -120,8 +121,9 @@ bool prepareDenseScene(const SfMData& sfmData,
   const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
   ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0/medianCameraExposure));
 
-#pragma omp parallel for num_threads(3)
-  for(int i = 0; i < viewIds.size(); ++i)
+  std::mutex progressMutex;
+  system::parallelFor<int>(0, viewIds.size(), system::ParallelSettings().setThreadCount(3),
+                           [&](int i)
   {
     auto itView = viewIds.begin();
     std::advance(itView, i);
@@ -148,7 +150,7 @@ bool prepareDenseScene(const SfMData& sfmData,
       std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
       if (!camPinHole) {
         ALICEVISION_LOG_ERROR("Camera is not pinhole in filter");
-        continue;
+        return;
       }
 
       Mat34 P = camPinHole->getProjectiveEquivalent(pose);
@@ -269,7 +271,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     }
 
     ++progressDisplay;
-  }
+  });
 
   return true;
 }

@@ -9,6 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -331,8 +332,7 @@ void smoothenBoundary(
 
 void removeCameraVisibility(mesh::Mesh& inputMesh, int camId)
 {
-    #pragma omp parallel for
-    for (int vertexId = 0; vertexId < inputMesh.pts.size(); ++vertexId)
+    system::parallelFor(0, inputMesh.pts.size(), [&](int vertexId)
     {
         auto& pointVisibilities = inputMesh.pointsVisibilities[vertexId];
         const int pointVisibilityIndex = pointVisibilities.indexOf(camId);
@@ -340,7 +340,7 @@ void removeCameraVisibility(mesh::Mesh& inputMesh, int camId)
         {
             pointVisibilities.remove(pointVisibilityIndex);
         }
-    }
+    });
 }
 
 void meshMasking(
@@ -386,8 +386,7 @@ void meshMasking(
             continue;
         }
 
-        #pragma omp parallel for
-        for (int vertexId = 0; vertexId < inputMesh.pts.size(); ++vertexId)
+        system::parallelFor(0, inputMesh.pts.size(), [&](int vertexId)
         {
             const auto& vertex = inputMesh.pts[vertexId];
 
@@ -396,7 +395,7 @@ void meshMasking(
             const int pointVisibilityIndex = pointVisibilities.indexOf(camId);
             if (usePointsVisibilities && pointVisibilityIndex == -1)
             {
-                continue;
+                return;
             }
 
             // project vertex on mask
@@ -409,7 +408,7 @@ void meshMasking(
                 {
                     pointVisibilities.remove(pointVisibilityIndex);  // not visible
                 }
-                continue;
+                return;
             }
 
             // get the mask value
@@ -430,7 +429,7 @@ void meshMasking(
                 }
                 ++vertexVisibilityCounters[vertexId];
             }
-        }
+        });
 
         maskCache.unlock(camId);
     }

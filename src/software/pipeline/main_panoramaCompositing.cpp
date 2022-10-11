@@ -20,6 +20,7 @@
 // System
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 // Reading command line options
 #include <boost/program_options.hpp>
@@ -354,13 +355,12 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     oiio::ParamValueList srcMetadata = image::readImageMetadata(firstImagePath);
     colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
 
-    #pragma omp parallel for
-    for (int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
+    system::parallelFor<int>(0, overlappingViews.size(), [&](int posCurrent)
     {
         IndexT viewCurrent = overlappingViews[posCurrent];
         if (hasFailed)
         {
-            continue;
+            return;
         }
 
         ALICEVISION_LOG_INFO("Processing input " << posCurrent << "/" << overlappingViews.size());
@@ -370,12 +370,12 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
         std::vector<BoundingBox> currentBoundingBoxes;
         if (!panoramaMap.getIntersectionsList(intersections, currentBoundingBoxes, referenceBoundingBox, viewCurrent))
         {
-            continue;
+            return;
         }
 
         if (intersections.empty())
         {
-            continue;
+            return;
         }
 
         ALICEVISION_LOG_TRACE("Effective processing");
@@ -450,7 +450,7 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
                 continue;
             }
         }
-    }
+    });
 
     if (hasFailed) 
     {
@@ -717,7 +717,7 @@ int aliceVision_main(int argc, char** argv)
     if(maxThreads > 0)
         omp_set_num_threads(std::min(omp_get_max_threads(), maxThreads));
 
-    //#pragma omp parallel for
+    // system::parallelFor<std::int64_t>(0, chunk.size(), [&](std::size_t posReference)
     for (std::size_t posReference = 0; posReference < chunk.size(); posReference++)
     {
         ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());
