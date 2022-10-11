@@ -1459,9 +1459,9 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             //                                 normalMap[i].g * 0.5 + 0.5,
             //                                 normalMap[i].b); // B:
             // 0:+1 => 0-255
-            normalMap(i) = image::RGBfColor(normalMap[i].r() * 0.5 + 0.5,
-                                            normalMap[i].g() * 0.5 + 0.5,
-                                            normalMap[i].b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
+            normalMap(i) = image::RGBfColor(normalMap(i).r() * 0.5 + 0.5,
+                                            normalMap(i).g() * 0.5 + 0.5,
+                                            normalMap(i).b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
         const std::string name = "Normal_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
         bfs::path normalMapPath = outPath / name;
