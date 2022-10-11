@@ -1312,8 +1312,8 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size() << " ("
                                                                         << _atlases[atlasID].size() << " triangles).");
 
-    std::vector<image::RGBfColor> normalMap(texParams.textureSide * texParams.textureSide);
-    std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
+    image::Image<image::RGBfColor> normalMap(texParams.textureSide, texParams.textureSide);
+    image::Image<float> heightMap(texParams.textureSide, texParams.textureSide);
     const auto& triangles = _atlases[atlasID];
 
     // iterate over atlas' triangles
@@ -1412,7 +1412,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                 if(intersection)
                 {
                     computeNormalHeight(*denseMeshAABB.mesh(), 1.0, t, f, worldToTriangleMatrix, q, qA1, qB1,
-                                        heightMap[xyoffset], normalMap[xyoffset]);
+                                        heightMap(xyoffset), normalMap(xyoffset));
                 }
                 else
                 {
@@ -1422,12 +1422,12 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                     if(intersection)
                     {
                         computeNormalHeight(*denseMeshAABB.mesh(), -1.0, t, f, worldToTriangleMatrix, q, qA2, qB2,
-                                            heightMap[xyoffset], normalMap[xyoffset]);
+                                            heightMap(xyoffset), normalMap(xyoffset));
                     }
                     else
                     {
-                        heightMap[xyoffset] = 0.0f;
-                        normalMap[xyoffset] = image::RGBfColor(0.0f, 0.0f, 0.0f);
+                        heightMap(xyoffset) = 0.0f;
+                        normalMap(xyoffset) = image::RGBfColor(0.0f, 0.0f, 0.0f);
                     }
                 }
             }
@@ -1442,12 +1442,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         if(texParams.downscale > 1)
         {
             ALICEVISION_LOG_INFO("Downscaling normal map (" << texParams.downscale << "x).");
-            std::vector<image::RGBfColor> resizedBuffer;
+            image::Image<image::RGBfColor> resizedBuffer;
             outTextureSide = texParams.textureSide / texParams.downscale;
             // use nearest-neighbor interpolation to avoid meaningless interpolation of normals on edges.
             const std::string interpolation = "box";
-            imageAlgo::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, normalMap,
-                                   resizedBuffer, interpolation);
+            imageAlgo::resizeImage(texParams.downscale, normalMap, resizedBuffer, interpolation);
 
             std::swap(resizedBuffer, normalMap);
         }
@@ -1456,11 +1455,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         // Y: -1 to +1 : Green : 0 to 255
         // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
         for(unsigned int i = 0; i < normalMap.size(); ++i)
-            // normalMap[i] = image::RGBfColor(normalMap[i].r * 0.5 + 0.5,
+            // normalMap(i) = image::RGBfColor(normalMap[i].r * 0.5 + 0.5,
             //                                 normalMap[i].g * 0.5 + 0.5,
             //                                 normalMap[i].b); // B:
             // 0:+1 => 0-255
-            normalMap[i] = image::RGBfColor(normalMap[i].r() * 0.5 + 0.5,
+            normalMap(i) = image::RGBfColor(normalMap[i].r() * 0.5 + 0.5,
                                             normalMap[i].g() * 0.5 + 0.5,
                                             normalMap[i].b() * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
 
@@ -1470,8 +1469,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
 
         image::OutputFileColorSpace outputColorSpace(image::EImageColorSpace::NO_CONVERSION,
                                                      image::EImageColorSpace::NO_CONVERSION);
-        image::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap,
-                          image::EImageQuality::OPTIMIZED, outputColorSpace);
+
+        oiio::ParamValueList metadata;
+        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
+                                            EStorageDataType_enumToString(image::EStorageDataType::Half)));
+        image::writeImage(normalMapPath.string(), normalMap, outputColorSpace, metadata);
     }
 
     // Save Height Maps
@@ -1481,10 +1483,9 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         if(texParams.downscale > 1)
         {
             ALICEVISION_LOG_INFO("Downscaling height map (" << texParams.downscale << "x).");
-            std::vector<float> resizedBuffer;
+            image::Image<float> resizedBuffer;
             outTextureSide = texParams.textureSide / texParams.downscale;
-            imageAlgo::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, heightMap,
-                                   resizedBuffer);
+            imageAlgo::resizeImage(texParams.downscale, heightMap, resizedBuffer);
             std::swap(resizedBuffer, heightMap);
         }
 
@@ -1494,7 +1495,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         //{
         //    // Y: [-1, 0, +1] => [0, 128, 255]
         //    for(unsigned int i = 0; i < heightMap.size(); ++i)
-        //        heightMap[i] = heightMap[i] * 0.5 + 0.5;
+        //        heightMap(i) = heightMap(i) * 0.5 + 0.5;
         //}
 
         // Save Bump Map
@@ -1504,8 +1505,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string bumpName = "Bump_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.bumpMappingFileType);
             bfs::path bumpMapPath = outPath / bumpName;
             ALICEVISION_LOG_INFO("Writing bump map: " << bumpMapPath);
-            image::writeImage(bumpMapPath.string(), outTextureSide, outTextureSide, heightMap,
-                              image::EImageQuality::OPTIMIZED, outputColorSpace);
+
+            oiio::ParamValueList metadata;
+            metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
+                                                EStorageDataType_enumToString(image::EStorageDataType::Half)));
+            image::writeImage(bumpMapPath.string(), heightMap, outputColorSpace, metadata);
         }
         // Save Displacement Map
         if(bumpMappingParams.displacementFileType != image::EImageFileType::NONE)
@@ -1513,8 +1517,11 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
             const std::string dispName = "Displacement_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(bumpMappingParams.displacementFileType);
             bfs::path dispMapPath = outPath / dispName;
             ALICEVISION_LOG_INFO("Writing displacement map: " << dispMapPath);
-            image::writeImage(dispMapPath.string(), outTextureSide, outTextureSide, heightMap,
-                              image::EImageQuality::OPTIMIZED, outputColorSpace);
+
+            oiio::ParamValueList metadata;
+            metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
+                                                EStorageDataType_enumToString(image::EStorageDataType::Half)));
+            image::writeImage(dispMapPath.string(), heightMap, outputColorSpace, metadata);
         }
     }
 }
