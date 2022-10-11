@@ -39,53 +39,6 @@ enum class EImageFileType
 };
 
 /**
- * @brief aggregate for multiple image reading options
- */
-struct ImageReadOptions
-{  
-  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
-  workingColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance), subROI(roi)
-  {
-  }
-
-  EImageColorSpace workingColorSpace;
-  bool applyWhiteBalance;
-
-  //ROI for this image.
-  //If the image contains an roi, this is the roi INSIDE the roi.
-  oiio::ROI subROI;
-};
-
-/**
- * @brief aggregate for multiple image writing options
- */
-class ImageWriteOptions
-{
-public:
-    ImageWriteOptions() = default;
-
-    EImageColorSpace getFromColorSpace() const { return _fromColorSpace; }
-    EImageColorSpace getToColorSpace() const { return _toColorSpace; }
-
-    ImageWriteOptions& fromColorSpace(EImageColorSpace colorSpace)
-    {
-        _fromColorSpace = colorSpace;
-        return *this;
-    }
-
-    ImageWriteOptions& toColorSpace(EImageColorSpace colorSpace)
-    {
-        _toColorSpace = colorSpace;
-        return *this;
-    }
-
-private:
-    EImageColorSpace _fromColorSpace{EImageColorSpace::LINEAR};
-    EImageColorSpace _toColorSpace{EImageColorSpace::AUTO};
-};
-
-
-/**
  * @brief get informations about each image file type
  * @return String
  */
@@ -196,6 +149,56 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
  * @return the modified stream without the read enum.
  */
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
+
+
+/**
+ * @brief aggregate for multiple image reading options
+ */
+struct ImageReadOptions
+{
+    ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
+                     bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
+        workingColorSpace(colorSpace),
+        applyWhiteBalance(useWhiteBalance),
+        subROI(roi)
+    {
+    }
+
+    EImageColorSpace workingColorSpace;
+    bool applyWhiteBalance;
+
+    //ROI for this image.
+    //If the image contains an roi, this is the roi INSIDE the roi.
+    oiio::ROI subROI;
+};
+
+/**
+ * @brief aggregate for multiple image writing options
+ */
+class ImageWriteOptions
+{
+public:
+    ImageWriteOptions() = default;
+
+    EImageColorSpace getFromColorSpace() const { return _fromColorSpace; }
+    EImageColorSpace getToColorSpace() const { return _toColorSpace; }
+
+    ImageWriteOptions& fromColorSpace(EImageColorSpace colorSpace)
+    {
+        _fromColorSpace = colorSpace;
+        return *this;
+    }
+
+    ImageWriteOptions& toColorSpace(EImageColorSpace colorSpace)
+    {
+        _toColorSpace = colorSpace;
+        return *this;
+    }
+
+private:
+    EImageColorSpace _fromColorSpace{EImageColorSpace::LINEAR};
+    EImageColorSpace _toColorSpace{EImageColorSpace::AUTO};
+};
 
 /**
  * @brief Test if the extension is supported for undistorted images.
