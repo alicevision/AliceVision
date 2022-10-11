@@ -335,16 +335,12 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
       metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    metadata.add_or_replace(oiio::ParamValue("AliceVision:storageDataType",
-                                             EStorageDataType_enumToString(image::EStorageDataType::Float)));
     image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 0), depthMap,
-                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
-
-    // overwrite metadata
-    metadata.add_or_replace(oiio::ParamValue("AliceVision:storageDataType",
-                                             EStorageDataType_enumToString(image::EStorageDataType::Half)));
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                .storageDataType(image::EStorageDataType::Float), metadata);
     image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 0), simMap,
-                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                .storageDataType(image::EStorageDataType::Half), metadata);
 
     ALICEVISION_LOG_DEBUG(rc << " solved.");
     mvsUtils::printfElapsedTime(t1);

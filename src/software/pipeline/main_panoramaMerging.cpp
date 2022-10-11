@@ -164,13 +164,12 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    image::EImageColorSpace outputColorSpace = colorSpace.empty() ? image::EImageColorSpace::AUTO : image::EImageColorSpace_stringToEnum(colorSpace);
+    image::EImageColorSpace outputColorSpace = colorSpace.empty()
+            ? image::EImageColorSpace::LINEAR : image::EImageColorSpace_stringToEnum(colorSpace);
 
-    oiio::ParamValueList targetMetadata;
-    targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
-    targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace", colorSpace = colorSpace.empty() ? "Linear" : colorSpace));
     image::writeImage(outputPanoramaPath, panorama,
-                      image::ImageWriteOptions().toColorSpace(outputColorSpace), targetMetadata);
+                      image::ImageWriteOptions().storageDataType(storageDataType)
+                                                .toColorSpace(outputColorSpace));
 
     return EXIT_SUCCESS;
 }

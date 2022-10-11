@@ -390,13 +390,9 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
                 colorBuffer(y, _w + x) = getColorFromJetColorMap(sim);
             }
         }
-
-        oiio::ParamValueList metadata;
-        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
-                                            EStorageDataType_enumToString(image::EStorageDataType::Float)));
         image::writeImage(filename, colorBuffer,
-                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR),
-                          metadata);
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                    .storageDataType(image::EStorageDataType::Float));
     }
     catch (...)
     {
