@@ -1638,34 +1638,36 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
   track::getTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
   
   std::set<IndexT>::iterator it;
-#pragma omp parallel private(it)
-  {
-    for (it = allTracksInNewViews.begin(); it != allTracksInNewViews.end(); ++it)
+
+    std::mutex mapTracksMutex;
+    system::parallelLoop([&](auto& manager)
     {
-#pragma omp single nowait
-      {
-        const std::size_t trackId = *it;
-        
-        const track::Track& track = _map_tracks.at(trackId);
-        
-        std::set<IndexT> allViewsSharingTheTrack;
-        std::transform(track.featPerView.begin(), track.featPerView.end(),
-                       std::inserter(allViewsSharingTheTrack, allViewsSharingTheTrack.begin()),
-                       stl::RetrieveKey());
-        
-        std::set<IndexT> allReconstructedViewsSharingTheTrack;
-        std::set_intersection(allViewsSharingTheTrack.begin(), allViewsSharingTheTrack.end(),
-                              allReconstructedViews.begin(), allReconstructedViews.end(),
-                              std::inserter(allReconstructedViewsSharingTheTrack, allReconstructedViewsSharingTheTrack.begin()));
-        
-        if (allReconstructedViewsSharingTheTrack.size() >= _params.minNbObservationsForTriangulation)
+        for (it = allTracksInNewViews.begin(); it != allTracksInNewViews.end(); ++it)
         {
-#pragma omp critical        
-          mapTracksToTriangulate[trackId] = allReconstructedViewsSharingTheTrack;
+            manager.submit([&, it]()
+            {
+                const std::size_t trackId = *it;
+
+                const track::Track& track = _map_tracks.at(trackId);
+
+                std::set<IndexT> allViewsSharingTheTrack;
+                std::transform(track.featPerView.begin(), track.featPerView.end(),
+                               std::inserter(allViewsSharingTheTrack, allViewsSharingTheTrack.begin()),
+                               stl::RetrieveKey());
+
+                std::set<IndexT> allReconstructedViewsSharingTheTrack;
+                std::set_intersection(allViewsSharingTheTrack.begin(), allViewsSharingTheTrack.end(),
+                                      allReconstructedViews.begin(), allReconstructedViews.end(),
+                                      std::inserter(allReconstructedViewsSharingTheTrack, allReconstructedViewsSharingTheTrack.begin()));
+
+                if (allReconstructedViewsSharingTheTrack.size() >= _params.minNbObservationsForTriangulation)
+                {
+                    std::lock_guard<std::mutex> lock{mapTracksMutex};
+                    mapTracksToTriangulate[trackId] = allReconstructedViewsSharingTheTrack;
+                }
+            });
         }
-      }
-    }
-  }
+    });
 }
 
 namespace {

@@ -72,30 +72,32 @@ void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerVie
 
   // Copy features and save a normalized version
   _normalizedFeaturesPerView = std::make_shared<FeaturesPerView>(*featuresPerView);
-  #pragma omp parallel
-  for(MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
-    iter != _normalizedFeaturesPerView->getData().end(); ++iter)
-  {
-    #pragma omp single nowait
+    system::parallelLoop([&](auto& manager)
     {
-      // get the related view & camera intrinsic and compute the corresponding bearing vectors
-      const View * view = _sfmData.getViews().at(iter->first).get();
-      if(_sfmData.getIntrinsics().count(view->getIntrinsicId()))
-      {
-        const std::shared_ptr<IntrinsicBase> cam = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
-        for(auto& iterFeatPerDesc: iter->second)
+        for (MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
+            iter != _normalizedFeaturesPerView->getData().end(); ++iter)
         {
-          for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
-            iterPt != iterFeatPerDesc.second.end(); ++iterPt)
-          {
-            const Vec2 pt = iterPt->coords().cast<double>();
-            const Vec3 bearingVector = cam->toUnitSphere(cam->removeDistortion(cam->ima2cam(pt)));
-            iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
-          }
+            manager.submit([&, iter]()
+            {
+                // get the related view & camera intrinsic and compute the corresponding bearing vectors
+                const View * view = _sfmData.getViews().at(iter->first).get();
+                if (_sfmData.getIntrinsics().count(view->getIntrinsicId()))
+                {
+                    const std::shared_ptr<IntrinsicBase> cam = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
+                    for (auto& iterFeatPerDesc: iter->second)
+                    {
+                        for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
+                             iterPt != iterFeatPerDesc.second.end(); ++iterPt)
+                        {
+                            const Vec2 pt = iterPt->coords().cast<double>();
+                            const Vec3 bearingVector = cam->toUnitSphere(cam->removeDistortion(cam->ima2cam(pt)));
+                            iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
+                        }
+                    }
+                }
+            });
         }
-      }
-    }
-  }
+    });
 }
 
 void ReconstructionEngine_globalSfM::SetMatchesProvider(matching::PairwiseMatches* provider)

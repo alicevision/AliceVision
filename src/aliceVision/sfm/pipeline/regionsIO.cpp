@@ -200,36 +200,38 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
   std::vector<std::unique_ptr<feature::ImageDescriber>> imageDescribers;
   imageDescribers.resize(imageDescriberTypes.size());
 
-  for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
-    imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
+    for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+        imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
 
-#pragma omp parallel num_threads(3)
- for(auto iter = sfmData.getViews().begin(); iter != sfmData.getViews().end() && !invalid; ++iter)
- {
-#pragma omp single nowait
-   {
-     for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
-     {
-       if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
-       {
-         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));
-         if(regionsPtr)
-         {
-#pragma omp critical
-           {
-             regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes.at(i), regionsPtr.release());
-             ++progressDisplay;
-           }
-         }
-         else
-         {
-           invalid = true;
-         }
-       }
-     }
-   }
- }
- return !invalid;
+    std::mutex regionsMutex;
+    system::parallelLoop(system::ParallelSettings().setThreadCount(3), [&](auto& manager)
+    {
+        for (auto iter = sfmData.getViews().begin(); iter != sfmData.getViews().end() && !invalid; ++iter)
+        {
+            manager.submit([&, iter]()
+            {
+                for (std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+                {
+                    if (viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
+                    {
+                        auto regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(),
+                                                      *(imageDescribers.at(i)));
+                        if (regionsPtr)
+                        {
+                            std::lock_guard<std::mutex> lock{regionsMutex};
+                            regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes.at(i), regionsPtr.release());
+                            ++progressDisplay;
+                        }
+                    }
+                    else
+                    {
+                        invalid = true;
+                    }
+                }
+            });
+        }
+    });
+    return !invalid;
 }
 
 
@@ -250,28 +252,29 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
   std::vector< std::unique_ptr<feature::ImageDescriber> > imageDescribers;
   imageDescribers.resize(imageDescriberTypes.size());
 
-  for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
-    imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
+    for (std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+        imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
 
-#pragma omp parallel
-  for (auto iter = sfmData.getViews().begin(); (iter != sfmData.getViews().end()) && (!invalid); ++iter)
-  {
-#pragma omp single nowait
+    std::mutex featuresMutex;
+    system::parallelLoop([&](auto& manager)
     {
-      for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
-      {
-        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(featuresFolders, iter->second.get()->getViewId(), *imageDescribers.at(i));
-
-#pragma omp critical
+        for (auto iter = sfmData.getViews().begin(); (iter != sfmData.getViews().end()) && (!invalid); ++iter)
         {
-          // save loaded Features as PointFeature
-          featuresPerView.addFeatures(iter->second.get()->getViewId(), imageDescriberTypes[i], regionsPtr->GetRegionsPositions());
-          ++progressDisplay;
+            manager.submit([&, iter]()
+            {
+                for (std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+                {
+                    auto regionsPtr = loadFeatures(featuresFolders, iter->second.get()->getViewId(), *imageDescribers.at(i));
+
+                    std::lock_guard<std::mutex> lock{featuresMutex};
+                    // save loaded Features as PointFeature
+                    featuresPerView.addFeatures(iter->second.get()->getViewId(), imageDescriberTypes[i], regionsPtr->GetRegionsPositions());
+                    ++progressDisplay;
+                }
+            });
         }
-      }
-    }
-  }
-  return !invalid;
+    });
+    return !invalid;
 }
 
 } // namespace sfm

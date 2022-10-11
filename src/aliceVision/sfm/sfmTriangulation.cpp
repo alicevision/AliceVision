@@ -8,6 +8,7 @@
 #include "sfmTriangulation.hpp"
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
 
@@ -32,67 +33,69 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData, std::mt1
 {
   std::deque<IndexT> rejectedId;
   system::ProgressDisplay progressDisplay;
-  if (_bConsoleVerbose)
-    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
-                                                           "Blind triangulation progress:\n");
 
-  #pragma omp parallel
-  for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
-    iterTracks != sfmData.structure.end();
-    ++iterTracks)
-  {
-    #pragma omp single nowait
+    if (_bConsoleVerbose)
     {
-      if (_bConsoleVerbose)
-      {
-        ++(progressDisplay);
-      }
-      // Triangulate each landmark
-      multiview::Triangulation trianObj;
-      const sfmData::Observations & observations = iterTracks->second.observations;
-      for(const auto& itObs : observations)
-      {
-        const sfmData::View * view = sfmData.views.at(itObs.first).get();
-        if (sfmData.isPoseAndIntrinsicDefined(view))
-        {
-          std::shared_ptr<IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
-          std::shared_ptr<camera::Pinhole> pinHoleCam = std::dynamic_pointer_cast<camera::Pinhole>(cam);
-          if (!pinHoleCam) {
-            ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate");
-            continue;
-          }
-
-          const Pose3 pose = sfmData.getPose(*view).getTransform();
-          trianObj.add(
-            pinHoleCam->getProjectiveEquivalent(pose),
-            cam->get_ud_pixel(itObs.second.x));
-        }
-      }
-      if (trianObj.size() < 2)
-      {
-        #pragma omp critical
-        {
-          rejectedId.push_front(iterTracks->first);
-        }
-      }
-      else
-      {
-        // Compute the 3D point
-        const Vec3 X = trianObj.compute();
-        if (trianObj.minDepth() > 0) // Keep the point only if it have a positive depth
-        {
-          iterTracks->second.X = X;
-        }
-        else
-        {
-          #pragma omp critical
-          {
-            rejectedId.push_front(iterTracks->first);
-          }
-        }
-      }
+        progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+                                                               "Blind triangulation progress:\n");
     }
-  }
+
+    std::mutex rejectedIdMutex;
+    system::parallelLoop([&](auto& manager)
+    {
+        for (sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
+             iterTracks != sfmData.structure.end();
+             ++iterTracks)
+        {
+            manager.submit([&, iterTracks]()
+            {
+                if (_bConsoleVerbose)
+                {
+                    ++progressDisplay;
+                }
+                // Triangulate each landmark
+                multiview::Triangulation trianObj;
+                const sfmData::Observations & observations = iterTracks->second.observations;
+                for (const auto& itObs : observations)
+                {
+                    const sfmData::View * view = sfmData.views.at(itObs.first).get();
+                    if (sfmData.isPoseAndIntrinsicDefined(view))
+                    {
+                        std::shared_ptr<IntrinsicBase> cam = sfmData.getIntrinsics().at(view->getIntrinsicId());
+                        std::shared_ptr<camera::Pinhole> pinHoleCam = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+                        if (!pinHoleCam) {
+                            ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate");
+                            continue;
+                        }
+
+                        const Pose3 pose = sfmData.getPose(*view).getTransform();
+                        trianObj.add(
+                            pinHoleCam->getProjectiveEquivalent(pose),
+                            cam->get_ud_pixel(itObs.second.x));
+                    }
+                }
+                if (trianObj.size() < 2)
+                {
+                    std::lock_guard<std::mutex> lock{rejectedIdMutex};
+                    rejectedId.push_front(iterTracks->first);
+                }
+                else
+                {
+                    // Compute the 3D point
+                    const Vec3 X = trianObj.compute();
+                    if (trianObj.minDepth() > 0) // Keep the point only if it have a positive depth
+                    {
+                        iterTracks->second.X = X;
+                    }
+                    else
+                    {
+                        std::lock_guard<std::mutex> lock{rejectedIdMutex};
+                        rejectedId.push_front(iterTracks->first);
+                    }
+                }
+            });
+        }
+    });
   // Erase the unsuccessful triangulated tracks
   for (auto& it : rejectedId)
   {
@@ -117,34 +120,42 @@ void StructureComputation_robust::robust_triangulation(sfmData::SfMData& sfmData
   std::deque<IndexT> rejectedId;
 
   system::ProgressDisplay progressDisplay;
-  if (_bConsoleVerbose)
-    progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
-                                                           "Robust triangulation progress:\n");
-
-  #pragma omp parallel
-  for(sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
-    iterTracks != sfmData.structure.end();
-    ++iterTracks)
-  {
-    #pragma omp single nowait
+    if (_bConsoleVerbose)
     {
-      if (_bConsoleVerbose)
-      {
-        ++(progressDisplay);
-      }
-      Vec3 X;
-      if (robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X)) {
-        iterTracks->second.X = X;
-      }
-      else {
-        iterTracks->second.X = Vec3::Zero();
-        #pragma omp critical
-        {
-          rejectedId.push_front(iterTracks->first);
-        }
-      }
+        progressDisplay = system::createConsoleProgressDisplay(sfmData.structure.size(), std::cout,
+                                                               "Robust triangulation progress:\n");
     }
-  }
+
+    std::mutex rejectedIdMutex;
+    system::parallelLoop([&](auto& manager)
+    {
+        for (sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
+             iterTracks != sfmData.structure.end();
+             ++iterTracks)
+        {
+            manager.submit([&, iterTracks]()
+            {
+                if (_bConsoleVerbose)
+                {
+                  ++(progressDisplay);
+                }
+                Vec3 X;
+                // "this->" can be removed once we no longer support GCC 6.x, see
+                // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67274
+                if (this->robust_triangulation(sfmData, iterTracks->second.observations, randomNumberGenerator, X)) {
+                    iterTracks->second.X = X;
+                }
+                else
+                {
+                    iterTracks->second.X = Vec3::Zero();
+
+                    std::lock_guard<std::mutex> lock{rejectedIdMutex};
+                    rejectedId.push_front(iterTracks->first);
+                }
+            });
+        }
+    });
+
   // Erase the unsuccessful triangulated tracks
   for(auto& it : rejectedId)
   {
