@@ -13,7 +13,7 @@
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
-
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision {
 namespace hdr {
@@ -72,8 +72,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   rgbCurve weightLongestExposure = weight;
   weightLongestExposure.freezeFirstPartValues();
 
-  #pragma omp parallel for
-  for(int y = 0; y < height; ++y)
+  system::parallelFor<int>(0, height, [&](int y)
   {
     for(int x = 0; x < width; ++x)
     {
@@ -140,7 +139,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
         radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetCameraExposure;
       }
     }
-  }
+  });
 }
 
 void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
@@ -170,8 +169,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
 
     image::Image<float> isPixelClamped(width, height);
 
-#pragma omp parallel for
-    for (int y = 0; y < height; ++y)
+    system::parallelFor<int>(0, height, [&](int y)
     {
         for (int x = 0; x < width; ++x)
         {
@@ -194,13 +192,12 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
             }
             isPixelClamped(y, x) /= 3.0;
         }
-    }
+    });
 
     image::Image<float> isPixelClamped_g(width, height);
     image::ImageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
 
-#pragma omp parallel for
-    for (int y = 0; y < height; ++y)
+    system::parallelFor<int>(0, height, [&](int y)
     {
         for (int x = 0; x < width; ++x)
         {
@@ -218,7 +215,7 @@ void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfC
                 }
             }
         }
-    }
+    });
 }
 
 } // namespace hdr
