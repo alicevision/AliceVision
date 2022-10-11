@@ -12,6 +12,7 @@
 #include <aliceVision/voctree/descriptorLoader.hpp>
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -169,12 +170,12 @@ int aliceVision_main(int argc, char** argv)
     // allocate as many visual words as the number of the features in the image
     imgVisualWords.resize(descRead[i], 0);
 
-    #pragma omp parallel for
-    for(ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(descRead[i]); ++j)
+    system::parallelFor<std::ptrdiff_t>(0, descRead[i], [&](std::ptrdiff_t j)
     {
       //	store the visual word associated to the feature in the temporary list
       imgVisualWords[j] = builder.tree().quantize(descriptors[ j + offset ]);
-    }
+    });
+
     aliceVision::voctree::SparseHistogram histo;
     aliceVision::voctree::computeSparseHistogram(imgVisualWords, histo);
     // add the vector to the documents

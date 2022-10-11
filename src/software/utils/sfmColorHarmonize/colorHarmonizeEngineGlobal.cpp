@@ -8,6 +8,7 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -416,8 +417,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     Image< RGBColor > image_c;
     readImage( _fileNames[ imaNum ], image_c , image::EImageColorSpace::LINEAR);
 
-    #pragma omp parallel for
-    for( int j = 0; j < image_c.Height(); ++j )
+    system::parallelFor(0, image_c.Height(), [&](int j)
     {
       for( int i = 0; i < image_c.Width(); ++i )
       {
@@ -425,7 +425,7 @@ bool ColorHarmonizationEngineGlobal::Process()
         image_c(j, i)[1] = clamp(vec_map_lut[1][image_c(j, i)[1]], 0., 255.);
         image_c(j, i)[2] = clamp(vec_map_lut[2][image_c(j, i)[2]], 0., 255.);
       }
-    }
+    });
 
     const std::string out_folder = (fs::path(_outputDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
     if(!fs::exists(out_folder))

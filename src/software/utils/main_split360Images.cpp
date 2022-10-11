@@ -9,6 +9,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
@@ -421,8 +422,10 @@ int aliceVision_main(int argc, char** argv)
     }
   }
 
-#pragma omp parallel for num_threads(nbThreads)
-  for(int i = 0; i < imagePaths.size(); ++i)
+  std::mutex pathsMutex;
+  system::parallelFor<int>(0, imagePaths.size(),
+                           system::ParallelSettings().setThreadCount(nbThreads),
+                           [&](int i)
   {
     const std::string& imagePath = imagePaths[i];
     bool hasCorrectPath = true;
@@ -445,10 +448,10 @@ int aliceVision_main(int argc, char** argv)
 
     if(!hasCorrectPath)
     {
-#pragma omp critical
+      std::lock_guard<std::mutex> lock{pathsMutex};
       badPaths.push_back(imagePath);
     }
-  }
+  });
 
   if(!badPaths.empty())
   {
