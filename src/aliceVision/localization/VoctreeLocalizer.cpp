@@ -23,6 +23,7 @@
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>
 
@@ -322,14 +323,19 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     featuresFolders.emplace_back(featFolder);
 
   // Read for each view the corresponding Regions and store them
-#pragma omp parallel for num_threads(3)
-  for(int i = 0; i < _sfm_data.getViews().size(); ++i)
+  std::mutex reconstructedRegionsMutex;
+  std::mutex databaseMutex;
+  std::mutex progressMutex;
+
+  system::parallelFor<int>(0, _sfm_data.getViews().size(),
+                           system::ParallelSettings().setThreadCount(3),
+                           [&](int i)
   {
     auto iter = _sfm_data.getViews().cbegin();
     std::advance(iter, i);
     const IndexT id_view = iter->second->getViewId();
     if(observationsPerView.count(id_view) == 0)
-      continue;
+      return;
     const auto& observations = observationsPerView.at(id_view);
     for(const auto& imageDescriber: _imageDescribers)
     {
@@ -339,8 +345,8 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       if(observations.count(descType) == 0)
       {
         // no descriptor of this type in this View
-#pragma omp critical
         {
+          std::lock_guard<std::mutex> lock{reconstructedRegionsMutex};
           // We always initialize objects with empty structures,
           // so all views and descTypes always exist in the map.
           // It simplifies the code based on these data structures,
@@ -358,8 +364,8 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       if(descType == _voctreeDescType)
       {
         voctree::SparseHistogram histo = _voctree->quantizeToSparse(currRegions->blindDescriptors());
-#pragma omp critical
         {
+          std::lock_guard<std::mutex> lock{databaseMutex};
           _database.insert(id_view, histo);
         }
       }
@@ -367,14 +373,14 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
 
       // Filter descriptors to keep only the 3D reconstructed points
       std::unique_ptr<feature::Regions> filteredRegions = createFilteredRegions(*currRegions, observations.at(descType), mapping);
-#pragma omp critical
       {
+        std::lock_guard<std::mutex> lock{reconstructedRegionsMutex};
         _reconstructedRegionsMappingPerView[id_view][descType] = std::move(mapping);
         _regionsPerView.getData()[id_view][descType] = std::move(filteredRegions);
       }
     }
     ++progressDisplay;
-  }
+  });
   return true;
 }
 
