@@ -33,3 +33,22 @@ BOOST_AUTO_TEST_CASE(read_write_pairs_to_file)
     BOOST_CHECK( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
     std::remove("pairsT_IO.txt");
 }
+
+BOOST_AUTO_TEST_CASE(load_multiple_images_per_line)
+{
+    std::stringstream input;
+    input.str(R"( 0 2 4 5
+        0 1
+        5 9
+)");
+
+    PairSet loadedPairs;
+    BOOST_CHECK(loadPairs(input, loadedPairs));
+
+    PairSet expectedPairs = {
+        {0, 2}, {0, 4}, {0, 5},
+        {0, 1},
+        {5, 9}
+    };
+    BOOST_CHECK(loadedPairs == expectedPairs);
+}
