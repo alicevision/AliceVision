@@ -947,7 +947,6 @@ void writeImage(const std::string& path,
                 int height,
                 int nchannels,
                 const std::vector<T>& buffer,
-                EImageQuality imageQuality,
                 const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata)
 {
@@ -989,7 +988,7 @@ void writeImage(const std::string& path,
     outBuf = &colorspaceBuf;
 
     oiio::ImageBuf formatBuf; // buffer for image format modification
-    if (imageQuality == EImageQuality::OPTIMIZED && isEXR)
+    if (isEXR && options.getStorageDataType() == EStorageDataType::Half)
     {
         formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
         outBuf = &formatBuf;
@@ -1004,38 +1003,33 @@ void writeImage(const std::string& path,
 }
 
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata)
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, options, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, options, metadata);
 }
 
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata)
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, options, metadata);
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, options, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer,                
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, options, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, options, metadata);
 }
 
 void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata)
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, options, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, options, metadata);
 }
 
 void writeImage(const std::string& path, int width, int height, const std::vector<RGBfColor>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata)
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, options, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, options, metadata);
 }
 
 static std::string aliceVisionRootOverride;

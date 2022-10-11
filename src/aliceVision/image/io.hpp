@@ -362,19 +362,19 @@ void readImage(const std::string& path, int& width, int& height, std::vector<RGB
  * @param[in] buffer The input image buffer
  */
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<RGBfColor>& buffer,
-                EImageQuality imageQuality, const ImageWriteOptions& options,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 template <typename T>

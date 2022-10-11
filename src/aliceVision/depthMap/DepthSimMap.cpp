@@ -459,11 +459,13 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
     metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
 
     image::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix),
-                      width, height, depthMap.getDataWritable(), image::EImageQuality::LOSSLESS,
-                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
+                      width, height, depthMap.getDataWritable(),
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                .storageDataType(image::EStorageDataType::Float), metadata);
     image::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix),
-                      width, height, simMap.getDataWritable(), image::EImageQuality::OPTIMIZED,
-                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR), metadata);
+                      width, height, simMap.getDataWritable(),
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                .storageDataType(image::EStorageDataType::Half), metadata);
 }
 
 void DepthSimMap::load(int fromScale)

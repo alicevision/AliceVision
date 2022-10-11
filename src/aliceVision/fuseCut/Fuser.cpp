@@ -228,8 +228,9 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
     {
         image::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap), w, h,
-                          numOfModalsMap, image::EImageQuality::LOSSLESS,
-                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
+                          numOfModalsMap,
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                    .storageDataType(image::EStorageDataType::Float));
     }
 
     delete numOfPtsMap;
