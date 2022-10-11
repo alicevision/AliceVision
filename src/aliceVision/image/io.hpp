@@ -351,50 +351,6 @@ void writeImageWithFloat(const std::string& path, const Image<IndexT>& image,
                          const ImageWriteOptions& options,
                          const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
-/**
- * @brief read an image with a given path and buffer
- * @param[in] path The given path to the image
- * @param[out] width The output image width
- * @param[out] height The output image height
- * @param[out] buffer The output image buffer
- * @param[in] image color space
- */
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<RGBfColor>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<RGBAfColor>& buffer,
-               EImageColorSpace toColorSpace);
-
-/**
- * @brief write an image with a given path and buffer
- * @param[in] path The given path to the image
- * @param[in] width The input image width
- * @param[in] height The input image height
- * @param[in] buffer The input image buffer
- */
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer,
-                const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer,
-                const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer,
-                const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer,
-                const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<RGBfColor>& buffer,
-                const ImageWriteOptions& options,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-
 template <typename T>
 struct ColorTypeInfo
 {
