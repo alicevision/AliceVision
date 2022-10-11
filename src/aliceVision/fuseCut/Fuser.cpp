@@ -41,18 +41,16 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
 
         if(nbDepthValues < 0)
         {
-            int width, height;
-            std::vector<float> depthMap;
+            image::Image<float> depthMap;
             nbDepthValues = 0;
 
             ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values.");
 
             image::readImage(mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, depthMap,
-                             image::EImageColorSpace::NO_CONVERSION);
+                             depthMap, image::EImageColorSpace::NO_CONVERSION);
             // no need to transpose for this operation
             for(int i = 0; i < depthMap.size(); ++i)
-                nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
+                nbDepthValues += static_cast<unsigned long>(depthMap(i) > 0.0f);
         }
 
         npts += nbDepthValues;
@@ -353,20 +351,19 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
         int rc = cams[c];
         int h = _mp.getHeight(rc) / scaleuse;
         int w = _mp.getWidth(rc) / scaleuse;
-        std::vector<float> rcdepthMap;
+        image::Image<float> rcdepthMap;
 
-        {
-            int width, height;
-            image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, rcdepthMap,
-                             image::EImageColorSpace::NO_CONVERSION);
-        }
+        image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
+                         rcdepthMap, image::EImageColorSpace::NO_CONVERSION);
+
+        if (rcdepthMap.size() < w * h)
+            throw std::runtime_error("Invalid image size");
 
         for(int y = 0; y < h; y++)
         {
             for(int x = 0; x < w; ++x)
             {
-                float depth = rcdepthMap[y * w + x];
+                float depth = rcdepthMap(y * w + x);
                 if(depth > 0.0f)
                 {
                     if(j % step == 0)
@@ -453,20 +450,15 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     {
         int w = _mp.getWidth(rc);
 
-        std::vector<float> depthMap;
-        {
-            int width, height;
-
-            image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, depthMap,
-                             image::EImageColorSpace::NO_CONVERSION);
-        }
+        image::Image<float> depthMap;
+        image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
+                         depthMap, image::EImageColorSpace::NO_CONVERSION);
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
         {
             int x = i % w;
             int y = i / w;
-            float depth = depthMap[i];
+            float depth = depthMap(i);
             if(depth > 0.0f)
             {
                 Point3d p = _mp.CArr[rc] + (_mp.iCamArr[rc] * Point2d((float)x, (float)y)).normalize() * depth;
@@ -499,20 +491,16 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     {
         int w = _mp.getWidth(rc);
 
-        std::vector<float> depthMap;
-        {
-            int width, height;
+        image::Image<float> depthMap;
 
-            image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, depthMap,
-                             image::EImageColorSpace::NO_CONVERSION);
-        }
+        image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
+                         depthMap, image::EImageColorSpace::NO_CONVERSION);
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
         {
             int x = i % w;
             int y = i / w;
-            float depth = depthMap[i];
+            float depth = depthMap(i);
             if(depth > 0.0f)
             {
                 Point3d p = _mp.CArr[rc] + (_mp.iCamArr[rc] * Point2d((float)x, (float)y)).normalize() * depth;
@@ -774,18 +762,17 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
             pts->reserve(w * h);
             sims->reserve(w * h);
 
-            std::vector<float> depthMap;
-            std::vector<float> simMap;
+            image::Image<float> depthMap;
+            image::Image<float> simMap;
 
+            image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale),
+                             depthMap, image::EImageColorSpace::NO_CONVERSION);
+            image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale),
+                             simMap, image::EImageColorSpace::NO_CONVERSION);
+
+            if (depthMap.size() < w * h || simMap.size() < w * h)
             {
-                int width, height;
-
-                image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale),
-                                 width, height, depthMap,
-                                 image::EImageColorSpace::NO_CONVERSION);
-                image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale),
-                                 width, height, simMap,
-                                 image::EImageColorSpace::NO_CONVERSION);
+                throw std::runtime_error("Invalid image size");
             }
 
             if(addRandomNoise)
@@ -794,7 +781,7 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
                 idsAlive->reserve(w * h);
                 for(int i = 0; i < w * h; i++)
                 {
-                    if(depthMap[i] > 0.0f)
+                    if (depthMap(i) > 0.0f)
                     {
                         idsAlive->push_back(i);
                     }
@@ -812,9 +799,9 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
                     {
                         int id = y * w + x;
                         int i = (*idsAlive)[randIdsAlive[id]];
-                        double depth = depthMap[i];
+                        double depth = depthMap(i);
 
-                        double sim = simMap[i];
+                        double sim = simMap(i);
                         if(depth > 0.0f)
                         {
                             Point3d p = mp.CArr[rc] +
@@ -869,8 +856,8 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
                     for(int y = 0; y < h; y++)
                     {
                         int i = x * h + y;
-                        double depth = depthMap[i];
-                        double sim = simMap[i];
+                        double depth = depthMap(i);
+                        double sim = simMap(i);
                         if(depth > 0.0f)
                         {
                             Point3d p =
