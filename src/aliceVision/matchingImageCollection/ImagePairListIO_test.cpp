@@ -13,6 +13,7 @@
 #include "ImagePairListIO.hpp"
 
 using namespace aliceVision;
+using namespace aliceVision::matchingImageCollection;
 
 BOOST_AUTO_TEST_CASE(read_write_pairs_to_file)
 {

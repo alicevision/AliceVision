@@ -12,6 +12,7 @@
 #include <fstream>
 
 namespace aliceVision {
+namespace matchingImageCollection {
 
 bool loadPairs(std::istream& stream,
                PairSet & pairs,
@@ -132,4 +133,5 @@ bool savePairsToFile(const std::string& sFileName, const PairSet& pairs)
     return !outStream.bad();
 }
 
+} // namespace matchingImageCollection
 } // namespace aliceVision

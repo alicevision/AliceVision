@@ -9,6 +9,7 @@
 #include <iosfwd>
 
 namespace aliceVision {
+namespace matchingImageCollection {
 
 /// Load a set of PairSet from a stream
 /// I J K L (pair that link I)
@@ -31,4 +32,5 @@ bool loadPairsFromFile(const std::string& sFileName, // filename of the list fil
 /// Same as savePairs, but saves to a given file
 bool savePairsToFile(const std::string& sFileName, const PairSet& pairs);
 
+} // namespace matchingImageCollection
 } // namespace aliceVision

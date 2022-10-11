@@ -307,7 +307,7 @@ int aliceVision_main(int argc, char** argv)
           selectedPairsSet.emplace(imagePairs.first, index);
       }
   }
-  savePairsToFile(outputFile, selectedPairsSet);
+  matchingImageCollection::savePairsToFile(outputFile, selectedPairsSet);
 
   ALICEVISION_LOG_INFO("pairList exported in: " << outputFile);
 
