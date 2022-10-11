@@ -11,6 +11,7 @@
 #include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
 
@@ -69,8 +70,12 @@ void ImageCollectionMatcher_generic::Match(
     // Initialize the matching interface
     matching::RegionsDatabaseMatcher matcher(randomNumberGenerator, _matcherType, regionsI);
 
-    #pragma omp parallel for schedule(dynamic) if(b_multithreaded_pair_search)
-    for (int j = 0; j < (int)indexToCompare.size(); ++j)
+    std::mutex matchesMutex;
+    system::parallelFor<int>(0, indexToCompare.size(),
+                             system::ParallelSettings()
+                                .setDynamicScheduling()
+                                .setEnableMultithreading(b_multithreaded_pair_search),
+                             [&](int j)
     {
       const size_t J = indexToCompare[j];
 
@@ -79,7 +84,7 @@ void ImageCollectionMatcher_generic::Match(
           || regionsI.Type_id() != regionsJ.Type_id())
       {
         ++progressDisplay;
-        continue;
+        return;
       }
 
       IndMatches vec_putatives_matches;
@@ -115,15 +120,15 @@ void ImageCollectionMatcher_generic::Match(
         std::swap(vec_putatives_matches, vec_putatives_matches_checked);
       }
 
-      #pragma omp critical
+      ++progressDisplay;
       {
-        ++progressDisplay;
+        std::lock_guard<std::mutex> lock{matchesMutex};
         if (!vec_putatives_matches.empty())
         {
           map_PutativesMatches[std::make_pair(I,J)].emplace(descType, std::move(vec_putatives_matches));
         }
       }
-    }
+    });
   }
 }
 

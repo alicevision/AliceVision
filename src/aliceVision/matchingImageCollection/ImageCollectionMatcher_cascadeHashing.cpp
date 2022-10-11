@@ -9,6 +9,7 @@
 #include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/matching/filters.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/config.hpp>
 
@@ -95,8 +96,9 @@ void Match
   }
 
   // Index the input regions
-  #pragma omp parallel for schedule(dynamic)
-  for (int i =0; i < used_index.size(); ++i)
+  std::mutex hashedMutex;
+  system::parallelFor<int>(0, used_index.size(), system::ParallelSettings().setDynamicScheduling(),
+                           [&](int i)
   {
     std::set<IndexT>::const_iterator iter = used_index.begin();
     std::advance(iter, i);
@@ -109,11 +111,11 @@ void Match
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
     HashedDescriptions hashed_description = cascade_hasher.CreateHashedDescriptions(mat_I,
       zero_mean_descriptor);
-    #pragma omp critical
     {
+      std::lock_guard<std::mutex> lock{hashedMutex};
       hashed_base_[I] = std::move(hashed_description);
     }
-  }
+  });
 
   // Perform matching between all the pairs
   for (Map_vectorT::const_iterator iter = map_Pairs.begin();
@@ -134,8 +136,11 @@ void Match
       reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
     const size_t dimension = regionsI.DescriptorLength();
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
-    #pragma omp parallel for schedule(dynamic)
-    for (int j = 0; j < (int)indexToCompare.size(); ++j)
+
+    std::mutex matchesMutex;
+    system::parallelFor<int>(0, indexToCompare.size(),
+                             system::ParallelSettings().setDynamicScheduling(),
+                             [&](int j)
     {
       size_t J = indexToCompare[j];
       const feature::Regions &regionsJ = regionsPerView.getRegions(I, descType);
@@ -144,7 +149,7 @@ void Match
           || regionsI.Type_id() != regionsJ.Type_id())
       {
         ++progressDisplay;
-        continue;
+        return;
       }
 
       // Matrix representation of the query input data;
@@ -192,16 +197,16 @@ void Match
         pointFeaturesI, pointFeaturesJ);
       matchDeduplicator.getDeduplicated(vec_putative_matches);
 
-      #pragma omp critical
+      ++progressDisplay;
       {
-        ++progressDisplay;
+        std::lock_guard<std::mutex> lock{matchesMutex};
         if (!vec_putative_matches.empty())
         {
           assert(map_PutativesMatches.count(std::make_pair(I,J)) == 0);
           map_PutativesMatches[std::make_pair(I,J)].emplace(descType, std::move(vec_putative_matches));
         }
       }
-    }
+    });
   }
 }
 } // namespace impl

@@ -12,6 +12,7 @@
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 
 #include <map>
@@ -55,8 +56,10 @@ void robustModelEstimation(
           system::createConsoleProgressDisplay(putativeMatches.size(), std::cout,
                                                "Robust Model Estimation\n");
   
-#pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)putativeMatches.size(); ++i)
+  std::mutex matchesMutex;
+  system::parallelFor<int>(0, putativeMatches.size(),
+                           system::ParallelSettings().setDynamicScheduling(),
+                           [&](int i)
   {
     PairwiseMatches::const_iterator iter = putativeMatches.begin();
     std::advance(iter, i);
@@ -80,15 +83,15 @@ void robustModelEstimation(
           std::swap(inliers, guidedGeometricInliers);
         }
 
-#pragma omp critical
         {
+          std::lock_guard<std::mutex> lock{matchesMutex};
           out_geometricMatches.emplace(currentPair, std::move(inliers));
         }
 
       }
     }
     ++progressDisplay;
-  }
+  });
 }
 
 /**

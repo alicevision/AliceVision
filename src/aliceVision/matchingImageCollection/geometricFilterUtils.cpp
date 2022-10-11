@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "geometricFilterUtils.hpp"
+#include <aliceVision/system/ParallelFor.hpp>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
@@ -244,8 +245,8 @@ void findTransformationInliers(const std::vector<feature::PointFeature> &feature
   inliersId.clear();
   const double squaredTolerance = Square(tolerance);
 
-#pragma omp parallel for
-  for (int iMatch = 0; iMatch < matches.size(); ++iMatch)
+  std::mutex inliersMutex;
+  system::parallelFor<int>(0, matches.size(), [&](int iMatch)
   {
     const feature::PointFeature & featI = featuresI.at(matches.at(iMatch)._i);
     const feature::PointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
@@ -259,10 +260,10 @@ void findTransformationInliers(const std::vector<feature::PointFeature> &feature
 
     if (dist < squaredTolerance)
     {
-#pragma omp critical
+      std::lock_guard<std::mutex> lock{inliersMutex};
       inliersId.insert(iMatch);
     }
-  }
+  });
 }
 
 void findTransformationInliers(const Mat2X& featuresI,
@@ -275,8 +276,8 @@ void findTransformationInliers(const Mat2X& featuresI,
   inliersId.clear();
   const double squaredTolerance = Square(tolerance);
 
-#pragma omp parallel for
-  for (int iMatch = 0; iMatch < matches.size(); ++iMatch)
+  std::mutex inliersMutex;
+  system::parallelFor<int>(0, matches.size(), [&](int iMatch)
   {
     const matching::IndMatch& match = matches.at(iMatch);
     const Vec2 & ptI = featuresI.col(match._i);
@@ -288,10 +289,10 @@ void findTransformationInliers(const Mat2X& featuresI,
 
     if (dist < squaredTolerance)
     {
-#pragma omp critical
+      std::lock_guard<std::mutex> lock{inliersMutex};
       inliersId.insert(iMatch);
     }
-  }
+  });
 }
 
 /**

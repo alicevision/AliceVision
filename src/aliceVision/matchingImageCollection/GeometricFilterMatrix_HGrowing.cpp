@@ -4,8 +4,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/matching/svgVisualization.hpp>
 #include "GeometricFilterMatrix_HGrowing.hpp"
+#include <aliceVision/matching/svgVisualization.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -131,13 +132,14 @@ void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatur
     Mat3 bestHomography;
 
     // -- Estimate H using homography-growing approach
-    #pragma omp parallel for // (huge optimization but modify results a little)
-    for(int iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
+    // parallel for is huge optimization but it modifies results a little)
+    std::mutex matchesMutex;
+    system::parallelFor<int>(0, remainingMatches.size(), [&](int iMatch)
     {
       // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)
       // each match is used once only per homography estimation (increases computation time) [1st improvement ([F.Srajer, 2016] p. 20) ]
       if (usedMatchesId.find(iMatch) != usedMatchesId.end())
-        continue;
+        return;
       std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
       Mat3 homography;
 
@@ -149,22 +151,21 @@ void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatur
                           homography,
                           param._growParam))
       {
-        continue;
+        return;
       }
 
-      #pragma omp critical
-      usedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
-
-      if (planarMatchesId.size() > bestMatchesId.size())
-      {
-        #pragma omp critical
         {
-          // if(iH == 3) { std::cout << "best iMatch" << iMatch << std::endl; }
-          bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
-          bestHomography = homography;
+            std::lock_guard<std::mutex> lock{matchesMutex};
+            usedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
+
+            if (planarMatchesId.size() > bestMatchesId.size())
+            {
+                // if(iH == 3) { std::cout << "best iMatch" << iMatch << std::endl; }
+                bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
+                bestHomography = homography;
+            }
         }
-      }
-    } // 'iMatch'
+    });
 
     // -- Refine H using Ceres minimizer
     refineHomography(siofeatures_I, siofeatures_J, remainingMatches, bestHomography, bestMatchesId, param._growParam._homographyTolerance);
