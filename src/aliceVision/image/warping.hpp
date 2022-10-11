@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision{
 namespace image{
@@ -34,14 +35,13 @@ void Warp(const Image &im, const Mat3 & H, Image &out)
 
   const Sampler2d<SamplerLinear> sampler;
   for (int j = 0; j < hOut; ++j)
-    #pragma omp parallel for
-    for (int i = 0; i < wOut; ++i)
+    system::parallelFor(0, wOut, [&](int i)
     {
       double xT = i, yT = j;
       if (ApplyH_AndCheckOrientation(H, xT, yT)
           && im.Contains(yT,xT))
         out(j,i) = sampler(im, (float)yT, (float)xT);
-    }
+    });
 }
 
 }; // namespace image

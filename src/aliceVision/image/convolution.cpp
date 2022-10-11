@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "convolution.hpp"
+#include <aliceVision/system/ParallelFor.hpp>
 
 namespace aliceVision {
 namespace image {
@@ -22,8 +23,7 @@ void SeparableConvolution2d(const RowMatrixXf& image,
   // each row. However, care must be taken at the top and bottom borders.
   const Eigen::Matrix<float, 1, Eigen::Dynamic> reverse_kernel_y = kernel_y.reverse();
 
-  #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < half_sigma_y; i++)
+  system::parallelFor(0, half_sigma_y, system::ParallelSettings().setDynamicScheduling(), [&](int i)
   {
     const int forward_size = i + half_sigma_y + 1;
     const int reverse_size = sigma_y - forward_size;
@@ -39,14 +39,14 @@ void SeparableConvolution2d(const RowMatrixXf& image,
       +
       reverse_kernel_y.head(reverse_size) *
       image.block(image.rows() - reverse_size - 1, 0, reverse_size, image.cols());
-  }
+  });
 
   // Applying the rest of the y filter.
-  #pragma omp parallel for schedule(dynamic)
-  for (int row = half_sigma_y; row < image.rows() - half_sigma_y; row++)
+  system::parallelFor<int>(half_sigma_y, image.rows() - half_sigma_y,
+                           system::ParallelSettings().setDynamicScheduling(), [&](int row)
   {
     out->row(row) =  kernel_y * image.block(row - half_sigma_y, 0, sigma_y, out->cols());
-  }
+  });
 
   const int sigma_x = static_cast<int>(kernel_x.cols());
   const int half_sigma_x = static_cast<int>(kernel_x.cols() / 2);
@@ -55,11 +55,12 @@ void SeparableConvolution2d(const RowMatrixXf& image,
   // as a sliding window, we use the row pixels as a sliding window around the
   // filter. We prepend and append the proper border values so that we are sure
   // to end up with the correct convolved values.
-  Eigen::RowVectorXf temp_row(image.cols() + sigma_x - 1);
 
-  #pragma omp parallel for firstprivate(temp_row), schedule(dynamic)
-  for (int row = 0; row < out->rows(); row++)
+  system::parallelFor<int>(0, out->rows(), system::ParallelSettings().setDynamicScheduling(),
+                           [&](int row)
   {
+    Eigen::RowVectorXf temp_row(image.cols() + sigma_x - 1);
+
     temp_row.head(half_sigma_x) =
       out->row(row).segment(1, half_sigma_x).reverse();
     temp_row.segment(half_sigma_x, image.cols()) = out->row(row);
@@ -74,7 +75,7 @@ void SeparableConvolution2d(const RowMatrixXf& image,
     for (int i = 1; i < sigma_x; i++) {
       out->row(row) += kernel_x(i) * temp_row.segment(i, image.cols());
     }
-  }
+  });
 }
 
 } // namespace image
