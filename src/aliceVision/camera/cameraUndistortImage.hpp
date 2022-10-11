@@ -9,6 +9,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
@@ -64,9 +65,8 @@ void UndistortImage(
     image_ud.resize(widthRoi, heightRoi, true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
     
-    
-    #pragma omp parallel for
-    for(int j = 0; j < heightRoi; ++j)
+    system::parallelFor(0, heightRoi, [&](int j)
+    {
         for(int i = 0; i < widthRoi; ++i)
         {       
             const Vec2 undisto_pix(i + xOffset, j + yOffset); 
@@ -77,6 +77,7 @@ void UndistortImage(
             if(imageIn.Contains(disto_pix(1), disto_pix(0)))
                 image_ud(j, i) = sampler(imageIn, disto_pix(1), disto_pix(0));
         }
+    });
   }
 }
 
