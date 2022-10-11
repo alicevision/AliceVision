@@ -358,7 +358,7 @@ void DepthSimMap::getSimMap(StaticVector<float>& out_simMap) const
 void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 {
     const int bufferWidth = 2 * _w;
-    std::vector<image::RGBfColor> colorBuffer(bufferWidth * _h);
+    image::Image<image::RGBfColor> colorBuffer(bufferWidth, _h);
 
     try
     {
@@ -384,15 +384,17 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
             {
                 const DepthSim& depthSim = _dsm[y * _w + x];
                 float depth = (depthSim.depth - maxMinDepth.y) / (maxMinDepth.x - maxMinDepth.y);
-                colorBuffer.at(y * bufferWidth + x) = getColorFromJetColorMap(depth);
+                colorBuffer(y, x) = getColorFromJetColorMap(depth);
 
                 float sim = (depthSim.sim - maxMinSim.y) / (maxMinSim.x - maxMinSim.y);
-                colorBuffer.at(y * bufferWidth + _w + x) = getColorFromJetColorMap(sim);
+                colorBuffer(y, _w + x) = getColorFromJetColorMap(sim);
             }
         }
 
         oiio::ParamValueList metadata;
-        image::writeImage(filename, bufferWidth, _h, colorBuffer, image::EImageQuality::LOSSLESS,
+        metadata.push_back(oiio::ParamValue("AliceVision:storageDataType",
+                                            EStorageDataType_enumToString(image::EStorageDataType::Float)));
+        image::writeImage(filename, colorBuffer,
                           image::OutputFileColorSpace(image::EImageColorSpace::NO_CONVERSION), metadata);
     }
     catch (...)
