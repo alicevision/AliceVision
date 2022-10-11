@@ -1,3 +1,10 @@
+if(ALICEVISION_HAVE_TBB)
+  set(system_files_headers_tbb ParallelismBackendTBB.hpp)
+  set(system_files_sources_tbb ParallelismBackendTBB.cpp)
+  set(system_tbb_library TBB::tbb)
+  set(system_tbb_definitions "-DALICEVISION_HAVE_TBB=1")
+endif()
+
 # Headers
 set(system_files_headers
   cpu.hpp
@@ -9,6 +16,7 @@ set(system_files_headers
   ParallelFor.hpp
   ParallelismBackend.hpp
   ParallelismBackendOpenMP.hpp
+  ${system_files_headers_tbb}
   ParallelSettings.hpp
   ProgressDisplay.hpp
   nvtx.hpp
@@ -22,6 +30,7 @@ set(system_files_sources
   Logger.cpp
   ParallelismBackend.cpp
   ParallelismBackendOpenMP.cpp
+  ${system_files_sources_tbb}
   ProgressDisplay.cpp
   nvtx.cpp
 )
@@ -38,6 +47,9 @@ alicevision_add_library(aliceVision_system
     ${ALICEVISION_NVTX_LIBRARY}
   PRIVATE_LINKS
     Boost::boost
+    ${system_tbb_library}
+  PRIVATE_DEFINITIONS
+    ${system_tbb_definitions}
 )
 
 alicevision_add_test(Logger_test.cpp NAME "system_Logger" LINKS aliceVision_system)

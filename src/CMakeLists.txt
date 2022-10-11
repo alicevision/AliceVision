@@ -56,6 +56,7 @@ option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" O
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
+trilean_option(ALICEVISION_USE_TBB "Enable tbb parallelization" OFF)
 trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
@@ -264,6 +265,21 @@ if(ALICEVISION_HAVE_OPENMP)
     else()
     list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
     endif()
+  endif()
+endif()
+
+# ==============================================================================
+# oneTBB
+# ==============================================================================
+set(ALICEVISION_HAVE_TBB 0)
+if(ALICEVISION_USE_TBB STREQUAL "OFF")
+else() # ON OR AUTO
+  find_package(TBB)
+  if(TBB_FOUND)
+    set(ALICEVISION_HAVE_TBB 1)
+  elseif(ALICEVISION_USE_TBB STREQUAL "ON")
+    set(ALICEVISION_HAVE_TBB 0)
+    message(SEND_ERROR "Failed to find TBB.")
   endif()
 endif()
 
@@ -904,6 +920,7 @@ message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
 message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
+message("** Enable TBB parallelization: " ${ALICEVISION_HAVE_TBB})
 message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
 message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
