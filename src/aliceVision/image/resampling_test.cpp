@@ -46,7 +46,8 @@ BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
   GenericRessample( image , sampling_grid , image.Width() , image.Height() , sampler , imageOut ) ;
 
   std::string out_filename = ("test_ressample_same.png");
-  BOOST_CHECK_NO_THROW( writeImage( out_filename, imageOut, image::EImageColorSpace::NO_CONVERSION) ) ;
+  BOOST_CHECK_NO_THROW( writeImage( out_filename, imageOut,
+                                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 }
 
 // Iterative image rotations

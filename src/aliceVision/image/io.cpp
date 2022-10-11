@@ -625,7 +625,7 @@ template<typename T>
 void writeImageNoFloat(const std::string& path,
                 oiio::TypeDesc typeDesc,
                 const Image<T>& image,
-                EImageColorSpace imageColorSpace,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
   const fs::path bPath = fs::path(path);
@@ -636,6 +636,7 @@ void writeImageNoFloat(const std::string& path,
   const bool isJPG = (extension == ".jpg");
   const bool isPNG = (extension == ".png");
 
+  auto imageColorSpace = options.getToColorSpace();
   if(imageColorSpace == EImageColorSpace::AUTO)
   {
     if(isJPG || isPNG)
@@ -709,19 +710,22 @@ void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadO
   readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
-void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<unsigned char>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, outputImageColorSpace, metadata);
+    writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<int>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::INT32, image, outputImageColorSpace, metadata);
+    writeImageNoFloat(path, oiio::TypeDesc::INT32, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<IndexT>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, outputImageColorSpace, metadata);
+    writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, options, metadata);
 }
 
 void writeImage(const std::string& path, const Image<float>& image,

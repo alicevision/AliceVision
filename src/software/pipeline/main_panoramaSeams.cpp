@@ -321,7 +321,8 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    image::writeImage(outputLabels, labels, image::EImageColorSpace::NO_CONVERSION);
+    image::writeImage(outputLabels, labels,
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 
     return EXIT_SUCCESS;
 }

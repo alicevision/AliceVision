@@ -280,8 +280,8 @@ bool ColorHarmonizationEngineGlobal::Process()
 
       std::string out_filename_J = "00_mask_J.png";
       out_filename_J = (fs::path(sEdge) / out_filename_J).string();
-      writeImage(out_filename_I, maskI, image::EImageColorSpace::AUTO);
-      writeImage(out_filename_J, maskJ, image::EImageColorSpace::AUTO);
+      writeImage(out_filename_I, maskI, image::ImageWriteOptions());
+      writeImage(out_filename_J, maskJ, image::ImageWriteOptions());
     }
 
     //-- Compute the histograms
