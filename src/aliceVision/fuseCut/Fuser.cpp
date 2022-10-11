@@ -42,16 +42,16 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int 
         if(nbDepthValues < 0)
         {
             int width, height;
-            StaticVector<float> depthMap;
+            std::vector<float> depthMap;
             nbDepthValues = 0;
 
             ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values.");
 
             image::readImage(mvsUtils::getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, depthMap.getDataWritable(),
+                             width, height, depthMap,
                              image::EImageColorSpace::NO_CONVERSION);
             // no need to transpose for this operation
-            for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); ++i)
+            for(int i = 0; i < depthMap.size(); ++i)
                 nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
         }
 
@@ -83,7 +83,8 @@ Fuser::~Fuser()
  * @param[in] scale
  */
 bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc,
-                           StaticVector<int>* numOfPtsMap, StaticVector<float>* depthMap, StaticVector<float>* simMap,
+                         StaticVector<int>* numOfPtsMap,
+                         const std::vector<float>& depthMap, const std::vector<float>& simMap,
                            int scale)
 {
     int w =_mp.getWidth(rc) / scale;
@@ -104,7 +105,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
 
     int d = pixSizeBall;
 
-    float sim = (*simMap)[cell.y * w + cell.x];
+    float sim = simMap[cell.y * w + cell.x];
     if(sim >= 1.0f)
     {
         d = pixSizeBallWSP;
@@ -119,7 +120,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
         for(ncell.y = std::max(0, cell.y - d); ncell.y <= std::min(h - 1, cell.y + d); ncell.y++)
         {
             // printf("%i %i %i %i %i %i %i %i\n",ncell.x,ncell.y,w,h,w*h,depthMap->size(),cam,scale);
-            float depth = (*depthMap)[ncell.y * w + ncell.x];
+            float depth = depthMap[ncell.y * w + ncell.x];
             // Point3d p1 = _mp.CArr[rc] +
             // (_mp.iCamArr[rc]*Point2d((float)ncell.x*(float)scale,(float)ncell.y*(float)scale)).normalize()*depth;
             // if ( (p1-p).size() < pixSize ) {
@@ -160,17 +161,17 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
     int w = _mp.getWidth(rc);
     int h = _mp.getHeight(rc);
 
-    StaticVector<float> depthMap;
-    StaticVector<float> simMap;
+    std::vector<float> depthMap;
+    std::vector<float> simMap;
 
     {
         int width, height;
 
         image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, 1),
-                         width, height, depthMap.getDataWritable(),
+                         width, height, depthMap,
                          image::EImageColorSpace::NO_CONVERSION);
         image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, 1),
-                         width, height, simMap.getDataWritable(),
+                         width, height, simMap,
                          image::EImageColorSpace::NO_CONVERSION);
     }
 
@@ -195,12 +196,12 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
         numOfPtsMap->resize_with(w * h, 0);
         int tc = tcams[c];
 
-        StaticVector<float> tcdepthMap;
+        std::vector<float> tcdepthMap;
 
         {
             int width, height;
             image::readImage(getFileNameFromIndex(_mp, tc, mvsUtils::EFileType::depthMap, 1),
-                             width, height, tcdepthMap.getDataWritable(),
+                             width, height, tcdepthMap,
                              image::EImageColorSpace::NO_CONVERSION);
         }
 
@@ -214,7 +215,7 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
                     if(depth > 0.0f)
                     {
                       Point3d p = _mp.CArr[tc] + (_mp.iCamArr[tc] * Point2d((float)x, (float)y)).normalize() * depth;
-                      updateInSurr(pixToleranceFactor, pixSizeBall, pixSizeBallWSP, p, rc, tc, numOfPtsMap, &depthMap, &simMap, 1);
+                      updateInSurr(pixToleranceFactor, pixSizeBall, pixSizeBallWSP, p, rc, tc, numOfPtsMap, depthMap, simMap, 1);
                     }
                 }
             }
@@ -364,12 +365,12 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
         int rc = cams[c];
         int h = _mp.getHeight(rc) / scaleuse;
         int w = _mp.getWidth(rc) / scaleuse;
-        StaticVector<float> rcdepthMap;
+        std::vector<float> rcdepthMap;
 
         {
             int width, height;
             image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, rcdepthMap.getDataWritable(),
+                             width, height, rcdepthMap,
                              image::EImageColorSpace::NO_CONVERSION);
         }
 
@@ -464,16 +465,16 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     {
         int w = _mp.getWidth(rc);
 
-        StaticVector<float> depthMap;
+        std::vector<float> depthMap;
         {
             int width, height;
 
             image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, depthMap.getDataWritable(),
+                             width, height, depthMap,
                              image::EImageColorSpace::NO_CONVERSION);
         }
 
-        for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i += stepPts)
+        for(int i = 0; i < depthMap.size(); i += stepPts)
         {
             int x = i % w;
             int y = i / w;
@@ -510,12 +511,12 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     {
         int w = _mp.getWidth(rc);
 
-        StaticVector<float> depthMap;
+        std::vector<float> depthMap;
         {
             int width, height;
 
             image::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, scale),
-                             width, height, depthMap.getDataWritable(),
+                             width, height, depthMap,
                              image::EImageColorSpace::NO_CONVERSION);
         }
 
@@ -785,17 +786,17 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
             pts->reserve(w * h);
             sims->reserve(w * h);
 
-            StaticVector<float> depthMap;
-            StaticVector<float> simMap;
+            std::vector<float> depthMap;
+            std::vector<float> simMap;
 
             {
                 int width, height;
 
                 image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale),
-                                 width, height, depthMap.getDataWritable(),
+                                 width, height, depthMap,
                                  image::EImageColorSpace::NO_CONVERSION);
                 image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale),
-                                 width, height, simMap.getDataWritable(),
+                                 width, height, simMap,
                                  image::EImageColorSpace::NO_CONVERSION);
             }
 

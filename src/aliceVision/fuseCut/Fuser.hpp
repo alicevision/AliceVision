@@ -46,7 +46,7 @@ public:
 
 private:
     bool updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
-                      StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
+                      const std::vector<float>& depthMap, const std::vector<float>& simMap, int scale);
 };
 
 unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
