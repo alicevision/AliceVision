@@ -245,5 +245,9 @@ function(alicevision_add_test test_file)
 
     set_property(TEST test_${TEST_EXECUTABLE_NAME} PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${TEST_LINK_DIRS}:$ENV{LD_LIBRARY_PATH}")
   endif()
+  
+  if (WIN32)
+    set_property(TEST test_${TEST_EXECUTABLE_NAME} PROPERTY ENVIRONMENT "ALICEVISION_ROOT=${CMAKE_INSTALL_PREFIX}")
+  endif()
 
 endfunction()
