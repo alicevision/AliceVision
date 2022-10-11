@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
@@ -108,10 +109,10 @@ public:
     Point2d getMaxMinSim() const;
 
     float getPercentileDepth(float perc) const;
-    void getDepthMapStep1(std::vector<float>& out_depthMap) const;
-    void getSimMapStep1(std::vector<float>& out_simMap) const;
-    void getDepthMap(std::vector<float>& out_depthMap) const;
-    void getSimMap(std::vector<float>& out_simMap) const;
+    void getDepthMapStep1(image::Image<float>& out_depthMap) const;
+    void getSimMapStep1(image::Image<float>& out_simMap) const;
+    void getDepthMap(image::Image<float>& out_depthMap) const;
+    void getSimMap(image::Image<float>& out_simMap) const;
 
     void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
     void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);

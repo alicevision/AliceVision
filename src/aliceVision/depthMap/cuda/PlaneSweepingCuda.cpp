@@ -680,7 +680,7 @@ void PlaneSweepingCuda::deleteNormalMapping( NormalMapping* m )
 bool PlaneSweepingCuda::computeNormalMap(
     NormalMapping*            mapping,
     const std::vector<float>& depthMap,
-    std::vector<image::RGBfColor>&   normalMap,
+    image::Image<image::RGBfColor>& normalMap,
     int rc, int scale,
     float igammaC, float igammaP, int wsh)
 {
@@ -714,9 +714,9 @@ bool PlaneSweepingCuda::computeNormalMap(
   {
     for (int i = 0; i < w * h; i++)
     {
-        normalMap[i].r() = normalMapPtr[i].x;
-        normalMap[i].g() = normalMapPtr[i].y;
-        normalMap[i].b() = normalMapPtr[i].z;
+        normalMap(i).r() = normalMapPtr[i].x;
+        normalMap(i).g() = normalMapPtr[i].y;
+        normalMap(i).b() = normalMapPtr[i].z;
     }
   }
 

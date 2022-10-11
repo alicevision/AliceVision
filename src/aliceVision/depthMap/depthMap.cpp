@@ -130,11 +130,10 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
             readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap,
                       image::EImageColorSpace::NO_CONVERSION);
 
-            std::vector<image::RGBfColor> normalMap;
-            normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
+            image::Image<image::RGBfColor> normalMap(mp.getWidth(rc), mp.getHeight(rc));
 
             cps.computeNormalMap(mapping, depthMap, normalMap, rc, 1, gammaC, gammaP, wsh);
-            image::writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap,
+            image::writeImage(normalMapFilepath, normalMap,
                               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
                                                         .storageDataType(image::EStorageDataType::Float));
         }

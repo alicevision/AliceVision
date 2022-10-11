@@ -196,14 +196,14 @@ float DepthSimMap::getPercentileDepth(float perc) const
 * @brief Get depth map at the size of our input image (with _scale applied)
 *        from an internal buffer only computed for a subpart (based on the step).
 */
-void DepthSimMap::getDepthMapStep1(std::vector<float>& out_depthMap) const
+void DepthSimMap::getDepthMapStep1(image::Image<float>& out_depthMap) const
 {
     // Size of our input image (with _scale applied)
     const int wdm = _mp.getWidth(_rc) / _scale;
     const int hdm = _mp.getHeight(_rc) / _scale;
 
     // Create a depth map at the size of our input image
-    out_depthMap.resize(wdm * hdm);
+    out_depthMap.resize(wdm, hdm);
 
     const double ratio = 1.0 / double(_step);
 
@@ -215,19 +215,19 @@ void DepthSimMap::getDepthMapStep1(std::vector<float>& out_depthMap) const
         {
             const double ox = (double(x) - 0.5) * ratio;
             const float depth = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).depth;
-            out_depthMap[y * wdm + x] = depth;
+            out_depthMap(y * wdm + x) = depth;
         }
     }
 }
 
-void DepthSimMap::getSimMapStep1(std::vector<float>& out_simMap) const
+void DepthSimMap::getSimMapStep1(image::Image<float>& out_simMap) const
 {
     // Size of our input image (with _scale applied)
     const int wdm = _mp.getWidth(_rc) / _scale;
     const int hdm = _mp.getHeight(_rc) / _scale;
 
     // Create a depth map at the size of our input image
-    out_simMap.resize(wdm * hdm);
+    out_simMap.resize(wdm, hdm);
 
     const double ratio = 1.0 / double(_step);
 
@@ -239,7 +239,7 @@ void DepthSimMap::getSimMapStep1(std::vector<float>& out_simMap) const
         {
             const double ox = (double(x) - 0.5) * ratio;
             const float sim = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).sim;
-            out_simMap[y * wdm + x] = sim;
+            out_simMap(y * wdm + x) = sim;
         }
     }
 }
@@ -338,21 +338,21 @@ void DepthSimMap::initFromDepthMapAndSimMap(const std::vector<float>& depthMapT,
     }
 }
 
-void DepthSimMap::getDepthMap(std::vector<float>& out_depthMap) const
+void DepthSimMap::getDepthMap(image::Image<float>& out_depthMap) const
 {
-    out_depthMap.resize(_dsm.size());
+    out_depthMap.resize(_w, _h);
     for (int i = 0; i < _dsm.size(); i++)
     {
-        out_depthMap[i] = _dsm[i].depth;
+        out_depthMap(i) = _dsm[i].depth;
     }
 }
 
-void DepthSimMap::getSimMap(std::vector<float>& out_simMap) const
+void DepthSimMap::getSimMap(image::Image<float>& out_simMap) const
 {
-    out_simMap.resize(_dsm.size());
+    out_simMap.resize(_w, _h);
     for (int i = 0; i < _dsm.size(); i++)
     {
-        out_simMap[i] = _dsm[i].sim;
+        out_simMap(i) = _dsm[i].sim;
     }
 }
 
@@ -403,8 +403,8 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 
 void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 {
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
     if (useStep1)
     {
         getDepthMapStep1(depthMap);
@@ -418,9 +418,6 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 
     const int step = (useStep1 ? 1 : _step);
     const int scaleStep = _scale * step;
-
-    const int width = _mp.getWidth(_rc) / scaleStep;
-    const int height = _mp.getHeight(_rc) / scaleStep;
 
     auto metadata = image::getMetadataFromMap(_mp.getMetadata(_rc));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * scaleStep));
@@ -456,15 +453,15 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
         metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    const int nbDepthValues = std::count_if(depthMap.begin(), depthMap.end(), [](float v) { return v > 0.0f; });
+    const int nbDepthValues = std::count_if(depthMap.data(), depthMap.data() + depthMap.size(), [](float v) { return v > 0.0f; });
     metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
 
     image::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix),
-                      width, height, depthMap,
+                      depthMap,
                       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
                                                 .storageDataType(image::EStorageDataType::Float), metadata);
     image::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix),
-                      width, height, simMap,
+                      simMap,
                       image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
                                                 .storageDataType(image::EStorageDataType::Half), metadata);
 }
