@@ -6,6 +6,7 @@
 
 #include "UVAtlas.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <iostream>
 
@@ -44,8 +45,7 @@ void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams
     // create one chart per triangle
     _triangleCameraIDs.resize(_mesh.tris.size());
     charts.resize(_mesh.tris.size());
-    #pragma omp parallel for
-    for(int i = 0; i < trisCams.size(); ++i)
+    system::parallelFor(0, trisCams.size(), [&](int i)
     {
         std::vector<std::pair<float, int>> commonCameraIDs;
 
@@ -83,7 +83,7 @@ void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams
 
         // store triangle ID
         chart.triangleIDs.emplace_back(i); // one triangle per chart in a first place
-    }
+    });
 }
 
 void UVAtlas::packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
@@ -187,14 +187,13 @@ void UVAtlas::finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewPara
 {
     ALICEVISION_LOG_INFO("Finalize packed charts (" <<  charts.size() << " charts).");
 
-    #pragma omp parallel for
-    for(int i = 0; i < charts.size(); ++i)
+    system::parallelFor<int>(0, charts.size(), [&](int i)
     {
         auto& chart = charts[i];
 
         // select reference =am
         if(chart.commonCameraIDs.empty())
-            continue; // skip triangles without visibility information
+            return; // skip triangles without visibility information
 
         // filter triangles (make unique)
         sort(chart.triangleIDs.begin(), chart.triangleIDs.end());
@@ -231,7 +230,7 @@ void UVAtlas::finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewPara
             ALICEVISION_LOG_WARNING("Downscaling chart (by " + std::to_string(chart.downscale) + ") to fit in texture."
                 "Set higher texture size for better results.");
         }
-    }
+    });
 }
 
 void UVAtlas::createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp)

@@ -10,8 +10,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
-#include <aliceVision/image/io.hpp>
-#include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -555,8 +554,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 ALICEVISION_LOG_INFO("      - band " << band + 1 << ": " << trianglesId.size() << " triangles.");
 
                 // for each triangle
-                #pragma omp parallel for
-                for(int ti = 0; ti < trianglesId.size(); ++ti)
+                system::parallelFor<int>(0, trianglesId.size(), [&](int ti)
                 {
                     const unsigned int triangleId = std::get<0>(trianglesId[ti]);
                     const float triangleScore = texParams.useScore ? std::get<1>(trianglesId[ti]) : 1.0f;
@@ -649,7 +647,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                            }
                        }
                     }
-                }
+                });
             }
         }
     }
@@ -1317,8 +1315,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     const auto& triangles = _atlases[atlasID];
 
     // iterate over atlas' triangles
-#pragma omp parallel for
-    for(int ti = 0; ti < triangles.size(); ++ti)
+    system::parallelFor<int>(0, triangles.size(), [&](int ti)
     {
         const unsigned int triangleId = triangles[ti];
         //  const Point3d __triangleNormal_ = me->computeTriangleNormal(triangleId).normalize();
@@ -1432,7 +1429,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
                 }
             }
         }
-    }
+    });
 
     // Save Normal Map
     if(bumpMappingParams.bumpType == EBumpMappingType::Normal && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)

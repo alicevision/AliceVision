@@ -8,6 +8,7 @@
 #include "geoMesh.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 
 #include <geogram/basic/permutation.h>
@@ -28,11 +29,10 @@ void getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts.size(), refMesh.pts.front().m);
 
-    #pragma omp parallel for
-    for(int i = 0; i < mesh.pts.size(); ++i)
+    system::parallelFor(0, mesh.pts.size(), [&](int i)
     {
         out_nearestVertex[i] = refMesh_kdTree.get_nearest_neighbor(mesh.pts[i].m);
-    }
+    });
     ALICEVISION_LOG_DEBUG("getNearestVertices done.");
 }
 
@@ -49,20 +49,19 @@ void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mes
 
     out_ptsVisibilities.resize(mesh.pts.size());
 
-    #pragma omp parallel for
-    for(int i = 0; i < mesh.pts.size(); ++i)
+    system::parallelFor(0, mesh.pts.size(), [&](int i)
     {
         PointVisibility& pOut = out_ptsVisibilities[i];
 
         int iRef = refMesh_kdTree.get_nearest_neighbor(mesh.pts[i].m);
         if(iRef == -1)
-            continue;
+            return;
         const PointVisibility& pRef = refPtsVisibilities[iRef];
         if(pRef.empty())
-            continue;
+            return;
 
         pOut = pRef;
-    }
+    });
 
     ALICEVISION_LOG_DEBUG("remapMeshVisibility done.");
 }
@@ -101,28 +100,28 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
         out_ptsVisibilities.resize(mesh.pts.size());
     }
 
-    #pragma omp parallel for
-    for (int rvi = 0; rvi < refMesh.pts.size(); ++rvi)
+    std::mutex outMutex;
+    system::parallelFor(0, refMesh.pts.size(), [&](int rvi)
     {
         const PointVisibility& rpVis = refPtsVisibilities[rvi];
         if (rpVis.empty())
-            continue;
+            return;
 
         const GEO::vec3 rp(refMesh.pts[rvi].m);
         GEO::vec3 nearestPoint;
         double dist2 = 0.0;
         GEO::index_t f = meshAABB.nearest_facet(rp, nearestPoint, dist2);
         if(f == GEO::NO_FACET)
-            continue;
+            return;
 
         double avgEdgeLength = mesh_facet_edges_length(meshG, f) / 3.0;
         // if average edge length is larger than the distance between the output mesh
         // and the closest point in the reference mesh.
         if(std::sqrt(dist2) > avgEdgeLength)
-            continue;
+            return;
 
-        #pragma omp critical
         {
+            std::lock_guard<std::mutex> lock{outMutex};
             for (int i = 0; i < 3; ++i)
             {
                 GEO::index_t v = meshG.facets.vertex(f, i);
@@ -134,7 +133,7 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
                     pOut.push_back_distinct(rpVis[j]);
             }
         }
-    }
+    });
 
     ALICEVISION_LOG_INFO("remapMeshVisibility done.");
 }
@@ -167,8 +166,7 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
     StaticVector<Point3d> normalsPerVertex;
     mesh.computeNormalsForPts(normalsPerVertex);
 
-#pragma omp parallel for
-    for(int vi = 0; vi < mesh.pts.size(); ++vi)
+    system::parallelFor(0, mesh.pts.size(), [&](int vi)
     {
         const Point3d& v = mesh.pts[vi];
         PointVisibility& vertexVisibility = out_ptsVisibilities[vi];
@@ -194,7 +192,7 @@ void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh&
 
             vertexVisibility.push_back(camIndex);
         }
-    }
+    });
 }
 
 } // namespace mesh

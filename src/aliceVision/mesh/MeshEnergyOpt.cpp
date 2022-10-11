@@ -6,6 +6,7 @@
 
 #include "MeshEnergyOpt.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -29,8 +30,7 @@ void MeshEnergyOpt::computeLaplacianPtsParallel(StaticVector<Point3d>& out_lapPt
     out_lapPts.resize_with(pts.size(), Point3d(0.0f, 0.0f, 0.f));
     int nlabpts = 0;
 
-#pragma omp parallel for
-    for(int i = 0; i < pts.size(); i++)
+    system::parallelFor(0, pts.size(), [&](int i)
     {
         Point3d lapPt;
         if(getLaplacianSmoothingVector(i, lapPt))
@@ -38,7 +38,7 @@ void MeshEnergyOpt::computeLaplacianPtsParallel(StaticVector<Point3d>& out_lapPt
             out_lapPts[i] = lapPt;
             nlabpts++;
         }
-    }
+    });
 }
 
 void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
@@ -52,8 +52,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
     newPts.reserve(pts.size());
     newPts.push_back_arr(&pts);
 
-#pragma omp parallel for
-    for(int i = 0; i < pts.size(); ++i)
+    system::parallelFor(0, pts.size(), [&](int i)
     {
         if( ptsCanMove.empty() || ptsCanMove[i] )
         {
@@ -68,7 +67,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
                 }
             }
         }
-    }
+    });
 
     pts.clear();
     pts.swap(newPts);

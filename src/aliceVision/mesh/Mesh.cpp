@@ -6,6 +6,7 @@
 
 #include "Mesh.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
@@ -2155,8 +2156,7 @@ void Mesh::filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor, const Sta
     const double averageEdgeLength = computeAverageEdgeLength();
     const double avelthr = averageEdgeLength * cutAverageEdgeLengthFactor;
 
-    #pragma omp parallel for
-    for(int i = 0; i < tris.size(); ++i)
+    system::parallelFor(0, tris.size(), [&](int i)
     {
         if(trisToConsider.empty() || trisToConsider[i])
         {
@@ -2165,7 +2165,7 @@ void Mesh::filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor, const Sta
           if(triMaxEdgelength >= avelthr)
               trisToStay[i] = false;
         }
-    }
+    });
 
     ALICEVISION_LOG_INFO("Filtering large triangles, done.");
 }
@@ -2174,8 +2174,7 @@ void Mesh::filterTrianglesByRatio(double ratio, const StaticVectorBool& trisToCo
 {
     ALICEVISION_LOG_INFO("Filtering triangles by ratio " << ratio << ".");
 
-    #pragma omp parallel for
-    for(int i = 0; i < tris.size(); ++i)
+    system::parallelFor(0, tris.size(), [&](int i)
     {
         if(trisToConsider.empty() || trisToConsider[i])
         {
@@ -2185,7 +2184,7 @@ void Mesh::filterTrianglesByRatio(double ratio, const StaticVectorBool& trisToCo
           if((minEdge == 0) || ((maxEdge/minEdge) > ratio))
               trisToStay[i] = false;
         }
-    }
+    });
 
     ALICEVISION_LOG_INFO("Filtering triangles by ratio, done.");
 }
@@ -2586,8 +2585,7 @@ bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_
     // Get all edges
     StaticVector<Edge> edges(tris.size() * 3);
 
-    #pragma omp parallel for
-    for(int i = 0; i < tris.size(); ++i)
+    system::parallelFor(0, tris.size(), [&](int i)
     {
       const int edgeStartIndex = i * 3;
       const Mesh::triangle& t = tris[i];
@@ -2595,7 +2593,7 @@ bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_
       edges[edgeStartIndex] = std::make_pair(std::min(t.v[0], t.v[1]), std::max(t.v[0], t.v[1]));
       edges[edgeStartIndex + 1] = std::make_pair(std::min(t.v[1], t.v[2]), std::max(t.v[1], t.v[2]));
       edges[edgeStartIndex + 2] = std::make_pair(std::min(t.v[2], t.v[0]), std::max(t.v[2], t.v[0]));
-    }
+    });
 
     // Sort edges by vertex indexes
     qsort(&edges[0], edges.size(), sizeof(Edge), qSortCompareEdgeAsc);
@@ -2641,14 +2639,13 @@ bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_
     {
         StaticVectorBool boundariesVerticesCurrent = boundariesVertices;
         
-        #pragma omp parallel for
-        for(int i = 0; i < edges.size(); ++i)
+        system::parallelFor(0, edges.size(), [&](int i)
         {
             Edge& edge = edges[i];
 
             if(boundariesVertices[edge.first] && 
                boundariesVertices[edge.second]) // 2 vertices on boundary, skip
-                continue;
+                return;
 
             if(boundariesVertices[edge.first])
             {
@@ -2659,7 +2656,7 @@ bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_
             {
                 boost::atomic_ref<char>{boundariesVerticesCurrent[edge.first]} = true;
             }
-        }
+        });
         std::swap(boundariesVertices, boundariesVerticesCurrent);
     }
 
@@ -2667,12 +2664,11 @@ bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_
     if(out_ptsCanMove.empty())
        out_ptsCanMove.resize(pts.size(), true);
     
-    #pragma omp parallel for
-    for(int i = 0; i < boundariesVertices.size(); ++i)
+    system::parallelFor(0, boundariesVertices.size(), [&](int i)
     {
         if(boundariesVertices[i] == !invert)
             out_ptsCanMove[i] = false;
-    }
+    });
     
     ALICEVISION_LOG_INFO("Lock surface " << (invert? "inner part" : "boundaries") << ", done.");
     return true;
@@ -2717,8 +2713,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
     // Get all edges
     StaticVector<Edge> edges(tris.size() * 3);
 
-    #pragma omp parallel for
-    for(int i = 0; i < tris.size(); ++i)
+    system::parallelFor(0, tris.size(), [&](int i)
     {
       const int edgeStartIndex = i * 3;
       const Mesh::triangle& t = tris[i];
@@ -2726,7 +2721,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
       edges[edgeStartIndex] = Edge(t.v[0], t.v[1], i);
       edges[edgeStartIndex + 1] = Edge(t.v[1], t.v[2], i);
       edges[edgeStartIndex + 2] = Edge(t.v[2], t.v[0], i);
-    }
+    });
 
     // Sort edges by vertex indexes
     qsort(&edges[0], edges.size(), sizeof(Edge), qSortCompareEdgeAsc);
@@ -2770,8 +2765,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
     out_trisToConsider.resize(tris.size(), false);
 
     // Surface triangles
-    #pragma omp parallel for
-    for(int i = 0; i < edges.size(); ++i)
+    system::parallelFor(0, edges.size(), [&](int i)
     {
         Edge& edge = edges[i];
 
@@ -2779,7 +2773,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
         {
             boost::atomic_ref<char>{out_trisToConsider[edge.triId]} = true;
         }
-    }
+    });
 
     ALICEVISION_LOG_INFO("Get surface " << (invert? "inner part" : "boundaries") << ", done.");
     return true;
