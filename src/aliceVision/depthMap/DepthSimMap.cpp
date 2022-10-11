@@ -215,7 +215,7 @@ void DepthSimMap::getDepthMapStep1(image::Image<float>& out_depthMap) const
         {
             const double ox = (double(x) - 0.5) * ratio;
             const float depth = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).depth;
-            out_depthMap(y * wdm + x) = depth;
+            out_depthMap(y, x) = depth;
         }
     }
 }
@@ -239,7 +239,7 @@ void DepthSimMap::getSimMapStep1(image::Image<float>& out_simMap) const
         {
             const double ox = (double(x) - 0.5) * ratio;
             const float sim = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).sim;
-            out_simMap(y * wdm + x) = sim;
+            out_simMap(y, x) = sim;
         }
     }
 }
