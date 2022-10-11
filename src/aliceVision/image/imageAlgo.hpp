@@ -48,8 +48,6 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
 
 /**
  * @brief resize a given image buffer
- * @param[in] inWidth The input image buffer width
- * @param[in] inHeight The input image buffer height
  * @param[in] downscale The resize downscale
  * @param[in] inBuffer The input image buffer
  * @param[out] outBuffer The output image buffer
@@ -58,13 +56,6 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
  *            See openImageIO documentation "ImageBufAlgo filtername"
  * @param[in] filterSize The resize filter size
  */
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale,
-                 const std::vector<image::RGBfColor>& inBuffer,
-                 std::vector<image::RGBfColor>& outBuffer,
-                 const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const image::Image<float>& inImage,
                  image::Image<float>& outImage,
                  const std::string& filter = "", float filterSize = 0);

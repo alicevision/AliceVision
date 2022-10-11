@@ -245,47 +245,6 @@ void resizeImage(oiio::TypeDesc typeDesc,
     oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
 }
 
-template<typename T>
-void resizeImage(oiio::TypeDesc typeDesc,
-                 int inWidth,
-                 int inHeight,
-                 int nchannels,
-                 int downscale,
-                 const std::vector<T>& inBuffer,
-                 std::vector<T>& outBuffer,
-                 const std::string& filter = "",
-                 float filterSize = 0)
-{
-    const int outWidth = inWidth / downscale;
-    const int outHeight = inHeight / downscale;
-    outBuffer.resize(outWidth * outHeight);
-    resizeImage(typeDesc, inWidth, inHeight, outWidth, outHeight, nchannels,
-                inBuffer.data(), outBuffer.data(), filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale,
-                 const std::vector<image::RGBfColor>& inBuffer,
-                 std::vector<image::RGBfColor>& outBuffer,
-                 const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
 void resizeImage(int downscale, const image::Image<float>& inImage,
                  image::Image<float>& outImage, const std::string& filter, float filterSize)
 {
