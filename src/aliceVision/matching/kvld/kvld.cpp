@@ -19,6 +19,7 @@
 #include <numeric>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::image;
@@ -38,8 +39,7 @@ ImageScale::ImageScale( const Image< float >& I, double r )
   GradAndNorm( I, angles[ 0 ], magnitudes[ 0 ] );
   ratios[ 0 ] = 1;
   
-  #pragma omp parallel for
-  for( int k = 1; k < number; k++ )
+  system::parallelFor(1, number, [&](int k)
   {
     Image< float > I2;
     double ratio = 1 * pow( step, k );
@@ -56,7 +56,7 @@ ImageScale::ImageScale( const Image< float >& I, double r )
     }
     GradAndNorm( I2,angles[ k ], magnitudes[ k ] );
     ratios[ k ] = ratio;
-  }
+  });
 }
 
 void ImageScale::GradAndNorm( const Image< float >& I, Image< float >& angle, Image< float >& m )
@@ -66,8 +66,7 @@ void ImageScale::GradAndNorm( const Image< float >& I, Image< float >& angle, Im
   angle.fill( 0 );
   m.fill( 0 );
   
-  #pragma omp parallel for
-  for( int y = 1; y < I.Height() - 1; y++ )
+  system::parallelFor(1, I.Height() - 1, [&](int y)
   {
     for( int x = 1; x < I.Width() - 1; x++ )
     {
@@ -78,7 +77,7 @@ void ImageScale::GradAndNorm( const Image< float >& I, Image< float >& angle, Im
         angle( y, x ) = -1;
       m( y, x ) = std::hypot(gx, gy);
     }
-  }
+  });
 }
 
 int ImageScale::getIndex( const double r )const

@@ -11,6 +11,7 @@
 #include <aliceVision/matching/ArrayMatcher.hpp>
 #include <aliceVision/feature/metric.hpp>
 #include <aliceVision/stl/indexedSort.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <aliceVision/config.hpp>
 
@@ -124,8 +125,8 @@ class ArrayMatcher_bruteForce  : public ArrayMatcher<Scalar, Metric>
     pvec_distances->resize(nbQuery * NN);
     pvec_indices->resize(nbQuery * NN);
 
-    #pragma omp parallel for schedule(dynamic)
-    for (int queryIndex=0; queryIndex < nbQuery; ++queryIndex) 
+    system::parallelFor(0, nbQuery, system::ParallelSettings().setDynamicScheduling(),
+                        [&](int queryIndex)
     {
       std::vector<DistanceType> vec_distance((*memMapping).rows(), 0.0);
       const Scalar * queryPtr = mat_query.row(queryIndex).data();
@@ -148,7 +149,7 @@ class ArrayMatcher_bruteForce  : public ArrayMatcher<Scalar, Metric>
         (*pvec_distances)[queryIndex*NN+i] = packet_vec[i].val;
         (*pvec_indices)[queryIndex*NN+i] = IndMatch(queryIndex, packet_vec[i].index);
       }
-    }
+    });
     return true;
   };
 

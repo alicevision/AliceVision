@@ -9,6 +9,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/ParallelFor.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
@@ -137,8 +138,10 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
-  #pragma omp parallel for num_threads(3)
-  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(viewsKeys.size()); ++i)
+  std::mutex matchesMutex;
+  std::mutex logMutex;
+  system::parallelFor<std::ptrdiff_t>(0, viewsKeys.size(), system::ParallelSettings().setThreadCount(3),
+                                      [&](std::ptrdiff_t i)
   {
     std::set<IndexT>::const_iterator it = viewsKeys.begin();
     std::advance(it, i);
@@ -147,14 +150,12 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
     PairwiseMatches fileMatches;
     if(!LoadMatchFile(fileMatches, (fs::path(folder) / matchFilename).string() ))
     {
-      #pragma omp critical
-      {
-        ALICEVISION_LOG_DEBUG("Unable to load match file: " << matchFilename << " in: " << folder);
-      }
-      continue;
+      std::lock_guard<std::mutex> lock{logMutex};
+      ALICEVISION_LOG_DEBUG("Unable to load match file: " << matchFilename << " in: " << folder);
+      return;
     }
-    #pragma omp critical
     {
+      std::lock_guard<std::mutex> lock{matchesMutex};
       ++nbLoadedMatchFiles;
       // merge the loaded matches into the output
       for(const auto& v: fileMatches)
@@ -162,7 +163,7 @@ std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
         matches[v.first] = v.second;
       }
     }
-  }
+  });
   return nbLoadedMatchFiles;
 }
 
@@ -185,8 +186,9 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
     }
   }
 
-  #pragma omp parallel for num_threads(3)
-  for(int i = 0; i < matchFiles.size(); ++i)
+  std::mutex matchesMutex;
+  system::parallelFor<int>(0, matchFiles.size(), system::ParallelSettings().setThreadCount(3),
+                           [&](int i)
   {
     const std::string& matchFile = matchFiles[i];
     PairwiseMatches fileMatches;
@@ -194,10 +196,10 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
     if(!LoadMatchFile(fileMatches, matchFile))
     {
       ALICEVISION_LOG_WARNING("Unable to load match file: " << matchFile);
-      continue;
+      return;
     }
-    #pragma omp critical
     {
+    std::lock_guard<std::mutex> lock{matchesMutex};
     for(const auto& matchesPerView: fileMatches)
     {
       const Pair& pair = matchesPerView.first;
@@ -216,7 +218,8 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
     }
     ++nbLoadedMatchFiles;
     }   
-  }
+  });
+
   if(!nbLoadedMatchFiles)
     ALICEVISION_LOG_WARNING("No matches file loaded in: " << folder);
   return nbLoadedMatchFiles;
