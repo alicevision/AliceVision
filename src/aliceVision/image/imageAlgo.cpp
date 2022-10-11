@@ -355,12 +355,6 @@ void fillHoles(int inWidth, int inHeight, image::RGBfColor* colorBuffer,
     oiio::ImageBufAlgo::copy(rgbBuf, filledBuf);
 }
 
-void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
-               const std::vector<float>& alphaBuffer)
-{
-    fillHoles(inWidth, inHeight, colorBuffer.data(), alphaBuffer);
-}
-
 void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer)
 {
     fillHoles(image.Width(), image.Height(), image.data(), alphaBuffer);
