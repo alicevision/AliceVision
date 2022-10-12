@@ -110,6 +110,19 @@ public:
     }
   }
 
+  template<class F>
+  void setDistortionParamsFn(F&& callback)
+  {
+    if (_pDistortion == nullptr)
+        return;
+
+    auto& params = _pDistortion->getParameters();
+    for (std::size_t i = 0; i < params.size(); ++i)
+    {
+        params[i] = callback(i);
+    }
+  }
+
   // Data wrapper for non linear optimization (get data)
   std::vector<double> getParams() const override
   {
