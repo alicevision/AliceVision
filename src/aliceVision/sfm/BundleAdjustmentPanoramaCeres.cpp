@@ -88,7 +88,7 @@ public:
 
     _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
     _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
-    _intrinsic->setDistortionParams({parameter_intrinsics[4], parameter_intrinsics[5], parameter_intrinsics[6]});
+    _intrinsic->setDistortionParamsFn(3, [&](auto index) { return parameter_intrinsics[4 + index]; });
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
