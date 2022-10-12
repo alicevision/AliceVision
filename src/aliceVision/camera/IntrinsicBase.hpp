@@ -346,6 +346,12 @@ public:
   virtual std::vector<double> getParams() const = 0;
 
   /**
+   * @brief Get count of intrinsic parameters
+   * @return the number of intrinsic parameters
+   */
+  virtual std::size_t getParamsSize() const = 0;
+
+  /**
    * @brief Update intrinsic parameters
    * @param[in] intrinsic parameters
    * @return true if done

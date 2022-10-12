@@ -81,6 +81,13 @@ public:
     return cam2ima(addDistortion(ima2cam(p)));
   }
 
+  std::size_t getDistortionParamsSize() const
+  {
+    if (_pDistortion == nullptr)
+        return 0;
+    return _pDistortion->getParameters().size();
+  }
+
   std::vector<double> getDistortionParams() const
   {
     if (!hasDistortion()) {
@@ -121,6 +128,30 @@ public:
     }
   }
 
+  template<class F>
+  void setDistortionParamsFn(std::size_t count, F&& callback)
+  {
+    if (_pDistortion == nullptr)
+    {
+        if (count != 0)
+        {
+            throwSetDistortionParamsCountError(0, count);
+        }
+        return;
+    }
+
+    auto& params = _pDistortion->getParameters();
+    if (params.size() != count)
+    {
+        throwSetDistortionParamsCountError(params.size(), count);
+    }
+
+    for (std::size_t i = 0; i < params.size(); ++i)
+    {
+        params[i] = callback(i);
+    }
+  }
+
   // Data wrapper for non linear optimization (get data)
   std::vector<double> getParams() const override
   {
@@ -132,6 +163,16 @@ public:
     }
 
     return params;
+  }
+
+  std::size_t getParamsSize() const override
+  {
+    std::size_t size = 4;
+    if (hasDistortion())
+    {
+      size += _pDistortion->getParameters().size();
+    }
+    return size;
   }
 
   // Data wrapper for non linear optimization (update from data)
