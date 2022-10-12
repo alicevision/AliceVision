@@ -99,9 +99,7 @@ public:
 
     if (distortionParams.size() != expected)
     {
-        std::stringstream s;
-        s << "IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected: " << expected << ", given:" << distortionParams.size() << ").";
-        throw std::runtime_error(s.str());
+        throwSetDistortionParamsCountError(expected, distortionParams.size());
     }
 
     if (_pDistortion)
@@ -221,6 +219,15 @@ public:
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
+  void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
+  {
+      std::stringstream s;
+      s << "IntrinsicsScaleOffsetDisto::setDistortionParams*: "
+        << "wrong number of distortion parameters (expected: "
+        << expected << ", given:" << received << ").";
+      throw std::runtime_error(s.str());
+  }
+
   std::shared_ptr<Distortion> _pDistortion;
 };
 
