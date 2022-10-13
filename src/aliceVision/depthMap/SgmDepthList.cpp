@@ -104,6 +104,10 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
                                         << "\t- scale factor to apply: " << scaleFactor);
 
             computeDepths(minDepth, maxDepth, scaleFactor, alldepths);
+
+            // ensure depth list size is not greater than maxDepths
+            if(_depths.size() > sgmParams.maxDepths)
+              _depths.resize(sgmParams.maxDepths); // reduce to depth list first maxDepths elements
         }
 
         if(sgmParams.saveDepthsToSweepTxtFile)
