@@ -129,6 +129,10 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
         ("sgmChooseDepthListPerTile", po::value<bool>(&sgmParams.chooseDepthListPerTile)->default_value(sgmParams.chooseDepthListPerTile),
             "Semi Global Matching: Choose depth list per tile.")
+        ("refineScale", po::value<int>(&refineParams.scale)->default_value(refineParams.scale),
+            "Refine: Downscale factor used for the refinement process.")
+        ("refineStepXY", po::value<int>(&refineParams.stepXY)->default_value(refineParams.stepXY),
+            "Refine: Step used for the refinement process on the X and Y axis.")
         ("refineMaxTCamsPerTile", po::value<int>(&refineParams.maxTCamsPerTile)->default_value(refineParams.maxTCamsPerTile),
             "Refine: Number of neighbour cameras per tile.")
         ("refineNSamplesHalf", po::value<int>(&refineParams.nSamplesHalf)->default_value(refineParams.nSamplesHalf),
@@ -317,6 +321,8 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.exportIntermediateResults", exportIntermediateResults);
 
     // Refine Parameters
+    mp.userParams.put("refine.scale", refineParams.scale);
+    mp.userParams.put("refine.stepXY", refineParams.stepXY);
     mp.userParams.put("refine.wsh", refineParams.wsh);
     mp.userParams.put("refine.sigma", refineParams.sigma);
     mp.userParams.put("refine.gammaC", refineParams.gammaC);
