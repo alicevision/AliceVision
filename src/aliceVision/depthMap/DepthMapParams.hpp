@@ -18,12 +18,13 @@ namespace depthMap {
  */
 struct DepthMapParams
 {
-  mvsUtils::TileParams tileParams;
-  SgmParams sgmParams;
-  RefineParams refineParams;
+  mvsUtils::TileParams tileParams;  // tilling parameters
+  SgmParams sgmParams;              // parameters of Sgm process
+  RefineParams refineParams;        // parameters of Refine process
 
-  bool chooseTCamsPerTile = true;
-  int maxTCams = 10;
+  bool useRefine = true;            // enable or disable Refine process
+  bool chooseTCamsPerTile = true;   // choose T cameras per R tile or for the entire R image
+  int maxTCams = 10;                // global T cameras maximum
 };
 
 } // namespace depthMap
