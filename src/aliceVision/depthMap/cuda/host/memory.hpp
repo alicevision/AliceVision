@@ -452,7 +452,7 @@ public:
     {
         if( buffer == nullptr )
         {
-            allocate( rhs.size );
+            allocate( rhs.getSize() );
         }
         else if( this->getSize() != rhs.getSize() )
         {
