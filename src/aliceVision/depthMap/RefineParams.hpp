@@ -16,6 +16,8 @@ struct RefineParams
 {
   // user parameters
 
+  int scale = 1;
+  int stepXY = 1;
   int wsh = 3;
   int nDepthsToRefine = 31;
   int nSamplesHalf = 150;
@@ -27,11 +29,6 @@ struct RefineParams
   bool doRefineFuse = true;
   bool doRefineOptimization = true;
   bool exportIntermediateResults = false;
-
-  // constant parameters
-
-  const int scale = 1; 
-  const int stepXY = 1;
 };
 
 } // namespace depthMap

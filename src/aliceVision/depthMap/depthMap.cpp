@@ -188,6 +188,8 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     // get Refine user parameters from MultiViewParams property_tree
 
     auto& refineParams = depthMapParams.refineParams;
+    refineParams.scale = mp.userParams.get<int>("refine.scale", refineParams.scale);
+    refineParams.stepXY = mp.userParams.get<int>("refine.stepXY", refineParams.stepXY);
     refineParams.wsh = mp.userParams.get<int>("refine.wsh", refineParams.wsh);
     refineParams.nDepthsToRefine = mp.userParams.get<int>("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
     refineParams.nSamplesHalf = mp.userParams.get<int>("refine.nSamplesHalf", refineParams.nSamplesHalf);
