@@ -149,6 +149,8 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: Perform Refine/Fuse.")
         ("refineDoRefineOptimization", po::value<bool>(&refineParams.doRefineOptimization)->default_value(refineParams.doRefineOptimization),
             "Refine: Perform Refine post-process optimization.")
+        ("refineEnabled", po::value<bool>(&depthMapParams.useRefine)->default_value(depthMapParams.useRefine),
+            "Enable/Disable depth/simiarity map refinement process.")
         ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
             "Export intermediate results from the SGM and Refine steps.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
@@ -209,6 +211,19 @@ int aliceVision_main(int argc, char* argv[])
     {
       ALICEVISION_LOG_ERROR("Invalid value for downscale parameter. Should be at least 1.");
       return EXIT_FAILURE;
+    }
+
+    // check that Sgm scaleStep is greater or equal to the Refine scaleStep
+    if(depthMapParams.useRefine)
+    {
+      const int sgmScaleStep = sgmParams.scale * sgmParams.stepXY;
+      const int refineScaleStep = refineParams.scale * refineParams.stepXY;
+
+      if(sgmScaleStep < refineScaleStep)
+      {
+        ALICEVISION_LOG_ERROR("SGM downscale (scale & step) should be greater or equal to the Refine downscale (scale & step).");
+        return EXIT_FAILURE;
+      }
     }
 
     // check min/max view angle
@@ -315,8 +330,9 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.exportIntermediateResults", exportIntermediateResults);
 
     // Workflow Parameters
-    mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
+    mp.userParams.put("depthMap.useRefine", depthMapParams.useRefine);
     mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
+    mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);

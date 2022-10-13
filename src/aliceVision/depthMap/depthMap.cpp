@@ -78,18 +78,23 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
 int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& depthMapParams, int nbTilesPerCamera)
 {
     const int maxImageSize = mp.getMaxImageWidth() * mp.getMaxImageHeight(); // process downscale apply
-    const double cameraFrameCostMB = (((maxImageSize / depthMapParams.sgmParams.scale) + (maxImageSize / depthMapParams.refineParams.scale)) * 16.0) / (1024.0 * 1024.0); // SGM + Refine float4 RGBA
 
-    double sgmTileCostMB;
-    double sgmTileCostUnpaddedMB;
+    const double sgmFrameCostMB = ((maxImageSize / depthMapParams.sgmParams.scale) * 16.0) / (1024.0 * 1024.0); // SGM float4 RGBA
+    const double refineFrameCostMB = ((maxImageSize / depthMapParams.refineParams.scale) * 16.0) / (1024.0 * 1024.0); // Refine float4 RGBA
+    const double cameraFrameCostMB = sgmFrameCostMB + (depthMapParams.useRefine ? refineFrameCostMB : 0.0); // SGM + Refine single frame cost
+
+    double sgmTileCostMB = 0.0;
+    double sgmTileCostUnpaddedMB = 0.0;
     {
       Sgm sgm(mp, depthMapParams.tileParams, depthMapParams.sgmParams, 0 /*stream*/);
       sgmTileCostMB = sgm.getDeviceMemoryConsumption();
       sgmTileCostUnpaddedMB = sgm.getDeviceMemoryConsumptionUnpadded();
     }
 
-    double refineTileCostMB;
-    double refineTileCostUnpaddedMB;
+    double refineTileCostMB = 0.0;
+    double refineTileCostUnpaddedMB = 0.0;
+
+    if(depthMapParams.useRefine)
     {
       Refine refine(mp, depthMapParams.tileParams, depthMapParams.refineParams, 0 /*stream*/);
       refineTileCostMB = refine.getDeviceMemoryConsumption();
@@ -193,8 +198,9 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
 
     // get workflow user parameters from MultiViewParams property_tree
 
-    depthMapParams.maxTCams = mp.userParams.get<int>("depthMap.maxTCams", depthMapParams.maxTCams);
+    depthMapParams.useRefine = mp.userParams.get<bool>("depthMap.useRefine", depthMapParams.useRefine);
     depthMapParams.chooseTCamsPerTile = mp.userParams.get<bool>("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
+    depthMapParams.maxTCams = mp.userParams.get<int>("depthMap.maxTCams", depthMapParams.maxTCams);
 }
 
 void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
@@ -225,7 +231,10 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // build device cache
     const int nbRcPerBatch = std::ceil(nbStreams / float(nbTilesPerCamera));            // number of R cameras in the same batch
     const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;                        // number of tiles in the same batch
-    const int nbCamerasPerBatch = (nbRcPerBatch * (1 + depthMapParams.maxTCams)) * 2;   // number of cameras (refine + sgm downscaled images) in the same batch
+    const bool hasRcWithoutDownscale = depthMapParams.sgmParams.scale == 1 || (depthMapParams.useRefine && depthMapParams.refineParams.scale == 1);
+    const int nbCamerasPerSgm = (1 + depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm cameras per R camera
+    const int nbCamerasPerRefine = depthMapParams.useRefine ? (1 + depthMapParams.maxTCams) : 0; // number of Refine cameras per R camera
+    const int nbCamerasPerBatch = nbRcPerBatch * (nbCamerasPerSgm + nbCamerasPerRefine);         // number of cameras in the same batch
 
     DeviceCache& deviceCache = DeviceCache::getInstance();
     deviceCache.buildCache(nbCamerasPerBatch);
@@ -258,7 +267,9 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             {
               // find nearest T cameras per tile
               t.sgmTCams = mp.findTileNearestCams(rc, depthMapParams.sgmParams.maxTCamsPerTile, tCams, t.roi);
-              t.refineTCams = mp.findTileNearestCams(rc, depthMapParams.refineParams.maxTCamsPerTile, tCams, t.roi);
+
+              if(depthMapParams.useRefine)
+                t.refineTCams = mp.findTileNearestCams(rc, depthMapParams.refineParams.maxTCamsPerTile, tCams, t.roi);
             }
             else
             {
@@ -276,13 +287,16 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     std::vector<Refine> refinePerStream;
 
     sgmPerStream.reserve(nbStreams);
-    refinePerStream.reserve(nbStreams);
+    refinePerStream.reserve(depthMapParams.useRefine ? nbStreams : 0);
 
+    // initialize Sgm objects
     for(int i = 0; i < nbStreams; ++i)
-    {
-        sgmPerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.sgmParams, deviceStreamManager.getStream(i));
-        refinePerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.refineParams, deviceStreamManager.getStream(i));
-    }
+      sgmPerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.sgmParams, deviceStreamManager.getStream(i));
+
+    // initialize Refine objects
+    if(depthMapParams.useRefine)
+      for(int i = 0; i < nbStreams; ++i)
+          refinePerStream.emplace_back(mp, depthMapParams.tileParams, depthMapParams.refineParams, deviceStreamManager.getStream(i));
 
     // allocate final deth/similarity map tile list in host memory
     std::vector<std::vector<CudaHostMemoryHeap<float2, 2>>> depthSimMapTilePerCam(nbRcPerBatch);
@@ -297,7 +311,12 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         depthMinMaxTiles.resize(nbTilesPerCamera);
 
         for(int j = 0; j < nbTilesPerCamera; ++j)
-          depthSimMapTiles.at(j).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
+        {
+          if(depthMapParams.useRefine)
+            depthSimMapTiles.at(j).allocate(refinePerStream.front().getDeviceDepthSimMap().getSize());
+          else // final depth/similarity map is SGM only
+            depthSimMapTiles.at(j).allocate(sgmPerStream.front().getDeviceDepthSimMap().getSize());
+        }
     }
 
 
@@ -319,14 +338,30 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         {
             const Tile& tile = tiles.at(i);
 
+            // add Sgm R camera to Device cache
             deviceCache.addCamera(tile.rc, depthMapParams.sgmParams.scale, ic, mp);
-            deviceCache.addCamera(tile.rc, depthMapParams.refineParams.scale, ic, mp);
 
+            // add Sgm T cameras to Device cache
             for(const int tc : tile.sgmTCams)
                 deviceCache.addCamera(tc, depthMapParams.sgmParams.scale, ic, mp);
 
-            for(const int tc : tile.refineTCams)
-                deviceCache.addCamera(tc, depthMapParams.refineParams.scale, ic, mp);
+            if(depthMapParams.useRefine)
+            {
+                // add Refine R camera to Device cache
+                deviceCache.addCamera(tile.rc, depthMapParams.refineParams.scale, ic, mp);
+
+                // add Refine T cameras to Device cache
+                for(const int tc : tile.refineTCams)
+                    deviceCache.addCamera(tc, depthMapParams.refineParams.scale, ic, mp);
+            }
+
+            if(depthMapParams.sgmParams.scale != 1 && (!depthMapParams.useRefine || depthMapParams.refineParams.scale != 1))
+            {
+              // add SGM R camera at scale 1 to Device cache.
+              // R camera parameters at scale 1 are required for SGM retrieve best depth
+              // TODO: Add only camera parameters to Device cache
+              deviceCache.addCamera(tile.rc, 1, ic, mp);
+            }
         }
 
         // wait for camera loading in device cache
@@ -348,7 +383,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             CudaHostMemoryHeap<float2, 2>& tileDepthSimMap_hmh = depthSimMapTilePerCam.at(batchCamIndex).at(tile.id);
 
             // check T cameras
-            if(tile.sgmTCams.empty() || tile.refineTCams.empty()) // no T camera found
+            if(tile.sgmTCams.empty() || (depthMapParams.useRefine && tile.refineTCams.empty())) // no T camera found
             {
                 resetDepthSimMap(tileDepthSimMap_hmh);
                 continue;
@@ -382,11 +417,19 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             sgm.sgmRc(tile, sgmDepthList);
 
             // compute Refine
-            Refine& refine = refinePerStream.at(streamIndex);
-            refine.refineRc(tile, sgm.getDeviceDepthSimMap());
-            
-            // copy depth/similarity map from device to host
-            tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
+            if(depthMapParams.useRefine)
+            {
+              Refine& refine = refinePerStream.at(streamIndex);
+              refine.refineRc(tile, sgm.getDeviceDepthSimMap());
+
+              // copy Refine depth/similarity map from device to host
+              tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
+            }
+            else
+            {
+              // copy Sgm depth/similarity map from device to host
+              tileDepthSimMap_hmh.copyFrom(sgm.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));
+            }
         }
 
         // wait for tiles batch computation
@@ -404,7 +447,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         for(int c = firstRc; c <= lastRc; ++c)
         {
           const int batchCamIndex = c % nbRcPerBatch;
-          writeDepthSimMapFromTileList(c, mp, depthMapParams.tileParams, tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
+
+          if(depthMapParams.useRefine)
+            writeDepthSimMapFromTileList(c, mp, depthMapParams.tileParams, tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
+          else
+            writeDepthSimMapFromTileList(c, mp, depthMapParams.tileParams, tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY);
 
           if(depthMapParams.sgmParams.exportIntermediateResults || depthMapParams.refineParams.exportIntermediateResults)
               exportDepthSimMapTilePatternObj(c, mp, tileRoiList, depthMinMaxTilePerCam.at(batchCamIndex));
@@ -422,7 +469,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");
             }
 
-            if(depthMapParams.refineParams.exportIntermediateResults)
+            if(depthMapParams.useRefine && depthMapParams.refineParams.exportIntermediateResults)
             {
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_sgmUpscaled");
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
