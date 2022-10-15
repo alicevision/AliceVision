@@ -18,6 +18,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/preprocessor/stringize.hpp>
 
 #include <cstring>
 #include <stdexcept>
@@ -1125,7 +1126,13 @@ std::string getAliceVisionRoot()
     if (!aliceVisionRootOverride.empty())
         return aliceVisionRootOverride;
     const char* value = std::getenv("ALICEVISION_ROOT");
-    return value ? value : "";
+    if (value)
+        return value;
+#ifdef ALICEVISION_DEFAULT_ROOT
+    return BOOST_PP_STRINGIZE(ALICEVISION_DEFAULT_ROOT);
+#else
+    return "";
+#endif
 }
 
 std::string getAliceVisionOCIOConfig()

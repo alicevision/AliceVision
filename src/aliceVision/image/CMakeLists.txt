@@ -42,6 +42,8 @@ alicevision_add_library(aliceVision_image
     Boost::filesystem
   PRIVATE_INCLUDE_DIRS
     ${OPENEXR_INCLUDE_DIR}
+  PRIVATE_DEFINITIONS
+    -DALICEVISION_DEFAULT_ROOT=${CMAKE_INSTALL_PREFIX}
 )
 
 # Install config.ocio
