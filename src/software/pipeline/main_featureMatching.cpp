@@ -506,22 +506,7 @@ int aliceVision_main(int argc, char **argv)
         randomNumberGenerator,
         guidedMatching);
 
-      // perform an additional check to remove pairs with poor overlap
-      std::vector<PairwiseMatches::key_type> toRemoveVec;
-      for(PairwiseMatches::const_iterator iterMap = geometricMatches.begin();
-        iterMap != geometricMatches.end(); ++iterMap)
-      {
-        const size_t putativePhotometricCount = mapPutativesMatches.find(iterMap->first)->second.getNbAllMatches();
-        const size_t putativeGeometricCount = iterMap->second.getNbAllMatches();
-        const float ratio = putativeGeometricCount / (float)putativePhotometricCount;
-        if (putativeGeometricCount < 50 || ratio < .3f)
-          toRemoveVec.push_back(iterMap->first); // the image pair will be removed
-      }
-
-      // remove discarded pairs
-      for(std::vector<PairwiseMatches::key_type>::const_iterator iter = toRemoveVec.begin();
-          iter != toRemoveVec.end(); ++iter)
-        geometricMatches.erase(*iter);
+      removePoorlyOverlappingImagePairs(geometricMatches, mapPutativesMatches, 0.3f, 50);
     }
     break;
 
