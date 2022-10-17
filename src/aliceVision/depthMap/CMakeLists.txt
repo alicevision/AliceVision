@@ -49,6 +49,7 @@ set(depthMap_cuda_host_sources
 set(depthMap_cuda_device_headers
   cuda/device/buffer.cuh
   cuda/device/color.cuh
+  cuda/device/eig33.cuh
   cuda/device/matrix.cuh
   cuda/device/operators.cuh
   cuda/device/Patch.cuh
@@ -71,7 +72,7 @@ set(depthMap_cuda_imageProcessing_sources
 
 # normalMapping CUDA Headers Only
 set(depthMap_cuda_normalMapping_headers
-  cuda/normalMapping/eig33.cuh
+  cuda/normalMapping/deviceNormalMapKernels.cuh
 )
 
 # normalMapping CUDA Sources
