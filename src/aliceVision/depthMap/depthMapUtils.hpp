@@ -27,6 +27,14 @@ namespace depthMap {
 void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
 
 /**
+ * @brief Copy an image from device memory to host memory and write on disk.
+ * @note  This function can be useful for code analysis and debugging.
+ * @param[in] in_img_dmp the image in device memory
+ * @param[in] path the path of the output image on disk
+ */
+void writeDeviceImage(const CudaDeviceMemoryPitched<float3, 2>& in_img_dmp, const std::string& path);
+
+/**
  * @brief Reset a depth/similarity map in host memory to the given default depth and similarity.
  * @param[in,out] inout_depthSimMap_hmh the depth/similarity map in host memory
  * @param[in] depth the depth reset value
