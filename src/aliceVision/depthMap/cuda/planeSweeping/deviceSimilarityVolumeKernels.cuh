@@ -160,7 +160,8 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
                                      int wsh, 
                                      float gammaC, 
                                      float gammaP, 
-                                     const float2* in_midDepthSimMap_d, int in_midDepthSimMap_p, 
+                                     const float2* in_midDepthSimMap_d, int in_midDepthSimMap_p,
+                                     const float3* in_normalMap_d, int in_normalMap_p,
                                      TSimRefine* inout_volSim_d, int inout_volSim_s, int inout_volSim_p, 
                                      const Range depthRange,
                                      const ROI roi)
@@ -203,7 +204,36 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     Patch ptch;
     ptch.p = p;
     ptch.d = computePixSize(rcDeviceCamId, p);
-    computeRotCSEpip(rcDeviceCamId, tcDeviceCamId, ptch);
+
+    // computeRotCSEpip
+    {
+      // Vector from the reference camera to the 3d point
+      float3 v1 = constantCameraParametersArray_d[rcDeviceCamId].C - ptch.p;
+      // Vector from the target camera to the 3d point
+      float3 v2 = constantCameraParametersArray_d[tcDeviceCamId].C - ptch.p;
+      normalize(v1);
+      normalize(v2);
+
+      // y has to be ortogonal to the epipolar plane
+      // n has to be on the epipolar plane
+      // x has to be on the epipolar plane
+
+      ptch.y = cross(v1, v2);
+      normalize(ptch.y);
+
+      if(in_normalMap_d != nullptr) // initialize patch normal from input normal map
+      {
+        ptch.n = *get2DBufferAt(in_normalMap_d, in_normalMap_p, vx, vy);
+      }
+      else // initialize patch normal from v1 & v2
+      {
+        ptch.n = (v1 + v2) / 2.0f;
+        normalize(ptch.n);
+      }
+
+      ptch.x = cross(ptch.y, ptch.n);
+      normalize(ptch.x);
+    }
 
     // compute similarity
     // TODO: this function should return a similarity value between -1 and 0 or 1 for infinite.

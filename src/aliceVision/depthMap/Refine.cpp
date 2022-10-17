@@ -41,6 +41,10 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
     _refinedDepthSimMap_dmp.allocate(depthSimMapDim);
     _optimizedDepthSimMap_dmp.allocate(depthSimMapDim);
 
+    // allocate normal map in device memory
+    if(refineParams.useNormalMap)
+      _normalMap_dmp.allocate(depthSimMapDim);
+
     // compute volume maximum dimensions
     const CudaSize<3> volDim(maxTileWidth, maxTileHeight, _refineParams.nDepthsToRefine);
 
@@ -62,6 +66,7 @@ double Refine::getDeviceMemoryConsumption() const
     bytes += _sgmDepthPixSizeMap_dmp.getBytesPadded();
     bytes += _refinedDepthSimMap_dmp.getBytesPadded();
     bytes += _optimizedDepthSimMap_dmp.getBytesPadded();
+    bytes += _normalMap_dmp.getBytesPadded();
     bytes += _volumeRefineSim_dmp.getBytesPadded();
 
     if(_refineParams.doRefineOptimization)
@@ -80,6 +85,7 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     bytes += _sgmDepthPixSizeMap_dmp.getBytesUnpadded();
     bytes += _refinedDepthSimMap_dmp.getBytesUnpadded();
     bytes += _optimizedDepthSimMap_dmp.getBytesUnpadded();
+    bytes += _normalMap_dmp.getBytesUnpadded();
     bytes += _volumeRefineSim_dmp.getBytesUnpadded();
 
     if(_refineParams.doRefineOptimization)
@@ -114,6 +120,13 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
 
         // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
         cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
+
+        // compute normal map from upscaled depth/pixSize map if needed
+        if(_refineParams.useNormalMap)
+        {
+            cuda_depthSimMapComputeNormal(_normalMap_dmp, _sgmDepthPixSizeMap_dmp, rcDeviceCamera, downscaledRoi, _stream);
+            writeDeviceImage(_normalMap_dmp, getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::depthMap, _refineParams.scale, "Normal", tile.roi.x.begin, tile.roi.y.begin));
+        }
     }
 
     // refine and fuse depth/sim map
@@ -183,6 +196,7 @@ void Refine::refineAndFuseDepthSimMap(const Tile& tile)
 
         cuda_volumeRefineSimilarity(_volumeRefineSim_dmp, 
                                     _sgmDepthPixSizeMap_dmp,
+                                    (_refineParams.useNormalMap) ? &_normalMap_dmp : nullptr,
                                     rcDeviceCamera, 
                                     tcDeviceCamera,
                                     _refineParams, 

@@ -68,6 +68,7 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_v
  * @brief Refine the best similarity volume for the given RC / TC.
  * @param[out] inout_volSim_dmp the similarity volume in device memory
  * @param[in] in_midDepthSimMap_dmp the SGM upscaled depth/sim map (usefull to get middle depth) in device memory
+ * @param[in] in_normalMap_dmpPtr (or nullptr) The related normal map
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] tcDeviceCamera the T device camera
  * @param[in] refineParams the Refine parameters
@@ -77,6 +78,7 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_v
  */
 extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
                                         const CudaDeviceMemoryPitched<float2, 2>& in_midDepthSimMap_dmp,
+                                        const CudaDeviceMemoryPitched<float3, 2>* in_normalMap_dmpPtr,
                                         const DeviceCamera& rcDeviceCamera, 
                                         const DeviceCamera& tcDeviceCamera, 
                                         const RefineParams& refineParams, 

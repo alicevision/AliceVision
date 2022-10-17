@@ -111,6 +111,7 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
 
 extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
                                         const CudaDeviceMemoryPitched<float2, 2>& in_midDepthSimMap_dmp,
+                                        const CudaDeviceMemoryPitched<float3, 2>* in_normalMap_dmpPtr,
                                         const DeviceCamera& rcDeviceCamera, 
                                         const DeviceCamera& tcDeviceCamera, 
                                         const RefineParams& refineParams, 
@@ -137,6 +138,8 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
         float(refineParams.gammaP), 
         in_midDepthSimMap_dmp.getBuffer(), 
         in_midDepthSimMap_dmp.getBytesPaddedUpToDim(0), 
+        (in_normalMap_dmpPtr == nullptr) ? nullptr : in_normalMap_dmpPtr->getBuffer(),
+        (in_normalMap_dmpPtr == nullptr) ? 0 : in_normalMap_dmpPtr->getBytesPaddedUpToDim(0),
         inout_volSim_dmp.getBuffer(), 
         inout_volSim_dmp.getBytesPaddedUpToDim(1),
         inout_volSim_dmp.getBytesPaddedUpToDim(0), 
