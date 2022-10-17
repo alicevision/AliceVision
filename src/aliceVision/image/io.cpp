@@ -89,6 +89,8 @@ namespace
         char const* ALICEVISION_ROOT = std::getenv("ALICEVISION_ROOT");
         if (ALICEVISION_ROOT == NULL)
         {
+            // Output message with logging before throw as this function could be called before main.
+            ALICEVISION_LOG_ERROR("ALICEVISION_ROOT is not defined, embedded OCIO config file cannot be accessed.");
             ALICEVISION_THROW_ERROR("ALICEVISION_ROOT is not defined, embedded OCIO config file cannot be accessed.");
         }
         configOCIOFilePath = std::string(ALICEVISION_ROOT);
@@ -96,6 +98,7 @@ namespace
 
         if (!fs::exists(configOCIOFilePath))
         {
+            ALICEVISION_LOG_ERROR("Embedded OCIO configuration file: '" << configOCIOFilePath << "' cannot be accessed.");
             ALICEVISION_THROW_ERROR("Embedded OCIO configuration file: '" << configOCIOFilePath << "' cannot be accessed.");
         }
         else
