@@ -84,6 +84,34 @@ __host__ void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>&
     CHECK_CUDA_ERROR();
 }
 
+__host__ void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& out_normalMap_dmp,
+                                            const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
+                                            const DeviceCamera& rcDeviceCamera,
+                                            const ROI& roi,
+                                            cudaStream_t stream)
+{
+    // default parameters
+    const int wsh = 3;
+    const float gammaC = 1.0f;
+    const float gammaP = 1.0f;
+
+    const dim3 block(8, 8, 1);
+    const dim3 grid(divUp(roi.width(), block.x), divUp(roi.height(), block.y), 1);
+
+    depthSimMapComputeNormal_kernel<<<grid, block, 0, stream>>>(
+      rcDeviceCamera.getDeviceCamId(),
+      out_normalMap_dmp.getBuffer(),
+      out_normalMap_dmp.getPitch(),
+      in_depthSimMap_dmp.getBuffer(),
+      in_depthSimMap_dmp.getPitch(),
+      wsh,
+      gammaC,
+      gammaP,
+      roi);
+
+    CHECK_CUDA_ERROR();
+}
+
 __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp,
                                                       CudaDeviceMemoryPitched<float, 2>& inout_imgVariance_dmp,
                                                       CudaDeviceMemoryPitched<float, 2>& inout_tmpOptDepthMap_dmp,

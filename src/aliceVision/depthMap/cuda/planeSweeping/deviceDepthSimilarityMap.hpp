@@ -50,6 +50,20 @@ extern void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& i
                                            const ROI& roi,
                                            cudaStream_t stream);
 
+
+/**
+ * @brief Compute the normal map from the depth/sim map (only depth is used).
+ * @param[out] out_normalMap_dmp the output normal map
+ * @param[in] rcDeviceCamera the R device camera
+ * @param[in] roi the 2d region of interest
+ * @param[in] stream the stream for gpu execution
+ */
+extern void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& out_normalMap_dmp,
+                                          const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
+                                          const DeviceCamera& rcDeviceCamera,
+                                          const ROI& roi,
+                                          cudaStream_t stream);
+
 /**
  * @brief Optimize a depth/sim map with the refineFused depth/sim map and the SGM depth/pixSize map.
  * @param[out] out_depthSimMapOptimized_dmp the output optimized depth/sim map
