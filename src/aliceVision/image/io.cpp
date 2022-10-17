@@ -63,26 +63,28 @@ namespace
             }
         }
 
-        // To be uncommented to take OCIO env var in consideration before using the enbedded config file
-        //
-        //char const* OCIO = getenv("OCIO");
-        //if (OCIO != NULL)
-        //{
-        //    configOCIOFilePath = std::string(OCIO);
-        //    if (fs::exists(configOCIOFilePath))
-        //    {
-        //        ALICEVISION_LOG_TRACE("OCIO configuration file: '" << configOCIOFilePath << "' found.");
-        //        return configOCIOFilePath;
-        //    }
-        //    else if (configOCIOFilePath == "")
-        //    {
-        //        ALICEVISION_LOG_TRACE("OCIO is empty. Use embedded config...");
-        //    }
-        //    else
-        //    {
-        //        ALICEVISION_LOG_TRACE("OCIO does not point to an existing file. Use embedded config...");
-        //    }
-        //}
+        // To be enabled if we decide to take OCIO env var in consideration before using the enbedded config file
+        if(false)
+        {
+            char const* OCIO = std::getenv("OCIO");
+            if(OCIO != NULL)
+            {
+                configOCIOFilePath = std::string(OCIO);
+                if(fs::exists(configOCIOFilePath))
+                {
+                    ALICEVISION_LOG_TRACE("OCIO configuration file: '" << configOCIOFilePath << "' found.");
+                    return configOCIOFilePath;
+                }
+                else if(configOCIOFilePath == "")
+                {
+                    ALICEVISION_LOG_TRACE("OCIO is empty. Use embedded config...");
+                }
+                else
+                {
+                    ALICEVISION_LOG_TRACE("OCIO does not point to an existing file. Use embedded config...");
+                }
+            }
+        }
 
         char const* ALICEVISION_ROOT = std::getenv("ALICEVISION_ROOT");
         if (ALICEVISION_ROOT == NULL)
