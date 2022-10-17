@@ -330,7 +330,7 @@ __device__ static void cuda_tql2(double V0[], double V1[], double V2[], double d
     V2[2] = V[2][2];
 }
 
-__device__ void cuda_eigen_decomposition(double A[3][3], double V0[], double V1[], double V2[], double d[])
+__device__ static void cuda_eigen_decomposition(double A[3][3], double V0[], double V1[], double V2[], double d[])
 {
     double e[3];
 
