@@ -10,6 +10,8 @@
 #include <aliceVision/depthMap/cuda/device/buffer.cuh>
 #include <aliceVision/depthMap/cuda/device/matrix.cuh>
 #include <aliceVision/depthMap/cuda/device/Patch.cuh>
+#include <aliceVision/depthMap/cuda/device/eig33.cuh>
+#include <aliceVision/depthMap/cuda/device/DeviceCameraParams.hpp>
 
 #define ALICEVISION_DEPTHMAP_UPSCALE_NEAREST_NEIGHBOR
 
@@ -91,6 +93,13 @@ __device__ float2 getCellSmoothStepEnergy(int rcDeviceCamId, cudaTextureObject_t
         out.y = e;
 
     return out;
+}
+
+__device__ static inline float orientedPointPlaneDistanceNormalizedNormal(const float3& point,
+                                                                          const float3& planePoint,
+                                                                          const float3& planeNormalNormalized)
+{
+    return (dot(point, planeNormalNormalized) - dot(planePoint, planeNormalNormalized));
 }
 
 __global__ void depthSimMapCopyDepthOnly_kernel(float2* out_deptSimMap, int out_deptSimMap_p,
@@ -224,6 +233,81 @@ __global__ void depthSimMapComputePixSize_kernel(int rcDeviceCamId, float2* inou
     const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x, y), inout_depthPixSize->x);
 
     inout_depthPixSize->y = computePixSize(rcDeviceCamId, p);
+}
+
+__global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
+                                                float3* out_normalMap_d, int out_normalMap_p,
+                                                const float2* in_depthSimMap_d, int in_depthSimMap_p,
+                                                int wsh,
+                                                int gammaC,
+                                                int gammaP,
+                                                const ROI roi)
+{
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(roiX >= roi.width() || roiY >= roi.height())
+        return;
+
+    // corresponding image coordinates
+    const int x = roi.x.begin + roiX;
+    const int y = roi.y.begin + roiY;
+
+    // corresponding input depth
+    const float in_depth = get2DBufferAt(in_depthSimMap_d, in_depthSimMap_p, roiX, roiY)->x; // use only depth
+
+    // corresponding output normal
+    float3* out_normal = get2DBufferAt(out_normalMap_d, out_normalMap_p, roiX, roiY);
+
+    // no depth
+    if(in_depth <= 0.0f)
+    {
+        *out_normal = make_float3(-1.f, -1.f, -1.f);
+        return;
+    }
+
+    const int2 pix = make_int2(x, y);
+    const float3 p = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pix, in_depth);
+    const float pixSize = size(p - get3DPointForPixelAndDepthFromRC(rcDeviceCamId, make_int2(x + 1, y), in_depth));
+
+    cuda_stat3d s3d = cuda_stat3d();
+
+    for(int yp = -wsh; yp <= wsh; ++yp)
+    {
+        for(int xp = -wsh; xp <= wsh; ++xp)
+        {
+            const float depthP = get2DBufferAt(in_depthSimMap_d, in_depthSimMap_p, roiX + xp, roiY + yp)->x;  // use only depth
+
+            if((depthP > 0.0f) && (fabs(depthP - in_depth) < 30.0f * pixSize))
+            {
+                const float w = 1.0f;
+                const float2 pixP = make_float2(x + xp, y + yp);
+                const float3 pP = get3DPointForPixelAndDepthFromRC(rcDeviceCamId, pixP, depthP);
+                s3d.update(pP, w);
+            }
+        }
+    }
+
+    float3 pp = p;
+    float3 nn = make_float3(-1.f, -1.f, -1.f);
+
+    if(!s3d.computePlaneByPCA(pp, nn))
+    {
+        *out_normal = make_float3(-1.f, -1.f, -1.f);
+        return;
+    }
+
+    float3 nc = constantCameraParametersArray_d[rcDeviceCamId].C - p;
+    normalize(nc);
+
+    if(orientedPointPlaneDistanceNormalizedNormal(pp + nn, pp, nc) < 0.0f)
+    {
+        nn.x = -nn.x;
+        nn.y = -nn.y;
+        nn.z = -nn.z;
+    }
+
+    *out_normal = nn;
 }
 
 __global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* out_varianceMap, int out_varianceMap_p, const ROI roi)
