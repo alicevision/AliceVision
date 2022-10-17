@@ -32,45 +32,59 @@ namespace
     {
         std::string configOCIOFilePath = "";
 
-        char const* ALICEVISION_OCIO = getenv("ALICEVISION_OCIO");
+        char const* ALICEVISION_OCIO = std::getenv("ALICEVISION_OCIO");
         if (ALICEVISION_OCIO != NULL)
         {
             configOCIOFilePath = std::string(ALICEVISION_OCIO);
             if (fs::exists(configOCIOFilePath))
             {
-                ALICEVISION_LOG_TRACE("ALICEVISION_OCIO configuration file: '" << configOCIOFilePath << "' found.");
-                return configOCIOFilePath;
+                // Check if a sRGB linear color space named "scene-linear Rec.709-sRGB" is present and set as scene_linear role 
+                oiio::ColorConfig colorConfig(configOCIOFilePath);
+                const std::string linearColorSpace = colorConfig.getColorSpaceNameByRole("scene_linear");
+                if (linearColorSpace == "scene-linear Rec.709-sRGB")
+                {
+                    ALICEVISION_LOG_TRACE("ALICEVISION_OCIO configuration file: '" << configOCIOFilePath << "' found.");
+                    return configOCIOFilePath;
+                }
+                else
+                {
+                    ALICEVISION_LOG_WARNING("ALICEVISION_OCIO configuration file is not valid: '" << configOCIOFilePath << "'.\n"
+                                            "The scene_linear role named \"scene-linear Rec.709-sRGB\" is required.\n"
+                                            "Skip this OCIO configuration file and use the embedded one.");
+                }
             }
-            else if (configOCIOFilePath == "")
+            else if (configOCIOFilePath.empty())
             {
-                ALICEVISION_LOG_TRACE("ALICEVISION_OCIO is empty. Try OCIO...");
+                ALICEVISION_LOG_TRACE("ALICEVISION_OCIO is empty.");
             }
             else
             {
-                ALICEVISION_LOG_TRACE("ALICEVISION_OCIO does not point to an existing file. Try OCIO...");
+                ALICEVISION_LOG_WARNING("ALICEVISION_OCIO is defined but does not point to an existing file: '" << configOCIOFilePath << "'");
             }
         }
 
-        char const* OCIO = getenv("OCIO");
-        if (OCIO != NULL)
-        {
-            configOCIOFilePath = std::string(OCIO);
-            if (fs::exists(configOCIOFilePath))
-            {
-                ALICEVISION_LOG_TRACE("OCIO configuration file: '" << configOCIOFilePath << "' found.");
-                return configOCIOFilePath;
-            }
-            else if (configOCIOFilePath == "")
-            {
-                ALICEVISION_LOG_TRACE("OCIO is empty. Use embedded config...");
-            }
-            else
-            {
-                ALICEVISION_LOG_TRACE("OCIO does not point to an existing file. Use embedded config...");
-            }
-        }
+        // To be uncommented to take OCIO env var in consideration before using the enbedded config file
+        //
+        //char const* OCIO = getenv("OCIO");
+        //if (OCIO != NULL)
+        //{
+        //    configOCIOFilePath = std::string(OCIO);
+        //    if (fs::exists(configOCIOFilePath))
+        //    {
+        //        ALICEVISION_LOG_TRACE("OCIO configuration file: '" << configOCIOFilePath << "' found.");
+        //        return configOCIOFilePath;
+        //    }
+        //    else if (configOCIOFilePath == "")
+        //    {
+        //        ALICEVISION_LOG_TRACE("OCIO is empty. Use embedded config...");
+        //    }
+        //    else
+        //    {
+        //        ALICEVISION_LOG_TRACE("OCIO does not point to an existing file. Use embedded config...");
+        //    }
+        //}
 
-        char const* ALICEVISION_ROOT = getenv("ALICEVISION_ROOT");
+        char const* ALICEVISION_ROOT = std::getenv("ALICEVISION_ROOT");
         if (ALICEVISION_ROOT == NULL)
         {
             ALICEVISION_THROW_ERROR("ALICEVISION_ROOT is not defined, embedded OCIO config file cannot be accessed.");
@@ -81,7 +95,6 @@ namespace
         if (!fs::exists(configOCIOFilePath))
         {
             ALICEVISION_THROW_ERROR("Embedded OCIO configuration file: '" << configOCIOFilePath << "' cannot be accessed.");
-            configOCIOFilePath = "";
         }
         else
         {
@@ -137,7 +150,7 @@ EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
         return EImageColorSpace::LINEAR;
     if(type == "srgb")
         return EImageColorSpace::SRGB;
-    if(type == "ACES2065-1")
+    if(type == "aces2065-1")
         return EImageColorSpace::ACES2065_1;
     if(type == "acescg")
         return EImageColorSpace::ACEScg;
@@ -162,7 +175,7 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
         case EImageColorSpace::SRGB:
             return "srgb";
         case EImageColorSpace::ACES2065_1:
-            return "ACES2065-1";
+            return "aces2065-1";
         case EImageColorSpace::ACEScg:
             return "acescg";
         case EImageColorSpace::LAB:
