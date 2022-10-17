@@ -513,7 +513,10 @@ int aliceVision_main(int argc, char * argv[])
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("metadataFolders", po::value<std::vector<std::string>>(&metadataFolders)->multitoken(),
-        "Use images metadata from specific folder(s) instead of those specified in the input images.")
+         "Use images metadata from specific folder(s) instead of those specified in the input images.")
+
+        ("keepImageFilename", po::value<bool>(&pParams.keepImageFilename)->default_value(pParams.keepImageFilename),
+         "Use original image names instead of view names when saving.")
 
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
@@ -706,12 +709,12 @@ int aliceVision_main(int argc, char * argv[])
             sfmData::View& view = sfmData.getView(viewId);
 
             const fs::path fsPath = viewPath;
+            const std::string fileName = fsPath.stem().string();
             const std::string fileExt = fsPath.extension().string();
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputfilePath = (fs::path(outputPath) / (std::to_string(viewId) + outputExt)).generic_string();
+            const std::string outputfilePath = (fs::path(outputPath) / ((pParams.keepImageFilename ? fileName : std::to_string(viewId)) + outputExt)).generic_string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
-
 
             image::ImageReadOptions options;
             options.workingColorSpace = workingColorSpace;
