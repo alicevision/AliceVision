@@ -48,6 +48,34 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
     imageIO::writeImage(path, int(imgSize.x()), int(imgSize.y()), img, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
 }
 
+void writeDeviceImage(const CudaDeviceMemoryPitched<float3, 2>& in_img_dmp, const std::string& path)
+{
+  const CudaSize<2>& imgSize = in_img_dmp.getSize();
+
+  // copy image from device pitched memory to host memory
+  CudaHostMemoryHeap<float3, 2> img_hmh(imgSize);
+  img_hmh.copyFrom(in_img_dmp);
+
+  // copy image from host memory to a vector
+  std::vector<ColorRGBf> img(imgSize.x() * imgSize.y(), {0.f,0.f,0.f});
+
+  for(size_t x = 0; x < imgSize.x(); ++x)
+  {
+      for(size_t y = 0; y < imgSize.y(); ++y)
+      {
+          const float3& rgba_hmh = img_hmh(x, y);
+          ColorRGBf& rgb = img.at(y * imgSize.x() + x);
+          rgb.r = rgba_hmh.x;
+          rgb.g = rgba_hmh.y;
+          rgb.b = rgba_hmh.z;
+      }
+  }
+
+  // write the vector buffer
+  using namespace imageIO;
+  imageIO::writeImage(path, int(imgSize.x()), int(imgSize.y()), img, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+}
+
 void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth, float sim)
 {
   const CudaSize<2>& depthSimMapSize = inout_depthSimMap_hmh.getSize();
