@@ -197,7 +197,7 @@ jobs:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release'
+          buildWithCMakeArgs: '--config Release --target install'
           cmakeAppendedArgs: -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                              -DBUILD_SHARED_LIBS:BOOL=ON
                              -DTARGET_ARCHITECTURE=core
