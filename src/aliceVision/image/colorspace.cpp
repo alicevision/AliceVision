@@ -26,7 +26,13 @@ namespace
 
 oiio::ColorConfig& getGlobalColorConfigOCIO()
 {
-	return colorConfigOCIO;
+    return colorConfigOCIO;
+}
+
+std::string getColorConfigFilePathFromSourceCode()
+{
+    const fs::path moduleFolder = fs::path(__FILE__).parent_path();
+    return (moduleFolder / "share/aliceVision/config.ocio").string();
 }
 
 std::string getDefaultColorConfigFilePath()
@@ -90,6 +96,12 @@ std::string getDefaultColorConfigFilePath()
     char const* ALICEVISION_ROOT = std::getenv("ALICEVISION_ROOT");
     if (ALICEVISION_ROOT == NULL)
     {
+        const std::string configFromSource = getColorConfigFilePathFromSourceCode();
+        if(fs::exists(configFromSource))
+        {
+            ALICEVISION_LOG_DEBUG("ALICEVISION_ROOT is not defined, use embedded OCIO config file from source code: " << configFromSource);
+            return configFromSource;
+        }
         // Output message with logging before throw as this function could be called before main.
         ALICEVISION_LOG_ERROR("ALICEVISION_ROOT is not defined, embedded OCIO config file cannot be accessed.");
         ALICEVISION_THROW_ERROR("ALICEVISION_ROOT is not defined, embedded OCIO config file cannot be accessed.");
@@ -99,6 +111,12 @@ std::string getDefaultColorConfigFilePath()
 
     if (!fs::exists(configOCIOFilePath))
     {
+        const std::string configFromSource = getColorConfigFilePathFromSourceCode();
+        if(fs::exists(configFromSource))
+        {
+            ALICEVISION_LOG_DEBUG("Embedded OCIO config file in ALICEVISION_ROOT does not exist, use config from source code: " << configFromSource);
+            return configFromSource;
+        }
         ALICEVISION_LOG_ERROR("Embedded OCIO configuration file: '" << configOCIOFilePath << "' cannot be accessed.");
         ALICEVISION_THROW_ERROR("Embedded OCIO configuration file: '" << configOCIOFilePath << "' cannot be accessed.");
     }
