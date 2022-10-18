@@ -878,7 +878,9 @@ else()
               PROPERTY FOLDER AliceVision
               )
 
-      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+      if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/doc)
+        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+      endif()
 
     endif()
   endif()
