@@ -27,10 +27,10 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-class IntrinsicsSymbolicParameterization : public ceres::LocalParameterization {
+class IntrinsicsSymbolicManifold : public ceres::Manifold {
  public:
-  explicit IntrinsicsSymbolicParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
-  : _globalSize(parametersSize),
+  explicit IntrinsicsSymbolicManifold(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+  : _ambientSize(parametersSize),
     _focalRatio(focalRatio),
     _lockFocal(lockFocal),
     _lockFocalRatio(lockFocalRatio),
@@ -58,7 +58,7 @@ class IntrinsicsSymbolicParameterization : public ceres::LocalParameterization {
         }
         else
         {
-            _localSize += 1;
+            _tangentSize += 1;
         }
     }
 
@@ -73,7 +73,7 @@ class IntrinsicsSymbolicParameterization : public ceres::LocalParameterization {
     }
   }
 
-  virtual ~IntrinsicsSymbolicParameterization() = default;
+  virtual ~IntrinsicsSymbolicManifold() = default;
 
 
   virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
@@ -134,7 +134,7 @@ class IntrinsicsSymbolicParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  virtual bool ComputeJacobian(const double* x, double* jacobian) const override
+  virtual bool PlusJacobian(const double* x, double* jacobian) const override
   {    
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, AmbientSize(), TangentSize());
 
@@ -191,11 +191,13 @@ class IntrinsicsSymbolicParameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  bool Minus(const double* y, const double* x, double* delta) const override {
+  bool Minus(const double* y, const double* x, double* delta) const override 
+  {
     throw std::invalid_argument("IntrinsicsManifold::Minus() should never be called");
   }
 
-  bool MinusJacobian(const double* x, double* jacobian) const override {
+  bool MinusJacobian(const double* x, double* jacobian) const override 
+  {
     throw std::invalid_argument("IntrinsicsManifold::MinusJacobian() should never be called");
   }
 
@@ -757,8 +759,12 @@ void BundleAdjustmentSymbolicCeres::addIntrinsicsToProblem(const sfmData::SfMDat
       lockDistortion = true;
     }
 
-    IntrinsicsSymbolicParameterization* subsetParameterization = new IntrinsicsSymbolicParameterization(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
-    problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);    
+    IntrinsicsSymbolicManifold* subsetManifold = new IntrinsicsSymbolicManifold(intrinsicBlock.size(), focalRatio, lockFocal, lockRatio, lockCenter, lockDistortion);
+#if ALICEVISION_CERES_HAS_MANIFOLD
+    problem.SetManifold(intrinsicBlockPtr, subsetManifold);
+#else
+    problem.SetParameterization(intrinsicBlockPtr, new utils::ManifoldToParameterizationWrapper(subsetManifold));
+#endif
 
     _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
   }

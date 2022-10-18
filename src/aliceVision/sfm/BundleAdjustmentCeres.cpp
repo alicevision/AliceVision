@@ -31,28 +31,28 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-class IntrinsicsParameterization : public ceres::LocalParameterization {
+class IntrinsicsManifold : public ceres::Manifold {
 public:
-    explicit IntrinsicsParameterization(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
-        : _globalSize(parametersSize),
+    explicit IntrinsicsManifold(size_t parametersSize, double focalRatio, bool lockFocal, bool lockFocalRatio, bool lockCenter, bool lockDistortion)
+        : _ambientSize(parametersSize),
         _focalRatio(focalRatio),
         _lockFocal(lockFocal),
         _lockFocalRatio(lockFocalRatio),
         _lockCenter(lockCenter),
         _lockDistortion(lockDistortion)
     {
-        _distortionSize = _globalSize - 4;
-        _localSize = 0;
+        _distortionSize = _ambientSize - 4;
+        _tangentSize = 0;
 
         if (!_lockFocal)
         {
             if (_lockFocalRatio)
             {
-                _localSize += 1;
+                _tangentSize += 1;
             }
             else
             {
-                _localSize += 2;
+                _tangentSize += 2;
             }
         }
         else
@@ -62,27 +62,27 @@ public:
             }
             else
             {
-                _localSize += 1;
+                _tangentSize += 1;
             }
         }
 
         if (!_lockCenter)
         {
-            _localSize += 2;
+            _tangentSize += 2;
         }
 
         if (!_lockDistortion)
         {
-            _localSize += _distortionSize;
+            _tangentSize += _distortionSize;
         }
     }
 
-    virtual ~IntrinsicsParameterization() = default;
+    virtual ~IntrinsicsManifold() = default;
 
 
     bool Plus(const double* x, const double* delta, double* x_plus_delta) const override
     {
-        for (int i = 0; i < _globalSize; i++)
+        for (int i = 0; i < _ambientSize; i++)
         {
             x_plus_delta[i] = x[i];
         }
@@ -138,9 +138,9 @@ public:
         return true;
     }
 
-    bool ComputeJacobian(const double* x, double* jacobian) const override
+    bool PlusJacobian(const double* x, double* jacobian) const override
     {
-        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, GlobalSize(), LocalSize());
+        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian, AmbientSize(), TangentSize());
 
         J.fill(0);
 
@@ -195,20 +195,30 @@ public:
         return true;
     }
 
-    int GlobalSize() const override
+    bool Minus(const double* y, const double* x, double* delta) const override
     {
-        return _globalSize;
+        throw std::invalid_argument("IntrinsicsManifold::Minus() should never be called");
     }
 
-    int LocalSize() const override
+    bool MinusJacobian(const double* x, double* jacobian) const override 
     {
-        return _localSize;
+        throw std::invalid_argument("IntrinsicsManifold::MinusJacobian() should never be called");
+    }
+
+    int AmbientSize() const override
+    {
+        return _ambientSize;
+    }
+
+    int TangentSize() const override
+    {
+        return _tangentSize;
     }
 
 private:
     size_t _distortionSize;
-    size_t _globalSize;
-    size_t _localSize;
+    size_t _ambientSize;
+    size_t _tangentSize;
     double _focalRatio;
     bool _lockFocal;
     bool _lockFocalRatio;

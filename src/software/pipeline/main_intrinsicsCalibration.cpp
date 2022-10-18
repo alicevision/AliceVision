@@ -251,7 +251,7 @@ bool process_innerGrids(sfmData::SfMData& sfmData, std::map<IndexT, calibration:
 
         //Create pose
         sfmData::CameraPose newPose(geometry::Pose3(R, -R.transpose() * t));
-        newPose.setDistance(distances[pos_view]);
+        //newPose.setDistance(distances[pos_view]);
         sfmData.getPoses()[viewId] = newPose;
         view->setPoseId(viewId);
         pos_view++;

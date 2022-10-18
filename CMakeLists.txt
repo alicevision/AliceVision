@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 project(aliceVision LANGUAGES C CXX)
-
+set(GFLAGS_USE_TARGET_NAMESPACE TRUE)
 option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
 set(AV_BUILD_DEPENDENCIES_PARALLEL 1
     CACHE STRING "Number of cores to use when building dependencies (0 - use the number of cores of the processor)")
