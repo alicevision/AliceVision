@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <boost/math/constants/constants.hpp>
 
 namespace aliceVision {
 namespace geometry {
@@ -107,7 +108,7 @@ inline Pose3 poseFromRT(const Mat3& R, const Vec3& t)
 inline Pose3 randomPose()
 {
     using namespace Eigen;
-    Vec3 rAngles = Vec3::Random() * M_PI;
+    Vec3 rAngles = Vec3::Random() * boost::math::constants::pi<double>();
     Mat3 R(AngleAxisd(rAngles(0), Vec3::UnitZ())
           * AngleAxisd(rAngles(1), Vec3::UnitY())
           * AngleAxisd(rAngles(2), Vec3::UnitZ()));
