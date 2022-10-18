@@ -14,8 +14,9 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 
-#include <vector>
 #include <map>
+#include <random>
+#include <vector>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -89,6 +90,19 @@ void robustModelEstimation(
     ++progressDisplay;
   }
 }
+
+/**
+ * @brief removePoorlyOverlappingImagePairs Removes image pairs from the given list of geometric
+ *  matches that have poor overlap according to the supplied criteria.
+ * @param[in,out] geometricMatches List of geometric matches to clean up
+ * @param putativeMatches List of putative matches
+ * @param minimumRatio Minimum ratio of geometric to putative matches for image pair
+ * @param minimumCount Minimum count of geometric matches for image pair
+ */
+void removePoorlyOverlappingImagePairs(PairwiseMatches& geometricMatches,
+                                       const PairwiseMatches& putativeMatches,
+                                       float minimumRatio,
+                                       std::size_t minimumGeometricCount);
 
 } // namespace matchingImageCollection
 } // namespace aliceVision

@@ -20,6 +20,7 @@ set(matching_collection_images_files_sources
   matchingCommon.cpp
   ImageCollectionMatcher_generic.cpp
   ImageCollectionMatcher_cascadeHashing.cpp
+  GeometricFilter.cpp
   GeometricFilterMatrix_HGrowing.cpp
   geometricFilterUtils.cpp
   pairBuilder.cpp
