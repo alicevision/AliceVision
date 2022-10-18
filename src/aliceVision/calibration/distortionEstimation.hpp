@@ -17,6 +17,7 @@ namespace calibration {
 struct LineWithPoints
 {
     int index;
+    int board;
     bool horizontal;
     double angle;
     double dist;
@@ -39,13 +40,7 @@ struct Statistics
 /**
  * Estimate the parameters of a camera (mostly distortion, from a set of line aligned points)
  */
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<LineWithPoints> & lines, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
-
-/**
- * Estimate the parameters of a camera (mostly distortion, from a set of pairs of <distorted points, undistorted points>)
- */
-bool estimate(std::shared_ptr<camera::Pinhole> & cameraToEstimate, Statistics & statistics, std::vector<PointPair> & points, bool lockScale, bool lockCenter, const std::vector<bool> & lockDistortions);
-
+bool estimate(std::shared_ptr<camera::Undistortion>& undistortionToEstimate, Statistics& statistics, std::vector<LineWithPoints>& lines, bool lockCenter, const std::vector<bool>& lockDistortions);
 
 }//namespace calibration
 }//namespace aliceVision
