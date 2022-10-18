@@ -170,7 +170,7 @@ public:
 
 private:
 
-  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation);
+  void addPose(const sfmData::CameraPose& cameraPose, bool isConstant, SE3::Matrix & poseBlock, ceres::Problem& problem, bool refineTranslation, bool refineRotation, bool constraintPosition);
 
   /**
    * @brief Clear structures for a new problem
@@ -185,6 +185,8 @@ private:
     _landmarksBlocks.clear();
     _rigBlocks.clear();
     _linearSolverOrdering.Clear();
+    _undistortionParametersBlocks.clear();
+    _undistortionOffsetBlocks.clear();
   }
 
   /**
@@ -208,6 +210,14 @@ private:
    * @param[out] problem The Ceres bundle adjustement problem
    */
   void addIntrinsicsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
+   * @brief Create a parameter block for each undistortions according to the Ceres format
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the undistortions
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addUndistortionsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
    * @brief Create a residual block for each landmarks according to the Ceres format
@@ -254,6 +264,8 @@ private:
     return (_localGraph != nullptr ? _localGraph->getIntrinsicState(intrinsicId) : BundleAdjustment::EParameterState::REFINED);
   }
 
+
+
   /**
    * @brief Return the BundleAdjustment::EParameterState for a specific landmark.
    * @param[in] landmarkId The landmark id
@@ -289,6 +301,8 @@ private:
   /// intrinsics blocks wrapper
   /// block: intrinsics params
   HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
+  HashMap<IndexT, std::vector<double>> _undistortionParametersBlocks;
+  HashMap<IndexT, Vec2> _undistortionOffsetBlocks;
   /// landmarks blocks wrapper
   /// block: 3d position(3)
   HashMap<IndexT, std::array<double,3>> _landmarksBlocks;
