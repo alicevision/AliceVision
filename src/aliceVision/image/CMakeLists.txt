@@ -5,6 +5,7 @@ set(image_files_headers
   all.hpp
   Image.hpp
   imageAlgo.hpp
+  colorspace.hpp
   concat.hpp
   convertion.hpp
   convolutionBase.hpp
@@ -23,6 +24,7 @@ set(image_files_headers
 
 # Sources
 set(image_files_sources
+  colorspace.cpp
   convolution.cpp
   filtering.cpp
   io.cpp
