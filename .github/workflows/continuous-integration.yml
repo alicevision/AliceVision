@@ -27,6 +27,7 @@ jobs:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
+      ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
     steps:
       - uses: actions/checkout@v1
 
@@ -106,6 +107,7 @@ jobs:
       # tripletPath: '${{ github.workspace }}\..\vcpkg\triplets\community\x64-windows-release.cmake'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
+      ALICEVISION_ROOT: '${{ github.workspace }}/install'
       COMMIT_ID: 8e8a3d7c1a6f7f587b486663b1e814911e6f2342
     steps:
       - name: Checkout
@@ -195,10 +197,11 @@ jobs:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release'
+          buildWithCMakeArgs: '--config Release --target install'
           cmakeAppendedArgs: -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                              -DBUILD_SHARED_LIBS:BOOL=ON
                              -DTARGET_ARCHITECTURE=core
+                             -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
                              -DALICEVISION_BUILD_TESTS:BOOL=ON
                              -DALICEVISION_BUILD_EXAMPLES:BOOL=ON
                              -DALICEVISION_USE_OPENCV:BOOL=ON
@@ -219,6 +222,7 @@ jobs:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target RUN_TESTS'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
           # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
           useVcpkgToolchainFile: true

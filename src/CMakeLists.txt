@@ -330,10 +330,6 @@ endif()
 find_package(OpenImageIO 2.0.9 REQUIRED)
 if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
   message(STATUS "OpenImageIO found.")
-  if(UNIX)
-    # Add DL dependency on linux
-    set(OPENIMAGEIO_LIBRARIES "${OPENIMAGEIO_LIBRARIES};dl")
-  endif()
 else()
   message(SEND_ERROR "Failed to find OpenImageIO.")
 endif()
@@ -882,7 +878,9 @@ else()
               PROPERTY FOLDER AliceVision
               )
 
-      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+      if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/doc)
+        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+      endif()
 
     endif()
   endif()

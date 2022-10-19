@@ -1,0 +1,144 @@
+ocio_profile_version: 2
+
+#
+# Note: this is not intended to be a complete production-ready config, its purpose is to
+# introduce many of the new features in OCIO v2.
+#
+
+description: A config to convert color space in AliceVision.
+name:        OCIOv2-AliceVision
+
+#
+# This config does not require any external files.
+#
+search_path: ""
+
+#
+# Defining the environment (even if empty) in the config can be a performance boost.
+#
+environment: {}
+
+#
+# The family separator is the character used to seprate colorspace family attributes into 
+# tokens or levels for hierarchical menus.  (The "/" character is also the default.)
+#
+family_separator: /
+
+#
+# Roles
+#
+roles:
+  #
+  # Please define the two interchange roles.  This will allow OCIO to convert pixels that are in
+  # a color space from another config (that also implements these roles) into a color space in
+  # this config.
+  #
+  aces_interchange: ACES2065-1
+  #cie_xyz_d65_interchange: CIE-XYZ D65
+  #
+  # (As this is just a demo, not all the usual roles have been defined.)
+  #
+  #color_timing: ACEScct
+  #compositing_log: ACEScct
+  #data: Raw
+  default: scene-linear Rec.709-sRGB
+  scene_linear: scene-linear Rec.709-sRGB
+
+#
+# The File Rules allow you to configure default behavior for applications importing image files.
+#
+file_rules:
+    #
+    # The next rule assigns the colorspace "ACEScg" to any files that contain "acescg" or "ACEScg" in the path.
+    #
+  - !<Rule> {name: ACEScg, colorspace: ACEScg, regex: "acescg|ACEScg"}
+    #
+    # The next rule assigns the colorspace "ACES" to any file that contain "aces or "ACES" in the path.
+    #
+  - !<Rule> {name: ACES, colorspace: ACES, regex: "aces|ACES"}
+    #
+    # The rules are ordered, highest priority first.  OCIO takes the path to a file and applies
+    # the rules one-by-one until there is a match.  The last rule, "Default", always matches.
+    # In this case the colorspace is assigned to the colorspace used by the "default" role.
+    #
+  - !<Rule> {name: Default, colorspace: default}
+
+displays:
+  linear:
+    - !<View> {name: Lin, colorspace: ACEScg}
+  log:
+    - !<View> {name: Log, colorspace: sRGB}
+
+# 
+# The next config section is the traditional section for colorspaces that are defined relative to a
+# scene-referred connection space.  This section may be placed either before or after the display
+# colorspaces, based on which you prefer appear first in colorspace menus.
+#
+colorspaces:
+    #
+    # Note that colorspaces may have some new attributes in OCIO v2 including categories and encoding.
+    # The categories are intended to indicate which colorspace menus in an application should include
+    # a given colorspace.  The categories may come both from the application and from the end-user.
+    # Application-defined categories such as "file-io" or "working-space" indicate which menus in the
+    # application the colorspaces will appear in.  The application categories are intended to be 
+    # combined with the encodings.  So for example, an application might filter by "working-space" as
+    # a category and "scene-linear" as an encoding to get all the scene-linear working space options
+    # to display in a certain menu.  User-defined categories such as "basic-3d" or "advanced-2d" 
+    # indicate what type or artist should see those colorspaces.  OCIO uses the intersection of the 
+    # application categories (combined with the encoding) along with the user categories to filter
+    # the list of colorspaces.  Note that the user categories are intended to be set via an environment
+    # variable based on the type of artist using the application.  OCIO does not yet provide an official 
+    # list of categories, so it will be up to application developers and config authors to determine
+    # what strings to use.  OCIO does however provide a specific list of allowed encoding strings.
+    #
+    #
+    # OCIO v2 introduces an "aliases" property that may be used to define synonyms for the canonical
+    # colorspace name.  This may be used to define short names that are easier to embed in file paths
+    # or to handle backwards compatibility when the name of a colorspace evolves over time.
+    #
+  - !<ColorSpace>
+    name: ACES2065-1
+    aliases: [ aces ]
+    family: ACES
+    description: |
+      The Academy Color Encoding System reference color space
+    isdata: false
+    categories: [ file-io, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: scene-linear
+
+  - !<ColorSpace>
+    name: ACEScg
+    family: ACES
+    description: |
+      ACEScg working space
+    isdata: false
+    categories: [ file-io, working-space, basic-3d, advanced-3d, basic-2d, advanced-2d ]
+    encoding: scene-linear
+    to_scene_reference: !<BuiltinTransform> {style: ACEScg_to_ACES2065-1}
+
+  - !<ColorSpace>
+    name: scene-linear Rec.709-sRGB
+    family: Linear
+    description: |
+      Scene-linear Rec.709 or sRGB primaries
+    isdata: false
+    categories: [ file-io, basic-3d, advanced-3d, advanced-2d ]
+    encoding: scene-linear
+    to_scene_reference: !<MatrixTransform> {matrix: [ 0.439632981919, 0.382988698152, 0.177378319929, 0, 0.089776442959, 0.813439428749, 0.096784128292, 0, 0.017541170383, 0.111546553302, 0.870912276314, 0, 0, 0, 0, 1 ]}
+
+  - !<ColorSpace>
+    name: sRGB
+    family: ""
+    bitdepth: 32f
+    description: |
+      Convert ACES2065-1 to sRGB
+      CLFtransformID: urn:aswf:ocio:transformId:1.0:OCIO:Utility:AP0_to_Rec709-sRGB:1.0
+    isdata: false
+    categories: [file-io]
+    encoding: sdr-video
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      name: AP0 to Rec.709 - sRGB
+      children:
+        - !<MatrixTransform> {matrix: [2.52140088857822, -1.13399574938275, -0.387561856768867, 0, -0.276214061561748, 1.37259556630409, -0.0962823557364663, 0, -0.0153202000774786, -0.152992561800699, 1.16838719961932, 0, 0, 0, 0, 1]}
+        - !<ExponentWithLinearTransform> {gamma: 2.4, offset: 0.055, direction: inverse}

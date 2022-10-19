@@ -23,7 +23,7 @@ using namespace aliceVision::image;
 using std::string;
 
 // tested extensions
-static std::vector<std::string> extensions = {"jpg", "png", "pgm", "ppm", "tiff", "exr"};
+static std::vector<std::string> extensions = { "jpg", "png", "pgm", "ppm", "tiff", "exr" };
 
 BOOST_AUTO_TEST_CASE(read_unexisting) {
   Image<unsigned char> image;
