@@ -10,6 +10,7 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/structures.hpp>
 
@@ -29,7 +30,8 @@ class SfMData;
 
 namespace mvsUtils {
 
-enum class EFileType {
+enum class EFileType
+{
     P = 0,
     K = 1,
     iK = 2,
@@ -68,6 +70,10 @@ enum class EFileType {
     nmodMap = 41,
     D = 42,
     normalMap = 43,
+    volume = 44,
+    volumeCross = 45,
+    stats9p = 46,
+    tilePattern = 47
 };
 
 class MultiViewParams
@@ -172,6 +178,16 @@ public:
     inline int getProcessDownscale() const
     {
         return _processDownscale;
+    }
+
+    inline int getMaxImageOriginalWidth() const
+    {
+        return _maxImageWidth;
+    }
+
+    inline int getMaxImageOriginalHeight() const
+    {
+        return _maxImageHeight;
     }
 
     inline int getMaxImageWidth() const
@@ -281,6 +297,15 @@ public:
      */
     StaticVector<int> findNearestCamsFromLandmarks(int rc, int nbNearestCams) const;
 
+    /**
+     * @brief Find nearest cameras for a given tile
+     * @param[in] rc R camera id
+     * @param[in] nbNearestCams maximum number of desired nearest cameras
+     * @param[in] tCams a given list of pre-selected nearest cameras
+     * @param[in] roi the tile 2d region of interest
+     * @return nearest cameras list for the given tile
+     */
+    std::vector<int> findTileNearestCams(int rc, int nbNearestCams, const std::vector<int>& tCams, const ROI& roi) const;
 
     inline void setMinViewAngle(float minViewAngle)
     {

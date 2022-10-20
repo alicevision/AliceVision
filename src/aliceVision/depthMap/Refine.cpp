@@ -8,312 +8,252 @@
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
-#include <aliceVision/gpu/gpu.hpp>
-
-#include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
-
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
-
-#include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/common.hpp>
-
-#include <boost/filesystem.hpp>
+#include <aliceVision/depthMap/depthMapUtils.hpp>
+#include <aliceVision/depthMap/volumeIO.hpp>
+#include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-namespace bfs = boost::filesystem;
-
-Refine::Refine(const RefineParams& refineParams, const mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& cps, int rc)
-    : _rc(rc)
-    , _mp(mp)
-    , _cps(cps)
+Refine::Refine(const mvsUtils::MultiViewParams& mp,
+               const mvsUtils::TileParams& tileParams, 
+               const RefineParams& refineParams, 
+               cudaStream_t stream)
+    : _mp(mp)
+    , _tileParams(tileParams)
     , _refineParams(refineParams)
-    , _depthSimMap(_rc, _mp, 1, 1)
+    , _stream(stream)
 {
-    _tCams = _mp.findNearestCamsFromLandmarks(_rc, _refineParams.maxTCams);
-}
+    // get tile maximum dimensions
+    const int downscale = _refineParams.scale * _refineParams.stepXY;
+    const int maxTileWidth  = std::ceil(tileParams.width  / float(downscale));
+    const int maxTileHeight = std::ceil(tileParams.height / float(downscale));
 
-Refine::~Refine()
-{}
+    // compute depth/sim map maximum dimensions
+    const CudaSize<2> depthSimMapDim(maxTileWidth, maxTileHeight);
 
-void Refine::upscaleSgmDepthSimMap(const DepthSimMap& sgmDepthSimMap, DepthSimMap& out_depthSimMapUpscaled) const
-{
-    const int w = _mp.getWidth(_rc);
-    const int h = _mp.getHeight(_rc);
+    // allocate depth/sim maps in device memory
+    _sgmDepthPixSizeMap_dmp.allocate(depthSimMapDim);
+    _refinedDepthSimMap_dmp.allocate(depthSimMapDim);
+    _optimizedDepthSimMap_dmp.allocate(depthSimMapDim);
 
-    out_depthSimMapUpscaled.initFromSmaller(sgmDepthSimMap);
+    // compute volume maximum dimensions
+    const CudaSize<3> volDim(maxTileWidth, maxTileHeight, _refineParams.nDepthsToRefine);
 
-    // set sim (y) to pixsize
-    for(int y = 0; y < h; ++y)
+    // allocate refine volume in device memory
+    _volumeRefineSim_dmp.allocate(volDim);
+
+    // allocate depth/sim map optimization buffers
+    if(_refineParams.doRefineOptimization)
     {
-        for(int x = 0; x < w; ++x)
-        {
-            const Point3d p = _mp.CArr[_rc] + (_mp.iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * out_depthSimMapUpscaled._dsm[y * w + x].depth;
-            DepthSim& depthSim = out_depthSimMapUpscaled._dsm[y * w + x];
-
-            if(_refineParams.useTcOrRcPixSize)
-            {
-                depthSim.sim = _mp.getCamsMinPixelSize(p, _tCams);
-            }
-            else
-            {
-                depthSim.sim = _mp.getCamPixelSize(p, _rc);
-            }
-        }
+        _optImgVariance_dmp.allocate(depthSimMapDim);
+        _optTmpDepthMap_dmp.allocate(depthSimMapDim);
     }
 }
 
-void Refine::filterMaskedPixels(DepthSimMap& out_depthSimMap)
+double Refine::getDeviceMemoryConsumption() const
 {
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = _cps._ic.getImg_sync(_rc);
+    size_t bytes = 0;
 
-    const int h = _mp.getHeight(_rc);
-    const int w = _mp.getWidth(_rc);
+    bytes += _sgmDepthPixSizeMap_dmp.getBytesPadded();
+    bytes += _refinedDepthSimMap_dmp.getBytesPadded();
+    bytes += _optimizedDepthSimMap_dmp.getBytesPadded();
+    bytes += _volumeRefineSim_dmp.getBytesPadded();
 
-    for(int y = 0; y < h; ++y)
+    if(_refineParams.doRefineOptimization)
     {
-        for(int x = 0; x < w; ++x)
-        {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
-
-            if(floatRGBA.a < 0.1f)
-            {
-                DepthSim& depthSim = out_depthSimMap._dsm[y * w + x];
-
-                depthSim.depth = -2.0;
-                depthSim.sim = -1.0;
-            }
-        }
-    }
-}
-
-void Refine::refineDepthSimMapPerTc(int tc, DepthSimMap& depthSimMap) const
-{
-    const system::Timer timer;
-
-    ALICEVISION_LOG_DEBUG("Refine depth/sim map per tc (rc: " << _rc << ", tc: " << tc << ")");
-
-    const int scale = depthSimMap._scale; // for now should be 1
-    const int w = _mp.getWidth(_rc) / scale;
-    const int h = _mp.getHeight(_rc) / scale; 
-
-    // slicing in order to fit into GPU memory
-    const int nParts = 4;
-    const int wPart = w / nParts;
-
-    for(int p = 0; p < nParts; ++p)
-    {
-        const int xFrom = p * wPart;
-        const int wPartAct = std::min(wPart, w - xFrom);
-
-        StaticVector<float> depthMap;
-        depthSimMap.getDepthMapStep1XPart(depthMap, xFrom, wPartAct);
-
-        StaticVector<float> simMap;
-        depthSimMap.getSimMapStep1XPart(simMap, xFrom, wPartAct);
-
-        _cps.refineRcTcDepthMap(_rc, tc, depthMap, simMap, _refineParams, xFrom, wPartAct);
-
-        for(int yp = 0; yp < h; ++yp)
-        {
-            for(int xp = xFrom; xp < xFrom + wPartAct; ++xp)
-            {
-                const float depth = depthMap[yp * wPartAct + (xp - xFrom)];
-                const float sim = simMap[yp * wPartAct + (xp - xFrom)];
-                const float oldSim = depthSimMap._dsm[(yp / depthSimMap._step) * depthSimMap._w + (xp / depthSimMap._step)].sim;
-
-                if((depth > 0.0f) && (sim < oldSim))
-                {
-                    depthSimMap._dsm[(yp / depthSimMap._step) * depthSimMap._w + (xp / depthSimMap._step)] = DepthSim(depth, sim);
-                }
-            }
-        }
+        bytes += _optImgVariance_dmp.getBytesPadded();
+        bytes += _optTmpDepthMap_dmp.getBytesPadded();
     }
 
-    ALICEVISION_LOG_DEBUG("Refine depth/sim map per tc (rc: " << _rc << ", tc: " << tc << ") done in: " << timer.elapsedMs() << " ms.");
+    return (double(bytes) / (1024.0 * 1024.0));
 }
 
-void Refine::refineAndFuseDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale, DepthSimMap& out_depthSimMapRefinedFused) const
+double Refine::getDeviceMemoryConsumptionUnpadded() const
 {
-    const system::Timer timer;
+    size_t bytes = 0;
 
-    ALICEVISION_LOG_INFO("Refine and fuse depth/sim map (rc: " << _rc << ")");
+    bytes += _sgmDepthPixSizeMap_dmp.getBytesUnpadded();
+    bytes += _refinedDepthSimMap_dmp.getBytesUnpadded();
+    bytes += _optimizedDepthSimMap_dmp.getBytesUnpadded();
+    bytes += _volumeRefineSim_dmp.getBytesUnpadded();
 
-    const int w = _mp.getWidth(_rc);
-    const int h = _mp.getHeight(_rc);
-
-    StaticVector<const DepthSimMap*> dataMaps;
-    dataMaps.reserve(_tCams.size() + 1);
-
-    // Put the raw upscaled SGM result first:
-    dataMaps.push_back(&depthSimMapSgmUpscale); // DO NOT ERASE !
-
-    for(int c = 0; c < _tCams.size(); ++c)
+    if(_refineParams.doRefineOptimization)
     {
-        const int tc = _tCams[c];
+        bytes += _optImgVariance_dmp.getBytesUnpadded();
+        bytes += _optTmpDepthMap_dmp.getBytesUnpadded();
+    }
 
-        DepthSimMap* depthSimMapC = new DepthSimMap(_rc, _mp, 1, 1);
-        depthSimMapC->initJustFromDepthMap(depthSimMapSgmUpscale, 1.0f);
+    return (double(bytes) / (1024.0 * 1024.0));
+}
 
-        refineDepthSimMapPerTc(tc, *depthSimMapC);
-        
-        dataMaps.push_back(depthSimMapC);
+void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp)
+{
+    const IndexT viewId = _mp.getViewId(tile.rc);
+
+    ALICEVISION_LOG_INFO(tile << "Refine depth/sim map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+
+    // compute upscaled SGM depth/pixSize map
+    {
+        // downscale the region of interest
+        const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
+
+        // get R device camera from cache
+        DeviceCache& deviceCache = DeviceCache::getInstance();
+        const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
+
+        // upscale SGM depth/sim map
+        cuda_depthSimMapUpscale(_sgmDepthPixSizeMap_dmp, in_sgmDepthSimMap_dmp, _stream);
 
         if(_refineParams.exportIntermediateResults)
-        {
-            depthSimMapC->save("_refine_tc_" + std::to_string(tc) + "_" + std::to_string(_mp.getViewId(tc)));
-        }
+          writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _sgmDepthPixSizeMap_dmp, _refineParams.scale, _refineParams.stepXY, "_sgmUpscaled");
+
+        // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
+        cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
     }
 
-    // slicing in order to fit into GPU memory
-    const int nhParts = 4;
-    const int hPartHeightGlob = h / nhParts;
-
-    for(int hPart = 0; hPart < nhParts; hPart++)
-    {
-        const int hPartHeight = std::min(h, (hPart + 1) * hPartHeightGlob) - hPart * hPartHeightGlob;
-
-        // vector of one depthSimMap tile per T cameras
-        StaticVector<StaticVector<DepthSim>*> dataMapsHPart;
-        dataMapsHPart.reserve(dataMaps.size());
-
-        for(int i = 0; i < dataMaps.size(); ++i) // iterate over T cameras
-        {
-            StaticVector<DepthSim>* dataMapHPart = new StaticVector<DepthSim>();
-            dataMapHPart->resize(w * hPartHeight);
-
-            const StaticVector<DepthSim>& dsm = dataMaps[i]->_dsm;
-
-#pragma omp parallel for
-            for(int y = 0; y < hPartHeight; y++)
-            {
-                for(int x = 0; x < w; x++)
-                {
-                    (*dataMapHPart)[y * w + x] = dsm[(y + hPart * hPartHeightGlob) * w + x];
-                }
-            }
-
-            dataMapsHPart.push_back(dataMapHPart);
-        }
-
-        StaticVector<DepthSim> depthSimMapFusedHPart;
-        depthSimMapFusedHPart.resize_with(w * hPartHeight, DepthSim(-1.0f, 1.0f));
-
-        _cps.fuseDepthSimMapsGaussianKernelVoting(w, hPartHeight, 
-                                                  depthSimMapFusedHPart, 
-                                                  dataMapsHPart, 
-                                                  _refineParams);
-
-#pragma omp parallel for
-        for(int y = 0; y < hPartHeight; ++y)
-        {
-            for(int x = 0; x < w; ++x)
-            {
-                out_depthSimMapRefinedFused._dsm[(y + hPart * hPartHeightGlob) * w + x] = depthSimMapFusedHPart[y * w + x];
-            }
-        }
-
-        deleteAllPointers(dataMapsHPart);
-    }
-
-    dataMaps[0] = nullptr; // it is input dsmap we dont want to delete it
-    for(int c = 1; c < dataMaps.size(); c++)
-    {
-        delete dataMaps[c];
-    }
-
-    ALICEVISION_LOG_INFO("Refine and fuse depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
-}
-
-void Refine::optimizeDepthSimMap(const DepthSimMap& depthSimMapSgmUpscale,     // upscaled SGM depth sim map
-                                 const DepthSimMap& depthSimMapRefinedFused,   // refined and fused depth sim map
-                                 DepthSimMap& out_depthSimMapOptimized) const  // optimized depth sim map
-{
-    const system::Timer timer;
-
-    ALICEVISION_LOG_INFO("Refine Optimizing depth/sim map (rc: " << _rc << ")");
-
-    if(_refineParams.nIters == 0)
-    {
-        out_depthSimMapOptimized.init(depthSimMapRefinedFused);
-        return;
-    }
-
-    const int h = _mp.getHeight(_rc);
-
-    // slicing in order to fit into GPU memory
-    // TODO: estimate the amount of VRAM available to decide the tiling
-    const int nParts = 4; 
-    const int hPart = h / nParts;
-
-    for(int part = 0; part < nParts; ++part)
-    {
-        const int yFrom = part * hPart;
-        const int hPartAct = std::min(hPart, h - yFrom);
-        _cps.optimizeDepthSimMapGradientDescent(_rc, 
-                                                out_depthSimMapOptimized._dsm, 
-                                                depthSimMapSgmUpscale._dsm, 
-                                                depthSimMapRefinedFused._dsm, 
-                                                _refineParams,
-                                                yFrom, hPartAct);
-    }
-
-    ALICEVISION_LOG_INFO("Refine Optimizing depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
-}
-
-bool Refine::refineRc(const DepthSimMap& sgmDepthSimMap)
-{
-    const system::Timer timer;
-    const IndexT viewId = _mp.getViewId(_rc);
-
-    ALICEVISION_LOG_INFO("Refine depth/sim map of view id: " << viewId << ", rc: " << _rc << " (" << (_rc + 1) << " / " << _mp.ncams << ")");
-
-    if(_tCams.empty())
-    {
-        return false;
-    }
-
-    DepthSimMap depthSimMapSgmUpscale(_rc, _mp, 1, 1); // depthSimMapVis
-    upscaleSgmDepthSimMap(sgmDepthSimMap, depthSimMapSgmUpscale);
-    filterMaskedPixels(depthSimMapSgmUpscale);
-
-    if(_refineParams.exportIntermediateResults)
-    {
-        depthSimMapSgmUpscale.save("_sgmUpscaled");
-    }
-
-    DepthSimMap depthSimMapRefinedFused(_rc, _mp, 1, 1); // depthSimMapPhoto
-
+    // refine and fuse depth/sim map
     if(_refineParams.doRefineFuse)
     {
-        refineAndFuseDepthSimMap(depthSimMapSgmUpscale, depthSimMapRefinedFused);
+        // refine and fuse with volume strategy
+        refineAndFuseDepthSimMap(tile);
 
-        if(_refineParams.exportIntermediateResults)
-        {
-            depthSimMapRefinedFused.save("_refinedFused");
-        }
     }
     else
     {
-        depthSimMapRefinedFused.initJustFromDepthMap(depthSimMapSgmUpscale, 1.0f);
+        cuda_depthSimMapCopyDepthOnly(_refinedDepthSimMap_dmp, _sgmDepthPixSizeMap_dmp, 1.0f, _stream);
     }
 
-    if(_refineParams.doRefineOpt && _refineParams.nIters != 0)
+    if(_refineParams.exportIntermediateResults)
+      writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _refinedDepthSimMap_dmp, _refineParams.scale, _refineParams.stepXY, "_refinedFused");
+
+    // optimize depth/sim map
+    if(_refineParams.doRefineOptimization && _refineParams.optimizationNbIters > 0)
     {
-        optimizeDepthSimMap(depthSimMapSgmUpscale, depthSimMapRefinedFused, _depthSimMap);
+        optimizeDepthSimMap(tile);
     }
     else
     {
-        _depthSimMap.init(depthSimMapRefinedFused);
+        _optimizedDepthSimMap_dmp.copyFrom(_refinedDepthSimMap_dmp, _stream);
     }
 
-    ALICEVISION_LOG_INFO("Refine depth/sim map (rc: " << _rc << ") done in: " << timer.elapsedMs() << " ms.");
-    return true;
+    ALICEVISION_LOG_INFO(tile << "Refine depth/sim map done.");
+}
+
+void Refine::refineAndFuseDepthSimMap(const Tile& tile)
+{
+    ALICEVISION_LOG_INFO(tile << "Refine and fuse depth/sim map volume.");
+
+    // downscale the region of interest
+    const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
+
+    // get the depth range
+    const Range depthRange(0, _volumeRefineSim_dmp.getSize().z());
+
+    // initialize the similarity volume at 0
+    // each tc filtered and inverted similarity value will be summed in this volume
+    cuda_volumeInitialize(_volumeRefineSim_dmp, 0.f, _stream);
+
+    // get device cache instance
+    DeviceCache& deviceCache = DeviceCache::getInstance();
+
+    // get R device camera from cache
+    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
+
+    // compute for each RcTc each similarity value for each depth to refine
+    // sum the inverted / filtered similarity value, best value is the HIGHEST
+    for(std::size_t tci = 0; tci < tile.refineTCams.size(); ++tci)
+    {
+        const int tc = tile.refineTCams.at(tci);
+
+        // get T device camera from cache
+        const DeviceCamera& tcDeviceCamera = deviceCache.requestCamera(tc, _refineParams.scale, _mp);
+
+        ALICEVISION_LOG_DEBUG(tile << "Refine similarity volume:" << std::endl
+                                   << "\t- rc: " << tile.rc << std::endl
+                                   << "\t- tc: " << tc << " (" << (tci + 1) << "/" << tile.refineTCams.size() << ")" << std::endl
+                                   << "\t- rc camera device id: " << rcDeviceCamera.getDeviceCamId() << std::endl
+                                   << "\t- tc camera device id: " << tcDeviceCamera.getDeviceCamId() << std::endl
+                                   << "\t- tile range x: [" << downscaledRoi.x.begin << " - " << downscaledRoi.x.end << "]" << std::endl
+                                   << "\t- tile range y: [" << downscaledRoi.y.begin << " - " << downscaledRoi.y.end << "]" << std::endl);
+
+        cuda_volumeRefineSimilarity(_volumeRefineSim_dmp, 
+                                    _sgmDepthPixSizeMap_dmp,
+                                    rcDeviceCamera, 
+                                    tcDeviceCamera,
+                                    _refineParams, 
+                                    depthRange,
+                                    downscaledRoi, 
+                                    _stream);
+    }
+
+    if(_refineParams.exportIntermediateResults)
+        exportVolumeInformation(tile, "afterRefine");
+
+    // retrieve the best depth/sim in the volume
+    // compute sub-pixel sample using a sliding gaussian 
+    cuda_volumeRefineBestDepth(_refinedDepthSimMap_dmp, 
+                                _sgmDepthPixSizeMap_dmp, 
+                                _volumeRefineSim_dmp,
+                                rcDeviceCamera, 
+                                _refineParams,
+                                downscaledRoi, 
+                                _stream);
+    
+    ALICEVISION_LOG_INFO(tile << "Refine and fuse depth/sim map volume done.");
+}
+
+void Refine::optimizeDepthSimMap(const Tile& tile)
+{
+    ALICEVISION_LOG_INFO(tile << "Optimize depth/sim map.");
+
+    // downscale the region of interest
+    const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
+    
+    // get R device camera from cache
+    DeviceCache& deviceCache = DeviceCache::getInstance();
+    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
+
+    cuda_depthSimMapOptimizeGradientDescent(_optimizedDepthSimMap_dmp, // output depth/sim map optimized
+                                            _optImgVariance_dmp,       // image variance buffer pre-allocate
+                                            _optTmpDepthMap_dmp,       // temporary depth map buffer pre-allocate
+                                            _sgmDepthPixSizeMap_dmp,   // input SGM upscaled depth/pixSize map
+                                            _refinedDepthSimMap_dmp,   // input refined and fused depth/sim map
+                                            rcDeviceCamera,
+                                            _refineParams,
+                                            downscaledRoi,
+                                            _stream);
+
+    ALICEVISION_LOG_INFO(tile << "Optimize depth/sim map done.");
+}
+
+void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) const
+{
+    // get tile begin indexes (default no tile)
+    int tileBeginX = -1;
+    int tileBeginY = -1;
+
+    if(tile.nbTiles > 1)
+    {
+        tileBeginX = tile.roi.x.begin;
+        tileBeginY = tile.roi.y.begin;
+    }
+
+    CudaHostMemoryHeap<TSimRefine, 3> volumeSim_hmh(_volumeRefineSim_dmp.getSize());
+    volumeSim_hmh.copyFrom(_volumeRefineSim_dmp);
+
+    CudaHostMemoryHeap<float2, 2> depthPixSizeMapSgmUpscale_hmh(_sgmDepthPixSizeMap_dmp.getSize());
+    depthPixSizeMapSgmUpscale_hmh.copyFrom(_sgmDepthPixSizeMap_dmp);
+
+    const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, _refineParams.scale, "_" + name, tileBeginX, tileBeginY);
+    const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _refineParams.scale, "_refine", tileBeginX, tileBeginY);
+
+    exportSimilarityVolumeCross(volumeSim_hmh, depthPixSizeMapSgmUpscale_hmh, _mp, tile.rc, _refineParams, volumeCrossPath, tile.roi);
+    exportSimilaritySamplesCSV(volumeSim_hmh, tile.rc, name, stats9Path);
 }
 
 } // namespace depthMap

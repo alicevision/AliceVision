@@ -1,17 +1,21 @@
 # Headers
 set(mvsUtils_files_headers
   common.hpp
+  depthSimMapIO.hpp
   fileIO.hpp
   ImagesCache.hpp
   MultiViewParams.hpp
+  TileParams.hpp
 )
 
 # Sources
 set(mvsUtils_files_sources
   common.cpp
+  depthSimMapIO.cpp
   fileIO.cpp
   ImagesCache.cpp
   MultiViewParams.cpp
+  TileParams.cpp
 )
 
 alicevision_add_library(aliceVision_mvsUtils

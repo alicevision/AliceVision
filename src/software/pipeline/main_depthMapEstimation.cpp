@@ -4,16 +4,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 #include <aliceVision/depthMap/depthMap.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/main.hpp>
+#include <aliceVision/depthMap/DepthMapParams.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <boost/program_options.hpp>
@@ -21,7 +20,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -48,11 +47,17 @@ int aliceVision_main(int argc, char* argv[])
     float minViewAngle = 2.0f;
     float maxViewAngle = 70.0f;
 
+    // DepthMap parameters
+    depthMap::DepthMapParams depthMapParams;
+
+    // Tilling parameters
+    auto& tileParams = depthMapParams.tileParams;
+
     // Semi Global Matching Parameters
-    depthMap::SgmParams sgmParams; 
+    auto& sgmParams = depthMapParams.sgmParams;
 
     // Refine Parameters
-    depthMap::RefineParams refineParams;
+    auto& refineParams = depthMapParams.refineParams;
 
     // intermediate results
     bool exportIntermediateResults = false;
@@ -81,9 +86,19 @@ int aliceVision_main(int argc, char* argv[])
         ("downscale", po::value<int>(&downscale)->default_value(downscale),
             "Image downscale factor.")
         ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
-            "minimum angle between two views.")
+            "Minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
-            "maximum angle between two views.")
+            "Maximum angle between two views.")
+        ("tileWidth", po::value<int>(&tileParams.width)->default_value(tileParams.width),
+            "Maximum tile buffer width.")
+        ("tileHeight", po::value<int>(&tileParams.height)->default_value(tileParams.height),
+            "Maximum tile buffer height.")
+        ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
+            "Tile buffer padding for overlapping.")
+        ("chooseTCamsPerTile", po::value<bool>(&depthMapParams.chooseTCamsPerTile)->default_value(depthMapParams.chooseTCamsPerTile),
+            "Choose neighbour cameras per tile.")
+        ("maxTCams", po::value<int>(&depthMapParams.maxTCams)->default_value(depthMapParams.maxTCams),
+            "Maximum number of neighbour cameras.")
         ("sgmScale", po::value<int>(&sgmParams.scale)->default_value(sgmParams.scale),
             "Semi Global Matching: Downscale factor used to compute the similarity volume.")
         ("sgmStepXY", po::value<int>(&sgmParams.stepXY)->default_value(sgmParams.stepXY),
@@ -92,8 +107,8 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Step used to compute the similarity volume on the Z axis.")
         ("sgmMaxSideXY", po::value<int>(&sgmParams.maxSideXY)->default_value(sgmParams.maxSideXY),
             "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
-        ("sgmMaxTCams", po::value<int>(&sgmParams.maxTCams)->default_value(sgmParams.maxTCams),
-            "Semi Global Matching: Number of neighbour cameras.")
+        ("sgmMaxTCamsPerTile", po::value<int>(&sgmParams.maxTCamsPerTile)->default_value(sgmParams.maxTCamsPerTile),
+            "Semi Global Matching: Number of neighbour cameras per tile.")
         ("sgmWSH", po::value<int>(&sgmParams.wsh)->default_value(sgmParams.wsh),
             "Semi Global Matching: Size of the patch used to compute the similarity.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
@@ -102,24 +117,26 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: GammaP threshold.")
         ("sgmP1", po::value<double>(&sgmParams.p1)->default_value(sgmParams.p1),
             "Semi Global Matching: P1.")
-        ("sgmP2", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
+        ("sgmP2Weighting", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
             "Semi Global Matching: P2 Weighting.")
         ("sgmMaxDepths", po::value<int>(&sgmParams.maxDepths)->default_value(sgmParams.maxDepths),
             "Semi Global Matching: Max number of depths in the overall similarity volume.")
         ("sgmMaxDepthsPerTc", po::value<int>(&sgmParams.maxDepthsPerTc)->default_value(sgmParams.maxDepthsPerTc),
             "Semi Global Matching: Max number of depths to sweep in the similarity volume per Rc/Tc cameras.")
-        ("sgmUseSfmSeeds", po::value<bool>(&sgmParams.useSfmSeeds)->default_value(sgmParams.useSfmSeeds),
-            "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
         ("sgmFilteringAxes", po::value<std::string>(&sgmParams.filteringAxes)->default_value(sgmParams.filteringAxes),
             "Semi Global Matching: Filtering axes for the 3D volume.")
-        ("refineMaxTCams", po::value<int>(&refineParams.maxTCams)->default_value(refineParams.maxTCams),
-            "Refine: Number of neighbour cameras.")
+        ("sgmUseSfmSeeds", po::value<bool>(&sgmParams.useSfmSeeds)->default_value(sgmParams.useSfmSeeds),
+            "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
+        ("sgmChooseDepthListPerTile", po::value<bool>(&sgmParams.chooseDepthListPerTile)->default_value(sgmParams.chooseDepthListPerTile),
+            "Semi Global Matching: Choose depth list per tile.")
+        ("refineMaxTCamsPerTile", po::value<int>(&refineParams.maxTCamsPerTile)->default_value(refineParams.maxTCamsPerTile),
+            "Refine: Number of neighbour cameras per tile.")
         ("refineNSamplesHalf", po::value<int>(&refineParams.nSamplesHalf)->default_value(refineParams.nSamplesHalf),
             "Refine: Number of samples.")
         ("refineNDepthsToRefine", po::value<int>(&refineParams.nDepthsToRefine)->default_value(refineParams.nDepthsToRefine),
             "Refine: Number of depths.")
-        ("refineNiters", po::value<int>(&refineParams.nIters)->default_value(refineParams.nIters),
-            "Refine: Number of iterations.")
+        ("refineNiters", po::value<int>(&refineParams.optimizationNbIters)->default_value(refineParams.optimizationNbIters),
+            "Refine: Number of optimization iterations.")
         ("refineWSH", po::value<int>(&refineParams.wsh)->default_value(refineParams.wsh),
             "Refine: Size of the patch used to compute the similarity.")
         ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
@@ -128,8 +145,10 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaC threshold.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold.")
-        ("refineUseTcOrRcPixSize", po::value<bool>(&refineParams.useTcOrRcPixSize)->default_value(refineParams.useTcOrRcPixSize),
-            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
+        ("refineDoRefineFuse", po::value<bool>(&refineParams.doRefineFuse)->default_value(refineParams.doRefineFuse),
+            "Refine: Perform Refine/Fuse.")
+        ("refineDoRefineOptimization", po::value<bool>(&refineParams.doRefineOptimization)->default_value(refineParams.doRefineOptimization),
+            "Refine: Perform Refine post-process optimization.")
         ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
             "Export intermediate results from the SGM and Refine steps.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
@@ -192,6 +211,37 @@ int aliceVision_main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
+    // check min/max view angle
+    if(minViewAngle < 0.f || minViewAngle > 360.f ||
+       maxViewAngle < 0.f || maxViewAngle > 360.f ||
+       minViewAngle > maxViewAngle)
+    {
+      ALICEVISION_LOG_ERROR("Invalid value for minViewAngle/maxViewAngle parameter(s). Should be between 0 and 360.");
+      return EXIT_FAILURE;
+    }
+
+    // check if the tile padding is correct
+    if(tileParams.padding < 0)
+    {
+        ALICEVISION_LOG_ERROR("Invalid value for tilePadding parameter. Should be at least 0.");
+        return EXIT_FAILURE;
+    }
+
+    // check if the downscaled tile parameters are correct
+    {
+      const float downscaledTileWidth = tileParams.width / float(downscale);
+      const float downscaledTileHeight = tileParams.height / float(downscale);
+      const float downscaledTilePadding = tileParams.padding / float(downscale);
+
+      if((downscaledTileWidth   - int(downscaledTileWidth))   > 0 ||
+         (downscaledTileHeight  - int(downscaledTileHeight))  > 0 ||
+         (downscaledTilePadding - int(downscaledTilePadding)) > 0)
+      {
+        ALICEVISION_LOG_ERROR("Tile dimensions (width/height/padding) must be able to be downscaled to integer values.");
+        return EXIT_FAILURE;
+      }
+    }
+
     // read the input SfM scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -200,42 +250,73 @@ int aliceVision_main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    // initialization
+    // MultiViewParams initialization
     mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", false, downscale);
 
+    // set MultiViewParams min/max view angle
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
 
+    // set undefined tile dimensions
+    {
+      const int tileWidth  = (tileParams.width  > 0) ? tileParams.width  : ((tileParams.height > 0) ? tileParams.height : mp.getMaxImageWidth());
+      const int tileHeight = (tileParams.height > 0) ? tileParams.height : ((tileParams.width  > 0) ? tileParams.width  : mp.getMaxImageHeight());
+      tileParams.width  = tileWidth;
+      tileParams.height = tileHeight;
+    }
+
+    // check tile passing
+    if(tileParams.padding >= std::min(tileParams.width, tileParams.height))
+    {
+      ALICEVISION_LOG_ERROR("Unable to compute tile dimensions, tile padding size is too large.");
+      return EXIT_FAILURE;
+    }
+
+    // check if tile size > max image size
+    if(tileParams.width > mp.getMaxImageWidth() || tileParams.height > mp.getMaxImageHeight())
+      ALICEVISION_LOG_WARNING("Tile size "  << tileParams.width << "x" << tileParams.height << " is larger than " << mp.getMaxImageWidth() << "x" << mp.getMaxImageHeight() <<  ", the maximum image size.");
+
     // set params in bpt
 
+    // Tile Parameters
+    mp.userParams.put("tile.width", tileParams.width);
+    mp.userParams.put("tile.height", tileParams.height);
+    mp.userParams.put("tile.padding", tileParams.padding);
+
     // SGM Parameters
-    mp.userParams.put("sgm.maxTCams", sgmParams.maxTCams);
+    mp.userParams.put("sgm.scale", sgmParams.scale);
+    mp.userParams.put("sgm.stepXY", sgmParams.stepXY);
+    mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
     mp.userParams.put("sgm.wsh", sgmParams.wsh);
     mp.userParams.put("sgm.gammaC", sgmParams.gammaC);
     mp.userParams.put("sgm.gammaP", sgmParams.gammaP);
     mp.userParams.put("sgm.p1", sgmParams.p1);
     mp.userParams.put("sgm.p2Weighting", sgmParams.p2Weighting);
-    mp.userParams.put("sgm.scale", sgmParams.scale);
-    mp.userParams.put("sgm.stepXY", sgmParams.stepXY);
-    mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
-    mp.userParams.put("sgm.maxSideXY", sgmParams.maxSideXY);
+    mp.userParams.put("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
     mp.userParams.put("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
-    mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
+    mp.userParams.put("sgm.maxSideXY", sgmParams.maxSideXY);
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
+    mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
+    mp.userParams.put("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
     mp.userParams.put("sgm.exportIntermediateResults", exportIntermediateResults);
 
     // Refine Parameters
-    mp.userParams.put("refine.maxTCams", refineParams.maxTCams);
-    mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
-    mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
-    mp.userParams.put("refine.nIters", refineParams.nIters);
     mp.userParams.put("refine.wsh", refineParams.wsh);
     mp.userParams.put("refine.sigma", refineParams.sigma);
     mp.userParams.put("refine.gammaC", refineParams.gammaC);
     mp.userParams.put("refine.gammaP", refineParams.gammaP);
-    mp.userParams.put("refine.useTcOrRcPixSize", refineParams.useTcOrRcPixSize);
+    mp.userParams.put("refine.maxTCamsPerTile", refineParams.maxTCamsPerTile);
+    mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
+    mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
+    mp.userParams.put("refine.optimizationNbIters", refineParams.optimizationNbIters);
+    mp.userParams.put("refine.doRefineFuse", refineParams.doRefineFuse);
+    mp.userParams.put("refine.doRefineOptimization", refineParams.doRefineOptimization);
     mp.userParams.put("refine.exportIntermediateResults", exportIntermediateResults);
+
+    // Workflow Parameters
+    mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
+    mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);

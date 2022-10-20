@@ -17,21 +17,21 @@ struct RefineParams
   // user parameters
 
   int wsh = 3;
-  int maxTCams = 6;
   int nDepthsToRefine = 31;
   int nSamplesHalf = 150;
-  int nIters = 100;
+  int optimizationNbIters = 100;
+  int maxTCamsPerTile = 4;
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
-  bool useTcOrRcPixSize = false;
+  bool doRefineFuse = true;
+  bool doRefineOptimization = true;
   bool exportIntermediateResults = false;
 
   // constant parameters
 
-  const int scale = 1; // should remain at 1 for now, some Refine functions do not support this parameter
-  const bool doRefineFuse = true;
-  const bool doRefineOpt = true;
+  const int scale = 1; 
+  const int stepXY = 1;
 };
 
 } // namespace depthMap
