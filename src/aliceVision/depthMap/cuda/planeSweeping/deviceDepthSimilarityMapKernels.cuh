@@ -274,9 +274,17 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
 
     for(int yp = -wsh; yp <= wsh; ++yp)
     {
+        const int roiYp = roiY + yp;
+        if(roiYp < 0)
+            continue;
+
         for(int xp = -wsh; xp <= wsh; ++xp)
         {
-            const float depthP = get2DBufferAt(in_depthSimMap_d, in_depthSimMap_p, roiX + xp, roiY + yp)->x;  // use only depth
+            const int roiXp = roiX + xp;
+            if(roiXp < 0)
+                continue;
+
+            const float depthP = get2DBufferAt(in_depthSimMap_d, in_depthSimMap_p, roiXp, roiYp)->x;  // use only depth
 
             if((depthP > 0.0f) && (fabs(depthP - in_depth) < 30.0f * pixSize))
             {
