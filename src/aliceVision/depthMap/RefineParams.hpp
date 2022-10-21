@@ -26,7 +26,7 @@ struct RefineParams
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
-  bool useNormalMap = true;
+  bool useNormalMap = false;
   bool doRefineFuse = true;
   bool doRefineOptimization = true;
   bool exportIntermediateResults = false;
