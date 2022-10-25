@@ -172,10 +172,27 @@ namespace image
 
         void hsdApply(const HsdTableInfo& table_info, const std::vector<HsbModify>& table_base, float& h, float& s, float& v) const;
 
+        Matrix matMult(const Matrix& A, const Matrix& B);
+        Triple matMult(const Matrix& M, const Triple& V);
+        Matrix matInv(const Matrix& M);
+
+        Matrix getInterpolatedMatrix(const float& cct, const std::string& type);
+        void getChromaticityCoordinatesFromXyz(const Triple& xyz, float& x, float& y);
+        Triple getXyzFromChromaticityCoordinates(const float& x, const float& y);
+        Triple getXyzFromTemperature(const float& cct, const float& tint = 0.f);
+        void setChromaticityCoordinates(const float& x, const float& y, float& cct, float& tint);
+        void getChromaticityCoordinates(const float& cct, const float& tint, float& x, float& y);
+        void getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, float& x, float& y);
+        Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget);
+        Matrix getCameraToXyzD50Matrix(const float& x, const float& y);
+
         Matrix ws_sRGB;
         Matrix sRGB_ws;
         Matrix color_matrix_1;
         Matrix color_matrix_2;
+        Matrix calib_matrix_1;
+        Matrix calib_matrix_2;
+        Matrix analogBalance;
         bool will_interpolate;
         bool valid;
         Matrix forward_matrix_1;

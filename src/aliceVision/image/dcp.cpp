@@ -245,6 +245,47 @@ inline void hsv2rgbdcp(float h, float s, float v, float& r, float& g, float& b)
             b = p;
         }
     }
+
+// Wyszecki & Stiles', 'Color Science - Concepts and Methods Data and Formulae - Second Edition', Page 228.
+// (Reciprocal Megakelvin, CIE 1960 Chromaticity Coordinates 'u', CIE 1960 Chromaticity Coordinates 'v', Slope)
+std::vector < std::vector<float>> WYSZECKI_ROBERSTON_TABLE =
+    { {0, 0.18006, 0.26352, -0.24341},
+      {10, 0.18066, 0.26589, -0.25479},
+      {20, 0.18133, 0.26846, -0.26876},
+      {30, 0.18208, 0.27119, -0.28539},
+      {40, 0.18293, 0.27407, -0.30470},
+      {50, 0.18388, 0.27709, -0.32675},
+      {60, 0.18494, 0.28021, -0.35156},
+      {70, 0.18611, 0.28342, -0.37915},
+      {80, 0.18740, 0.28668, -0.40955},
+      {90, 0.18880, 0.28997, -0.44278},
+      {100, 0.19032, 0.29326, -0.47888},
+      {125, 0.19462, 0.30141, -0.58204},
+      {150, 0.19962, 0.30921, -0.70471},
+      {175, 0.20525, 0.31647, -0.84901},
+      {200, 0.21142, 0.32312, -1.0182},
+      {225, 0.21807, 0.32909, -1.2168},
+      {250, 0.22511, 0.33439, -1.4512},
+      {275, 0.23247, 0.33904, -1.7298},
+      {300, 0.24010, 0.34308, -2.0637},
+      {325, 0.24792, 0.34655, -2.4681}, // 0.24702 ---> 0.24792 Bruce Lindbloom
+      {350, 0.25591, 0.34951, -2.9641},
+      {375, 0.26400, 0.35200, -3.5814},
+      {400, 0.27218, 0.35407, -4.3633},
+      {425, 0.28039, 0.35577, -5.3762},
+      {450, 0.28863, 0.35714, -6.7262},
+      {475, 0.29685, 0.35823, -8.5955},
+      {500, 0.30505, 0.35907, -11.324},
+      {525, 0.31320, 0.35968, -15.628},
+      {550, 0.32129, 0.36011, -23.325},
+      {575, 0.32931, 0.36038, -40.770},
+      {600, 0.33724, 0.36051, -116.45} };
+
+DCPProfile::Matrix IdentityMatrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+
+DCPProfile::Matrix CAT02_MATRIX = { 0.7328, 0.4296, -0.1624, -0.7036, 1.6975, 0.0061, 0.0030, 0.0136, 0.9834 };
+
+double TINT_SCALE = -3000.0;
 } // namespace
 
 enum class TagType : int
@@ -1517,6 +1558,480 @@ inline void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vect
     {
         v *= val_scale;
     }
+}
+
+
+
+
+DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const float& cct, const std::string& type)
+{
+    float a = 1.e6 / info.temperature_1;
+    float b = 1.e6 / info.temperature_2;
+    float c = 1.e6 / cct;
+
+    Matrix Ma = (type == "color") ? color_matrix_1 : ((type == "calib") ? calib_matrix_1 : forward_matrix_1);
+    Matrix Mb = (type == "color") ? color_matrix_2 : ((type == "calib") ? calib_matrix_2 : forward_matrix_2);
+    Matrix interpolatedMatrix;
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j=0; j < 3; ++j)
+        {
+            interpolatedMatrix[i][j] = Ma[i][j] + ((c - a) / (b - a)) * (Mb[i][j] - Ma[i][j]);
+        }
+    }
+
+    return interpolatedMatrix;
+}
+
+DCPProfile::Matrix DCPProfile::matMult(const Matrix& A, const Matrix& B)
+{
+    Matrix Res;
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            Res[i][j] = 0.f;
+            for (int k = 0; k < 3; k++)
+            {
+                Res[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    return Res;
+}
+DCPProfile::Triple DCPProfile::matMult(const Matrix& M, const Triple& V)
+{
+    Triple Res;
+    for (int i = 0; i < 3; ++i)
+    {
+        Res[i] = 0.f;
+        for (int k = 0; k < 3; k++)
+        {
+            Res[i] += M[i][k] * V[k];
+        }
+    }
+    return Res;
+}
+DCPProfile::Matrix DCPProfile::matInv(const Matrix& M)
+{
+    Matrix Inv = M;
+
+    float det = M[0][0]*M[1][1]*M[2][2] + M[0][1]*M[1][2]*M[2][0] + M[0][2]*M[1][0]*M[2][1] - M[2][0]*M[1][1]*M[0][2] - M[1][0]*M[0][1]*M[2][2] - M[0][0]*M[2][1]*M[1][2];
+
+    if (det != 0.f)
+    {
+        Inv[0][0] = (M[1][1] * M[2][2] - M[2][1] * M[1][2]) / det;
+        Inv[0][1] = (M[0][2] * M[2][1] - M[0][1] * M[2][2]) / det;
+        Inv[0][2] = (M[0][1] * M[1][2] - M[0][2] * M[1][1]) / det;
+        Inv[1][0] = (M[1][2] * M[2][0] - M[1][0] * M[2][2]) / det;
+        Inv[1][1] = (M[0][0] * M[2][2] - M[2][0] * M[0][2]) / det;
+        Inv[1][2] = (M[0][2] * M[1][2] - M[0][0] * M[1][2]) / det;
+        Inv[2][0] = (M[1][0] * M[2][1] - M[1][1] * M[2][0]) / det;
+        Inv[2][1] = (M[0][1] * M[2][0] - M[0][0] * M[2][1]) / det;
+        Inv[2][2] = (M[0][0] * M[1][1] - M[1][0] * M[0][1]) / det;
+    }
+
+    return Inv;
+}
+
+/*
+    Sets the temperature and tint using given chromaticity coordinates.
+
+    'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/source/dng_temperature.cpp: 'dng_temperature::Set_xy_coord'.
+
+    Usage::
+
+        >>> Temperature().setChromaticityCoordinates(0.25, 0.25)
+        (28847.66573353418, 2.0587866255277527)
+
+    Args:
+        x (float): X chromaticity coordinate.
+        y (float): Y chromaticity coordinate.
+
+    Returns:
+        tuple. Temperature, tint
+*/
+void DCPProfile::setChromaticityCoordinates(const float& x, const float& y, float& cct, float& tint)
+{
+    float u = 2.0 * x / (1.5 - x + 6.0 * y);
+    float v = 3.0 * y / (1.5 - x + 6.0 * y);
+
+    float lastDt = 0.f;
+    float lastDv = 0.f;
+    float lastDu = 0.f;
+
+    for (int i = 1; i < 31; i++)
+    {
+        std::vector<float> wrRuvt = WYSZECKI_ROBERSTON_TABLE[i];
+        std::vector<float> wrRuvtPrevious = WYSZECKI_ROBERSTON_TABLE[i - 1];
+
+        float du = 1.f;
+        float dv = wrRuvt[3];
+        float len = std::sqrtf(1.f + dv * dv);
+
+        du /= len;
+        dv /= len;
+        float uu = u - wrRuvt[1];
+        float vv = v - wrRuvt[2];
+        float dt = -uu * dv + vv * du;
+
+        if (dt <= 0.f || i == 30)
+        {
+
+            dt = -std::min<float>(dt, 0.f);
+
+            const float f = (i == 1) ? 0.f : dt / (lastDt + dt);
+
+            cct = 1.0e6 / (wrRuvtPrevious[0] * f + wrRuvt[0] * (1.f - f));
+
+            const float uu = u - (wrRuvtPrevious[1] * f + wrRuvt[1] * (1.0 - f));
+            const float vv = v - (wrRuvtPrevious[2] * f + wrRuvt[2] * (1.0 - f));
+
+            du = du * (1.0 - f) + lastDu * f;
+            dv = dv * (1.0 - f) + lastDv * f;
+            len = std::sqrt(du * du + dv * dv);
+            du /= len;
+            dv /= len;
+
+            tint = (uu * du + vv * dv) * 3000.f;
+
+            break;
+        }
+
+        lastDt = dt;
+        lastDu = du;
+        lastDv = dv;
+    }
+}
+
+/*
+    Returns the chromaticity coordinates.
+
+    'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/source/dng_temperature.cpp: 'dng_temperature::Get_xy_coord'.
+
+    Usage::
+
+        >>> Temperature(6500, 25).getChromaticityCoordinates()
+        (0.3115291328160886, 0.33790935423997026)
+
+    Returns:
+        tuple. Chromaticity coordinates.
+*/
+void DCPProfile::getChromaticityCoordinates(const float& cct, const float& tint, float& x, float& y)
+{
+    double r = 1.0e6 / cct;
+    double offset = tint * (1.0 / TINT_SCALE);
+
+    for (int i = 0; i < 30; ++i)
+    {
+        std::vector<float> wrRuvt = WYSZECKI_ROBERSTON_TABLE[i];
+        std::vector<float> wrRuvtNext = WYSZECKI_ROBERSTON_TABLE[i + 1];
+
+        if (r < wrRuvtNext[0] || i == 29)
+        {
+
+            const double f = (wrRuvtNext[0] - r) / (wrRuvtNext[0] - wrRuvt[0]);
+
+            double u = wrRuvt[1] * f + wrRuvtNext[1] * (1.0 - f);
+            double v = wrRuvt[2] * f + wrRuvtNext[2] * (1.0 - f);
+
+            double uu1 = 1.0;
+            double uu2 = 1.0;
+            double vv1 = wrRuvt[3];
+            double vv2 = wrRuvtNext[3];
+
+            double len1 = sqrt(1.0 + vv1 * vv1);
+            double len2 = sqrt(1.0 + vv2 * vv2);
+
+            uu1 /= len1;
+            vv1 /= len1;
+
+            uu2 /= len2;
+            vv2 /= len2;
+
+            double uu3 = uu1 * f + uu2 * (1.0 - f);
+            double vv3 = vv1 * f + vv2 * (1.0 - f);
+
+            double len3 = sqrt(uu3 * uu3 + vv3 * vv3);
+
+            uu3 /= len3;
+            vv3 /= len3;
+
+            u += uu3 * offset;
+            v += vv3 * offset;
+
+            x = 1.5 * u / (u - 4.0 * v + 2.0);
+            y = v / (u - 4.0 * v + 2.0);
+
+            break;
+        }
+    }
+}
+
+
+
+void DCPProfile::getChromaticityCoordinatesFromXyz(const Triple& xyz, float& x, float& y)
+{
+    x = xyz[0] / (xyz[0] + xyz[1] + xyz[2]);
+    y = xyz[1] / (xyz[0] + xyz[1] + xyz[2]);
+}
+
+DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const float& x, const float& y)
+{
+    Triple xyz;
+    xyz[0] = x * 1.0 / y;
+    xyz[1] = 1.0;
+    xyz[2] = (1.0 - x - y) * 1.0 / y;
+    return xyz;
+}
+
+DCPProfile::Triple DCPProfile::getXyzFromTemperature(const float& cct, const float& tint)
+{
+    float x, y;
+    getChromaticityCoordinates(cct, tint, x, y);
+    Triple xyz = getXyzFromChromaticityCoordinates(x, y);
+    return xyz;
+}
+
+
+/*
+Returns the chromaticity coordinates from 'As Shot Neutral' matrix.
+
+'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3 / dng_sdk / documents / dng_spec_1_3_0_0.pdf : 'Mapping Camera Color Space to CIE XYZ Space'.
+
+Usage::
+
+>> > getChromaticityCoordinatesFromCameraNeutral(2850, \
+    6500, \
+    numpy.matrix([0.5309, -0.0229, -0.0336, \
+        - 0.6241, 1.3265, 0.3337, \
+        - 0.0817, 0.1215, 0.6664]).reshape((3, 3)), \
+    numpy.matrix([0.4716, 0.0603, -0.083, \
+        - 0.7798, 1.5474, 0.248, \
+        - 0.1496, 0.1937, 0.6651]).reshape((3, 3)), \
+    numpy.matrix([0.9603, 0., 0., \
+        0., 1., 0., \
+        0., 0., 0.9664]).reshape((3, 3)), \
+    numpy.matrix([0.9603, 0., 0., \
+        0., 1., 0., \
+        0., 0., 0.9664]).reshape((3, 3)), \
+    numpy.identity(3), \
+    numpy.matrix([0.305672, 1., 0.905393]).reshape((3, 1)))
+    (0.27389027140925454, 0.28376817722941361)
+
+    Args:
+calibrationIlluminant1Cct(float) : Calibration Illuminant 1 correlated color temperature.
+calibrationIlluminant2Cct(float) : Calibration Illuminant 2 correlated color temperature.
+colorMatrix1(Matrix) : Color Matrix 1 matrix(3 x 3).
+colorMatrix2(Matrix) : Color Matrix 2 matrix(3 x 3).
+cameraCalibration1(Matrix) : Camera Calibration 1 matrix(3 x 3).
+cameraCalibration2(Matrix) : Camera Calibration 2 matrix(3 x 3).
+analogBalance(Matrix) : Analog Balance matrix(3 x 3).
+asShotNeutral(Matrix) : As Shot Neutral matrix(3 x 3).
+
+Kwargs :
+    verbose(bool) : Verbose value
+
+    Returns :
+tuple.Chromaticity coordinates.
+
+*/
+void DCPProfile::getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, float& x, float& y)
+{
+    x = 0.24559589702841558;
+    y = 0.24240399461846152;
+
+    float residual = 1.0;
+    int itNb = 0;
+
+    while ((residual > 1e-7) && (itNb < 100))
+    {
+        float xPrevious = x;
+        float yPrevious = y;
+
+        float cct, tint;
+        setChromaticityCoordinates(x, y, cct, tint);
+
+        // Check that at least one color matrix is mandatory in a dcp
+        Matrix interpolatedColorMatrix;
+        Matrix interpolatedCalibMatrix;
+        if (info.has_color_matrix_1 && info.has_color_matrix_2)
+        {
+            interpolatedColorMatrix = getInterpolatedMatrix(cct, "color");
+            interpolatedCalibMatrix = getInterpolatedMatrix(cct, "calib");
+        }
+        else
+        {
+            interpolatedColorMatrix = info.has_color_matrix_1 ? color_matrix_1 : color_matrix_2;
+        }
+
+        Matrix xyzToCamera = matMult(analogBalance, matMult(interpolatedCalibMatrix, interpolatedColorMatrix));
+        Triple xyz = matMult(matInv(xyzToCamera), asShotNeutral);
+
+        for (int i = 0; i < 3; ++i)
+        {
+            xyz[i] /= xyz[1];
+        }
+
+        getChromaticityCoordinatesFromXyz(xyz, x, y);
+
+        residual = std::abs(x - xPrevious) + std::abs(y - yPrevious);
+    }
+}
+
+/*
+    Returns the 'Chromatic Adaptation' matrix using given 'XYZ' source and target matrices.
+
+    'http://brucelindbloom.com/index.html?Eqn_ChromAdapt.html'
+
+    Usage::
+
+        >>> getChromaticAdaptationMatrix(numpy.matrix([1.09923822, 1.000, 0.35445412]).reshape((3, 1)), \
+        numpy.matrix([0.96907232, 1.000, 1.121792157]).reshape((3, 1)))
+        matrix([[ 0.87145615, -0.13204674,  0.40394832],
+                [-0.09638805,  1.04909781,  0.1604033 ],
+                [ 0.0080207 ,  0.02826367,  3.06023196]])
+
+
+    Args:
+        xyzSource (Matrix): XYZ source matrix ( 3 x 1 ).
+        xyzTarget (Matrix): XYZ target matrix ( 3 x 1 ).
+
+    Kwargs:
+        verbose (bool):	Verbose value
+
+    Returns:
+        Matrix. Chromatic Adaptation matrix ( 3 x 3 ).
+*/
+DCPProfile::Matrix DCPProfile::getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget)
+{
+    const Triple pybSource = matMult(CAT02_MATRIX, xyzSource);
+    const Triple pybTarget = matMult(CAT02_MATRIX, xyzTarget);
+
+    Matrix crd = IdentityMatrix;
+    crd[0][0] = pybTarget[0] / pybSource[0];
+    crd[1][1] = pybTarget[1] / pybSource[1];
+    crd[2][2] = pybTarget[2] / pybSource[2];
+
+    const Matrix cat = matMult(matMult(matInv(CAT02_MATRIX), crd), CAT02_MATRIX);
+
+    return cat;
+}
+
+/*
+    Returns the 'camera to XYZ ( D50 )' matrix.
+    'colorMatrix1', 'colorMatrix2', 'forwardMatrix1' and 'forwardMatrix2' are considered as non existing if given as identity matrices.
+
+    'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/documents/dng_spec_1_3_0_0.pdf: 'Mapping Camera Color Space to CIE XYZ Space'.
+
+    Usage::
+
+        >>> getCameraToXyzD50Matrix(0.24559589702841558, \
+                                 0.24240399461846152, \
+                                 2850, \
+                                 6500, \
+                                 numpy.matrix([0.5309, -0.0229, -0.0336, \
+                                       -0.6241, 1.3265, 0.3337, \
+                                       -0.0817, 0.1215, 0.6664]).reshape((3, 3)), \
+                                 numpy.matrix([0.4716, 0.0603, -0.083, \
+                                       -0.7798, 1.5474, 0.248, \
+                                       -0.1496, 0.1937, 0.6651]).reshape((3, 3)), \
+                                 numpy.matrix([0.9603, 0., 0., \
+                                             0., 1., 0., \
+                                             0., 0., 0.9664]).reshape((3, 3)), \
+                                 numpy.matrix([0.9603, 0., 0., \
+                                             0., 1., 0., \
+                                             0., 0., 0.9664]).reshape((3, 3)), \
+                                 numpy.identity(3), \
+                                 numpy.matrix([0.8924, -0.1041, 0.176, \
+                                         0.4351, 0.6621, -0.0972, \
+                                         0.0505, -0.1562, 0.9308]).reshape((3, 3)), \
+                                 numpy.matrix([0.8924, -0.1041, 0.176, \
+                                         0.4351, 0.6621, -0.0972, \
+                                         0.0505, -0.1562, 0.9308]).reshape((3, 3)))
+        matrix([[ 3.48428482, -0.1041    ,  0.14605003],
+                [ 1.69880359,  0.6621    , -0.08065945],
+                [ 0.1971721 , -0.1562    ,  0.77240552]])
+
+    Args:
+        x (float): X chromaticity coordinate
+        y (float): Y chromaticity coordinate
+        calibrationIlluminant1Cct (float): Calibration Illuminant 1 correlated color temperature.
+        calibrationIlluminant2Cct (float): Calibration Illuminant 2 correlated color temperature.
+        colorMatrix1 (Matrix): Color Matrix 1 matrix ( 3 x 3 ).
+        colorMatrix2 (Matrix): Color Matrix 2 matrix ( 3 x 3 ).
+        cameraCalibration1 (Matrix): Camera Calibration 1 matrix ( 3 x 3 ).
+        cameraCalibration2 (Matrix): Camera Calibration 2 matrix ( 3 x 3 ).
+        analogBalance (Matrix): Analog Balance matrix ( 3 x 3 ).
+        forwardMatrix1 (Matrix): Forward Matrix 1 matrix ( 3 x 3 ).
+        forwardMatrix2 (Matrix): Forward Matrix 2 matrix ( 3 x 3 ).
+
+    Kwargs:
+        verbose (bool): Verbose value
+
+    Returns:
+        Matrix.  Camera to XYZ ( D50 ) matrix ( 3 x 3 ).
+*/
+DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float& x, const float& y)
+{
+    float cct, tint;
+    setChromaticityCoordinates(x, y, cct, tint);
+    Triple xyz;
+    xyz[0] = x * 1.f / y;
+    xyz[1] = 1.f;
+    xyz[2] = (1.f - x - y) * 1.f / y;
+
+    Matrix interpolatedColorMatrix;
+    if (info.has_color_matrix_1 && info.has_color_matrix_2)
+    {
+        interpolatedColorMatrix = getInterpolatedMatrix(cct, "color");
+    }
+    else
+    {
+        interpolatedColorMatrix = info.has_color_matrix_1 ? color_matrix_1 : color_matrix_2;
+    }
+    Matrix interpolatedCalibMatrix = getInterpolatedMatrix(cct, "calib");
+
+    Triple rgb = matMult(interpolatedColorMatrix, xyz);
+    Triple asShotNeutral;
+    asShotNeutral[0] = rgb[0] / rgb[1];
+    asShotNeutral[1] = rgb[1] / rgb[1];
+    asShotNeutral[2] = rgb[2] / rgb[1];
+
+    Triple referenceNeutral = matMult(matInv(matMult(analogBalance, interpolatedCalibMatrix)), asShotNeutral);
+
+    Matrix d = IdentityMatrix;
+    d[0][0] = 1.0 / referenceNeutral[0];
+    d[1][1] = 1.0 / referenceNeutral[1];
+    d[2][2] = 1.0 / referenceNeutral[2];
+
+    Matrix cameraToXyzD50;
+
+    if ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2))
+    {
+        Matrix interpolatedForwardMatrix = IdentityMatrix;
+
+        Matrix xyzToCamera = matMult(analogBalance, matMult(interpolatedCalibMatrix, interpolatedColorMatrix));
+        Matrix cameraToXyz = matInv(xyzToCamera);
+
+        double D50_cct = 5000.706605070579;  //
+        double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+        cameraToXyzD50 = matMult(cat, cameraToXyz);
+    }
+    else if ((!info.has_forward_matrix_1) || (!info.has_forward_matrix_2))
+    {
+        Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
+        cameraToXyzD50 = matMult(interpolatedForwardMatrix, matMult(d, matInv(matMult(analogBalance, interpolatedCalibMatrix))));
+    }
+    else
+    {
+
+        Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
+        cameraToXyzD50 = matMult(interpolatedForwardMatrix, matMult(d, matInv(matMult(analogBalance, interpolatedCalibMatrix))));
+    }
+
+    return cameraToXyzD50;
 }
 
 
