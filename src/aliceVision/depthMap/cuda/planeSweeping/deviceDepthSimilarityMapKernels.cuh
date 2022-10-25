@@ -119,6 +119,31 @@ __global__ void depthSimMapCopyDepthOnly_kernel(float2* out_deptSimMap, int out_
     out_depthSim->y = defaultSim;
 }
 
+template<class T>
+__global__ void mapUpscale_kernel(T* out_upscaledMap, int out_upscaledMap_p,
+                                  const T* in_map, int in_map_p, 
+                                  int out_width, int out_height, 
+                                  int in_width, int in_height, 
+                                  float ratio)
+{
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(x >= out_width || y >= out_height)
+        return;
+
+    const float ox = (float(x) - 0.5f) * ratio;
+    const float oy = (float(y) - 0.5f) * ratio;
+
+    // nearest neighbor, no interpolation
+    const int xp = min(int(floor(ox + 0.5)), in_width  - 1);
+    const int yp = min(int(floor(oy + 0.5)), in_height - 1);
+
+    // write output upscaled map
+    *get2DBufferAt(out_upscaledMap, out_upscaledMap_p, x, y) = *get2DBufferAt(in_map, in_map_p, xp, yp);
+}
+
+
 __global__ void depthSimMapUpscale_kernel(float2* out_upscaledDeptSimMap, int out_upscaledDeptSimMap_p,
                                           const float2* in_otherDepthSimMap, int in_otherDepthSimMap_p,
                                           int out_width, int out_height, 
