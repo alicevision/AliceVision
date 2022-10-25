@@ -426,7 +426,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             if(depthMapParams.useRefine)
             {
               Refine& refine = refinePerStream.at(streamIndex);
-              refine.refineRc(tile, sgm.getDeviceDepthSimMap());
+              refine.refineRc(tile, sgm.getDeviceDepthSimMap(), sgm.getDeviceNormalMap());
 
               // copy Refine depth/similarity map from device to host
               tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), deviceStreamManager.getStream(streamIndex));

@@ -7,10 +7,12 @@
 #include "Sgm.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>
 
 #include <iostream>
@@ -43,6 +45,10 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     // allocate depth/sim map in device memory
     _depthSimMap_dmp.allocate(CudaSize<2>(maxTileWidth, maxTileHeight));
 
+    // allocate normal map in device memory
+    if(_sgmParams.computeNormalMap)
+        _normalMap_dmp.allocate(CudaSize<2>(maxTileWidth, maxTileHeight));
+
     // allocate similarity volumes in device memory
     {
         const CudaSize<3> volDim(maxTileWidth, maxTileHeight, _sgmParams.maxDepths);
@@ -70,6 +76,9 @@ double Sgm::getDeviceMemoryConsumption() const
     bytes += _volumeBestSim_dmp.getBytesPadded();
     bytes += _volumeSecBestSim_dmp.getBytesPadded();
 
+    if(_sgmParams.computeNormalMap)
+        bytes += _normalMap_dmp.getBytesPadded();
+
     if(_sgmParams.doSgmOptimizeVolume)
     {
         bytes += _volumeSliceAccA_dmp.getBytesPadded();
@@ -88,6 +97,9 @@ double Sgm::getDeviceMemoryConsumptionUnpadded() const
     bytes += _depthSimMap_dmp.getBytesUnpadded();
     bytes += _volumeBestSim_dmp.getBytesUnpadded();
     bytes += _volumeSecBestSim_dmp.getBytesUnpadded();
+
+    if(_sgmParams.computeNormalMap)
+        bytes += _normalMap_dmp.getBytesUnpadded();
 
     if(_sgmParams.doSgmOptimizeVolume)
     {
@@ -149,6 +161,22 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     if(_sgmParams.exportIntermediateResults)
     {
         writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "_sgm");
+    }
+
+    // compute normal map from depth/sim map if needed
+    if(_sgmParams.computeNormalMap)
+    {
+        // downscale the region of interest
+        const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
+
+        // get R device camera from cache
+        DeviceCache& deviceCache = DeviceCache::getInstance();
+        const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _sgmParams.scale, _mp);
+
+        ALICEVISION_LOG_INFO(tile << "SGM normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+        cuda_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, rcDeviceCamera, _sgmParams, downscaledRoi, _stream);
+
+        writeDeviceImage(_normalMap_dmp, getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::depthMap, _sgmParams.scale, "Normal", tile.roi.x.begin, tile.roi.y.begin));
     }
 
     ALICEVISION_LOG_INFO(tile << "SGM depth/sim map done.");

@@ -49,6 +49,9 @@ public:
     // final depth/similarity map getter
     inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthSimMap() const { return _depthSimMap_dmp; }
 
+    // final normal map getter
+    inline const CudaDeviceMemoryPitched<float3, 2>& getDeviceNormalMap() const { return _normalMap_dmp; }
+
     /**
      * @brief Get memory consumpyion in device memory.
      * @return device memory consumpyion (in MB)
@@ -120,6 +123,7 @@ private:
     CudaHostMemoryHeap<float, 2> _depths_hmh;                  //< rc depth data host memory
     CudaDeviceMemoryPitched<float, 2> _depths_dmp;             //< rc depth data device memory
     CudaDeviceMemoryPitched<float2, 2> _depthSimMap_dmp;       //< rc result depth/sim map
+    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;         //< rc normal map
     CudaDeviceMemoryPitched<TSim, 3> _volumeBestSim_dmp;       //< rc best similarity volume
     CudaDeviceMemoryPitched<TSim, 3> _volumeSecBestSim_dmp;    //< rc second best similarity volume
     CudaDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccA_dmp;  //< for optimization: volume accumulation slice A

@@ -265,7 +265,8 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
                                                 const float2* in_depthSimMap_d, int in_depthSimMap_p,
                                                 int wsh,
                                                 int gammaC,
-                                                int gammaP,
+                                                int gammaP, 
+                                                int stepXY,
                                                 const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -275,8 +276,8 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
         return;
 
     // corresponding image coordinates
-    const int x = roi.x.begin + roiX;
-    const int y = roi.y.begin + roiY;
+    const int x = (roi.x.begin + roiX) * stepXY;
+    const int y = (roi.y.begin + roiY) * stepXY;
 
     // corresponding input depth
     const float in_depth = get2DBufferAt(in_depthSimMap_d, in_depthSimMap_p, roiX, roiY)->x; // use only depth

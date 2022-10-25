@@ -114,7 +114,8 @@ __host__ void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>&
 
 __host__ void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& out_normalMap_dmp,
                                             const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
-                                            const DeviceCamera& rcDeviceCamera,
+                                            const DeviceCamera& rcDeviceCamera, 
+                                            const SgmParams& sgmParams,
                                             const ROI& roi,
                                             cudaStream_t stream)
 {
@@ -135,6 +136,7 @@ __host__ void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& 
       wsh,
       gammaC,
       gammaP,
+      sgmParams.stepXY,
       roi);
 
     CHECK_CUDA_ERROR();

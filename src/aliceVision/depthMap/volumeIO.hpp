@@ -8,7 +8,6 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>

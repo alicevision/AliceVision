@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
@@ -97,7 +98,7 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     return (double(bytes) / (1024.0 * 1024.0));
 }
 
-void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp)
+void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthSimMap_dmp, const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
@@ -121,11 +122,9 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
         // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
         cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
 
-        // compute normal map from upscaled depth/pixSize map if needed
-        if(_refineParams.useNormalMap)
+        if(_refineParams.useNormalMap && in_sgmNormalMap_dmp.getBuffer() != nullptr)
         {
-            cuda_depthSimMapComputeNormal(_normalMap_dmp, _sgmDepthPixSizeMap_dmp, rcDeviceCamera, downscaledRoi, _stream);
-            writeDeviceImage(_normalMap_dmp, getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::depthMap, _refineParams.scale, "Normal", tile.roi.x.begin, tile.roi.y.begin));
+            cuda_normalMapUpscale(_normalMap_dmp, in_sgmNormalMap_dmp, _stream);
         }
     }
 

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/mvsData/ROI.hpp>
+#include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCamera.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
@@ -65,12 +66,14 @@ extern void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& i
  * @brief Compute the normal map from the depth/sim map (only depth is used).
  * @param[out] out_normalMap_dmp the output normal map
  * @param[in] rcDeviceCamera the R device camera
+ * @param[in] sgmParams the SGM parameters
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& out_normalMap_dmp,
                                           const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
                                           const DeviceCamera& rcDeviceCamera,
+                                          const SgmParams& sgmParams,
                                           const ROI& roi,
                                           cudaStream_t stream);
 
