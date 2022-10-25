@@ -91,7 +91,7 @@ __host__ void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& 
                                             cudaStream_t stream)
 {
     // default parameters
-    const int wsh = 3;
+    const int wsh = 4;
     const float gammaC = 1.0f;
     const float gammaP = 1.0f;
 
