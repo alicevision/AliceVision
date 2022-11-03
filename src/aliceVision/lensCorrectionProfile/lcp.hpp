@@ -571,7 +571,7 @@ private:
         else if (name == "stCamera:CameraPrettyName")
             CameraPrettyName = _currText;
         else if (name == "stCamera:CameraRawProfile")
-            CameraRawProfile = (_currText == "true");
+            CameraRawProfile = ((_currText == "true") || (_currText == "True"));
         else if (name == "stCamera:SensorFormatFactor")
             SensorFormatFactor = atof(_currText.c_str());
     }
