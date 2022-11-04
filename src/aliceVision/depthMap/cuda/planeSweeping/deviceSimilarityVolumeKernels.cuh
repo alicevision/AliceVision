@@ -101,8 +101,8 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
                                     const int wsh,
                                     const int stepXY,
                                     const float* in_depths_d, int in_depths_p, 
-                                    TSim* out_volume_1st, int out_volume1st_s, int out_volume1st_p,
-                                    TSim* out_volume_2nd, int out_volume2nd_s, int out_volume2nd_p,
+                                    TSim* out_volume_1st_d, int out_volume1st_s, int out_volume1st_p,
+                                    TSim* out_volume_2nd_d, int out_volume2nd_s, int out_volume2nd_p,
                                     const Range depthRange,
                                     const ROI roi)
 {
@@ -156,8 +156,8 @@ __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
       fsim *= 254.0f;
     }
 
-    TSim* fsim_1st = get3DBufferAt(out_volume_1st, out_volume1st_s, out_volume1st_p, vx, vy, vz);
-    TSim* fsim_2nd = get3DBufferAt(out_volume_2nd, out_volume2nd_s, out_volume2nd_p, vx, vy, vz);
+    TSim* fsim_1st = get3DBufferAt(out_volume_1st_d, out_volume1st_s, out_volume1st_p, vx, vy, vz);
+    TSim* fsim_2nd = get3DBufferAt(out_volume_2nd_d, out_volume2nd_s, out_volume2nd_p, vx, vy, vz);
 
     if (fsim < *fsim_1st)
     {
@@ -281,7 +281,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
 
 __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int out_bestDepthSimMap_p,
                                             const float* in_depths_d, int in_depths_p, 
-                                            const TSim* in_simVolume, int in_simVolume_s, int in_simVolume_p,
+                                            const TSim* in_simVolume_d, int in_simVolume_s, int in_simVolume_p,
                                             int volDimZ, 
                                             int rcDeviceCamId,
                                             int scaleStep, 
@@ -305,7 +305,7 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int o
     int bestZIdx = -1;
     for(int vz = depthRange.begin; vz < depthRange.end; ++vz)
     {
-      const float simAtZ = *get3DBufferAt(in_simVolume, in_simVolume_s, in_simVolume_p, vx, vy, vz);
+      const float simAtZ = *get3DBufferAt(in_simVolume_d, in_simVolume_s, in_simVolume_p, vx, vy, vz);
       if (simAtZ < bestSim)
       {
         bestSim = simAtZ;
@@ -334,9 +334,9 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int o
     depths.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);
 
     float3 sims;
-    sims.x = *get3DBufferAt(in_simVolume, in_simVolume_s, in_simVolume_p, vx, vy, bestZIdx_m1);
+    sims.x = *get3DBufferAt(in_simVolume_d, in_simVolume_s, in_simVolume_p, vx, vy, bestZIdx_m1);
     sims.y = bestSim;
-    sims.z = *get3DBufferAt(in_simVolume, in_simVolume_s, in_simVolume_p, vx, vy, bestZIdx_p1);
+    sims.z = *get3DBufferAt(in_simVolume_d, in_simVolume_s, in_simVolume_p, vx, vy, bestZIdx_p1);
 
     // convert sims from (0, 255) to (-1, +1)
     sims.x = (sims.x / 255.0f) * 2.0f - 1.0f;
@@ -441,7 +441,7 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
 }
 
 template <typename T>
-__global__ void volume_initVolumeYSlice_kernel(T* volume, int volume_s, int volume_p, const int3 volDim, const int3 axisT, int y, T cst)
+__global__ void volume_initVolumeYSlice_kernel(T* volume_d, int volume_s, int volume_p, const int3 volDim, const int3 axisT, int y, T cst)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int z = blockIdx.y * blockDim.y + threadIdx.y;
@@ -453,14 +453,14 @@ __global__ void volume_initVolumeYSlice_kernel(T* volume, int volume_s, int volu
 
     if ((x >= 0) && (x < (&volDim.x)[axisT.x]) && (z >= 0) && (z < (&volDim.x)[axisT.z]))
     {
-        T* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, v.x, v.y, v.z);
+        T* volume_zyx = get3DBufferAt(volume_d, volume_s, volume_p, v.x, v.y, v.z);
         *volume_zyx = cst;
     }
 }
 
 template <typename T1, typename T2>
-__global__ void volume_getVolumeXZSlice_kernel(T1* slice, int slice_p,
-                                               const T2* volume, int volume_s, int volume_p,
+__global__ void volume_getVolumeXZSlice_kernel(T1* slice_d, int slice_p,
+                                               const T2* volume_d, int volume_s, int volume_p,
                                                const int3 volDim, const int3 axisT, int y)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -474,26 +474,26 @@ __global__ void volume_getVolumeXZSlice_kernel(T1* slice, int slice_p,
     if (x >= (&volDim.x)[axisT.x] || z >= (&volDim.x)[axisT.z])
       return;
 
-    const T2* volume_xyz = get3DBufferAt(volume, volume_s, volume_p, v);
-    T1* slice_xz = get2DBufferAt(slice, slice_p, x, z);
+    const T2* volume_xyz = get3DBufferAt(volume_d, volume_s, volume_p, v);
+    T1* slice_xz = get2DBufferAt(slice_d, slice_p, x, z);
     *slice_xz = (T1)(*volume_xyz);
 }
 
-__global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice, int xzSlice_p, TSimAcc* ySliceBestInColCst, int volDimX, int volDimZ)
+__global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice_d, int xzSlice_p, TSimAcc* ySliceBestInColCst_d, int volDimX, int volDimZ)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(x >= volDimX)
         return;
 
-    TSimAcc bestCst = *get2DBufferAt(xzSlice, xzSlice_p, x, 0);
+    TSimAcc bestCst = *get2DBufferAt(xzSlice_d, xzSlice_p, x, 0);
 
     for(int z = 1; z < volDimZ; ++z)
     {
-        const TSimAcc cst = *get2DBufferAt(xzSlice, xzSlice_p, x, z);
+        const TSimAcc cst = *get2DBufferAt(xzSlice_d, xzSlice_p, x, z);
         bestCst = cst < bestCst ? cst : bestCst;  // min(cst, bestCst);
     }
-    ySliceBestInColCst[x] = bestCst;
+    ySliceBestInColCst_d[x] = bestCst;
 }
 
 /**
@@ -504,10 +504,10 @@ __global__ void volume_computeBestZInSlice_kernel(TSimAcc* xzSlice, int xzSlice_
  */
 __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
             cudaTextureObject_t rcTex,
-            TSimAcc* xzSliceForY, int xzSliceForY_p,
-            const TSimAcc* xzSliceForYm1, int xzSliceForYm1_p,
-            const TSimAcc* bestSimInYm1,
-            TSim* volAgr, int volAgr_s, int volAgr_p,
+            TSimAcc* xzSliceForY_d, int xzSliceForY_p,
+            const TSimAcc* xzSliceForYm1_d, int xzSliceForYm1_p,
+            const TSimAcc* bestSimInYm1_d,
+            TSim* volAgr_d, int volAgr_s, int volAgr_p,
             const int3 volDim,
             const int3 axisT,
             float step,
@@ -530,7 +530,7 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
     const int beginX = (axisT.x == 0) ? roi.x.begin : roi.y.begin;
     const int beginY = (axisT.x == 0) ? roi.y.begin : roi.x.begin;
 
-    TSimAcc* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
+    TSimAcc* sim_xz = get2DBufferAt(xzSliceForY_d, xzSliceForY_p, x, z);
     float pathCost = 255.0f;
 
     if((z >= 1) && (z < volDim.z - 1))
@@ -561,10 +561,10 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
           P2 = sigmoid(80.f, 255.f, 80.f, _P2, deltaC);
         }
 
-        const TSimAcc bestCostInColM1 = bestSimInYm1[x];
-        const TSimAcc pathCostMDM1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
-        const TSimAcc pathCostMD   = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z);
-        const TSimAcc pathCostMDP1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
+        const TSimAcc bestCostInColM1 = bestSimInYm1_d[x];
+        const TSimAcc pathCostMDM1 = *get2DBufferAt(xzSliceForYm1_d, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
+        const TSimAcc pathCostMD   = *get2DBufferAt(xzSliceForYm1_d, xzSliceForYm1_p, x, z);
+        const TSimAcc pathCostMDP1 = *get2DBufferAt(xzSliceForYm1_d, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
         const float minCost = multi_fminf(pathCostMD, pathCostMDM1 + _P1, pathCostMDP1 + _P1, bestCostInColM1 + P2);
 
         // if 'pathCostMD' is the minimal value of the depth
@@ -580,7 +580,7 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
 #endif
 
     // aggregate into the final output
-    TSim* volume_xyz = get3DBufferAt(volAgr, volAgr_s, volAgr_p, v.x, v.y, v.z);
+    TSim* volume_xyz = get3DBufferAt(volAgr_d, volAgr_s, volAgr_p, v.x, v.y, v.z);
     const float val = (float(*volume_xyz) * float(filteringIndex) + pathCost) / float(filteringIndex + 1);
     *volume_xyz = TSim(val);
 }

@@ -211,14 +211,14 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& out_vol
     const dim3 blockVolSlide(blockSizeL, 1, 1);
     const dim3 gridVolSlide(divUp(volDimX, blockVolSlide.x), volDimZ, 1);
 
-    CudaDeviceMemoryPitched<TSimAcc, 2>* xzSliceForY   = &inout_volSliceAccA_dmp; // Y slice
-    CudaDeviceMemoryPitched<TSimAcc, 2>* xzSliceForYm1 = &inout_volSliceAccB_dmp; // Y-1 slice
-    CudaDeviceMemoryPitched<TSimAcc, 2>* bestSimInYm1  = &inout_volAxisAcc_dmp;   // best sim score along the Y axis for each Z value
+    CudaDeviceMemoryPitched<TSimAcc, 2>* xzSliceForY_dmpPtr   = &inout_volSliceAccA_dmp; // Y slice
+    CudaDeviceMemoryPitched<TSimAcc, 2>* xzSliceForYm1_dmpPtr = &inout_volSliceAccB_dmp; // Y-1 slice
+    CudaDeviceMemoryPitched<TSimAcc, 2>* bestSimInYm1_dmpPtr  = &inout_volAxisAcc_dmp;   // best sim score along the Y axis for each Z value
 
-    // Copy the first XZ plane (at Y=0) from 'in_volSim_dmp' into 'xzSliceForYm1'
+    // Copy the first XZ plane (at Y=0) from 'in_volSim_dmp' into 'xzSliceForYm1_dmpPtr'
     volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ, 0, stream>>>(
-        xzSliceForYm1->getBuffer(),
-        xzSliceForYm1->getPitch(),
+        xzSliceForYm1_dmpPtr->getBuffer(),
+        xzSliceForYm1_dmpPtr->getPitch(),
         in_volSim_dmp.getBuffer(),
         in_volSim_dmp.getBytesPaddedUpToDim(1),
         in_volSim_dmp.getBytesPaddedUpToDim(0),
@@ -243,15 +243,15 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& out_vol
         // Foreach x:
         //   bestSimInYm1[x] = min(d_xzSliceForY[1:height])
         volume_computeBestZInSlice_kernel<<<gridColZ, blockColZ, 0, stream>>>(
-            xzSliceForYm1->getBuffer(), 
-            xzSliceForYm1->getPitch(),
-            bestSimInYm1->getBuffer(),
+            xzSliceForYm1_dmpPtr->getBuffer(), 
+            xzSliceForYm1_dmpPtr->getPitch(),
+            bestSimInYm1_dmpPtr->getBuffer(),
             volDimX, volDimZ);
 
         // Copy the 'z' plane from 'in_volSim_dmp' into 'xzSliceForY'
         volume_getVolumeXZSlice_kernel<TSimAcc, TSim><<<gridVolXZ, blockVolXZ, 0, stream>>>(
-            xzSliceForY->getBuffer(),
-            xzSliceForY->getPitch(),
+            xzSliceForY_dmpPtr->getBuffer(),
+            xzSliceForY_dmpPtr->getPitch(),
             in_volSim_dmp.getBuffer(),
             in_volSim_dmp.getBytesPaddedUpToDim(1),
             in_volSim_dmp.getBytesPaddedUpToDim(0),
@@ -259,11 +259,11 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& out_vol
 
         volume_agregateCostVolumeAtXinSlices_kernel<<<gridVolSlide, blockVolSlide, 0, stream>>>(
             rcDeviceCamera.getTextureObject(), 
-            xzSliceForY->getBuffer(),   // inout: xzSliceForY
-            xzSliceForY->getPitch(),     
-            xzSliceForYm1->getBuffer(), // in:    xzSliceForYm1
-            xzSliceForYm1->getPitch(), 
-            bestSimInYm1->getBuffer(),  // in:    bestSimInYm1                        
+            xzSliceForY_dmpPtr->getBuffer(),   // inout: xzSliceForY
+            xzSliceForY_dmpPtr->getPitch(),     
+            xzSliceForYm1_dmpPtr->getBuffer(), // in:    xzSliceForYm1
+            xzSliceForYm1_dmpPtr->getPitch(), 
+            bestSimInYm1_dmpPtr->getBuffer(),  // in:    bestSimInYm1                        
             out_volAgr_dmp.getBuffer(), 
             out_volAgr_dmp.getBytesPaddedUpToDim(1), 
             out_volAgr_dmp.getBytesPaddedUpToDim(0), 
@@ -276,7 +276,7 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& out_vol
             filteringIndex,
             roi);
 
-        std::swap(xzSliceForYm1, xzSliceForY);
+        std::swap(xzSliceForYm1_dmpPtr, xzSliceForY_dmpPtr);
     }
     
     CHECK_CUDA_ERROR();

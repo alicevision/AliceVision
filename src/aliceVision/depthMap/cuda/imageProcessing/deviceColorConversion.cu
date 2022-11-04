@@ -15,7 +15,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-__global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, int height)
+__global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab_d, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -23,7 +23,7 @@ __global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, 
     if((x >= width) || (y >= height))
         return;
 
-    CudaRGBA* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
+    CudaRGBA* rgb = get2DBufferAt(irgbaOlab_d, irgbaOlab_p, x, y);
     float3 flab = xyz2lab(rgb2xyz(make_float3(rgb->x / 255.f, rgb->y / 255.f, rgb->z / 255.f)));
 
     rgb->x = flab.x;

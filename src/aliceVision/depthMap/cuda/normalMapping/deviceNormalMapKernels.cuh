@@ -40,11 +40,10 @@ float orientedPointPlaneDistanceNormalizedNormal(const float3& point, const floa
     return (dot(point, planeNormalNormalized) - dot(planePoint, planeNormalNormalized));
 }
 
-__global__ void computeNormalMap_kernel(
-    const DeviceCameraParams& rcDeviceCamParams,
-    float* depthMap, int depthMap_p, //cudaTextureObject_t depthsTex,
-    float3* nmap, int nmap_p,
-    int width, int height, int wsh, const float gammaC, const float gammaP)
+__global__ void computeNormalMap_kernel(const DeviceCameraParams& rcDeviceCamParams,
+                                        float* depthMap_d, int depthMap_p, //cudaTextureObject_t depthsTex,
+                                        float3* nmap_d, int nmap_p,
+                                        int width, int height, int wsh, const float gammaC, const float gammaP)
 {
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -52,10 +51,10 @@ __global__ void computeNormalMap_kernel(
   if ((x >= width) || (y >= height))
     return;
 
-  float depth = *get2DBufferAt<float>(depthMap, depthMap_p, x, y); // tex2D<float>(depthsTex, x, y);
+  float depth = *get2DBufferAt<float>(depthMap_d, depthMap_p, x, y); // tex2D<float>(depthsTex, x, y);
   if(depth <= 0.0f)
   {
-    *get2DBufferAt(nmap, nmap_p, x, y) = make_float3(-1.f, -1.f, -1.f);
+    *get2DBufferAt(nmap_d, nmap_p, x, y) = make_float3(-1.f, -1.f, -1.f);
     return;
   }
 
@@ -74,7 +73,7 @@ __global__ void computeNormalMap_kernel(
   {
     for (int xp = -wsh; xp <= wsh; ++xp)
     {
-      float depthn = *get2DBufferAt<float>(depthMap, depthMap_p, x + xp, y + yp); // tex2D<float>(depthsTex, x + xp, y + yp);
+      float depthn = *get2DBufferAt<float>(depthMap_d, depthMap_p, x + xp, y + yp); // tex2D<float>(depthsTex, x + xp, y + yp);
       if ((depth > 0.0f) && (fabs(depthn - depth) < 30.0f * pixSize))
       {
         float w = 1.0f;
@@ -89,7 +88,7 @@ __global__ void computeNormalMap_kernel(
   float3 nn = make_float3(-1.f, -1.f, -1.f);
   if(!s3d.computePlaneByPCA(pp, nn))
   {
-    *get2DBufferAt(nmap, nmap_p, x, y) = make_float3(-1.f, -1.f, -1.f);
+    *get2DBufferAt(nmap_d, nmap_p, x, y) = make_float3(-1.f, -1.f, -1.f);
     return;
   }
 
@@ -101,7 +100,7 @@ __global__ void computeNormalMap_kernel(
     nn.y = -nn.y;
     nn.z = -nn.z;
   }
-  *get2DBufferAt(nmap, nmap_p, x, y) = nn;
+  *get2DBufferAt(nmap_d, nmap_p, x, y) = nn;
 }
 
 } // namespace depthMap

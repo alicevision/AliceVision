@@ -42,7 +42,7 @@ __device__ void cuda_swap_float(float& a, float& b)
  * @note This kernel implementation is not optimized because the Gaussian filter is separable.
  */
 __global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t originalFrameTex, 
-                                                 CudaRGBA* downscaleFrame, int downscaleFrame_p,
+                                                 CudaRGBA* downscaleFrame_d, int downscaleFrame_p,
                                                  int downscaleFrameWidth, 
                                                  int downscaleFrameHeight, 
                                                  int downscale, 
@@ -71,7 +71,7 @@ __global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t originalFra
             }
         }
 
-        CudaRGBA& out = BufPtr<CudaRGBA>(downscaleFrame, downscaleFrame_p).at(x, y);
+        CudaRGBA& out = BufPtr<CudaRGBA>(downscaleFrame_d, downscaleFrame_p).at(x, y);
         out.x = accPix.x / sumFactor;
         out.y = accPix.y / sumFactor;
         out.z = accPix.z / sumFactor;
@@ -80,8 +80,8 @@ __global__ void downscaleWithGaussianBlur_kernel(cudaTextureObject_t originalFra
 }
 
 __global__ void gaussianBlurVolumeZ_kernel(float* out_volume_d, int out_volume_s, int out_volume_p, 
-                                                     const float* in_volume_d, int in_volume_s, int in_volume_p, 
-                                                     int volDimX, int volDimY, int volDimZ, int gaussRadius)
+                                           const float* in_volume_d, int in_volume_s, int in_volume_p, 
+                                           int volDimX, int volDimY, int volDimZ, int gaussRadius)
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -111,8 +111,8 @@ __global__ void gaussianBlurVolumeZ_kernel(float* out_volume_d, int out_volume_s
 }
 
 __global__ void gaussianBlurVolumeXYZ_kernel(float* out_volume_d, int out_volume_s, int out_volume_p,
-                                                       const float* in_volume_d, int in_volume_s, int in_volume_p,
-                                                       int volDimX, int volDimY, int volDimZ, int gaussRadius)
+                                             const float* in_volume_d, int in_volume_s, int in_volume_p,
+                                             int volDimX, int volDimY, int volDimZ, int gaussRadius)
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -160,7 +160,7 @@ __global__ void gaussianBlurVolumeXYZ_kernel(float* out_volume_d, int out_volume
 /**
  * @warning: use an hardcoded buffer size, so max radius value is 3.
  */
-__global__ void medianFilter3_kernel(cudaTextureObject_t tex, float* texLab, int texLab_p, int width, int height, int scale)
+__global__ void medianFilter3_kernel(cudaTextureObject_t tex, float* texLab_d, int texLab_p, int width, int height, int scale)
 {
     const int radius = 3;
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -190,7 +190,7 @@ __global__ void medianFilter3_kernel(cudaTextureObject_t tex, float* texLab, int
             if(buf[k] < buf[l])
                 cuda_swap_float(buf[k], buf[l]);
 
-    BufPtr<float>(texLab, texLab_p).at(x, y) = buf[radius * filterWidth + radius];
+    BufPtr<float>(texLab_d, texLab_p).at(x, y) = buf[radius * filterWidth + radius];
 }
 
 /*********************************************************************************
