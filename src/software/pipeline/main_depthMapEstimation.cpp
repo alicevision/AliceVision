@@ -111,6 +111,8 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Number of neighbour cameras per tile.")
         ("sgmWSH", po::value<int>(&sgmParams.wsh)->default_value(sgmParams.wsh),
             "Semi Global Matching: Size of the patch used to compute the similarity.")
+        ("sgmSeedsRangeInflate", po::value<double>(&sgmParams.seedsRangeInflate)->default_value(sgmParams.seedsRangeInflate),
+            "Semi Global Matching: Seeds range inflate factor.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
             "Semi Global Matching: GammaC threshold.")
         ("sgmGammaP", po::value<double>(&sgmParams.gammaP)->default_value(sgmParams.gammaP),
@@ -307,6 +309,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.stepXY", sgmParams.stepXY);
     mp.userParams.put("sgm.stepZ", sgmParams.stepZ);
     mp.userParams.put("sgm.wsh", sgmParams.wsh);
+    mp.userParams.put("sgm.seedsRangeInflate", sgmParams.seedsRangeInflate);
     mp.userParams.put("sgm.gammaC", sgmParams.gammaC);
     mp.userParams.put("sgm.gammaP", sgmParams.gammaP);
     mp.userParams.put("sgm.p1", sgmParams.p1);

@@ -26,6 +26,7 @@ struct SgmParams
   int maxDepths = 3000;
   int maxDepthsPerTc = 1500;
   int maxTCamsPerTile = 4;
+  double seedsRangeInflate = 0.2;
   double gammaC = 5.5;
   double gammaP = 8.0;
   double p1 = 10;
@@ -45,7 +46,6 @@ struct SgmParams
 
   const int rcTcDepthsHalfLimit = 2048;
   const int rcDepthsCompStep = 6;
-  const double seedsRangeInflate = 0.2;
   const double seedsRangePercentile = 0.999;
   const bool doSgmOptimizeVolume = true;
   const bool saveDepthsToSweepTxtFile = false;

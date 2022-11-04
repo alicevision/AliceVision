@@ -176,6 +176,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.maxDepthsPerTc = mp.userParams.get<int>("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
     sgmParams.maxSideXY = mp.userParams.get<int>("sgm.maxSideXY", sgmParams.maxSideXY);
     sgmParams.maxTCamsPerTile = mp.userParams.get<int>("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
+    sgmParams.seedsRangeInflate = mp.userParams.get<double>("sgm.seedsRangeInflate", sgmParams.seedsRangeInflate);
     sgmParams.gammaC = mp.userParams.get<double>("sgm.gammaC", sgmParams.gammaC);
     sgmParams.gammaP = mp.userParams.get<double>("sgm.gammaP", sgmParams.gammaP);
     sgmParams.p1 = mp.userParams.get<double>("sgm.p1", sgmParams.p1);
