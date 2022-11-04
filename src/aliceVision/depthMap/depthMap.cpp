@@ -326,7 +326,6 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         }
     }
 
-
     // log device memory information
     logDeviceMemoryInfo();
 

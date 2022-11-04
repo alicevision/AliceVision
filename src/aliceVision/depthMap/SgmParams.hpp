@@ -38,7 +38,7 @@ struct SgmParams
 
   // constant parameters
 
-  const bool computeNormalMap = false;
+  const bool computeNormalMap = false; // for experimentation purposes
   const bool prematchinMinMaxDepthDontUseSeeds = false;
   const float prematchingMaxDepthScale = 1.5f;
   const float prematchingMinCamDist = 0.0f;
