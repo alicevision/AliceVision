@@ -228,7 +228,7 @@ void exportDepthSimMapTilePatternObj(int rc,
   const int nbRoiCornerVertices = 6;                 // 6 vertices per ROI corner
   const int nbRoiCornerFaces = 4;                    // 4 faces per ROI corner
   const int nbRoiVertices = nbRoiCornerVertices * 4; // 24 vertices per ROI
-  const int nbRoiFaces = nbRoiCornerFaces *4;        // 16 faces per ROI
+  const int nbRoiFaces = nbRoiCornerFaces * 4 + 2;   // 18 faces per ROI (16 for corners + 2 for first/last depth)
 
   std::vector<Point3d> vertices(nbRoiVertices * tileRoiList.size());
   std::vector<std::tuple<int,int,int>> faces(nbRoiFaces * tileRoiList.size());
@@ -292,6 +292,22 @@ void exportDepthSimMapTilePatternObj(int rc,
         faces[fStartIdx + 1] = {vStartIdx + 1, vStartIdx + 2, vStartIdx + 3};
         faces[fStartIdx + 2] = {vStartIdx    , vStartIdx + 1, vStartIdx + 4};
         faces[fStartIdx + 3] = {vStartIdx + 1, vStartIdx + 4, vStartIdx + 5};
+      }
+
+      // build first/last depth faces
+      {
+          const std::size_t vStartIdx = ri * nbRoiVertices;
+          const std::size_t fStartIdx = ri * nbRoiFaces + roiCorners.size() * nbRoiCornerFaces;
+
+          // first depth
+          faces[fStartIdx    ] = {vStartIdx, 
+                                  vStartIdx + 1 * nbRoiCornerVertices, 
+                                  vStartIdx + 2 * nbRoiCornerVertices}; 
+
+          // last depth
+          faces[fStartIdx + 1] = {vStartIdx + 1 * nbRoiCornerVertices + 1, 
+                                  vStartIdx + 2 * nbRoiCornerVertices + 1,
+                                  vStartIdx + 3 * nbRoiCornerVertices + 1};
       }
   }
 
