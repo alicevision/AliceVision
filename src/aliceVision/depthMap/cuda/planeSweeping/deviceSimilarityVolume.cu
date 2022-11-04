@@ -69,6 +69,30 @@ __host__ void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volum
     CHECK_CUDA_ERROR();
 }
 
+__host__ void cuda_volumeUpdateUninitializedSimilarity(const CudaDeviceMemoryPitched<TSim, 3>& in_volBestSim_dmp,
+                                                       CudaDeviceMemoryPitched<TSim, 3>& inout_volSecBestSim_dmp,
+                                                       cudaStream_t stream)
+{
+    assert(in_volBestSim_dmp.getSize() == inout_volSecBestSim_dmp.getSize());
+
+    const CudaSize<3>& volDim = inout_volSecBestSim_dmp.getSize();
+
+    const dim3 block(32, 4, 1);
+    const dim3 grid(divUp(volDim.x(), block.x), divUp(volDim.y(), block.y), volDim.z());
+
+    volume_updateUninitialized_kernel<<<grid, block, 0, stream>>>(
+        inout_volSecBestSim_dmp.getBuffer(),
+        inout_volSecBestSim_dmp.getBytesPaddedUpToDim(1),
+        inout_volSecBestSim_dmp.getBytesPaddedUpToDim(0),
+        in_volBestSim_dmp.getBuffer(),
+        in_volBestSim_dmp.getBytesPaddedUpToDim(1),
+        in_volBestSim_dmp.getBytesPaddedUpToDim(0), 
+        int(volDim.x()),
+        int(volDim.y()));
+
+    CHECK_CUDA_ERROR();
+}
+
 __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_volBestSim_dmp,
                                            CudaDeviceMemoryPitched<TSim, 3>& out_volSecBestSim_dmp,
                                            const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp,

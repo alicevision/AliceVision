@@ -43,6 +43,16 @@ extern void cuda_volumeAdd(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volume_
                            cudaStream_t stream);
 
 /**
+ * @brief Update second best similarity volume uninitialized values with first best volume values.
+ * @param[in] in_volBestSim_dmp the best similarity volume in device memory
+ * @param[out] inout_volSecBestSim_dmp the second best similarity volume in device memory
+ * @param[in] stream the stream for gpu execution
+ */
+extern void cuda_volumeUpdateUninitializedSimilarity(const CudaDeviceMemoryPitched<TSim, 3>& in_volBestSim_dmp,
+                                                     CudaDeviceMemoryPitched<TSim, 3>& inout_volSecBestSim_dmp,
+                                                     cudaStream_t stream);
+
+/**
  * @brief Compute the best / second best similarity volume for the given RC / TC.
  * @param[out] out_volBestSim_dmp the best similarity volume in device memory
  * @param[out] out_volSecBestSim_dmp the second best similarity volume in device memory

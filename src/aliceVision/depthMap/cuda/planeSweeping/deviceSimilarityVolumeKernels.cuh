@@ -69,6 +69,27 @@ __global__ void volume_add_kernel(TSimRefine* inout_volume_d, int inout_volume_s
     *outSimPtr += *get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz);
 }
 
+__global__ void volume_updateUninitialized_kernel(TSim* inout_volume2nd_d, int inout_volume2nd_s, int inout_volume2nd_p, 
+                                                  const TSim* in_volume1st_d, int in_volume1st_s, int in_volume1st_p, 
+                                                  int volDimX, int volDimY)
+{
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vz = blockIdx.z;
+
+    if(vx >= volDimX || vy >= volDimY)
+        return;
+
+    // input/output second best similarity value
+    TSim* inout_simPtr = get3DBufferAt(inout_volume2nd_d, inout_volume2nd_s, inout_volume2nd_p, vx, vy, vz);
+
+    if(*inout_simPtr >= 255.f) // invalid or uninitialized similarity value
+    {
+        // update second best similarity value with first best similarity value
+        *inout_simPtr = *get3DBufferAt(in_volume1st_d, in_volume1st_s, in_volume1st_p, vx, vy, vz);
+    }
+}
+
 __global__ void volume_slice_kernel(cudaTextureObject_t rcTex,
                                     cudaTextureObject_t tcTex,
                                     int rcDeviceCamId,
