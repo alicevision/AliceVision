@@ -336,8 +336,8 @@ void exportDepthSimMapTilePatternObj(int rc,
   {
       const auto& vertex = vertices[i];
       aimesh->mVertices[i].x = vertex.x;
-      aimesh->mVertices[i].y = vertex.y;
-      aimesh->mVertices[i].z = vertex.z;
+      aimesh->mVertices[i].y = -vertex.y; // openGL display
+      aimesh->mVertices[i].z = -vertex.z; // openGL display
   }
 
   aimesh->mColors[0] = new aiColor4D[vertices.size()];
