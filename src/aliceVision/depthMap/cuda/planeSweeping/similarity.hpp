@@ -6,6 +6,10 @@
 
 #pragma once
 
+// #define TSIM_REFINE_USE_HALF
+#define CUDA_NO_HALF
+#include <cuda_fp16.h>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -23,7 +27,11 @@ namespace depthMap {
     using TSimAcc = unsigned int; // TSimAcc is the similarity accumulation type
 #endif
 
-using TSimRefine = float;
+#ifdef TSIM_REFINE_USE_HALF
+    using TSimRefine = __half;
+#else
+    using TSimRefine = float;
+#endif
 
 } // namespace depthMap
 } // namespace aliceVision

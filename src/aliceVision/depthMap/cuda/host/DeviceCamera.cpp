@@ -38,7 +38,13 @@ void buildFrameCudaTexture(CudaDeviceMemoryPitched<CudaRGBA, 2>& frame_dmp, cuda
 
     cudaResourceDesc resDesc;
     resDesc.resType = cudaResourceTypePitch2D;
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+    resDesc.res.pitch2D.desc = cudaCreateChannelDescHalf4();
+#else
     resDesc.res.pitch2D.desc = cudaCreateChannelDesc<CudaRGBA>();
+#endif
+
     resDesc.res.pitch2D.devPtr = frame_dmp.getBuffer();
     resDesc.res.pitch2D.width = frame_dmp.getSize()[0];
     resDesc.res.pitch2D.height = frame_dmp.getSize()[1];

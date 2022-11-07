@@ -83,8 +83,8 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
 {
     const int maxImageSize = mp.getMaxImageWidth() * mp.getMaxImageHeight(); // process downscale apply
 
-    const double sgmFrameCostMB = ((maxImageSize / depthMapParams.sgmParams.scale) * 16.0) / (1024.0 * 1024.0); // SGM float4 RGBA
-    const double refineFrameCostMB = ((maxImageSize / depthMapParams.refineParams.scale) * 16.0) / (1024.0 * 1024.0); // Refine float4 RGBA
+    const double sgmFrameCostMB = ((maxImageSize / depthMapParams.sgmParams.scale) * sizeof(CudaRGBA)) / (1024.0 * 1024.0); // SGM RGBA
+    const double refineFrameCostMB = ((maxImageSize / depthMapParams.refineParams.scale) * sizeof(CudaRGBA)) / (1024.0 * 1024.0); // Refine RGBA
     const double cameraFrameCostMB = sgmFrameCostMB + (depthMapParams.useRefine ? refineFrameCostMB : 0.0); // SGM + Refine single frame cost
 
     double sgmTileCostMB = 0.0;

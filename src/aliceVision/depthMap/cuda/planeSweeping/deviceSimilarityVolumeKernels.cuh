@@ -66,7 +66,12 @@ __global__ void volume_add_kernel(TSimRefine* inout_volume_d, int inout_volume_s
         return;
 
     TSimRefine* outSimPtr = get3DBufferAt(inout_volume_d, inout_volume_s, inout_volume_p, vx, vy, vz);
+
+#ifdef TSIM_REFINE_USE_HALF
+    *outSimPtr = __hadd(*outSimPtr, *get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz));
+#else
     *outSimPtr += *get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz);
+#endif
 }
 
 __global__ void volume_updateUninitialized_kernel(TSim* inout_volume2nd_d, int inout_volume2nd_s, int inout_volume2nd_p, 
@@ -276,7 +281,11 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     TSimRefine* outSimPtr = get3DBufferAt(inout_volSim_d, inout_volSim_s, inout_volSim_p, vx, vy, vz);
 
     // add the output similarity value
+#ifdef TSIM_REFINE_USE_HALF
+    *outSimPtr = __hadd(*outSimPtr, TSimRefine(fsimInvertedFiltered));
+#else
     *outSimPtr += TSimRefine(fsimInvertedFiltered);
+#endif
 }
 
 __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int out_bestDepthSimMap_p,

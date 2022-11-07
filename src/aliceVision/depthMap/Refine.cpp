@@ -168,7 +168,7 @@ void Refine::refineAndFuseDepthSimMap(const Tile& tile)
 
     // initialize the similarity volume at 0
     // each tc filtered and inverted similarity value will be summed in this volume
-    cuda_volumeInitialize(_volumeRefineSim_dmp, 0.f, _stream);
+    cuda_volumeInitialize(_volumeRefineSim_dmp, TSimRefine(0.f), _stream);
 
     // get device cache instance
     DeviceCache& deviceCache = DeviceCache::getInstance();
