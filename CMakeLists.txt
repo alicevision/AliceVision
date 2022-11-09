@@ -124,8 +124,8 @@ set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_S
 if(AV_BUILD_ZLIB)
 set(ZLIB_TARGET zlib)
 ExternalProject_Add(${ZLIB_TARGET}
-       URL http://www.zlib.net/zlib-1.2.12.tar.gz
-       URL_HASH SHA256=91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9
+       URL http://www.zlib.net/zlib-1.2.13.tar.gz
+       URL_HASH SHA256=b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30
        DOWNLOAD_DIR ${BUILD_DIR}/download/zlib
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
