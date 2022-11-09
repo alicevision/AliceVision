@@ -363,10 +363,10 @@ private:
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
 
-  //List of views which are affected by a previous update
-  std::set<IndexT> _registeredCandidatesViews;
-
   // Temporary data
+
+  /// List of views which are affected by a previous update
+  std::set<IndexT> _registeredCandidatesViews;
 
   /// Putative landmark tracks (visibility per potential 3D point)
   track::TracksMap _map_tracks;
