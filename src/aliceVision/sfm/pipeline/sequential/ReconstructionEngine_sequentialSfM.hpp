@@ -330,7 +330,7 @@ private:
       std::map<IndexT, std::set<IndexT> > & mapTracksToTriangulate) const;
 
   /**
-   * @brief  Loop over the reconstructed views, and for each landmarks of the reconstructed views, 
+   * @brief  Loop over the reconstructed views, and for each landmark of the reconstructed views, 
    * loop over their tracks to detect which views may have new information using this newly reconstructed views
    * 
    * @param newReconstructedViews a list of reconstructed views to analyse
