@@ -410,6 +410,8 @@ bool process_basic(sfmData::SfMData& sfmData, std::map<IndexT, calibration::Chec
             return false;
         }
 
+        
+
         ALICEVISION_LOG_INFO("Processing Intrinsic " << intrinsicId);
 
 
@@ -421,6 +423,13 @@ bool process_basic(sfmData::SfMData& sfmData, std::map<IndexT, calibration::Chec
             if (pv.second->getIntrinsicId() != intrinsicId)
             {
                 continue;
+            }
+
+            std::shared_ptr<camera::Undistortion> undisto;
+            IndexT uid = pv.second->getUndistortionId();
+            if (uid != UndefinedIndexT)
+            {
+                undisto = sfmData.getUndistortions()[uid];
             }
 
             const calibration::CheckerDetector& detector = boardsAllImages[pv.first];
@@ -457,6 +466,11 @@ bool process_basic(sfmData::SfMData& sfmData, std::map<IndexT, calibration::Chec
                     Eigen::Vector2d curpt;
                     curpt = detector.getCorners()[cid].center;
                     curpt = cameraPinhole->get_ud_pixel(curpt);
+
+                    if (undisto)
+                    {
+                        curpt = undisto->undistort(curpt);
+                    }
 
                     refpts.push_back(refpt);
                     points.push_back(curpt);
@@ -674,7 +688,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     double squareSize = 0.1;
     double distance = 1.0;
-    bool useBetaFeatureInnerGrids = true;
+    bool useBetaFeatureInnerGrids = false;
     bool useSimplePinhole = false;
     // Command line parameters
     po::options_description allParams(
