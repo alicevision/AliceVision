@@ -60,22 +60,3 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
     BOOST_CHECK( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
   }
 }
-
-BOOST_AUTO_TEST_CASE(matchingImageCollection_IO)
-{
-  PairSet pairSetGT;
-  pairSetGT.insert( std::make_pair(0,1) );
-  pairSetGT.insert( std::make_pair(1,2) );
-  pairSetGT.insert( std::make_pair(2,0) );
-
-  PairSet pairSetGTsorted;
-  pairSetGTsorted.insert( std::make_pair(0,1) );
-  pairSetGTsorted.insert( std::make_pair(0,2) );
-  pairSetGTsorted.insert( std::make_pair(1,2) );
-
-  BOOST_CHECK( savePairs("pairsT_IO.txt", pairSetGT));
-
-  PairSet loaded_Pairs;
-  BOOST_CHECK( loadPairs("pairsT_IO.txt", loaded_Pairs));
-  BOOST_CHECK( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
-}
