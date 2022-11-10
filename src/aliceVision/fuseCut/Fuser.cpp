@@ -103,7 +103,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
 
     int d = pixSizeBall;
 
-    float sim = simMap(cell.y * w + cell.x);
+    const float sim = simMap(cell.y, cell.x);
     if(sim >= 1.0f)
     {
         d = pixSizeBallWSP;
@@ -118,7 +118,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
         for(ncell.y = std::max(0, cell.y - d); ncell.y <= std::min(h - 1, cell.y + d); ncell.y++)
         {
             // printf("%i %i %i %i %i %i %i %i\n",ncell.x,ncell.y,w,h,w*h,depthMap->size(),cam,scale);
-            float depth = depthMap(ncell.y * w + ncell.x);
+            const float depth = depthMap(ncell.y, ncell.x);
             // Point3d p1 = _mp.CArr[rc] +
             // (_mp.iCamArr[rc]*Point2d((float)ncell.x*(float)scale,(float)ncell.y*(float)scale)).normalize()*depth;
             // if ( (p1-p).size() < pixSize ) {
@@ -363,7 +363,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
         {
             for(int x = 0; x < w; ++x)
             {
-                float depth = rcdepthMap(y * w + x);
+                const float depth = rcdepthMap(y, x);
                 if(depth > 0.0f)
                 {
                     if(j % step == 0)
