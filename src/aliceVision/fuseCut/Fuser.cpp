@@ -770,7 +770,7 @@ std::string generateTempPtsSimsFiles(const std::string& tmpDir, mvsUtils::MultiV
             image::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale),
                              simMap, image::EImageColorSpace::NO_CONVERSION);
 
-            if (depthMap.size() < w * h || simMap.size() < w * h)
+            if (depthMap.size() != (w * h) || simMap.size() != (w * h))
             {
                 throw std::runtime_error("Invalid image size");
             }
