@@ -602,7 +602,7 @@ public:
 
     boost::filesystem::path filepath = boost::filesystem::path(_debugDirectory) /
           (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
-    image::writeImage(filepath.string(), toSave, image::EImageColorSpace::AUTO);
+    image::writeImage(filepath.string(), toSave, image::ImageWriteOptions());
   }
 
 private:

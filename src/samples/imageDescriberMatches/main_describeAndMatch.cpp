@@ -118,7 +118,8 @@ int main(int argc, char **argv)
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     const std::string out_filename = "00_images.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(out_filename, concat,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
   }
 
   {
@@ -136,7 +137,8 @@ int main(int argc, char **argv)
       DrawCircle(imaB.x()+imageL.Width(), imaB.y(), 3.0f, 255, &concat);
     }
     const std::string out_filename = "01_features.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(out_filename, concat,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
   }
 
   //--

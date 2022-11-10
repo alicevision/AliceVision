@@ -19,7 +19,7 @@ public:
 
     void loadCameraParameters();
     void allocHostMaps( int w, int h );
-    void copyDepthMap( const std::vector<float>& depthMap );
+    void copyDepthMap(const float* depthMap, int depthMapSize);
 
     const float* getDepthMapHst()  const; // an input
     float3*      getNormalMapHst();       // an output

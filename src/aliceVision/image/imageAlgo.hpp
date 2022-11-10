@@ -47,20 +47,7 @@ void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src,
                   image::EImageColorSpace fromColorSpace, image::EImageColorSpace toColorSpace);
 
 /**
- * @brief transpose a given image buffer
- * @param[in] width The image buffer width
- * @param[in] height The image buffer height
- * @param[in,out] buffer The image buffer
- */
-void transposeImage(int width, int height, std::vector<unsigned char>& buffer);
-void transposeImage(int width, int height, std::vector<rgb>& buffer);
-void transposeImage(int width, int height, std::vector<float>& buffer);
-void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer);
-
-/**
  * @brief resize a given image buffer
- * @param[in] inWidth The input image buffer width
- * @param[in] inHeight The input image buffer height
  * @param[in] downscale The resize downscale
  * @param[in] inBuffer The input image buffer
  * @param[out] outBuffer The output image buffer
@@ -69,12 +56,8 @@ void transposeImage(int width, int height, std::vector<image::RGBfColor>& buffer
  *            See openImageIO documentation "ImageBufAlgo filtername"
  * @param[in] filterSize The resize filter size
  */
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, int downscale,
-                 const std::vector<image::RGBfColor>& inBuffer,
-                 std::vector<image::RGBfColor>& outBuffer,
+void resizeImage(int downscale, const image::Image<float>& inImage,
+                 image::Image<float>& outImage,
                  const std::string& filter = "", float filterSize = 0);
 void resizeImage(int downscale, const image::Image<image::RGBfColor>& inImage,
                  image::Image<image::RGBfColor>& outImage,
@@ -85,8 +68,6 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
 
 /**
  * @brief convolve a given image buffer
- * @param[in] inWidth The input image buffer width
- * @param[in] inHeight The input image buffer heightt
  * @param[in] inBuffer The input image buffer
  * @param[out] outBuffer outBuffer The output image buffer
  * @param[in] kernel The kernel name, can be "gaussian", "sharp-gaussian", "box", ...
@@ -95,23 +76,30 @@ void resizeImage(int downscale, const image::Image<image::RGBAfColor>& inImage,
  * @param[in] kernelWidth The kernel width
  * @param[in] kernelHeight The kernal height
  */
-void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-void convolveImage(int inWidth, int inHeight, const std::vector<image::RGBfColor>& inBuffer,
-                   std::vector<image::RGBfColor>& outBuffer,
+void convolveImage(const image::Image<unsigned char>& inBuffer,
+                   image::Image<unsigned char>& outBuffer,
                    const std::string& kernel = "gaussian",
                    float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
+void convolveImage(const image::Image<rgb>& inBuffer, image::Image<rgb>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+void convolveImage(const image::Image<float>& inBuffer, image::Image<float>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+void convolveImage(const image::Image<image::RGBfColor>& inBuffer,
+                   image::Image<image::RGBfColor>& outBuffer,
+                   const std::string& kernel = "gaussian",
+                   float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
+
 /**
  * @brief fill holes in a given image buffer with plausible values
- * @param[in] inWidth The input image buffer width
- * @param[in] inHeight The input image buffer height
  * @param[in,out] colorBuffer The image buffer to fill
  * @param[in] alphaBuffer The input alpha buffer containing 0.0/1.0 for empty/valid pixels
  */
-void fillHoles(int inWidth, int inHeight, std::vector<image::RGBfColor>& colorBuffer,
-               const std::vector<float>& alphaBuffer);
 void fillHoles(image::Image<image::RGBfColor>& image, const std::vector<float>& alphaBuffer);
 
 /**

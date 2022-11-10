@@ -129,7 +129,9 @@ int main(int argc, char **argv)
 
         std::string outputPath = outputFilePath + fs::path(view.getImagePath()).stem().string() + ".EXR"; 
         oiio::ParamValueList metadata = image::getMetadataFromMap(view.getMetadata()); 
-        image::writeImage(outputPath, img, image::EImageColorSpace::LINEAR, metadata); 
+        image::writeImage(outputPath, img,
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR),
+                          metadata);
     } 
  
 /* 

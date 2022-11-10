@@ -26,27 +26,6 @@ class rgb;
 
 namespace image {
 
-struct OutputFileColorSpace
-{
-    EImageColorSpace from{EImageColorSpace::LINEAR};
-    EImageColorSpace to{EImageColorSpace::AUTO};
-
-    OutputFileColorSpace(EImageColorSpace from_, EImageColorSpace to_)
-        : from(from_)
-        , to(to_)
-    {
-    }
-    /// @brief Assumes that @p from is LINEAR
-    explicit OutputFileColorSpace(EImageColorSpace to_)
-    {
-        if(to_ == EImageColorSpace::NO_CONVERSION)
-            to = from;
-        else
-            to = to_;
-    }
-    OutputFileColorSpace() = default;
-};
-
 /**
  * @brief Available image file type for pipeline output
  */
@@ -58,25 +37,6 @@ enum class EImageFileType
   EXR,
   NONE
 };
-
-/**
- * @brief aggregate for multiple image reading options
- */
-struct ImageReadOptions
-{  
-  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
-  workingColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance), subROI(roi)
-  {
-  }
-
-  EImageColorSpace workingColorSpace;
-  bool applyWhiteBalance;
-
-  //ROI for this image.
-  //If the image contains an roi, this is the roi INSIDE the roi.
-  oiio::ROI subROI;
-};
-
 
 /**
  * @brief get informations about each image file type
@@ -136,7 +96,8 @@ enum class EStorageDataType
     Float, //< Use full floating point precision to store
     Half, //< Use half (values our of range could become inf or nan)
     HalfFinite, //< Use half, but ensures out-of-range pixels are clamps to keep finite pixel values
-    Auto //< Use half if all pixels can be stored in half without clamp, else use full float
+    Auto, //< Use half if all pixels can be stored in half without clamp, else use full float
+    Undefined //< Storage data type is not defined and should be inferred from other sources
 };
 
 std::string EStorageDataType_informations();
@@ -189,6 +150,64 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
  * @return the modified stream without the read enum.
  */
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
+
+
+/**
+ * @brief aggregate for multiple image reading options
+ */
+struct ImageReadOptions
+{
+    ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
+                     bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
+        workingColorSpace(colorSpace),
+        applyWhiteBalance(useWhiteBalance),
+        subROI(roi)
+    {
+    }
+
+    EImageColorSpace workingColorSpace;
+    bool applyWhiteBalance;
+
+    //ROI for this image.
+    //If the image contains an roi, this is the roi INSIDE the roi.
+    oiio::ROI subROI;
+};
+
+/**
+ * @brief aggregate for multiple image writing options
+ */
+class ImageWriteOptions
+{
+public:
+    ImageWriteOptions() = default;
+
+    EImageColorSpace getFromColorSpace() const { return _fromColorSpace; }
+    EImageColorSpace getToColorSpace() const { return _toColorSpace; }
+    EStorageDataType getStorageDataType() const { return _storageDataType; }
+
+    ImageWriteOptions& fromColorSpace(EImageColorSpace colorSpace)
+    {
+        _fromColorSpace = colorSpace;
+        return *this;
+    }
+
+    ImageWriteOptions& toColorSpace(EImageColorSpace colorSpace)
+    {
+        _toColorSpace = colorSpace;
+        return *this;
+    }
+
+    ImageWriteOptions& storageDataType(EStorageDataType storageDataType)
+    {
+        _storageDataType = storageDataType;
+        return *this;
+    }
+
+private:
+    EImageColorSpace _fromColorSpace{EImageColorSpace::LINEAR};
+    EImageColorSpace _toColorSpace{EImageColorSpace::AUTO};
+    EStorageDataType _storageDataType{EStorageDataType::Undefined};
+};
 
 /**
  * @brief Test if the extension is supported for undistorted images.
@@ -282,81 +301,53 @@ void readImageDirect(const std::string& path, Image<unsigned char>& image);
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace outputImageColorSpace,const oiio::ParamValueList& metadata = oiio::ParamValueList(),const oiio::ROI& roi = oiio::ROI());
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace outputImageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-
-void writeImage(const std::string& path, const Image<float>& image,
-                OutputFileColorSpace imageColorSpace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI());
-
-void writeImage(const std::string& path, const Image<RGBAfColor>& image,
-                OutputFileColorSpace colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI());
-
-void writeImage(const std::string& path, const Image<RGBAColor>& image,
-                OutputFileColorSpace colorspace,
+void writeImage(const std::string& path, const Image<unsigned char>& image,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image,
-                OutputFileColorSpace colorspace,
+void writeImage(const std::string& path, const Image<int>& image,
+                const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+void writeImage(const std::string& path, const Image<IndexT>& image,
+                const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+void writeImage(const std::string& path, const Image<float>& image, const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
                 const oiio::ROI& roi = oiio::ROI());
 
-void writeImage(const std::string& path, const Image<RGBColor>& image,
-                OutputFileColorSpace colorspace,
+void writeImage(const std::string& path, const Image<RGBAfColor>& image, const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList(),
+                const oiio::ROI& roi = oiio::ROI());
+
+void writeImage(const std::string& path, const Image<RGBAColor>& image, const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+void writeImage(const std::string& path, const Image<RGBfColor>& image, const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList(),
+                const oiio::ROI& roi = oiio::ROI());
+
+void writeImage(const std::string& path, const Image<RGBColor>& image, const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 /**
- * @brief read an image with a given path and buffer
+ * @brief write an image with a given path and buffer, converting to float as necessary to perform
+ * intermediate calculations.
  * @param[in] path The given path to the image
- * @param[out] width The output image width
- * @param[out] height The output image height
- * @param[out] buffer The output image buffer
- * @param[in] image color space
+ * @param[in] image The output image buffer
  */
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<RGBfColor>& buffer,
-               EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<RGBAfColor>& buffer,
-               EImageColorSpace toColorSpace);
+void writeImageWithFloat(const std::string& path, const Image<unsigned char>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
-/**
- * @brief write an image with a given path and buffer
- * @param[in] path The given path to the image
- * @param[in] width The input image width
- * @param[in] height The input image height
- * @param[in] buffer The input image buffer
- */
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer,
-                EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer,
-                EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer,
-                EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer,
-                EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<RGBfColor>& buffer,
-                EImageQuality imageQuality, const OutputFileColorSpace& colorspace,
-                const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImageWithFloat(const std::string& path, const Image<int>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata = oiio::ParamValueList());
+
+void writeImageWithFloat(const std::string& path, const Image<IndexT>& image,
+                         const ImageWriteOptions& options,
+                         const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 template <typename T>
 struct ColorTypeInfo

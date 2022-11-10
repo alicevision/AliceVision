@@ -202,7 +202,8 @@ int aliceVision_main(int argc, char ** argv)
     image::Image<image::RGBfColor> originalImage;
     image::readImage(viewImagePathI, originalImage, image::EImageColorSpace::LINEAR);
     destFilename_I = (fs::path(outputFolder) / (origFilename + ".png")).string();
-    image::writeImage(destFilename_I, originalImage, image::EImageColorSpace::SRGB);
+    image::writeImage(destFilename_I, originalImage,
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::SRGB));
     }
 
     {
@@ -211,7 +212,8 @@ int aliceVision_main(int argc, char ** argv)
     image::Image<image::RGBfColor> originalImage;
     image::readImage(viewImagePathJ, originalImage, image::EImageColorSpace::LINEAR);
     destFilename_J = (fs::path(outputFolder) / (origFilename + ".png")).string();
-    image::writeImage(destFilename_J, originalImage, image::EImageColorSpace::SRGB);
+    image::writeImage(destFilename_J, originalImage,
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::SRGB));
     }
 
     const std::pair<size_t, size_t> dimImageI = std::make_pair(viewI->getWidth(), viewI->getHeight());

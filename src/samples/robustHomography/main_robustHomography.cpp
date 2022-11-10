@@ -66,7 +66,8 @@ int main() {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     std::string out_filename = "01_concat.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(out_filename, concat,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
   }
 
   //- Draw features on the two image (side by side)
@@ -84,7 +85,8 @@ int main() {
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     std::string out_filename = "02_features.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(out_filename, concat,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
   }
 
   std::vector<IndMatch> vec_PutativeMatches;
@@ -196,13 +198,13 @@ int main() {
       //---------------------------------------
       // reread right image that will be warped to fit left image
       readImage(jpg_filenameR, image, image::EImageColorSpace::NO_CONVERSION);
-      writeImage("query.png", image, image::EImageColorSpace::NO_CONVERSION);
+      writeImage("query.png", image, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 
       // Create and fill the output image
       Image<RGBColor> imaOut(imageL.Width(), imageL.Height());
       image::Warp(image, H.getMatrix(), imaOut);
       const std::string imageNameOut = "query_warped.png";
-      writeImage(imageNameOut, imaOut, image::EImageColorSpace::NO_CONVERSION);
+      writeImage(imageNameOut, imaOut, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
     }
     else  {
       std::cout << "ACRANSAC was unable to estimate a rigid homography"

@@ -143,8 +143,8 @@ public:
     void deleteNormalMapping( NormalMapping* m );
 
     bool computeNormalMap( NormalMapping* mapping,
-                           const std::vector<float>& depthMap,
-                           std::vector<image::RGBfColor>& normalMap,
+                           const image::Image<float>& depthMap,
+                           image::Image<image::RGBfColor>& normalMap,
                            int rc, int scale,
                            float igammaC, float igammaP, int wsh);
 

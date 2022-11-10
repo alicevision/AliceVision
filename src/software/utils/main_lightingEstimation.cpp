@@ -206,7 +206,7 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
-                        image::EImageColorSpace::AUTO);
+                        image::ImageWriteOptions());
     }
     break;
     case EAlbedoEstimation::BLUR_FILTER:
@@ -217,7 +217,7 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
-                        image::EImageColorSpace::AUTO);
+                        image::ImageWriteOptions());
     }
     break;
   }
@@ -245,7 +245,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
-                        image::EImageColorSpace::AUTO);
+                        image::ImageWriteOptions());
     }
     break;
     case EAlbedoEstimation::BLUR_FILTER:
@@ -256,7 +256,7 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
       image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
-                        image::EImageColorSpace::AUTO);
+                        image::ImageWriteOptions());
     }
     break;
   }

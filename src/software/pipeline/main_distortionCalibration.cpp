@@ -163,7 +163,8 @@ bool retrieveLines(std::vector<calibration::LineWithPoints> & lineWithPoints, co
     {
         image::Image<image::RGBColor> drawing = input;
         detect.drawCheckerBoard(drawing);
-        image::writeImage(checkerImagePath, drawing, image::EImageColorSpace::NO_CONVERSION);
+        image::writeImage(checkerImagePath, drawing,
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
     }
 
     lineWithPoints.clear();
@@ -761,10 +762,11 @@ int aliceVision_main(int argc, char* argv[])
 
             Vec2 offset;
             image::Image<image::RGBColor> ud = undistort(offset, cameraPinhole, input);
-            image::writeImage(undistortedImagePath, ud, image::EImageColorSpace::AUTO);
+            image::writeImage(undistortedImagePath, ud, image::ImageWriteOptions());
 
             image::Image<image::RGBfColor> stmap = undistortSTMAP(offset, cameraPinhole, input);
-            image::writeImage(stMapImagePath, stmap, image::EImageColorSpace::NO_CONVERSION);
+            image::writeImage(stMapImagePath, stmap,
+                              image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
         }
     }
 

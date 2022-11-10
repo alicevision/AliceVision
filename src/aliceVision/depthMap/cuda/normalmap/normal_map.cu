@@ -232,14 +232,14 @@ void NormalMapping::allocHostMaps( int w, int h )
     }
 }
 
-void NormalMapping::copyDepthMap( const std::vector<float>& depthMap )
+void NormalMapping::copyDepthMap(const float* depthMap , int depthMapSize)
 {
-    if( _allocated_floats > depthMap.size() )
+    if (_allocated_floats > depthMapSize)
     {
         std::cerr << "WARNING: " << __FILE__ << ":" << __LINE__
                   << ": copying depthMap whose origin is too small" << std::endl;
     }
-    memcpy( _depthMapHst, depthMap.data(), _allocated_floats*sizeof(float) );
+    memcpy( _depthMapHst, depthMap, _allocated_floats*sizeof(float) );
 }
 
 const float* NormalMapping::getDepthMapHst() const

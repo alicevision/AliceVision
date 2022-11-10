@@ -66,11 +66,11 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
     using Pix = typename ImageT::Tpixel;
     Pix pixZero(Pix::Zero());
     UndistortImage(image, cam, image_ud, pixZero);
-    writeImage(dstColorImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+    writeImage(dstColorImage, image_ud, image::ImageWriteOptions(), metadata);
   }
   else
   {
-    writeImage(dstColorImage, image, image::EImageColorSpace::AUTO, metadata);
+    writeImage(dstColorImage, image, image::ImageWriteOptions(), metadata);
   }
 }
 
