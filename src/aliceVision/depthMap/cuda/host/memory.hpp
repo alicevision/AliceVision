@@ -6,8 +6,14 @@
 
 #pragma once
 
+// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+#define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
 #define CUDA_NO_HALF
 #include <cuda_fp16.h>
+#endif
 
 #include <aliceVision/depthMap/cuda/host/utils.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -26,10 +32,6 @@
 namespace aliceVision {
 namespace depthMap {
 
-// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
-// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
-#define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
-
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 using CudaColorBaseType = unsigned char;
 using CudaRGBA = uchar4;
@@ -40,8 +42,8 @@ using CudaRGBA = struct { __half x, y, z, w; };
 #else
 using CudaColorBaseType = float;
 using CudaRGBA = float4; 
-#endif
-#endif
+#endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+#endif // ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
 /*********************************************************************************
  * forward declarations
