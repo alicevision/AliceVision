@@ -88,7 +88,7 @@ public:
 
     _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
     _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
-    _intrinsic->setDistortionParams({parameter_intrinsics[4], parameter_intrinsics[5], parameter_intrinsics[6]});
+    _intrinsic->setDistortionParamsFn(3, [&](auto index) { return parameter_intrinsics[4 + index]; });
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
@@ -167,14 +167,14 @@ public:
     _intrinsic->setScale({parameter_intrinsics[0], parameter_intrinsics[1]});
     _intrinsic->setOffset({parameter_intrinsics[2], parameter_intrinsics[3]});
 
-    std::vector<double> distortion_params;
-    size_t params_size = _intrinsic->getParams().size();
-    size_t disto_size = _intrinsic->getDistortionParams().size();
+    size_t params_size = _intrinsic->getParamsSize();
+    size_t disto_size = _intrinsic->getDistortionParamsSize();
     size_t offset = params_size - disto_size;
-    for (size_t index = offset; index < params_size; index++) {
-      distortion_params.push_back(parameter_intrinsics[index]);
-    }
-    _intrinsic->setDistortionParams(distortion_params);
+
+    _intrinsic->setDistortionParamsFn(disto_size, [&](auto index)
+    {
+        return parameter_intrinsics[offset + index];
+    });
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
