@@ -909,12 +909,19 @@ bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
                  LCPinfo& lcpData,
                  bool omitCameraModel)
 {
-    std::string reducedCameraModel = reduceString(omitCameraModel ? cameraMake : cameraModel);
-    std::string reducedLensModel = reduceString(lensModel);
+    const std::string reducedCameraMake = reduceString(cameraMake);
+    const std::string reducedCameraModel = omitCameraModel ? reducedCameraMake : reduceString(cameraModel);
+    const std::string reducedLensModel = reduceString(lensModel);
 
     for(const boost::filesystem::path& lcpFile: lcpFilenames)
     {
-        const LCPinfo lcp(lcpFile.string(), false);
+        const std::string lcpFileStr = lcpFile.string();
+        const std::string reducedLcpFileStr = reduceString(lcpFileStr);
+        const bool filepathContainsMake = (reducedLcpFileStr.find(reducedCameraMake) != std::string::npos);
+        if(!filepathContainsMake)
+            continue;
+
+        const LCPinfo lcp(lcpFileStr, false);
 
         const std::string reducedCameraModelLCP =
             reduceString(omitCameraModel ? lcp.getCameraMaker() : lcp.getCameraModel());
@@ -937,11 +944,11 @@ bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
 
         const bool lcpFound =
             (cameraOK && lensOK && lensIDOK && ((isRaw && rawMode < 2) || (!isRaw && (rawMode % 2 == 0))));
-        if (lcpFound)
-        {
-            lcpData.load(lcpFile.string(), true);
-            return true;
-        }
+        if(!lcpFound)
+            continue;
+
+        lcpData.load(lcpFile.string(), true);
+        return true;
     }
 
     return false;
