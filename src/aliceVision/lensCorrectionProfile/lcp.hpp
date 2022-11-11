@@ -669,7 +669,7 @@ private:
 * @return True if a file is found
 */
 bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMake, const std::string& cameraModel,
-                 const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData,
+                 const std::string& lensModel, const int lensID, int rawMode, LCPinfo& lcpData,
                  bool omitCameraModel = false);
 
 /**
@@ -688,5 +688,5 @@ bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMa
 * @return True if a file is found
 */
 bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const std::string& cameraMake,
-                 const std::string& cameraModel, const std::string& lensModel, const int& lensID, int rawMode,
+                 const std::string& cameraModel, const std::string& lensModel, const int lensID, int rawMode,
                  LCPinfo& lcpData, bool omitCameraModel = false);

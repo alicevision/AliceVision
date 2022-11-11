@@ -869,30 +869,14 @@ void parseDirectory(const boost::filesystem::path& p, std::vector<boost::filesys
 
 std::string reduceString(const std::string& str)
 {
-    std::string localStr = str;
+    std::string s = str;
 
-    // remove all space
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), ' '), localStr.end());
-    // remove all '/'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), '/'), localStr.end());
-    // remove all '.'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), '.'), localStr.end());
-    // remove all '_'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), '_'), localStr.end());
-    // remove all '-'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), '-'), localStr.end());
-    // remove all '*'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), '*'), localStr.end());
-    // remove all ','
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), ','), localStr.end());
-    // remove all ';'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), ';'), localStr.end());
-    // remove all ':'
-    localStr.erase(std::remove(localStr.begin(), localStr.end(), ':'), localStr.end());
+    // remove non-alphanumeric characters
+    s.erase(std::remove_if(s.begin(), s.end(), [](char c) { return !std::isalnum(c); }), s.end());
     // to lowercase
-    boost::algorithm::to_lower(localStr);
+    boost::algorithm::to_lower(s);
 
-    return localStr;
+    return s;
 }
 
 std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str)
@@ -907,7 +891,7 @@ std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str)
 
 // LCP database parsing implementation
 bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMake, const std::string& cameraModel,
-                 const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
+                 const std::string& lensModel, const int lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
 {
     std::vector<boost::filesystem::path> v_lcpFilename;
     parseDirectory(dbDirectoryname, v_lcpFilename);
@@ -920,7 +904,7 @@ bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
                  const std::string& cameraMake,
                  const std::string& cameraModel,
                  const std::string& lensModel,
-                 const int& lensID,
+                 const int lensID,
                  int rawMode,
                  LCPinfo& lcpData,
                  bool omitCameraModel)
@@ -928,39 +912,37 @@ bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
     std::string reducedCameraModel = reduceString(omitCameraModel ? cameraMake : cameraModel);
     std::string reducedLensModel = reduceString(lensModel);
 
-    bool lcpFound = false;
-    size_t lcpIndex = 0;
-    while ((lcpIndex < lcpFilenames.size()) && !lcpFound)
+    for(const boost::filesystem::path& lcpFile: lcpFilenames)
     {
-        LCPinfo lcp(lcpFilenames[lcpIndex].string(), false);
+        const LCPinfo lcp(lcpFile.string(), false);
 
-        std::string reducedCameraModelLCP = reduceString(omitCameraModel ? lcp.getCameraMaker() : lcp.getCameraModel());
-        std::string reducedCameraPrettyNameLCP = reduceString(lcp.getCameraPrettyName());
-        std::string reducedLensPrettyNameLCP = reduceString(lcp.getLensPrettyName());
+        const std::string reducedCameraModelLCP =
+            reduceString(omitCameraModel ? lcp.getCameraMaker() : lcp.getCameraModel());
+        const std::string reducedCameraPrettyNameLCP = reduceString(lcp.getCameraPrettyName());
+        const std::string reducedLensPrettyNameLCP = reduceString(lcp.getLensPrettyName());
 
         std::vector<std::string> lensModelsLCP;
         lcp.getLensModels(lensModelsLCP);
-        std::vector<std::string> reducedLensModelsLCP = reduceStrings(lensModelsLCP);
+        const std::vector<std::string> reducedLensModelsLCP = reduceStrings(lensModelsLCP);
 
         std::vector<int> lensIDsLCP;
         lcp.getLensIDs(lensIDsLCP);
 
-        bool cameraOK = ((reducedCameraModelLCP == reducedCameraModel) || (reducedCameraPrettyNameLCP == reducedCameraModel));
-        bool lensOK = ((reducedLensPrettyNameLCP == reducedLensModel) ||
+        const bool cameraOK =
+            ((reducedCameraModelLCP == reducedCameraModel) || (reducedCameraPrettyNameLCP == reducedCameraModel));
+        const bool lensOK = ((reducedLensPrettyNameLCP == reducedLensModel) ||
                        (std::find(reducedLensModelsLCP.begin(), reducedLensModelsLCP.end(), reducedLensModel) != reducedLensModelsLCP.end()));
-        bool lensIDOK = (std::find(lensIDsLCP.begin(), lensIDsLCP.end(), lensID) != lensIDsLCP.end());
-        bool isRaw = lcp.isRawProfile();
+        const bool lensIDOK = (std::find(lensIDsLCP.begin(), lensIDsLCP.end(), lensID) != lensIDsLCP.end());
+        const bool isRaw = lcp.isRawProfile();
 
-        lcpFound = (cameraOK && lensOK && lensIDOK && ((isRaw && rawMode < 2) || (!isRaw && (rawMode%2 == 0))));
+        const bool lcpFound =
+            (cameraOK && lensOK && lensIDOK && ((isRaw && rawMode < 2) || (!isRaw && (rawMode % 2 == 0))));
         if (lcpFound)
         {
-            lcpData.load(lcpFilenames[lcpIndex].string(), true);
-        }
-        else
-        {
-            lcpIndex++;
+            lcpData.load(lcpFile.string(), true);
+            return true;
         }
     }
 
-    return lcpFound;
+    return false;
 }
