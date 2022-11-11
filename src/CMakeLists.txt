@@ -339,7 +339,7 @@ endif()
 # Expat
 # ==============================================================================
 find_package(expat CONFIG REQUIRED)
-if(EXPAT_FOUND OR expat_FOUND)
+if(EXPAT_FOUND OR expat_FOUND OR TARGET expat::expat)
   message(STATUS "Expat found.")
 else()
   message(SEND_ERROR "Failed to find Expat.")
