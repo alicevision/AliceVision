@@ -1,45 +1,22 @@
+#include "dcp.hpp"
+
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #include <iostream>
 #include <cstdio>
 #include <cstring>
 #include <functional>
 
-#include <aliceVision/system/Logger.hpp>
-#include "dcp.hpp"
+namespace alicevision {
+namespace image {
 
-using namespace alicevision::image;
+using aliceVision::clamp;
 
-namespace
+double calibrationIlluminantToTemperature(LightSource light)
 {
-double calibrationIlluminantToTemperature(int light)
-{
-    enum class LightSource
-    {
-        UNKNOWN = 0,
-        DAYLIGHT = 1,
-        FLUORESCENT = 2,
-        TUNGSTEN = 3,
-        FLASH = 4,
-        FINE_WEATHER = 9,
-        CLOUDY_WEATHER = 10,
-        SHADE = 11,
-        DAYLIGHT_FLUORESCENT = 12,   // D  5700 - 7100K
-        DAYWHITE_FLUORESCENT = 13,   // N  4600 - 5500K
-        COOL_WHITE_FLUORESCENT = 14, // W  3800 - 4500K
-        WHITE_FLUORESCENT = 15,      // WW 3250 - 3800K
-        WARM_WHITE_FLUORESCENT = 16, // L  2600 - 3250K
-        STANDARD_LIGHT_A = 17,
-        STANDARD_LIGHT_B = 18,
-        STANDARD_LIGHT_C = 19,
-        D55 = 20,
-        D65 = 21,
-        D75 = 22,
-        D50 = 23,
-        ISO_STUDIO_TUNGSTEN = 24,
-        OTHER = 255
-    };
-
     // These temperatures are those found in DNG SDK reference code
-    switch(LightSource(light))
+    switch(light)
     {
         case LightSource::STANDARD_LIGHT_A:
         case LightSource::TUNGSTEN:
@@ -113,65 +90,20 @@ double calibrationIlluminantToTemperature(int light)
 }
 
 inline bool rgb2hsvdcp(float r, float g, float b, float& h, float& s, float& v)
+{
+    const float var_Min = std::min<float>(r, std::min<float>(g, b));
+
+    if (var_Min < 0.f)
     {
-
-        const float var_Min = std::min<float>(r, std::min<float>(g, b));
-
-        if (var_Min < 0.f)
-        {
-            return false;
-        }
-        else
-        {
-            const float var_Max = std::max<float>(r, std::max<float>(g, b));
-            const float del_Max = var_Max - var_Min;
-            v = var_Max / 65535.f;
-
-            if (fabsf(del_Max) < 0.00001f)
-            {
-                h = 0.f;
-                s = 0.f;
-            }
-            else
-            {
-                s = del_Max / var_Max;
-
-                if (r == var_Max)
-                {
-                    h = (g - b) / del_Max;
-                }
-                else if (g == var_Max)
-                {
-                    h = 2.f + (b - r) / del_Max;
-                }
-                else
-                {
-                    h = 4.f + (r - g) / del_Max;
-                }
-
-                if (h < 0.f)
-                {
-                    h += 6.f;
-                }
-                else if (h > 6.f)
-                {
-                    h -= 6.f;
-                }
-            }
-
-            return true;
-        }
+        return false;
     }
-
-inline void rgb2hsvtc(float r, float g, float b, float& h, float& s, float& v)
+    else
     {
-        const float var_Min = std::min<float>(r, std::min<float>(g, b));
         const float var_Max = std::max<float>(r, std::max<float>(g, b));
         const float del_Max = var_Max - var_Min;
-
         v = var_Max / 65535.f;
 
-        if (del_Max < 0.00001f)
+        if (std::abs(del_Max) < 0.00001f)
         {
             h = 0.f;
             s = 0.f;
@@ -182,7 +114,7 @@ inline void rgb2hsvtc(float r, float g, float b, float& h, float& s, float& v)
 
             if (r == var_Max)
             {
-                h = (g < b ? 6.f : 0.f) + (g - b) / del_Max;
+                h = (g - b) / del_Max;
             }
             else if (g == var_Max)
             {
@@ -192,63 +124,108 @@ inline void rgb2hsvtc(float r, float g, float b, float& h, float& s, float& v)
             {
                 h = 4.f + (r - g) / del_Max;
             }
+
+            if (h < 0.f)
+            {
+                h += 6.f;
+            }
+            else if (h > 6.f)
+            {
+                h -= 6.f;
+            }
+        }
+
+        return true;
+    }
+}
+
+inline void rgb2hsvtc(float r, float g, float b, float& h, float& s, float& v)
+{
+    const float var_Min = std::min<float>(r, std::min<float>(g, b));
+    const float var_Max = std::max<float>(r, std::max<float>(g, b));
+    const float del_Max = var_Max - var_Min;
+
+    v = var_Max / 65535.f;
+
+    if (del_Max < 0.00001f)
+    {
+        h = 0.f;
+        s = 0.f;
+    }
+    else
+    {
+        s = del_Max / var_Max;
+
+        if (r == var_Max)
+        {
+            h = (g < b ? 6.f : 0.f) + (g - b) / del_Max;
+        }
+        else if (g == var_Max)
+        {
+            h = 2.f + (b - r) / del_Max;
+        }
+        else
+        {
+            h = 4.f + (r - g) / del_Max;
         }
     }
+}
 
 inline void hsv2rgbdcp(float h, float s, float v, float& r, float& g, float& b)
+{
+    // special version for dcp which saves 1 division (in caller) and six multiplications (inside this function)
+    const int sector = h;       // sector 0 to 5, floor() is very slow, and h is always > 0
+    const float f = h - sector; // fractional part of h
+
+    v *= 65535.f;
+    const float vs = v * s;
+    const float p = v - vs;
+    const float q = v - f * vs;
+    const float t = p + v - q;
+
+    switch (sector)
     {
-        // special version for dcp which saves 1 division (in caller) and six multiplications (inside this function)
-        const int sector = h;       // sector 0 to 5, floor() is very slow, and h is always > 0
-        const float f = h - sector; // fractional part of h
+    case 1:
+        r = q;
+        g = v;
+        b = p;
+        break;
 
-        v *= 65535.f;
-        const float vs = v * s;
-        const float p = v - vs;
-        const float q = v - f * vs;
-        const float t = p + v - q;
+    case 2:
+        r = p;
+        g = v;
+        b = t;
+        break;
 
-        switch (sector)
-        {
-        case 1:
-            r = q;
-            g = v;
-            b = p;
-            break;
+    case 3:
+        r = p;
+        g = q;
+        b = v;
+        break;
 
-        case 2:
-            r = p;
-            g = v;
-            b = t;
-            break;
+    case 4:
+        r = t;
+        g = p;
+        b = v;
+        break;
 
-        case 3:
-            r = p;
-            g = q;
-            b = v;
-            break;
+    case 5:
+        r = v;
+        g = p;
+        b = q;
+        break;
 
-        case 4:
-            r = t;
-            g = p;
-            b = v;
-            break;
-
-        case 5:
-            r = v;
-            g = p;
-            b = q;
-            break;
-
-        default:
-            r = v;
-            g = t;
-            b = p;
-        }
+    default:
+        r = v;
+        g = t;
+        b = p;
     }
+}
 
-// Wyszecki & Stiles', 'Color Science - Concepts and Methods Data and Formulae - Second Edition', Page 228.
-// (Reciprocal Megakelvin, CIE 1960 Chromaticity Coordinates 'u', CIE 1960 Chromaticity Coordinates 'v', Slope)
-std::vector < std::vector<float>> WYSZECKI_ROBERSTON_TABLE =
+namespace {
+/// Wyszecki & Stiles', 'Color Science - Concepts and Methods Data and Formulae - Second Edition', Page 228.
+/// (Reciprocal Megakelvin, CIE 1960 Chromaticity Coordinates 'u', CIE 1960 Chromaticity Coordinates 'v', Slope)
+const std::vector<std::vector<float>> WYSZECKI_ROBERSTON_TABLE =
     { {0, 0.18006, 0.26352, -0.24341},
       {10, 0.18066, 0.26589, -0.25479},
       {20, 0.18133, 0.26846, -0.26876},
@@ -281,11 +258,11 @@ std::vector < std::vector<float>> WYSZECKI_ROBERSTON_TABLE =
       {575, 0.32931, 0.36038, -40.770},
       {600, 0.33724, 0.36051, -116.45} };
 
-DCPProfile::Matrix IdentityMatrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+const DCPProfile::Matrix IdentityMatrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
 
-DCPProfile::Matrix CAT02_MATRIX = { 0.7328, 0.4296, -0.1624, -0.7036, 1.6975, 0.0061, 0.0030, 0.0136, 0.9834 };
+const DCPProfile::Matrix CAT02_MATRIX = {0.7328, 0.4296, -0.1624, -0.7036, 1.6975, 0.0061, 0.0030, 0.0136, 0.9834};
 
-double TINT_SCALE = -3000.0;
+const double TINT_SCALE = -3000.0;
 } // namespace
 
 enum class TagType : int
@@ -395,7 +372,7 @@ short int int2_to_signed(short unsigned int i)
     return u.s;
 }
 
-/*
+/**
  * A class representing a single TIFF tag
  */
 class Tag
@@ -567,13 +544,14 @@ void Tag::toString(char* buffer, std::size_t size, int ofs) const
     if(type == TagType::T_UNDEFINED)
     {
         bool isstring = true;
-        unsigned int i = 0;
 
-        for(i = 0; i + ofs < datasize && i < 64 && v_value[i + ofs]; i++)
-            if(v_value[i + ofs] < 32 || v_value[i + ofs] > 126)
+        for(unsigned int i = 0; (i + ofs < datasize) && (i < 64) && v_value[i + ofs]; ++i)
+        {
+            if((v_value[i + ofs] < 32) || (v_value[i + ofs] > 126))
             {
                 isstring = false;
             }
+        }
 
         if(isstring)
         {
@@ -584,7 +562,7 @@ void Tag::toString(char* buffer, std::size_t size, int ofs) const
 
             std::size_t j = 0;
 
-            for(i = 0; i + ofs < datasize && i < 64 && v_value[i + ofs]; i++)
+            for(unsigned int i = 0; (i + ofs < datasize) && (i < 64) && v_value[i + ofs]; ++i)
             {
                 if(v_value[i + ofs] == '<' || v_value[i + ofs] == '>')
                 {
@@ -683,14 +661,16 @@ std::string Tag::valueToString() const
     return buffer;
 }
 
-Tag* findTag(TagKey tagID, std::vector<Tag>& v_Tags)
+const Tag* findTag(TagKey tagID, const std::vector<Tag>& v_Tags)
 {
     size_t idx = 0;
     while(idx < v_Tags.size() && (v_Tags[idx].tagID != (unsigned short)tagID))
     {
         idx++;
     }
-    return (idx == v_Tags.size()) ? nullptr : &v_Tags[idx];
+    if(idx == v_Tags.size())
+        return nullptr;
+    return &(v_Tags[idx]);
 }
 
 void SplineToneCurve::Set(const std::vector<double>& v_xy)
@@ -732,12 +712,12 @@ void SplineToneCurve::Set(const std::vector<double>& v_xy)
     for(int i = 0; i < 65536; ++i)
     {
 
-        float t = float(i) / 65535.f;
+        const float t = float(i) / 65535.f;
         while((v_x[k_hi] <= t) && (k_hi < v_x.size() - 1))
             k_hi++;
 
-        int k_lo = k_hi - 1;
-        double h = v_x[k_hi] - v_x[k_lo];
+        const int k_lo = k_hi - 1;
+        const double h = v_x[k_hi] - v_x[k_lo];
         const double a = (v_x[k_hi] - t) / h;
         const double b = (t - v_x[k_lo]) / h;
         const double r = a * v_y[k_lo] + b * v_y[k_hi] +
@@ -750,9 +730,9 @@ void SplineToneCurve::Set(const std::vector<double>& v_xy)
 
 void SplineToneCurve::Apply(float& ir, float& ig, float& ib) const
 {
-    float r = std::max<float>(0.0, std::min<float>(65535.0, ir));
-    float g = std::max<float>(0.0, std::min<float>(65535.0, ig));
-    float b = std::max<float>(0.0, std::min<float>(65535.0, ib));
+    float r = clamp<float>(ir, 0.f, 65535.0f);
+    float g = clamp<float>(ig, 0.f, 65535.0f);
+    float b = clamp<float>(ib, 0.f, 65535.0f);
 
     if(r >= g)
     {
@@ -821,7 +801,7 @@ float SplineToneCurve::getval(const float idx) const
         return idx_dec * ffffToneCurve[idx_int] + (1.f - idx_dec) * ffffToneCurve[idx_int + 1];
 }
 
-DCPProfile::DCPProfile(const std::string filename)
+DCPProfile::DCPProfile(const std::string& filename)
     : will_interpolate(false)
     , valid(false)
     , baseline_exposure_offset(0.0)
@@ -988,12 +968,12 @@ DCPProfile::DCPProfile(const std::string filename)
 
     fclose(file);
 
-    Tag* tag = findTag(TagKey::CALIBRATION_ILLUMINANT_1, v_tag);
+    const Tag* tag = findTag(TagKey::CALIBRATION_ILLUMINANT_1, v_tag);
     info.light_source_1 = tag ? tag->toInt(0, TagType::T_SHORT) : -1;
     tag = findTag(TagKey::CALIBRATION_ILLUMINANT_2, v_tag);
     info.light_source_2 = tag ? tag->toInt(0, TagType::T_SHORT) : -1;
-    info.temperature_1 = calibrationIlluminantToTemperature(info.light_source_1);
-    info.temperature_2 = calibrationIlluminantToTemperature(info.light_source_2);
+    info.temperature_1 = calibrationIlluminantToTemperature(LightSource(info.light_source_1));
+    info.temperature_2 = calibrationIlluminantToTemperature(LightSource(info.light_source_2));
 
     const bool has_second_hue_sat =
         findTag(TagKey::PROFILE_HUE_SAT_MAP_DATA_2, v_tag); // Some profiles have two matrices, but just one huesat
@@ -1340,12 +1320,9 @@ void DCPProfile::apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& param
 
 void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
 {
-#define CLIPF_0_65535(a) ((a) > 0.f ? ((a) < 65535.5f ? (a) : 65535.5f) : 0.f)
-#define CLIPF_0_1(a) ((a) > 0 ? ((a) < 1 ? (a) : 1) : 0)
-
     const float exp_scale = (params.apply_baseline_exposure_offset && info.has_baseline_exposure_offset)
-        ? powf(2.0, baseline_exposure_offset)
-        : 1.0;
+        ? std::pow(2.0, baseline_exposure_offset)
+        : 1.0f;
 
     if (!params.use_tone_curve && !params.apply_look_table)
     {
@@ -1354,7 +1331,7 @@ void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
             return;
         }
 
-        for (int c = 0; c < 3; c++)
+        for (int c = 0; c < 3; ++c)
         {
             rgb[c] *= exp_scale;
         }
@@ -1362,7 +1339,7 @@ void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
     else
     {
 
-        for (int c = 0; c < 3; c++)
+        for (int c = 0; c < 3; ++c)
         {
             rgb[c] *= exp_scale;
         }
@@ -1370,7 +1347,7 @@ void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
         float ws_rgb[3] = { 0.0, 0.0, 0.0 };
         for (int i = 0; i < 3; i++)
         {
-            for (int j = 0; j < 3; j++)
+            for (int j = 0; j < 3; ++j)
             {
                 ws_rgb[i] += ws_sRGB[i][j] * rgb[j];
             }
@@ -1383,23 +1360,24 @@ void DCPProfile::apply(float* rgb, const DCPProfileApplyParams& params) const
         if (params.apply_look_table)
         {
             float clipped_ws_rgb[3];
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; ++i)
             {
-                clipped_ws_rgb[i] = CLIPF_0_65535(ws_rgb[i]);
+                clipped_ws_rgb[i] = clamp(ws_rgb[i], 0.f, 65535.5f);
             }
 
             float h, s, v;
             rgb2hsvtc(clipped_ws_rgb[0], clipped_ws_rgb[1], clipped_ws_rgb[2], h, s, v);
 
             hsdApply(look_info, look_table, h, s, v);
-            s = CLIPF_0_1(s);
-            v = CLIPF_0_1(v);
+            s = clamp(s, 0.f, 1.f);
+            v = clamp(v, 0.f, 1.f);
 
             h += (h < 0.0f ? 6.0f : (h >= 6.0f ? -6.0f : 0.0f));
 
             hsv2rgbdcp(h, s, v, clipped_ws_rgb[0], clipped_ws_rgb[1], clipped_ws_rgb[2]);
 
-            if (!(ws_rgb[0] < 0.0 || ws_rgb[0] > 65535.0) || !(ws_rgb[1] < 0.0 || ws_rgb[1] > 65535.0) ||
+            if (!(ws_rgb[0] < 0.0 || ws_rgb[0] > 65535.0) ||
+                !(ws_rgb[1] < 0.0 || ws_rgb[1] > 65535.0) ||
                 !(ws_rgb[2] < 0.0 || ws_rgb[2] > 65535.0))
             {
                 ws_rgb[0] = clipped_ws_rgb[0];
@@ -1561,9 +1539,7 @@ inline void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vect
 }
 
 
-
-
-DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const float& cct, const std::string& type)
+DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const float cct, const std::string& type)
 {
     float a = 1.e6 / info.temperature_1;
     float b = 1.e6 / info.temperature_2;
@@ -1634,27 +1610,27 @@ DCPProfile::Matrix DCPProfile::matInv(const Matrix& M)
     return Inv;
 }
 
-/*
-    Sets the temperature and tint using given chromaticity coordinates.
-
-    'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/source/dng_temperature.cpp: 'dng_temperature::Set_xy_coord'.
-
-    Usage::
-
-        >>> Temperature().setChromaticityCoordinates(0.25, 0.25)
-        (28847.66573353418, 2.0587866255277527)
-
-    Args:
-        x (float): X chromaticity coordinate.
-        y (float): Y chromaticity coordinate.
-
-    Returns:
-        tuple. Temperature, tint
-*/
-void DCPProfile::setChromaticityCoordinates(const float& x, const float& y, float& cct, float& tint)
+/**
+ *  Sets the temperature and tint using given chromaticity coordinates.
+ *
+ *  'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/source/dng_temperature.cpp: 'dng_temperature::Set_xy_coord'.
+ *
+ *  Usage::
+ *
+ *      >>> Temperature().setChromaticityCoordinates(0.25, 0.25)
+ *      (28847.66573353418, 2.0587866255277527)
+ *
+ *  Args:
+ *      x (float): X chromaticity coordinate.
+ *      y (float): Y chromaticity coordinate.
+ *
+ *  Returns:
+ *      tuple. Temperature, tint
+ */
+void DCPProfile::setChromaticityCoordinates(const float x, const float y, float& cct, float& tint)
 {
-    float u = 2.0 * x / (1.5 - x + 6.0 * y);
-    float v = 3.0 * y / (1.5 - x + 6.0 * y);
+    const float u = 2.0 * x / (1.5 - x + 6.0 * y);
+    const float v = 3.0 * y / (1.5 - x + 6.0 * y);
 
     float lastDt = 0.f;
     float lastDv = 0.f;
@@ -1667,7 +1643,7 @@ void DCPProfile::setChromaticityCoordinates(const float& x, const float& y, floa
 
         float du = 1.f;
         float dv = wrRuvt[3];
-        float len = std::sqrtf(1.f + dv * dv);
+        float len = std::sqrt(1.f + dv * dv);
 
         du /= len;
         dv /= len;
@@ -1704,20 +1680,20 @@ void DCPProfile::setChromaticityCoordinates(const float& x, const float& y, floa
     }
 }
 
-/*
-    Returns the chromaticity coordinates.
-
-    'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/source/dng_temperature.cpp: 'dng_temperature::Get_xy_coord'.
-
-    Usage::
-
-        >>> Temperature(6500, 25).getChromaticityCoordinates()
-        (0.3115291328160886, 0.33790935423997026)
-
-    Returns:
-        tuple. Chromaticity coordinates.
+/**
+ * @brief Returns the chromaticity coordinates.
+ *
+ *  'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/source/dng_temperature.cpp: 'dng_temperature::Get_xy_coord'.
+ *
+ *  Usage::
+ *
+ *      >>> Temperature(6500, 25).getChromaticityCoordinates()
+ *      (0.3115291328160886, 0.33790935423997026)
+ *
+ *  Returns:
+ *      tuple. Chromaticity coordinates.
 */
-void DCPProfile::getChromaticityCoordinates(const float& cct, const float& tint, float& x, float& y)
+void DCPProfile::getChromaticityCoordinates(const float cct, const float tint, float& x, float& y)
 {
     double r = 1.0e6 / cct;
     double offset = tint * (1.0 / TINT_SCALE);
@@ -1769,14 +1745,13 @@ void DCPProfile::getChromaticityCoordinates(const float& cct, const float& tint,
 }
 
 
-
 void DCPProfile::getChromaticityCoordinatesFromXyz(const Triple& xyz, float& x, float& y)
 {
     x = xyz[0] / (xyz[0] + xyz[1] + xyz[2]);
     y = xyz[1] / (xyz[0] + xyz[1] + xyz[2]);
 }
 
-DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const float& x, const float& y)
+DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const float x, const float y)
 {
     Triple xyz;
     xyz[0] = x * 1.0 / y;
@@ -1785,7 +1760,7 @@ DCPProfile::Triple DCPProfile::getXyzFromChromaticityCoordinates(const float& x,
     return xyz;
 }
 
-DCPProfile::Triple DCPProfile::getXyzFromTemperature(const float& cct, const float& tint)
+DCPProfile::Triple DCPProfile::getXyzFromTemperature(const float cct, const float tint)
 {
     float x, y;
     getChromaticityCoordinates(cct, tint, x, y);
@@ -1794,48 +1769,47 @@ DCPProfile::Triple DCPProfile::getXyzFromTemperature(const float& cct, const flo
 }
 
 
-/*
-Returns the chromaticity coordinates from 'As Shot Neutral' matrix.
-
-'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3 / dng_sdk / documents / dng_spec_1_3_0_0.pdf : 'Mapping Camera Color Space to CIE XYZ Space'.
-
-Usage::
-
->> > getChromaticityCoordinatesFromCameraNeutral(2850, \
-    6500, \
-    numpy.matrix([0.5309, -0.0229, -0.0336, \
-        - 0.6241, 1.3265, 0.3337, \
-        - 0.0817, 0.1215, 0.6664]).reshape((3, 3)), \
-    numpy.matrix([0.4716, 0.0603, -0.083, \
-        - 0.7798, 1.5474, 0.248, \
-        - 0.1496, 0.1937, 0.6651]).reshape((3, 3)), \
-    numpy.matrix([0.9603, 0., 0., \
-        0., 1., 0., \
-        0., 0., 0.9664]).reshape((3, 3)), \
-    numpy.matrix([0.9603, 0., 0., \
-        0., 1., 0., \
-        0., 0., 0.9664]).reshape((3, 3)), \
-    numpy.identity(3), \
-    numpy.matrix([0.305672, 1., 0.905393]).reshape((3, 1)))
-    (0.27389027140925454, 0.28376817722941361)
-
-    Args:
-calibrationIlluminant1Cct(float) : Calibration Illuminant 1 correlated color temperature.
-calibrationIlluminant2Cct(float) : Calibration Illuminant 2 correlated color temperature.
-colorMatrix1(Matrix) : Color Matrix 1 matrix(3 x 3).
-colorMatrix2(Matrix) : Color Matrix 2 matrix(3 x 3).
-cameraCalibration1(Matrix) : Camera Calibration 1 matrix(3 x 3).
-cameraCalibration2(Matrix) : Camera Calibration 2 matrix(3 x 3).
-analogBalance(Matrix) : Analog Balance matrix(3 x 3).
-asShotNeutral(Matrix) : As Shot Neutral matrix(3 x 3).
-
-Kwargs :
-    verbose(bool) : Verbose value
-
-    Returns :
-tuple.Chromaticity coordinates.
-
-*/
+/**
+ * @brief Returns the chromaticity coordinates from 'As Shot Neutral' matrix.
+ *
+ * 'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3 / dng_sdk / documents / dng_spec_1_3_0_0.pdf : 'Mapping Camera Color Space to CIE XYZ Space'.
+ *
+ * Usage::
+ *
+ * >> > getChromaticityCoordinatesFromCameraNeutral(2850, \
+ *     6500, \
+ *     numpy.matrix([0.5309, -0.0229, -0.0336, \
+ *         - 0.6241, 1.3265, 0.3337, \
+ *         - 0.0817, 0.1215, 0.6664]).reshape((3, 3)), \
+ *     numpy.matrix([0.4716, 0.0603, -0.083, \
+ *         - 0.7798, 1.5474, 0.248, \
+ *         - 0.1496, 0.1937, 0.6651]).reshape((3, 3)), \
+ *     numpy.matrix([0.9603, 0., 0., \
+ *         0., 1., 0., \
+ *         0., 0., 0.9664]).reshape((3, 3)), \
+ *     numpy.matrix([0.9603, 0., 0., \
+ *         0., 1., 0., \
+ *         0., 0., 0.9664]).reshape((3, 3)), \
+ *     numpy.identity(3), \
+ *     numpy.matrix([0.305672, 1., 0.905393]).reshape((3, 1)))
+ *     (0.27389027140925454, 0.28376817722941361)
+ * 
+ *     Args:
+ * calibrationIlluminant1Cct(float) : Calibration Illuminant 1 correlated color temperature.
+ * calibrationIlluminant2Cct(float) : Calibration Illuminant 2 correlated color temperature.
+ * colorMatrix1(Matrix) : Color Matrix 1 matrix(3 x 3).
+ * colorMatrix2(Matrix) : Color Matrix 2 matrix(3 x 3).
+ * cameraCalibration1(Matrix) : Camera Calibration 1 matrix(3 x 3).
+ * cameraCalibration2(Matrix) : Camera Calibration 2 matrix(3 x 3).
+ * analogBalance(Matrix) : Analog Balance matrix(3 x 3).
+ * asShotNeutral(Matrix) : As Shot Neutral matrix(3 x 3).
+ *
+ * Kwargs :
+ *     verbose(bool) : Verbose value
+ * 
+ *     Returns :
+ * tuple.Chromaticity coordinates.
+ */
 void DCPProfile::getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, float& x, float& y)
 {
     x = 0.24559589702841558;
@@ -1879,30 +1853,30 @@ void DCPProfile::getChromaticityCoordinatesFromCameraNeutral(const Matrix& analo
     }
 }
 
-/*
-    Returns the 'Chromatic Adaptation' matrix using given 'XYZ' source and target matrices.
-
-    'http://brucelindbloom.com/index.html?Eqn_ChromAdapt.html'
-
-    Usage::
-
-        >>> getChromaticAdaptationMatrix(numpy.matrix([1.09923822, 1.000, 0.35445412]).reshape((3, 1)), \
-        numpy.matrix([0.96907232, 1.000, 1.121792157]).reshape((3, 1)))
-        matrix([[ 0.87145615, -0.13204674,  0.40394832],
-                [-0.09638805,  1.04909781,  0.1604033 ],
-                [ 0.0080207 ,  0.02826367,  3.06023196]])
-
-
-    Args:
-        xyzSource (Matrix): XYZ source matrix ( 3 x 1 ).
-        xyzTarget (Matrix): XYZ target matrix ( 3 x 1 ).
-
-    Kwargs:
-        verbose (bool):	Verbose value
-
-    Returns:
-        Matrix. Chromatic Adaptation matrix ( 3 x 3 ).
-*/
+/**
+ * @brief Returns the 'Chromatic Adaptation' matrix using given 'XYZ' source and target matrices.
+ * 
+ *     'http://brucelindbloom.com/index.html?Eqn_ChromAdapt.html'
+ * 
+ *     Usage::
+ * 
+ *         >>> getChromaticAdaptationMatrix(numpy.matrix([1.09923822, 1.000, 0.35445412]).reshape((3, 1)), \
+ *         numpy.matrix([0.96907232, 1.000, 1.121792157]).reshape((3, 1)))
+ *         matrix([[ 0.87145615, -0.13204674,  0.40394832],
+ *                 [-0.09638805,  1.04909781,  0.1604033 ],
+ *                 [ 0.0080207 ,  0.02826367,  3.06023196]])
+ *
+ * 
+ *     Args:
+ *         xyzSource (Matrix): XYZ source matrix ( 3 x 1 ).
+ *         xyzTarget (Matrix): XYZ target matrix ( 3 x 1 ).
+ * 
+ *     Kwargs:
+ *         verbose (bool):	Verbose value
+ * 
+ *     Returns:
+ *         Matrix. Chromatic Adaptation matrix ( 3 x 3 ).
+ */
 DCPProfile::Matrix DCPProfile::getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget)
 {
     const Triple pybSource = matMult(CAT02_MATRIX, xyzSource);
@@ -1918,68 +1892,70 @@ DCPProfile::Matrix DCPProfile::getChromaticAdaptationMatrix(const Triple& xyzSou
     return cat;
 }
 
-/*
-    Returns the 'camera to XYZ ( D50 )' matrix.
-    'colorMatrix1', 'colorMatrix2', 'forwardMatrix1' and 'forwardMatrix2' are considered as non existing if given as identity matrices.
-
-    'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/documents/dng_spec_1_3_0_0.pdf: 'Mapping Camera Color Space to CIE XYZ Space'.
-
-    Usage::
-
-        >>> getCameraToXyzD50Matrix(0.24559589702841558, \
-                                 0.24240399461846152, \
-                                 2850, \
-                                 6500, \
-                                 numpy.matrix([0.5309, -0.0229, -0.0336, \
-                                       -0.6241, 1.3265, 0.3337, \
-                                       -0.0817, 0.1215, 0.6664]).reshape((3, 3)), \
-                                 numpy.matrix([0.4716, 0.0603, -0.083, \
-                                       -0.7798, 1.5474, 0.248, \
-                                       -0.1496, 0.1937, 0.6651]).reshape((3, 3)), \
-                                 numpy.matrix([0.9603, 0., 0., \
-                                             0., 1., 0., \
-                                             0., 0., 0.9664]).reshape((3, 3)), \
-                                 numpy.matrix([0.9603, 0., 0., \
-                                             0., 1., 0., \
-                                             0., 0., 0.9664]).reshape((3, 3)), \
-                                 numpy.identity(3), \
-                                 numpy.matrix([0.8924, -0.1041, 0.176, \
-                                         0.4351, 0.6621, -0.0972, \
-                                         0.0505, -0.1562, 0.9308]).reshape((3, 3)), \
-                                 numpy.matrix([0.8924, -0.1041, 0.176, \
-                                         0.4351, 0.6621, -0.0972, \
-                                         0.0505, -0.1562, 0.9308]).reshape((3, 3)))
-        matrix([[ 3.48428482, -0.1041    ,  0.14605003],
-                [ 1.69880359,  0.6621    , -0.08065945],
-                [ 0.1971721 , -0.1562    ,  0.77240552]])
-
-    Args:
-        x (float): X chromaticity coordinate
-        y (float): Y chromaticity coordinate
-        calibrationIlluminant1Cct (float): Calibration Illuminant 1 correlated color temperature.
-        calibrationIlluminant2Cct (float): Calibration Illuminant 2 correlated color temperature.
-        colorMatrix1 (Matrix): Color Matrix 1 matrix ( 3 x 3 ).
-        colorMatrix2 (Matrix): Color Matrix 2 matrix ( 3 x 3 ).
-        cameraCalibration1 (Matrix): Camera Calibration 1 matrix ( 3 x 3 ).
-        cameraCalibration2 (Matrix): Camera Calibration 2 matrix ( 3 x 3 ).
-        analogBalance (Matrix): Analog Balance matrix ( 3 x 3 ).
-        forwardMatrix1 (Matrix): Forward Matrix 1 matrix ( 3 x 3 ).
-        forwardMatrix2 (Matrix): Forward Matrix 2 matrix ( 3 x 3 ).
-
-    Kwargs:
-        verbose (bool): Verbose value
-
-    Returns:
-        Matrix.  Camera to XYZ ( D50 ) matrix ( 3 x 3 ).
-*/
-DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float& x, const float& y)
+/**
+ * @brief Returns the 'camera to XYZ ( D50 )' matrix.
+ *     'colorMatrix1', 'colorMatrix2', 'forwardMatrix1' and 'forwardMatrix2' are considered as non existing if given as
+ *  identity matrices.
+ * 
+ *     'Adobe DNG SDK 1.3.0.0': dng_sdk_1_3/dng_sdk/documents/dng_spec_1_3_0_0.pdf: 'Mapping Camera Color Space to CIE
+ *  XYZ Space'.
+ * 
+ *     Usage::
+ * 
+ *         >>> getCameraToXyzD50Matrix(0.24559589702841558, \
+ *                                  0.24240399461846152, \
+ *                                  2850, \
+ *                                  6500, \
+ *                                  numpy.matrix([0.5309, -0.0229, -0.0336, \
+ *                                        -0.6241, 1.3265, 0.3337, \
+ *                                        -0.0817, 0.1215, 0.6664]).reshape((3, 3)), \
+ *                                  numpy.matrix([0.4716, 0.0603, -0.083, \
+ *                                        -0.7798, 1.5474, 0.248, \
+ *                                        -0.1496, 0.1937, 0.6651]).reshape((3, 3)), \
+ *                                  numpy.matrix([0.9603, 0., 0., \
+ *                                              0., 1., 0., \
+ *                                              0., 0., 0.9664]).reshape((3, 3)), \
+ *                                  numpy.matrix([0.9603, 0., 0., \
+ *                                              0., 1., 0., \
+ *                                              0., 0., 0.9664]).reshape((3, 3)), \
+ *                                  numpy.identity(3), \
+ *                                  numpy.matrix([0.8924, -0.1041, 0.176, \
+ *                                          0.4351, 0.6621, -0.0972, \
+ *                                          0.0505, -0.1562, 0.9308]).reshape((3, 3)), \
+ *                                  numpy.matrix([0.8924, -0.1041, 0.176, \
+ *                                          0.4351, 0.6621, -0.0972, \
+ *                                          0.0505, -0.1562, 0.9308]).reshape((3, 3)))
+ *         matrix([[ 3.48428482, -0.1041    ,  0.14605003],
+ *                 [ 1.69880359,  0.6621    , -0.08065945],
+ *                 [ 0.1971721 , -0.1562    ,  0.77240552]])
+ * 
+ *     Args:
+ *         x (float): X chromaticity coordinate
+ *         y (float): Y chromaticity coordinate
+ *         calibrationIlluminant1Cct (float): Calibration Illuminant 1 correlated color temperature.
+ *         calibrationIlluminant2Cct (float): Calibration Illuminant 2 correlated color temperature.
+ *         colorMatrix1 (Matrix): Color Matrix 1 matrix ( 3 x 3 ).
+ *         colorMatrix2 (Matrix): Color Matrix 2 matrix ( 3 x 3 ).
+ *         cameraCalibration1 (Matrix): Camera Calibration 1 matrix ( 3 x 3 ).
+ *         cameraCalibration2 (Matrix): Camera Calibration 2 matrix ( 3 x 3 ).
+ *         analogBalance (Matrix): Analog Balance matrix ( 3 x 3 ).
+ *         forwardMatrix1 (Matrix): Forward Matrix 1 matrix ( 3 x 3 ).
+ *         forwardMatrix2 (Matrix): Forward Matrix 2 matrix ( 3 x 3 ).
+ * 
+ *     Kwargs:
+ *         verbose (bool): Verbose value
+ * 
+ *     Returns:
+ *         Matrix.  Camera to XYZ ( D50 ) matrix ( 3 x 3 ).
+ */
+DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float x, const float y)
 {
     float cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
-    Triple xyz;
-    xyz[0] = x * 1.f / y;
-    xyz[1] = 1.f;
-    xyz[2] = (1.f - x - y) * 1.f / y;
+    Triple xyz = {
+        x * 1.f / y,
+        1.f,
+        (1.f - x - y) * 1.f / y};
 
     Matrix interpolatedColorMatrix;
     if (info.has_color_matrix_1 && info.has_color_matrix_2)
@@ -1993,10 +1969,10 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float& x, const flo
     Matrix interpolatedCalibMatrix = getInterpolatedMatrix(cct, "calib");
 
     Triple rgb = matMult(interpolatedColorMatrix, xyz);
-    Triple asShotNeutral;
-    asShotNeutral[0] = rgb[0] / rgb[1];
-    asShotNeutral[1] = rgb[1] / rgb[1];
-    asShotNeutral[2] = rgb[2] / rgb[1];
+    Triple asShotNeutral = {
+        rgb[0] / rgb[1],
+        rgb[1] / rgb[1],
+        rgb[2] / rgb[1]};
 
     Triple referenceNeutral = matMult(matInv(matMult(analogBalance, interpolatedCalibMatrix)), asShotNeutral);
 
@@ -2026,7 +2002,6 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float& x, const flo
     }
     else
     {
-
         Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
         cameraToXyzD50 = matMult(interpolatedForwardMatrix, matMult(d, matInv(matMult(analogBalance, interpolatedCalibMatrix))));
     }
@@ -2034,4 +2009,5 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float& x, const flo
     return cameraToXyzD50;
 }
 
-
+}
+}

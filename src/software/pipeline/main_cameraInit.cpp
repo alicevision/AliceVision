@@ -133,11 +133,14 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     return in;
 }
 
-std::list<std::string>::iterator findColorProfile(const std::pair<std::string, std::string>& p, std::list<std::string>& fileList)
+/**
+ * @brief Find the filepath which contains make/model of the camera.
+ */
+std::vector<std::string>::iterator findColorProfile(const std::string& make, const std::string& model, std::vector<std::string>& fileList)
 {
-    return std::find_if(fileList.begin(), fileList.end(), [p](const std::string& s)
-        {
-            return (s.find(p.first) != std::string::npos) && (s.find(p.second) != std::string::npos);
+    return std::find_if(fileList.begin(), fileList.end(),
+                        [make, model](const std::string& s)
+                        { return (s.find(make) != std::string::npos) && (s.find(model) != std::string::npos);
         });
 }
 
@@ -317,14 +320,14 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
-  std::list<std::string> colorProfileList;
-  if (!colorProfileDatabaseDirPath.empty() && !fs::is_directory(colorProfileDatabaseDirPath))
+  std::vector<std::string> colorProfileList;
+  if (!colorProfileDatabaseDirPath.empty())
   {
-      ALICEVISION_LOG_ERROR("The specified database for color profiles does not exist.");
-      return EXIT_FAILURE;
-  }
-  else if (!colorProfileDatabaseDirPath.empty())
-  {
+      if(!fs::is_directory(colorProfileDatabaseDirPath))
+      {
+          ALICEVISION_LOG_ERROR("The specified database for color profiles does not exist.");
+          return EXIT_FAILURE;
+      }
       fs::path targetDir(colorProfileDatabaseDirPath);
       fs::directory_iterator it(targetDir), eod;
 
@@ -399,7 +402,7 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
-  int allColorProfilesFound = 1; // int type instead of bool to support usage of omp atomic
+  char allColorProfilesFound = 1; // char type instead of bool to support usage of atomic
 
   #pragma omp parallel for
   for(int i = 0; i < sfmData.getViews().size(); ++i)
@@ -474,30 +477,24 @@ int aliceVision_main(int argc, char **argv)
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
     camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
 
-
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImagePath()));
 
     std::string imgFormat = in->format_name();
 
     // check if a color profile is available for the image
-    if (!colorProfileDatabaseDirPath.empty() && (imgFormat.compare("raw") == 0))
+    if(hasCameraMetadata && !colorProfileDatabaseDirPath.empty() && (imgFormat.compare("raw") == 0))
     {
-        bool colorProfileFound = false;
-        if (hasCameraMetadata)
+        const std::vector<std::string>::iterator it = findColorProfile(make, model, colorProfileList);
+        if(it != colorProfileList.end())
         {
-            std::pair<std::string, std::string> pairMakeModel = std::pair<std::string, std::string>(make, model);
-            std::list<std::string>::iterator it = findColorProfile(pairMakeModel, colorProfileList);
-
-            colorProfileFound = (it != colorProfileList.end());
-
-            if (colorProfileFound)
-            {
-                view.addMetadata("AliceVision:colorProfileFileName", *it);
-            }
+            // color profile found, keep the path in metadata
+            view.addMetadata("AliceVision:colorProfileFileName", *it);
         }
-
-        #pragma omp atomic
-        allColorProfilesFound &= static_cast<int>(colorProfileFound);
+        else if(allColorProfilesFound)
+        {
+            // there is a missing color profile for one image or more
+            boost::atomic_ref<char>{allColorProfilesFound} = 0;
+        }
     }
 
     // check if the view intrinsic is already defined
