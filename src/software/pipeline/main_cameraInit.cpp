@@ -562,9 +562,10 @@ int aliceVision_main(int argc, char **argv)
         // Find an LCP file that matches the camera model and the lens model.
         const std::string& lensModel = view.getMetadataLensModel();
         const int lensID = view.getMetadataLensID();
-        const std::string make_or_model = lensCorrectionProfileSearchByLensNameAndCameraMakerOnly ? make : model;
 
-        const std::string lcpKey = make_or_model + lensModel + std::to_string(lensID);
+        const std::string lcpKey = make +
+            (lensCorrectionProfileSearchByLensNameAndCameraMakerOnly ? ""  : model) +
+            lensModel + std::to_string(lensID);
 
         if (lcpStore.find(lcpKey) != lcpStore.end())
         {
@@ -572,7 +573,7 @@ int aliceVision_main(int argc, char **argv)
         }
         else
         {
-            findLCPInfo(v_lcpFilepath, make_or_model, lensModel, lensID, 1, lcpData, lensCorrectionProfileSearchByLensNameAndCameraMakerOnly);
+            findLCPInfo(v_lcpFilepath, make, model, lensModel, lensID, 1, lcpData, lensCorrectionProfileSearchByLensNameAndCameraMakerOnly);
             if (!lcpData.isEmpty())
             {
                 #pragma omp critical

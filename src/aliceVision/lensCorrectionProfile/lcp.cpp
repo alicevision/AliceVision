@@ -906,24 +906,26 @@ std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str)
 }
 
 // LCP database parsing implementation
-
-bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraModelOrMaker, const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
+bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMake, const std::string& cameraModel,
+                 const std::string& lensModel, const int& lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
 {
     std::vector<boost::filesystem::path> v_lcpFilename;
     parseDirectory(dbDirectoryname, v_lcpFilename);
 
-    return findLCPInfo(v_lcpFilename, cameraModelOrMaker, lensModel, lensID, rawMode, lcpData, omitCameraModel);
+    return findLCPInfo(v_lcpFilename, cameraMake, cameraModel, lensModel, lensID, rawMode, lcpData,
+                       omitCameraModel);
 }
 
 bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
-                 const std::string& cameraModelOrMaker,
+                 const std::string& cameraMake,
+                 const std::string& cameraModel,
                  const std::string& lensModel,
                  const int& lensID,
                  int rawMode,
                  LCPinfo& lcpData,
                  bool omitCameraModel)
 {
-    std::string reducedCameraModel = reduceString(cameraModelOrMaker);
+    std::string reducedCameraModel = reduceString(omitCameraModel ? cameraMake : cameraModel);
     std::string reducedLensModel = reduceString(lensModel);
 
     bool lcpFound = false;
