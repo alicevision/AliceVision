@@ -686,7 +686,7 @@ int aliceVision_main(int argc, char * argv[])
 
             image::ImageReadOptions options;
             options.workingColorSpace = workingColorSpace;
-            options.applyWhiteBalance = view.getApplyWhiteBalance();
+            options.rawColorInterpretation = view.getApplyWhiteBalance() ? image::ERawColorInterpretation::LibRawWhiteBalancing : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
             options.colorProfileFileName = view.getColorProfileFileName();
             options.applyToneCurve = applyToneCurve;
 

@@ -173,7 +173,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
         image::ImageReadOptions options;
         options.workingColorSpace = colorspace;
-        options.applyWhiteBalance = applyWhiteBalance;
+        options.rawColorInterpretation = applyWhiteBalance ? image::ERawColorInterpretation::LibRawWhiteBalancing  : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
 
         // Load image
         readImage(imagePaths[idBracket], img, options);

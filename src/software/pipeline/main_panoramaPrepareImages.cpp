@@ -252,7 +252,7 @@ int aliceVision_main(int argc, char* argv[])
 
         image::ImageReadOptions options;
         options.workingColorSpace = image::EImageColorSpace::LINEAR;
-        options.applyWhiteBalance = v.second->getApplyWhiteBalance();
+        options.rawColorInterpretation = v.second->getApplyWhiteBalance() ? image::ERawColorInterpretation::LibRawWhiteBalancing : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
         
 
         image::readImage(v.second->getImagePath(), originalImage, options);

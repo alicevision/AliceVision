@@ -252,6 +252,70 @@ bool isSupportedUndistortFormat(const std::string &ext)
     return(std::find(start, end, boost::to_lower_copy(ext)) != end);
 }
 
+std::string ERawColorInterpretation_informations()
+{
+    return "Raw color interpretation :\n"
+        "* None \n"
+        "* libRaw whithout white balancing ";
+        "* libRaw whith white balancing ";
+        "* DCP linear processing if available ";
+        "* DCP linear processing mandatory ";
+        "* None but if DCP available info in metadata ";
+        "* None but DCP info in metadata mandatory ";
+}
+
+ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& rawColorInterpretation)
+{
+    std::string type = rawColorInterpretation;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+    if (type == "none")
+        return ERawColorInterpretation::None;
+    if (type == "librawnowhitebalancing")
+        return ERawColorInterpretation::LibRawNoWhiteBalancing;
+    if (type == "librawwhitebalancing")
+        return ERawColorInterpretation::LibRawWhiteBalancing;
+    if (type == "dcplinearprocessing_ifavailable")
+        return ERawColorInterpretation::DcpLinearProcessing_ifAvailable;
+    if (type == "dcpLinearprocessing_required")
+        return ERawColorInterpretation::DcpLinearProcessing_required;
+    if (type == "dcpmetadata_ifavailable")
+        return ERawColorInterpretation::DcpMetadata_ifAvailable;
+    if (type == "dcpmetadata_required")
+        return ERawColorInterpretation::DcpMetadata_required;
+
+    throw std::out_of_range("Invalid raw color interpretation : " + rawColorInterpretation);
+
+}
+
+std::string ERawColorInterpretation_enumToString(const ERawColorInterpretation rawColorInterpretation)
+{
+    switch (rawColorInterpretation)
+    {
+        case ERawColorInterpretation::None: return "none";
+        case ERawColorInterpretation::LibRawNoWhiteBalancing: return "librawnowhitebalancing";
+        case ERawColorInterpretation::LibRawWhiteBalancing: return "librawwhitebalancing";
+        case ERawColorInterpretation::DcpLinearProcessing_ifAvailable: return "dcplinearprocessing_ifavailable";
+        case ERawColorInterpretation::DcpLinearProcessing_required: return "dcpLinearprocessing_required";
+        case ERawColorInterpretation::DcpMetadata_ifAvailable: return "dcpmetadata_ifavailable";
+        case ERawColorInterpretation::DcpMetadata_required: return "dcpmetadata_required";
+    }
+    throw std::out_of_range("Invalid ERawColorInterpretation enum");
+}
+
+std::ostream& operator<<(std::ostream& os, ERawColorInterpretation rawColorInterpretation)
+{
+    return os << ERawColorInterpretation_enumToString(rawColorInterpretation);
+}
+
+std::istream& operator>>(std::istream& in, ERawColorInterpretation& rawColorInterpretation)
+{
+    std::string token;
+    in >> token;
+    rawColorInterpretation = ERawColorInterpretation_stringToEnum(token);
+    return in;
+}
+
 // Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
@@ -368,7 +432,7 @@ void readImage(const std::string& path,
   // libRAW configuration
   // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
   configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-  configSpec.attribute("raw:use_camera_wb", (imageReadOptions.applyWhiteBalance?1:0)); // white balance correction
+  configSpec.attribute("raw:use_camera_wb", (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing ?1:0)); // white balance correction
   // use_camera_matrix: Whether to use the embedded color profile, if it is present: 0=never, 1 (default)=only for DNG files, 3=always
   configSpec.attribute("raw:use_camera_matrix", 3); // use embeded color profile
   configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries

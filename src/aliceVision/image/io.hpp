@@ -39,17 +39,41 @@ enum class EImageFileType
 };
 
 /**
+ * @brief Available raw processing methods
+ */
+enum class ERawColorInterpretation
+{
+    /// Debayering without any color processing
+    None,
+    /// Simple neutralization
+    LibRawNoWhiteBalancing,
+    /// Use internal white balancing from libraw
+    LibRawWhiteBalancing,
+    /// Apply the linear operations (forward matrix) from DCP profiles, if the DCP file is available.
+    /// If DCP file is not available fallback is simple neutralization (LibRawNoWhiteBalancing)
+    DcpLinearProcessing_ifAvailable,
+    /// If DCP file is not available throw an exception
+    DcpLinearProcessing_required,
+    /// Similar to LibRawNoWhiteBalancing, but put DCP profiles into metadata without applying color processing
+    DcpMetadata_ifAvailable,
+    /// If DCP file is not available throw an exception
+    DcpMetadata_required
+};
+
+/**
  * @brief aggregate for multiple image reading options
  */
 struct ImageReadOptions
 {  
-  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO, bool useWhiteBalance = true, const std::string& colorProfile="", const oiio::ROI& roi = oiio::ROI()) :
-  workingColorSpace(colorSpace), applyWhiteBalance(useWhiteBalance), colorProfileFileName(colorProfile), applyToneCurve(false), subROI(roi)
+  ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
+                   ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawNoWhiteBalancing,
+                   const std::string& colorProfile = "", const oiio::ROI& roi = oiio::ROI()) :
+      workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), applyToneCurve(false), subROI(roi)
   {
   }
 
   EImageColorSpace workingColorSpace;
-  bool applyWhiteBalance;
+  ERawColorInterpretation rawColorInterpretation;
   std::string colorProfileFileName;
   bool applyToneCurve;
 
@@ -173,26 +197,26 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 
 
-/**
- * @brief aggregate for multiple image reading options
- */
-struct ImageReadOptions
-{
-    ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
-                     bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
-        workingColorSpace(colorSpace),
-        applyWhiteBalance(useWhiteBalance),
-        subROI(roi)
-    {
-    }
-
-    EImageColorSpace workingColorSpace;
-    bool applyWhiteBalance;
-
-    //ROI for this image.
-    //If the image contains an roi, this is the roi INSIDE the roi.
-    oiio::ROI subROI;
-};
+///**
+// * @brief aggregate for multiple image reading options
+// */
+//struct ImageReadOptions
+//{
+//    ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
+//                     bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
+//        workingColorSpace(colorSpace),
+//        applyWhiteBalance(useWhiteBalance),
+//        subROI(roi)
+//    {
+//    }
+//
+//    EImageColorSpace workingColorSpace;
+//    bool applyWhiteBalance;
+//
+//    //ROI for this image.
+//    //If the image contains an roi, this is the roi INSIDE the roi.
+//    oiio::ROI subROI;
+//};
 
 /**
  * @brief aggregate for multiple image writing options
