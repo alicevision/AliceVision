@@ -136,20 +136,6 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     return in;
 }
 
-//void parseLCPDatabase(const boost::filesystem::path& p, std::vector<boost::filesystem::path>& v)
-//{
-//    if (boost::filesystem::is_directory(p))
-//    {
-//        for (auto&& x : boost::filesystem::directory_iterator(p))
-//            parseLCPDatabase(x.path(), v);
-//    }
-//    else if (boost::filesystem::is_regular_file(p) && (p.extension().string() == ".lcp"))
-//    {
-//        v.push_back(p);
-//    }
-//}
-
-
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
  * - Export a SfMData file with View & Intrinsic data
@@ -421,7 +407,7 @@ int aliceVision_main(int argc, char **argv)
   image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
   int viewsWithDCPMetadata = 0;
 
-  std::map<std::string, LCPinfo> lcpStore;
+  LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchByLensNameAndCameraMakerOnly);
 
   #pragma omp parallel for
   for (int i = 0; i < sfmData.getViews().size(); ++i)
@@ -550,36 +536,18 @@ int aliceVision_main(int argc, char **argv)
             ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
     }
     // try to find an appropriate Lens Correction Profile
-    //fs::path lcpFilepath = "";
-    LCPinfo lcpData;
-    if (v_lcpFilepath.size() == 1)
+    LCPinfo* lcpData = nullptr;
+    if(lcpStore.size() == 1)
     {
-        //std::string lcpFilepath = v_lcpFilepath.back().string();
-        lcpData.load(v_lcpFilepath.back().string());
+        lcpData = lcpStore.retrieveLCP();
     }
-    else if (!v_lcpFilepath.empty())
+    else if(!lcpStore.empty())
     {
         // Find an LCP file that matches the camera model and the lens model.
         const std::string& lensModel = view.getMetadataLensModel();
         const int lensID = view.getMetadataLensID();
 
-        const std::string lcpKey = make +
-            (lensCorrectionProfileSearchByLensNameAndCameraMakerOnly ? ""  : model) +
-            lensModel + std::to_string(lensID);
-
-        if (lcpStore.find(lcpKey) != lcpStore.end())
-        {
-            lcpData = lcpStore.at(lcpKey);
-        }
-        else
-        {
-            findLCPInfo(v_lcpFilepath, make, model, lensModel, lensID, 1, lcpData, lensCorrectionProfileSearchByLensNameAndCameraMakerOnly);
-            if (!lcpData.isEmpty())
-            {
-                #pragma omp critical
-                lcpStore.insert(std::pair<std::string,LCPinfo>(lcpKey,lcpData));
-            }
-        }
+        lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
     }
 
     // check if the view intrinsic is already defined
@@ -701,15 +669,15 @@ int aliceVision_main(int argc, char **argv)
         defaultFocalRatio, defaultOffsetX, defaultOffsetY, 
         defaultCameraModel, allowedCameraModels);
 
-    if (!lcpData.isEmpty())
+    if (lcpData != nullptr)
     {
         float apertureValue = 2.f * std::log(view.getMetadataFNumber()) / std::log(2.0);
         float focalLength = view.getMetadataFocalLength();
         float focusDistance = 0.f;
 
         LensParam lensParam;
-        lcpData.getDistortionParams(focalLength, focusDistance, lensParam);
-        lcpData.getVignettingParams(focalLength, focusDistance, lensParam);
+        lcpData->getDistortionParams(focalLength, focusDistance, lensParam);
+        lcpData->getVignettingParams(focalLength, focusDistance, lensParam);
 
         std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsicBase);
         if (intrinsicDisto)
@@ -718,7 +686,7 @@ int aliceVision_main(int argc, char **argv)
           std::shared_ptr<camera::DistortionRadialK3> distoRadialK3 = std::dynamic_pointer_cast<camera::DistortionRadialK3>(distortion);
           if (distoRadialK3)
           {
-            const int Dmax = std::max<int>(lcpData.getImageWidth(), lcpData.getImageLength());
+            const int Dmax = std::max<int>(lcpData->getImageWidth(), lcpData->getImageLength());
 
             const aliceVision::Vec2 offset((lensParam.perspParams.ImageXCenter - 0.5f) * Dmax, (lensParam.perspParams.ImageYCenter - 0.5f) * Dmax);        
             intrinsicDisto->setOffset(offset);

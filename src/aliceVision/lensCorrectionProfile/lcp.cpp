@@ -1,12 +1,14 @@
-#include <iostream>
-#include <math.h>
-
-#include "boost/filesystem.hpp"
-#include "boost/algorithm/string.hpp"
-
-#include <expat.h>
 #include "lcp.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+
+#include <expat.h>
+
+#include <iostream>
+#include <math.h>
 
 template<typename T>
 constexpr T interpolate(T a, T b, T c)
@@ -473,6 +475,14 @@ LCPinfo::LCPinfo(const std::string& filename, bool fullParsing) :
 
 void LCPinfo::load(const std::string& filename, bool fullParsing)
 {
+    if(fullParsing)
+    {
+        ALICEVISION_LOG_DEBUG("Load LCP file: \"" << filename << "\"");
+    }
+    else
+    {
+        ALICEVISION_LOG_TRACE("Load LCP header: \"" << filename << "\"");
+    }
     XML_Parser parser = XML_ParserCreate(nullptr);
 
     if (!parser)
@@ -852,18 +862,17 @@ void LCPinfo::getVignettingParams(const float& focalLength, const float& apertur
     }
 }
 
-// Some useful functions when parsing the LCP database
 
-void parseDirectory(const boost::filesystem::path& p, std::vector<boost::filesystem::path>& v)
+void LCPdatabase::loadDirectory(const boost::filesystem::path& p)
 {
     if (boost::filesystem::is_directory(p))
     {
         for (auto&& x : boost::filesystem::directory_iterator(p))
-            parseDirectory(x.path(), v);
+            loadDirectory(x.path());
     }
     else if (boost::filesystem::is_regular_file(p) && (boost::filesystem::extension(p) == ".lcp"))
     {
-        v.push_back(p);
+        _lcpFilepaths.push_back(p);
     }
 }
 
@@ -889,66 +898,88 @@ std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str)
     return v_localStr;
 }
 
-// LCP database parsing implementation
-bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMake, const std::string& cameraModel,
-                 const std::string& lensModel, const int lensID, int rawMode, LCPinfo& lcpData, bool omitCameraModel)
+LCPinfo* LCPdatabase::retrieveLCP(const std::string& lcpFilepath)
 {
-    std::vector<boost::filesystem::path> v_lcpFilename;
-    parseDirectory(dbDirectoryname, v_lcpFilename);
+    // Check if the LCP is already in the cache, or add it
+    auto lcpCacheIt = _lcpCache.find(lcpFilepath);
+    if(lcpCacheIt == _lcpCache.end())
+    {
+        // If not already in the cache, add it.
+#pragma omp critical
+        _lcpCache[lcpFilepath] = LCPinfo(lcpFilepath, true);
+        lcpCacheIt = _lcpCache.find(lcpFilepath);
+    }
 
-    return findLCPInfo(v_lcpFilename, cameraMake, cameraModel, lensModel, lensID, rawMode, lcpData,
-                       omitCameraModel);
+    // return the LCPinfo from the cache
+    return &lcpCacheIt->second;
 }
 
-bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames,
+LCPinfo* LCPdatabase::findLCP(
                  const std::string& cameraMake,
                  const std::string& cameraModel,
                  const std::string& lensModel,
                  const int lensID,
-                 int rawMode,
-                 LCPinfo& lcpData,
-                 bool omitCameraModel)
+                 int rawMode)
 {
     const std::string reducedCameraMake = reduceString(cameraMake);
-    const std::string reducedCameraModel = omitCameraModel ? reducedCameraMake : reduceString(cameraModel);
+    const std::string reducedCameraModel = _omitCameraModel ? reducedCameraMake : reduceString(cameraModel);
     const std::string reducedLensModel = reduceString(lensModel);
 
-    for(const boost::filesystem::path& lcpFile: lcpFilenames)
+    const std::string lensUidStr = reducedCameraMake + reducedCameraModel + reducedLensModel;
+    const auto cachetoLcpPathIt = _lcpCameraMappingCache.find(lensUidStr);
+    if(cachetoLcpPathIt != _lcpCameraMappingCache.end())
     {
-        const std::string lcpFileStr = lcpFile.string();
-        const std::string reducedLcpFileStr = reduceString(lcpFileStr);
-        const bool filepathContainsMake = (reducedLcpFileStr.find(reducedCameraMake) != std::string::npos);
+        return retrieveLCP(cachetoLcpPathIt->second);
+    }
+
+    for(const LcpPath& lcpPath : _lcpFilepaths)
+    {
+        const bool filepathContainsMake = (lcpPath.reducedPath.find(reducedCameraMake) != std::string::npos);
         if(!filepathContainsMake)
             continue;
 
-        const LCPinfo lcp(lcpFileStr, false);
+        auto headerIt = _lcpHeaderCache.find(lcpPath.reducedPath);
+        if(headerIt == _lcpHeaderCache.end())
+        {
+            // If not already in the cache of LCP headers, add it.
+#pragma omp critical
+            _lcpHeaderCache[lcpPath.path.string()] = LCPinfo(lcpPath.path.string(), false);
+            headerIt = _lcpHeaderCache.find(lcpPath.path.string());
+        }
+
+        const LCPinfo& lcpHeader = headerIt->second;
 
         const std::string reducedCameraModelLCP =
-            reduceString(omitCameraModel ? lcp.getCameraMaker() : lcp.getCameraModel());
-        const std::string reducedCameraPrettyNameLCP = reduceString(lcp.getCameraPrettyName());
-        const std::string reducedLensPrettyNameLCP = reduceString(lcp.getLensPrettyName());
+            reduceString(_omitCameraModel ? lcpHeader.getCameraMaker() : lcpHeader.getCameraModel());
+        const std::string reducedCameraPrettyNameLCP = reduceString(lcpHeader.getCameraPrettyName());
+        const std::string reducedLensPrettyNameLCP = reduceString(lcpHeader.getLensPrettyName());
 
         std::vector<std::string> lensModelsLCP;
-        lcp.getLensModels(lensModelsLCP);
+        lcpHeader.getLensModels(lensModelsLCP);
         const std::vector<std::string> reducedLensModelsLCP = reduceStrings(lensModelsLCP);
 
         std::vector<int> lensIDsLCP;
-        lcp.getLensIDs(lensIDsLCP);
+        lcpHeader.getLensIDs(lensIDsLCP);
 
         const bool cameraOK =
             ((reducedCameraModelLCP == reducedCameraModel) || (reducedCameraPrettyNameLCP == reducedCameraModel));
         const bool lensOK = ((reducedLensPrettyNameLCP == reducedLensModel) ||
                        (std::find(reducedLensModelsLCP.begin(), reducedLensModelsLCP.end(), reducedLensModel) != reducedLensModelsLCP.end()));
         const bool lensIDOK = (std::find(lensIDsLCP.begin(), lensIDsLCP.end(), lensID) != lensIDsLCP.end());
-        const bool isRaw = lcp.isRawProfile();
+        const bool isRaw = lcpHeader.isRawProfile();
 
         const bool lcpFound =
             (cameraOK && lensOK && lensIDOK && ((isRaw && rawMode < 2) || (!isRaw && (rawMode % 2 == 0))));
         if(!lcpFound)
+            // The LCP does not match our image metadata
             continue;
 
-        lcpData.load(lcpFile.string(), true);
-        return true;
+        // Add the mapping of the lens ID to the found LCP filepath
+#pragma omp critical
+        _lcpCameraMappingCache[lensUidStr] = lcpPath.path.string();
+
+        // Return the LCP from file or cache
+        return retrieveLCP(lcpPath.path.string());
     }
 
     return false;

@@ -1,8 +1,11 @@
 #pragma once
 
+#include <boost/filesystem/path.hpp>
+
 #include <string>
 #include <vector>
 #include <sstream>
+#include <map>
 
 enum class LCPCorrectionMode
 {
@@ -251,7 +254,7 @@ public:
     * @param[in] fullParsing Load only common camera and lens info  and skip all models when set to false (default = true)
     */
     LCPinfo(const std::string& filename, bool fullParsing=true);
-    ~LCPinfo() {};
+    ~LCPinfo() = default;
 
     /**
     * @brief LCPinfo loader
@@ -652,41 +655,79 @@ private:
     }
 };
 
-/**
-* @brief Parse a given directory and all subdirectories and try to find an appropriate LCP file for a set of camera and lens information
-*        amongst the discovered LCP files. If a file is found, load its content.
-* @param[in] dbDirectoryname Directory to explore
-* @param[in] cameraMake Camera maker name
-* @param[in] cameraModel Camera model name
-* @param[in] lensModel Lens model name
-* @param[in] lensID Lens ID
-* @param[in] rawMode Set if raw status of a profile must be considered or not
-*            0 : no matter about raw status
-*            1 : only raw profile are considered in the search
-*            2 : only non raw profile are considered in the search
-* @param[in] lcpData LCP info to be populated with the file content
-* @param[in] omitCameraModel cameraModelOrMaker contains only the camera maker (default is false)
-* @return True if a file is found
-*/
-bool findLCPInfo(const std::string& dbDirectoryname, const std::string& cameraMake, const std::string& cameraModel,
-                 const std::string& lensModel, const int lensID, int rawMode, LCPinfo& lcpData,
-                 bool omitCameraModel = false);
+std::string reduceString(const std::string& str);
+std::vector<std::string> reduceStrings(const std::vector<std::string>& v_str);
 
 /**
-* @brief Try to find an appropriate LCP file for a set of camera and lens information amongst a set of files. If a file is found, load its content.
-* @param[in] lcpFilenames Set of all filepathes to explore
-* @param[in] cameraMake Camera maker name
-* @param[in] cameraModel Camera model name
-* @param[in] lensModel Lens model name
-* @param[in] lensID Lens ID
-* @param[in] rawMode Set if raw status of a profile must be considered or not
-*            0 : no matter about raw status
-*            1 : only raw profile are considered in the search
-*            2 : only non raw profile are considered in the search
-* @param[in] lcpData LCP info to be populated with the file content
-* @param[in] omitCameraModel cameraModelOrMaker contains only the camera maker (default is false)
-* @return True if a file is found
-*/
-bool findLCPInfo(const std::vector<boost::filesystem::path>& lcpFilenames, const std::string& cameraMake,
-                 const std::string& cameraModel, const std::string& lensModel, const int lensID, int rawMode,
-                 LCPinfo& lcpData, bool omitCameraModel = false);
+ * @brief LCPdatabase allows to access all the LCP files in the database.
+ */
+class LCPdatabase
+{
+public:
+    LCPdatabase() = default;
+    /**
+     * @brief LCPdatabase constructor
+     * @param[in] folder The folder containing all lcp files
+     */
+    LCPdatabase(const std::string& folder, bool omitCameraModel = false)
+        : _omitCameraModel(omitCameraModel)
+    {
+        loadDirectory(folder);
+    }
+    ~LCPdatabase() = default;
+
+    bool empty() const { return _lcpFilepaths.empty(); }
+
+    size_t size() const { return _lcpFilepaths.size(); }
+
+    void loadDirectory(const boost::filesystem::path& p);
+
+    LCPinfo* retrieveLCP() { return retrieveLCP(_lcpFilepaths.begin()->path.string()); }
+
+    /**
+     * @brief Get the LCP from filepath. Retrieve it from cache or load it into the cache.
+     */
+    LCPinfo* retrieveLCP(const std::string& p);
+
+    /**
+     * @brief Try to find an appropriate LCP file for a set of camera and lens information amongst a set of files. If a
+     * file is found, load its content.
+     * 
+     * @param[in] cameraMake Camera maker name
+     * @param[in] cameraModel Camera model name
+     * @param[in] lensModel Lens model name
+     * @param[in] lensID Lens ID
+     * @param[in] rawMode Set if raw status of a profile must be considered or not
+     *            0 : no matter about raw status
+     *            1 : only raw profile are considered in the search
+     *            2 : only non raw profile are considered in the search
+     * @param[in] omitCameraModel cameraModelOrMaker contains only the camera maker (default is false)
+     * @return pointer to the found LCPinfo
+     */
+    LCPinfo* findLCP(const std::string& cameraMake, const std::string& cameraModel,
+                     const std::string& lensModel, const int lensID, int rawMode);
+
+private:
+    struct LcpPath
+    {
+        LcpPath(const boost::filesystem::path& p)
+            : path(p)
+            , reducedPath(reduceString(p.string()))
+        {}
+        boost::filesystem::path path;
+        std::string reducedPath;
+    };
+
+    /// List of all LCP files
+    std::vector<LcpPath> _lcpFilepaths;
+    /// Cache the header of LCP files
+    std::map<std::string, LCPinfo> _lcpHeaderCache;
+    /// Cache of fully loaded LCP files
+    std::map<std::string, LCPinfo> _lcpCache;
+    /// Map the label from the camera to the matching LCP filepath
+    std::map<std::string, std::string> _lcpCameraMappingCache;
+    /// The matching could be strict and fully match the camera Make, Model and Lens.
+    /// As we are looking for lens information, we can omit the CameraModel to get generic values valid for more lenses.
+    bool _omitCameraModel = false;
+};
+
