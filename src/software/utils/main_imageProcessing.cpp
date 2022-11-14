@@ -492,6 +492,7 @@ int aliceVision_main(int argc, char * argv[])
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
     bool applyToneCurve = false;
+    image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
 
     ProcessingParams pParams;
 
@@ -570,7 +571,10 @@ int aliceVision_main(int argc, char * argv[])
          "Output image format (rgba, rgb, grayscale)")
 
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
-         ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+            ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+
+        ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
+            ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
 
         ("applyToneCurve", po::value<bool>(&applyToneCurve)->default_value(applyToneCurve),
             "Apply color profile embedded tone curve if any.")
@@ -686,7 +690,8 @@ int aliceVision_main(int argc, char * argv[])
 
             image::ImageReadOptions options;
             options.workingColorSpace = workingColorSpace;
-            options.rawColorInterpretation = view.getApplyWhiteBalance() ? image::ERawColorInterpretation::LibRawWhiteBalancing : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+            //options.rawColorInterpretation = view.getApplyWhiteBalance() ? image::ERawColorInterpretation::LibRawWhiteBalancing : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+            options.rawColorInterpretation = rawColorInterpretation;
             options.colorProfileFileName = view.getColorProfileFileName();
             options.applyToneCurve = applyToneCurve;
 

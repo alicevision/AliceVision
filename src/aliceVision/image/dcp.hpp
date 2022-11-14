@@ -147,6 +147,10 @@ public:
     explicit DCPProfile(const std::string& filename);
     ~DCPProfile();
 
+    void getMatrices(const std::string& type, std::vector<Matrix>& v_Mat);
+
+    void applyLinear(OIIO::ImageBuf& image, Triple neutral);
+
     void apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params);
     void apply(float* rgb, const DCPProfileApplyParams& params) const;
 
@@ -194,6 +198,7 @@ private:
     void getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, float& x, float& y);
     Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget);
     Matrix getCameraToXyzD50Matrix(const float x, const float y);
+    Matrix getCameraToSrgbLinearMatrix(const float x, const float y);
 
     Matrix ws_sRGB;
     Matrix sRGB_ws;

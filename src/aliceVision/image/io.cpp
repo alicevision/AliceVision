@@ -277,7 +277,7 @@ ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& 
         return ERawColorInterpretation::LibRawWhiteBalancing;
     if (type == "dcplinearprocessing_ifavailable")
         return ERawColorInterpretation::DcpLinearProcessing_ifAvailable;
-    if (type == "dcpLinearprocessing_required")
+    if (type == "dcplinearprocessing_required")
         return ERawColorInterpretation::DcpLinearProcessing_required;
     if (type == "dcpmetadata_ifavailable")
         return ERawColorInterpretation::DcpMetadata_ifAvailable;
@@ -409,120 +409,219 @@ void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer)
   getBufferFromImage(image, oiio::TypeDesc::UINT8, 3, buffer);
 }
 
+bool isRawFormat(const std::string& path)
+{
+    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+    std::string imgFormat = in->format_name();
+
+    return (imgFormat.compare("raw") == 0);
+}
+
+
 template<typename T>
 void readImage(const std::string& path,
                oiio::TypeDesc format,
                int nchannels,
                Image<T>& image,
-               const ImageReadOptions & imageReadOptions)
+               const ImageReadOptions& imageReadOptions)
 {
     ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
 
     // check requested channels number
     if (nchannels == 0)
-        throw std::runtime_error("Requested channels is 0. Image file: '" + path + "'.");
+        ALICEVISION_THROW_ERROR("Requested channels is 0. Image file: '" + path + "'.");
     if (nchannels == 2)
-        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
+        ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
-  if(!fs::exists(path))
-    ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
+    if(!fs::exists(path))
+        ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
 
-  oiio::ImageSpec configSpec;
+    oiio::ImageSpec configSpec;
 
-  // libRAW configuration
-  // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
-  configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-  configSpec.attribute("raw:use_camera_wb", (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing ?1:0)); // white balance correction
-  // use_camera_matrix: Whether to use the embedded color profile, if it is present: 0=never, 1 (default)=only for DNG files, 3=always
-  configSpec.attribute("raw:use_camera_matrix", 3); // use embeded color profile
-  configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+    const bool isRawImage = isRawFormat(path);
 
-  oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+    if (isRawImage)
+    {
+        // libRAW configuration
+        // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
 
-  inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
+        if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::None)
+        {
+            if (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION)
+            {
+                ALICEVISION_THROW_ERROR("Working color space must be set to \"no_conversion\" if raw color interpretation is set to \"none\"");
+            }
 
-  if(!inBuf.initialized())
-    ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
+            float user_mul[4] = {1,1,1,1};
+
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 1); // white balance correction (with user multiplicators)
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc::FLOAT, user_mul); // no neutralization
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
+            configSpec.attribute("raw:HighlightMode", 0); // unclip
+        }
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawNoWhiteBalancing)
+        {
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+        }
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::LibRawWhiteBalancing)
+        {
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 1); // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
+        }
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_ifAvailable)
+        {
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", imageReadOptions.colorProfileFileName.empty() ? "Linear" : "raw");
+        }
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_required)
+        {
+            if (imageReadOptions.colorProfileFileName.empty())
+            {
+                ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
+            }
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "raw");
+        }
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata_ifAvailable)
+        {
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "Linear");
+        }
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata_required)
+        {
+            if (imageReadOptions.colorProfileFileName.empty())
+            {
+                ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
+            }
+            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
+            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
+            configSpec.attribute("raw:ColorSpace", "Linear");
+        }
+    }
+
+    oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
+
+    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
+
+    if(!inBuf.initialized())
+        ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
 
     // check picture channels number
     if (inBuf.spec().nchannels == 0)
-        throw std::runtime_error("No channel in the input image file: '" + path + "'.");
+        ALICEVISION_THROW_ERROR("No channel in the input image file: '" + path + "'.");
     if (inBuf.spec().nchannels == 2)
-        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
+        ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
-  // color conversion
-  if(imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
-    throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
+    // Apply DCP profile
+    if (!imageReadOptions.colorProfileFileName.empty() &&
+        (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_required ||
+        imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_ifAvailable))
+    {
+        alicevision::image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
-  // Get color space name. Default image color space is sRGB
-  const std::string& fromColorSpaceName = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB");
+        oiio::ParamValueList imgMetadata = readImageMetadata(path);
+        std::string cam_mul;
+        imgMetadata.getattribute("raw:cam_mul", cam_mul);
+        std::vector<float> v_mult;
+        size_t last = 1;
+        size_t next = 1;
+        while ((next = cam_mul.find(",", last)) != std::string::npos)
+        {
+            v_mult.push_back(atoi(cam_mul.substr(last, next - last).c_str()));
+            last = next + 1;
+        }
+        v_mult.push_back(atof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
 
-  ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
+        alicevision::image::DCPProfile::Triple neutral;
+        for (int i = 0; i < 3; i++)
+        {
+            neutral[i] = v_mult[i] / v_mult[1];
+        }
 
+        dcpProfile.applyLinear(inBuf, neutral);
+    }
+
+    // color conversion
+    if(imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
+        ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
+
+    // Get color space name. Default image color space is sRGB
+    const std::string& fromColorSpaceName = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB");
+
+    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
   
-  //    alicevision::image::DCPProfileApplyParams DCPparams;
-  //    DCPparams.use_tone_curve = imageReadOptions.applyToneCurve;
+    if ((imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION) &&
+        ((imageReadOptions.workingColorSpace != EImageColorSpace::LINEAR) && isRawImage))
+    {
+        imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.workingColorSpace);
+    }
 
-  //    colorProfile.apply(inBuf, DCPparams);
-  //}
+    // convert to grayscale if needed
+    if(nchannels == 1 && inBuf.spec().nchannels >= 3)
+    {
+        // convertion region of interest (for inBuf.spec().nchannels > 3)
+        oiio::ROI convertionROI = inBuf.roi();
+        convertionROI.chbegin = 0;
+        convertionROI.chend = 3;
 
-  if(imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION)
-  {
-      imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.workingColorSpace);
-  }
+        // compute luminance via a weighted sum of R,G,B
+        // (assuming Rec709 primaries and a linear scale)
+        const float weights[3] = {.2126f, .7152f, .0722f}; // To be changed if not sRGB Rec 709 Linear.
+        oiio::ImageBuf grayscaleBuf;
+        oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
+        inBuf.copy(grayscaleBuf);
 
-  // convert to grayscale if needed
-  if(nchannels == 1 && inBuf.spec().nchannels >= 3)
-  {
-    // convertion region of interest (for inBuf.spec().nchannels > 3)
-    oiio::ROI convertionROI = inBuf.roi();
-    convertionROI.chbegin = 0;
-    convertionROI.chend = 3;
+        // TODO: if inBuf.spec().nchannels == 4: premult?
+    }
 
-    // compute luminance via a weighted sum of R,G,B
-    // (assuming Rec709 primaries and a linear scale)
-    const float weights[3] = {.2126f, .7152f, .0722f}; // To be changed if not sRGB Rec 709 Linear.
-    oiio::ImageBuf grayscaleBuf;
-    oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
-    inBuf.copy(grayscaleBuf);
+    // duplicate first channel for RGB
+    if (nchannels >= 3 && inBuf.spec().nchannels == 1)
+    {
+        oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
+        oiio::ImageBuf requestedBuf(requestedSpec);
+        int channelOrder[] = { 0, 0, 0 };
+        float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/ };
+        oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
+        inBuf.swap(requestedBuf);
+    }
 
-    // TODO: if inBuf.spec().nchannels == 4: premult?
-  }
+    // Add an alpha channel if needed
+    if (nchannels == 4 && inBuf.spec().nchannels == 3)
+    {
+        oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
+        oiio::ImageBuf requestedBuf(requestedSpec);
+        int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
+        float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
+        oiio::ImageBufAlgo::channels(requestedBuf, inBuf,
+                                        4, // create an image with 4 channels
+                                        channelOrder,
+                                        channelValues); // only the 4th value is used
+        inBuf.swap(requestedBuf);
+    }
 
-  // duplicate first channel for RGB
-  if (nchannels >= 3 && inBuf.spec().nchannels == 1)
-  {
-    oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
-    oiio::ImageBuf requestedBuf(requestedSpec);
-    int channelOrder[] = { 0, 0, 0 };
-    float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/ };
-    oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
-    inBuf.swap(requestedBuf);
-  }
+    // copy pixels from oiio to eigen
+    image.resize(inBuf.spec().width, inBuf.spec().height, false);
+    {
+        oiio::ROI exportROI = inBuf.roi();
+        exportROI.chbegin = 0;
+        exportROI.chend = nchannels;
 
-  // Add an alpha channel if needed
-  if (nchannels == 4 && inBuf.spec().nchannels == 3)
-  {
-    oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
-    oiio::ImageBuf requestedBuf(requestedSpec);
-    int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
-    float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
-    oiio::ImageBufAlgo::channels(requestedBuf, inBuf,
-                                  4, // create an image with 4 channels
-                                  channelOrder,
-                                  channelValues); // only the 4th value is used
-    inBuf.swap(requestedBuf);
-  }
-
-  // copy pixels from oiio to eigen
-  image.resize(inBuf.spec().width, inBuf.spec().height, false);
-  {
-    oiio::ROI exportROI = inBuf.roi();
-    exportROI.chbegin = 0;
-    exportROI.chend = nchannels;
-
-    inBuf.get_pixels(exportROI, format, image.data());
-  }
+        inBuf.get_pixels(exportROI, format, image.data());
+    }
 }
 
 template<typename T>

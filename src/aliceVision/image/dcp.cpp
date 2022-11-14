@@ -262,6 +262,10 @@ const DCPProfile::Matrix IdentityMatrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.
 
 const DCPProfile::Matrix CAT02_MATRIX = {0.7328, 0.4296, -0.1624, -0.7036, 1.6975, 0.0061, 0.0030, 0.0136, 0.9834};
 
+const DCPProfile::Matrix xyzD50ToSrgbD65LinearMatrix = { 3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252 };
+
+const DCPProfile::Matrix xyzD50ToSrgbD50LinearMatrix = { 3.1338561, -1.6168667, -0.4906146, -0.9787684, 1.9161415, 0.0334540, 0.0719453, -0.2289914, 1.4052427 };
+
 const double TINT_SCALE = -3000.0;
 } // namespace
 
@@ -673,6 +677,9 @@ const Tag* findTag(TagKey tagID, const std::vector<Tag>& v_Tags)
     return &(v_Tags[idx]);
 }
 
+// Spline interpolation from user data to get the internal tone curve with 65536 values
+// https://en.wikipedia.org/wiki/Spline_interpolation
+//
 void SplineToneCurve::Set(const std::vector<double>& v_xy)
 {
     std::vector<double> v_x;
@@ -805,6 +812,15 @@ DCPProfile::DCPProfile(const std::string& filename)
     : will_interpolate(false)
     , valid(false)
     , baseline_exposure_offset(0.0)
+    , analogBalance(IdentityMatrix)
+    , calib_matrix_1(IdentityMatrix)
+    , calib_matrix_2(IdentityMatrix)
+    , color_matrix_1(IdentityMatrix)
+    , color_matrix_2(IdentityMatrix)
+    , forward_matrix_1(IdentityMatrix)
+    , forward_matrix_2(IdentityMatrix)
+    , ws_sRGB(IdentityMatrix)
+    , sRGB_ws(IdentityMatrix)
 {
     delta_info.hue_step = delta_info.val_step = look_info.hue_step = look_info.val_step = 0;
     constexpr int tiff_float_size = 4;
@@ -2007,6 +2023,99 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const float x, const floa
     }
 
     return cameraToXyzD50;
+}
+
+DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const float x, const float y)
+{
+    float cct, tint;
+    setChromaticityCoordinates(x, y, cct, tint);
+    Triple xyz = {
+        x * 1.f / y,
+        1.f,
+        (1.f - x - y) * 1.f / y };
+
+    Matrix interpolatedColorMatrix;
+    if (info.has_color_matrix_1 && info.has_color_matrix_2)
+    {
+        interpolatedColorMatrix = getInterpolatedMatrix(cct, "color");
+    }
+    else
+    {
+        interpolatedColorMatrix = info.has_color_matrix_1 ? color_matrix_1 : color_matrix_2;
+    }
+
+    Matrix cameraToXyzD50;
+
+    if ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2))
+    {
+        Matrix interpolatedForwardMatrix = IdentityMatrix;
+
+        Matrix xyzToCamera = interpolatedColorMatrix;
+        Matrix cameraToXyz = matInv(xyzToCamera);
+
+        double D50_cct = 5000.706605070579;  //
+        double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+        cameraToXyzD50 = matMult(cat, cameraToXyz);
+    }
+    else if ((!info.has_forward_matrix_1) || (!info.has_forward_matrix_2))
+    {
+        Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
+        cameraToXyzD50 = interpolatedForwardMatrix;
+    }
+    else
+    {
+        Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
+        cameraToXyzD50 = interpolatedForwardMatrix;
+    }
+
+    Matrix cameraToSrgbLinear = matMult(xyzD50ToSrgbD65LinearMatrix, cameraToXyzD50);
+
+    return cameraToSrgbLinear;
+}
+
+void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat)
+{
+    if (type == "color")
+    {
+        if (info.has_color_matrix_1)
+            v_Mat.push_back(color_matrix_1);
+        if (info.has_color_matrix_2)
+            v_Mat.push_back(color_matrix_2);
+    }
+    else if (type == "forward")
+    {
+        if (info.has_forward_matrix_1)
+            v_Mat.push_back(forward_matrix_1);
+        if (info.has_forward_matrix_2)
+            v_Mat.push_back(forward_matrix_2);
+    }
+}
+
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral)
+{
+    float x, y;
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, neutral, x, y);
+    Matrix cameraToSrgbLinearMatrix = getCameraToSrgbLinearMatrix(x, y);
+
+#pragma omp parallel for
+    for (int i = 0; i < image.spec().height; ++i)
+        for (int j = 0; j < image.spec().width; ++j)
+        {
+            float rgb[3];
+            image.getpixel(j, i, rgb, 3);
+
+            float rgbOut[3];
+            for (int r = 0; r < 3; ++r)
+            {
+                rgbOut[r] = 0.0;
+                for (int c = 0; c < 3; ++c)
+                {
+                    rgbOut[r] += cameraToSrgbLinearMatrix[r][c] * rgb[c];
+                }
+            }
+            image.setpixel(j, i, rgbOut, 3);
+        }
 }
 
 }

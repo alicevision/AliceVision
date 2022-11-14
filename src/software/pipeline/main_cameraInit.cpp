@@ -12,7 +12,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/image/io.cpp>
+#include <aliceVision/image/io.cpp>    //////// ?????? .cpp ????????
+#include <aliceVision/image/dcp.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
 #include <boost/program_options.hpp>
@@ -489,6 +490,47 @@ int aliceVision_main(int argc, char **argv)
         {
             // color profile found, keep the path in metadata
             view.addMetadata("AliceVision:colorProfileFileName", *it);
+
+            alicevision::image::DCPProfile dcpProf(*it);
+
+            view.addMetadata("AliceVision:DCP:Temp1", std::to_string(dcpProf.info.temperature_1));
+            view.addMetadata("AliceVision:DCP:Temp2", std::to_string(dcpProf.info.temperature_2));
+
+            const int colorMatrixNumber = (dcpProf.info.has_color_matrix_1 && dcpProf.info.has_color_matrix_2) ? 2 :
+                                          (dcpProf.info.has_color_matrix_1 ? 1 : 0);
+            view.addMetadata("AliceVision:DCP:ColorMatrixNumber", std::to_string(colorMatrixNumber));
+
+            const int forwardMatrixNumber = (dcpProf.info.has_forward_matrix_1 && dcpProf.info.has_forward_matrix_2) ? 2 :
+                                            (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
+            view.addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
+
+            std::vector<alicevision::image::DCPProfile::Matrix> v_ColorMatrix;
+            dcpProf.getMatrices("color", v_ColorMatrix);
+            for (int k = 1; k <= v_ColorMatrix.size(); k++)
+            {
+                std::string Matrixstr = "";
+                for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
+                        Matrixstr += (std::to_string(v_ColorMatrix[k - 1][i][j]) + " ");
+                view.addMetadata("AliceVision:DCP:ColorMat" + std::to_string(k), Matrixstr);
+            }
+
+            std::vector<alicevision::image::DCPProfile::Matrix> v_ForwardMatrix;
+            dcpProf.getMatrices("forward", v_ForwardMatrix);
+            for (int k = 1; k <= v_ForwardMatrix.size(); k++)
+            {
+                std::string Matrixstr = "";
+                for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
+                        Matrixstr += (std::to_string(v_ForwardMatrix[k - 1][i][j]) + " ");
+                view.addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k), Matrixstr);
+            }
+
+            const std::vector<int> cam_mul = view.getCameraMultiplicators();
+            std::string Matrixstr = "";
+            for (int i = 0; i < 3; i++)
+                Matrixstr += (std::to_string(cam_mul[i]) + " ");
+            view.addMetadata("AliceVision:cam_mul", Matrixstr);
         }
         else if(allColorProfilesFound)
         {

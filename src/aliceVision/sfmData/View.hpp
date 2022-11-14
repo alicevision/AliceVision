@@ -564,6 +564,23 @@ public:
       return getMetadata({ "AliceVision:colorProfileFileName" });
   }
 
+  const std::vector<int> getCameraMultiplicators() const
+  {
+      const std::string cam_mul = getMetadata({ "raw:cam_mul" });
+      std::vector<int> v_mult;
+
+      size_t last = 0;
+      size_t next = 0;
+      while ((next = cam_mul.find(" ", last)) != std::string::npos)
+      {
+          v_mult.push_back(atoi(cam_mul.substr(last, next - last).c_str()));
+          last = next + 1;
+      }
+      v_mult.push_back(atoi(cam_mul.substr(last).c_str()));
+
+      return v_mult;
+  }
+
   const bool hasMetadataDateTimeOriginal() const
   {
       return hasMetadata(
