@@ -81,7 +81,7 @@ double calibrationIlluminantToTemperature(LightSource light);
 
 
 /**
- * @brief A class representing a tone curve that can be embedded within a DCP color profile
+ * @brief SplineToneCurve represents a tone curve that can be embedded within a DCP color profile
  */
 class SplineToneCurve final
 {
@@ -102,7 +102,7 @@ private:
 };
 
 /**
- * @brief Aggregate all color profile application options
+ * @brief Aggregate all DCP color profile application options (non linear part)
  */
 struct DCPProfileApplyParams
 {
@@ -113,9 +113,9 @@ struct DCPProfileApplyParams
     std::string working_space = "sRGB";
 };
 
-/**
- * @brief Aggregate all color profile information
- */
+ /**
+  * @brief DCPProfileInfo contains information about matrices, table and curves containes in the profile
+  */
 struct DCPProfileInfo
 {
     bool has_color_matrix_1 = false;
@@ -134,8 +134,10 @@ struct DCPProfileInfo
 };
 
 /**
-    * @brief A class representing a DCP color profile
-    */
+* @brief DCPProfile contains a Dng Color Profile as specified by Adobe
+* DNG specification can be found here: https://helpx.adobe.com/content/dam/help/en/photoshop/pdf/dng_spec_1_6_0_0.pdf
+* Profiles with more than 2 illuminants are not supported
+*/
 class DCPProfile final
 {
 public:
@@ -144,14 +146,38 @@ public:
     using Triple = std::array<double, 3>;
     using Matrix = std::array<Triple, 3>;
 
+    /**
+    * @brief DCPProfile constructor
+    * @param[in] filename The dcp path on disk
+    */
     explicit DCPProfile(const std::string& filename);
     ~DCPProfile();
 
+    /**
+     * @brief getMatrices gets some matrices contained in the profile
+     * param[in] type The matrices to get, "color" or "forward"
+     * param[in] v_Mat A vector of matrices to be populated
+     */
     void getMatrices(const std::string& type, std::vector<Matrix>& v_Mat);
 
+    /**
+     * @brief applyLinear applies the linear part of a DCP profile on an OIIO image buffer
+     * param[in] image The OIIO image on which the profile must be applied
+     * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
+     */
     void applyLinear(OIIO::ImageBuf& image, Triple neutral);
 
+    /**
+     * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
+     * param[in] image The OIIO image on which the profile must be applied
+     * param[in] params contains the application parameters indicating which parts of the profile must be applied
+     */
     void apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params);
+    /**
+     * @brief apply applies the non linear part of a DCP profile on a rgb pixel
+     * param[in] rgb The pixel values on which the profile must be applied
+     * param[in] params contains the application parameters indicating which parts of the profile must be applied
+     */
     void apply(float* rgb, const DCPProfileApplyParams& params) const;
 
 private:
@@ -200,25 +226,25 @@ private:
     Matrix getCameraToXyzD50Matrix(const float x, const float y);
     Matrix getCameraToSrgbLinearMatrix(const float x, const float y);
 
-    Matrix ws_sRGB;
-    Matrix sRGB_ws;
-    Matrix color_matrix_1;
-    Matrix color_matrix_2;
-    Matrix calib_matrix_1;
-    Matrix calib_matrix_2;
+    Matrix ws_sRGB; // working color space to sRGB
+    Matrix sRGB_ws; // sRGB to working color space
+    Matrix color_matrix_1; // Color matrix for illuminant 1
+    Matrix color_matrix_2; // Color matrix for illuminant 2
+    Matrix calib_matrix_1; // Calibration matrix for illuminant 1
+    Matrix calib_matrix_2; // Calibration matrix for illuminant 2
     Matrix analogBalance;
     bool will_interpolate;
     bool valid;
-    Matrix forward_matrix_1;
-    Matrix forward_matrix_2;
+    Matrix forward_matrix_1; // white balanced raw to xyzD50 for illumimant 1
+    Matrix forward_matrix_2; // white balanced raw to xyzD50 for illumimant 2
     double baseline_exposure_offset;
-    std::vector<HsbModify> deltas_1;
-    std::vector<HsbModify> deltas_2;
-    std::vector<HsbModify> look_table;
-    HsdTableInfo delta_info;
-    HsdTableInfo look_info;
+    std::vector<HsbModify> deltas_1; // Basic Hue Sat update table for illumimant 1
+    std::vector<HsbModify> deltas_2; // Basic Hue Sat update table for illumimant 2
+    std::vector<HsbModify> look_table; // Hue Sat update table for look modification
+    HsdTableInfo delta_info; // Information for basic Hue Sat updates
+    HsdTableInfo look_info;  // Information for look modification 
 
-    SplineToneCurve AS_tone_curve;
+    SplineToneCurve AS_tone_curve; // Adobe standard tone curve
 
     SplineToneCurve gammatab_srgb;
     SplineToneCurve igammatab_srgb;
