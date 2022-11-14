@@ -419,7 +419,10 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
 
 oiio::ImageSpec readImageSpec(const std::string& path)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  oiio::ImageSpec configSpec;
+  configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of buffer
+
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
   oiio::ImageSpec spec = in->spec();
 
   if(!in)
@@ -516,6 +519,7 @@ void readImage(const std::string& path,
 
     const bool isRawImage = isRawFormat(path);
     image::DCPProfile::Triple neutral = {1.0,1.0,1.0};
+  configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of buffer
 
     if (isRawImage)
     {
