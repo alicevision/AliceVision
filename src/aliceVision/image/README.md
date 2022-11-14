@@ -3,9 +3,9 @@
 
 ## Image Container
 
-`Image\<T\>` class is a generic image container based on an Eigen aligned row-major matrix of template pixel type `T`. Images can store grayscale, RGB, RGBA or custom data.
+`Image<T>` class is a generic image container based on an Eigen aligned row-major matrix of template pixel type `T`. Images can store grayscale, RGB, RGBA or custom data.
 
-`Image\<T\>` provide basic pixel read and write operation.
+`Image<T>` provide basic pixel read and write operation.
 
 See examples from image_test.cpp:
 

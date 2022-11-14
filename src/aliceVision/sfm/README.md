@@ -1,7 +1,7 @@
 # sfm
 
 sfm is the module related to Structure from Motion.
-It handles storage of SfM related data and method to solve SfM problems (camera pose estimation, structure triangulation, bundle_adjustment).
+It handles storage of SfM related data and method to solve SfM problems (camera pose estimation, structure triangulation, bundle adjustment).
 
 
 ## A generic SfM data container
@@ -106,7 +106,7 @@ Two method are proposed:
 
 ## Non linear refinement, Bundle Adjustment
 
-This project provides a generic bundle_adjustment framework to refine or keep as constant the following parameters:
+This project provides a generic bundle adjustment framework to refine or keep as constant the following parameters:
 
 * internal orientation parameters (intrinsics: camera projection model),
 * external orientation parameters (extrinsics: camera poses),
@@ -127,14 +127,14 @@ const double dResidual_after = RMSE(sfm_data);
 ```
 
 Bundle Adjustment (ajustement de faisceaux), is a non linear optimization problem.
-It looks to minimizing the residual error of a series of user cost functions (the reprojection errors of the structure `X_j` to the images measures `x_j^i`).
+It looks to minimizing the residual error of a series of user cost functions (the reprojection errors of the structure $X_j$ to the images measures $x_j^i$).
 According:
 
-* `X_j` the Jnth 3D point of the structure of the scene,
-* `x_j^i` the observation of the projection of the 3D point `X_j` in the image `i`,
-* `P_i` the projection matrix of the image `i`
+* $X_j$ the Jnth 3D point of the structure of the scene,
+* $x_j^i$ the observation of the projection of the 3D point $X_j$ in the image $i$,
+* $P_i$ the projection matrix of the image $i$
 
-From a user provided initial guess the vector of parameters: `\{X_j,P_i\}_{i,j}`: camera parameters `\{P_i\}_i` and the scene structure `\{X_j\}_j` are refined in order to minimizes the residual reprojection cost:
+From a user provided initial guess the vector of parameters: $\{X_j,P_i\}_{i,j}$: camera parameters $\{P_i\}_i$ and the scene structure $\{X_j\}_j$ are refined in order to minimizes the residual reprojection cost:
 
 $$
 \underset{ \{P_i\}_i, \{X_j\}_j}{minimize} \left\| \sum_{j=0}^{m} \sum_{i=0}^{n} x_j^i - P_i X_j \right\|_2

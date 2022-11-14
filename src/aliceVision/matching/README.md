@@ -84,7 +84,7 @@ $$
 
 * "Nearest Neighbor Distance Ratio" distance check can be performed to remove repetitive elements.
 
-  * As many nearest points have been asked we can measure the similarity between the N-nearest neighbor. If the ratio of distance is inferior to a threshold ``\delta`` the match is kept else it is rejected (since the risk of confusion is higher). It allows to avoid ambiguous correspondences. ``\delta`` is often chosen between ``0.6`` and ``0.8``.
+  * As many nearest points have been asked we can measure the similarity between the N-nearest neighbor. If the ratio of distance is inferior to a threshold $\delta$ the match is kept else it is rejected (since the risk of confusion is higher). It allows to avoid ambiguous correspondences. $\delta$ is often chosen between ``0.6`` and ``0.8``.
     
 $$
 \lbrace (P^i_A,P^j_B): j = \underset{k} {\mathrm{argmin}} ~ d(\text{desc}(P^i_A), \text{desc}(P^k_B)) < \delta \underset{k\neq j} \min ~ d(\text{desc}(P^i_A), \text{desc}(P^k_B))

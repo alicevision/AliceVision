@@ -58,7 +58,7 @@ This project implementation follows the DLT (Direct Linear Transform) explained 
 ### Fundamental matrix:
 
 The fundamental matrix is a relation between two images viewing the same scene where those point's
-projections are visible in the two images. Given a point correspondence between two views $`(x_i,x'_i)`$:
+projections are visible in the two images. Given a point correspondence between two views $(x_i,x'_i)$:
 
 We obtain the following relation:
 
@@ -67,8 +67,8 @@ x'^T_i Fx_i = 0
 $$
 
 `F` is the (3 x 3) Fundamental matrix, it puts in relation a point x to a line where belong the projection of the 3D X point.
-$`l'_i = Fx_i`$ designs the epipolar line on which the point $`x'_i`$ could be.
-The relation $`x'^T_i Fx_i = 0`$ exists for all corresponding point belonging to a stereo pair.
+$l'_i = Fx_i$ designs the epipolar line on which the point $x'_i$ could be.
+The relation $x'^T_i Fx_i = 0$ exists for all corresponding point belonging to a stereo pair.
 
 ![The fundamental matrix and the point to line constraint.](../../../docs/img/fundamentalMatrix.png)
 
@@ -80,7 +80,7 @@ Implementation follows the DLT (Direct Linear Transform) explained in [HZ] book.
 ## Relative pose estimation (Essential matrix)
 
 Adding intrinsic parameters to the fundamental matrix gives a metric "object" that provides the following relation
-`E = K'^T FK` , this is the Essential relation explained by Longuet-Higgins in 1981 [Longuet].
+$E = K'^T FK$ , this is the Essential relation explained by Longuet-Higgins in 1981 [Longuet].
 This essential matrix links the relative position of the camera to the fundamental matrix relation.
 
 ![The essential matrix geometric relation.](../../../docs/img/essentialMatrix.png)
@@ -119,13 +119,23 @@ In order to use the solver in a generic robust estimation framework, we use them
 
 ![The Kernel concept (the two view case).](../../../docs/img/kernelConcept.png)
 
-Solver:
-	MINIMUM_SAMPLES: The minimal number of point required for the model estimation,
-	MAX_MODELS: The number of models that the minimal solver could return,
-	A Solve function that estimates a model from MINIMUM_SAMPLES to n vector data.
-ErrorModel: 
-	A metric function that returns the error of a sample data to the provided model.
-Kernel: 
-	Embed data (putative), the model estimator and the error model.
-	This kernel is core brick used in the This project robust estimator framework.
 
+Solver:
+
+MINIMUM_SAMPLES: The minimal number of point required for the model estimation,
+
+MAX_MODELS: The number of models that the minimal solver could return,
+
+A Solve function that estimates a model from MINIMUM_SAMPLES to n vector data.
+
+
+ErrorModel: 
+
+A metric function that returns the error of a sample data to the provided model.
+
+
+Kernel: 
+
+Embed data (putative), the model estimator and the error model.
+
+This kernel is core brick used in the This project robust estimator framework.

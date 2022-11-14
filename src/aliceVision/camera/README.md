@@ -31,16 +31,16 @@ f*k_u &  & c_u \\
 \end{bmatrix}
 $$
 
-- Intrinsic parameters $`[f; cu; cv]:` $
+- Intrinsic parameters $[f; cu; cv]$:
 
-  * $`ku, kv :`$ scale factor relating pixels to distance (often equal to 1),
-  * $`f :`$ the focal distance (distance between focal and image plane),
-  * $`cu, cv :`$ the principal point, which would be ideally in the centre of the image.
+  * $ku, kv$: scale factor relating pixels to distance (often equal to 1),
+  * $f$: the focal distance (distance between focal and image plane),
+  * $cu, cv$: the principal point, which would be ideally in the centre of the image.
 
-- Extrinsic parameters $`[R|t] = [R| - RC]:`$
+- Extrinsic parameters $[R|t] = [R| - RC]$:
 
-  * $`R :`$ the rotation of the camera to the world frame,
-  * $`t :`$ the translation of the camera. t is not the position of the camera. It is the position of the origin of the world coordinate system expressed in coordinates of the camera-centred coordinate system. The position, $$`C`$$, of the camera expressed in world coordinates is $`C=-R^{-1} t = -R^T t`$ (since R is a rotation matrix).
+  * $R$: the rotation of the camera to the world frame,
+  * $t$: the translation of the camera. t is not the position of the camera. It is the position of the origin of the world coordinate system expressed in coordinates of the camera-centred coordinate system. The position, $C$, of the camera expressed in world coordinates is $C=-R^{-1} t = -R^T t$ (since R is a rotation matrix).
 
 A 3D point is projected in a image with the following formula (homogeneous coordinates):
 
