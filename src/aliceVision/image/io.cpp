@@ -495,10 +495,14 @@ void readImage(const std::string& path,
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata_ifAvailable)
         {
+            float user_mul[4] = { 1,1,1,1 };
+
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_wb", 1); // white balance correction (with user multiplicators)
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc::FLOAT, user_mul); // no neutralization
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
-            configSpec.attribute("raw:ColorSpace", "Linear");
+            configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
+            configSpec.attribute("raw:HighlightMode", 0); // unclip
         }
         else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata_required)
         {
@@ -506,10 +510,14 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
+            float user_mul[4] = { 1,1,1,1 };
+
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_wb", 1); // white balance correction (with user multiplicators)
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc::FLOAT, user_mul); // no neutralization
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
-            configSpec.attribute("raw:ColorSpace", "Linear");
+            configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
+            configSpec.attribute("raw:HighlightMode", 0); // unclip
         }
     }
 
@@ -560,12 +568,12 @@ void readImage(const std::string& path,
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string& fromColorSpaceName = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB");
+    const std::string& fromColorSpaceName = isRawImage ? "Linear" : inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
   
     if ((imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION) &&
-        ((imageReadOptions.workingColorSpace != EImageColorSpace::LINEAR) && isRawImage))
+        (imageReadOptions.workingColorSpace != EImageColorSpace_stringToEnum(fromColorSpaceName)))
     {
         imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.workingColorSpace);
     }
