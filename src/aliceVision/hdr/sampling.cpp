@@ -146,7 +146,7 @@ void square(image::Image<image::RGBfColor> & dest, const Eigen::Matrix<image::RG
     }
 }
 
-bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace & colorspace, bool applyWhiteBalance, const Sampling::Params params)
+bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, const std::vector<std::string>& imagePaths, const std::vector<double>& times, const size_t imageWidth, const size_t imageHeight, const size_t channelQuantization, const EImageColorSpace& colorspace, image::ERawColorInterpretation rawColorInterpretation, const Sampling::Params params)
 {
     const int radiusp1 = params.radius + 1;
     const int diameter = (params.radius * 2) + 1;
@@ -173,8 +173,8 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples, c
 
         image::ImageReadOptions options;
         options.workingColorSpace = colorspace;
-        options.rawColorInterpretation = applyWhiteBalance ? image::ERawColorInterpretation::LibRawWhiteBalancing  : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
-
+        options.rawColorInterpretation = rawColorInterpretation;
+        
         // Load image
         readImage(imagePaths[idBracket], img, options);
 

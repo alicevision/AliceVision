@@ -173,8 +173,8 @@ int aliceVision_main(int argc, char **argv)
   std::string viewIdRegex = ".*?(\\d+)";
 
   bool allowSingleView = false;
-  bool useInternalWhiteBalance = true;
   bool errorOnMissingColorProfile = true;
+  image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
 
 
   po::options_description requiredParams("Required parameters");
@@ -218,8 +218,8 @@ int aliceVision_main(int argc, char **argv)
       " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
     ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
       "Regex used to catch number used as viewId in filename.")
-    ("useInternalWhiteBalance", po::value<bool>(&useInternalWhiteBalance)->default_value(useInternalWhiteBalance),
-      "Apply the white balance included in the image metadata (Only for raw images)")
+    ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
+      ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
     ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
       "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
@@ -907,7 +907,7 @@ int aliceVision_main(int argc, char **argv)
   {
     if (vitem.second) 
     {
-      vitem.second->addMetadata("AliceVision:useWhiteBalance", (useInternalWhiteBalance)?"1":"0");
+        vitem.second->addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
     }
   }
   

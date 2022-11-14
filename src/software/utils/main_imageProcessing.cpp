@@ -689,9 +689,15 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
             image::ImageReadOptions options;
-            options.workingColorSpace = workingColorSpace;
-            //options.rawColorInterpretation = view.getApplyWhiteBalance() ? image::ERawColorInterpretation::LibRawWhiteBalancing : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
-            options.rawColorInterpretation = rawColorInterpretation;
+            options.workingColorSpace = workingColorSpace;           
+            if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
+            {
+                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+            }
+            else
+            {
+                options.rawColorInterpretation = rawColorInterpretation;
+            }
             options.colorProfileFileName = view.getColorProfileFileName();
             options.applyToneCurve = applyToneCurve;
 

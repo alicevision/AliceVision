@@ -564,6 +564,11 @@ public:
       return getMetadata({ "AliceVision:colorProfileFileName" });
   }
 
+  const std::string& getRawColorInterpretation() const
+  {
+      return getMetadata({ "AliceVision:rawColorInterpretation" });
+  }
+
   const std::vector<int> getCameraMultiplicators() const
   {
       const std::string cam_mul = getMetadata({ "raw:cam_mul" });

@@ -38,7 +38,7 @@ bool extractSamplesGroups(std::vector<std::vector<ImageSample>>& out_samples,
         if (!Sampling::extractSamplesFromImages(groupSamples, imagePaths[idGroup],
                                                 times[idGroup], width, height,
                                                 channelQuantization,
-                                                image::EImageColorSpace::LINEAR, true,
+                                                image::EImageColorSpace::LINEAR, image::ERawColorInterpretation::LibRawWhiteBalancing,
                                                 Sampling::Params{}))
         {
             return false;

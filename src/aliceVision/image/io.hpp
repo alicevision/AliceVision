@@ -45,7 +45,9 @@ enum class ERawColorInterpretation
     /// Similar to LibRawNoWhiteBalancing, but put DCP profiles into metadata without applying color processing
     DcpMetadata_ifAvailable,
     /// If DCP file is not available throw an exception
-    DcpMetadata_required
+    DcpMetadata_required,
+    /// Access aliceVision:rawColorInterpretation metadata to set the method
+    Auto
 };
 
 std::string ERawColorInterpretation_informations();
@@ -185,7 +187,7 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 struct ImageReadOptions
 {
     ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
-        ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawNoWhiteBalancing,
+        ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::Auto,
         const std::string& colorProfile = "", const oiio::ROI& roi = oiio::ROI()) :
         workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), applyToneCurve(false), subROI(roi)
     {

@@ -262,6 +262,7 @@ std::string ERawColorInterpretation_informations()
         "* DCP linear processing mandatory ";
         "* None but if DCP available info in metadata ";
         "* None but DCP info in metadata mandatory ";
+        "* Read image metadata to set processing method ";
 }
 
 ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& rawColorInterpretation)
@@ -283,6 +284,8 @@ ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& 
         return ERawColorInterpretation::DcpMetadata_ifAvailable;
     if (type == "dcpmetadata_required")
         return ERawColorInterpretation::DcpMetadata_required;
+    if (type == "auto")
+        return ERawColorInterpretation::Auto;
 
     throw std::out_of_range("Invalid raw color interpretation : " + rawColorInterpretation);
 
@@ -299,6 +302,7 @@ std::string ERawColorInterpretation_enumToString(const ERawColorInterpretation r
         case ERawColorInterpretation::DcpLinearProcessing_required: return "dcpLinearprocessing_required";
         case ERawColorInterpretation::DcpMetadata_ifAvailable: return "dcpmetadata_ifavailable";
         case ERawColorInterpretation::DcpMetadata_required: return "dcpmetadata_required";
+        case ERawColorInterpretation::Auto: return "auto";
     }
     throw std::out_of_range("Invalid ERawColorInterpretation enum");
 }

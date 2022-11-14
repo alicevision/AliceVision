@@ -465,7 +465,7 @@ int aliceVision_main(int argc, char** argv)
                 view.getMetadataBodySerialNumber(),
                 view.getMetadataLensSerialNumber() };
             imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
-            imgOpt.readOptions.rawColorInterpretation = view.getApplyWhiteBalance() ? image::ERawColorInterpretation::LibRawWhiteBalancing : image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+            imgOpt.readOptions.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
             detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
 
