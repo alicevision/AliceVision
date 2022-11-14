@@ -1,2 +1,5 @@
-#Doxygen
+# Doxygen
 doxygen/build/
+
+# Sphinx
+sphinx/_build/
