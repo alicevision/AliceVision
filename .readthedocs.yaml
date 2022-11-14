@@ -7,7 +7,7 @@ version: 2
 
 sphinx:
   builder: html
-  configuration: docs/source/conf.py
+  configuration: docs/sphinx/conf.py
 
 build:
   os: "ubuntu-20.04"
