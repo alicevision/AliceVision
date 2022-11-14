@@ -248,7 +248,7 @@ int aliceVision_main(int argc, char* argv[])
             {
                 std::stringstream ss;
                 ss << outputFilePath << "/" << pair.first << "_" << viewId << ".png";
-                image::writeImage(ss.str(), pair.second, image::EImageColorSpace::SRGB);
+                image::writeImage(ss.str(), pair.second, image::ImageWriteOptions());
             }
         }
     }

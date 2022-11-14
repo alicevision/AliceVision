@@ -405,26 +405,26 @@ int aliceVision_main(int argc, char** argv)
 
                   UndistortMap(stmap, iso_source, iso_output, undistortion, rod);
                   const oiio::ROI roi = convertRodToRoi(intrinsic_output.get(), rod);
-                  writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata, roi);
+                  writeImage(dstImage, stmap, image::ImageWriteOptions(), targetMetadata, roi);
               }
               else
               {
                   UndistortMap(stmap, iso_source, iso_output, undistortion);
-                  image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
+                  image::writeImage(dstImage, stmap, image::ImageWriteOptions(), targetMetadata);
               }
 
               //Distort st map
               {
                   const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_distort_stmap.exr")).string();
                   distortMap(stmap, iso_source, iso_output, undistortion);
-                  image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
-              }
+                  image::writeImage(dstImage, stmap, image::ImageWriteOptions(), targetMetadata);
+              } 
 
               //Distort st map checker
               {
                   const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(intrinsicPair.first) + "_distort_stmap_checker.exr")).string();
                   distortMapChecker(stmap, iso_source, iso_output, undistortion);
-                  image::writeImage(dstImage, stmap, image::EImageColorSpace::AUTO, targetMetadata);
+                  image::writeImage(dstImage, stmap, image::ImageWriteOptions(), targetMetadata);
               }
           }
       }
@@ -512,12 +512,12 @@ int aliceVision_main(int argc, char** argv)
 
             camera::UndistortImage(image, (camera::IntrinsicBase*)iso_source.get(), (camera::IntrinsicBase*)iso_output.get(), undistortion.get(), image_ud, image::FBLACK, rod);
             const oiio::ROI roi = convertRodToRoi(intrinsic_output.get(), rod);
-            writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, oiio::ParamValueList(), roi);
+            writeImage(dstImage, image_ud, image::ImageWriteOptions(), oiio::ParamValueList(), roi);
         }
         else
         {
             camera::UndistortImage(image, (camera::IntrinsicBase*)iso_source.get(), (camera::IntrinsicBase*)iso_output.get(), undistortion.get(), image_ud, image::FBLACK);
-            image::writeImage(dstImage, image_ud, image::EImageColorSpace::AUTO, metadata);
+            image::writeImage(dstImage, image_ud, image::ImageWriteOptions(), metadata);
         }
       }
       else // (no distortion)
