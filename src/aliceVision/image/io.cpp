@@ -561,7 +561,7 @@ void readImage(const std::string& path,
         alicevision::image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)
         {
-            neutral[i] = v_mult[i] / v_mult[1];
+            neutral[i] = v_mult[1] / v_mult[i];
         }
 
         ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
