@@ -191,7 +191,7 @@ int aliceVision_main(int argc, char **argv)
     ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
       "Camera sensor width database path.")
     ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
-      "Camera sensor width database path.")
+      "DNG Color Profiles (DCP) database path.")
     ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
       "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
@@ -317,7 +317,7 @@ int aliceVision_main(int argc, char **argv)
 
   if(!sensorDatabasePath.empty() && !sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
   {
-      ALICEVISION_LOG_ERROR("Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
+      ALICEVISION_LOG_ERROR("Invalid input sensor database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
   }
 
@@ -326,7 +326,7 @@ int aliceVision_main(int argc, char **argv)
   {
       if(!fs::is_directory(colorProfileDatabaseDirPath))
       {
-          ALICEVISION_LOG_ERROR("The specified database for color profiles does not exist.");
+          ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist.");
           return EXIT_FAILURE;
       }
       fs::path targetDir(colorProfileDatabaseDirPath);
@@ -482,14 +482,17 @@ int aliceVision_main(int argc, char **argv)
 
     std::string imgFormat = in->format_name();
 
-    // check if a color profile is available for the image
-    if(hasCameraMetadata && !colorProfileDatabaseDirPath.empty() && (imgFormat.compare("raw") == 0))
+    // if a color profile is required check if a dcp database exists and if one is available inside 
+    // if yes and if metadata exist and image format is raw then update metadata with DCP info
+    if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+        rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata) &&
+        hasCameraMetadata && !colorProfileDatabaseDirPath.empty() && (imgFormat.compare("raw") == 0))
     {
         const std::vector<std::string>::iterator it = findColorProfile(make, model, colorProfileList);
         if(it != colorProfileList.end())
         {
             // color profile found, keep the path in metadata
-            view.addMetadata("AliceVision:colorProfileFileName", *it);
+            view.addMetadata("AliceVision:DCP:colorProfileFileName", *it);
 
             alicevision::image::DCPProfile dcpProf(*it);
 
@@ -525,12 +528,6 @@ int aliceVision_main(int argc, char **argv)
                         Matrixstr += (std::to_string(v_ForwardMatrix[k - 1][i][j]) + " ");
                 view.addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k), Matrixstr);
             }
-
-            const std::vector<int> cam_mul = view.getCameraMultiplicators();
-            std::string Matrixstr = "";
-            for (int i = 0; i < 3; i++)
-                Matrixstr += (std::to_string(cam_mul[i]) + " ");
-            view.addMetadata("AliceVision:cam_mul", Matrixstr);
         }
         else if(allColorProfilesFound)
         {
@@ -564,13 +561,13 @@ int aliceVision_main(int argc, char **argv)
       if(sensorDB::getInfo(make, model, sensorDatabase, datasheet))
       {
         // sensor is in the database
-        ALICEVISION_LOG_TRACE("Sensor width found in database: " << std::endl
+        ALICEVISION_LOG_TRACE("Sensor width found in sensor database: " << std::endl
                               << "\t- brand: " << make << std::endl
                               << "\t- model: " << model << std::endl
                               << "\t- sensor width: " << datasheet._sensorWidth << " mm");
 
         if(datasheet._model != model) {
-          // the camera model in database is slightly different
+          // the camera model in sensor database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
         }
 
@@ -856,21 +853,21 @@ int aliceVision_main(int argc, char **argv)
 
   if(!unsureSensors.empty())
   {
-    ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
+    ALICEVISION_LOG_WARNING("The camera found in the sensor database is slightly different for image(s):");
     for(const auto& unsureSensor : unsureSensors)
       ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
                         << "\t- image camera brand: " << unsureSensor.first.first <<  std::endl
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
-                        << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
-                        << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
-    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
+                        << "\t- sensor database camera brand: " << unsureSensor.second.second._brand <<  std::endl
+                        << "\t- sensor database camera model: " << unsureSensor.second.second._model << std::endl
+                        << "\t- sensor database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
+    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the sensor database." << std::endl);
   }
 
   if(!unknownSensors.empty())
   {
     std::stringstream ss;
-    ss << "Sensor width doesn't exist in the database for image(s):\n";
+    ss << "Sensor width doesn't exist in the sensor database for image(s):\n";
     for(const auto& unknownSensor : unknownSensors)
     {
       ss << "\t- camera brand: " << unknownSensor.first.first << "\n"

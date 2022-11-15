@@ -253,6 +253,7 @@ int aliceVision_main(int argc, char* argv[])
         image::ImageReadOptions options;
         options.workingColorSpace = image::EImageColorSpace::LINEAR;
         options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(v.second->getRawColorInterpretation());
+        options.colorProfileFileName = v.second->getColorProfileFileName();
 
         image::readImage(v.second->getImagePath(), originalImage, options);
         oiio::ImageBuf bufInput(

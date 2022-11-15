@@ -968,7 +968,7 @@ DCPProfile::DCPProfile(const std::string& filename)
         {
             type = TagType::T_INVALID;
             fclose(file);
-            ALICEVISION_LOG_WARNING("ERROR : Invalid Tag in dcp file !");
+            ALICEVISION_LOG_WARNING("ERROR : Invalid Tag in dcp file or file too big : datasize = " << datasize);
             return;
         }
 

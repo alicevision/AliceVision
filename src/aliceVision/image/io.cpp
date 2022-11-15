@@ -258,9 +258,7 @@ std::string ERawColorInterpretation_informations()
            "* None \n"
            "* libRaw whithout white balancing \n"
            "* libRaw whith white balancing \n"
-           "* DCP linear processing if available \n"
            "* DCP linear processing mandatory \n"
-           "* None but if DCP available info in metadata \n"
            "* None but DCP info in metadata mandatory \n"
            "* Read image metadata to set processing method";
 }
@@ -276,14 +274,10 @@ ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& 
         return ERawColorInterpretation::LibRawNoWhiteBalancing;
     if (type == "librawwhitebalancing")
         return ERawColorInterpretation::LibRawWhiteBalancing;
-    if (type == "dcplinearprocessing_ifavailable")
-        return ERawColorInterpretation::DcpLinearProcessing_ifAvailable;
-    if (type == "dcplinearprocessing_required")
-        return ERawColorInterpretation::DcpLinearProcessing_required;
-    if (type == "dcpmetadata_ifavailable")
-        return ERawColorInterpretation::DcpMetadata_ifAvailable;
-    if (type == "dcpmetadata_required")
-        return ERawColorInterpretation::DcpMetadata_required;
+    if (type == "dcplinearprocessing")
+        return ERawColorInterpretation::DcpLinearProcessing;
+    if (type == "dcpmetadata")
+        return ERawColorInterpretation::DcpMetadata;
     if (type == "auto")
         return ERawColorInterpretation::Auto;
 
@@ -298,10 +292,8 @@ std::string ERawColorInterpretation_enumToString(const ERawColorInterpretation r
         case ERawColorInterpretation::None: return "none";
         case ERawColorInterpretation::LibRawNoWhiteBalancing: return "librawnowhitebalancing";
         case ERawColorInterpretation::LibRawWhiteBalancing: return "librawwhitebalancing";
-        case ERawColorInterpretation::DcpLinearProcessing_ifAvailable: return "dcplinearprocessing_ifavailable";
-        case ERawColorInterpretation::DcpLinearProcessing_required: return "dcpLinearprocessing_required";
-        case ERawColorInterpretation::DcpMetadata_ifAvailable: return "dcpmetadata_ifavailable";
-        case ERawColorInterpretation::DcpMetadata_required: return "dcpmetadata_required";
+        case ERawColorInterpretation::DcpLinearProcessing: return "dcpLinearprocessing";
+        case ERawColorInterpretation::DcpMetadata: return "dcpmetadata";
         case ERawColorInterpretation::Auto: return "auto";
     }
     throw std::out_of_range("Invalid ERawColorInterpretation enum");
@@ -479,14 +471,7 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
         }
-        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_ifAvailable)
-        {
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
-            configSpec.attribute("raw:ColorSpace", imageReadOptions.colorProfileFileName.empty() ? "Linear" : "raw");
-        }
-        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_required)
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
         {
             if (imageReadOptions.colorProfileFileName.empty())
             {
@@ -497,18 +482,7 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
         }
-        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata_ifAvailable)
-        {
-            float user_mul[4] = { 1,1,1,1 };
-
-            configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 1); // white balance correction (with user multiplicators)
-            configSpec.attribute("raw:user_mul", oiio::TypeDesc::FLOAT, user_mul); // no neutralization
-            configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
-            configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
-            configSpec.attribute("raw:HighlightMode", 0); // unclip
-        }
-        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata_required)
+        else if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpMetadata)
         {
             if (imageReadOptions.colorProfileFileName.empty())
             {
@@ -540,8 +514,7 @@ void readImage(const std::string& path,
 
     // Apply DCP profile
     if (!imageReadOptions.colorProfileFileName.empty() &&
-        (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_required ||
-        imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing_ifAvailable))
+        imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
         alicevision::image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 

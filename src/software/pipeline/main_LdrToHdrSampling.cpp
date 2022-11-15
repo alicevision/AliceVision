@@ -189,15 +189,18 @@ int aliceVision_main(int argc, char** argv)
         std::vector<sfmData::ExposureSetting> exposuresSetting;
 
         image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+        std::string colorProfileFileName = "";
 
         for (auto & v : group)
         {
             paths.push_back(v->getImagePath());
             exposuresSetting.push_back(v->getCameraExposureSetting());
 
-            rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(v->getRawColorInterpretation());
+            const std::string rawColorInterpretation_str = v->getRawColorInterpretation();
+            rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(rawColorInterpretation_str);
+            colorProfileFileName = v->getColorProfileFileName();
 
-            ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", applyWhiteBalance: " << v->getApplyWhiteBalance());
+            ALICEVISION_LOG_INFO("Image: " << paths.back() << ", exposure: " << exposuresSetting.back() << ", raw color interpretation: " << rawColorInterpretation_str);
         }
         if(!sfmData::hasComparableExposures(exposuresSetting))
         {
@@ -205,8 +208,13 @@ int aliceVision_main(int argc, char** argv)
         }
         std::vector<double> exposures = getExposures(exposuresSetting);
 
+        image::ImageReadOptions imgReadOptions;
+        imgReadOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+        imgReadOptions.rawColorInterpretation = rawColorInterpretation;
+        imgReadOptions.colorProfileFileName = colorProfileFileName;
+
         std::vector<hdr::ImageSample> out_samples;
-        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, image::EImageColorSpace::SRGB, rawColorInterpretation, params);
+        const bool res = hdr::Sampling::extractSamplesFromImages(out_samples, paths, exposures, width, height, channelQuantization, imgReadOptions, params);
         if (!res)
         {
             ALICEVISION_LOG_ERROR("Error while extracting samples from group " << groupIdx);

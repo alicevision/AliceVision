@@ -37,15 +37,10 @@ enum class ERawColorInterpretation
     LibRawNoWhiteBalancing,
     /// Use internal white balancing from libraw
     LibRawWhiteBalancing,
-    /// Apply the linear operations (forward matrix) from DCP profiles, if the DCP file is available.
-    /// If DCP file is not available fallback is simple neutralization (LibRawNoWhiteBalancing)
-    DcpLinearProcessing_ifAvailable,
     /// If DCP file is not available throw an exception
-    DcpLinearProcessing_required,
-    /// Similar to LibRawNoWhiteBalancing, but put DCP profiles into metadata without applying color processing
-    DcpMetadata_ifAvailable,
+    DcpLinearProcessing,
     /// If DCP file is not available throw an exception
-    DcpMetadata_required,
+    DcpMetadata,
     /// Access aliceVision:rawColorInterpretation metadata to set the method
     Auto
 };
