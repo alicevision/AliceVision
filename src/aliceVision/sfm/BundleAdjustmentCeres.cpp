@@ -797,7 +797,18 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
     for(const auto& observationPair: landmark.observations)
     {
       const sfmData::View& view = sfmData.getView(observationPair.first);
-      const sfmData::Observation& observation = observationPair.second;
+      
+      sfmData::Observation observation_copy = observationPair.second;
+
+      IndexT udid = view.getUndistortionId();
+      if (udid != UndefinedIndexT)
+      {
+        std::shared_ptr<camera::Undistortion> undisto = sfmData.getUndistortions().at(udid);
+        if (undisto)
+        {
+          observation_copy.x = undisto->undistort(observation_copy.x);
+        }
+      }
 
       // each residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
@@ -820,7 +831,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
       if(view.isPartOfRig() && !view.isPoseIndependant())
       {
-        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation);
+        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation_copy);
 
         double* rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
         _linearSolverOrdering.AddElementToGroup(rigBlockPtr, 1);
@@ -834,7 +845,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
       }
       else
       {
-        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation);
+        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation_copy);
 
         problem.AddResidualBlock(costFunction,
             lossFunction,
