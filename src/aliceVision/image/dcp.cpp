@@ -1031,7 +1031,6 @@ DCPProfile::DCPProfile(const std::string& filename)
     if(!tag)
     {
         ALICEVISION_LOG_WARNING("DCP '" << filename << "' is missing 'ColorMatrix1'. Skipped.");
-        fclose(file);
         return;
     }
 
@@ -1244,11 +1243,6 @@ DCPProfile::DCPProfile(const std::string& filename)
         {
             will_interpolate = true;
         }
-    }
-
-    if(file)
-    {
-        fclose(file);
     }
 
     valid = true;
