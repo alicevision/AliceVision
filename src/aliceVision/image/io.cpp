@@ -553,7 +553,7 @@ void readImage(const std::string& path,
         size_t next = 1;
         while ((next = cam_mul.find(",", last)) != std::string::npos)
         {
-            v_mult.push_back(atoi(cam_mul.substr(last, next - last).c_str()));
+            v_mult.push_back(atof(cam_mul.substr(last, next - last).c_str()));
             last = next + 1;
         }
         v_mult.push_back(atof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
@@ -563,6 +563,8 @@ void readImage(const std::string& path,
         {
             neutral[i] = v_mult[i] / v_mult[1];
         }
+
+        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
 
         dcpProfile.applyLinear(inBuf, neutral);
     }
