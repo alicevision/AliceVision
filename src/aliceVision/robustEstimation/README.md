@@ -95,7 +95,7 @@ found.
 
 ![A contrario robust estimation, noise adaptivity.](../../../docs/img/ACRansac.png)
 
-Here an example of how to find a best fit line, by using the a contrario robust estimation framework:
+Here an example of how to find a best fitting line, by using the a contrario robust estimation framework:
 It is a bit more complex, we use a class in order to perform the a contrario required task.
 
 ```
