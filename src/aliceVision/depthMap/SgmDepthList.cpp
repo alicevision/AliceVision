@@ -556,7 +556,26 @@ StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& 
     // segment of epipolar line
     Point2d pFromTar, pToTar; 
 
-    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rMid, _tile.rc, tc, mp);
+    
+    // TODO: quick fix, find a better solution to compute segment of epipolar line
+    // getTarEpipolarDirectedLine(&pFromTar, &pToTar, rMid, _tile.rc, tc, mp);
+    {
+        const Matrix3x4& rP = mp.camArr[_tile.rc];
+        const Matrix3x4& tP = mp.camArr[tc];
+
+        Point3d rC;
+        Matrix3x3 rR;
+        Matrix3x3 riR;
+        Matrix3x3 rK;
+        Matrix3x3 riK;
+        Matrix3x3 riP;
+        mp.decomposeProjectionMatrix(rC, rR, riR, rK, riK, riP, rP);
+
+        Point2d tarpix;
+        mp.getPixelFor3DPoint(&tarpix, rC, tP);
+
+        get2dLineImageIntersection(&pFromTar, &pToTar, tarpix, tarpix, mp, tc);   
+    }
 
     int allDepths = static_cast<int>((pToTar - pFromTar).size());
     const int allDepthsFound = allDepths; // for debug log
