@@ -322,7 +322,9 @@ int aliceVision_main(int argc, char **argv)
   }
 
   std::vector<std::string> colorProfileList;
-  if (!colorProfileDatabaseDirPath.empty())
+  if (!colorProfileDatabaseDirPath.empty() &&
+      (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+       rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
   {
       if(!fs::is_directory(colorProfileDatabaseDirPath))
       {
