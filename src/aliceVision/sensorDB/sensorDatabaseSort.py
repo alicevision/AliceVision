@@ -24,13 +24,19 @@ parser.add_argument('-o', '--output', metavar='outputSensorDatabase.txt', requir
 args = parser.parse_args()
 
 # read
-file = open(args.input, "r")
-database = file.readlines()
-file.close()
+with open(args.input, 'r') as file:
+	database = file.readlines()
 
-# process
+# sorting process
+# 1st step: sort lines
 sensors = [entry.split(';')  for entry in database]
 sensors.sort(key=lambda t : tuple(s.lower() if isinstance(s, basestring) else s for s in t))
+# 2nd step: in each line, sort the list of sources
+for entry in sensors:
+	sources = entry[-1][:-1] # omit the newline character for sorting
+	sources = sources.split(',')
+	sources.sort()
+	entry[-1] = ','.join(sources) + '\n'
 outDatabase = ""
 for entry in sensors:
 	outDatabase += ';'.join(entry)
