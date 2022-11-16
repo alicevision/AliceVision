@@ -15,7 +15,7 @@
 
 // Image
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 // System
 #include <aliceVision/system/MemoryInfo.hpp>
@@ -348,6 +348,12 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
 
     bool hasFailed = false;
 
+    // Load metadata to get image color space
+    std::string colorSpace;
+    const std::string firstImagePath = (fs::path(warpingFolder) / (std::to_string(overlappingViews[0]) + ".exr")).string();
+    oiio::ParamValueList srcMetadata = image::readImageMetadata(firstImagePath);
+    colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
+
     #pragma omp parallel for
     for (int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
     {
@@ -533,13 +539,15 @@ bool processImage(const PanoramaMap & panoramaMap, const std::string & composite
     }
 
     oiio::ParamValueList metadata;
-    metadata.push_back(oiio::ParamValue("AliceVision:storageDataType", EStorageDataType_enumToString(storageDataType)));
     metadata.push_back(oiio::ParamValue("AliceVision:offsetX", int(referenceBoundingBox.left)));
     metadata.push_back(oiio::ParamValue("AliceVision:offsetY", int(referenceBoundingBox.top)));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaWidth", int(panoramaMap.getWidth())));
     metadata.push_back(oiio::ParamValue("AliceVision:panoramaHeight", int(panoramaMap.getHeight())));
+    metadata.push_back(oiio::ParamValue("AliceVision:ColorSpace", colorSpace));
 
-    image::writeImage(outputFilePath, output, image::EImageColorSpace::LINEAR, metadata);
+    image::writeImage(outputFilePath, output,
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace_stringToEnum(colorSpace))
+                                                .storageDataType(storageDataType), metadata);
 
     return true;
 }
@@ -652,7 +660,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        int countIterations = int(std::ceil(double(viewsCount) / double(rangeSize)));
+        int countIterations = divideRoundUp(viewsCount, rangeSize);
        
         if(rangeIteration >= countIterations)
         {

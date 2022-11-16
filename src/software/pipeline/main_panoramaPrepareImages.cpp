@@ -286,7 +286,7 @@ int aliceVision_main(int argc, char* argv[])
         image::Image<image::RGBfColor> originalImage;
 
         image::ImageReadOptions options;
-        options.outputColorSpace = image::EImageColorSpace::LINEAR;
+        options.workingColorSpace = image::EImageColorSpace::LINEAR;
         options.applyWhiteBalance = v.second->getApplyWhiteBalance();
         
 
@@ -333,7 +333,7 @@ int aliceVision_main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        image::writeImage(rotatedImagePath, output, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(rotatedImagePath, output, image::ImageWriteOptions(), metadata);
         v.second->setWidth(output.Width());
         v.second->setHeight(output.Height());
         v.second->setImagePath(rotatedImagePath);

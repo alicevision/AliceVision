@@ -318,15 +318,14 @@ int aliceVision_main(int argc, char **argv)
   std::vector<sensorDB::Datasheet> sensorDatabase;
   if (sensorDatabasePath.empty())
   {
-      char const* val = getenv("ALICEVISION_ROOT");
-      if (val == NULL)
+      const auto root = image::getAliceVisionRoot();
+      if (root.empty())
       {
           ALICEVISION_LOG_WARNING("ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
       }
       else
       {
-          sensorDatabasePath = std::string(val);
-          sensorDatabasePath.append("/share/aliceVision/cameraSensors.db");
+          sensorDatabasePath = root + "/share/aliceVision/cameraSensors.db";
       }
   }
 

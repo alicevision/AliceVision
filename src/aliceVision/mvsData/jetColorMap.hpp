@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Color.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/image/Rgb.hpp>
 
 namespace aliceVision {
 
@@ -29,6 +29,6 @@ rgb getRGBFromJetColorMap(float value);
  *          - 'value' <= 0.0f: black
  *          - 'value' >= 1.0f: white
  */
-ColorRGBf getColorFromJetColorMap(float value);
+image::RGBfColor getColorFromJetColorMap(float value);
 
 } // namespace aliceVision

@@ -288,7 +288,7 @@ alicevision_add_software(aliceVision_utils_generateSampleScene
 
 
 # Perform color chart detection
-if(ALICEVISION_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV_CONTRIB)
   alicevision_add_software(aliceVision_utils_colorCheckerDetection
     SOURCE main_colorCheckerDetection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -304,7 +304,7 @@ endif()
 
 
 # Perform color correction
-if(ALICEVISION_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV_CONTRIB)
   alicevision_add_software(aliceVision_utils_colorCheckerCorrection
     SOURCE main_colorCheckerCorrection.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}

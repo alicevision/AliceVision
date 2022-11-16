@@ -9,7 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/matchingImageCollection/pairBuilder.hpp>
+#include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
@@ -155,7 +155,7 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Pair filtering took: " << timer.elapsed() << " s");
 
   // export pairs on disk
-  if(savePairs(outputFilename, pairs))
+  if (matchingImageCollection::savePairsToFile(outputFilename, pairs))
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;

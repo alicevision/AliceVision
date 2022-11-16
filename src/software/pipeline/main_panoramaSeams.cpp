@@ -13,7 +13,7 @@
 
 // Image
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 // System
 #include <aliceVision/system/MemoryInfo.hpp>
@@ -266,7 +266,7 @@ int aliceVision_main(int argc, char** argv)
 
         if(maxPanoramaWidth > 0 && panoramaSize.first > maxPanoramaWidth)
         {
-            downscaleFactor = std::ceil(panoramaSize.first / double(maxPanoramaWidth));
+            downscaleFactor = divideRoundUp(panoramaSize.first, maxPanoramaWidth);
         }
 
         ALICEVISION_LOG_INFO("Input panorama size is " << panoramaSize.first << "x" << panoramaSize.second);
@@ -292,7 +292,7 @@ int aliceVision_main(int argc, char** argv)
         // Load mask
         const std::string maskPath = (fs::path(warpingFolder) / (std::to_string(viewId) + "_mask.exr")).string();
         int width, height;
-        image::readImageMetadata(maskPath, width, height);
+        image::readImageSize(maskPath, width, height);
         width /= downscaleFactor;
         height /= downscaleFactor;
 
@@ -321,7 +321,8 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    image::writeImage(outputLabels, labels, image::EImageColorSpace::NO_CONVERSION);
+    image::writeImage(outputLabels, labels,
+                      image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 
     return EXIT_SUCCESS;
 }

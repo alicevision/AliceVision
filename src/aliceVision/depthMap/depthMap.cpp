@@ -8,7 +8,6 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/depthSimMapIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -224,7 +223,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     computeScaleStepSgmParams(mp, depthMapParams.sgmParams);
 
     // initialize RAM image cache
-    mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(mp, image::EImageColorSpace::LINEAR);
 
     // compute tile ROI list
     std::vector<ROI> tileRoiList;
@@ -492,8 +491,6 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
 void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
 {
-    using namespace imageIO;
-
     // set the device to use for GPU executions
     // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
     setCudaDeviceId(cudaDeviceId);
@@ -502,7 +499,7 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
     const float gammaP = 1.0f;
     const int wsh = 3;
 
-    mvsUtils::ImagesCache<ImageRGBAf> ic(mp, EImageColorSpace::LINEAR);
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(mp, image::EImageColorSpace::LINEAR);
 
     DeviceNormalMapper normalMapper;
 
@@ -513,11 +510,11 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
         if (!fs::exists(normalMapFilepath))
         {
             const int scale = 1;
-            std::vector<float> depthMap;
-            mvsUtils::readDepthMap(rc, mp, depthMap);
 
-            std::vector<ColorRGBf> normalMap;
-            normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
+            image::Image<float> depthMap;
+            readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), depthMap, image::EImageColorSpace::NO_CONVERSION);
+
+            image::Image<image::RGBfColor> normalMap(mp.getWidth(rc), mp.getHeight(rc));
 
             const int w = mp.getWidth(rc) / scale;
             const int h = mp.getHeight(rc) / scale;
@@ -530,13 +527,13 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
             fillHostCameraParameters(*(normalMapper.cameraParameters_h), rc, scale, mp);
             normalMapper.loadCameraParameters();
             normalMapper.allocHostMaps(w, h);
-            normalMapper.copyDepthMap(depthMap);
+            normalMapper.copyDepthMap(depthMap.data(), depthMap.size());
 
             cuda_computeNormalMap(&normalMapper, w, h, wsh, gammaC, gammaP);
 
             float3* normalMapPtr = normalMapper.getNormalMapHst();
 
-            constexpr bool q = (sizeof(ColorRGBf[2]) == sizeof(float3[2]));
+            constexpr bool q = (sizeof(image::RGBfColor[2]) == sizeof(float3[2]));
             if(q == true)
             {
                 memcpy(normalMap.data(), normalMapper.getNormalMapHst(), w * h * sizeof(float3));
@@ -545,13 +542,15 @@ void computeNormalMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const st
             {
                 for(int i = 0; i < w * h; i++)
                 {
-                    normalMap[i].r = normalMapPtr[i].x;
-                    normalMap[i].g = normalMapPtr[i].y;
-                    normalMap[i].b = normalMapPtr[i].z;
+                    normalMap(i).r() = normalMapPtr[i].x;
+                    normalMap(i).g() = normalMapPtr[i].y;
+                    normalMap(i).b() = normalMapPtr[i].z;
                 }
             }
 
-            writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+            image::writeImage(normalMapFilepath, normalMap,
+                              image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR)
+                                                        .storageDataType(image::EStorageDataType::Float));
 
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
         }

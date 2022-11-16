@@ -280,7 +280,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Load " << filepath);
 
             image::ImageReadOptions options;
-            options.outputColorSpace = image::EImageColorSpace::SRGB;
+            options.workingColorSpace = image::EImageColorSpace::SRGB;
             options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
             image::readImage(filepath, images[i], options);
 
@@ -315,9 +315,10 @@ int aliceVision_main(int argc, char** argv)
 
         // Write an image with parameters from the target view
         oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
-        targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
-
-        image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
+        targetMetadata.add_or_replace(oiio::ParamValue("AliceVision:ColorSpace",
+                                                       image::EImageColorSpace_enumToString(image::EImageColorSpace::LINEAR)));
+        image::writeImage(hdrImagePath, HDRimage,
+                          image::ImageWriteOptions().storageDataType(storageDataType), targetMetadata);
     }
 
     return EXIT_SUCCESS;

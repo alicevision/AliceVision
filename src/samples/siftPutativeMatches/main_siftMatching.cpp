@@ -53,7 +53,8 @@ int main() {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     std::string out_filename = "00_images.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(out_filename, concat,
+               image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
   }
 
   const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
@@ -74,7 +75,7 @@ int main() {
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     const std::string out_filename = "01_features.jpg";
-    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
+    writeImage(out_filename, concat, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
   }
 
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio

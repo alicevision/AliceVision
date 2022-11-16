@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
 #include <vector>
 

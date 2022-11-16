@@ -4,6 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -12,7 +13,6 @@
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>

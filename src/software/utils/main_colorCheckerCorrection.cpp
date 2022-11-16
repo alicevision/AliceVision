@@ -116,17 +116,18 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     // Read metadata based on a filepath
     oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
 
+    image::ImageWriteOptions options;
+
     if(isEXR)
     {
         // Select storage data type
-        metadata.push_back(
-            oiio::ParamValue("AliceVision:storageDataType", image::EStorageDataType_enumToString(storageDataType)));
+        options.storageDataType(storageDataType);
     }
 
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
 
-    image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+    image::writeImage(outputPath, image, options, metadata);
 }
 
 
@@ -269,7 +270,7 @@ int aliceVision_main(int argc, char** argv)
 
                 // Read image options and load image
                 image::ImageReadOptions options;
-                options.outputColorSpace = image::EImageColorSpace::NO_CONVERSION;
+                options.workingColorSpace = image::EImageColorSpace::NO_CONVERSION;
                 options.applyWhiteBalance = view.getApplyWhiteBalance();
 
                 image::Image<image::RGBAfColor> image;

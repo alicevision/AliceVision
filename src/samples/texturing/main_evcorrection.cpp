@@ -96,12 +96,13 @@ int main(int argc, char **argv)
         if(fs::is_regular_file(filePath)) 
         { 
             int w, h; 
-            std::map<std::string, std::string> metadata; 
             const IndexT id_view = c, id_pose = c, id_intrinsic = 0, rigId = 0, subPoseId = 0; 
  
-            image::readImageMetadata(filePath.string(), w, h, metadata); 
+            const auto metadata = image::readImageMetadata(filePath.string(), w, h);
  
-            sfm_data.views[c] = std::make_shared<sfmData::View>(filePath.string(), id_view, id_intrinsic, id_pose, w, h, rigId, subPoseId, metadata); 
+            sfm_data.views[c] = std::make_shared<sfmData::View>(filePath.string(), id_view, id_intrinsic,
+                                                                id_pose, w, h, rigId, subPoseId,
+                                                                image::getMapFromMetadata(metadata));
  
             ++c; 
         } 
@@ -128,7 +129,9 @@ int main(int argc, char **argv)
 
         std::string outputPath = outputFilePath + fs::path(view.getImagePath()).stem().string() + ".EXR"; 
         oiio::ParamValueList metadata = image::getMetadataFromMap(view.getMetadata()); 
-        image::writeImage(outputPath, img, image::EImageColorSpace::LINEAR, metadata); 
+        image::writeImage(outputPath, img,
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR),
+                          metadata);
     } 
  
 /* 

@@ -147,10 +147,10 @@ int aliceVision_main(int argc, char **argv)
     const std::string basename = fs::path(view.getImagePath()).stem().string();
 
     image::writeImage(outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg",
-                      imageProxy, image::EImageColorSpace::AUTO);
+                      imageProxy, image::ImageWriteOptions());
 
     image::writeImage(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg",
-                      imageThumbnail, image::EImageColorSpace::AUTO);
+                      imageThumbnail, image::ImageWriteOptions());
 
     ++progressDisplay;
   }

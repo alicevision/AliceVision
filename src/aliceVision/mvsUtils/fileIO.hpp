@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <fstream>
 #include <string>
@@ -34,7 +34,8 @@ Matrix3x4 load3x4MatrixFromFile(std::istream& in);
 
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
+               image::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

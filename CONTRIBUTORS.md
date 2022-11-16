@@ -22,9 +22,11 @@ Individuals
 - Michal Polic
 - Nicolas Rondaud
 - Pierre Gurdjos
+- Povilas Kanapickas
 - Simone Gasparini
 - Théo Leplomb
 - Tomas Pajdla
+- Vincent Demoulin
 - Yann Lanthony
 - Zeljko Vrba
 

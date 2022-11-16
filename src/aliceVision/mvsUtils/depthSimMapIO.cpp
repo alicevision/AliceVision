@@ -7,10 +7,9 @@
 #include "depthSimMapIO.hpp"
 
 #include <aliceVision/mvsData/Point2d.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
@@ -22,8 +21,7 @@ namespace mvsUtils {
 
 void getTileParamsFromMetadata(const std::string& mapFirstTilePath, TileParams& tileParams) 
 {
-    oiio::ParamValueList metadata;
-    imageIO::readImageMetadata(mapFirstTilePath, metadata);
+    const oiio::ParamValueList metadata = image::readImageMetadata(mapFirstTilePath);
 
     const auto tileWidthIt = metadata.find("AliceVision:tileWidth");
     const auto tileHeightIt = metadata.find("AliceVision:tileHeight");
@@ -56,25 +54,21 @@ void getTileParamsFromMetadata(const std::string& mapFirstTilePath, TileParams& 
  * @param b alpha for top-right
  * @param c alpha for bottom-right
  * @param d alpha for bottom-left
- * @param currentTileWidth
- * @param currentTileHeight
  * @param borderWidth tiles intersection area width (could be the intersection between 2 or 4 tiles)
  * @param borderHeight tiles intersection area height
  * @param lu left-up corner of the intersection area in the tile coordinate system
- * @param in_tileMap image buffer of the tile
+ * @param in_tileMap image of the tile
  */
 void weightTileBorder(int a, int b, int c, int d, 
-                      int currentTileWidth, 
-                      int currentTileHeight,
                       int borderWidth, 
                       int borderHeight,
                       const Point2d& lu, 
-                      std::vector<float>& in_tileMap)
+                      image::Image<float>& in_tileMap)
 {
     const Point2d rd = lu + Point2d(borderWidth, borderHeight);
 
-    const int endX = std::min(int(rd.x), currentTileWidth);
-    const int endY = std::min(int(rd.y), currentTileHeight);
+    const int endX = std::min(int(rd.x), in_tileMap.Width());
+    const int endY = std::min(int(rd.y), in_tileMap.Height());
 
     // Add small margin where alpha is 0 for corners (lu and rd)
     static const double margin = 2.0;
@@ -96,7 +90,7 @@ void weightTileBorder(int a, int b, int c, int d,
             const float weight = r_y * (r_x * a + l_x * b) + l_y * (r_x * d + l_x * c);
 
             // apply weight to tile depth/sim map
-            in_tileMap[y * currentTileWidth + x] *= weight;
+            in_tileMap(y, x) *= weight;
         }
     }
 }
@@ -106,13 +100,11 @@ void addTileMapWeighted(int rc,
                          const TileParams& tileParams,
                          const ROI& roi, 
                          int downscale,
-                         std::vector<float>& in_tileMap,
-                         std::vector<float>& inout_map)
+                         image::Image<float>& in_tileMap,
+                         image::Image<float>& inout_map)
 {
     // get downscaled ROI
     const ROI downscaledRoi = downscaleROI(roi, downscale);
-    const int currentTileWidth = downscaledRoi.width();
-    const int currentTileHeight = downscaledRoi.height();
 
     // get tile border size
     const int tileWidth = tileParams.width / downscale;
@@ -131,7 +123,7 @@ void addTileMapWeighted(int rc,
         const Point2d lu(0, 0);
         const int b = (firstRow) ? 1 : 0;
         const int d = (firstColumn) ? 1 : 0;
-        weightTileBorder(0, b, 1, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
+        weightTileBorder(0, b, 1, d, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom left corner
@@ -140,7 +132,7 @@ void addTileMapWeighted(int rc,
         const Point2d lu(0, tileHeight - tilePadding);
         const int a = (firstColumn) ? 1 : 0;
         const int c = (lastRow) ? 1 : 0;
-        weightTileBorder(a, 1, c, 0, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
+        weightTileBorder(a, 1, c, 0, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the top right corner
@@ -149,7 +141,7 @@ void addTileMapWeighted(int rc,
         const Point2d lu(tileWidth - tilePadding, 0);
         const int a = (firstRow) ? 1 : 0;
         const int c = (lastColumn) ? 1 : 0;
-        weightTileBorder(a, 0, c, 1, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
+        weightTileBorder(a, 0, c, 1, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom right corner
@@ -158,40 +150,38 @@ void addTileMapWeighted(int rc,
         const Point2d lu(tileWidth - tilePadding, tileHeight - tilePadding);
         const int b = (lastColumn) ? 1 : 0;
         const int d = (lastRow) ? 1 : 0;
-        weightTileBorder(1, b, 0, d, currentTileWidth, currentTileHeight, tilePadding, tilePadding, lu, in_tileMap);
+        weightTileBorder(1, b, 0, d, tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the top border
     if(!firstRow)
     {
         const Point2d lu(tilePadding, 0);
-        weightTileBorder(0, 0, 1, 1, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
+        weightTileBorder(0, 0, 1, 1, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the bottom border
     if(!lastRow)
     {
         const Point2d lu(tilePadding, tileHeight - tilePadding);
-        weightTileBorder(1, 1, 0, 0, currentTileWidth, currentTileHeight, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
+        weightTileBorder(1, 1, 0, 0, tileWidth - 2 * tilePadding, tilePadding, lu, in_tileMap);
     }
 
     // weight the left border
     if(!firstColumn)
     {
         const Point2d lu(0, tilePadding);
-        weightTileBorder(0, 1, 1, 0, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
+        weightTileBorder(0, 1, 1, 0, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
     }
 
     // weight the right border
     if(!lastColumn)
     {
         const Point2d lu(tileWidth - tilePadding, tilePadding);
-        weightTileBorder(1, 0, 0, 1, currentTileWidth, currentTileHeight, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
+        weightTileBorder(1, 0, 0, 1, tilePadding, tileHeight - 2 * tilePadding, lu, in_tileMap);
     }
 
     // add weighted tile to the depth/sim map
-    const int mapWidth = std::ceil(mp.getWidth(rc) / float(downscale));
-
     for(int x = downscaledRoi.x.begin; x < downscaledRoi.x.end; ++x)
     {
         for(int y = downscaledRoi.y.begin; y < downscaledRoi.y.end; ++y)
@@ -199,7 +189,7 @@ void addTileMapWeighted(int rc,
             const int tx = x - downscaledRoi.x.begin;
             const int ty = y - downscaledRoi.y.begin;
 
-            inout_map[y * mapWidth + x] += in_tileMap[ty * currentTileWidth + tx];
+            inout_map(y, x) += in_tileMap(ty, tx);
         }
     }
 }
@@ -207,7 +197,7 @@ void addTileMapWeighted(int rc,
 void readMapFromTiles(int rc, 
                       const MultiViewParams& mp, 
                       EFileType fileType,
-                      std::vector<float>& out_map, 
+                      image::Image<float>& out_map, 
                       int scale,
                       int step, 
                       const std::string& customSuffix)
@@ -218,7 +208,7 @@ void readMapFromTiles(int rc,
     const int width = std::ceil(mp.getWidth(rc) / float(scaleStep));
     const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
 
-    out_map.resize(width * height, 0.f);
+    out_map.resize(width, height, true, 0.f);
 
     std::string firstTilePath;
 
@@ -252,8 +242,6 @@ void readMapFromTiles(int rc,
 
     for(std::size_t i = 0; i < tileList.size(); ++i)
     {
-        using namespace imageIO;
-
         const ROI roi = intersect(tileList.at(i), imageRoi);
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
 
@@ -263,9 +251,8 @@ void readMapFromTiles(int rc,
         try
         {
             // read tile
-            std::vector<float> tileMap;
-            int w, h;
-            readImage(mapTilePath, w, h, tileMap, EImageColorSpace::NO_CONVERSION);
+            image::Image<float> tileMap;
+            image::readImage(mapTilePath, tileMap, image::EImageColorSpace::NO_CONVERSION);
 
             // add tile to the full map
             addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
@@ -281,16 +268,16 @@ void writeDepthSimMap(int rc,
                       const MultiViewParams& mp, 
                       const TileParams& tileParams, 
                       const ROI& roi,
-                      const std::vector<float>& depthMap, 
-                      const std::vector<float>& simMap, 
+                      const image::Image<float>& depthMap, 
+                      const image::Image<float>& simMap, 
                       int scale,
                       int step,
                       const std::string& customSuffix)
 {
     const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
-    const int nbDepthValues = std::count_if(depthMap.begin(), depthMap.end(), [](float v) { return v > 0.0f; });
+    const int nbDepthValues = std::count_if(depthMap.data(), depthMap.data() + depthMap.size(), [](float v) { return v > 0.0f; });
 
-    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp.getMetadata(rc));
+    oiio::ParamValueList metadata = image::getMetadataFromMap(mp.getMetadata(rc));
 
     // tile metadata
     if((tileParams.width > 0) && (tileParams.height > 0) && (tileParams.padding >= 0))
@@ -329,8 +316,10 @@ void writeDepthSimMap(int rc,
         float maxDepth = -1.0f;
         float minDepth = std::numeric_limits<float>::max();
 
-        for(const float depth : depthMap)
+        for(int i = 0; i < depthMap.size(); ++i)
         {
+            const float depth = depthMap(i);
+
             if(depth <= -1.0f)
                 continue;
 
@@ -350,18 +339,24 @@ void writeDepthSimMap(int rc,
     }
 
     // get full image dimensions
-    const ROI downscaledROI = downscaleROI(roi, scaleStep);
     const int imageWidth = std::ceil(mp.getWidth(rc) / float(scaleStep));
     const int imageHeight = std::ceil(mp.getHeight(rc) / float(scaleStep));
 
-    oiio::ROI imageROI = oiio::ROI::All();
+    // get downscaled ROI
+    const ROI downscaledROI = downscaleROI(roi, scaleStep);
+    
+    // OIIO roi
+    const oiio::ROI displayRoi(0, imageWidth, 0, imageHeight); 
+    oiio::ROI pixelRoi = displayRoi;
+    
+    // output map path
     std::string depthMapPath;
     std::string simMapPath;
 
     if(downscaledROI.width() != imageWidth || downscaledROI.height() != imageHeight)
     {
         // tiled depth/sim map
-        imageROI = oiio::ROI(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
+        pixelRoi = oiio::ROI(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
 ;       depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
         simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix, roi.x.begin, roi.y.begin);
     }
@@ -372,18 +367,37 @@ void writeDepthSimMap(int rc,
         simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix);
     }
 
-    // write depth/sim map
-    using namespace imageIO;
-    if(!depthMap.empty())
-      writeImage(depthMapPath, imageWidth, imageHeight, depthMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata, imageROI);
-    if(!simMap.empty())
-      writeImage(simMapPath, imageWidth, imageHeight, simMap, imageIO::EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata, imageROI);
+    // write depth map
+    if(!depthMap.size() <= 0)
+    {
+        image::writeImage(depthMapPath, 
+                          depthMap,
+                          image::ImageWriteOptions()
+                              .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                              .storageDataType(image::EStorageDataType::Float),
+                          metadata, 
+                          displayRoi,
+                          pixelRoi);
+    }
+
+    // write sim map
+    if(!simMap.size() <= 0)
+    {
+        image::writeImage(simMapPath,  
+                          simMap,
+                          image::ImageWriteOptions()
+                              .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
+                              .storageDataType(image::EStorageDataType::Half),
+                          metadata, 
+                          displayRoi,
+                          pixelRoi);
+    }
 }
 
 void writeDepthSimMap(int rc, 
                       const MultiViewParams& mp,
-                      const std::vector<float>& depthMap, 
-                      const std::vector<float>& simMap, 
+                      const image::Image<float>& depthMap, 
+                      const image::Image<float>& simMap, 
                       int scale,
                       int step,
                       const std::string& customSuffix)
@@ -396,21 +410,21 @@ void writeDepthSimMap(int rc,
 
 void writeDepthMap(int rc, 
                    const MultiViewParams& mp,
-                   const std::vector<float>& depthMap, 
+                   const image::Image<float>& depthMap, 
                    int scale,
                    int step,
                    const std::string& customSuffix)
 {
     const TileParams tileParams;  // default tile parameters, no tiles
     const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // full roi
-    std::vector<float> simMap(0); // empty simMap, write only depth map
+    image::Image<float> simMap; // empty simMap, write only depth map
     writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
 }
 
 void readDepthSimMap(int rc, 
                      const MultiViewParams& mp,
-                     std::vector<float>& out_depthMap, 
-                     std::vector<float>& out_simMap, 
+                     image::Image<float>& out_depthMap, 
+                     image::Image<float>& out_simMap, 
                      int scale,
                      int step, 
                      const std::string& customSuffix)
@@ -420,10 +434,8 @@ void readDepthSimMap(int rc,
 
     if (fs::exists(depthMapPath) && fs::exists(simMapPath))
     {
-        using namespace imageIO;
-        int w, h;
-        readImage(depthMapPath, w, h, out_depthMap, EImageColorSpace::NO_CONVERSION);
-        readImage(simMapPath, w, h, out_simMap, EImageColorSpace::NO_CONVERSION);
+        image::readImage(depthMapPath, out_depthMap, image::EImageColorSpace::NO_CONVERSION);
+        image::readImage(simMapPath, out_simMap, image::EImageColorSpace::NO_CONVERSION);
     }
     else
     {
@@ -434,7 +446,7 @@ void readDepthSimMap(int rc,
 
 void readDepthMap(int rc, 
                   const MultiViewParams& mp,
-                  std::vector<float>& out_depthMap, 
+                  image::Image<float>& out_depthMap, 
                   int scale,
                   int step,
                   const std::string& customSuffix)
@@ -443,9 +455,7 @@ void readDepthMap(int rc,
         
     if (fs::exists(depthMapPath))
     {
-        using namespace imageIO;
-        int w, h;
-        readImage(depthMapPath, w, h, out_depthMap, EImageColorSpace::NO_CONVERSION);
+        image::readImage(depthMapPath, out_depthMap, image::EImageColorSpace::NO_CONVERSION);
     }
     else
     {
@@ -453,15 +463,18 @@ void readDepthMap(int rc,
     }
 }
 
-void readSimMap(int rc, const MultiViewParams& mp, std::vector<float>& out_simMap, int scale, int step, const std::string& customSuffix)
+void readSimMap(int rc, 
+                const MultiViewParams& mp, 
+                image::Image<float>& out_simMap, 
+                int scale, 
+                int step, 
+                const std::string& customSuffix)
 {
     const std::string simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix);
 
     if (fs::exists(simMapPath))
     {
-        using namespace imageIO;
-        int w, h;
-        readImage(simMapPath, w, h, out_simMap, EImageColorSpace::NO_CONVERSION);
+        image::readImage(simMapPath, out_simMap, image::EImageColorSpace::NO_CONVERSION);
     }
     else
     {
@@ -481,8 +494,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
     // get nbDepthValues from metadata
     if (fs::exists(depthMapPath)) // untilled
     {
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(depthMapPath, metadata);
+        const oiio::ParamValueList metadata = image::readImageMetadata(depthMapPath);
         nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
     }
     else // tilled
@@ -501,9 +513,9 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
 
         for(const ROI& roi : tileList)
         {
-            oiio::ParamValueList metadata;
             const std::string mapTilePath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
-            imageIO::readImageMetadata(depthMapPath, metadata);
+            const oiio::ParamValueList metadata = image::readImageMetadata(mapTilePath);
+
             const int nbTileDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
             if(nbTileDepthValues < 0)
@@ -516,14 +528,13 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
     // no metadata compute number of depth values
     if(nbDepthValues < 0)
     {
-        std::vector<float> depthMap;
+        image::Image<float> depthMap;
 
         ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in depth map (rc: " << rc << "). Recompute the number of valid values.");
 
         readDepthMap(rc, mp, depthMap, scale, step, customSuffix);
 
-        for(int i = 0; i < depthMap.size(); ++i)
-            nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
+        nbDepthValues = std::count_if(depthMap.data(), depthMap.data() + depthMap.size(), [](float v) { return v > 0.0f; });
     }
 
     return nbDepthValues;
@@ -569,8 +580,6 @@ void deleteDepthSimMapTiles(int rc,
 
   for(std::size_t i = 0; i < tileList.size(); ++i)
   {
-    using namespace imageIO;
-
     const ROI roi = intersect(tileList.at(i), imageRoi);
 
     if(roi.isEmpty())

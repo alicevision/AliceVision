@@ -4,7 +4,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/image/drawing.hpp>
 
 #include <random>
@@ -602,7 +602,7 @@ public:
 
     boost::filesystem::path filepath = boost::filesystem::path(_debugDirectory) /
           (name + "_" + std::to_string(pyramid_id) + "_" + std::to_string(level) + ".exr");
-    image::writeImage(filepath.string(), toSave, image::EImageColorSpace::AUTO);
+    image::writeImage(filepath.string(), toSave, image::ImageWriteOptions());
   }
 
 private:

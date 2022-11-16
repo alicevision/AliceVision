@@ -31,16 +31,14 @@ void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod, const
     return;
 
   int width, height;
-  std::map<std::string, std::string> metadata;
-
-  image::readImageMetadata(view.getImagePath(), width, height, metadata);
+  const auto metadata = image::readImageMetadata(view.getImagePath(), width, height);
 
   view.setWidth(width);
   view.setHeight(height);
 
   // reset metadata
   if(view.getMetadata().empty())
-    view.setMetadata(metadata);
+    view.setMetadata(image::getMapFromMetadata(metadata));
 
   // Reset viewId
   if(view.getViewId() == UndefinedIndexT)

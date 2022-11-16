@@ -247,7 +247,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
   {
     outputPath = (fs::path(outputPath) / ("panorama.exr")).string();
   }
-  image::writeImage(outputPath, imageOut, image::EImageColorSpace::AUTO, bufferOut.specmod().extra_attribs);
+  image::writeImage(outputPath, imageOut, image::ImageWriteOptions(), bufferOut.specmod().extra_attribs);
 
   ALICEVISION_LOG_INFO("Panorama successfully written as " << outputPath);
 }

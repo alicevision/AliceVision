@@ -55,7 +55,7 @@ public:
      * @param[in,out] imageCache the image cache to get host-side data
      * @param[in] mp the multi-view parameters
      */
-    void addCamera(int globalCamId, int downscale, mvsUtils::ImagesCache<ImageRGBAf>& imageCache, const mvsUtils::MultiViewParams& mp);
+    void addCamera(int globalCamId, int downscale, mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache, const mvsUtils::MultiViewParams& mp);
 
     /**
      * @brief Request a camera (images + parameters) in current gpu device cache.

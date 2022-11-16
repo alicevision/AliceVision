@@ -81,6 +81,13 @@ public:
     return cam2ima(addDistortion(ima2cam(p)));
   }
 
+  std::size_t getDistortionParamsSize() const
+  {
+    if (_pDistortion == nullptr)
+        return 0;
+    return _pDistortion->getParameters().size();
+  }
+
   std::vector<double> getDistortionParams() const
   {
     if (!hasDistortion()) {
@@ -99,14 +106,49 @@ public:
 
     if (distortionParams.size() != expected)
     {
-        std::stringstream s;
-        s << "IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected: " << expected << ", given:" << distortionParams.size() << ").";
-        throw std::runtime_error(s.str());
+        throwSetDistortionParamsCountError(expected, distortionParams.size());
     }
 
     if (_pDistortion)
     {
       _pDistortion->getParameters() = distortionParams;
+    }
+  }
+
+  template<class F>
+  void setDistortionParamsFn(F&& callback)
+  {
+    if (_pDistortion == nullptr)
+        return;
+
+    auto& params = _pDistortion->getParameters();
+    for (std::size_t i = 0; i < params.size(); ++i)
+    {
+        params[i] = callback(i);
+    }
+  }
+
+  template<class F>
+  void setDistortionParamsFn(std::size_t count, F&& callback)
+  {
+    if (_pDistortion == nullptr)
+    {
+        if (count != 0)
+        {
+            throwSetDistortionParamsCountError(0, count);
+        }
+        return;
+    }
+
+    auto& params = _pDistortion->getParameters();
+    if (params.size() != count)
+    {
+        throwSetDistortionParamsCountError(params.size(), count);
+    }
+
+    for (std::size_t i = 0; i < params.size(); ++i)
+    {
+        params[i] = callback(i);
     }
   }
 
@@ -121,6 +163,16 @@ public:
     }
 
     return params;
+  }
+
+  std::size_t getParamsSize() const override
+  {
+    std::size_t size = 4;
+    if (hasDistortion())
+    {
+      size += _pDistortion->getParameters().size();
+    }
+    return size;
   }
 
   // Data wrapper for non linear optimization (update from data)
@@ -208,6 +260,15 @@ public:
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
+  void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
+  {
+      std::stringstream s;
+      s << "IntrinsicsScaleOffsetDisto::setDistortionParams*: "
+        << "wrong number of distortion parameters (expected: "
+        << expected << ", given:" << received << ").";
+      throw std::runtime_error(s.str());
+  }
+
   std::shared_ptr<Distortion> _pDistortion;
 };
 

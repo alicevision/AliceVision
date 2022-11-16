@@ -7,8 +7,7 @@
 #include "depthMapUtils.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/mvsData/Color.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/depthSimMapIO.hpp>
 
@@ -28,52 +27,50 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
     CudaHostMemoryHeap<CudaRGBA, 2> img_hmh(imgSize);
     img_hmh.copyFrom(in_img_dmp);
 
-    // copy image from host memory to a vector
-    std::vector<ColorRGBf> img(imgSize.x() * imgSize.y(), {0.f,0.f,0.f});
+    // copy image from host memory to an Image
+    image::Image<image::RGBfColor> img(imgSize.x(), imgSize.y(), true, {0.f,0.f,0.f});
 
     for(size_t x = 0; x < imgSize.x(); ++x)
     {
         for(size_t y = 0; y < imgSize.y(); ++y)
         {
             const CudaRGBA& rgba_hmh = img_hmh(x, y);
-            ColorRGBf& rgb = img.at(y * imgSize.x() + x);
-            rgb.r = rgba_hmh.x;
-            rgb.g = rgba_hmh.y;
-            rgb.b = rgba_hmh.z;
+            image::RGBfColor& rgb = img(int(y), int(x));
+            rgb.r() = rgba_hmh.x;
+            rgb.g() = rgba_hmh.y;
+            rgb.b() = rgba_hmh.z;
         }
     }
 
     // write the vector buffer
-    using namespace imageIO;
-    imageIO::writeImage(path, int(imgSize.x()), int(imgSize.y()), img, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+    image::writeImage(path, img, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
 void writeDeviceImage(const CudaDeviceMemoryPitched<float3, 2>& in_img_dmp, const std::string& path)
 {
-  const CudaSize<2>& imgSize = in_img_dmp.getSize();
+    const CudaSize<2>& imgSize = in_img_dmp.getSize();
 
-  // copy image from device pitched memory to host memory
-  CudaHostMemoryHeap<float3, 2> img_hmh(imgSize);
-  img_hmh.copyFrom(in_img_dmp);
+    // copy image from device pitched memory to host memory
+    CudaHostMemoryHeap<float3, 2> img_hmh(imgSize);
+    img_hmh.copyFrom(in_img_dmp);
 
-  // copy image from host memory to a vector
-  std::vector<ColorRGBf> img(imgSize.x() * imgSize.y(), {0.f,0.f,0.f});
+    // copy image from host memory to an Image
+    image::Image<image::RGBfColor> img(imgSize.x(), imgSize.y(), true, {0.f, 0.f, 0.f});
 
-  for(size_t x = 0; x < imgSize.x(); ++x)
-  {
-      for(size_t y = 0; y < imgSize.y(); ++y)
-      {
-          const float3& rgba_hmh = img_hmh(x, y);
-          ColorRGBf& rgb = img.at(y * imgSize.x() + x);
-          rgb.r = rgba_hmh.x;
-          rgb.g = rgba_hmh.y;
-          rgb.b = rgba_hmh.z;
-      }
-  }
+    for(size_t x = 0; x < imgSize.x(); ++x)
+    {
+        for(size_t y = 0; y < imgSize.y(); ++y)
+        {
+            const float3& rgba_hmh = img_hmh(x, y);
+            image::RGBfColor& rgb = img(int(y), int(x));
+            rgb.r() = rgba_hmh.x;
+            rgb.g() = rgba_hmh.y;
+            rgb.b() = rgba_hmh.z;
+        }
+    }
 
-  // write the vector buffer
-  using namespace imageIO;
-  imageIO::writeImage(path, int(imgSize.x()), int(imgSize.y()), img, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+    // write the vector buffer
+    image::writeImage(path, img, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 }
 
 void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth, float sim)
@@ -91,29 +88,29 @@ void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, floa
   }
 }
 
-void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_simMap, const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh, const ROI& roi, int downscale)
+void copyDepthSimMap(image::Image<float>& out_depthMap, image::Image<float>& out_simMap, const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh, const ROI& roi, int downscale)
 {
     const ROI downscaledROI = downscaleROI(roi, downscale);
-    const size_t vectorSize = downscaledROI.width() * downscaledROI.height();
+    const int width  = int(downscaledROI.width());
+    const int height = int(downscaledROI.height());
 
     // resize output vectors
-    out_depthMap.resize(vectorSize);
-    out_simMap.resize(vectorSize);
+    out_depthMap.resize(width, height);
+    out_simMap.resize(width, height);
 
     // copy image from host memory to output vectors
-    for(size_t x = 0; x < downscaledROI.width(); ++x)
+    for(int x = 0; x < width; ++x)
     {
-        for(size_t y = 0; y < downscaledROI.height(); ++y)
+        for(int y = 0; y < height; ++y)
         {
-            const size_t index = y * downscaledROI.width() + x;
             const float2& depthSim = in_depthSimMap_hmh(x, y);
-            out_depthMap[index] = depthSim.x;
-            out_simMap[index] = depthSim.y;
+            out_depthMap(y, x) = depthSim.x;
+            out_simMap(y, x) = depthSim.y;
         }
     }
 }
 
-void copyDepthSimMap(std::vector<float>& out_depthMap, std::vector<float>& out_simMap, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const ROI& roi, int downscale)
+void copyDepthSimMap(image::Image<float>& out_depthMap, image::Image<float>& out_simMap, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const ROI& roi, int downscale)
 {
     // copy depth/sim maps from device pitched memory to host memory
     CudaHostMemoryHeap<float2, 2> depthSimMap_hmh(in_depthSimMap_dmp.getSize());
@@ -133,8 +130,8 @@ void writeDepthSimMap(int rc,
 {
     const int scaleStep = scale * step;
 
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
 
     copyDepthSimMap(depthMap, simMap, in_depthSimMap_hmh, roi, scaleStep);
 
@@ -152,8 +149,8 @@ void writeDepthSimMap(int rc,
 {
     const int scaleStep = scale * step;
 
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
 
     copyDepthSimMap(depthMap, simMap, in_depthSimMap_dmp, roi, scaleStep);
 
@@ -172,15 +169,13 @@ void writeDepthSimMapFromTileList(int rc,
   ALICEVISION_LOG_TRACE("Merge and write depth/similarity map tiles (rc: " << rc << ", view id: " << mp.getViewId(rc) << ").");
   
   const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
-
+  
   const int scaleStep = scale * step;
-  const int width  = std::ceil(mp.getWidth(rc)  / float(scaleStep));
-  const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
-  const int bufferSize = width * height;
+  const int width  = divideRoundUp(mp.getWidth(rc),  scaleStep);
+  const int height = divideRoundUp(mp.getHeight(rc), scaleStep);
 
-  std::vector<float> depthMap(bufferSize, 0.f); // map should be initialize, additive process
-  std::vector<float> simMap(bufferSize, 0.f);   // map should be initialize, additive process
-
+  image::Image<float> depthMap(width, height, true, 0.0f); // map should be initialize, additive process
+  image::Image<float> simMap(width, height, true, 0.0f);   // map should be initialize, additive process
 
   for(size_t i = 0; i < tileRoiList.size(); ++i)
   {
@@ -189,15 +184,15 @@ void writeDepthSimMapFromTileList(int rc,
     if(roi.isEmpty())
         continue;
 
-    std::vector<float> tileDepthMap;
-    std::vector<float> tileSimMap;
+    image::Image<float> tileDepthMap;
+    image::Image<float> tileSimMap;
 
     // copy tile depth/sim map from host memory
     copyDepthSimMap(tileDepthMap, tileSimMap, in_depthSimMapTiles_hmh.at(i), roi, scaleStep);
 
     // add tile maps to the full-size maps with weighting
     addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileDepthMap, depthMap);
-    addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileSimMap, simMap);
+    addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileSimMap,   simMap);
   }
 
   // write full-size maps on disk
@@ -210,8 +205,8 @@ void mergeDepthSimMapTiles(int rc,
                            int step,
                            const std::string& customSuffix)
 {
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
+    image::Image<float> depthMap;
+    image::Image<float> simMap;
 
     mvsUtils::readDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix);  // read and merge tiles
     mvsUtils::writeDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix); // write the merged depth/sim maps

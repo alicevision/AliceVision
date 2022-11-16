@@ -17,18 +17,13 @@ Getting the sources:
 git clone https://github.com/alicevision/AliceVision.git --recursive
 ```
 
-As AliceVision use some C++11 features you must have a c++11 ready compiler:
-- Visual studio >= 2015 (English language pack required for vcpkg)
-- GCC >= 4.7
-- Clang >= 3.3
-
 Dependencies
 ------------
 
 AliceVision depends on external libraries:
 
 * [Assimp >= 5.0.0](https://github.com/assimp/assimp)
-* [Boost >= 1.73.0](https://www.boost.org)
+* [Boost >= 1.74.0](https://www.boost.org)
 * [Ceres >= 1.10.0](https://github.com/ceres-solver/ceres-solver)
 * [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
 * [Geogram >= 1.7.5](https://gforge.inria.fr/frs/?group_id=5833)
@@ -46,6 +41,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * OpenGV (rig calibration and localization)
 * OpenMP (enable multi-threading)
+* PCL (Point Cloud Library) >= 1.12.1 for the registration module
 * PopSift (feature extraction on GPU)
 * UncertaintyTE (Uncertainty computation)
 
@@ -111,6 +107,7 @@ vcpkg install ^
           cuda ^
           tbb ^
           assimp ^
+          pcl ^
           clp ^
           --triplet x64-windows
 ```

@@ -113,3 +113,64 @@ BOOST_AUTO_TEST_CASE(Numeric_MeanAndVarianceAlongRows) {
   BOOST_CHECK_SMALL(0.25-variance(0), 1e-8);
   BOOST_CHECK_SMALL(1.25-variance(1), 1e-8);
 }
+
+BOOST_AUTO_TEST_CASE(Numeric_divideRoundUp)
+{
+    BOOST_CHECK_EQUAL(divideRoundUp(0, 1), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(1, 1), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(2, 1), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(0, 2), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(1, 2), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(2, 2), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(3, 2), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(4, 2), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(999, 1000), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(1000, 1000), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(1001, 1000), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(1000999, 1000), 1001);
+    BOOST_CHECK_EQUAL(divideRoundUp(1001000, 1000), 1001);
+    BOOST_CHECK_EQUAL(divideRoundUp(1001001, 1000), 1002);
+
+    BOOST_CHECK_EQUAL(divideRoundUp(-1, 1), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-2, 1), -2);
+    BOOST_CHECK_EQUAL(divideRoundUp(-0, 2), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1, 2), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(-2, 2), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-3, 2), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-4, 2), -2);
+    BOOST_CHECK_EQUAL(divideRoundUp(-999, 1000), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1000, 1000), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1001, 1000), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1000999, 1000), -1000);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1001000, 1000), -1001);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1001001, 1000), -1001);
+
+    BOOST_CHECK_EQUAL(divideRoundUp(0, -1), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(1, -1), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(2, -1), -2);
+    BOOST_CHECK_EQUAL(divideRoundUp(0, -2), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(1, -2), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(2, -2), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(3, -2), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(4, -2), -2);
+    BOOST_CHECK_EQUAL(divideRoundUp(999, -1000), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(1000, -1000), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(1001, -1000), -1);
+    BOOST_CHECK_EQUAL(divideRoundUp(1000999, -1000), -1000);
+    BOOST_CHECK_EQUAL(divideRoundUp(1001000, -1000), -1001);
+    BOOST_CHECK_EQUAL(divideRoundUp(1001001, -1000), -1001);
+
+    BOOST_CHECK_EQUAL(divideRoundUp(-1, -1), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-2, -1), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(0, -2), 0);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1, -2), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-2, -2), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-3, -2), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(-4, -2), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(-999, -1000), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1000, -1000), 1);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1001, -1000), 2);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1000999, -1000), 1001);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1001000, -1000), 1001);
+    BOOST_CHECK_EQUAL(divideRoundUp(-1001001, -1000), 1002);
+}

@@ -187,7 +187,7 @@ void DeviceCache::buildCache(int maxNbCameras)
     _cachePerDevice[cudaDeviceId].reset(new SingleDeviceCache(maxNbCameras));
 }
 
-void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCache<ImageRGBAf>& imageCache, const mvsUtils::MultiViewParams& mp)
+void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache, const mvsUtils::MultiViewParams& mp)
 {
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
@@ -222,10 +222,10 @@ void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCach
       ALICEVISION_LOG_TRACE("Add camera on device cache (id: " << globalCamId << ", view id: " << viewId << ", downscale: " << downscale << ")."
                             << "Replace camera (id: " << deviceCamera.getGlobalCamId() << ", view id: " << mp.getViewId(deviceCamera.getGlobalCamId()) << ", downscale: " << deviceCamera.getDownscale() << ")");
 
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = imageCache.getImg_sync(globalCamId);
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>::ImgSharedPtr img = imageCache.getImg_sync(globalCamId);
 
     // allocate the frame full size host-sided data buffer
-    CudaSize<2> originalFrameSize(img->width(), img->height());
+    CudaSize<2> originalFrameSize(img->Width(), img->Height());
     CudaHostMemoryHeap<CudaRGBA, 2> frame_hmh(originalFrameSize);
 
     // copy data for cached image "globalCamId" into an host-side data buffer
@@ -234,12 +234,12 @@ void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCach
     {
         for(int x = 0; x < originalFrameSize.x(); ++x)
         {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
+            const image::RGBAfColor& floatRGBA = (*img)(y, x);
             CudaRGBA& cudaRGBA = frame_hmh(x, y);
-            cudaRGBA.x = floatRGBA.r * 255.0f;
-            cudaRGBA.y = floatRGBA.g * 255.0f;
-            cudaRGBA.z = floatRGBA.b * 255.0f;
-            cudaRGBA.w = floatRGBA.a * 255.0f;
+            cudaRGBA.x = floatRGBA.r() * 255.0f;
+            cudaRGBA.y = floatRGBA.g() * 255.0f;
+            cudaRGBA.z = floatRGBA.b() * 255.0f;
+            cudaRGBA.w = floatRGBA.a() * 255.0f;
         }
     }
 

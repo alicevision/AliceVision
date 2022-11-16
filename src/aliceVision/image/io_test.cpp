@@ -23,7 +23,7 @@ using namespace aliceVision::image;
 using std::string;
 
 // tested extensions
-static std::vector<std::string> extensions = {"jpg", "png", "pgm", "ppm", "tiff", "exr"};
+static std::vector<std::string> extensions = { "jpg", "png", "pgm", "ppm", "tiff", "exr" };
 
 BOOST_AUTO_TEST_CASE(read_unexisting) {
   Image<unsigned char> image;
@@ -146,7 +146,8 @@ BOOST_AUTO_TEST_CASE(read_write_grayscale) {
   for(const auto& extension : extensions)
   {
     const std::string filename = "test_write." + extension;
-    BOOST_CHECK_NO_THROW(writeImage(filename, image, image::EImageColorSpace::NO_CONVERSION));
+    BOOST_CHECK_NO_THROW(writeImage(filename, image,
+                                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 
     Image<unsigned char> read_image;
     BOOST_CHECK_NO_THROW(readImage(filename, read_image, image::EImageColorSpace::NO_CONVERSION));
@@ -164,7 +165,8 @@ BOOST_AUTO_TEST_CASE(read_write_rgb) {
   for(const auto& extension : extensions)
   {
     const std::string filename = "test_write_rgb." + extension;
-    BOOST_CHECK_NO_THROW(writeImage(filename, image, image::EImageColorSpace::NO_CONVERSION));
+    BOOST_CHECK_NO_THROW(writeImage(filename, image,
+                                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 
     Image<RGBColor> read_image;
     BOOST_CHECK_NO_THROW(readImage(filename, read_image, image::EImageColorSpace::NO_CONVERSION));
@@ -196,7 +198,8 @@ BOOST_AUTO_TEST_CASE(read_write_rgba) {
       continue; // doesn't support 4 channels
 
     const std::string filename = "test_write_rgba." + extension;
-    BOOST_CHECK_NO_THROW(writeImage(filename, image, image::EImageColorSpace::NO_CONVERSION));
+    BOOST_CHECK_NO_THROW(writeImage(filename, image,
+                                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 
     Image<RGBAColor> read_image;
     BOOST_CHECK_NO_THROW(readImage(filename, read_image, image::EImageColorSpace::NO_CONVERSION));
@@ -224,7 +227,8 @@ BOOST_AUTO_TEST_CASE(read_write_from_rgb_to_grayscale) {
   for(const auto& extension : extensions)
   {
     const std::string filename = "test_write_from_grayscale." + extension;
-    BOOST_CHECK_NO_THROW(writeImage(filename, imageRGB, image::EImageColorSpace::NO_CONVERSION));
+    BOOST_CHECK_NO_THROW(writeImage(filename, imageRGB,
+                                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 
     Image<unsigned char> read_image;
     BOOST_CHECK_NO_THROW(readImage(filename, read_image, image::EImageColorSpace::NO_CONVERSION));
@@ -245,7 +249,8 @@ BOOST_AUTO_TEST_CASE(read_write_from_grayscale_to_rgb) {
   for(const auto& extension : extensions)
   {
     const std::string filename = "test_write_from_rgb." + extension;
-    BOOST_CHECK_NO_THROW(writeImage(filename, imageGrayscale, image::EImageColorSpace::NO_CONVERSION));
+    BOOST_CHECK_NO_THROW(writeImage(filename, imageGrayscale,
+                                    image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 
     Image<RGBColor> read_image;
     BOOST_CHECK_NO_THROW(readImage(filename, read_image, image::EImageColorSpace::NO_CONVERSION));

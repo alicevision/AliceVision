@@ -5,9 +5,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/all.hpp>
 
+#include <aliceVision/system/Logger.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -16,8 +16,8 @@
 
 #include <aliceVision/half.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstring>
 #include <stdexcept>
@@ -29,69 +29,53 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace image {
 
-std::string EImageColorSpace_informations()
+
+EImageColorSpace getImageColorSpace(const std::string& imagePath)
 {
-    return EImageColorSpace_enumToString(EImageColorSpace::AUTO) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::LINEAR) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::SRGB) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::ACES) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::ACEScg) + ", " +
-           EImageColorSpace_enumToString(EImageColorSpace::NO_CONVERSION);
-}
+    oiio::ImageSpec metadataSpec;
 
-EImageColorSpace EImageColorSpace_stringToEnum(const std::string& dataType)
-{
-    const std::string type = boost::to_lower_copy(dataType);
+    metadataSpec.extra_attribs = readImageMetadata(imagePath);
 
-    if(type == "auto")
-        return EImageColorSpace::AUTO;
-    if(type == "linear")
-        return EImageColorSpace::LINEAR;
-    if(type == "srgb")
-        return EImageColorSpace::SRGB;
-    if(type == "aces")
-        return EImageColorSpace::ACES;
-    if(type == "acescg")
-        return EImageColorSpace::ACEScg;
-    if(type == "no_conversion")
-        return EImageColorSpace::NO_CONVERSION;
-
-    throw std::out_of_range("Invalid EImageColorSpace: " + dataType);
-}
-
-std::string EImageColorSpace_enumToString(const EImageColorSpace dataType)
-{
-    switch(dataType)
+    std::string colorSpace = metadataSpec.get_string_attribute("AliceVision:ColorSpace", ""); // default image color space is empty
+    if (!colorSpace.empty())
     {
-        case EImageColorSpace::AUTO:
-            return "auto";
-        case EImageColorSpace::LINEAR:
-            return "linear";
-        case EImageColorSpace::SRGB:
-            return "srgb";
-        case EImageColorSpace::ACES:
-            return "aces";
-        case EImageColorSpace::ACEScg:
-            return "acescg";
-        case EImageColorSpace::NO_CONVERSION:
-            return "no_conversion";
+        ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace << " colorspace according to AliceVision:ColorSpace metadata).");
     }
-    throw std::out_of_range("Invalid EImageColorSpace enum");
-}
+    else
+    {
+        colorSpace = metadataSpec.get_string_attribute("oiio:ColorSpace", ""); // Check oiio metadata
+        if ((colorSpace == "Linear") || (colorSpace == ""))
+        {
+            const std::string colorSpaceFromFileName = getGlobalColorConfigOCIO().getColorSpaceFromFilepath(imagePath);
+            if (!colorSpaceFromFileName.empty())
+            {
+                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpaceFromFileName << " colorspace according to file name).");
+                colorSpace = colorSpaceFromFileName;
+            }
+            else if (!colorSpace.empty())
+            {
+                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (encoded in " << colorSpace << " colorspace according to oiio:ColorSpace metadata).");
+            }
+            else
+            {
+                ALICEVISION_LOG_TRACE("Read image " << imagePath << " (no colorspace info, supposed to be encoded in sRGB).");
+                colorSpace = "sRGB";
+            }
+        }
+    }
 
-std::ostream& operator<<(std::ostream& os, EImageColorSpace dataType)
-{
-    return os << EImageColorSpace_enumToString(dataType);
-}
+    if (!EImageColorSpace_isSupportedOIIOstring(colorSpace))
+    {
+        const size_t npos = imagePath.find_last_of(".");
+        const std::string ext = imagePath.substr(npos + 1);
+        const std::string forcedColorSpace = (ext == "exr" || ext == "EXR") ? "linear" : "sRGB";
 
-std::istream& operator>>(std::istream& in, EImageColorSpace& dataType)
-{
-    std::string token;
-    in >> token;
-    dataType = EImageColorSpace_stringToEnum(token);
-    return in;
-}
+        ALICEVISION_LOG_WARNING("The color space " << colorSpace << " detected for " << imagePath << " is not supported. Force Color space to " << forcedColorSpace << ".");
+        colorSpace = forcedColorSpace;
+    }
 
+    return EImageColorSpace_stringToEnum(colorSpace);
+}
 
 std::string EImageFileType_informations()
 {
@@ -122,6 +106,7 @@ std::string EImageFileType_enumToString(const EImageFileType imageFileType)
     case EImageFileType::PNG:   return "png";
     case EImageFileType::TIFF:  return "tif";
     case EImageFileType::EXR:   return "exr";
+    case EImageFileType::NONE:  return "none";
   }
   throw std::out_of_range("Invalid EImageType enum");
 }
@@ -165,13 +150,13 @@ bool isSupported(const std::string& ext)
   return (std::find(start, end, boost::to_lower_copy(ext)) != end);
 }
 
-
 std::string EStorageDataType_informations()
 {
     return EStorageDataType_enumToString(EStorageDataType::Float) + ", " +
         EStorageDataType_enumToString(EStorageDataType::Half) + ", " +
         EStorageDataType_enumToString(EStorageDataType::HalfFinite) + ", " +
-        EStorageDataType_enumToString(EStorageDataType::Auto);
+        EStorageDataType_enumToString(EStorageDataType::Auto) + ", " +
+        EStorageDataType_enumToString(EStorageDataType::Undefined);
 }
 
 EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType)
@@ -183,6 +168,7 @@ EStorageDataType EStorageDataType_stringToEnum(const std::string& dataType)
     if (type == "half") return EStorageDataType::Half;
     if (type == "halffinite") return EStorageDataType::HalfFinite;
     if (type == "auto") return EStorageDataType::Auto;
+    if (type == "undefined") return EStorageDataType::Undefined;
 
     throw std::out_of_range("Invalid EStorageDataType: " + dataType);
 }
@@ -195,6 +181,7 @@ std::string EStorageDataType_enumToString(const EStorageDataType dataType)
     case EStorageDataType::Half:   return "half";
     case EStorageDataType::HalfFinite:  return "halfFinite";
     case EStorageDataType::Auto:   return "auto";
+    case EStorageDataType::Undefined: return "undefined";
     }
     throw std::out_of_range("Invalid EStorageDataType enum");
 }
@@ -212,6 +199,59 @@ std::istream& operator>>(std::istream& in, EStorageDataType& dataType)
     return in;
 }
 
+std::string EImageQuality_informations()
+{
+    return "Image quality :\n"
+           "* optimized \n"
+           "* lossless ";
+}
+
+EImageQuality EImageQuality_stringToEnum(const std::string& imageQuality)
+{
+    std::string type = imageQuality;
+    std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+    if (type == "optimized")
+        return EImageQuality::OPTIMIZED;
+    if (type == "lossless")
+        return EImageQuality::LOSSLESS;
+
+    throw std::out_of_range("Invalid image quality : " + imageQuality);
+}
+
+std::string EImageQuality_enumToString(const EImageQuality imageQuality)
+{
+    switch(imageQuality)
+    {
+        case EImageQuality::OPTIMIZED:  return "optimized";
+        case EImageQuality::LOSSLESS:   return "lossless";
+    }
+    throw std::out_of_range("Invalid EImageQuality enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality)
+{
+    return os << EImageQuality_enumToString(imageQuality);
+}
+
+std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
+{
+    std::string token;
+    in >> token;
+    imageQuality = EImageQuality_stringToEnum(token);
+    return in;
+}
+
+bool isSupportedUndistortFormat(const std::string &ext)
+{
+    static const std::array<std::string, 6> supportedExtensions = {
+        ".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"
+    };
+    const auto start = supportedExtensions.begin();
+    const auto end = supportedExtensions.end();
+    return(std::find(start, end, boost::to_lower_copy(ext)) != end);
+}
+
 // Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
@@ -221,7 +261,25 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
+std::map<std::string, std::string> getMapFromMetadata(const oiio::ParamValueList& metadata)
+{
+    std::map<std::string, std::string> metadataMap;
+
+    for (const auto& param : metadata)
+        metadataMap.emplace(param.name().string(), param.get_string());
+
+    return metadataMap;
+}
+
 oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
+{
+    const auto spec = readImageSpec(path);
+    width = spec.width;
+    height = spec.height;
+    return spec.extra_attribs;
+}
+
+oiio::ImageSpec readImageSpec(const std::string& path)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
   oiio::ImageSpec spec = in->spec();
@@ -229,45 +287,21 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
-#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
-  const std::string formatStr = in->format_name();
-  if(formatStr == "raw")
-  {
-    // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
-    spec.attribute("oiio:ColorSpace", "Linear");
-    ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
-  }
-#endif
-
-  width = spec.width;
-  height = spec.height;
-
-  oiio::ParamValueList metadata = spec.extra_attribs;
-
   in->close();
 
-  return metadata;
+  return spec;
 }
 
 oiio::ParamValueList readImageMetadata(const std::string& path)
 {
-  int w, h;
-  return readImageMetadata(path, w, h);
-}
-
-// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
-void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
-{
-  oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
-
-  for(const auto& param : oiioMetadadata)
-    metadata.emplace(param.name().string(), param.get_string());
+    return readImageSpec(path).extra_attribs;
 }
 
 void readImageSize(const std::string& path, int& width, int& height)
 {
-    std::map<std::string, std::string> metadata;
-    readImageMetadata(path, width, height, metadata);
+    const auto spec = readImageSpec(path);
+    width = spec.width;
+    height = spec.height;
 }
 
 template<typename T>
@@ -318,8 +352,13 @@ void readImage(const std::string& path,
                Image<T>& image,
                const ImageReadOptions & imageReadOptions)
 {
-  // check requested channels number
-  assert(nchannels == 1 || nchannels >= 3);
+    ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
+
+    // check requested channels number
+    if (nchannels == 0)
+        throw std::runtime_error("Requested channels is 0. Image file: '" + path + "'.");
+    if (nchannels == 2)
+        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
   if(!fs::exists(path))
     ALICEVISION_THROW_ERROR("No such image file: '" << path << "'.");
@@ -332,12 +371,7 @@ void readImage(const std::string& path,
   configSpec.attribute("raw:use_camera_wb", (imageReadOptions.applyWhiteBalance?1:0)); // white balance correction
   // use_camera_matrix: Whether to use the embedded color profile, if it is present: 0=never, 1 (default)=only for DNG files, 3=always
   configSpec.attribute("raw:use_camera_matrix", 3); // use embeded color profile
-#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
-  // In old versions of oiio, there was no Linear option
-  configSpec.attribute("raw:ColorSpace", "sRGB"); // use colorspace sRGB
-#else
   configSpec.attribute("raw:ColorSpace", "Linear"); // use linear colorspace with sRGB primaries
-#endif
 
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
@@ -346,32 +380,24 @@ void readImage(const std::string& path,
   if(!inBuf.initialized())
     ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'.");
 
-  // check picture channels number
-  if(inBuf.spec().nchannels != 1 && inBuf.spec().nchannels < 3)
-    ALICEVISION_THROW_ERROR("Can't load channels of image file: '" << path << "', nchannels=" << inBuf.spec().nchannels);
+    // check picture channels number
+    if (inBuf.spec().nchannels == 0)
+        throw std::runtime_error("No channel in the input image file: '" + path + "'.");
+    if (inBuf.spec().nchannels == 2)
+        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
   // color conversion
-  if(imageReadOptions.outputColorSpace == EImageColorSpace::AUTO)
+  if(imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
     throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
 
-  const std::string& colorSpace = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
-  ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
+  // Get color space name. Default image color space is sRGB
+  const std::string& fromColorSpaceName = inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB");
 
-  if(imageReadOptions.outputColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
+  ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
+
+  if (imageReadOptions.workingColorSpace != image::EImageColorSpace::NO_CONVERSION)
   {
-    if (colorSpace != "sRGB")
-    {
-      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
-      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
-    }
-  }
-  else if(imageReadOptions.outputColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
-  {
-    if (colorSpace != "Linear")
-    {
-      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
-      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
-    }
+      imageAlgo::colorconvert(inBuf, fromColorSpaceName, imageReadOptions.workingColorSpace);
   }
 
   // convert to grayscale if needed
@@ -384,7 +410,7 @@ void readImage(const std::string& path,
 
     // compute luminance via a weighted sum of R,G,B
     // (assuming Rec709 primaries and a linear scale)
-    const float weights[3] = {.2126f, .7152f, .0722f};
+    const float weights[3] = {.2126f, .7152f, .0722f}; // To be changed if not sRGB Rec 709 Linear.
     oiio::ImageBuf grayscaleBuf;
     oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
     inBuf.copy(grayscaleBuf);
@@ -483,9 +509,10 @@ void writeImage(const std::string& path,
                 oiio::TypeDesc typeDesc,
                 int nchannels,
                 const Image<T>& image,
-                EImageColorSpace imageColorSpace,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList(),
-                const oiio::ROI& roi = oiio::ROI())
+                const oiio::ROI& displayRoi = oiio::ROI(), 
+                const oiio::ROI& pixelRoi = oiio::ROI())
 {
   const fs::path bPath = fs::path(path);
   const std::string extension = boost::to_lower_copy(bPath.extension().string());
@@ -495,53 +522,87 @@ void writeImage(const std::string& path,
   const bool isJPG = (extension == ".jpg");
   const bool isPNG = (extension == ".png");
 
-  if(imageColorSpace == EImageColorSpace::AUTO)
-  {
-    if(isJPG || isPNG)
-      imageColorSpace = EImageColorSpace::SRGB;
-    else
-      imageColorSpace = EImageColorSpace::LINEAR;
-  }
+    auto toColorSpace = options.getToColorSpace();
+    auto fromColorSpace = options.getFromColorSpace();
+
+    if (toColorSpace == EImageColorSpace::AUTO)
+    {
+        if (isJPG || isPNG)
+            toColorSpace = EImageColorSpace::SRGB;
+        else
+            toColorSpace = EImageColorSpace::LINEAR;
+    }
+
+
+    ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << "\n"
+                       << "\t- width: " << image.Width() << "\n"
+                       << "\t- height: " << image.Height() << "\n"
+                       << "\t- channels: " << nchannels);
 
   oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
   imageSpec.extra_attribs = metadata; // add custom metadata
 
   imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
   imageSpec.attribute("compression", isEXR ? "zips" : "none"); // if possible, set compression (zips for EXR, none for the other)
-  if(roi.defined() && isEXR)
+
+  if(displayRoi.defined() && isEXR)
   {
-      imageSpec.set_roi_full(roi);
+      imageSpec.set_roi_full(displayRoi);
   }
 
+  if(pixelRoi.defined() && isEXR)
+  {
+      imageSpec.set_roi(pixelRoi);
+  }
+
+  std::string currentColorSpace = imageSpec.get_string_attribute("AliceVision:ColorSpace", "Linear");
+
+  imageSpec.attribute("AliceVision:ColorSpace",
+                      (toColorSpace == EImageColorSpace::NO_CONVERSION)
+                          ? currentColorSpace : EImageColorSpace_enumToString(toColorSpace));
+  
   const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
   const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
   oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
-  if(imageColorSpace == EImageColorSpace::SRGB)
-  {
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
-      outBuf = &colorspaceBuf;
-  }
-  else if((imageColorSpace != EImageColorSpace::LINEAR) && (imageColorSpace != EImageColorSpace::NO_CONVERSION)) // ACES or ACEScg
-  {
-      char const* val = getenv("ALICEVISION_ROOT");
-      if (val == NULL)
-      {
-          throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-      }
-      std::string configOCIOFilePath = std::string(val);
-      configOCIOFilePath.append("/share/aliceVision/config.ocio");
+    if (fromColorSpace == toColorSpace)
+    {
+        // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
+        // even if no conversion is needed.
+    }
+    else if ((toColorSpace == EImageColorSpace::ACES2065_1) || (toColorSpace == EImageColorSpace::ACEScg))
+    {
+        const auto colorConfigPath = getAliceVisionOCIOConfig();
+        if (colorConfigPath.empty())
+        {
+            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
+        }
 
-      oiio::ColorConfig colorConfig(configOCIOFilePath);
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear",
-                                       (imageColorSpace != EImageColorSpace::ACES) ? "aces" : "ACEScg", true, "", "",
-                                       &colorConfig);
-      outBuf = &colorspaceBuf;
-  }
+        oiio::ColorConfig colorConfig(colorConfigPath);
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf,
+                                         EImageColorSpace_enumToOIIOString(fromColorSpace),
+                                         EImageColorSpace_enumToOIIOString(toColorSpace), true, "", "",
+                                         &colorConfig);
+        outBuf = &colorspaceBuf;
+    }
+    else
+    {
+        imageAlgo::colorconvert(colorspaceBuf, *outBuf, fromColorSpace, toColorSpace);
+        outBuf = &colorspaceBuf;
+    }
 
   oiio::ImageBuf formatBuf;  // buffer for image format modification
   if(isEXR)
   {
+    // Storage data type may be saved as attributes to formats that support it and then come back
+    // as metadata to this function. Therefore we store the storage data type to attributes if it
+    // is set and load it from attributes if it isn't set.
+    if (options.getStorageDataType() != EStorageDataType::Undefined)
+    {
+        imageSpec.attribute("AliceVision:storageDataType",
+                            EStorageDataType_enumToString(options.getStorageDataType()));
+    }
+
     const std::string storageDataTypeStr = imageSpec.get_string_attribute("AliceVision:storageDataType", EStorageDataType_enumToString(EStorageDataType::HalfFinite));
     EStorageDataType storageDataType  = EStorageDataType_stringToEnum(storageDataTypeStr);
 
@@ -574,7 +635,7 @@ void writeImage(const std::string& path,
 
   // write image
   if(!outBuf->write(tmpPath))
-    throw std::runtime_error("Can't write output image file '" + path + "'.");
+      ALICEVISION_THROW_ERROR("Can't write output image file '" + path + "'.");
 
   // rename temporary filename
   fs::rename(tmpPath, path);
@@ -584,7 +645,7 @@ template<typename T>
 void writeImageNoFloat(const std::string& path,
                 oiio::TypeDesc typeDesc,
                 const Image<T>& image,
-                EImageColorSpace imageColorSpace,
+                const ImageWriteOptions& options,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
   const fs::path bPath = fs::path(path);
@@ -595,6 +656,7 @@ void writeImageNoFloat(const std::string& path,
   const bool isJPG = (extension == ".jpg");
   const bool isPNG = (extension == ".png");
 
+  auto imageColorSpace = options.getToColorSpace();
   if(imageColorSpace == EImageColorSpace::AUTO)
   {
     if(isJPG || isPNG)
@@ -668,45 +730,84 @@ void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadO
   readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
-void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<unsigned char>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, imageColorSpace, metadata);
+    writeImageNoFloat(path, oiio::TypeDesc::UINT8, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<int>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<int>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::INT32, image, imageColorSpace, metadata);
+    writeImageNoFloat(path, oiio::TypeDesc::INT32, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<IndexT>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<IndexT>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, imageColorSpace, metadata);
+    writeImageNoFloat(path, oiio::TypeDesc::UINT32, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+void writeImage(const std::string& path, 
+                const Image<float>& image,
+                const ImageWriteOptions& options,
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& displayRoi, 
+                const oiio::ROI& pixelRoi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 1, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, 
+                const Image<RGBAfColor>& image,
+                const ImageWriteOptions& options, 
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& displayRoi, 
+                const oiio::ROI& pixelRoi)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, 4, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI &roi)
+void writeImage(const std::string& path, const Image<RGBAColor>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata,roi);
+    writeImage(path, oiio::TypeDesc::UINT8, 4, image, options, metadata);
 }
 
-void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata, const oiio::ROI& roi)
+void writeImage(const std::string& path, 
+                const Image<RGBfColor>& image,
+                const ImageWriteOptions& options, 
+                const oiio::ParamValueList& metadata,
+                const oiio::ROI& displayRoi,
+                const oiio::ROI& pixelRoi)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata,roi);
+    writeImage(path, oiio::TypeDesc::FLOAT, 3, image, options, metadata, displayRoi, pixelRoi);
 }
 
-void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace,const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, const Image<RGBColor>& image,
+                const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UINT8, 3, image, options, metadata);
 }
+
+void writeImageWithFloat(const std::string& path, const Image<unsigned char>& image,
+                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::UINT8, 1, image, options, metadata);
+}
+
+void writeImageWithFloat(const std::string& path, const Image<int>& image,
+                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::INT32, 1, image, options, metadata);
+}
+
+void writeImageWithFloat(const std::string& path, const Image<IndexT>& image,
+                         const ImageWriteOptions& options, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::UINT32, 1, image, options, metadata);
+}
+
 
 bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& masksFolders,
                  const IndexT viewId, const std::string & srcImage)
@@ -732,6 +833,28 @@ bool tryLoadMask(Image<unsigned char>* mask, const std::vector<std::string>& mas
         }
     }
     return false;
+}
+
+static std::string aliceVisionRootOverride;
+
+std::string getAliceVisionRoot()
+{
+    if (!aliceVisionRootOverride.empty())
+        return aliceVisionRootOverride;
+    const char* value = std::getenv("ALICEVISION_ROOT");
+    return value ? value : "";
+}
+
+std::string getAliceVisionOCIOConfig()
+{
+    if (!getAliceVisionRoot().empty())
+        return getAliceVisionRoot() + "/share/aliceVision/config.ocio";
+    return {};
+}
+
+void setAliceVisionRootOverride(const std::string& value)
+{
+    aliceVisionRootOverride = value;
 }
 
 }  // namespace image

@@ -6,10 +6,11 @@
 
 #include "fileIO.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsData/imageAlgo.hpp>
-#include <aliceVision/mvsData/Image.hpp>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -348,34 +349,34 @@ Matrix3x4 load3x4MatrixFromFile(std::istream& in)
 }
 
 template<class Image>
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
+               image::EImageColorSpace colorspace, ECorrectEV correctEV)
 {
     // check image size
     auto checkImageSize = [&path, &mp, camId, &img](){
-        if((mp.getOriginalWidth(camId) != img.width()) || (mp.getOriginalHeight(camId) != img.height()))
+        if((mp.getOriginalWidth(camId) != img.Width()) || (mp.getOriginalHeight(camId) != img.Height()))
         {
             std::stringstream s;
             s << "Bad image dimension for camera : " << camId << "\n";
             s << "\t- image path : " << path << "\n";
             s << "\t- expected dimension : " << mp.getOriginalWidth(camId) << "x" << mp.getOriginalHeight(camId) << "\n";
-            s << "\t- real dimension : " << img.width() << "x" << img.height() << "\n";
+            s << "\t- real dimension : " << img.Width() << "x" << img.Height() << "\n";
             throw std::runtime_error(s.str());
         }
     };
 
     if(correctEV == ECorrectEV::NO_CORRECTION)
     {
-        imageIO::readImage(path, img, colorspace);
+        image::readImage(path, img, colorspace);
         checkImageSize();
     }
     // if exposure correction, apply it in linear colorspace and then convert colorspace
     else
     {
-        imageIO::readImage(path, img, imageIO::EImageColorSpace::LINEAR);
+        image::readImage(path, img, image::EImageColorSpace::LINEAR);
         checkImageSize();
 
-        oiio::ParamValueList metadata;
-        imageIO::readImageMetadata(path, metadata);
+        const auto metadata = image::readImageMetadata(path);
 
         float exposureCompensation = metadata.get_float("AliceVision:EVComp", -1);
 
@@ -388,10 +389,10 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         {
             ALICEVISION_LOG_INFO("  exposure compensation for image " << camId + 1 << ": " << exposureCompensation);
 
-            for(int pix = 0; pix < img.size(); ++pix)
-                img[pix] = img[pix] * exposureCompensation;
+            for (std::size_t i = 0; i < img.size(); ++i)
+                img(i) = img(i) * exposureCompensation;
 
-            imageAlgo::colorconvert(img, imageIO::EImageColorSpace::LINEAR, colorspace);
+            imageAlgo::colorconvert(img, image::EImageColorSpace::LINEAR, colorspace);
         }
     }
 
@@ -407,8 +408,12 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
     }
 }
 
-template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
-template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<image::Image<image::RGBfColor>>(const std::string& path, const MultiViewParams& mp, int camId,
+                                                        image::Image<image::RGBfColor>& img,
+                                                        image::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<image::Image<image::RGBAfColor>>(const std::string& path, const MultiViewParams& mp, int camId,
+                                                         image::Image<image::RGBAfColor>& img,
+                                                         image::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 } // namespace mvsUtils
 } // namespace aliceVision

@@ -26,7 +26,8 @@ std::string ECorrectEV_enumToString(const ECorrectEV correctEV)
 
 
 template<typename Image>
-ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
+ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+                                ECorrectEV correctEV)
   : _mp(mp)
   , _colorspace(colorspace)
   , _correctEV(correctEV)
@@ -40,7 +41,8 @@ ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorS
 }
 
 template<typename Image>
-ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames
+ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, image::EImageColorSpace colorspace,
+                                std::vector<std::string>& imagesNames
                         , ECorrectEV correctEV)
   : _mp(mp)
   , _colorspace(colorspace)
@@ -150,8 +152,8 @@ void ImagesCache<Image>::refreshImages_async(const std::vector<int>& camIds)
     _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache<Image>::refreshImages_sync, this, camIds));
 }
 
-template class ImagesCache<ImageRGBf>;
-template class ImagesCache<ImageRGBAf>;
+template class ImagesCache<image::Image<image::RGBfColor>>;
+template class ImagesCache<image::Image<image::RGBAfColor>>;
 
 } // namespace mvsUtils
 } // namespace aliceVision

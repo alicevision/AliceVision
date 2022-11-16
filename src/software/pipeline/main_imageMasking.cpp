@@ -403,7 +403,8 @@ int main(int argc, char **argv)
         }
         const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
         const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
-        image::writeImage(resultPath, result, image::EImageColorSpace::LINEAR);
+        image::writeImage(resultPath, result,
+                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::LINEAR));
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

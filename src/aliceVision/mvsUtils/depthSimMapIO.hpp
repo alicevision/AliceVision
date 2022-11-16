@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/image/Image.hpp>
 
 #include <vector>
 #include <string>
@@ -23,7 +23,7 @@ namespace mvsUtils {
  * @param[in] tileParams tile workflow parameters
  * @param[in] roi the 2d region of interest without any downscale apply
  * @param[in] downscale the depth/sim map downscale factor
- * @param[in] in_tileMap the tile map buffer to add
+ * @param[in] in_tileMap the tile map to add
  * @param[in,out] inout_map the full output map
  */
 void addTileMapWeighted(int rc,
@@ -31,8 +31,8 @@ void addTileMapWeighted(int rc,
                          const TileParams& tileParams,
                          const ROI& roi,
                          int downscale,
-                         std::vector<float>& in_tileMap,
-                         std::vector<float>& inout_map);
+                         image::Image<float>& in_tileMap,
+                         image::Image<float>& inout_map);
 
 /**
  * @brief Write the depth map and the similarity map
@@ -40,8 +40,8 @@ void addTileMapWeighted(int rc,
  * @param[in] mp the multi-view parameters
  * @param[in] tileParams tile workflow parameters
  * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] depthMap the corresponding depth map buffer
- * @param[in] simMap the corresponding similarity map buffer
+ * @param[in] depthMap the corresponding depth map
+ * @param[in] simMap the corresponding similarity map
  * @param[in] scale the depth/sim map downscale factor
  * @param[in] step the depth/sim map step factor
  * @param[in] customSuffix the filename custom suffix
@@ -50,8 +50,8 @@ void writeDepthSimMap(int rc,
                       const MultiViewParams& mp, 
                       const TileParams& tileParams, 
                       const ROI& roi,
-                      const std::vector<float>& depthMap, 
-                      const std::vector<float>& simMap, 
+                      const image::Image<float>& depthMap, 
+                      const image::Image<float>& simMap, 
                       int scale,
                       int step,
                       const std::string& customSuffix = "");
@@ -60,16 +60,16 @@ void writeDepthSimMap(int rc,
  * @brief Write the depth map and the similarity map
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[in] depthMap the corresponding depth map buffer
- * @param[in] simMap the corresponding similarity map buffer
+ * @param[in] depthMap the corresponding depth map
+ * @param[in] simMap the corresponding similarity map 
  * @param[in] scale the depth/sim map downscale factor
  * @param[in] step the depth/sim map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 void writeDepthSimMap(int rc, 
                       const MultiViewParams& mp,
-                      const std::vector<float>& depthMap, 
-                      const std::vector<float>& simMap, 
+                      const image::Image<float>& depthMap, 
+                      const image::Image<float>& simMap, 
                       int scale = 1,
                       int step = 1,
                       const std::string& customSuffix = "");
@@ -78,14 +78,14 @@ void writeDepthSimMap(int rc,
  * @brief Write the depth map 
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[in] depthMap the corresponding depth map buffer
+ * @param[in] depthMap the corresponding depth map
  * @param[in] scale the depth/sim map downscale factor
  * @param[in] step the depth/sim map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 void writeDepthMap(int rc, 
                    const MultiViewParams& mp,
-                   const std::vector<float>& depthMap, 
+                   const image::Image<float>& depthMap, 
                    int scale = 1,
                    int step = 1,
                    const std::string& customSuffix = "");
@@ -94,16 +94,16 @@ void writeDepthMap(int rc,
  * @brief read the depth map and the similarity map from files
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[out] out_depthMap the corresponding depth map buffer
- * @param[out] out_simMap the corresponding similarity map buffer
+ * @param[out] out_depthMap the corresponding depth map
+ * @param[out] out_simMap the corresponding similarity map
  * @param[in] scale the depth/sim map downscale factor
  * @param[in] step the depth/sim map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 void readDepthSimMap(int rc, 
                      const MultiViewParams& mp,
-                     std::vector<float>& out_depthMap, 
-                     std::vector<float>& out_simMap, 
+                     image::Image<float>& out_depthMap, 
+                     image::Image<float>& out_simMap, 
                      int scale = 1,
                      int step = 1,
                      const std::string& customSuffix = "");
@@ -112,14 +112,14 @@ void readDepthSimMap(int rc,
  * @brief read the depth map from file(s)
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[out] out_depthMap the corresponding depth map buffer
+ * @param[out] out_depthMap the corresponding depth map
  * @param[in] scale the depth/sim map downscale factor
  * @param[in] step the depth/sim map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 void readDepthMap(int rc, 
                   const MultiViewParams& mp,
-                  std::vector<float>& out_depthMap, 
+                  image::Image<float>& out_depthMap, 
                   int scale = 1,
                   int step = 1,
                   const std::string& customSuffix = "");
@@ -128,14 +128,14 @@ void readDepthMap(int rc,
  * @brief read the similarity map from file(s)
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[out] out_simMap the corresponding similarity map buffer
+ * @param[out] out_simMap the corresponding similarity map
  * @param[in] scale the depth/sim map downscale factor
  * @param[in] step the depth/sim map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 void readSimMap(int rc, 
                 const MultiViewParams& mp,
-                std::vector<float>& out_simMap, 
+                image::Image<float>& out_simMap, 
                 int scale = 1,
                 int step = 1,
                 const std::string& customSuffix = "");

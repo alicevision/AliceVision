@@ -356,7 +356,7 @@ int aliceVision_main(int argc, char** argv)
 				std::string imagePath = view.getImagePath();
 				ALICEVISION_LOG_INFO("Load image with path " << imagePath);
 				image::Image<image::RGBfColor> source;
-				image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
+				image::readImage(imagePath, source, image::EImageColorSpace::NO_CONVERSION);
 
 				// Load metadata and update for output
 				oiio::ParamValueList metadata = image::readImageMetadata(imagePath);

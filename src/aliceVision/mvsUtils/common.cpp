@@ -410,8 +410,9 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(const Point3d& linePoin
 void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc,
                                                      Point2d P[4], StaticVector<Point3d>& out)
 {
-    const double maxd =
-        std::max(std::max((mp.CArr[rc] - A).size(), (mp.CArr[rc] - B).size()), (mp.CArr[rc] - C).size()) * 1000.0f;
+    const double maxd = std::max({(mp.CArr[rc] - A).size(),
+                                  (mp.CArr[rc] - B).size(),
+                                  (mp.CArr[rc] - C).size()}) * 1000.0f;
 
     out.reserve(40);
 
@@ -527,9 +528,9 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
 
 double computeHexahedronVolume(const Point3d* hexah)
 {
-  const double w = std::sqrt(std::pow(hexah[1].x - hexah[0].x, 2));
-  const double h = std::sqrt(std::pow(hexah[3].y - hexah[0].y, 2));
-  const double l = std::sqrt(std::pow(hexah[4].z - hexah[0].z, 2));
+  const double w = std::abs(hexah[1].x - hexah[0].x);
+  const double h = std::abs(hexah[3].y - hexah[0].y);
+  const double l = std::abs(hexah[4].z - hexah[0].z);
 
   return (l * w * h);
 }

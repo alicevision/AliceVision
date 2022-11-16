@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
@@ -43,28 +44,28 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<float3, 2>& in_img_dmp, cons
 void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
 
 /**
- * @brief Copy a depth/similarity map from host memory to 2 vectors.
- * @param[out] out_depthMap the output depth vector
- * @param[out] out_simMap the output similarity vector
+ * @brief Copy a depth/similarity map from host memory to 2 images.
+ * @param[out] out_depthMap the output depth image
+ * @param[out] out_simMap the output similarity image
  * @param[in] in_depthSimMap_hmh the depth/similarity map in host memory
  * @param[in] roi the 2d region of interest without any downscale apply
  * @param[in] downscale the depth/similarity map downscale factor
  */
-void copyDepthSimMap(std::vector<float>& out_depthMap,
-                     std::vector<float>& out_simMap,
+void copyDepthSimMap(image::Image<float>& out_depthMap,
+                     image::Image<float>& out_simMap,
                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
                      const ROI& roi, 
                      int downscale);
 /**
- * @brief Copy a depth/similarity map from device memory to 2 vectors.
- * @param[out] out_depthMap the output depth vector
- * @param[out] out_simMap the output similarity vector
+ * @brief Copy a depth/similarity map from device memory to 2 images.
+ * @param[out] out_depthMap the output depth image
+ * @param[out] out_simMap the output similarity image
  * @param[in] in_depthSimMap_dmp the depth/similarity map in device memory
  * @param[in] roi the 2d region of interest without any downscale apply
  * @param[in] downscale the depth/similarity map downscale factor
  */
-void copyDepthSimMap(std::vector<float>& out_depthMap, 
-                     std::vector<float>& out_simMap, 
+void copyDepthSimMap(image::Image<float>& out_depthMap, 
+                     image::Image<float>& out_simMap, 
                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
                      const ROI& roi, 
                      int downscale);

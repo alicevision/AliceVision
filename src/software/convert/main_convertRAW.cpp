@@ -135,7 +135,7 @@ int aliceVision_main(int argc, char** argv)
     // write output image
     try
     {
-      image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
+      image::writeImage(outputPath, image, image::ImageWriteOptions(), metadata);
     }
     catch(std::exception& e)
     {

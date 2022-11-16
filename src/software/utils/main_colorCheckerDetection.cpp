@@ -498,7 +498,7 @@ int aliceVision_main(int argc, char** argv)
                 std::to_string(view.getViewId()),
                 view.getMetadataBodySerialNumber(),
                 view.getMetadataLensSerialNumber() };
-            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::SRGB;
+            imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
             imgOpt.readOptions.applyWhiteBalance = view.getApplyWhiteBalance();
             detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
@@ -546,7 +546,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO(++counter << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
             ImageOptions imgOpt;
             imgOpt.imgFsPath = imgSrcPath;
-            imgOpt.readOptions.outputColorSpace = image::EImageColorSpace::SRGB;
+            imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
             detectColorChecker(detectedCCheckers, imgOpt, settings);
         }
 
