@@ -171,13 +171,13 @@ class CmdLine
 {
 public:
     CmdLine(const std::string& name) :
-        allParams(name)
+        _allParams(name)
     {
     }
 
     void add(const boost::program_options::options_description& options)
     {
-        allParams.add(options);
+        _allParams.add(options);
     }
 
     bool execute(int argc, char** argv)
@@ -188,16 +188,16 @@ public:
         logParams.add_options()
             ("verboseLevel,v", boost::program_options::value<std::string>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
 
-        allParams.add(logParams);
+        _allParams.add(logParams);
 
         boost::program_options::variables_map vm;
         try
         {
-            boost::program_options::store(boost::program_options::parse_command_line(argc, argv, allParams), vm);
+            boost::program_options::store(boost::program_options::parse_command_line(argc, argv, _allParams), vm);
 
             if (vm.count("help") || (argc == 1))
             {
-                ALICEVISION_COUT(allParams);
+                ALICEVISION_COUT(_allParams);
                 return false;
             }
             boost::program_options::notify(vm);
@@ -205,13 +205,13 @@ public:
         catch (boost::program_options::required_option& e)
         {
             ALICEVISION_CERR("ERROR: " << e.what());
-            ALICEVISION_COUT("Usage:\n\n" << allParams);
+            ALICEVISION_COUT("Usage:\n\n" << _allParams);
             return false;
         }
         catch (boost::program_options::error& e)
         {
             ALICEVISION_CERR("ERROR: " << e.what());
-            ALICEVISION_COUT("Usage:\n\n" << allParams);
+            ALICEVISION_COUT("Usage:\n\n" << _allParams);
             return false;
         }
 
@@ -225,7 +225,7 @@ public:
     }
 
 private:
-    boost::program_options::options_description allParams;
+    boost::program_options::options_description _allParams;
 };
 
 }
