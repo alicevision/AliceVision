@@ -255,12 +255,11 @@ bool isSupportedUndistortFormat(const std::string &ext)
 std::string ERawColorInterpretation_informations()
 {
     return "Raw color interpretation :\n"
-           "* None \n"
-           "* libRaw whithout white balancing \n"
-           "* libRaw whith white balancing \n"
-           "* DCP linear processing mandatory \n"
-           "* None but DCP info in metadata mandatory \n"
-           "* Read image metadata to set processing method";
+           "* none : None \n"
+           "* librawnowhitebalancing : libRaw whithout white balancing \n"
+           "* librawwhitebalancing : libRaw whith white balancing \n"
+           "* dcplinearprocessing : DCP linear processing \n"
+           "* dcpmetadata : None but DCP info embedded in metadata";
 }
 
 ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& rawColorInterpretation)

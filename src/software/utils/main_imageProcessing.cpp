@@ -213,6 +213,12 @@ inline std::istream& operator>>(std::istream& in, EImageFormat& e)
     return in;
 }
 
+std::string getColorProfileDatabaseFolder()
+{
+    const char* value = std::getenv("ALICEVISION_COLOR_PROFILE_DB");
+    return value ? value : "";
+}
+
 struct ProcessingParams
 {
     bool reconstructedViewsOnly = false;
@@ -510,7 +516,7 @@ int aliceVision_main(int argc, char * argv[])
     std::string extension;
     bool applyToneCurve = false;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
-    std::string colorProfileDatabaseDirPath;
+    std::string colorProfileDatabaseDirPath = "";
     bool errorOnMissingColorProfile = true;
 
     ProcessingParams pParams;
@@ -593,7 +599,7 @@ int aliceVision_main(int argc, char * argv[])
             ("Output color space: " + image::EImageColorSpace_informations()).c_str())
 
         ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
-            ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
+            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : librawnowhitebalancing").c_str())
 
         ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
             "DNG Color Profiles (DCP) database path.")
@@ -849,6 +855,11 @@ int aliceVision_main(int argc, char * argv[])
             {
                 if (!dcpDatabaseLoaded)
                 {
+                    if (colorProfileDatabaseDirPath.empty())
+                    {
+                        colorProfileDatabaseDirPath = getColorProfileDatabaseFolder();
+                    }
+
                     if (!fs::is_directory(colorProfileDatabaseDirPath))
                     {
                         ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist.");
