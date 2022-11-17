@@ -32,7 +32,6 @@ int aliceVision_main(int argc, char* argv[])
 {
     ALICEVISION_COMMANDLINE_START
 
-    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string outputFolder;
     std::string imagesFolder;
@@ -60,9 +59,7 @@ int aliceVision_main(int argc, char* argv[])
     // number of GPUs to use (0 means use all GPUs)
     int nbGPUs = 0;
 
-    po::options_description allParams("AliceVision depthMapEstimation\n"
-                                      "Estimate depth map for each input image");
-
+        
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -135,45 +132,14 @@ int aliceVision_main(int argc, char* argv[])
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
             "Number of GPUs to use (0 means use all GPUs).");
 
-    po::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-            "Verbosity level (fatal, error, warning, info, debug, trace).");
-
-    allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-    po::variables_map vm;
-
-    try
+    CmdLine cmdline("AliceVision depthMapEstimation\n"
+                        "Estimate depth map for each input image");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-      po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-      if(vm.count("help") || (argc == 1))
-      {
-        ALICEVISION_COUT(allParams);
-        return EXIT_SUCCESS;
-      }
-
-      po::notify(vm);
+        return EXIT_FAILURE;
     }
-    catch(boost::program_options::required_option& e)
-    {
-      ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << allParams);
-      return EXIT_FAILURE;
-    }
-    catch(boost::program_options::error& e)
-    {
-      ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << allParams);
-      return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    // set verbose level
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     // print GPU Information
     ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());

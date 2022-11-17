@@ -83,7 +83,6 @@ int main(int argc, char **argv)
     // command-line parameters
     std::string sfmFilePath;
     std::string outputFilePath;
-    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
     // misc.
     bool invert = false;
@@ -108,7 +107,6 @@ int main(int argc, char **argv)
     std::string depthMapFolder;
     std::string depthMapExp;
 
-    po::options_description allParams("AliceVision masking");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -156,43 +154,14 @@ int main(int argc, char **argv)
             "Compute a sub-range of N images (N=rangeSize).")
         ;
 
-    po::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-            "verbosity level (fatal, error, warning, info, debug, trace).");
-
-    allParams.add(requiredParams).add(hsvParams).add(optionalParams).add(logParams);
-
-    po::variables_map vm;
-    try
+    CmdLine cmdline("AliceVision masking");
+    cmdline.add(requiredParams);
+    cmdline.add(hsvParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(allParams);
-            return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    // set verbose level
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     // check user choose at least one input option
     if(sfmFilePath.empty())

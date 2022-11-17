@@ -42,9 +42,6 @@ namespace fs = boost::filesystem;
 int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
-
-  /// verbosity level
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   /// the file containing a list of features
   std::string sfmDataFilenameA;
   /// the folder(s) containing the extracted features with their associated descriptors
@@ -78,15 +75,6 @@ int aliceVision_main(int argc, char** argv)
   std::string matchingModeName = EImageMatchingMode_enumToString(EImageMatchingMode::A_A);
   /// the combine SfM output
   std::string outputCombinedSfM;
-
-  po::options_description allParams(
-    "The objective of this software is to find images that are looking to the same areas of the scene. "
-    "For that, we use the image retrieval techniques to find images that share content without "
-    "the cost of resolving all feature matches in detail. The ambition is to simplify the image in "
-    "a compact image descriptor which allows to compute the distance between all images descriptors efficiently.\n"
-    "This program generates a pair list file to be passed to the aliceVision_featureMatching software. "
-    "This file contains for each image the list of most similar images.\n"
-    "AliceVision featureMatching");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -132,43 +120,20 @@ int aliceVision_main(int argc, char** argv)
       ("outputCombinedSfM", po::value<std::string>(&outputCombinedSfM)->default_value(outputCombinedSfM),
         "Output file path for the combined SfMData file (if empty, don't combine).");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-        "verbosity level (fatal, error, warning, info, debug, trace).");
-
-  allParams.add(requiredParams).add(optionalParams).add(multiSfMParams).add(logParams);
-
-  po::variables_map vm;
-  try
+  CmdLine cmdline("The objective of this software is to find images that are looking to the same areas of the scene. "
+                  "For that, we use the image retrieval techniques to find images that share content without "
+                  "the cost of resolving all feature matches in detail. The ambition is to simplify the image in "
+                  "a compact image descriptor which allows to compute the distance between all images descriptors efficiently.\n"
+                  "This program generates a pair list file to be passed to the aliceVision_featureMatching software. "
+                  "This file contains for each image the list of most similar images.\n"
+                  "AliceVision featureMatching");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
+  cmdline.add(multiSfMParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
+      return EXIT_FAILURE;
   }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
-
-  // set verbose level
-  system::Logger::get()->setLogLevel(verboseLevel);
 
   // multiple SfM
   const bool useMultiSfM = !sfmDataFilenameB.empty();
