@@ -112,7 +112,6 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
 
 int aliceVision_main(int argc, char** argv)
 {
-    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename;
     std::string samplesFolder;
     std::string outputResponsePath;
@@ -123,8 +122,6 @@ int aliceVision_main(int argc, char** argv)
     size_t maxTotalPoints = 1000000;
 
     // Command line parameters
-    po::options_description allParams("Recover the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracking.\n"
-                                      "AliceVision LdrToHdrCalibration");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -151,42 +148,15 @@ int aliceVision_main(int argc, char** argv)
          "can be managed by the calibration step (in term of computation time and memory usage).")
         ;
 
-    po::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-         "verbosity level (fatal, error, warning, info, debug, trace).");
-
-    allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-    po::variables_map vm;
-    try
+    CmdLine cmdline("Recover the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracking.\n"
+                    "AliceVision LdrToHdrCalibration");
+                  
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(allParams);
-            return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     // Read sfm data
     sfmData::SfMData sfmData;

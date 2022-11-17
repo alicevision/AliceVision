@@ -111,9 +111,6 @@ int aliceVision_main(int argc, char** argv)
   int randomSeed = std::mt19937::default_seed;
 
   std::size_t numCameras = 0;
-  po::options_description allParams("This program is used to calibrate a camera rig composed of internally calibrated cameras."
-  "It takes as input a synchronized sequence of N cameras and it saves the estimated "
-  "rig calibration to a text file");
 
   po::options_description ioParams("Required input and output parameters");  
   ioParams.add_options()
@@ -190,35 +187,18 @@ int aliceVision_main(int argc, char** argv)
           "It also saves a file for each camera named 'filename.cam##.abc'.")
 #endif
           ;
-  
-  allParams.add(ioParams).add(outputParams).add(commonParams).add(voctreeParams);
-  
-  po::variables_map vm;
-
-  try
+    
+  CmdLine cmdline("This program is used to calibrate a camera rig composed of internally calibrated cameras."
+                  "It takes as input a synchronized sequence of N cameras and it saves the estimated "
+                  "rig calibration to a text file");
+  cmdline.add(ioParams);
+  cmdline.add(outputParams);
+  cmdline.add(commonParams);
+  cmdline.add(voctreeParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-
-    po::notify(vm);
-  }
-  catch(po::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
-  }
-  catch(po::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
+  }	
 
   const double defaultLoRansacMatchingError = 4.0;
   const double defaultLoRansacResectionError = 4.0;
@@ -246,8 +226,6 @@ int aliceVision_main(int argc, char** argv)
                         (matchDescTypes.front() == feature::EImageDescriberType::CCTAG4)));
 #endif
 
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
 
   std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 

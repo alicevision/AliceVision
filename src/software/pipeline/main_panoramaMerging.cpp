@@ -46,12 +46,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputPanoramaPath;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
-    system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
-
     // Program description
-    po::options_description allParams(
-        "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
-        "AliceVision PanoramaCompositing");
 
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
@@ -59,51 +54,20 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
         ("compositingFolder,w", po::value<std::string>(&compositingFolder)->required(), "Folder with composited images.")
         ("outputPanorama,o", po::value<std::string>(&outputPanoramaPath)->required(), "Path of the output panorama.");
-    allParams.add(requiredParams);
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str());
-    allParams.add(optionalParams);
 
-    // Setup log level given command line
-    po::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", po::value<system::EVerboseLevel>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
-    allParams.add(logParams);
-
-    // Effectively parse command line given parse options
-    po::variables_map vm;
-    try
+    CmdLine cmdline("Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
+                    "AliceVision PanoramaCompositing");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(allParams);
-            return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    // Set verbose level given command line
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     // load input scene
     sfmData::SfMData sfmData;
