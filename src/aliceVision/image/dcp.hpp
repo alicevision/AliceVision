@@ -118,6 +118,8 @@ struct DCPProfileApplyParams
   */
 struct DCPProfileInfo
 {
+    std::string filename = "";
+
     bool has_color_matrix_1 = false;
     bool has_color_matrix_2 = false;
     bool has_forward_matrix_1 = false;
@@ -146,6 +148,8 @@ public:
     using Triple = std::array<double, 3>;
     using Matrix = std::array<Triple, 3>;
 
+    DCPProfile();
+
     /**
     * @brief DCPProfile constructor
     * @param[in] filename The dcp path on disk
@@ -154,11 +158,24 @@ public:
     ~DCPProfile();
 
     /**
+    * @brief DCPProfile loader
+    * @param[in] filename The dcp path on disk
+    */
+    void Load(const std::string& filename);
+
+    /**
      * @brief getMatrices gets some matrices contained in the profile
      * param[in] type The matrices to get, "color" or "forward"
      * param[in] v_Mat A vector of matrices to be populated
      */
     void getMatrices(const std::string& type, std::vector<Matrix>& v_Mat);
+
+    /**
+     * @brief getMatrices gets some matrices contained in the profile in a string format (one string per matrix)
+     * param[in] type The matrices to get, "color" or "forward"
+     * param[in] v_Mat A vector of std::string to be populated
+     */
+    void getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat);
 
     /**
      * @brief applyLinear applies the linear part of a DCP profile on an OIIO image buffer

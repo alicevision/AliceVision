@@ -509,26 +509,18 @@ int aliceVision_main(int argc, char **argv)
                                             (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
             view.addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
 
-            std::vector<alicevision::image::DCPProfile::Matrix> v_ColorMatrix;
-            dcpProf.getMatrices("color", v_ColorMatrix);
-            for (int k = 1; k <= v_ColorMatrix.size(); k++)
+            std::vector<std::string> v_strColorMatrix;
+            dcpProf.getMatricesAsStrings("color", v_strColorMatrix);
+            for (int k = 0; k < v_strColorMatrix.size(); k++)
             {
-                std::string Matrixstr = "";
-                for (int i = 0; i < 3; i++)
-                    for (int j = 0; j < 3; j++)
-                        Matrixstr += (std::to_string(v_ColorMatrix[k - 1][i][j]) + " ");
-                view.addMetadata("AliceVision:DCP:ColorMat" + std::to_string(k), Matrixstr);
+                view.addMetadata("AliceVision:DCP:ColorMat" + std::to_string(k + 1), v_strColorMatrix[k]);
             }
 
-            std::vector<alicevision::image::DCPProfile::Matrix> v_ForwardMatrix;
-            dcpProf.getMatrices("forward", v_ForwardMatrix);
-            for (int k = 1; k <= v_ForwardMatrix.size(); k++)
+            std::vector<std::string> v_strForwardMatrix;
+            dcpProf.getMatricesAsStrings("forward", v_strForwardMatrix);
+            for (int k = 1; k <= v_strForwardMatrix.size(); k++)
             {
-                std::string Matrixstr = "";
-                for (int i = 0; i < 3; i++)
-                    for (int j = 0; j < 3; j++)
-                        Matrixstr += (std::to_string(v_ForwardMatrix[k - 1][i][j]) + " ");
-                view.addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k), Matrixstr);
+                view.addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k + 1), v_strForwardMatrix[k]);
             }
         }
         else if(allColorProfilesFound)

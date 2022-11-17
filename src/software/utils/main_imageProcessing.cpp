@@ -14,6 +14,7 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include <opencv2/imgproc.hpp>
@@ -403,7 +404,7 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
     }
 }
 
-void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath, std::map<std::string, std::string> inputMetadata,
                const std::vector<std::string>& metadataFolders, const image::EImageColorSpace workingColorSpace, const EImageFormat outputFormat,
                const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
 {
@@ -413,8 +414,23 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     const std::string filename = fs::path(inputPath).filename().string();
     const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
     const bool isEXR = (outExtension == ".exr");
-    // If metadataFolders is specified
-    if(!metadataFolders.empty())
+    oiio::ParamValueList metadata;
+    
+    if (!inputMetadata.empty()) // If metadata are provided as input
+    {
+        for (const auto & meta : inputMetadata)
+        {
+            if (meta.first.compare(0, 3, "raw") == 0)
+            {
+                metadata.add_or_replace(oiio::ParamValue("AliceVision:"+meta.first, meta.second));
+            }
+            else
+            {
+                metadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
+            }
+        }
+    }
+    else if (!metadataFolders.empty()) // If metadataFolders is specified
     {
         // The file must match the file name and extension to be used as a metadata replacement.
         const std::vector<std::string> metadataFilePaths = utils::getFilesPathsFromFolders(
@@ -441,16 +457,17 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
             ALICEVISION_LOG_TRACE("Metadata path found for the current image: " << filename);
             metadataFilePath = metadataFilePaths[0];
         }
+        metadata = image::readImageMetadata(metadataFilePath);
     }
     else
     {
         // Metadata are extracted from the original images
-        metadataFilePath = inputPath;
+        metadata = image::readImageMetadata(inputPath);
     }
 
-    oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
-
-    auto options = image::ImageWriteOptions().toColorSpace(workingColorSpace);
+    image::ImageWriteOptions options;
+    options.fromColorSpace(workingColorSpace);
+    options.toColorSpace(outputColorSpace);
 
     if(isEXR)
     {
@@ -493,6 +510,8 @@ int aliceVision_main(int argc, char * argv[])
     std::string extension;
     bool applyToneCurve = false;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+    std::string colorProfileDatabaseDirPath;
+    bool errorOnMissingColorProfile = true;
 
     ProcessingParams pParams;
 
@@ -575,6 +594,12 @@ int aliceVision_main(int argc, char * argv[])
 
         ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
             ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
+
+        ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
+            "DNG Color Profiles (DCP) database path.")
+
+        ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
+            "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
 
         ("applyToneCurve", po::value<bool>(&applyToneCurve)->default_value(applyToneCurve),
             "Apply color profile embedded tone curve if any.")
@@ -723,7 +748,10 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+
+            std::map<std::string, std::string> metadata = view.getMetadata();
+
+            saveImage(image, viewPath, outputfilePath, metadata, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -799,6 +827,9 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO(size << " images found.");
         }
 
+        std::vector<std::string> colorProfileList;
+        bool dcpDatabaseLoaded = false;  // Needed because the dabase can be loaded but empty
+        std::map<std::string, alicevision::image::DCPProfile> dcpStore;
         int i = 0;
         for (const std::string& inputFilePath : filesStrPaths)
         {
@@ -810,15 +841,117 @@ int aliceVision_main(int argc, char * argv[])
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
 
+            alicevision::image::DCPProfile dcpProf;
+            sfmData::View view; // used to extract and complete metadata
+
+            if (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+                rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+            {
+                if (!dcpDatabaseLoaded)
+                {
+                    if (!fs::is_directory(colorProfileDatabaseDirPath))
+                    {
+                        ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist.");
+                        return EXIT_FAILURE;
+                    }
+                    fs::path targetDir(colorProfileDatabaseDirPath);
+                    fs::directory_iterator it(targetDir), eod;
+
+                    BOOST_FOREACH(fs::path const& p, std::make_pair(it, eod))
+                    {
+                        if (fs::is_regular_file(p))
+                        {
+                            colorProfileList.emplace_back(p.generic_string());
+                        }
+                    }
+
+                    if (colorProfileList.empty() && errorOnMissingColorProfile)
+                    {
+                        ALICEVISION_LOG_ERROR("The specified DCP database for color profiles exists but is empty.");
+                        return EXIT_FAILURE;
+                    }
+
+                    dcpDatabaseLoaded = true;
+                }
+
+                view.setImagePath(inputFilePath);
+                int width, height;
+                const auto metadata = image::readImageMetadata(inputFilePath, width, height);
+                view.setMetadata(image::getMapFromMetadata(metadata));
+
+                const std::string& make = view.getMetadataMake();
+                const std::string& model = view.getMetadataModel();
+
+                const std::string dcpKey = make + "_" + model;
+
+                std::map<std::string, alicevision::image::DCPProfile>::iterator it = dcpStore.find(dcpKey);
+                if (it != dcpStore.end())
+                {
+                    dcpProf = it->second;
+                }
+                else
+                {
+                    const std::vector<std::string>::iterator it = std::find_if(colorProfileList.begin(), colorProfileList.end(), [make, model](const std::string& s)
+                        { return (s.find(make) != std::string::npos) && (s.find(model) != std::string::npos); });
+
+                    if (it != colorProfileList.end())
+                    {
+                        dcpProf.Load(*it);
+                        dcpStore.insert(std::pair<std::string, alicevision::image::DCPProfile>(dcpKey, dcpProf));
+                    }
+                    else if (errorOnMissingColorProfile)
+                    {
+                        ALICEVISION_LOG_ERROR("The specified DCP database does not contain an appropriate profil for " << make << " " << model);
+                        return EXIT_FAILURE;
+                    }
+                }
+
+                // color profile found, keep the path in metadata
+                view.addMetadata("AliceVision:DCP:colorProfileFileName", dcpProf.info.filename);
+
+                view.addMetadata("AliceVision:DCP:Temp1", std::to_string(dcpProf.info.temperature_1));
+                view.addMetadata("AliceVision:DCP:Temp2", std::to_string(dcpProf.info.temperature_2));
+
+                const int colorMatrixNumber = (dcpProf.info.has_color_matrix_1 && dcpProf.info.has_color_matrix_2) ? 2 :
+                    (dcpProf.info.has_color_matrix_1 ? 1 : 0);
+                view.addMetadata("AliceVision:DCP:ColorMatrixNumber", std::to_string(colorMatrixNumber));
+
+                const int forwardMatrixNumber = (dcpProf.info.has_forward_matrix_1 && dcpProf.info.has_forward_matrix_2) ? 2 :
+                    (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
+                view.addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
+
+                std::vector<std::string> v_strColorMatrix;
+                dcpProf.getMatricesAsStrings("color", v_strColorMatrix);
+                for (int k = 0; k < v_strColorMatrix.size(); k++)
+                {
+                    view.addMetadata("AliceVision:DCP:ColorMat" + std::to_string(k + 1), v_strColorMatrix[k]);
+                }
+
+                std::vector<std::string> v_strForwardMatrix;
+                dcpProf.getMatricesAsStrings("forward", v_strForwardMatrix);
+                for (int k = 0; k < v_strForwardMatrix.size(); k++)
+                {
+                    view.addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k + 1), v_strForwardMatrix[k]);
+                }
+            }
+
+            // set readOptions
+            image::ImageReadOptions readOptions;
+            readOptions.colorProfileFileName = dcpProf.info.filename;
+            readOptions.rawColorInterpretation = rawColorInterpretation;
+            readOptions.workingColorSpace = workingColorSpace;
+
             // Read original image
             image::Image<image::RGBAfColor> image;
-            image::readImage(inputFilePath, image, workingColorSpace);
+            image::readImage(inputFilePath, image, readOptions);
 
             // Image processing
             processImage(image, pParams);
 
+            std::map<std::string,std::string> metadata = view.getMetadata();
+
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, metadata, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
         }
     }
 

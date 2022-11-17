@@ -808,6 +808,21 @@ float SplineToneCurve::getval(const float idx) const
         return idx_dec * ffffToneCurve[idx_int] + (1.f - idx_dec) * ffffToneCurve[idx_int + 1];
 }
 
+DCPProfile::DCPProfile()
+    : will_interpolate(false)
+    , valid(false)
+    , baseline_exposure_offset(0.0)
+    , analogBalance(IdentityMatrix)
+    , calib_matrix_1(IdentityMatrix)
+    , calib_matrix_2(IdentityMatrix)
+    , color_matrix_1(IdentityMatrix)
+    , color_matrix_2(IdentityMatrix)
+    , forward_matrix_1(IdentityMatrix)
+    , forward_matrix_2(IdentityMatrix)
+    , ws_sRGB(IdentityMatrix)
+    , sRGB_ws(IdentityMatrix)
+{}
+
 DCPProfile::DCPProfile(const std::string& filename)
     : will_interpolate(false)
     , valid(false)
@@ -821,6 +836,13 @@ DCPProfile::DCPProfile(const std::string& filename)
     , forward_matrix_2(IdentityMatrix)
     , ws_sRGB(IdentityMatrix)
     , sRGB_ws(IdentityMatrix)
+{
+    Load(filename);
+}
+
+DCPProfile::~DCPProfile() = default;
+
+void DCPProfile::Load(const std::string& filename)
 {
     delta_info.hue_step = delta_info.val_step = look_info.hue_step = look_info.val_step = 0;
     constexpr int tiff_float_size = 4;
@@ -919,11 +941,11 @@ DCPProfile::DCPProfile(const std::string& filename)
         0.99511f, 0.99527f, 0.99542f, 0.99558f, 0.99573f, 0.99588f, 0.99603f, 0.99619f, 0.99634f, 0.99649f, 0.99664f,
         0.99678f, 0.99693f, 0.99708f, 0.99722f, 0.99737f, 0.99751f, 0.99766f, 0.99780f, 0.99794f, 0.99809f, 0.99823f,
         0.99837f, 0.99851f, 0.99865f, 0.99879f, 0.99892f, 0.99906f, 0.99920f, 0.99933f, 0.99947f, 0.99960f, 0.99974f,
-        0.99987f, 1.00000f};
+        0.99987f, 1.00000f };
 
     FILE* const file = fopen(filename.c_str(), "rb");
 
-    if(file == nullptr)
+    if (file == nullptr)
     {
         ALICEVISION_LOG_WARNING("Unable to load DCP profile " << filename);
         return;
@@ -940,7 +962,7 @@ DCPProfile::DCPProfile(const std::string& filename)
     // read tags
     const int numOfTags = get2(file, order);
 
-    if(numOfTags <= 0 || numOfTags > 1000)
+    if (numOfTags <= 0 || numOfTags > 1000)
     {
         ALICEVISION_LOG_WARNING("DCP Error: Tag number out of range.");
         fclose(file);
@@ -949,14 +971,14 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     std::vector<Tag> v_tag;
 
-    for(int i = 0; i < numOfTags; i++)
+    for (int i = 0; i < numOfTags; i++)
     {
 
         unsigned short tag = get2(file, order);
         TagType type = (TagType)get2(file, order);
         unsigned int datasize = get4(file, order);
 
-        if(!datasize)
+        if (!datasize)
         {
             datasize = 1;
         }
@@ -964,7 +986,7 @@ DCPProfile::DCPProfile(const std::string& filename)
         // filter out invalid tags
         // note the large count is to be able to pass LeafData ASCII tag which can be up to almost 10 megabytes,
         // (only a small part of it will actually be parsed though)
-        if((int)type < 1 || (int)type > 14 || datasize > 10 * 1024 * 1024)
+        if ((int)type < 1 || (int)type > 14 || datasize > 10 * 1024 * 1024)
         {
             type = TagType::T_INVALID;
             fclose(file);
@@ -984,6 +1006,8 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     fclose(file);
 
+    info.filename = filename;
+
     const Tag* tag = findTag(TagKey::CALIBRATION_ILLUMINANT_1, v_tag);
     info.light_source_1 = tag ? tag->toInt(0, TagType::T_SHORT) : -1;
     tag = findTag(TagKey::CALIBRATION_ILLUMINANT_2, v_tag);
@@ -997,13 +1021,13 @@ DCPProfile::DCPProfile(const std::string& filename)
     // Fetch Forward Matrices, if any
     tag = findTag(TagKey::FORWARD_MATRIX_1, v_tag);
 
-    if(tag)
+    if (tag)
     {
         info.has_forward_matrix_1 = true;
 
-        for(int row = 0; row < 3; ++row)
+        for (int row = 0; row < 3; ++row)
         {
-            for(int col = 0; col < 3; ++col)
+            for (int col = 0; col < 3; ++col)
             {
                 forward_matrix_1[row][col] = tag->toDouble((col + row * 3) * 8);
             }
@@ -1012,13 +1036,13 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     tag = findTag(TagKey::FORWARD_MATRIX_2, v_tag);
 
-    if(tag)
+    if (tag)
     {
         info.has_forward_matrix_2 = true;
 
-        for(int row = 0; row < 3; ++row)
+        for (int row = 0; row < 3; ++row)
         {
-            for(int col = 0; col < 3; ++col)
+            for (int col = 0; col < 3; ++col)
             {
                 forward_matrix_2[row][col] = tag->toDouble((col + row * 3) * 8);
             }
@@ -1028,7 +1052,7 @@ DCPProfile::DCPProfile(const std::string& filename)
     // Color Matrix (one is always there)
     tag = findTag(TagKey::COLOR_MATRIX_1, v_tag);
 
-    if(!tag)
+    if (!tag)
     {
         ALICEVISION_LOG_WARNING("DCP '" << filename << "' is missing 'ColorMatrix1'. Skipped.");
         return;
@@ -1036,9 +1060,9 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     info.has_color_matrix_1 = true;
 
-    for(int row = 0; row < 3; ++row)
+    for (int row = 0; row < 3; ++row)
     {
-        for(int col = 0; col < 3; ++col)
+        for (int col = 0; col < 3; ++col)
         {
             color_matrix_1[row][col] = tag->toDouble((col + row * 3) * 8);
         }
@@ -1046,7 +1070,7 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     tag = findTag(TagKey::PROFILE_LOOK_TABLE_DIMS, v_tag);
 
-    if(tag)
+    if (tag)
     {
         look_info.hue_divisions = tag->toInt(0);
         look_info.sat_divisions = tag->toInt(4);
@@ -1060,7 +1084,7 @@ DCPProfile::DCPProfile(const std::string& filename)
 
         look_table.resize(look_info.array_count);
 
-        for(unsigned int i = 0; i < look_info.array_count; i++)
+        for (unsigned int i = 0; i < look_info.array_count; i++)
         {
             look_table[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
             look_table[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
@@ -1082,7 +1106,7 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     tag = findTag(TagKey::PROFILE_HUE_SAT_MAP_DIMS, v_tag);
 
-    if(tag)
+    if (tag)
     {
         delta_info.hue_divisions = tag->toInt(0);
         delta_info.sat_divisions = tag->toInt(4);
@@ -1096,7 +1120,7 @@ DCPProfile::DCPProfile(const std::string& filename)
 
         deltas_1.resize(delta_info.array_count);
 
-        for(unsigned int i = 0; i < delta_info.array_count; ++i)
+        for (unsigned int i = 0; i < delta_info.array_count; ++i)
         {
             deltas_1[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
             deltas_1[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
@@ -1116,30 +1140,30 @@ DCPProfile::DCPProfile(const std::string& filename)
         info.has_hue_sat_map = true;
     }
 
-    if(info.light_source_2 != -1)
+    if (info.light_source_2 != -1)
     {
         // Second matrix
         info.has_color_matrix_2 = true;
 
         tag = findTag(TagKey::COLOR_MATRIX_2, v_tag);
 
-        for(int row = 0; row < 3; ++row)
+        for (int row = 0; row < 3; ++row)
         {
-            for(int col = 0; col < 3; ++col)
+            for (int col = 0; col < 3; ++col)
             {
                 color_matrix_2[row][col] = tag ? tag->toDouble((col + row * 3) * 8) : color_matrix_1[row][col];
             }
         }
 
         // Second huesatmap
-        if(has_second_hue_sat)
+        if (has_second_hue_sat)
         {
             deltas_2.resize(delta_info.array_count);
 
             // Saturation maps. Need to be unwinded.
             tag = findTag(TagKey::PROFILE_HUE_SAT_MAP_DATA_2, v_tag);
 
-            for(unsigned int i = 0; i < delta_info.array_count; ++i)
+            for (unsigned int i = 0; i < delta_info.array_count; ++i)
             {
                 deltas_2[i].hue_shift = tag->toDouble((i * 3) * tiff_float_size);
                 deltas_2[i].sat_scale = tag->toDouble((i * 3 + 1) * tiff_float_size);
@@ -1150,7 +1174,7 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     tag = findTag(TagKey::BASELINE_EXPOSURE_OFFSET, v_tag);
 
-    if(tag)
+    if (tag)
     {
         info.has_baseline_exposure_offset = true;
         baseline_exposure_offset = tag->toDouble();
@@ -1159,19 +1183,19 @@ DCPProfile::DCPProfile(const std::string& filename)
     // Read tone curve points, if any, but disable to RTs own profiles
     tag = findTag(TagKey::PROFILE_TONE_CURVE, v_tag);
 
-    if(tag)
+    if (tag)
     {
         std::vector<double> AS_curve_points;
 
         // Push back each X/Y coordinates in a loop
         bool curve_is_linear = true;
 
-        for(int i = 0; i < tag->datasize; i += 2)
+        for (int i = 0; i < tag->datasize; i += 2)
         {
             const double x = tag->toDouble((i + 0) * tiff_float_size);
             const double y = tag->toDouble((i + 1) * tiff_float_size);
 
-            if(x != y)
+            if (x != y)
             {
                 curve_is_linear = false;
             }
@@ -1180,7 +1204,7 @@ DCPProfile::DCPProfile(const std::string& filename)
             AS_curve_points.push_back(y);
         }
 
-        if(!curve_is_linear)
+        if (!curve_is_linear)
         {
             // Create the curve
             info.has_tone_curve = true;
@@ -1191,7 +1215,7 @@ DCPProfile::DCPProfile(const std::string& filename)
     {
         tag = findTag(TagKey::PROFILE_TONE_COPYRIGHT, v_tag);
 
-        if(tag && tag->valueToString().find("Adobe Systems") != std::string::npos)
+        if (tag && tag->valueToString().find("Adobe Systems") != std::string::npos)
         {
             // An Adobe profile without tone curve is expected to have the Adobe Default Curve
             std::vector<double> AS_curve_points;
@@ -1199,7 +1223,7 @@ DCPProfile::DCPProfile(const std::string& filename)
             constexpr size_t tc_len =
                 sizeof(adobe_camera_raw_default_curve) / sizeof(adobe_camera_raw_default_curve[0]);
 
-            for(size_t i = 0; i < tc_len; ++i)
+            for (size_t i = 0; i < tc_len; ++i)
             {
                 const double x = static_cast<double>(i) / (tc_len - 1);
                 const double y = adobe_camera_raw_default_curve[i];
@@ -1214,17 +1238,17 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     will_interpolate = false;
 
-    if(info.has_forward_matrix_1)
+    if (info.has_forward_matrix_1)
     {
-        if(info.has_forward_matrix_2)
+        if (info.has_forward_matrix_2)
         {
-            if(forward_matrix_1 != forward_matrix_2)
+            if (forward_matrix_1 != forward_matrix_2)
             {
                 // Common that forward matrices are the same!
                 will_interpolate = true;
             }
 
-            if(!deltas_1.empty() && !deltas_2.empty())
+            if (!deltas_1.empty() && !deltas_2.empty())
             {
                 // We assume tables are different
                 will_interpolate = true;
@@ -1232,14 +1256,14 @@ DCPProfile::DCPProfile(const std::string& filename)
         }
     }
 
-    if(info.has_color_matrix_1 && info.has_color_matrix_2)
+    if (info.has_color_matrix_1 && info.has_color_matrix_2)
     {
-        if(color_matrix_1 != color_matrix_2)
+        if (color_matrix_1 != color_matrix_2)
         {
             will_interpolate = true;
         }
 
-        if(!deltas_1.empty() && !deltas_2.empty())
+        if (!deltas_1.empty() && !deltas_2.empty())
         {
             will_interpolate = true;
         }
@@ -1249,18 +1273,15 @@ DCPProfile::DCPProfile(const std::string& filename)
 
     std::vector<double> gammatab_srgb_data;
     std::vector<double> igammatab_srgb_data;
-    for(int i = 0; i < 65536; i++)
+    for (int i = 0; i < 65536; i++)
     {
         double x = i / 65535.0;
         gammatab_srgb_data.push_back((x <= 0.003040) ? (x * 12.92310) : (1.055 * exp(log(x) / 2.4) - 0.055)); // from RT
-        igammatab_srgb_data.push_back((x <= 0.039286) ? (x / 12.92310)
-                                                      : (exp(log((x + 0.055) / 1.055) * 2.4))); // from RT
+        igammatab_srgb_data.push_back((x <= 0.039286) ? (x / 12.92310) : (exp(log((x + 0.055) / 1.055) * 2.4))); // from RT
     }
     gammatab_srgb.Set(gammatab_srgb_data);
     igammatab_srgb.Set(igammatab_srgb_data);
 }
-
-DCPProfile::~DCPProfile() = default;
 
 void DCPProfile::apply(OIIO::ImageBuf& image, const DCPProfileApplyParams& params)
 {
@@ -1547,7 +1568,6 @@ inline void DCPProfile::hsdApply(const HsdTableInfo& table_info, const std::vect
         v *= val_scale;
     }
 }
-
 
 DCPProfile::Matrix DCPProfile::getInterpolatedMatrix(const float cct, const std::string& type)
 {
@@ -2070,6 +2090,8 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const float x, const 
 
 void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat)
 {
+    v_Mat.clear();
+
     if (type == "color")
     {
         if (info.has_color_matrix_1)
@@ -2083,6 +2105,22 @@ void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat
             v_Mat.push_back(forward_matrix_1);
         if (info.has_forward_matrix_2)
             v_Mat.push_back(forward_matrix_2);
+    }
+}
+
+void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::string>& v_strMat)
+{
+    v_strMat.clear();
+    std::vector<Matrix> v_Mat;
+    getMatrices(type, v_Mat);
+
+    for (const auto &mat : v_Mat)
+    {
+        std::string strMat = "";
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                strMat += (std::to_string(mat[i][j]) + " ");
+        v_strMat.push_back(strMat);
     }
 }
 
