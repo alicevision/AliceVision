@@ -188,6 +188,8 @@ public:
         logParams.add_options()
             ("verboseLevel,v", boost::program_options::value<std::string>(&verboseLevel)->default_value(verboseLevel), "verbosity level (fatal, error, warning, info, debug, trace).");
 
+        allParams.add(logParams);
+
         boost::program_options::variables_map vm;
         try
         {
