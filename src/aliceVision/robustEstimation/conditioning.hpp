@@ -10,13 +10,6 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 
-/**
- * @brief Implementation of normalized coordinates.
- *        Normalization improve accuracy of results and provide benefits
- *        that make scale and coordinate origin invariant.
- *        The implementation follows @see Algorithm 4.2 from HZ page 109.
- */
-
 namespace aliceVision {
 namespace robustEstimation {
 
@@ -41,7 +34,7 @@ void normalizePoints(const Mat& points, Mat* normalized_points, Mat3* T);
 void preconditionerFromImageSize(int width, int height, Mat3 *T);
 
 /**
- * @brief Normalize point rom image coordinates to [-.5, .5]
+ * @brief Normalize point from image coordinates to [-.5, .5]
  */
 void normalizePointsFromImageSize(const Mat& points, Mat* normalized_points, Mat3* T, int width, int height);
 

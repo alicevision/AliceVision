@@ -19,18 +19,21 @@
 namespace aliceVision {
 namespace robustEstimation{
 
-/// \brief The famous Random Sample Consensus algorithm (Fischler&Bolles 1981).
-/// \details The number of tests is reevaluated down as soon as more inliers are
-/// found. Return the found model.
-// 1. The model.
-// 2. The minimum number of samples needed to fit.
-// 3. A way to convert samples to a model.
-// 4. A way to convert samples and a model to an error.
-//
-// 1. Kernel::ModelT
-// 2. Kernel::getMinimumNbRequiredSamples()
-// 3. Kernel::fit(vector<int>, vector<Kernel::Model> *)
-// 4. Kernel::error(Model, int) -> error
+/**
+ * @brief Implementation of the "Random Sample Consensus" algorithm (Fischler&Bolles 1981).
+ * 
+ * @details The number of tests is reevaluated down as soon as more inliers are
+ * found. Return the found model.
+ * 1. The model.
+ * 2. The minimum number of samples needed to fit.
+ * 3. A way to convert samples to a model.
+ * 4. A way to convert samples and a model to an error.
+ *
+ * 1. Kernel::ModelT
+ * 2. Kernel::getMinimumNbRequiredSamples()
+ * 3. Kernel::fit(vector<int>, vector<Kernel::Model> *)
+ * 4. Kernel::error(Model, int) -> error
+ */
 template<typename Kernel, typename Scorer>
 typename Kernel::ModelT RANSAC(
   const Kernel& kernel,
