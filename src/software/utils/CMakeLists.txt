@@ -22,6 +22,7 @@ if(ALICEVISION_HAVE_UNCERTAINTYTE)
       SOURCE main_computeUncertainty.cpp
       FOLDER ${FOLDER_SOFTWARE_UTILS}
       LINKS aliceVision_sfm
+            aliceVision_system
             ${CUDA_LIBRARIES}
             ${CUDA_CUBLAS_LIBRARIES}
             ${CUDA_cusparse_LIBRARY}
@@ -71,6 +72,7 @@ alicevision_add_software(aliceVision_utils_voctreeCreation
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_system
         Boost::program_options
 )
 
@@ -82,6 +84,7 @@ alicevision_add_software(aliceVision_utils_voctreeQueryUtility
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_system
         Boost::program_options
         Boost::boost
         Boost::timer
@@ -93,6 +96,7 @@ alicevision_add_software(aliceVision_utils_voctreeStatistics
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_voctree
         aliceVision_sfmData
+        aliceVision_system
         aliceVision_sfmDataIO
         Boost::program_options
         Boost::boost
@@ -122,6 +126,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
           aliceVision_localization
           aliceVision_dataio
           aliceVision_rig
+          aliceVision_system
           Boost::program_options
           Boost::filesystem
   )
@@ -231,6 +236,7 @@ alicevision_add_software(aliceVision_utils_sfmDistances
   LINKS aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
+        aliceVision_system
         ${Boost_LIBRARIES}
 )
 

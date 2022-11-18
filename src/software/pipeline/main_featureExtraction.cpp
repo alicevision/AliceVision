@@ -136,6 +136,7 @@ int aliceVision_main(int argc, char **argv)
   extractor.setOutputFolder(outputFolder);
 
   // set maxThreads
+  extractor.setMaxMemory(cmdline.getUserMaxMemoryAvailable());
   extractor.setMaxThreads(maxThreads);
 
   // set extraction range

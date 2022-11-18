@@ -99,6 +99,11 @@ public:
       _imageDescribers.push_back(imageDescriber);
     }
 
+    void setMaxMemory(size_t maxMemory)
+    {
+        _maxMemory = maxMemory;
+    }
+
     void process();
 
 private:
@@ -112,6 +117,7 @@ private:
     int _rangeStart = -1;
     int _rangeSize = -1;
     int _maxThreads = -1;
+    size_t _maxMemory = std::numeric_limits<size_t>::max();
 };
 
 } // namespace feature

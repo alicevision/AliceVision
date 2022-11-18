@@ -93,6 +93,10 @@ void FeatureExtractor::process()
     {
         system::MemoryInfo memoryInformation = system::getMemoryInfo();
 
+        //Put an upper bound with user specified memory
+        size_t maxMemory = std::min(memoryInformation.availableRam, _maxMemory);
+        size_t maxTotalMemory = std::min(memoryInformation.totalRam, _maxMemory);
+
         ALICEVISION_LOG_INFO("Job max memory consumption for one image: "
                              << jobMaxMemoryConsuption / (1024*1024) << " MB");
         ALICEVISION_LOG_INFO("Memory information: " << std::endl << memoryInformation);
@@ -103,38 +107,38 @@ void FeatureExtractor::process()
         // How many buffers can fit in 90% of the available RAM?
         // This is used to estimate how many jobs can be computed in parallel without SWAP.
         const std::size_t memoryImageCapacity =
-                std::size_t((0.9 * memoryInformation.availableRam) / jobMaxMemoryConsuption);
+                std::size_t((0.9 * maxMemory) / jobMaxMemoryConsuption);
 
         std::size_t nbThreads = std::max(std::size_t(1), memoryImageCapacity);
         ALICEVISION_LOG_INFO("Max number of threads regarding memory usage: " << nbThreads);
         const double oneGB = 1024.0 * 1024.0 * 1024.0;
-        if (jobMaxMemoryConsuption > memoryInformation.availableRam)
+        if (jobMaxMemoryConsuption > maxMemory)
         {
             ALICEVISION_LOG_WARNING("The amount of RAM available is critical to extract features.");
-            if (jobMaxMemoryConsuption <= memoryInformation.totalRam)
+            if (jobMaxMemoryConsuption <= maxTotalMemory)
             {
                 ALICEVISION_LOG_WARNING("But the total amount of RAM is enough to extract features, "
                                         << "so you should close other running applications.");
-                ALICEVISION_LOG_WARNING(" => " << std::size_t(std::round((double(memoryInformation.totalRam - memoryInformation.availableRam) / oneGB)))
+                ALICEVISION_LOG_WARNING(" => " << std::size_t(std::round((double(maxTotalMemory - maxMemory) / oneGB)))
                                         << " GB are used by other applications for a total RAM capacity of "
-                                        << std::size_t(std::round(double(memoryInformation.totalRam) / oneGB))
+                                        << std::size_t(std::round(double(maxTotalMemory) / oneGB))
                                         << " GB.");
             }
         }
         else
         {
-            if (memoryInformation.availableRam < 0.5 * memoryInformation.totalRam)
+            if (maxMemory < 0.5 * maxTotalMemory)
             {
                 ALICEVISION_LOG_WARNING("More than half of the RAM is used by other applications. It would be more efficient to close them.");
                 ALICEVISION_LOG_WARNING(" => "
-                                        << std::size_t(std::round(double(memoryInformation.totalRam - memoryInformation.availableRam) / oneGB))
+                                        << std::size_t(std::round(double(maxTotalMemory - maxMemory) / oneGB))
                                         << " GB are used by other applications for a total RAM capacity of "
-                                        << std::size_t(std::round(double(memoryInformation.totalRam) / oneGB))
+                                        << std::size_t(std::round(double(maxTotalMemory) / oneGB))
                                         << " GB.");
             }
         }
 
-        if(memoryInformation.availableRam == 0)
+        if(maxMemory == 0)
         {
           ALICEVISION_LOG_WARNING("Cannot find available system memory, this can be due to OS limitation.\n"
                                   "Use only one thread for CPU feature extraction.");
@@ -146,7 +150,7 @@ void FeatureExtractor::process()
           nbThreads = std::min(static_cast<std::size_t>(_maxThreads), nbThreads);
 
         // nbThreads should not be higher than the core number
-        nbThreads = std::min(static_cast<std::size_t>(omp_get_num_procs()), nbThreads);
+        nbThreads = std::min(static_cast<std::size_t>(omp_get_max_threads()), nbThreads);
 
         // nbThreads should not be higher than the number of jobs
         nbThreads = std::min(cpuJobs.size(), nbThreads);

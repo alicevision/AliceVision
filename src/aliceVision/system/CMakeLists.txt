@@ -18,6 +18,7 @@ set(system_files_sources
   Logger.cpp
   ProgressDisplay.cpp
   nvtx.cpp
+  cmdline.cpp
 )
 
 alicevision_add_library(aliceVision_system
