@@ -36,7 +36,7 @@ public:
    * @brief Process media paths and build a list of selected frames using a regular sampling over time
    * @param[in] mediaPaths for each camera, give the media file name (path)
    */
-  void processSimple(const std::vector<std::string>& mediaPaths);
+  void processRegular(const std::vector<std::string>& mediaPaths);
 
   /**
    * @brief Write selected frames indices

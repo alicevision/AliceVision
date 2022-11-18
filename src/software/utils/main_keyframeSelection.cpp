@@ -30,7 +30,7 @@ int aliceVision_main(int argc, char** argv)
     // Command-line parameters
     std::string sensorDbPath;               // camera sensor width database
     std::string outputFolder;               // output folder for keyframes
-    bool useSimpleMethod = true;            // use regular keyframes method
+    bool useRegularKeyframes = true;        // use regular keyframes method
 
     // Info for each "rig" view
     std::vector<std::string> mediaPaths;    // media file path list
@@ -50,7 +50,7 @@ int aliceVision_main(int argc, char** argv)
             "Camera sensor width database path.")
         ("outputFolder", po::value<std::string>(&outputFolder)->required(),
             "Output keyframes folder for .jpg.")
-        ("useSimpleMethod", po::value<bool>(&useSimpleMethod)->required(),
+        ("useRegularKeyframes", po::value<bool>(&useRegularKeyframes)->required(),
             "Use regular keyframe extraction instead of the smart method.");
 
     po::options_description metadataParams("Metadata parameters");  
@@ -115,10 +115,10 @@ int aliceVision_main(int argc, char** argv)
     selector.setMinFrameStep(minFrameStep);
     selector.setMaxOutFrame(maxNbOutFrame);
 
-    // Process
-    if (useSimpleMethod)
+    // process
+    if (useRegularKeyframes)
     {
-        selector.processSimple(mediaPaths);
+        selector.processRegular(mediaPaths);
     }
     else
     {

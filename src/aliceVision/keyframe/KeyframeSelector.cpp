@@ -164,7 +164,7 @@ double estimateFlow(const std::vector<std::unique_ptr<dataio::FeedProvider>> & f
     return minmaxflow;
 }
 
-void KeyframeSelector::processSimple(const std::vector<std::string>& mediaPaths)
+void KeyframeSelector::processRegular(const std::vector<std::string>& mediaPaths)
 {
     std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
