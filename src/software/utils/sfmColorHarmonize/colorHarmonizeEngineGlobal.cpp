@@ -52,45 +52,55 @@ using namespace aliceVision::sfmData;
 typedef feature::PointFeature FeatureT;
 typedef std::vector<FeatureT> featsT;
 
+EHistogramSelectionMethod EHistogramSelectionMethod_stringToEnum(const std::string& histogramSelectionMethod)
+{
+  if(histogramSelectionMethod == "full_frame")     return EHistogramSelectionMethod::eHistogramHarmonizeFullFrame;
+  if(histogramSelectionMethod == "matched_points") return EHistogramSelectionMethod::eHistogramHarmonizeMatchedPoints;
+  if(histogramSelectionMethod == "VLD_segments")   return EHistogramSelectionMethod::eHistogramHarmonizeVLDSegment;
+
+  throw std::invalid_argument("Invalid selection method: " + histogramSelectionMethod);
+}
+
+std::string EHistogramSelectionMethod_enumToString(const EHistogramSelectionMethod histogramSelectionMethod)
+{
+  if(histogramSelectionMethod == EHistogramSelectionMethod::eHistogramHarmonizeFullFrame)     return "full_frame";
+  if(histogramSelectionMethod == EHistogramSelectionMethod::eHistogramHarmonizeMatchedPoints) return "matched_points";
+  if(histogramSelectionMethod == EHistogramSelectionMethod::eHistogramHarmonizeVLDSegment)    return "VLD_segments";
+
+  throw std::invalid_argument("Unrecognized EHistogramSelectionMethod: " + std::to_string(int(histogramSelectionMethod)));
+}
+
+std::ostream& operator<<(std::ostream& os, EHistogramSelectionMethod p)
+{
+  return os << EHistogramSelectionMethod_enumToString(p);
+}
+
+std::istream& operator>>(std::istream& in, EHistogramSelectionMethod& p)
+{
+  std::string token;
+  in >> token;
+  p = EHistogramSelectionMethod_stringToEnum(token);
+  return in;
+}
+
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
     const std::string& sfmDataFilename,
     const std::vector<std::string>& featuresFolders,
     const std::vector<std::string>& matchesFolders,
     const std::string& outputDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    int selectionMethod,
+    EHistogramSelectionMethod selectionMethod,
     int imgRef)
   : _sfmDataFilename(sfmDataFilename)
   , _featuresFolders(featuresFolders)
   , _matchesFolders(matchesFolders)
   , _outputDirectory(outputDirectory)
   , _descTypes(descTypes)
+  , _selectionMethod(selectionMethod)
+  , _imgRef(imgRef)
 {
   if(!fs::exists(outputDirectory))
     fs::create_directory(outputDirectory);
-
-  // choose image reference
-  while(imgRef < 0 || imgRef >= _fileNames.size())
-  {
-      std::cout << "Choose your reference image:\n";
-      for( int i = 0; i < _fileNames.size(); ++i )
-      {
-        std::cout << "id: " << i << "\t" << _fileNames[ i ] << std::endl;
-      }
-      std::cin >> imgRef;
-  }
-  _imgRef = imgRef;
-
-  // choose selection method
-  while(selectionMethod < 0 || selectionMethod > 2)
-  {
-    std::cout << "Choose your selection method:\n"
-      << "- FullFrame: 0\n"
-      << "- Matched Points: 1\n"
-      << "- VLD Segment: 2\n";
-    std::cin >> selectionMethod;
-  }
-  _selectionMethod = static_cast<EHistogramSelectionMethod>(selectionMethod);
 
 }
 
@@ -182,7 +192,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     map_cameraNodeToCameraIndex[*iterSet] = std::distance(set_indeximage.begin(), iterSet);
   }
 
-  std::cout << "\n Remaining cameras after CC filter : \n"
+  std::cout << "\nRemaining cameras after CC filter : \n"
     << map_cameraIndexTocameraNode.size() << " from a total of " << _fileNames.size() << std::endl;
 
   size_t bin      = 256;
@@ -219,7 +229,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     switch(_selectionMethod)
     {
-      case eHistogramHarmonizeFullFrame:
+      case EHistogramSelectionMethod::eHistogramHarmonizeFullFrame:
       {
         colorHarmonization::CommonDataByPair_fullFrame  dataSelector(
           p_imaNames.first,
@@ -227,7 +237,7 @@ bool ColorHarmonizationEngineGlobal::Process()
         dataSelector.computeMask( maskI, maskJ );
       }
       break;
-      case eHistogramHarmonizeMatchedPoints:
+      case EHistogramSelectionMethod::eHistogramHarmonizeMatchedPoints:
       {
         int circleSize = 10;
         colorHarmonization::CommonDataByPair_matchedPoints dataSelector(
@@ -240,7 +250,7 @@ bool ColorHarmonizationEngineGlobal::Process()
         dataSelector.computeMask( maskI, maskJ );
       }
       break;
-      case eHistogramHarmonizeVLDSegment:
+      case EHistogramSelectionMethod::eHistogramHarmonizeVLDSegment:
       {
         maskI.fill(0);
         maskJ.fill(0);
@@ -427,7 +437,8 @@ bool ColorHarmonizationEngineGlobal::Process()
       }
     }
 
-    const std::string out_folder = (fs::path(_outputDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
+    const int selectionMethodIdx = static_cast<int>(_selectionMethod);
+    const std::string out_folder = (fs::path(_outputDirectory) / (vec_selectionMethod[ selectionMethodIdx ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
     if(!fs::exists(out_folder))
       fs::create_directory(out_folder);
     const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
@@ -465,7 +476,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   {
     const View* v = iter->second.get();
     _fileNames.push_back(v->getImagePath());
-    _imageSize.push_back( std::make_pair( v->getWidth(), v->getHeight() ));
+    _imageSize.push_back(std::make_pair( v->getWidth(), v->getHeight() ));
   }
 
   // b. Read matches
