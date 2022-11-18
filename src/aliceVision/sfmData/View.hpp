@@ -13,6 +13,7 @@
 #include <string>
 #include <utility>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/image/dcp.hpp>
 
 namespace aliceVision {
 namespace sfmData {
@@ -726,7 +727,41 @@ public:
    */
   void addMetadata(const std::string& key, const std::string& value)
   {
-    _metadata[key] = value;
+      _metadata[key] = value;
+  }
+
+  /**
+   * @brief Add DCP info in metadata
+   * @param[in] dcpProf The DCP color profile
+   */
+  void addDCPMetadata(image::DCPProfile& dcpProf)
+  {
+      addMetadata("AliceVision:DCP:colorProfileFileName", dcpProf.info.filename);
+
+      addMetadata("AliceVision:DCP:Temp1", std::to_string(dcpProf.info.temperature_1));
+      addMetadata("AliceVision:DCP:Temp2", std::to_string(dcpProf.info.temperature_2));
+
+      const int colorMatrixNumber = (dcpProf.info.has_color_matrix_1 && dcpProf.info.has_color_matrix_2) ? 2 :
+          (dcpProf.info.has_color_matrix_1 ? 1 : 0);
+      addMetadata("AliceVision:DCP:ColorMatrixNumber", std::to_string(colorMatrixNumber));
+
+      const int forwardMatrixNumber = (dcpProf.info.has_forward_matrix_1 && dcpProf.info.has_forward_matrix_2) ? 2 :
+          (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
+      addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
+
+      std::vector<std::string> v_strColorMatrix;
+      dcpProf.getMatricesAsStrings("color", v_strColorMatrix);
+      for (int k = 0; k < v_strColorMatrix.size(); k++)
+      {
+          addMetadata("AliceVision:DCP:ColorMat" + std::to_string(k + 1), v_strColorMatrix[k]);
+      }
+
+      std::vector<std::string> v_strForwardMatrix;
+      dcpProf.getMatricesAsStrings("forward", v_strForwardMatrix);
+      for (int k = 0; k < v_strForwardMatrix.size(); k++)
+      {
+          addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k + 1), v_strForwardMatrix[k]);
+      }
   }
 
 private:

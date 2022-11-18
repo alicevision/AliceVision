@@ -515,7 +515,7 @@ void readImage(const std::string& path,
     if (!imageReadOptions.colorProfileFileName.empty() &&
         imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
     {
-        alicevision::image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
+        image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
         oiio::ParamValueList imgMetadata = readImageMetadata(path);
         std::string cam_mul;
@@ -530,7 +530,7 @@ void readImage(const std::string& path,
         }
         v_mult.push_back(atof(cam_mul.substr(last, cam_mul.find("}", last) - last).c_str()));
 
-        alicevision::image::DCPProfile::Triple neutral;
+        image::DCPProfile::Triple neutral;
         for (int i = 0; i < 3; i++)
         {
             neutral[i] = v_mult[1] / v_mult[i];

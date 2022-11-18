@@ -3,15 +3,20 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
+
 #include <iostream>
 #include <cstdio>
 #include <cstring>
 #include <functional>
 
-namespace alicevision {
+namespace aliceVision {
 namespace image {
 
 using aliceVision::clamp;
+namespace bfs = boost::filesystem;
 
 double calibrationIlluminantToTemperature(LightSource light)
 {
@@ -258,12 +263,10 @@ const std::vector<std::vector<float>> WYSZECKI_ROBERSTON_TABLE =
       {575, 0.32931, 0.36038, -40.770},
       {600, 0.33724, 0.36051, -116.45} };
 
+// Useful matrices
 const DCPProfile::Matrix IdentityMatrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-
 const DCPProfile::Matrix CAT02_MATRIX = {0.7328, 0.4296, -0.1624, -0.7036, 1.6975, 0.0061, 0.0030, 0.0136, 0.9834};
-
 const DCPProfile::Matrix xyzD50ToSrgbD65LinearMatrix = { 3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252 };
-
 const DCPProfile::Matrix xyzD50ToSrgbD50LinearMatrix = { 3.1338561, -1.6168667, -0.4906146, -0.9787684, 1.9161415, 0.0334540, 0.0719453, -0.2289914, 1.4052427 };
 
 const double TINT_SCALE = -3000.0;
@@ -677,6 +680,8 @@ const Tag* findTag(TagKey tagID, const std::vector<Tag>& v_Tags)
     return &(v_Tags[idx]);
 }
 
+
+
 // Spline interpolation from user data to get the internal tone curve with 65536 values
 // https://en.wikipedia.org/wiki/Spline_interpolation
 //
@@ -807,6 +812,8 @@ float SplineToneCurve::getval(const float idx) const
     else
         return idx_dec * ffffToneCurve[idx_int] + (1.f - idx_dec) * ffffToneCurve[idx_int + 1];
 }
+
+
 
 DCPProfile::DCPProfile()
     : will_interpolate(false)
@@ -2150,5 +2157,100 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral)
         }
 }
 
+
+DCPDatabase::DCPDatabase(const std::string& databaseDirPath)
+{
+    load(databaseDirPath, true);
 }
+
+int DCPDatabase::load(const std::string& databaseDirPath, bool force)
+{
+    if (!databaseDirPath.compare(folderName) && !force)
+    {
+        return dcpFilenamesList.size();
+    }
+
+    clear();
+
+    folderName = databaseDirPath;
+
+    if (!bfs::is_directory(databaseDirPath))
+    {
+        return 0;
+    }
+
+    bfs::path targetDir(databaseDirPath);
+    bfs::directory_iterator it(targetDir), eod;
+    BOOST_FOREACH(bfs::path const& p, std::make_pair(it, eod))
+    {
+        if (bfs::is_regular_file(p))
+        {
+            dcpFilenamesList.emplace_back(p.generic_string());
+        }
+    }
+
+    return dcpFilenamesList.size();
 }
+
+void DCPDatabase::clear()
+{
+    dcpFilenamesList.clear();
+    dcpStore.clear();
+    folderName = "";
+}
+
+bool DCPDatabase::getDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf)
+{
+    const std::string dcpKey = make + "_" + model;
+
+    std::map<std::string, image::DCPProfile>::iterator it = dcpStore.find(dcpKey);
+    if (it != dcpStore.end())
+    {
+        dcpProf = it->second;
+        return true;
+    }
+    else
+    {
+        const std::vector<std::string>::iterator it = std::find_if(dcpFilenamesList.begin(), dcpFilenamesList.end(), [make, model](const std::string& s)
+            { return (s.find(make) != std::string::npos) && (s.find(model) != std::string::npos); });
+
+        if (it != dcpFilenamesList.end())
+        {
+            dcpProf.Load(*it);
+            dcpStore.insert(std::pair<std::string, image::DCPProfile>(dcpKey, dcpProf));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+void DCPDatabase::add_or_replace(DCPProfile& dcpProf, const std::string& make, const std::string& model)
+{
+    const std::string dcpKey = make + "_" + model;
+
+    std::map<std::string, image::DCPProfile>::iterator it = dcpStore.find(dcpKey);
+    if (it != dcpStore.end())
+    {
+        dcpStore[dcpKey] = dcpProf;
+        std::vector<std::string>::iterator it = find(dcpFilenamesList.begin(), dcpFilenamesList.end(), dcpProf.info.filename);
+        if (it != dcpFilenamesList.end())
+        {
+            dcpFilenamesList[it - dcpFilenamesList.begin()] = dcpProf.info.filename;
+        }
+    }
+    else
+    {
+        dcpStore.insert(std::pair<std::string, image::DCPProfile>(dcpKey, dcpProf));
+        dcpFilenamesList.push_back(dcpProf.info.filename);
+    }
+}
+
+} // namespace image
+} // namespace aliceVision
+
+
+
+

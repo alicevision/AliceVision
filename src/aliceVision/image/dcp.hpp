@@ -8,7 +8,7 @@
 
 #include <OpenImageIO/imagebuf.h>
 
-namespace alicevision {
+namespace aliceVision {
 namespace image {
 
 /**
@@ -114,7 +114,7 @@ struct DCPProfileApplyParams
 };
 
  /**
-  * @brief DCPProfileInfo contains information about matrices, table and curves containes in the profile
+  * @brief DCPProfileInfo contains information about matrices, table and curves contained in the profile
   */
 struct DCPProfileInfo
 {
@@ -266,6 +266,69 @@ private:
     SplineToneCurve gammatab_srgb;
     SplineToneCurve igammatab_srgb;
 };
+
+/**
+* @brief DCPDatabase manages DCP profiles loading and caching
+*/
+class DCPDatabase final
+{
+public:
+    DCPDatabase() = default;
+    DCPDatabase(const std::string& databaseDirPath);
+
+    ~DCPDatabase() = default;
+
+    /**
+     * @brief load stores in a file list all the valid dcp filenames found in a folder (including subfolders). 
+     * None of them are loaded in cache.
+     * param[in] database folder name.
+     * param[in] if true loading is forced even if a database with the same folder name is already loaded.
+     * return Number of DCP files found.
+     */
+    int load(const std::string& databaseDirPath, bool force = false);
+
+    /**
+     * @brief clear clears the cache and the DCP file list.
+     */
+    void clear();
+
+    /**
+     * @brief Check if the databse is empty.
+     * return True if empty.
+     */
+    inline bool empty() { return dcpFilenamesList.empty(); }
+
+    /**
+     * @brief add_or_replace adds or replaces an existing DCP profile in the cache.
+     * Update the DCP file list with dcpProf.info.filename. 
+     * param[in] DCP profile to be stored.
+     * param[in] DSLR Maker.
+     * param[in] DSLR Model.
+     */
+    void add_or_replace(DCPProfile& dcpProf, const std::string& make, const std::string& model);
+
+    /**
+     * @brief getDcpForCamera gets a DCP profile in the database for a given camera.
+     * Search first in the cache. If no DCP profile is found search if an appropriate DCP file exists in the file list.
+     * If a dcp file is found then load it and store it in the cache.
+     * param[in] make The camera maker
+     * param[in] model The camera model
+     * param[in] dcpProf the DCP profile to be filled in
+     * return True if a corresponding profile has been found
+     */
+    bool getDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf);
+
+private:
+
+    std::string folderName;
+
+    std::vector<std::string> dcpFilenamesList;
+
+    std::map<std::string, DCPProfile> dcpStore;
+
+};
+
+
 
 }
 }

@@ -12,7 +12,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/image/io.cpp>    //////// ?????? .cpp ????????
 #include <aliceVision/image/dcp.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
@@ -132,17 +131,6 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     in >> token;
     s = EGroupCameraFallback_stringToEnum(token);
     return in;
-}
-
-/**
- * @brief Find the filepath which contains make/model of the camera.
- */
-std::vector<std::string>::iterator findColorProfile(const std::string& make, const std::string& model, std::vector<std::string>& fileList)
-{
-    return std::find_if(fileList.begin(), fileList.end(),
-                        [make, model](const std::string& s)
-                        { return (s.find(make) != std::string::npos) && (s.find(model) != std::string::npos);
-        });
 }
 
 /**
@@ -321,28 +309,6 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
-  std::vector<std::string> colorProfileList;
-  if (!colorProfileDatabaseDirPath.empty() &&
-      (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
-       rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
-  {
-      if(!fs::is_directory(colorProfileDatabaseDirPath))
-      {
-          ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist.");
-          return EXIT_FAILURE;
-      }
-      fs::path targetDir(colorProfileDatabaseDirPath);
-      fs::directory_iterator it(targetDir), eod;
-
-      BOOST_FOREACH(fs::path const& p, std::make_pair(it, eod))
-      {
-          if (fs::is_regular_file(p))
-          {
-              colorProfileList.emplace_back(p.generic_string());
-          }
-      }
-  }
-
   camera::EINTRINSIC allowedCameraModels = camera::EINTRINSIC_parseStringToBitmask(allowedCameraModelsStr);
 
   // use current time as seed for random generator for intrinsic Id without metadata
@@ -406,9 +372,11 @@ int aliceVision_main(int argc, char **argv)
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
   char allColorProfilesFound = 1; // char type instead of bool to support usage of atomic
+  image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
+  int viewsWithDCPMetadata = 0;
 
   #pragma omp parallel for
-  for(int i = 0; i < sfmData.getViews().size(); ++i)
+  for (int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
 
@@ -484,44 +452,27 @@ int aliceVision_main(int argc, char **argv)
 
     std::string imgFormat = in->format_name();
 
+    if (dcpDatabase.empty() && (imgFormat.compare("raw") == 0) && errorOnMissingColorProfile)
+    {
+        ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist or is empty.");
+        // No color profile available
+        boost::atomic_ref<char>{allColorProfilesFound} = 0;
+    }
+
     // if a color profile is required check if a dcp database exists and if one is available inside 
     // if yes and if metadata exist and image format is raw then update metadata with DCP info
     if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
         rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata) &&
-        hasCameraMetadata && !colorProfileDatabaseDirPath.empty() && (imgFormat.compare("raw") == 0))
+        hasCameraMetadata && !dcpDatabase.empty() && (imgFormat.compare("raw") == 0))
     {
-        const std::vector<std::string>::iterator it = findColorProfile(make, model, colorProfileList);
-        if(it != colorProfileList.end())
+        image::DCPProfile dcpProf;
+
+        if(dcpDatabase.getDcpForCamera(make, model, dcpProf))
         {
-            // color profile found, keep the path in metadata
-            view.addMetadata("AliceVision:DCP:colorProfileFileName", *it);
+            view.addDCPMetadata(dcpProf);
 
-            alicevision::image::DCPProfile dcpProf(*it);
-
-            view.addMetadata("AliceVision:DCP:Temp1", std::to_string(dcpProf.info.temperature_1));
-            view.addMetadata("AliceVision:DCP:Temp2", std::to_string(dcpProf.info.temperature_2));
-
-            const int colorMatrixNumber = (dcpProf.info.has_color_matrix_1 && dcpProf.info.has_color_matrix_2) ? 2 :
-                                          (dcpProf.info.has_color_matrix_1 ? 1 : 0);
-            view.addMetadata("AliceVision:DCP:ColorMatrixNumber", std::to_string(colorMatrixNumber));
-
-            const int forwardMatrixNumber = (dcpProf.info.has_forward_matrix_1 && dcpProf.info.has_forward_matrix_2) ? 2 :
-                                            (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
-            view.addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
-
-            std::vector<std::string> v_strColorMatrix;
-            dcpProf.getMatricesAsStrings("color", v_strColorMatrix);
-            for (int k = 0; k < v_strColorMatrix.size(); k++)
-            {
-                view.addMetadata("AliceVision:DCP:ColorMat" + std::to_string(k + 1), v_strColorMatrix[k]);
-            }
-
-            std::vector<std::string> v_strForwardMatrix;
-            dcpProf.getMatricesAsStrings("forward", v_strForwardMatrix);
-            for (int k = 1; k <= v_strForwardMatrix.size(); k++)
-            {
-                view.addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k + 1), v_strForwardMatrix[k]);
-            }
+            #pragma omp critical
+            viewsWithDCPMetadata++;
         }
         else if(allColorProfilesFound)
         {
@@ -912,7 +863,8 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("CameraInit report:"
                    << "\n\t- # views listed: " << sfmData.getViews().size()
                    << "\n\t   - # views with an initialized intrinsic listed: " << completeViewCount
-                   << "\n\t   - # views without metadata (with a default intrinsic): " <<  noMetadataImagePaths.size()
+                   << "\n\t   - # views without metadata (with a default intrinsic): " << noMetadataImagePaths.size()
+                   << "\n\t   - # views with DCP metadata (raw images only): " << viewsWithDCPMetadata
                    << "\n\t- # intrinsics listed: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
