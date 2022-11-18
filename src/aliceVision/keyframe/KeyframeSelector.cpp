@@ -44,25 +44,25 @@ double computeSharpness(const cv::Mat& grayscaleImage, const int window_size)
     cv::Laplacian(grayscaleImage, laplacian, CV_64F);
     cv::integral(laplacian, sum, sumsq);
 
-    double n = window_size * window_size;
+    double totalCount = window_size * window_size;
     double maxstd = 0.0;
-    for (int i = 0; i < sum.rows - window_size; i++)
+    for (int y = 0; y < sum.rows - window_size; y++)
     {
-        for (int j = 0; j < sum.cols - window_size; j++)
+        for (int x = 0; x < sum.cols - window_size; x++)
         {
-            double tl = sum.at<double>(i, j);
-            double tr = sum.at<double>(i, j + window_size);
-            double bl = sum.at<double>(i + window_size, j);
-            double br = sum.at<double>(i + window_size, j + window_size);
+            double tl = sum.at<double>(y, x);
+            double tr = sum.at<double>(y, x + window_size);
+            double bl = sum.at<double>(y + window_size, x);
+            double br = sum.at<double>(y + window_size, x + window_size);
             double s1 = br + tl - tr - bl;
 
-            tl = sumsq.at<double>(i, j);
-            tr = sumsq.at<double>(i, j + window_size);
-            bl = sumsq.at<double>(i + window_size, j);
-            br = sumsq.at<double>(i + window_size, j + window_size);
+            tl = sumsq.at<double>(y, x);
+            tr = sumsq.at<double>(y, x + window_size);
+            bl = sumsq.at<double>(y + window_size, x);
+            br = sumsq.at<double>(y + window_size, x + window_size);
             double s2 = br + tl - tr - bl;
 
-            double std_2 = sqrt((s2 - (s1 * s1) / n) / n);
+            double std_2 = std::sqrt((s2 - (s1 * s1) / totalCount) / totalCount);
 
             maxstd = std::max(maxstd, std_2);
         }
@@ -194,14 +194,14 @@ void KeyframeSelector::processSimple(const std::vector<std::string>& mediaPaths)
     // check if minimum number of frame is zero
     if (nbFrames == 0)
     {
-        ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty !");
-        throw std::invalid_argument("One or multiple medias can't be found or empty !");
+        ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty!");
+        throw std::invalid_argument("One or multiple medias can't be found or empty!");
     }
 
     int step = _minFrameStep;
     if (_maxOutFrame > 0)
     {
-        step = int(std::floor(double(nbFrames) / double(_maxOutFrame)));
+        step = nbFrames / _maxOutFrame;
     }
 
     for (int id = 0; id < nbFrames; id += step)
@@ -219,7 +219,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
     const double thresholdSharpness = 10.0;
     const double thresholdFlow = 10.0;
 
-    for(std::size_t mediaIndex = 0; mediaIndex < mediaPaths.size(); ++mediaIndex)
+    for (std::size_t mediaIndex = 0; mediaIndex < mediaPaths.size(); ++mediaIndex)
     {
         const auto& path = mediaPaths.at(mediaIndex);
 
@@ -229,7 +229,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         const auto& feed = *feeds.back();
 
         // check if feed is initialized
-        if(!feed.isInit())
+        if (!feed.isInit())
         {
             ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
             throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
@@ -240,13 +240,13 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
     }
 
     // check if minimum number of frame is zero
-    if(nbFrames == 0)
+    if (nbFrames == 0)
     {
         ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty !");
         throw std::invalid_argument("One or multiple medias can't be found or empty !");
     }
 
-    const int searchWindowSize = (_maxOutFrame <= 0) ? 1 : std::floor(double(nbFrames) / double(_maxOutFrame));
+    const int searchWindowSize = (_maxOutFrame <= 0) ? 1 : nbFrames / _maxOutFrame;
 
     // feed provider variables
     image::Image<image::RGBColor> image;     // original image
@@ -276,7 +276,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
     {
         double minimalSharpness = std::numeric_limits<double>::max();
 
-        for(std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
+        for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
         {
             ALICEVISION_LOG_DEBUG("media : " << mediaPaths.at(mediaIndex));
             auto& feed = *feeds.at(mediaIndex);
