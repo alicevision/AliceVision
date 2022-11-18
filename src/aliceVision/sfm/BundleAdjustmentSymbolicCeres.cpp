@@ -332,12 +332,14 @@ void BundleAdjustmentSymbolicCeres::CeresOptions::setSparseBA()
     linearSolverType = ceres::SPARSE_SCHUR;
     ALICEVISION_LOG_DEBUG("BundleAdjustmentSymbolic[Ceres]: SPARSE_SCHUR, SUITE_SPARSE");
   }
+#if ALICEVISION_CERES_HAS_CXSPARSE
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE))
   {
     sparseLinearAlgebraLibraryType = ceres::CX_SPARSE;
     linearSolverType = ceres::SPARSE_SCHUR;
     ALICEVISION_LOG_DEBUG("BundleAdjustmentSymbolic[Ceres]: SPARSE_SCHUR, CX_SPARSE");
   }
+#endif
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     sparseLinearAlgebraLibraryType = ceres::EIGEN_SPARSE;
