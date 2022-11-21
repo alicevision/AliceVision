@@ -74,8 +74,9 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
         // if we want to use SfM seeds anf if we get enough information from these seeds, adjust min/maxDepth
         if(sgmParams.useSfmSeeds && !mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 10)
         {
-            minDepth = minObsDepth * (1.0f - sgmParams.seedsRangeInflate);
-            maxDepth = maxObsDepth * (1.0f + sgmParams.seedsRangeInflate);
+            const float margin = sgmParams.seedsRangeInflate * (maxObsDepth-minObsDepth);
+            minDepth = minObsDepth - margin;
+            maxDepth = maxObsDepth + margin;
 
             if(maxDepthAll < minDepth || minDepthAll > maxDepth)
             {
