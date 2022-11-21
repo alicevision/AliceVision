@@ -425,7 +425,7 @@ __global__ void optimize_depthSimMap_kernel(cudaTextureObject_t rc_tex,
         stepToFineDM = copysignf(fminf(fabsf(stepToFineDM), roughPixSize / 10.0f), stepToFineDM);
 
         const float stepToRoughDM = roughDepth - depthOpt; // distance to smooth/robust input depth map
-        const float imgColorVariance = tex2D<float>(imgVarianceTex, float(roiX) + 0.5f, float(roiY) + 0.5f);
+        const float imgColorVariance = tex2D<float>(imgVarianceTex, float(roiX), float(roiY)); // do not use 0.5f offset as we use nearest neighbor interpolation
         const float colorVarianceThresholdForSmoothing = 20.0f;
         const float angleThresholdForSmoothing = 30.0f; // 30
 
