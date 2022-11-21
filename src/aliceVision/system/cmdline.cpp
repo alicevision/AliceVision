@@ -17,9 +17,7 @@ bool CmdLine::execute(int argc, char** argv)
     _allParams.add(logParams);
 
     boost::program_options::options_description hardwareParams("Hardware parameters");
-    hardwareParams.add_options()
-        ("maxMemoryAvailable", boost::program_options::value<size_t>(&_maxMemoryAvailable)->default_value(_maxMemoryAvailable), "User specified available RAM")
-        ("maxCoresAvailable", boost::program_options::value<unsigned int>(&_maxCoresAvailable)->default_value(_maxCoresAvailable), "User specified available number of cores");
+    _hContext.setOptions(hardwareParams);
 
     _allParams.add(hardwareParams);
 
@@ -54,37 +52,9 @@ bool CmdLine::execute(int argc, char** argv)
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // Limit globally the maximum number of core used by openmp
-    omp_set_num_threads(std::min(_maxCoresAvailable, unsigned int(system::get_total_cpus())));
-
-    displayHardware();
+    _hContext.displayHardware();
 
     return true;
-}
-
-void CmdLine::displayHardware()
-{
-    std::cout << "Hardware : " << std::endl;
-    
-    std::cout << "\tDetected core count : " << system::get_total_cpus() << std::endl;
-
-    if (_maxMemoryAvailable < std::numeric_limits<size_t>::max())
-    {
-        std::cout << "\tUser upper limit on core count : " << _maxCoresAvailable << std::endl;
-    }
-
-    std::cout << "\tOpenMP will use " << omp_get_max_threads() << " cores" << std::endl;
-
-    auto meminfo = system::getMemoryInfo();
-    
-    std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024)  << " Mo" << std::endl;
-
-    if (_maxCoresAvailable < std::numeric_limits<unsigned int>::max())
-    {
-        std::cout << "\tUser upper limit on memory available : " << _maxMemoryAvailable / (1024 * 1024) << " Mo" << std::endl;
-    }
-
-    std::cout << std::endl;
 }
 
 }

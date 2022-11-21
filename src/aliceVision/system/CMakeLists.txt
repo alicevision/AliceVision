@@ -8,6 +8,7 @@ set(system_files_headers
   Logger.hpp
   ProgressDisplay.hpp
   nvtx.hpp
+  hardwareContext.hpp
 )
 
 # Sources
@@ -19,6 +20,7 @@ set(system_files_sources
   ProgressDisplay.cpp
   nvtx.cpp
   cmdline.cpp
+  hardwareContext.cpp
 )
 
 alicevision_add_library(aliceVision_system

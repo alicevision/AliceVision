@@ -55,8 +55,11 @@ FeatureExtractor::FeatureExtractor(const sfmData::SfMData& sfmData) :
 
 FeatureExtractor::~FeatureExtractor() = default;
 
-void FeatureExtractor::process()
+void FeatureExtractor::process(const HardwareContext & hContext)
 {
+    size_t maxAvailableMemory = hContext.getUserMaxMemoryAvailable();
+    unsigned int maxAvailableCores = hContext.getMaxThreads();
+    
     // iteration on each view in the range in order
     // to prepare viewJob stack
     sfmData::Views::const_iterator itViewBegin = _sfmData.getViews().begin();
@@ -92,10 +95,11 @@ void FeatureExtractor::process()
     if (!cpuJobs.empty())
     {
         system::MemoryInfo memoryInformation = system::getMemoryInfo();
+        
 
         //Put an upper bound with user specified memory
-        size_t maxMemory = std::min(memoryInformation.availableRam, _maxMemory);
-        size_t maxTotalMemory = std::min(memoryInformation.totalRam, _maxMemory);
+        size_t maxMemory = std::min(memoryInformation.availableRam, maxAvailableMemory);
+        size_t maxTotalMemory = std::min(memoryInformation.totalRam, maxAvailableMemory);
 
         ALICEVISION_LOG_INFO("Job max memory consumption for one image: "
                              << jobMaxMemoryConsuption / (1024*1024) << " MB");
@@ -145,12 +149,8 @@ void FeatureExtractor::process()
           nbThreads = 1;
         }
 
-        // nbThreads should not be higher than user maxThreads param
-        if(_maxThreads > 0)
-          nbThreads = std::min(static_cast<std::size_t>(_maxThreads), nbThreads);
-
-        // nbThreads should not be higher than the core number
-        nbThreads = std::min(static_cast<std::size_t>(omp_get_max_threads()), nbThreads);
+        // nbThreads should not be higher than the available cores
+        nbThreads = std::min(static_cast<std::size_t>(maxAvailableCores), nbThreads);
 
         // nbThreads should not be higher than the number of jobs
         nbThreads = std::min(cpuJobs.size(), nbThreads);

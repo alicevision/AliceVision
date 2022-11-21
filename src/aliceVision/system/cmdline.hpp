@@ -8,13 +8,13 @@
 
 #include "Logger.hpp"
 #include "Timer.hpp"
+#include "hardwareContext.hpp"
 
-// This file is header only, so the module don't need to have program_options as a dependency
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/option.hpp>
 #include <boost/program_options/errors.hpp>
-#include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/program_options/options_description.hpp>
 
 #include <functional>
 #include <ostream>
@@ -173,8 +173,6 @@ public:
     CmdLine(const std::string& name) :
         _allParams(name)
     {
-        _maxMemoryAvailable = std::numeric_limits<size_t>::max();
-        _maxCoresAvailable = std::numeric_limits<unsigned int>::max();
     }
 
     void add(const boost::program_options::options_description& options)
@@ -184,24 +182,14 @@ public:
 
     bool execute(int argc, char** argv);
 
-    size_t getUserMaxMemoryAvailable()
+    HardwareContext getHardwareContext()
     {
-        return _maxMemoryAvailable;
+        return _hContext;
     }
-
-    unsigned int getUserMaxCoresAvailable()
-    {
-        return _maxCoresAvailable;
-    }
-
-private:
-    void displayHardware();
 
 private:
     boost::program_options::options_description _allParams;
-
-    size_t _maxMemoryAvailable;
-    unsigned int _maxCoresAvailable;
+    HardwareContext _hContext;
 };
 
 }
