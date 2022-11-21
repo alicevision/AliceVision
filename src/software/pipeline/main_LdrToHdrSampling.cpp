@@ -98,6 +98,11 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+
+
     const std::size_t channelQuantization = std::pow(2, channelQuantizationPower);
 
     // Read sfm data

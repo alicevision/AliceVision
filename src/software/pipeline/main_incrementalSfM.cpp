@@ -189,6 +189,10 @@ int aliceVision_main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
+  // set maxThreads
+  HardwareContext hwc = cmdline.getHardwareContext();
+  omp_set_num_threads(hwc.getMaxThreads());
+
   const double defaultLoRansacLocalizationError = 4.0;
   if(!robustEstimation::adjustRobustEstimatorThreshold(sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, defaultLoRansacLocalizationError))
   {
