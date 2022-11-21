@@ -198,16 +198,16 @@ __device__ static float angleBetwV1andV2(const float3& iV1, const float3& iV2)
 
 __device__ static float angleBetwABandAC(const float3& A, const float3& B, const float3& C)
 {
-    float3 V1, V2;
-    V1 = B - A;
-    V2 = C - A;
+    float3 V1 = B - A;
+    float3 V2 = C - A;
+
     normalize(V1);
     normalize(V2);
 
-    float a = acosf(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z);
-    a = isinf(a) ? 0.0f : a;
-
-    return fabsf(a) / (CUDART_PI_F / 180.0f);
+    const double x = double(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z);
+    double a = acos(x);
+    a = isinf(a) ? 0.0 : a;
+    return float(fabs(a) / (CUDART_PI / 180.0));
 }
 
 __device__ static float3 lineLineIntersect(float* k, 
