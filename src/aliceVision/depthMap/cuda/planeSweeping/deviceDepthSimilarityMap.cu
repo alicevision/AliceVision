@@ -170,6 +170,7 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
     }
 
     CudaTexture<float> imgVarianceTex(inout_imgVariance_dmp);
+    CudaTexture<float> depthTex(inout_tmpOptDepthMap_dmp);
 
     // setup block and grid
     const int blockSize = 16;
@@ -185,8 +186,6 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
             out_depthSimMapOptimized_dmp.getBuffer(), // initialized with SGM depth/sim map
             out_depthSimMapOptimized_dmp.getPitch(),
             roi);
-
-        CudaTexture<float> depthTex(inout_tmpOptDepthMap_dmp);
 
         // adjust depth/sim by using previously computed depths
         optimize_depthSimMap_kernel<<<grid, block, 0, stream>>>(
