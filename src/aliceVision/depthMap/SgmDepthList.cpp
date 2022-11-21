@@ -66,7 +66,8 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
     {
         ALICEVISION_LOG_DEBUG(_tile << "Depth candidates from seeds for R camera:" << std::endl
                                     << "\t- nb observations: " << nbObsDepths <<  std::endl
-                                    << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]");
+                                    << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]"
+                                    << "\t- sfm depth range: [" << minObsDepth << "-" << maxObsDepth << "]");
 
         float minDepth = minDepthAll;
         float maxDepth = maxDepthAll;
@@ -89,6 +90,7 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
                 minDepth = std::max(minDepthAll, minDepth);
                 maxDepth = std::min(maxDepthAll, maxDepth);
             }
+            ALICEVISION_LOG_DEBUG(_tile << "Final depth range (intersection: frustums / landmarks with margin): [" << minDepth << "-" << maxDepth << "]");
         }
 
         // build the list of "best" depths for rc, from all tc cameras depths
@@ -290,7 +292,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& m
     cameraPlane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
     cameraPlane.n = cameraPlane.n.normalize();
 
-    Point3d midDepthPoint = Point3d();
+    Point3d midDepthPoint;
     out_nbDepths = 0;
 
     // for each landmark
