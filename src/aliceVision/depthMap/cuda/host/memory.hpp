@@ -37,8 +37,8 @@ using CudaColorBaseType = unsigned char;
 using CudaRGBA = uchar4;
 #else
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF 
+struct CudaRGBA { __half x, y, z, w; };
 using CudaColorBaseType = __half;
-using CudaRGBA = struct { __half x, y, z, w; };
 #else
 using CudaColorBaseType = float;
 using CudaRGBA = float4; 
