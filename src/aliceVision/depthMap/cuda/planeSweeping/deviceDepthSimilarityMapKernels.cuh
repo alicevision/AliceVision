@@ -27,17 +27,17 @@ __device__ float2 getCellSmoothStepEnergy(int rcDeviceCamId, cudaTextureObject_t
 
     // Get pixel depth from the depth texture
     // Note: we do not use 0.5f offset as we use nearest neighbor interpolation
-    float d0 = tex2D<float>(depthTex, float(cell0.x), float(cell0.y));
+    const float d0 = tex2D<float>(depthTex, float(cell0.x), float(cell0.y));
 
     // Early exit: depth is <= 0
     if(d0 <= 0.0f)
         return out;
 
     // Consider the neighbor pixels
-    const int2 cellL = cell0 + make_int2(0, -1); // Left
-    const int2 cellR = cell0 + make_int2(0, 1);	 // Right
-    const int2 cellU = cell0 + make_int2(-1, 0); // Up
-    const int2 cellB = cell0 + make_int2(1, 0);	 // Bottom
+    const int2 cellL = cell0 + make_int2( 0, -1); // Left
+    const int2 cellR = cell0 + make_int2( 0,  1);	// Right
+    const int2 cellU = cell0 + make_int2(-1,  0); // Up
+    const int2 cellB = cell0 + make_int2( 1,  0);	// Bottom
 
     // Get associated depths from depth texture
     const float dL = tex2D<float>(depthTex, float(cellL.x), float(cellL.y));
@@ -358,10 +358,10 @@ __global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* o
     const int y = roi.y.begin + roiY;
 
     // compute gradient size of L
-    const float xM1 = tex2D_float4(rcTex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x;
-    const float xP1 = tex2D_float4(rcTex, (float)(x + 1) + 0.5f, (float)(y + 0) + 0.5f).x;
-    const float yM1 = tex2D_float4(rcTex, (float)(x + 0) + 0.5f, (float)(y - 1) + 0.5f).x;
-    const float yP1 = tex2D_float4(rcTex, (float)(x + 0) + 0.5f, (float)(y + 1) + 0.5f).x;
+    const float xM1 = tex2D_float4(rcTex, float(x - 1) + 0.5f, float(y + 0) + 0.5f).x;
+    const float xP1 = tex2D_float4(rcTex, float(x + 1) + 0.5f, float(y + 0) + 0.5f).x;
+    const float yM1 = tex2D_float4(rcTex, float(x + 0) + 0.5f, float(y - 1) + 0.5f).x;
+    const float yP1 = tex2D_float4(rcTex, float(x + 0) + 0.5f, float(y + 1) + 0.5f).x;
     const float2 g = make_float2(xM1 - xP1, yM1 - yP1); // TODO: not divided by 2?
     const float grad = size(g);
 
