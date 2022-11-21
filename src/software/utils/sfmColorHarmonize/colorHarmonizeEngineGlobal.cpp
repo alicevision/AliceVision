@@ -117,7 +117,6 @@ inline void pauseProcess()
 
 bool ColorHarmonizationEngineGlobal::Process()
 {
-  const std::string vec_selectionMethod[ 3 ] = { "fullFrame", "matchedPoints", "KVLD" };
   const std::string vec_harmonizeMethod[ 1 ] = { "quantifiedGainCompensation" };
   const int harmonizeMethod = 0;
 
@@ -437,8 +436,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       }
     }
 
-    const int selectionMethodIdx = static_cast<int>(_selectionMethod);
-    const std::string out_folder = (fs::path(_outputDirectory) / (vec_selectionMethod[ selectionMethodIdx ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
+    const std::string out_folder = (fs::path(_outputDirectory) / (EHistogramSelectionMethod_enumToString(_selectionMethod) + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
     if(!fs::exists(out_folder))
       fs::create_directory(out_folder);
     const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
