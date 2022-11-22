@@ -285,7 +285,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& m
     const IndexT viewId = mp.getViewId(_tile.rc);
 
     const ROI fullsizeRoi = upscaleROI(_tile.roi, mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
-    const ROI selectionRoi = inflateROI(fullsizeRoi, 2.f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
+    const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
 
     OrientedPoint cameraPlane;
     cameraPlane.p = mp.CArr[_tile.rc];
