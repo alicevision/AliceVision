@@ -328,50 +328,6 @@ bool MultiViewParams::is3DPointInFrontOfCam(const Point3d* X, int rc) const
     return XT.z >= 0;
 }
 
-void MultiViewParams::getMinMaxMidNbDepth(int index, float& min, float& max, float& mid, std::size_t& nbDepths, float percentile) const
-{
-  using namespace boost::accumulators;
-
-  const std::size_t cacheSize =  1000;
-  accumulator_set<float, stats<tag::tail_quantile<left>>>  accDistanceMin(tag::tail<left>::cache_size = cacheSize);
-  accumulator_set<float, stats<tag::tail_quantile<right>>> accDistanceMax(tag::tail<right>::cache_size = cacheSize);
-
-  const IndexT viewId = getViewId(index);
-
-  ALICEVISION_LOG_DEBUG("Compute min/max/mid/nb depth for view id: " << viewId);
-
-  OrientedPoint cameraPlane;
-  cameraPlane.p = CArr[index];
-  cameraPlane.n = iRArr[index] * Point3d(0.0, 0.0, 1.0);
-  cameraPlane.n = cameraPlane.n.normalize();
-
-  Point3d midDepthPoint = Point3d();
-  nbDepths = 0;
-
-  for(const auto& landmarkPair : _sfmData.getLandmarks())
-  {
-    const sfmData::Landmark& landmark = landmarkPair.second;
-    const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
-
-    for(const auto& observationPair : landmark.observations)
-    {
-      if(observationPair.first == viewId)
-      {
-        const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
-        accDistanceMin(distance);
-        accDistanceMax(distance);
-        midDepthPoint = midDepthPoint + point;
-        ++nbDepths;
-      }
-    }
-  }
-
-  min = quantile(accDistanceMin, quantile_probability = 1.0 - percentile);
-  max = quantile(accDistanceMax, quantile_probability = percentile);
-  midDepthPoint = midDepthPoint / static_cast<float>(nbDepths);
-  mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
-}
-
 void MultiViewParams::getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const
 {
     getPixelFor3DPoint(out, X, camArr[rc]);

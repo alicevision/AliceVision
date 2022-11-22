@@ -254,7 +254,6 @@ public:
 
     bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
 
-    void getMinMaxMidNbDepth(int index, float& min, float& max, float& mid, std::size_t& nbDepths, float percentile = 0.999f) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const;
     void getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) const;
