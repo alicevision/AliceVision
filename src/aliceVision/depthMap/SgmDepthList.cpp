@@ -629,10 +629,12 @@ StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& 
     // segment of epipolar line
     Point2d pFromTar, pToTar; 
 
-    
-    // TODO: quick fix, find a better solution to compute segment of epipolar line
-    // getTarEpipolarDirectedLine(&pFromTar, &pToTar, rMid, _tile.rc, tc, mp);
     {
+        double zmin;
+        double zmax;
+
+        getRcTcDepthRangeFromSfM(mp, sgmParams, _tile.rc, tc, zmin, zmax);
+
         const Matrix3x4& rP = mp.camArr[_tile.rc];
         const Matrix3x4& tP = mp.camArr[tc];
 
@@ -644,10 +646,13 @@ StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& 
         Matrix3x3 riP;
         mp.decomposeProjectionMatrix(rC, rR, riR, rK, riK, riP, rP);
 
-        Point2d tarpix;
-        mp.getPixelFor3DPoint(&tarpix, rC, tP);
+        Point2d tarpix1;
+        Point2d tarpix2;
 
-        get2dLineImageIntersection(&pFromTar, &pToTar, tarpix, tarpix, mp, tc);   
+        mp.getPixelFor3DPoint(&tarpix1, ((riP * rMid) * zmin) + rC, tP);
+        mp.getPixelFor3DPoint(&tarpix2, ((riP * rMid) * zmax) + rC, tP);
+
+        get2dLineImageIntersection(&pFromTar, &pToTar, tarpix1, tarpix2, mp, tc);
     }
 
     int allDepths = static_cast<int>((pToTar - pFromTar).size());
