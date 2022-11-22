@@ -345,6 +345,76 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& m
                                 << "\t- percentile: " << sgmParams.seedsRangePercentile);
 }
 
+void SgmDepthList::getRcTcDepthRangeFromSfM(const mvsUtils::MultiViewParams& mp,
+                                            const SgmParams& sgmParams,
+                                            int rc,
+                                            int tc,
+                                            double& out_zmin,
+                                            double& out_zmax) const
+{
+    // get Rc/Tc view ids
+    const IndexT rcViewId = mp.getViewId(_tile.rc);
+    const IndexT tcViewId = mp.getViewId(tc);
+
+    // get R region-of-interest
+    // landmark observations are in the full-size image coordinate system, we need to upcscale the tile ROI
+    // we can inflate the image full-size roi to be more permissive for common landmark selection
+    const ROI fullsizeRoi = upscaleROI(_tile.roi, mp.getProcessDownscale());
+    const ROI selectionRoi = fullsizeRoi; // TODO: add user parameter, inflateROI(fullsizeRoi, 1.4f);
+
+    // build R camera plane
+    OrientedPoint cameraPlane;
+    cameraPlane.p = mp.CArr[_tile.rc];
+    cameraPlane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
+    cameraPlane.n = cameraPlane.n.normalize();
+
+    // initialize output min/max depth
+    out_zmin = std::numeric_limits<double>::max();
+    out_zmax = std::numeric_limits<double>::min();
+
+    // for each landmark
+    for(const auto& landmarkPair : mp.getInputSfMData().getLandmarks())
+    {
+        const sfmData::Landmark& landmark = landmarkPair.second;
+        const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
+
+        // is tc observation
+        if(landmark.observations.find(tcViewId) != landmark.observations.end())
+        {
+            const auto it = landmark.observations.find(rcViewId);
+
+            // is rc observation
+            if(it != landmark.observations.end())
+            {
+                const Vec2& obs2d = it->second.x;
+
+                // observation located inside the inflated image full-size ROI
+                if(!sgmParams.chooseDepthListPerTile || selectionRoi.contains(obs2d.x(), obs2d.y()))
+                {
+                    // compute related depth
+                    const double depth = pointPlaneDistance(point, cameraPlane.p, cameraPlane.n);
+
+                    // update min/max depth
+                    out_zmin = std::min(out_zmin, depth);
+                    out_zmax = std::max(out_zmax, depth);
+                }
+            }
+        }
+    }
+
+    // no common observations found
+    if(out_zmin > out_zmax)
+    {
+        ALICEVISION_THROW_ERROR(_tile << "Cannot compute min/max depth from common Rc/Tc SfM observations." << std::endl
+                                      << "No common observations found (tc view id: " << tcViewId << ").");
+    }
+
+    ALICEVISION_LOG_DEBUG(_tile << "Compute min/max depth from common Rc/Tc SfM observations:" << std::endl
+                                << "\t- rc view id: " << rcViewId << std::endl
+                                << "\t- tc view id: " << tcViewId << std::endl
+                                << "\t- min depth: "  << out_zmin << std::endl
+                                << "\t- max depth: "  << out_zmax);
+}
 
 StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(const mvsUtils::MultiViewParams& mp,
                                                                               const SgmParams& sgmParams,

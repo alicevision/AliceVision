@@ -81,6 +81,22 @@ private:
                                     std::size_t& out_nbDepths) const;
 
     /**
+     * @brief Compute min/max depth from common Rc/Tc SfM observations
+     * @param[in] mp the multi-view parameters
+     * @param[in] sgmParams the Semi Global Matching parameters
+     * @param[in] rc The R camera index
+     * @param[in] tc The T camera index
+     * @param[out] out_zmin The minimum depth
+     * @param[out] out_zmax The maximum depth
+     */
+    void getRcTcDepthRangeFromSfM(const mvsUtils::MultiViewParams& mp,
+                                  const SgmParams& sgmParams,
+                                  int rc,
+                                  int tc,
+                                  double& out_zmin,
+                                  double& out_zmax) const;
+
+    /**
      * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
      *        providing meaningful 3d information.
      *
