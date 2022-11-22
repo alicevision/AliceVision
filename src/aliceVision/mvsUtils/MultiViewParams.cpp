@@ -654,7 +654,10 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
   ids.reserve(tcScore.size());
 
   for(const auto& tcScorePair : tcScore)
-    ids.push_back(SortedId(tcScorePair.first, tcScorePair.second));
+  {
+    if(tcScorePair.second > 0.0f)
+      ids.push_back(SortedId(tcScorePair.first, tcScorePair.second));
+  }
 
   qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
 
