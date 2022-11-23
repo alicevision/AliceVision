@@ -22,7 +22,6 @@ struct SgmParams
   int stepXY = 2;
   int stepZ = -1;
   int wsh = 4;
-  int maxSideXY = 700;
   int maxDepths = 3000;
   int maxDepthsPerTc = 1500;
   int maxTCamsPerTile = 4;

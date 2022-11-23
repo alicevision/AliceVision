@@ -51,7 +51,7 @@ int computeDownscale(const mvsUtils::MultiViewParams& mp, int scale, int maxWidt
 void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams)
 {
     const int fileScale = 1; // input images scale (should be one)
-    const int maxSideXY = sgmParams.maxSideXY / mp.getProcessDownscale();
+    const int maxSideXY = 700 / mp.getProcessDownscale(); // max side in order to fit in device memory
     const int maxImageW = mp.getMaxImageWidth();
     const int maxImageH = mp.getMaxImageHeight();
 
@@ -173,7 +173,6 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.wsh = mp.userParams.get<int>("sgm.wsh", sgmParams.wsh);
     sgmParams.maxDepths = mp.userParams.get<int>("sgm.maxDepths", sgmParams.maxDepths);
     sgmParams.maxDepthsPerTc = mp.userParams.get<int>("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
-    sgmParams.maxSideXY = mp.userParams.get<int>("sgm.maxSideXY", sgmParams.maxSideXY);
     sgmParams.maxTCamsPerTile = mp.userParams.get<int>("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     sgmParams.seedsRangeInflate = mp.userParams.get<double>("sgm.seedsRangeInflate", sgmParams.seedsRangeInflate);
     sgmParams.gammaC = mp.userParams.get<double>("sgm.gammaC", sgmParams.gammaC);

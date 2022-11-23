@@ -108,8 +108,6 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Step used to compute the similarity volume on the X and Y axis.")
         ("sgmStepZ", po::value<int>(&sgmParams.stepZ)->default_value(sgmParams.stepZ),
             "Semi Global Matching: Step used to compute the similarity volume on the Z axis.")
-        ("sgmMaxSideXY", po::value<int>(&sgmParams.maxSideXY)->default_value(sgmParams.maxSideXY),
-            "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
         ("sgmMaxTCamsPerTile", po::value<int>(&sgmParams.maxTCamsPerTile)->default_value(sgmParams.maxTCamsPerTile),
             "Semi Global Matching: Number of neighbour cameras per tile.")
         ("sgmWSH", po::value<int>(&sgmParams.wsh)->default_value(sgmParams.wsh),
@@ -328,7 +326,6 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
     mp.userParams.put("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
-    mp.userParams.put("sgm.maxSideXY", sgmParams.maxSideXY);
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     mp.userParams.put("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
