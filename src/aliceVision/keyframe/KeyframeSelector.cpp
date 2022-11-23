@@ -84,14 +84,14 @@ cv::Mat readImage(dataio::FeedProvider & feed, size_t max_width)
         throw std::invalid_argument("Cannot read frame '" + currentImgName + "' !");
     }
 
-    //Convert content to opencv
+    // Convert content to OpenCV
     cv::Mat cvFrame(cv::Size(image.cols(), image.rows()), CV_8UC3, image.data(), image.cols() * 3);
 
     cv::Mat cvGrayscale;
-    //Convert to grayscale
+    // Convert to grayscale
     cv::cvtColor(cvFrame, cvGrayscale, cv::COLOR_BGR2GRAY);
 
-    //Resize to smaller size
+    // Resize to smaller size
     cv::Mat cvRescaled;
     if (cvGrayscale.cols > max_width)
     {
@@ -175,23 +175,23 @@ void KeyframeSelector::processRegular(const std::vector<std::string>& mediaPaths
     {
         const auto& path = mediaPaths.at(mediaIndex);
 
-        // create a feed provider per mediaPaths
+        // Create a feed provider per mediaPaths
         feeds.emplace_back(new dataio::FeedProvider(path));
 
         const auto& feed = *feeds.back();
 
-        // check if feed is initialized
+        // Check if feed is initialized
         if (!feed.isInit())
         {
             ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
             throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
         }
 
-        // update minimum number of frames
+        // Update minimum number of frames
         nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
     }
 
-    // check if minimum number of frame is zero
+    // Check if minimum number of frame is zero
     if (nbFrames == 0)
     {
         ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty!");
@@ -199,9 +199,9 @@ void KeyframeSelector::processRegular(const std::vector<std::string>& mediaPaths
     }
 
     int step = _minFrameStep;
-    if (_maxOutFrame > 0)
+    if (_maxOutFrame > 0 && nbFrames / _maxOutFrame > step)
     {
-        step = nbFrames / _maxOutFrame;
+        step = (nbFrames / _maxOutFrame) + 1;   // + 1 to prevent ending up with more than _maxOutFrame selected frames
     }
 
     for (int id = 0; id < nbFrames; id += step)
@@ -212,7 +212,7 @@ void KeyframeSelector::processRegular(const std::vector<std::string>& mediaPaths
 
 void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
 {
-    // create feeds and count minimum number of frames
+    // Create feeds and count minimum number of frames
     std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
     std::vector<std::unique_ptr<dataio::FeedProvider>> feeds;
     const size_t processWidth = 720;
@@ -223,23 +223,23 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
     {
         const auto& path = mediaPaths.at(mediaIndex);
 
-        // create a feed provider per mediaPaths
+        // Create a feed provider per mediaPaths
         feeds.emplace_back(new dataio::FeedProvider(path));
 
         const auto& feed = *feeds.back();
 
-        // check if feed is initialized
+        // Check if feed is initialized
         if (!feed.isInit())
         {
             ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
             throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
         }
 
-        // update minimum number of frames
+        // Update minimum number of frames
         nbFrames = std::min(nbFrames, (size_t)feed.nbFrames());
     }
 
-    // check if minimum number of frame is zero
+    // Check if minimum number of frame is zero
     if (nbFrames == 0)
     {
         ALICEVISION_LOG_ERROR("One or multiple medias can't be found or empty !");
@@ -248,17 +248,17 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
 
     const int searchWindowSize = (_maxOutFrame <= 0) ? 1 : nbFrames / _maxOutFrame;
 
-    // feed provider variables
+    // Feed provider variables
     image::Image<image::RGBColor> image;     // original image
     camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
     bool hasIntrinsics = false;              // true if queryIntrinsics is valid
     std::string currentImgName;              // current image name
 
 
-    // feed and metadata initialization
+    // Feed and metadata initialization
     for (std::size_t mediaIndex = 0; mediaIndex < feeds.size(); ++mediaIndex)
     {
-        // first frame with offset
+        // First frame with offset
         feeds.at(mediaIndex)->goToFrame(0);
 
         if (!feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
@@ -307,15 +307,15 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         double maxval = *maxIter;
         if (maxval < thresholdSharpness)
         {
-            //This value means that the image is completely blurry.
-            //We consider we should not select a value here
+            // This value means that the image is completely blurry.
+            // We consider we should not select a value here
             startPosition += searchWindowSize;
             continue;
         }
 
         if (indices.size() == 0)
         {
-            //No previous, so no flow check
+            // No previous, so no flow check
             startPosition = index + std::max(int(_minFrameStep), searchWindowSize);
             indices.push_back(index);
             continue;
@@ -326,7 +326,7 @@ void KeyframeSelector::processSmart(const std::vector<std::string> & mediaPaths)
         double flow = estimateFlow(feeds, processWidth, previous, index);
         if (flow < thresholdFlow)
         {
-            //Continue with next frame
+            // Continue with next frame
             startPosition = index + 1;
             continue;
         }
@@ -349,10 +349,10 @@ bool KeyframeSelector::writeSelection(const std::string & outputFolder, const st
     {
         const auto& path = mediaPaths.at(id);
 
-        // create a feed provider per mediaPaths
+        // Create a feed provider per mediaPaths
         dataio::FeedProvider feed(path);
 
-        // check if feed is initialized
+        // Check if feed is initialized
         if (!feed.isInit())
         {
             ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
