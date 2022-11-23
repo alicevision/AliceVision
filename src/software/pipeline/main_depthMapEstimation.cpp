@@ -60,7 +60,10 @@ int aliceVision_main(int argc, char* argv[])
     auto& refineParams = depthMapParams.refineParams;
 
     // intermediate results
-    bool exportIntermediateResults = false;
+    bool exportIntermediateDepthSimMaps = false;
+    bool exportIntermediateVolumes = false;
+    bool exportIntermediateCrossVolumes = false;
+    bool exportIntermediateVolume9pCsv = false;
 
     // number of GPUs to use (0 means use all GPUs)
     int nbGPUs = 0;
@@ -157,8 +160,16 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: Perform Refine post-process optimization.")
         ("refineEnabled", po::value<bool>(&depthMapParams.useRefine)->default_value(depthMapParams.useRefine),
             "Enable/Disable depth/simiarity map refinement process.")
-        ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
-            "Export intermediate results from the SGM and Refine steps.")
+        ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
+            "Export intermediate depth/similarity maps from the SGM and Refine steps.")
+        ("exportIntermediateVolumes", po::value<bool>(&exportIntermediateVolumes)->default_value(exportIntermediateVolumes),
+            "Export intermediate similarity volumes from the SGM and Refine steps.")
+        ("exportIntermediateCrossVolumes", po::value<bool>(&exportIntermediateCrossVolumes)->default_value(exportIntermediateCrossVolumes),
+            "Export intermediate similarity cross volumes from the SGM and Refine steps.")
+        ("exportIntermediateVolume9pCsv", po::value<bool>(&exportIntermediateVolume9pCsv)->default_value(exportIntermediateVolume9pCsv),
+            "Export intermediate volumes 9 points CSV from the SGM and Refine steps.")
+        ("exportTilePattern", po::value<bool>(&depthMapParams.exportTilePattern)->default_value(depthMapParams.exportTilePattern),
+            "Export workflow tile pattern.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
             "Number of GPUs to use (0 means use all GPUs).");
 
@@ -321,7 +332,10 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     mp.userParams.put("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
-    mp.userParams.put("sgm.exportIntermediateResults", exportIntermediateResults);
+    mp.userParams.put("sgm.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
+    mp.userParams.put("sgm.exportIntermediateVolumes", exportIntermediateVolumes);
+    mp.userParams.put("sgm.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
+    mp.userParams.put("sgm.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
 
     // Refine Parameters
     mp.userParams.put("refine.scale", refineParams.scale);
@@ -336,12 +350,15 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.optimizationNbIters", refineParams.optimizationNbIters);
     mp.userParams.put("refine.doRefineFuse", refineParams.doRefineFuse);
     mp.userParams.put("refine.doRefineOptimization", refineParams.doRefineOptimization);
-    mp.userParams.put("refine.exportIntermediateResults", exportIntermediateResults);
+    mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
+    mp.userParams.put("refine.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
+    mp.userParams.put("refine.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
 
     // Workflow Parameters
     mp.userParams.put("depthMap.useRefine", depthMapParams.useRefine);
     mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
     mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
+    mp.userParams.put("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);

@@ -131,8 +131,8 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     // compute best sim and second best sim volumes
     computeSimilarityVolumes(tile, tileDepthList);
 
-    if(_sgmParams.exportIntermediateResults)
-        exportVolumeInformation(tile, tileDepthList, _volumeSecBestSim_dmp, "beforeFiltering");
+    // export intermediate volume information (if requested by user)
+    exportVolumeInformation(tile, tileDepthList, _volumeSecBestSim_dmp, "beforeFiltering");
 
     // this is here for experimental purposes
     // to show how SGGC work on non optimized depthmaps
@@ -147,13 +147,14 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         _volumeBestSim_dmp.copyFrom(_volumeSecBestSim_dmp, _stream);
     }
 
-    if(_sgmParams.exportIntermediateResults)
-        exportVolumeInformation(tile, tileDepthList, _volumeBestSim_dmp, "afterFiltering");
+    // export intermediate volume information (if requested by user)
+    exportVolumeInformation(tile, tileDepthList, _volumeBestSim_dmp, "afterFiltering");
 
     // retrieve best depth
     retrieveBestDepth(tile, tileDepthList);
 
-    if(_sgmParams.exportIntermediateResults)
+    // export intermediate depth/sim map (if requested by user)
+    if(_sgmParams.exportIntermediateDepthSimMaps)
     {
         writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "_sgm");
     }
@@ -296,6 +297,14 @@ void Sgm::exportVolumeInformation(const Tile& tile,
                                   const CudaDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
                                   const std::string& name) const
 {
+    if(!_sgmParams.exportIntermediateVolumes && 
+       !_sgmParams.exportIntermediateCrossVolumes &&
+       !_sgmParams.exportIntermediateVolume9pCsv)
+    {
+        // nothing to do
+        return;
+    }
+
     // get file tile begin indexes (default is single tile)
     int tileBeginX = -1;
     int tileBeginY = -1;
@@ -306,16 +315,44 @@ void Sgm::exportVolumeInformation(const Tile& tile,
         tileBeginY = tile.roi.y.begin;
     }
 
+    // copy device similarity volume to host memory
     CudaHostMemoryHeap<TSim, 3> volumeSim_hmh(in_volume_dmp.getSize());
     volumeSim_hmh.copyFrom(in_volume_dmp);
 
-    const std::string volumePath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
-    const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
-    const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", tileBeginX, tileBeginY);
+    if(_sgmParams.exportIntermediateVolumes)
+    {
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ").");
 
-    exportSimilarityVolume(volumeSim_hmh, tileDepthList.getDepths().getData(), _mp, tile.rc, _sgmParams, volumePath, tile.roi);
-    exportSimilarityVolumeCross(volumeSim_hmh, tileDepthList.getDepths().getData(), _mp, tile.rc, _sgmParams, volumeCrossPath, tile.roi);
-    exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths().getData(), tile.rc, name, stats9Path);
+        const std::string volumePath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+        
+        exportSimilarityVolume(volumeSim_hmh, tileDepthList.getDepths().getData(), _mp, tile.rc, _sgmParams, volumePath, tile.roi);
+
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ") done.");
+    }
+
+
+    if(_sgmParams.exportIntermediateCrossVolumes)
+    {
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ").");
+
+        const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
+
+        exportSimilarityVolumeCross(volumeSim_hmh, tileDepthList.getDepths().getData(), _mp, tile.rc, _sgmParams, volumeCrossPath, tile.roi);
+
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ") done.");
+    }
+
+
+    if(_sgmParams.exportIntermediateVolume9pCsv)
+    {
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ").");
+
+        const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", tileBeginX, tileBeginY);
+
+        exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths().getData(), tile.rc, name, stats9Path);
+
+        ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ") done.");
+    }
 }
 
 } // namespace depthMap

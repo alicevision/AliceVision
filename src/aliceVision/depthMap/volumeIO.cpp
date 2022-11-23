@@ -148,8 +148,6 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
     const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
     const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
-    ALICEVISION_LOG_DEBUG("DepthMap exportSimilarityVolume: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ", xyStep=" << xyStep << ".");
-
     for (int vy = 0; vy < volDim[1]; vy += xyStep)
     {
         for (int vx = 0; vx < volDim[0]; vx += xyStep)
@@ -195,8 +193,6 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
     const auto volDim = in_volumeSim_hmh.getSize();
     const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
     const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
-
-    ALICEVISION_LOG_DEBUG("Export similarity volume cross: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ".");
 
     for(int vz = 0; vz < in_depths.size(); ++vz)
     {
@@ -246,8 +242,6 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
     const auto volDim = in_volumeSim_hmh.getSize();
     const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
     const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
-
-    ALICEVISION_LOG_DEBUG("Export similarity volume cross (rc:  " << camIndex << ", x: "<< volDim[0] << ", y: " << volDim[1] << ", z: " << volDim[2] << ").");
 
     IndexT landmarkId = 0;
 

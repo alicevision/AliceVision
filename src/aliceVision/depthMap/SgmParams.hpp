@@ -34,7 +34,13 @@ struct SgmParams
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
   bool chooseDepthListPerTile = false;
-  bool exportIntermediateResults = false;
+
+  // intermediate results export parameters
+
+  bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateVolumes = false;
+  bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateVolume9pCsv = false;
 
   // constant parameters
 

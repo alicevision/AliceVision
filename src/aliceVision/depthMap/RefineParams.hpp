@@ -28,7 +28,12 @@ struct RefineParams
   double gammaP = 8.0;
   bool doRefineFuse = true;
   bool doRefineOptimization = true;
-  bool exportIntermediateResults = false;
+
+  // intermediate results export parameters
+
+  bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateCrossVolumes = false;
+  bool exportIntermediateVolume9pCsv = false;
 
   // constant parameters
 

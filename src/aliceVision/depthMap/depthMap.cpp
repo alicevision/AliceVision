@@ -183,7 +183,10 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.filteringAxes = mp.userParams.get<std::string>("sgm.filteringAxes", sgmParams.filteringAxes);
     sgmParams.useSfmSeeds = mp.userParams.get<bool>("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     sgmParams.chooseDepthListPerTile = mp.userParams.get<bool>("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
-    sgmParams.exportIntermediateResults = mp.userParams.get<bool>("sgm.exportIntermediateResults", sgmParams.exportIntermediateResults);
+    sgmParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("sgm.exportIntermediateDepthSimMaps", sgmParams.exportIntermediateDepthSimMaps);
+    sgmParams.exportIntermediateVolumes = mp.userParams.get<bool>("sgm.exportIntermediateVolumes", sgmParams.exportIntermediateVolumes);
+    sgmParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("sgm.exportIntermediateCrossVolumes", sgmParams.exportIntermediateCrossVolumes);
+    sgmParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("sgm.exportIntermediateVolume9pCsv", sgmParams.exportIntermediateVolume9pCsv);
 
     // get Refine user parameters from MultiViewParams property_tree
 
@@ -200,13 +203,16 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.gammaP = mp.userParams.get<double>("refine.gammaP", refineParams.gammaP);
     refineParams.doRefineFuse = mp.userParams.get<bool>("refine.doRefineFuse", refineParams.doRefineFuse);
     refineParams.doRefineOptimization = mp.userParams.get<bool>("refine.doRefineOptimization", refineParams.doRefineOptimization);
-    refineParams.exportIntermediateResults = mp.userParams.get<bool>("refine.exportIntermediateResults", refineParams.exportIntermediateResults);
+    refineParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("refine.exportIntermediateDepthSimMaps", refineParams.exportIntermediateDepthSimMaps);
+    refineParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("refine.exportIntermediateCrossVolumes", refineParams.exportIntermediateCrossVolumes);
+    refineParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("refine.exportIntermediateVolume9pCsv", refineParams.exportIntermediateVolume9pCsv);
 
     // get workflow user parameters from MultiViewParams property_tree
 
+    depthMapParams.maxTCams = mp.userParams.get<int>("depthMap.maxTCams", depthMapParams.maxTCams);
     depthMapParams.useRefine = mp.userParams.get<bool>("depthMap.useRefine", depthMapParams.useRefine);
     depthMapParams.chooseTCamsPerTile = mp.userParams.get<bool>("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
-    depthMapParams.maxTCams = mp.userParams.get<int>("depthMap.maxTCams", depthMapParams.maxTCams);
+    depthMapParams.exportTilePattern = mp.userParams.get<bool>("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
 }
 
 void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
@@ -458,7 +464,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
           else
             writeDepthSimMapFromTileList(c, mp, depthMapParams.tileParams, tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY);
 
-          if(depthMapParams.sgmParams.exportIntermediateResults || depthMapParams.refineParams.exportIntermediateResults)
+          if(depthMapParams.exportTilePattern)
               exportDepthSimMapTilePatternObj(c, mp, tileRoiList, depthMinMaxTilePerCam.at(batchCamIndex));
         }
     }
@@ -469,12 +475,12 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         // merge tiles if needed and desired
         for(int rc : cams)
         {
-            if(depthMapParams.sgmParams.exportIntermediateResults)
+            if(depthMapParams.sgmParams.exportIntermediateDepthSimMaps)
             {
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");
             }
 
-            if(depthMapParams.useRefine && depthMapParams.refineParams.exportIntermediateResults)
+            if(depthMapParams.useRefine && depthMapParams.refineParams.exportIntermediateDepthSimMaps)
             {
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_sgmUpscaled");
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
