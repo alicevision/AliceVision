@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <aliceVision/sensorDB/Datasheet.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
@@ -109,6 +111,57 @@ std::vector<std::string> viewPathsFromFolders(const sfmData::View& view, const s
 * @return true if the image filename (stripped of its extension) contains a number
 */
 bool extractNumberFromFileStem(const std::string& imagePathStem, IndexT& number, std::string& prefix, std::string& suffix);
+
+/**
+ * @brief Checks whether a given view has an appropriately defined intrinsic. If this function
+ * returns false, then `buildViewIntrinsic()` should be called to build an intrinsic.
+ */
+bool viewHasDefinedIntrinsic(const sfmData::SfMData& sfmData, const sfmData::View& view);
+
+enum class EGroupCameraFallback {
+    GLOBAL,
+    FOLDER,
+    IMAGE
+};
+
+std::string EGroupCameraFallback_enumToString(EGroupCameraFallback strategy);
+EGroupCameraFallback EGroupCameraFallback_stringToEnum(const std::string& strategy);
+std::ostream& operator<<(std::ostream& os, EGroupCameraFallback s);
+std::istream& operator>>(std::istream& in, EGroupCameraFallback& s);
+
+struct BuildViewIntrinsicsReport
+{
+    // key (make,model), value (first imagePath)
+    std::map<std::pair<std::string, std::string>, std::string> unknownSensors;
+    // key (make,model), value (first imagePath,datasheet)
+    std::map<std::pair<std::string, std::string>,
+             std::pair<std::string, sensorDB::Datasheet>> unsureSensors;
+
+    std::vector<std::string> missingDeviceUID;
+    std::vector<std::string> noMetadataImagePaths;
+
+    // key imagePath value (sensor width, focal length)
+    std::map<std::string, std::pair<double, double>> intrinsicsSetFromFocal35mm;
+
+    void merge(const BuildViewIntrinsicsReport& other);
+    void reportToLog();
+};
+
+/**
+ * @brief Build intrinsic for a view.
+ * @param[in] view View to build intrinsic for
+ * @param[in] sensorDatabase The sensor database to fetch sensor from
+ * @param[out] report Any warnings that have arisen during processing will be added to this variable.
+ */
+std::shared_ptr<camera::IntrinsicBase>
+    buildViewIntrinsic(sfmData::View& view,
+                       const std::vector<sensorDB::Datasheet>& sensorDatabase,
+                       double defaultFocalLength, double defaultFieldOfView,
+                       double defaultFocalRatio, double defaultOffsetX, double defaultOffsetY,
+                       camera::EINTRINSIC defaultCameraModel,
+                       camera::EINTRINSIC allowedCameraModels,
+                       EGroupCameraFallback groupCameraFallback,
+                       BuildViewIntrinsicsReport& report);
 
 } // namespace sfmDataIO
 } // namespace aliceVision
