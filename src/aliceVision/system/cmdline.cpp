@@ -17,7 +17,7 @@ bool CmdLine::execute(int argc, char** argv)
     _allParams.add(logParams);
 
     boost::program_options::options_description hardwareParams("Hardware parameters");
-    _hContext.setOptions(hardwareParams);
+    _hContext.setupFromCommandLine(hardwareParams);
 
     _allParams.add(hardwareParams);
 

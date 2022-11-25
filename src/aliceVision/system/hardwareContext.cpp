@@ -6,7 +6,7 @@
 
 namespace aliceVision {
 
-void HardwareContext::setOptions(boost::program_options::options_description & options)
+void HardwareContext::setupFromCommandLine(boost::program_options::options_description & options)
 {
     options.add_options()
         ("maxMemoryAvailable", boost::program_options::value<size_t>(&_maxUserMemoryAvailable)->default_value(_maxUserMemoryAvailable), "User specified available RAM")
@@ -50,12 +50,9 @@ unsigned int HardwareContext::getMaxThreads() const
     }
 
     //Get User limit max threads
-    if (_limitUserCores > 0)
+    if (_limitUserCores > 0 && count > _limitUserCores)
     {
-        if (count > _limitUserCores)
-        {
-            count = _limitUserCores;
-        }
+        count = _limitUserCores;
     }
 
     return count;

@@ -33,13 +33,29 @@ public:
         _limitUserCores = coresLimit;
     }
 
-    void setOptions(boost::program_options::options_description & options);
+    void setupFromCommandLine(boost::program_options::options_description & options);
 
     unsigned int getMaxThreads() const;
 
 private:
+    /**
+     * @brief This is the maximum memory available 
+     * This information is passed to the application through command line parameters
+     * if we want to override the system defined information (E.g. cgroups)
+     */
     size_t _maxUserMemoryAvailable = std::numeric_limits<size_t>::max();
+
+    /**
+     * @brief This is the maximum number of cores available to this application
+     * This information is passed to the application through command line parameters
+     * if we want to override the system defined information (E.g. cgroups)
+     */
     unsigned int _maxUserCoresAvailable = std::numeric_limits<unsigned int>::max();
+
+    /**
+     * @brief This is the maximum number of cores the user wants to use for this application
+     * The value will only be used if less than the _maxUserCoresAvailable value
+     */
     unsigned int _limitUserCores = std::numeric_limits<unsigned int>::max();
 };
 
