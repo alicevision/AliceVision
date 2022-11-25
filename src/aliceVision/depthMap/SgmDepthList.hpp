@@ -132,16 +132,18 @@ private:
                                     float& out_midDepth,
                                     float& out_maxDepth);
 
-    StaticVector<float>* getDepthsByPixelSize(const mvsUtils::MultiViewParams& mp,
-                                              const SgmParams& sgmParams,
-                                              float minDepth,
-                                              float midDepth,
-                                              float maxDepth);
+    void getDepthsByPixelSize(std::vector<float>& out_depths,
+                              const mvsUtils::MultiViewParams& mp,
+                              const SgmParams& sgmParams,
+                              float minDepth,
+                              float midDepth,
+                              float maxDepth);
 
-    StaticVector<float>* getDepthsTc(const mvsUtils::MultiViewParams& mp,
-                                     const SgmParams& sgmParams,
-                                     int tc,
-                                     float midDepth);
+    void getDepthsRcTc(std::vector<float>& out_depths,
+                       const mvsUtils::MultiViewParams& mp,
+                       const SgmParams& sgmParams,
+                       int tc,
+                       float midDepth) const;
 
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);

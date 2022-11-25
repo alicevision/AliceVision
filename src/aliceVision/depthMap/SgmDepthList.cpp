@@ -66,7 +66,7 @@ void SgmDepthList::computeListRc(const mvsUtils::MultiViewParams& mp, const SgmP
     {
         ALICEVISION_LOG_DEBUG(_tile << "Depth candidates from seeds for R camera:" << std::endl
                                     << "\t- nb observations: " << nbObsDepths <<  std::endl
-                                    << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]"
+                                    << "\t- all depth range: [" << minDepthAll << "-" << maxDepthAll << "]" << std::endl
                                     << "\t- sfm depth range: [" << minObsDepth << "-" << maxObsDepth << "]");
 
         float minDepth = minDepthAll;
@@ -285,7 +285,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(const mvsUtils::MultiViewParams& m
     const IndexT viewId = mp.getViewId(_tile.rc);
 
     const ROI fullsizeRoi = upscaleROI(_tile.roi, mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
-    const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
+    const ROI selectionRoi = fullsizeRoi; //inflateROI(fullsizeRoi, 1.4f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
 
     OrientedPoint cameraPlane;
     cameraPlane.p = mp.CArr[_tile.rc];
@@ -410,8 +410,8 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(const mvsUtils::MultiViewParams& mp,
     }
 
     ALICEVISION_LOG_DEBUG(_tile << "Compute min/max depth from common Rc/Tc SfM observations:" << std::endl
-                                << "\t- rc view id: " << rcViewId << std::endl
-                                << "\t- tc view id: " << tcViewId << std::endl
+                                << "\t- rc: " << _tile.rc << " (view id: " << rcViewId << ")" << std::endl
+                                << "\t- tc: " << tc       << " (view id: " << tcViewId << ")" << std::endl
                                 << "\t- min depth: "  << out_zmin << std::endl
                                 << "\t- max depth: "  << out_zmax);
 }
@@ -427,32 +427,27 @@ StaticVector<StaticVector<float>*>* SgmDepthList::computeAllDepthsAndResetTcs(co
     for(std::size_t c = 0; c < _tile.sgmTCams.size(); ++c)
     {
         // depths of all meaningful points on the principal ray of the reference camera regarding the target camera tc
-        StaticVector<float>* tcdepths = getDepthsTc(mp, sgmParams, _tile.sgmTCams.at(c), midDepth);
-        if(sizeOfStaticVector<float>(tcdepths) < 10)
+        std::vector<float> tcDepths;
+        getDepthsRcTc(tcDepths, mp, sgmParams, _tile.sgmTCams.at(c), midDepth);
+
+        if(tcDepths.size() < 10)
         {
+            ALICEVISION_LOG_WARNING("fallback if we don't have enough valid samples over the epipolar line");
+
             // fallback if we don't have enough valid samples over the epipolar line
-            if(tcdepths != nullptr)
-            {
-                delete tcdepths;
-                tcdepths = nullptr;
-            }
+            tcDepths.clear();
+
             float avMinDist, avMidDist, avMaxDist;
             getPreMatchingMinMaxDepths(mp, sgmParams, avMinDist, avMidDist, avMaxDist);
-            tcdepths = getDepthsByPixelSize(mp, sgmParams, avMinDist, avMidDist, avMaxDist);
-
-            if(sizeOfStaticVector<float>(tcdepths) < 10)
-            {
-                if(tcdepths != nullptr)
-                {
-                    delete tcdepths;
-                    tcdepths = nullptr;
-                }
-            }
+            getDepthsByPixelSize(tcDepths, mp, sgmParams, avMinDist, avMidDist, avMaxDist);
         }
 
-        if(tcdepths != nullptr)
+        if(tcDepths.size() > 10)
         {
-            alldepths->push_back(tcdepths);
+            StaticVector<float>* tcDepthsPtr = new StaticVector<float>();
+            std::swap(tcDepthsPtr->getDataWritable(), tcDepths);
+
+            alldepths->push_back(tcDepthsPtr);
             tCamsNew.push_back(_tile.sgmTCams.at(c));
         }
     }
@@ -529,12 +524,15 @@ void SgmDepthList::getPreMatchingMinMaxDepths(const mvsUtils::MultiViewParams& m
     }
 }
 
-StaticVector<float>* SgmDepthList::getDepthsByPixelSize(const mvsUtils::MultiViewParams& mp,
-                                                        const SgmParams& sgmParams,
-                                                        float minDepth,
-                                                        float midDepth,
-                                                        float maxDepth)
+void SgmDepthList::getDepthsByPixelSize(std::vector<float>& out_depths,
+                                        const mvsUtils::MultiViewParams& mp,
+                                        const SgmParams& sgmParams,
+                                        float minDepth,
+                                        float midDepth,
+                                        float maxDepth)
 {
+    assert(out_depths.empty());
+
     const int maxDepthsHalf = 1024;
 
     const float d = float(sgmParams.scale) * float(sgmParams.rcDepthsCompStep);
@@ -576,8 +574,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(const mvsUtils::MultiVie
         ndepths++;
     }
 
-    StaticVector<float>* out = new StaticVector<float>();
-    out->reserve(ndepths);
+    out_depths.reserve(ndepths);
 
     // fill
     depth = mindepth;
@@ -585,7 +582,7 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(const mvsUtils::MultiVie
     ndepths = 0;
     while((depth < maxdepth) && (pixSize > 0.0f) && (ndepths < 2 * maxDepthsHalf))
     {
-        out->push_back(depth);
+        out_depths.push_back(depth);
         Point3d p = rcplane.p + rcplane.n * depth;
         pixSize = mp.getCamPixelSize(p, _tile.rc, d);
         depth += pixSize;
@@ -593,25 +590,27 @@ StaticVector<float>* SgmDepthList::getDepthsByPixelSize(const mvsUtils::MultiVie
     }
 
     // check if it is asc
-    for(int i = 0; i < out->size() - 1; i++)
+    for(int i = 0; i < out_depths.size() - 1; i++)
     {
-        if((*out)[i] >= (*out)[i + 1])
+        if(out_depths[i] >= out_depths[i + 1])
         {
             for(int j = 0; j <= i + 1; j++)
             {
-                ALICEVISION_LOG_TRACE(_tile << "getDepthsByPixelSize: check if it is asc: " << (*out)[j]);
+                ALICEVISION_LOG_TRACE(_tile << "getDepthsByPixelSize: check if it is asc: " << out_depths[j]);
             }
             throw std::runtime_error("getDepthsByPixelSize not asc.");
         }
     }
-    return out;
 }
 
-StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& mp,
-                                               const SgmParams& sgmParams,
-                                               int tc,
-                                               float midDepth)
+void SgmDepthList::getDepthsRcTc(std::vector<float>& out_depths,
+                                 const mvsUtils::MultiViewParams& mp,
+                                 const SgmParams& sgmParams,
+                                 int tc,
+                                 float midDepth) const
 {
+    assert(out_depths.empty());
+
     OrientedPoint rcplane;
     rcplane.p = mp.CArr[_tile.rc];
     rcplane.n = mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
@@ -620,21 +619,19 @@ StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& 
     // ROI center 
     const Point2d roiCenter((_tile.roi.x.begin + (_tile.roi.width() * 0.5)), _tile.roi.y.begin + (_tile.roi.height() * 0.5));
 
-    // principal point of the rc camera to the tc camera
+    // principal point of the rc camera
     const Point2d principalPoint(mp.getWidth(_tile.rc) * 0.5, mp.getHeight(_tile.rc) * 0.5);
     
-    // reference pixel for the epipolar line
-    const Point2d rMid = (!sgmParams.chooseDepthListPerTile) ? principalPoint : roiCenter;
+    // reference point for the epipolar line
+    const Point2d referencePoint = (!sgmParams.chooseDepthListPerTile) ? principalPoint : roiCenter;
+
+    // input middle depth related point
+    Point2d tcMidDepthPoint;
 
     // segment of epipolar line
-    Point2d pFromTar, pToTar; 
+    Point2d tcFromPoint, tcToPoint; 
 
     {
-        double zmin;
-        double zmax;
-
-        getRcTcDepthRangeFromSfM(mp, sgmParams, _tile.rc, tc, zmin, zmax);
-
         const Matrix3x4& rP = mp.camArr[_tile.rc];
         const Matrix3x4& tP = mp.camArr[tc];
 
@@ -646,219 +643,124 @@ StaticVector<float>* SgmDepthList::getDepthsTc(const mvsUtils::MultiViewParams& 
         Matrix3x3 riP;
         mp.decomposeProjectionMatrix(rC, rR, riR, rK, riK, riP, rP);
 
+        mp.getPixelFor3DPoint(&tcMidDepthPoint, ((riP * referencePoint) * midDepth) + rC, tP);
+
+        double zmin;
+        double zmax;
+
+        getRcTcDepthRangeFromSfM(mp, sgmParams, _tile.rc, tc, zmin, zmax);
+
         Point2d tarpix1;
         Point2d tarpix2;
 
-        mp.getPixelFor3DPoint(&tarpix1, ((riP * rMid) * zmin) + rC, tP);
-        mp.getPixelFor3DPoint(&tarpix2, ((riP * rMid) * zmax) + rC, tP);
+        mp.getPixelFor3DPoint(&tarpix1, ((riP * referencePoint) * zmin) + rC, tP);
+        mp.getPixelFor3DPoint(&tarpix2, ((riP * referencePoint) * zmax) + rC, tP);
 
-        get2dLineImageIntersection(&pFromTar, &pToTar, tarpix1, tarpix2, mp, tc);
+        get2dLineImageIntersection(&tcFromPoint, &tcToPoint, tarpix1, tarpix2, mp, tc);
     }
 
-    int allDepths = static_cast<int>((pToTar - pFromTar).size());
-    const int allDepthsFound = allDepths; // for debug log
-
-    const Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0, (double)sgmParams.scale);
-
-    Point2d cg = Point2d(0.0, 0.0);
-    Point3d cg3 = Point3d(0.0, 0.0, 0.0);
-    int ncg = 0;
+    const int nbSegmentPoints = static_cast<int>((tcToPoint - tcFromPoint).size());
+    const Point2d pixelVect = (tcToPoint - tcFromPoint).normalize() * std::max(1.0, double(sgmParams.scale));
+   
+    int nbValidSegmentPoints = 0;
+    Point2d validPointSum = Point2d(0.0, 0.0);
 
     // navigate through all pixels of the epilolar segment
-    // Compute the middle of the valid pixels of the epipolar segment (in rc camera) of the principal point (of the rc
-    // camera)
-    for(int i = 0; i < allDepths; i++)
+    // Compute the middle of the valid pixels of the epipolar segment (in R camera) 
+    // of the reference point (of the R camera)
+    for(int i = 0; i < nbSegmentPoints; ++i)
     {
-        Point2d tpix = pFromTar + pixelVect * (float)i;
+        const Point2d tcPoint = tcFromPoint + (pixelVect * double(i));
+
         Point3d p;
-        if(triangulateMatch(p, rMid, tpix, _tile.rc, tc, mp)) // triangulate principal point from rc with tpix
+
+        if(triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, mp)) // triangulate principal point from rc with tcPoint
         {
-            float depth = orientedPointPlaneDistance(
-                p, rcplane.p,
-                rcplane.n); // todo: can compute the distance to the camera (as it's the principal point it's the same)
-            if(mp.isPixelInImage(tpix, tc) && (depth > 0.0f) &&
-               checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()))
+            const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+
+            if(mp.isPixelInImage(tcPoint, tc) && (depth > 0.0f) && checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()))
             {
-                cg = cg + tpix;
-                cg3 = cg3 + p;
-                ncg++;
+                validPointSum = validPointSum + tcPoint;
+                nbValidSegmentPoints++;
             }
         }
     }
-    if(ncg == 0)
-    {
-        return new StaticVector<float>();
-    }
-    cg = cg / (float)ncg;
-    cg3 = cg3 / (float)ncg;
-    allDepths = ncg;
 
-    Point2d midpoint = cg;
-    if(midDepth > 0.0f)
-    {
-        Point3d midPt = rcplane.p + rcplane.n * midDepth;
-        mp.getPixelFor3DPoint(&midpoint, midPt, tc);
-    }
+    if(nbValidSegmentPoints <= 0)
+        return;
+    
+    // average middle point from all valid segment points
+    const Point2d averageMidPoint = validPointSum / double(nbValidSegmentPoints);
 
-    // compute the direction
-    float direction = 1.0f;
+    // middle point of the epilolar segment
+    // use the input middle depth related point 
+    // or the average middle point from all valid segment points
+    const Point2d middlePoint = (midDepth > 0.0f) ? tcMidDepthPoint : averageMidPoint;
+
+    // compute the epilolar segment depth direction
+    int depthDirection = 1;
     {
         Point3d p;
-        if(!triangulateMatch(p, rMid, midpoint, _tile.rc, tc, mp))
-        {
-            StaticVector<float>* out = new StaticVector<float>();
-            return out;
-        }
 
-        float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+        if(!triangulateMatch(p, referencePoint, middlePoint, _tile.rc, tc, mp))
+            return;
 
-        if(!triangulateMatch(p, rMid, midpoint + pixelVect, _tile.rc, tc, mp))
-        {
-            StaticVector<float>* out = new StaticVector<float>();
-            return out;
-        }
+        const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        float depthP1 = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+        if(!triangulateMatch(p, referencePoint, middlePoint + pixelVect, _tile.rc, tc, mp))
+            return;
+
+        const float depthP1 = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+
         if(depth > depthP1)
-        {
-            direction = -1.0f;
-        }
+            depthDirection = -1;
     }
 
-    StaticVector<float>* out1 = new StaticVector<float>();
-    out1->reserve(2 * sgmParams.rcTcDepthsHalfLimit);
+    out_depths.reserve(2 * sgmParams.rcTcDepthsHalfLimit);
 
-    Point2d tpix = midpoint;
-    float depthOld = -1.0f;
-    int istep = 0;
-    bool ok = true;
+    float previousDepth = -1.0f;
 
-    // compute depths for all pixels from the middle point to on one side of the epipolar line
-    while((out1->size() < sgmParams.rcTcDepthsHalfLimit) && (mp.isPixelInImage(tpix, tc) == true) && (ok == true))
+    // compute depths for all pixels from one side of the epipolar segment to the other
+    for(int i = -sgmParams.rcTcDepthsHalfLimit; i < sgmParams.rcTcDepthsHalfLimit; ++i) 
     {
-        tpix = tpix + pixelVect * direction;
+        const Point2d tcPoint = middlePoint + (pixelVect * i * depthDirection);
 
-        Point3d refvect = mp.iCamArr[_tile.rc] * rMid;
-        Point3d tarvect = mp.iCamArr[tc] * tpix;
-        float rptpang = angleBetwV1andV2(refvect, tarvect);
+        // check if the tc pixel is in the tc image
+        if(!mp.isPixelInImage(tcPoint, tc))
+            continue;
 
+        const Point3d refVect = mp.iCamArr[_tile.rc] * referencePoint;
+        const Point3d tarVect = mp.iCamArr[tc] * tcPoint;
+        const float refTarVectAngle = angleBetwV1andV2(refVect, tarVect);
+
+        // if vects are near parallel then this results to strange angles
+        // this is the proper angle because it does not depend on the triangulated p
+        if(refTarVectAngle < mp.getMinViewAngle() || refTarVectAngle > mp.getMaxViewAngle())
+            continue;
+
+        // compute related 3d point
         Point3d p;
-        ok = triangulateMatch(p, rMid, tpix, _tile.rc, tc, mp);
 
-        float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
-        if(mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth > depthOld) &&
-           checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()) &&
-           (rptpang >
-            mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
-           &&
-           (rptpang <
-            mp.getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
+        if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, mp) ||
+           !checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()))
+            continue;
+
+        // compute related 3d point depth
+        const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+
+        if(depth > 0.0f && (depth > previousDepth))
         {
-            out1->push_back(depth);
-            // if ((tpix.x!=tpixold.x)||(tpix.y!=tpixold.y)||(depthOld>=depth))
-            //{
-            // printf("after %f %f %f %f %i %f %f\n",tpix.x,tpix.y,depth,depthOld,istep,ang,kk);
-            //};
-        }
-        else
-        {
-            ok = false;
-        }
-        depthOld = depth;
-        istep++;
-    }
-
-    StaticVector<float>* out2 = new StaticVector<float>();
-    out2->reserve(2 * sgmParams.rcTcDepthsHalfLimit);
-    tpix = midpoint;
-    istep = 0;
-    ok = true;
-
-    // compute depths for all pixels from the middle point to the other side of the epipolar line
-    while((out2->size() < sgmParams.rcTcDepthsHalfLimit) && (mp.isPixelInImage(tpix, tc) == true) && (ok == true))
-    {
-        const Point3d refvect = mp.iCamArr[_tile.rc] * rMid;
-        const Point3d tarvect = mp.iCamArr[tc] * tpix;
-        const float rptpang = angleBetwV1andV2(refvect, tarvect);
-
-        Point3d p;
-        ok = triangulateMatch(p, rMid, tpix, _tile.rc, tc, mp);
-
-        float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
-        if(mp.isPixelInImage(tpix, tc) && (depth > 0.0f) && (depth < depthOld) &&
-           checkPair(p, _tile.rc, tc, mp, mp.getMinViewAngle(), mp.getMaxViewAngle()) &&
-           (rptpang > mp.getMinViewAngle()) // WARNING if vects are near parallel thaen this results to strange angles ...
-           && (rptpang < mp.getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
-        {
-            out2->push_back(depth);
-            // printf("%f %f\n",tpix.x,tpix.y);
-        }
-        else
-        {
-            ok = false;
-        }
-
-        depthOld = depth;
-        tpix = tpix - pixelVect * direction;
-    }
-
-    // printf("out2\n");
-    StaticVector<float>* out = new StaticVector<float>();
-    out->reserve(2 * sgmParams.rcTcDepthsHalfLimit);
-    for(int i = out2->size() - 1; i >= 0; i--)
-    {
-        out->push_back((*out2)[i]);
-        // printf("%f\n",(*out2)[i]);
-    }
-    // printf("out1\n");
-    for(int i = 0; i < out1->size(); i++)
-    {
-        out->push_back((*out1)[i]);
-        // printf("%f\n",(*out1)[i]);
-    }
-
-    delete out2;
-    delete out1;
-
-    // we want to have it in ascending order
-    if(out->size() > 0 && (*out)[0] > (*out)[out->size() - 1])
-    {
-        StaticVector<float>* outTmp = new StaticVector<float>();
-        outTmp->reserve(out->size());
-        for(int i = out->size() - 1; i >= 0; i--)
-        {
-            outTmp->push_back((*out)[i]);
-        }
-        delete out;
-        out = outTmp;
-    }
-
-    // check if it is asc
-    for(int i = 0; i < out->size() - 1; i++)
-    {
-        if((*out)[i] > (*out)[i + 1])
-        {
-
-            for(int j = 0; j <= i + 1; j++)
-            {
-                ALICEVISION_LOG_TRACE(_tile << "getDepthsRcTc: check if it is asc: " << (*out)[j]);
-            }
-            ALICEVISION_LOG_WARNING(_tile << "getDepthsRcTc: not asc.");
-
-            if(out->size() > 1)
-            {
-                qsort(&(*out)[0], out->size(), sizeof(float), qSortCompareFloatAsc);
-            }
+            out_depths.push_back(depth);
+            previousDepth = depth;
         }
     }
 
     ALICEVISION_LOG_DEBUG(_tile << "Find depths over the epipolar line segment between R and T cameras:" << std::endl
-                                << "\t- rc: " << _tile.rc << std::endl
-                                << "\t- tc: " << tc << std::endl
-                                << "\t- all depths found: " << allDepthsFound << std::endl
-                                << "\t- correct depths found: " << allDepths << std::endl
-                                << "\t- depths to use: " << out->size());
-    return out;
+                                << "\t- rc: " << _tile.rc << "(view id: " << mp.getViewId(_tile.rc) << ")" << std::endl
+                                << "\t- tc: " << tc       << "(view id: " << mp.getViewId(tc)       << ")" << std::endl
+                                << "\t- # points of the epipolar segment: " << nbSegmentPoints << std::endl
+                                << "\t- # valid points of the epipolar segment: " << nbValidSegmentPoints << std::endl
+                                << "\t- # depths to use: " << out_depths.size());
 }
 
 bool SgmDepthList::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)
