@@ -23,6 +23,14 @@ enum class EHistogramSelectionMethod
     eHistogramHarmonizeVLDSegment
 };
 
+inline std::string EHistogramSelectionMethod_description()
+{
+  return "Histogram selection method: \n"
+         "* full frame \n"
+         "* matched points \n"
+         "* VLD segments\n";
+}
+
 EHistogramSelectionMethod EEHistogramSelectionMethod_stringToEnum(const std::string& histogramSelectionMethod);
 std::string EHistogramSelectionMethod_enumToString(const EHistogramSelectionMethod histogramSelectionMethod);
 std::ostream& operator<<(std::ostream& os, EHistogramSelectionMethod p);

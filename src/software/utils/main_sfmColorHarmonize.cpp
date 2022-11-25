@@ -58,7 +58,7 @@ int aliceVision_main( int argc, char **argv )
     ("referenceImage", po::value<int>(&imgRef)->required(),
       "Reference image id.")
     ("selectionMethod", po::value<EHistogramSelectionMethod>(&selectionMethod)->required(), 
-      "Histogram selection method");
+      EHistogramSelectionMethod_description().c_str());
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
