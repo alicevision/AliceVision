@@ -31,12 +31,8 @@ namespace po = boost::program_options;
 int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
-
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outputSfMDataFilename;
-
-  po::options_description allParams("AliceVision exportColoredPointCloud");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()

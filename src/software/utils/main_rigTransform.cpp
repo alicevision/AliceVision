@@ -41,7 +41,6 @@ static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
 
 int aliceVision_main(int argc, char** argv)
 {
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string exportFile;
   std::string importFile;
   std::string rigFile;

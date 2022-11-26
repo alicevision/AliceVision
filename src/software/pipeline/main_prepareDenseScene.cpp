@@ -277,8 +277,6 @@ bool prepareDenseScene(const SfMData& sfmData,
 int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
-
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);

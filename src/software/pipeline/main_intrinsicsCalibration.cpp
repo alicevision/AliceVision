@@ -685,16 +685,11 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmInputDataFilepath;
     std::string checkerBoardsPath;
     std::string sfmOutputDataFilepath;
-    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     double squareSize = 0.1;
     double distance = 1.0;
     bool useBetaFeatureInnerGrids = false;
     bool useSimplePinhole = false;
     // Command line parameters
-    po::options_description allParams(
-        "Parse external information about cameras used in a panorama.\n"
-        "AliceVision PanoramaInit");
-
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
@@ -704,43 +699,12 @@ int aliceVision_main(int argc, char* argv[])
         ("distance,d", po::value<double>(&distance)->default_value(distance), "Distance to grid mm")
         ("useSimplePinhole,u", po::value<bool>(&useSimplePinhole)->default_value(useSimplePinhole), "use simple pinhole result, undistort observations");
 
-    po::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-            "verbosity level (fatal, error, warning, info, debug, trace).");
-
-    allParams.add(requiredParams).add(logParams);
-
-    // Parse command line
-    po::variables_map vm;
-    try
+    CmdLine cmdline("AliceVision checkerboard intrinsics calibration");
+    cmdline.add(requiredParams);
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if (vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(allParams);
-            return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch (boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
-    catch (boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     //Load sfmData from disk
     sfmData::SfMData sfmData;
