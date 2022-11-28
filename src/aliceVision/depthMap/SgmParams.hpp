@@ -33,6 +33,7 @@ struct SgmParams
   std::string filteringAxes = "YX";
   bool useSfmSeeds = true;
   bool chooseDepthListPerTile = false;
+  bool updateUnitializeSim = true; // should always be true, false for debug purposes
 
   // intermediate results export parameters
 
@@ -40,20 +41,16 @@ struct SgmParams
   bool exportIntermediateVolumes = false;
   bool exportIntermediateCrossVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
+  const bool exportDepthsTxtFiles = false;
 
   // constant parameters
 
   const bool computeNormalMap = false; // for experimentation purposes
-  const bool prematchinMinMaxDepthDontUseSeeds = false;
   const float prematchingMaxDepthScale = 1.5f;
-  const float prematchingMinCamDist = 0.0f;
-  const float prematchingMaxCamDist = 15.0f;
-
   const int rcTcDepthsHalfLimit = 2048;
-  const int rcDepthsCompStep = 6;
   const double seedsRangePercentile = 0.999;
   const bool doSgmOptimizeVolume = true;
-  const bool saveDepthsToSweepTxtFile = false;
+  
 };
 
 } // namespace depthMap

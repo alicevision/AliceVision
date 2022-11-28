@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <aliceVision/mvsData/ROI.hpp>
+
 #include <vector>
 #include <ostream>
 

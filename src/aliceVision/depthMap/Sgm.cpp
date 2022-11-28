@@ -232,6 +232,7 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
     // update second best uninitialized similarity volume values with first best similarity volume values
     // - allows to avoid the particular case with a single tc (second best volume has no valid similarity values)
     // - usefull if a tc alone contributes to the calculation of a subpart of the similarity volume
+    if(_sgmParams.updateUnitializeSim) // should always be true, false for debug purposes
     {
         ALICEVISION_LOG_DEBUG(tile << "SGM Update uninitialized similarity volume values from best similarity volume.");
 
@@ -325,7 +326,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
 
         const std::string volumePath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volume, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
         
-        exportSimilarityVolume(volumeSim_hmh, tileDepthList.getDepths().getData(), _mp, tile.rc, _sgmParams, volumePath, tile.roi);
+        exportSimilarityVolume(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumePath, tile.roi);
 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume (" << name << ") done.");
     }
@@ -337,7 +338,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
 
         const std::string volumeCrossPath = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::volumeCross, _sgmParams.scale, "_" + name, tileBeginX, tileBeginY);
 
-        exportSimilarityVolumeCross(volumeSim_hmh, tileDepthList.getDepths().getData(), _mp, tile.rc, _sgmParams, volumeCrossPath, tile.roi);
+        exportSimilarityVolumeCross(volumeSim_hmh, tileDepthList.getDepths(), _mp, tile.rc, _sgmParams, volumeCrossPath, tile.roi);
 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume cross (" << name << ") done.");
     }
@@ -349,7 +350,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
 
         const std::string stats9Path = getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::stats9p, _sgmParams.scale, "_sgm", tileBeginX, tileBeginY);
 
-        exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths().getData(), tile.rc, name, stats9Path);
+        exportSimilaritySamplesCSV(volumeSim_hmh, tileDepthList.getDepths(), tile.rc, name, stats9Path);
 
         ALICEVISION_LOG_INFO(tile << "Export similarity volume 9 points CSV (" << name << ") done.");
     }

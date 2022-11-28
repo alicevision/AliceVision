@@ -400,10 +400,10 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
             }
 
             // build tile SGM depth list
-            SgmDepthList sgmDepthList(tile);
+            SgmDepthList sgmDepthList(mp, depthMapParams.sgmParams, tile);
 
             // compute the R camera depth list
-            sgmDepthList.computeListRc(mp, depthMapParams.sgmParams);
+            sgmDepthList.computeListRc();
 
             // check number of depths
             if(sgmDepthList.getDepths().empty()) // no depth found
@@ -413,11 +413,14 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
                 continue;
             }
 
+            // remove T cameras with no depth found.
+            sgmDepthList.removeTcWithNoDepth(tile);
+
             // store min/max depth
             depthMinMaxTilePerCam.at(batchCamIndex).at(tile.id) = sgmDepthList.getMinMaxDepths();
 
             // log debug camera / depth information
-            sgmDepthList.logRcTcDepthInformation(mp);
+            sgmDepthList.logRcTcDepthInformation();
 
             // check if starting and stopping depth are valid
             sgmDepthList.checkStartingAndStoppingDepth();
