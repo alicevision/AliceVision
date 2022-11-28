@@ -278,7 +278,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
     const IndexT viewId = _mp.getViewId(_tile.rc);
 
     const ROI fullsizeRoi = upscaleROI(_tile.roi, _mp.getProcessDownscale()); // landmark observations are in the full-size image coordinate system
-    const ROI selectionRoi = fullsizeRoi; //inflateROI(fullsizeRoi, 1.4f); // inflate the image full-size roi, this ROI is more permissive for common landmark selection
+    //const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // we can inflate the image full-size roi to be more permissive for common landmark selection
 
     OrientedPoint cameraPlane;
     cameraPlane.p = _mp.CArr[_tile.rc];
@@ -347,9 +347,8 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
 
     // get R region-of-interest
     // landmark observations are in the full-size image coordinate system, we need to upcscale the tile ROI
-    // we can inflate the image full-size roi to be more permissive for common landmark selection
     const ROI fullsizeRoi = upscaleROI(_tile.roi, _mp.getProcessDownscale());
-    const ROI selectionRoi = fullsizeRoi; // TODO: add user parameter, inflateROI(fullsizeRoi, 1.4f);
+    //const ROI selectionRoi = inflateROI(fullsizeRoi, 1.4f); // we can inflate the image full-size roi to be more permissive for common landmark selection
 
     // build R camera plane
     OrientedPoint cameraPlane;
@@ -378,7 +377,7 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
                 const Vec2& obs2d = it->second.x;
 
                 // observation located inside the inflated image full-size ROI
-                if(!_sgmParams.chooseDepthListPerTile || selectionRoi.contains(obs2d.x(), obs2d.y()))
+                if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
                 {
                     // compute related depth
                     const double depth = pointPlaneDistance(point, cameraPlane.p, cameraPlane.n);
