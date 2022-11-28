@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 namespace aliceVision {
