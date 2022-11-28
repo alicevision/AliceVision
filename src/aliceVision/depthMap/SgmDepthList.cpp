@@ -471,17 +471,21 @@ void SgmDepthList::computeRcTcDepths(int tc,
     {
         const Point2d tcPoint = tcFromPoint + (pixelVect * double(i));
 
+        if(!_mp.isPixelInImage(tcPoint, tc))
+            continue;
+
         Point3d p;
 
-        if(triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp)) // triangulate principal point from rc with tcPoint
-        {
-            const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+        if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp) || // triangulate principal point from rc with tcPoint
+           !checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
+            continue;
+ 
+        const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-            if(_mp.isPixelInImage(tcPoint, tc) && (depth > 0.0f) && checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
-            {
-                validPointSum = validPointSum + tcPoint;
-                nbValidSegmentPoints++;
-            }
+        if(depth > 0.0f)
+        {
+            validPointSum = validPointSum + tcPoint;
+            nbValidSegmentPoints++;
         }
     }
 
