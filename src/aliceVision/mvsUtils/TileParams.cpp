@@ -6,14 +6,16 @@
 
 #include "TileParams.hpp"
 
+#include <aliceVision/numeric/numeric.hpp>
+
 namespace aliceVision {
 namespace mvsUtils {
 
 void getTileList(const TileParams& tileParams, int imageWidth, int imageHeight, std::vector<ROI>& out_tileList)
 {
     // compute nb of tiles per side
-    const int nbTileSideX = 1 + int(std::ceil(float(imageWidth  - tileParams.width)  / float(tileParams.width  - tileParams.padding)));
-    const int nbTileSideY = 1 + int(std::ceil(float(imageHeight - tileParams.height) / float(tileParams.height - tileParams.padding)));
+    const int nbTileSideX = 1 + divideRoundUp((imageWidth  - tileParams.width) , (tileParams.width  - tileParams.padding));
+    const int nbTileSideY = 1 + divideRoundUp((imageHeight - tileParams.height), (tileParams.height - tileParams.padding));
 
     out_tileList.resize(nbTileSideX * nbTileSideY);
 

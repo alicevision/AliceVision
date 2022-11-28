@@ -205,8 +205,8 @@ void readMapFromTiles(int rc,
     const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
 
     const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
-    const int width = std::ceil(mp.getWidth(rc) / float(scaleStep));
-    const int height = std::ceil(mp.getHeight(rc) / float(scaleStep));
+    const int width  = divideRoundUp(mp.getWidth(rc) , scaleStep);
+    const int height = divideRoundUp(mp.getHeight(rc), scaleStep);
 
     out_map.resize(width, height, true, 0.f);
 
@@ -339,8 +339,8 @@ void writeDepthSimMap(int rc,
     }
 
     // get full image dimensions
-    const int imageWidth = std::ceil(mp.getWidth(rc) / float(scaleStep));
-    const int imageHeight = std::ceil(mp.getHeight(rc) / float(scaleStep));
+    const int imageWidth  = divideRoundUp(mp.getWidth(rc) , scaleStep);
+    const int imageHeight = divideRoundUp(mp.getHeight(rc), scaleStep);
 
     // get downscaled ROI
     const ROI downscaledROI = downscaleROI(roi, scaleStep);
