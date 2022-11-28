@@ -264,6 +264,25 @@ void SgmDepthList::checkStartingAndStoppingDepth() const
     assert(_depths.size() >= stoppingDepth);
 }
 
+void SgmDepthList::getMinMaxMidDepthDefault(float& out_min, float& out_max, float& out_mid) const
+{
+    constexpr float minCamDist = 0.0f;
+    constexpr float maxCamDist = 15.0f;
+
+    out_min = 0.0f;
+    out_max = 0.0f;
+
+    for(int tc : _tile.sgmTCams)
+    {
+        out_min += (_mp.CArr[_tile.rc] - _mp.CArr[tc]).size() * minCamDist;
+        out_max += (_mp.CArr[_tile.rc] - _mp.CArr[tc]).size() * maxCamDist;
+    }
+
+    out_min /= static_cast<float>(_tile.sgmTCams.size());
+    out_max /= static_cast<float>(_tile.sgmTCams.size());
+    out_mid = (out_min + out_max) * 0.5f;
+}
+
 void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
                                               float& out_max,
                                               float& out_mid,
