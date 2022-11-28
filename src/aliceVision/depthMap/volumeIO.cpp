@@ -7,6 +7,7 @@
 #include "volumeIO.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
