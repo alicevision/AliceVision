@@ -165,7 +165,7 @@ struct ResidualErrorFunctor_Pinhole
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -323,7 +323,7 @@ struct ResidualErrorFunctor_PinholeRadialK1
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -480,7 +480,7 @@ struct ResidualErrorFunctor_PinholeRadialK3
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -650,7 +650,7 @@ struct ResidualErrorFunctor_PinholeBrownT2
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -822,7 +822,7 @@ struct ResidualErrorFunctor_PinholeFisheye
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -980,7 +980,7 @@ struct ResidualErrorFunctor_PinholeFisheye1
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -1160,7 +1160,7 @@ struct ResidualErrorFunctor_Pinhole3DEClassicLD
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 
@@ -1335,7 +1335,7 @@ struct ResidualErrorFunctor_Pinhole3DERadial4
     return true;
   }
 
-  const sfmData::Observation& _obs; // The 2D observation
+  const sfmData::Observation _obs; // The 2D observation
   const Vec2 _center;
 };
 

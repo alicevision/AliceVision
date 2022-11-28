@@ -345,7 +345,7 @@ public:
   }
 
 private:
-  const sfmData::Observation & _measured;
+  const sfmData::Observation _measured;
   const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
   std::shared_ptr<camera::Undistortion> _undistortion;
   bool _withRig;
