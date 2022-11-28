@@ -240,7 +240,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     DeviceStreamManager deviceStreamManager(nbStreams);
 
     // build device cache
-    const int nbRcPerBatch = std::ceil(nbStreams / float(nbTilesPerCamera));            // number of R cameras in the same batch
+    const int nbRcPerBatch = divideRoundUp(nbStreams, nbTilesPerCamera);                // number of R cameras in the same batch
     const int nbTilesPerBatch = nbRcPerBatch * nbTilesPerCamera;                        // number of tiles in the same batch
     const bool hasRcWithoutDownscale = depthMapParams.sgmParams.scale == 1 || (depthMapParams.useRefine && depthMapParams.refineParams.scale == 1);
     const int nbCamerasPerSgm = (1 + depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1); // number of Sgm cameras per R camera
@@ -334,7 +334,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     logDeviceMemoryInfo();
 
     // compute number of batches
-    const int nbBatches = std::ceil(tiles.size() / float(nbTilesPerBatch));
+    const int nbBatches = divideRoundUp(int(tiles.size()), nbTilesPerBatch);
 
     // compute each batch of R cameras
     for(int b = 0; b < nbBatches; ++b)
