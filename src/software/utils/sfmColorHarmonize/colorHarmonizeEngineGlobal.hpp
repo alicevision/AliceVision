@@ -26,9 +26,9 @@ enum class EHistogramSelectionMethod
 inline std::string EHistogramSelectionMethod_description()
 {
   return "Histogram selection method: \n"
-         "* full frame \n"
-         "* matched points \n"
-         "* VLD segments\n";
+         "* full_frame \n"
+         "* matched_points \n"
+         "* VLD_segments\n";
 }
 
 EHistogramSelectionMethod EEHistogramSelectionMethod_stringToEnum(const std::string& histogramSelectionMethod);
