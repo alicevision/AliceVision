@@ -4,7 +4,6 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
