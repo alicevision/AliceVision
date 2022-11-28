@@ -561,7 +561,7 @@ void SgmDepthList::computeRcTcDepths(int tc,
                                 << "\t- # depths to use: " << out_depths.size());
 
     if(!out_depths.empty())
-      ALICEVISION_LOG_DEBUG(_tile << " depth to use range [" << out_depths.front() << "-" << out_depths.back() << "]" << std::endl);
+      ALICEVISION_LOG_DEBUG(_tile << "Depth to use range [" << out_depths.front() << "-" << out_depths.back() << "]" << std::endl);
 }
 
 void SgmDepthList::computePixelSizeDepths(float minObsDepth,
