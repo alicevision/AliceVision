@@ -294,23 +294,22 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
 
-        // for each landmark observation
-        for(const auto& observationPair : landmark.observations)
-        {
-            // is rc observation
-            if(observationPair.first == viewId)
-            {
-                const Vec2& obs2d = observationPair.second.x;
+        // find rc observation
+        const auto it = landmark.observations.find(viewId);
 
-                // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
-                if(!_sgmParams.chooseDepthListPerTile || selectionRoi.contains(obs2d.x(), obs2d.y()))
-                {
-                    const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
-                    accDistanceMin(distance);
-                    accDistanceMax(distance);
-                    midDepthPoint = midDepthPoint + point;
-                    ++out_nbDepths;
-                }
+        // is rc observation
+        if(it != landmark.observations.end())
+        {
+            const Vec2& obs2d = it->second.x;
+
+            // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
+            if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+            {
+                const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
+                accDistanceMin(distance);
+                accDistanceMax(distance);
+                midDepthPoint = midDepthPoint + point;
+                ++out_nbDepths;
             }
         }
     }
