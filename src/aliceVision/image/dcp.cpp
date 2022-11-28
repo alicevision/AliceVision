@@ -2095,6 +2095,58 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const float x, const 
     return cameraToSrgbLinear;
 }
 
+DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const Triple& asShotNeutral, const bool sourceIsRaw)
+{
+    float x, y;
+    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutral, x, y);
+    float cct, tint;
+    setChromaticityCoordinates(x, y, cct, tint);
+
+    Matrix neutral = IdentityMatrix;
+
+    if (sourceIsRaw)
+    {
+        neutral[0][0] = 1.0 / asShotNeutral[0];
+        neutral[1][1] = 1.0 / asShotNeutral[1];
+        neutral[2][2] = 1.0 / asShotNeutral[2];
+    }
+
+    Matrix cameraToXyzD50;
+
+    if ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2))
+    {
+        Matrix xyzToCamera;
+        if (info.has_color_matrix_1 && info.has_color_matrix_2)
+        {
+            xyzToCamera = getInterpolatedMatrix(cct, "color");
+        }
+        else
+        {
+            xyzToCamera = info.has_color_matrix_1 ? color_matrix_1 : color_matrix_2;
+        }
+        Matrix cameraToXyz = matInv(xyzToCamera);
+
+        double D50_cct = 5000.706605070579;  //
+        double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+        cameraToXyzD50 = matMult(cat, cameraToXyz);
+    }
+    else if ((!info.has_forward_matrix_1) || (!info.has_forward_matrix_2))
+    {
+        Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
+        cameraToXyzD50 = matMult(interpolatedForwardMatrix, neutral);
+    }
+    else
+    {
+        Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
+        cameraToXyzD50 = matMult(interpolatedForwardMatrix, neutral);
+    }
+    Matrix cameraToSrgbLinear = matMult(xyzD50ToSrgbD65LinearMatrix, cameraToXyzD50);
+
+    return cameraToSrgbLinear;
+}
+
+
 void DCPProfile::getMatrices(const std::string& type, std::vector<Matrix>& v_Mat)
 {
     v_Mat.clear();
@@ -2131,11 +2183,9 @@ void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::
     }
 }
 
-void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral)
+void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw)
 {
-    float x, y;
-    getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, neutral, x, y);
-    Matrix cameraToSrgbLinearMatrix = getCameraToSrgbLinearMatrix(x, y);
+    Matrix cameraToSrgbLinearMatrix = getCameraToSrgbLinearMatrix(neutral, sourceIsRaw);
 
 #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)

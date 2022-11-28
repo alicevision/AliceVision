@@ -181,8 +181,9 @@ public:
      * @brief applyLinear applies the linear part of a DCP profile on an OIIO image buffer
      * param[in] image The OIIO image on which the profile must be applied
      * param[in] neutral The neutral value calculated from the camera multiplicators contained in the cam_mul OIIO metadata
+     * param[in] sourceIsRaw indicates that the image buffer contains data in raw space (no neutralization <=> cam_mul not applied)
      */
-    void applyLinear(OIIO::ImageBuf& image, Triple neutral);
+    void applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw = false);
 
     /**
      * @brief apply applies the non linear part of a DCP profile on an OIIO image buffer
@@ -242,6 +243,7 @@ private:
     Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget);
     Matrix getCameraToXyzD50Matrix(const float x, const float y);
     Matrix getCameraToSrgbLinearMatrix(const float x, const float y);
+    Matrix getCameraToSrgbLinearMatrix(const Triple& asShotNeutral, const bool sourceIsRaw = false);
 
     Matrix ws_sRGB; // working color space to sRGB
     Matrix sRGB_ws; // sRGB to working color space
