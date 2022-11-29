@@ -470,58 +470,22 @@ void SgmDepthList::computeRcTcDepths(int tc,
     }
 
     const int nbSegmentPoints = static_cast<int>((tcToPoint - tcFromPoint).size());
+    const int nbSegmentPointsAtSgmScale = nbSegmentPoints / _sgmParams.scale;
     const Point2d pixelVect = (tcToPoint - tcFromPoint).normalize() * std::max(1.0, double(_sgmParams.scale));
-   
-    int nbValidSegmentPoints = 0;
-    Point2d validPointSum = Point2d(0.0, 0.0);
-
-    // navigate through all pixels of the epilolar segment
-    // Compute the middle of the valid pixels of the epipolar segment (in R camera) 
-    // of the reference point (of the R camera)
-    for(int i = 0; i < nbSegmentPoints; ++i)
-    {
-        const Point2d tcPoint = tcFromPoint + (pixelVect * double(i));
-
-        if(!_mp.isPixelInImage(tcPoint, tc))
-            continue;
-
-        Point3d p;
-
-        if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp) || // triangulate principal point from rc with tcPoint
-           !checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
-            continue;
- 
-        const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
-
-        if(depth > 0.0f)
-        {
-            validPointSum = validPointSum + tcPoint;
-            nbValidSegmentPoints++;
-        }
-    }
-
-    if(nbValidSegmentPoints <= 0)
-        return;
-    
-    // average middle point from all valid segment points
-    const Point2d averageMidPoint = validPointSum / double(nbValidSegmentPoints);
-
-    // middle point of the epilolar segment
-    // use the input middle depth related point 
-    // or the average middle point from all valid segment points
-    const Point2d middlePoint = (midDepth > 0.0f) ? tcMidDepthPoint : averageMidPoint;
 
     // compute the epilolar segment depth direction
     int depthDirection = 1;
     {
         Point3d p;
 
-        if(!triangulateMatch(p, referencePoint, middlePoint, _tile.rc, tc, _mp))
+        // triangulate middle depth point
+        if(!triangulateMatch(p, referencePoint, tcMidDepthPoint, _tile.rc, tc, _mp))
             return;
 
         const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        if(!triangulateMatch(p, referencePoint, middlePoint + pixelVect, _tile.rc, tc, _mp))
+        // triangulate middle depth point + 1 pixelVect
+        if(!triangulateMatch(p, referencePoint, tcMidDepthPoint + pixelVect, _tile.rc, tc, _mp))
             return;
 
         const float depthP1 = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
@@ -529,21 +493,20 @@ void SgmDepthList::computeRcTcDepths(int tc,
         if(depth > depthP1)
             depthDirection = -1;
     }
+   
+    out_depths.reserve(nbSegmentPointsAtSgmScale);
 
-    out_depths.reserve(2 * _sgmParams.rcTcDepthsHalfLimit);
-
+    const Point3d refVect = _mp.iCamArr[_tile.rc] * referencePoint;
     float previousDepth = -1.0f;
 
     // compute depths for all pixels from one side of the epipolar segment to the other
-    for(int i = -_sgmParams.rcTcDepthsHalfLimit; i < _sgmParams.rcTcDepthsHalfLimit; ++i) 
+    for(int i = 0; i < nbSegmentPointsAtSgmScale; ++i)
     {
-        const Point2d tcPoint = middlePoint + (pixelVect * i * depthDirection);
+        const Point2d tcPoint = ((depthDirection > 0) ? tcFromPoint : tcToPoint) + (pixelVect * double(i) * double(depthDirection));
 
-        // check if the tc pixel is in the tc image
         if(!_mp.isPixelInImage(tcPoint, tc))
             continue;
 
-        const Point3d refVect = _mp.iCamArr[_tile.rc] * referencePoint;
         const Point3d tarVect = _mp.iCamArr[tc] * tcPoint;
         const float refTarVectAngle = angleBetwV1andV2(refVect, tarVect);
 
@@ -552,27 +515,33 @@ void SgmDepthList::computeRcTcDepths(int tc,
         if(refTarVectAngle < _mp.getMinViewAngle() || refTarVectAngle > _mp.getMaxViewAngle())
             continue;
 
-        // compute related 3d point
+        // epipolar segment point related 3d point
         Point3d p;
 
-        if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp) || !checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
+        // triangulate principal point from rc with tcPoint
+        if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp))
+            continue;
+
+        if(!checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
             continue;
 
         // compute related 3d point depth
         const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
 
-        if(depth > 0.0f && (depth > previousDepth))
+        if((depth > 0.0f) && (depth > previousDepth))
         {
-            out_depths.push_back(depth);
-            previousDepth = depth;
+          out_depths.push_back(depth);
+          previousDepth = depth;
         }
     }
+
+    out_depths.shrink_to_fit();
 
     ALICEVISION_LOG_DEBUG(_tile << "Find depths over the epipolar line segment between R and T cameras:" << std::endl
                                 << "\t- rc: " << _tile.rc << "(view id: " << _mp.getViewId(_tile.rc) << ")" << std::endl
                                 << "\t- tc: " << tc << "(view id: " << _mp.getViewId(tc) << ")" << std::endl
                                 << "\t- # points of the epipolar segment: " << nbSegmentPoints << std::endl
-                                << "\t- # valid points of the epipolar segment: " << nbValidSegmentPoints << std::endl
+                                << "\t- # points of the epipolar segment at SGM scale: " << nbSegmentPointsAtSgmScale << std::endl
                                 << "\t- # depths to use: " << out_depths.size());
 
     if(!out_depths.empty())

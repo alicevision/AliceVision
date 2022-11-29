@@ -47,7 +47,6 @@ struct SgmParams
 
   const bool computeNormalMap = false; // for experimentation purposes
   const float prematchingMaxDepthScale = 1.5f;
-  const int rcTcDepthsHalfLimit = 2048;
   const double seedsRangePercentile = 0.999;
   const bool doSgmOptimizeVolume = true;
   
