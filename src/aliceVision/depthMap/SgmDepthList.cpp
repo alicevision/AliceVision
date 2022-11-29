@@ -305,20 +305,21 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
         // find rc observation
         const auto it = landmark.observations.find(viewId);
 
-        // is rc observation
-        if(it != landmark.observations.end())
-        {
-            const Vec2& obs2d = it->second.x;
+        // no rc observation
+        if(it == landmark.observations.end())
+          continue;
 
-            // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
-            if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
-            {
-                const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
-                accDistanceMin(distance);
-                accDistanceMax(distance);
-                midDepthPoint = midDepthPoint + point;
-                ++out_nbDepths;
-            }
+        // get rc 2d observation
+        const Vec2& obs2d = it->second.x;
+
+        // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
+        if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+        {
+            const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
+            accDistanceMin(distance);
+            accDistanceMax(distance);
+            midDepthPoint = midDepthPoint + point;
+            ++out_nbDepths;
         }
     }
 
@@ -374,27 +375,29 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
         const sfmData::Landmark& landmark = landmarkPair.second;
         const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
 
-        // is tc observation
-        if(landmark.observations.find(tcViewId) != landmark.observations.end())
+        // no tc observation
+        if(landmark.observations.find(tcViewId) == landmark.observations.end())
+          continue;
+
+        // find rc observation
+        const auto it = landmark.observations.find(rcViewId);
+
+        // no rc observation
+        if(it == landmark.observations.end())
+          continue;
+
+        // get rc 2d observation
+        const Vec2& obs2d = it->second.x;
+
+        // observation located inside the inflated image full-size ROI
+        if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
         {
-            const auto it = landmark.observations.find(rcViewId);
+            // compute related depth
+            const double depth = pointPlaneDistance(point, cameraPlane.p, cameraPlane.n);
 
-            // is rc observation
-            if(it != landmark.observations.end())
-            {
-                const Vec2& obs2d = it->second.x;
-
-                // observation located inside the inflated image full-size ROI
-                if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
-                {
-                    // compute related depth
-                    const double depth = pointPlaneDistance(point, cameraPlane.p, cameraPlane.n);
-
-                    // update min/max depth
-                    out_zmin = std::min(out_zmin, depth);
-                    out_zmax = std::max(out_zmax, depth);
-                }
-            }
+            // update min/max depth
+            out_zmin = std::min(out_zmin, depth);
+            out_zmax = std::max(out_zmax, depth);
         }
     }
 
