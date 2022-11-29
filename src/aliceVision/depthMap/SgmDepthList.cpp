@@ -190,7 +190,8 @@ void SgmDepthList::computeListRc()
 
 void SgmDepthList::removeTcWithNoDepth(Tile& tile) 
 {
-    assert(tile == _tile);
+    assert(tile.rc == _tile.rc);
+    assert(tile.sgmTCams.size() == _tile.sgmTCams.size());
 
     std::vector<int> out_tCams;
     std::vector<Pixel> out_depthsTcLimits;
