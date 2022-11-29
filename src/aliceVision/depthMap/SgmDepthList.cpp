@@ -110,7 +110,7 @@ void SgmDepthList::computeListRc()
                                 << "\t- sfm depth range: [" << minObsDepth << "-" << maxObsDepth << "]");
 
     float firstDepth = minDepthAll;
-    float lastDepth = maxDepthAll;
+    float lastDepth  = maxDepthAll;
 
     // if we want to use SfM seeds anf if we get enough information from these seeds, adjust min/maxDepth
     if(_sgmParams.useSfmSeeds && !_mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 10)
@@ -119,7 +119,7 @@ void SgmDepthList::computeListRc()
         firstDepth = minObsDepth - margin;
         lastDepth  = maxObsDepth + margin;
 
-        if(maxDepthAll < firstDepth || maxDepthAll > lastDepth)
+        if(maxDepthAll < firstDepth || minDepthAll > lastDepth)
         {
             // no intersection between min/maxDepth and min/maxDepthSample
             // keep min/maxDepth value as is
