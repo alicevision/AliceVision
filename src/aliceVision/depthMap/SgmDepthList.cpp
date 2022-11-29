@@ -183,7 +183,7 @@ void SgmDepthList::computeListRc()
     }
 
     if(_sgmParams.exportDepthsTxtFiles)
-        exportTxtFiles(minDepthAll, maxDepthAll, depthsPerTc);
+        exportTxtFiles(depthsPerTc);
 
     ALICEVISION_LOG_DEBUG(_tile << "Compute SGM depths list done.");
 }
@@ -684,23 +684,10 @@ void SgmDepthList::computeRcDepthList(float firstDepth,
     }
 }
 
-void SgmDepthList::exportTxtFiles(int minDepthAll,
-                                  int maxDepthAll,
-                                  const std::vector<std::vector<float>>& dephtsPerTc) const
+void SgmDepthList::exportTxtFiles(const std::vector<std::vector<float>>& dephtsPerTc) const
 {
-    const std::string prefix(_mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_tile.rc)));
+    const std::string prefix(_mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(_tile.rc)) + std::string("_"));
     const std::string suffix("_" + std::to_string(_tile.roi.x.begin) + "_" + std::to_string(_tile.roi.y.begin) + ".txt");
-
-    // export final depth list
-    {
-        const std::string fn = prefix + "depthsAll" + suffix;
-        FILE* f = fopen(fn.c_str(), "w");
-        for(int j = 0; j < _depths.size(); j++)
-        {
-            fprintf(f, "%f\n", _depths[j]);
-        }
-        fclose(f);
-    }
 
     // export depthsTcLimits txt file
     {
@@ -729,7 +716,7 @@ void SgmDepthList::exportTxtFiles(int minDepthAll,
     {
         for(int c = 0; c < dephtsPerTc.size(); ++c)
         {
-            const std::string fn = prefix + "depths" + mvsUtils::num2str(c) + suffix;
+            const std::string fn = prefix + "depths_tc_" + mvsUtils::num2str(_mp.getViewId(_tile.sgmTCams.at(c))) + suffix;
             FILE* f = fopen(fn.c_str(), "w");
             for(const float depth : dephtsPerTc.at(c))
             {
@@ -737,25 +724,6 @@ void SgmDepthList::exportTxtFiles(int minDepthAll,
             }
             fclose(f);
         }
-    }
-
-    // export rc depth txt file
-    {
-        OrientedPoint rcplane;
-        rcplane.p = _mp.CArr[_tile.rc];
-        rcplane.n = _mp.iRArr[_tile.rc] * Point3d(0.0, 0.0, 1.0);
-        rcplane.n = rcplane.n.normalize();
-
-        const std::string fn = prefix + "rcDepths" + suffix;
-        FILE* f = fopen(fn.c_str(), "w");
-        float depth = minDepthAll;
-        while(depth < maxDepthAll)
-        {
-            fprintf(f, "%f\n", depth);
-            const Point3d p = rcplane.p + rcplane.n * depth;
-            depth = depth + _mp.getCamPixelSize(p, _tile.rc);
-        }
-        fclose(f);
     }
 }
 

@@ -127,13 +127,9 @@ private:
 
     /**
      * @brief Export multiple intermediate depth list txt files.
-     * @param[in] minDepthAll The minimum depth of all Rc/Tc depth range
-     * @param[in] maxDepthAll The maximum depth of all Rc/Tc depth range
      * @param[in] dephtsPerTc The depth list per T camera
      */
-    void exportTxtFiles(int minDepthAll,
-                        int maxDepthAll,
-                        const std::vector<std::vector<float>>& dephtsPerTc) const;
+    void exportTxtFiles(const std::vector<std::vector<float>>& dephtsPerTc) const;
 
     // private members
 
