@@ -116,7 +116,7 @@ void SgmDepthList::computeListRc()
     if(_sgmParams.useSfmSeeds && !_mp.getInputSfMData().getLandmarks().empty() && nbObsDepths > 10)
     {
         const float margin = _sgmParams.seedsRangeInflate * (maxObsDepth-minObsDepth);
-        firstDepth = minObsDepth - margin;
+        firstDepth = std::max(0.f, minObsDepth - margin);
         lastDepth  = maxObsDepth + margin;
 
         if(maxDepthAll < firstDepth || minDepthAll > lastDepth)
