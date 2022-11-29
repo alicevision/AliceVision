@@ -49,10 +49,20 @@ void SgmDepthList::computeListRc()
 {
     ALICEVISION_LOG_DEBUG(_tile << "Compute SGM depths list.");
 
+    // reset member variables
+    _depths.clear();
+    _depthsTcLimits.clear();
+
     // compute min/max/mid/nb depth from SfM
     std::size_t nbObsDepths;
     float minObsDepth, maxObsDepth, midObsDepth;
     getMinMaxMidNbDepthFromSfM(minObsDepth, maxObsDepth, midObsDepth, nbObsDepths);
+
+    if(nbObsDepths < 2)
+    {
+       ALICEVISION_LOG_INFO(_tile << "Cannot get min/max/middle depth from SfM.");
+       return; // nothing to do
+    }
 
     // compute depth list for each T cameras
     std::vector<std::vector<float>> depthsPerTc(_tile.sgmTCams.size());
@@ -91,10 +101,7 @@ void SgmDepthList::computeListRc()
     if(minDepthAll > maxDepthAll)
     {
         ALICEVISION_LOG_INFO(_tile << "No depths found.");
-
-        _depths.clear();
-        _depthsTcLimits.clear();
-        return;
+        return; // nothing to do
     }
 
     ALICEVISION_LOG_DEBUG(_tile << "Depth candidates from seeds for R camera:" << std::endl
