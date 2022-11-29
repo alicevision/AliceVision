@@ -68,16 +68,6 @@ private:
     // private methods
 
     /**
-     * @brief Compute default min/max/mid depth from camera matrices and heuristics.
-     * @param[out] out_min The default minimum depth 
-     * @param[out] out_max The default maximum depth 
-     * @param[out] out_mid The default middle depth
-     */
-    void getMinMaxMidDepthDefault(float& out_min,
-                                  float& out_max,
-                                  float& out_mid) const;
-
-    /**
      * @brief Compute min/max/mid/nb depth observation for R camera from SfM.
      * @param[out] out_min The minimum depth observation
      * @param[out] out_max The maximum depth observation
