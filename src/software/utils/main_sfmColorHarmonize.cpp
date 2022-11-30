@@ -36,7 +36,7 @@ int aliceVision_main( int argc, char **argv )
   std::vector<std::string> featuresFolders;
   std::vector<std::string> matchesFolders;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  int selectionMethod;
+  EHistogramSelectionMethod selectionMethod;
   int imgRef;
 
   // user optional parameters
@@ -52,10 +52,8 @@ int aliceVision_main( int argc, char **argv )
       "Path to folder(s) in which computed matches are stored.")
     ("referenceImage", po::value<int>(&imgRef)->required(),
       "Reference image id.")
-    ("selectionMethod", po::value<int>(&selectionMethod)->required(),
-      "- 0: FullFrame\n"
-      "- 1: Matched Points\n"
-      "- 2: VLD Segment");
+    ("selectionMethod", po::value<EHistogramSelectionMethod>(&selectionMethod)->required(), 
+      EHistogramSelectionMethod_description().c_str());
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
