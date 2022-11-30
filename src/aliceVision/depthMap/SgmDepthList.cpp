@@ -526,12 +526,12 @@ void SgmDepthList::computeRcTcDepths(int tc,
             continue;
 
         // compute related 3d point depth
-        const float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
+        const float depth = float(orientedPointPlaneDistance(p, rcplane.p, rcplane.n));
 
         if((depth > 0.0f) && (depth > previousDepth))
         {
           out_depths.push_back(depth);
-          previousDepth = depth;
+          previousDepth = depth + std::numeric_limits<float>::epsilon();
         }
     }
 
