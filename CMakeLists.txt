@@ -218,30 +218,21 @@ endif()
 # Add Tbb
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
-       # TODO: Update to 2021.1.1
-       URL https://github.com/01org/tbb/archive/2019_U6.tar.gz
-       URL_HASH MD5=fbb2d9572fe39b997575055b9f9c820b
+       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.5.0.tar.gz
+       URL_HASH MD5=5e5f2ee22a0d19c0abbe7478f1c7ccf6
        DOWNLOAD_DIR ${BUILD_DIR}/download/tbb
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
        UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
-       BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
+       BINARY_DIR ${BUILD_DIR}/tbb_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       CONFIGURE_COMMAND ""
-       BUILD_COMMAND OS=Linux $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} PREFIX=<INSTALL_DIR>
-       INSTALL_COMMAND mkdir -p <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR} && echo "cp <BINARY_DIR>/build/linux_*_release/*.so* <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
+       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DTBB_TEST:BOOL=OFF -DTBB_STRICT:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>  <SOURCE_DIR>
+       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
        )
-# TODO: need to upgrade code in cctag
-# URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.4.0.tar.gz
-# URL_HASH MD5=fa317f16003e31e33a57ae7d888403e4#
-# == Build v2021.4.0
-# TBB_ALLOCATOR_TRAITS_BROKEN: https://github.com/oneapi-src/oneTBB/issues/383
-# CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_CXX_FLAGS=-DTBB_ALLOCATOR_TRAITS_BROKEN -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
-# Use default build / install
-#
-set(TBB_CMAKE_FLAGS -DTBB_INCLUDE_DIRS:PATH=${CMAKE_INSTALL_PREFIX}/include -DTBB_LIBRARIES=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libtbb${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+set(TBB_CMAKE_FLAGS -DTBB_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/TBB)
 
 # Eigen requires overaligned buffers for maximum efficiency (e.g. on AVX512 buffers may need to
 # be aligned to 64 bytes). AliceVision currently does not support this. Fortunately this is fixed
@@ -771,7 +762,7 @@ if(AV_BUILD_CCTAG)
 set(CCTAG_TARGET cctag)
 ExternalProject_Add(${CCTAG_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/CCTag
-      GIT_TAG a0f4630d018ac9026299e3443ff3cde64f850dc8
+      GIT_TAG v1.0.3
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
