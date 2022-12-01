@@ -415,7 +415,7 @@ int aliceVision_main(int argc, char* argv[])
 
 
         std::shared_ptr<camera::Undistortion> undistortion = std::make_shared<camera::Undistortion3DEAnamorphic4>(cameraPinhole->w(), cameraPinhole->h());
-        sfmData.getUndistortions()[intrinsicId] = undistortion;
+        cameraPinhole->setUndistortionObject(undistortion);
 
         //Transform checkerboards to line With points
         std::vector<calibration::LineWithPoints> allLinesWithPoints;
@@ -425,8 +425,6 @@ int aliceVision_main(int argc, char* argv[])
             {
                 continue;
             }
-
-            pv.second->setUndistortionId(intrinsicId);
 
             std::vector<calibration::LineWithPoints> linesWithPoints;
             if (!retrieveLines(linesWithPoints, boardsAllImages[pv.first]))

@@ -225,7 +225,7 @@ class IntrinsicsSymbolicManifold : public ceres::Manifold {
 
 class CostProjection : public ceres::CostFunction {
 public:
-  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, const std::shared_ptr<camera::Undistortion> & undistortion, bool withRig) : _measured(measured), _intrinsics(intrinsics), _undistortion(undistortion), _withRig(withRig)
+  CostProjection(const sfmData::Observation& measured, const std::shared_ptr<camera::IntrinsicBase> & intrinsics, bool withRig) : _measured(measured), _intrinsics(intrinsics), _withRig(withRig)
   {
     set_num_residuals(2);
 
@@ -233,6 +233,13 @@ public:
     mutable_parameter_block_sizes()->push_back(16);
     mutable_parameter_block_sizes()->push_back(intrinsics->getParams().size());    
     mutable_parameter_block_sizes()->push_back(3);    
+
+    std::shared_ptr<camera::Undistortion> undistortion;
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsics);
+    if (isod)
+    {   
+        undistortion = isod->getUndistortion();
+    }
 
     if (undistortion)
     {
@@ -260,20 +267,27 @@ public:
     }
     _intrinsics->updateFromParams(params);
 
-    if (_undistortion)
+    std::shared_ptr<camera::Undistortion> undistortion;
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(_intrinsics);
+    if (isod)
+    {
+      undistortion = isod->getUndistortion();
+    }
+
+    if (undistortion)
     {
         const double* parameter_undistortionOffset = parameters[4];
         const double* parameter_undistortionParams = parameters[5];
 
-        _undistortion->setOffset({ parameter_undistortionOffset[0], parameter_undistortionOffset[1] });
+        undistortion->setOffset({ parameter_undistortionOffset[0], parameter_undistortionOffset[1] });
 
-        size_t params_size = _undistortion->getParameters().size();
+        size_t params_size = undistortion->getParameters().size();
         std::vector<double> paramsUndist;
         for (size_t param_id = 0; param_id < params_size; param_id++) {
             paramsUndist.push_back(parameter_undistortionParams[param_id]);
         }
 
-        _undistortion->setParameters(paramsUndist);
+        undistortion->setParameters(paramsUndist);
     }
 
     const SE3::Matrix T = cTr * rTo;
@@ -284,9 +298,9 @@ public:
     const double scale = (_measured.scale > 1e-12) ? _measured.scale : 1.0;
 
     Vec2 measured_undistorted = _measured.x;
-    if (_undistortion)
+    if (undistortion)
     {
-        measured_undistorted = _undistortion->undistort(_measured.x);
+        measured_undistorted = undistortion->undistort(_measured.x);
     }
 
     residuals[0] = (pt_est(0) - measured_undistorted(0)) / scale;
@@ -323,21 +337,21 @@ public:
       J = d_res_d_pt_est * _intrinsics->getDerivativeProjectWrtPoint(T_pose3, pth) * Eigen::Matrix<double, 4, 3>::Identity();
     }
 
-    if (_undistortion)
+    if (undistortion)
     {
-        size_t undistortion_params_size = _undistortion->getParameters().size();
+        size_t undistortion_params_size = undistortion->getParameters().size();
 
         if (jacobians[4] != nullptr) {
             Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[4]);
 
-            J = -d_res_d_pt_est * _undistortion->getDerivativeUndistortWrtOffset(_measured.x);
+            J = -d_res_d_pt_est * undistortion->getDerivativeUndistortWrtOffset(_measured.x);
             J.fill(0);
         }
 
         if (jacobians[5] != nullptr) {
             Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[5], 2, undistortion_params_size);
 
-            J = -d_res_d_pt_est * _undistortion->getDerivativeUndistortWrtParameters(_measured.x);
+            J = -d_res_d_pt_est * undistortion->getDerivativeUndistortWrtParameters(_measured.x);
         }
     }
 
@@ -347,7 +361,6 @@ public:
 private:
   const sfmData::Observation _measured;
   const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
-  std::shared_ptr<camera::Undistortion> _undistortion;
   bool _withRig;
 };
 
@@ -774,30 +787,36 @@ void BundleAdjustmentSymbolicCeres::addUndistortionsToProblem(const sfmData::SfM
 {
     const bool refineIntrinsicsUndistortion = refineOptions & REFINE_INTRINSICS_UNDISTORTION;
 
-    /*Sort undistortions by frame id*/
-    std::map<IndexT, IndexT> sorted_undistortions;
-    for (auto v : sfmData.getViews())
+    std::map<std::shared_ptr<camera::Undistortion>, IndexT> undistortions;
+
+    for (auto pair : sfmData.getIntrinsics())
     {
-        IndexT uid = v.second->getUndistortionId();
-        if (uid == UndefinedIndexT)
+        std::shared_ptr<camera::Undistortion> undistortionObject;
+        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(pair.second);
+        if (isod)
+        {
+            undistortionObject = isod->getUndistortion();
+        }
+
+        if (undistortionObject == nullptr)
         {
             continue;
         }
 
-        
-        sorted_undistortions[v.second->getFrameId()] = uid;
+        undistortions[undistortionObject] = pair.first;
     }
 
-    for (auto p : sfmData.getUndistortions())
+    for (auto up : undistortions)
     {
-        std::shared_ptr<camera::Undistortion> undistortionObject = p.second;
+        IndexT intrinsicId = up.second;
+        std::shared_ptr<camera::Undistortion> undistortionObject = up.first;
 
-        _undistortionOffsetBlocks[p.first] = undistortionObject->getOffset();
-        _undistortionParametersBlocks[p.first] = undistortionObject->getParameters();
+        _undistortionOffsetBlocks[intrinsicId] = undistortionObject->getOffset();
+        _undistortionParametersBlocks[intrinsicId] = undistortionObject->getParameters();
 
 
-        Vec2& undistOffset = _undistortionOffsetBlocks[p.first];
-        std::vector<double>& undistParameters = _undistortionParametersBlocks[p.first];
+        Vec2& undistOffset = _undistortionOffsetBlocks[intrinsicId];
+        std::vector<double>& undistParameters = _undistortionParametersBlocks[intrinsicId];
 
         problem.AddParameterBlock(undistOffset.data(), 2);
         problem.AddParameterBlock(undistParameters.data(), undistParameters.size());
@@ -810,32 +829,6 @@ void BundleAdjustmentSymbolicCeres::addUndistortionsToProblem(const sfmData::SfM
 
         _allParametersBlocks.push_back(undistOffset.data());
         _allParametersBlocks.push_back(undistParameters.data());
-    }
-
-    for (auto it = sorted_undistortions.begin(); it != sorted_undistortions.end(); it++)
-    {
-        auto next_it = std::next(it);
-        if (next_it == sorted_undistortions.end())
-        {
-            break;
-        }
-
-        //std::shared_ptr<camera::Undistortion> undistortion = sfmData.getUndistortions().at(uid);
-        Vec2& undistOffset_1 = _undistortionOffsetBlocks[it->second];
-        Vec2& undistOffset_2 = _undistortionOffsetBlocks[next_it->second];
-        std::vector<double>& undistParameters_1 = _undistortionParametersBlocks[it->second];
-        std::vector<double>& undistParameters_2 = _undistortionParametersBlocks[next_it->second];
-        
-        //problem.AddResidualBlock(new CostUndistortionSimilar(undistParameters_1.size()), nullptr, undistOffset_1.data(), undistOffset_2.data(), undistParameters_1.data(), undistParameters_2.data());
-
-        auto next_next_it = std::next(next_it);
-        if (next_next_it == sorted_undistortions.end())
-        {
-            continue;
-        }
-
-        std::vector<double>& undistParameters_3 = _undistortionParametersBlocks[next_next_it->second];
-        //problem.AddResidualBlock(new CostUndistortionGradient(undistParameters_1.size()), nullptr, undistParameters_1.data(), undistParameters_2.data(), undistParameters_3.data());
     }
 }
 
@@ -879,13 +872,6 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
       const sfmData::View& view = sfmData.getView(observationPair.first);
       const sfmData::Observation& observation = observationPair.second;
       const std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
-      
-      std::shared_ptr<camera::Undistortion> undistortion;
-      IndexT undistortionId = view.getUndistortionId();
-      if (undistortionId != UndefinedIndexT)
-      {
-          undistortion = sfmData.getUndistortions().at(undistortionId);
-      }
 
       // each residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
@@ -916,7 +902,7 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
         _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
       }
 
-      ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, undistortion, withRig);
+      ceres::CostFunction* costFunction = new CostProjection(observation, intrinsic, withRig);
 
       std::vector<double*> params;
       params.push_back(poseBlockPtr);
@@ -925,10 +911,11 @@ void BundleAdjustmentSymbolicCeres::addLandmarksToProblem(const sfmData::SfMData
       params.push_back(landmarkBlockPtr);
 
 
-      if (_undistortionParametersBlocks.find(view.getUndistortionId()) != _undistortionParametersBlocks.end())
+     if (_undistortionParametersBlocks.find(view.getIntrinsicId()) != _undistortionParametersBlocks.end())
       {
-          double* undistortionParameterBlockPtr = _undistortionParametersBlocks.at(view.getUndistortionId()).data();
-          double* undistortionOffsetBlockPtr = _undistortionOffsetBlocks.at(view.getUndistortionId()).data();
+         std::cout << "ok" << std::endl;
+          double* undistortionParameterBlockPtr = _undistortionParametersBlocks.at(view.getIntrinsicId()).data();
+          double* undistortionOffsetBlockPtr = _undistortionOffsetBlocks.at(view.getIntrinsicId()).data();
           params.push_back(undistortionOffsetBlockPtr);
           params.push_back(undistortionParameterBlockPtr);
       }
@@ -1034,28 +1021,46 @@ void BundleAdjustmentSymbolicCeres::updateFromSolution(sfmData::SfMData& sfmData
           sfmData.getIntrinsics().at(intrinsicId)->updateFromParams(intrinsicBlockPair.second);
       }
   }
-
+  
   if (refineUndistortion)
   {
     for (const auto& undistoBlockPair : _undistortionOffsetBlocks)
     {
-        const IndexT undistortionId = undistoBlockPair.first;
-
-        std::shared_ptr<camera::Undistortion> undistortionObject = sfmData.getUndistortions().at(undistortionId);
-        if (undistortionObject)
+        const IndexT intrinsicId = undistoBlockPair.first;
+        std::shared_ptr<camera::IntrinsicBase> camera = sfmData.getIntrinsicsharedPtr(intrinsicId);
+        if (!camera) 
         {
-            undistortionObject->setOffset(undistoBlockPair.second);
+            continue;
+        }
+
+        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(camera);
+        if (isod)
+        {
+            std::shared_ptr<camera::Undistortion> undistortionObject = isod->getUndistortion();
+            if (undistortionObject)
+            {
+                undistortionObject->setOffset(undistoBlockPair.second);
+            }
         }
     }
 
     for (const auto& undistoBlockPair : _undistortionParametersBlocks)
     {
-        const IndexT undistortionId = undistoBlockPair.first;
-
-        std::shared_ptr<camera::Undistortion> undistortionObject = sfmData.getUndistortions().at(undistortionId);
-        if (undistortionObject)
+        const IndexT intrinsicId = undistoBlockPair.first;
+        std::shared_ptr<camera::IntrinsicBase> camera = sfmData.getIntrinsicsharedPtr(intrinsicId);
+        if (!camera)
         {
-            undistortionObject->setParameters(undistoBlockPair.second);
+            continue;
+        }
+
+        std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(camera);
+        if (isod)
+        {
+            std::shared_ptr<camera::Undistortion> undistortionObject = isod->getUndistortion();
+            if (undistortionObject)
+            {
+                undistortionObject->setParameters(undistoBlockPair.second);
+            }
         }
     }
   }

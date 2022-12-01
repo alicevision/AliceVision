@@ -315,13 +315,6 @@ int aliceVision_main(int argc, char** argv)
         // std::map::emplace does nothing if the key already exist
         sfmDataExport.getIntrinsics().emplace(view.getIntrinsicId(), sfmData.getIntrinsics().at(view.getIntrinsicId()));
     }
-
-    // Export intrinsics if defined
-    if (view.getUndistortionId() != UndefinedIndexT)
-    {
-        // std::map::emplace does nothing if the key already exist
-        sfmDataExport.getUndistortions().emplace(view.getUndistortionId(), sfmData.getUndistortions().at(view.getUndistortionId()));
-    }
   }
 
   const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
@@ -333,28 +326,17 @@ int aliceVision_main(int argc, char** argv)
   std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;
   std::map<std::string, std::vector<std::pair<std::size_t, IndexT>> > dslrViewPerKey;
 
-  std::set<std::pair<IndexT, IndexT>> unique_intrinsics;
-  for (const auto& view : sfmDataExport.getViews())
-  {
-      unique_intrinsics.insert(std::make_pair(view.second->getIntrinsicId(), view.second->getUndistortionId()));
-  }
-
   // export distortion map / one image per intrinsic/undistortion pair
   if(exportUVMaps)
   {
       oiio::ParamValueList targetMetadata;
       targetMetadata.push_back(oiio::ParamValue("AliceVision:storageDataType", "float"));
-      for(const auto& intrinsicPair : unique_intrinsics)
+      for(const auto& intrinsicPair : sfmData.getIntrinsics())
       {
           const IndexT intrinsicId = intrinsicPair.first;
-          const IndexT undistortionId = intrinsicPair.second;
+          const auto intrinsic = intrinsicPair.second;
 
-          const auto intrinsic = sfmDataExport.getIntrinsicsharedPtr(intrinsicId);
           std::shared_ptr<camera::Undistortion> undistortion;
-          if (undistortionId != UndefinedIndexT)
-          {
-              undistortion = sfmDataExport.getUndistortions()[undistortionId];
-          } 
           
           image::Image<image::RGBAfColor> stmap;
           if (intrinsic->isValid())
@@ -376,6 +358,7 @@ int aliceVision_main(int argc, char** argv)
               if (isod_output)
               {
                 isod_output->setDistortionObject(nullptr);
+                undistortion = isod_output->getUndistortion();
               }
 
               if (correctPixelRatio)
@@ -477,18 +460,14 @@ int aliceVision_main(int argc, char** argv)
           iso_output->setScale(scale);
         }
 
+        std::shared_ptr<camera::Undistortion> undistortion;
         std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod_output = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic_output);
         if (isod_output)
         {
+          undistortion = isod_output->getUndistortion();
           isod_output->setDistortionObject(nullptr);
         }
 
-        IndexT undistortionId = view.getUndistortionId();
-        std::shared_ptr<camera::Undistortion> undistortion = nullptr;
-        if (undistortionId != UndefinedIndexT)
-        {
-            undistortion = sfmData.getUndistortions()[undistortionId];
-        }
         
         // undistort the image and save it
         if(exportFullROD)

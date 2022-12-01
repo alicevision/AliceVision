@@ -800,10 +800,13 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
       
       sfmData::Observation observation_copy = observationPair.second;
 
-      IndexT udid = view.getUndistortionId();
-      if (udid != UndefinedIndexT)
+      IndexT intrinsicId = view.getIntrinsicId();
+      std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+      std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> isod = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+      
+      if (isod)
       {
-        std::shared_ptr<camera::Undistortion> undisto = sfmData.getUndistortions().at(udid);
+        std::shared_ptr<camera::Undistortion> undisto = isod->getUndistortion();
         if (undisto)
         {
           observation_copy.x = undisto->undistort(observation_copy.x);

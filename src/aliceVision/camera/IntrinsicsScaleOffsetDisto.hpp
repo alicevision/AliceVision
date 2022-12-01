@@ -51,6 +51,11 @@ public:
       _pDistortion = object;
   }
 
+  void setUndistortionObject(std::shared_ptr<Undistortion> object)
+  {
+      _pUndistortion = object;
+  }
+
   bool hasDistortion() const override
   {
     return _pDistortion != nullptr;
@@ -263,6 +268,11 @@ public:
       return _pDistortion;
   }
 
+  std::shared_ptr<Undistortion> getUndistortion() const
+  {
+      return _pUndistortion;
+  }
+
   ~IntrinsicsScaleOffsetDisto() override = default;
 
 protected:
@@ -276,6 +286,7 @@ protected:
   }
 
   std::shared_ptr<Distortion> _pDistortion;
+  std::shared_ptr<Undistortion> _pUndistortion;
 };
 
 } // namespace camera

@@ -215,7 +215,6 @@ public:
        std::size_t height = 0,
        IndexT rigId = UndefinedIndexT,
        IndexT subPoseId = UndefinedIndexT,
-       IndexT undistortionId = UndefinedIndexT,
        const std::map<std::string, std::string>& metadata = std::map<std::string, std::string>())
     : _imagePath(imagePath)
     , _width(width)
@@ -225,7 +224,6 @@ public:
     , _poseId(poseId)
     , _rigId(rigId)
     , _subPoseId(subPoseId)
-    , _undistortionId(undistortionId)
     , _metadata(metadata)
   {}
 
@@ -238,8 +236,7 @@ public:
            _width == other._width &&
            _height == other._height &&
            _rigId == other._rigId &&
-           _subPoseId == other._subPoseId && 
-           _undistortionId == other._undistortionId;
+           _subPoseId == other._subPoseId;
   }
 
   inline bool operator!=(const View& other) const { return !(*this == other); }
@@ -297,16 +294,6 @@ public:
   {
     return _intrinsicId;
   }
-
-  /**
-  * @brief Get the undistortion id
-  * @return undistortion id
-  */
-  IndexT getUndistortionId() const
-  {
-    return _undistortionId;
-  }
-
 
   /**
    * @brief Get the pose id
