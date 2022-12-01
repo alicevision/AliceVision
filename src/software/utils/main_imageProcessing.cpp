@@ -17,9 +17,7 @@
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include <opencv2/imgproc.hpp>
-#include <opencv2/core/core.hpp>
 #include <opencv2/photo.hpp>
-#include <opencv2/photo/cuda.hpp>
 #endif
 
 #include <OpenImageIO/imageio.h>
