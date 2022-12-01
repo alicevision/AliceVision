@@ -116,7 +116,9 @@ bool solve_translations_problem_l2_chordal(
   options.function_tolerance = function_tolerance;
   options.parameter_tolerance = parameter_tolerance;
   if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::SUITE_SPARSE) ||
+#if ALICEVISION_CERES_HAS_CXSPARSE
       ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE) ||
+#endif
       ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
