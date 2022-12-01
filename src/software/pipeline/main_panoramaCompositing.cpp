@@ -595,6 +595,11 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    hwc.setUserCoresLimit(maxThreads);
+    omp_set_num_threads(hwc.getMaxThreads());
+
     if (overlayType == "borders" || overlayType == "all")
     {
         showBorders = true;
@@ -677,10 +682,6 @@ int aliceVision_main(int argc, char** argv)
     
     bool succeeded = true;
 
-    if(maxThreads > 0)
-        omp_set_num_threads(std::min(omp_get_max_threads(), maxThreads));
-
-    //#pragma omp parallel for
     for (std::size_t posReference = 0; posReference < chunk.size(); posReference++)
     {
         ALICEVISION_LOG_INFO("processing input region " << posReference + 1 << "/" << chunk.size());

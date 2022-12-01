@@ -136,7 +136,8 @@ int aliceVision_main(int argc, char **argv)
   extractor.setOutputFolder(outputFolder);
 
   // set maxThreads
-  extractor.setMaxThreads(maxThreads);
+  HardwareContext hwc = cmdline.getHardwareContext();
+  hwc.setUserCoresLimit(maxThreads);
 
   // set extraction range
   if(rangeStart != -1)
@@ -176,7 +177,7 @@ int aliceVision_main(int argc, char **argv)
   {
     system::Timer timer;
 
-    extractor.process();
+    extractor.process(hwc);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
   }

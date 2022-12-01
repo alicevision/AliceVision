@@ -134,6 +134,10 @@ int aliceVision_main(int argc, char** argv)
 			return EXIT_FAILURE;
     	}	
 
+		// set maxThreads
+		HardwareContext hwc = cmdline.getHardwareContext();
+		omp_set_num_threads(hwc.getMaxThreads());
+
 		bool clampHalf = false;
 		oiio::TypeDesc typeColor = oiio::TypeDesc::FLOAT;
 		if (storageDataType == image::EStorageDataType::Half || storageDataType == image::EStorageDataType::HalfFinite) 
