@@ -73,44 +73,48 @@ inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, i
 
 
 /**
- * @brief Converts an openCv image (cv::Mat) in BGR to an aliceVision image
+ * @brief Implements the conversion of an OpenCV image (cv::Mat) in BGR to an aliceVision image
  * Keeps the alpha channel of the output image unchanged
- * @param[in] img - Input openCV image (cv::Mat)
- * @param[out] img - output RGBA aliceVision image
- * @return the resulting regex
+ * @tparam VecType - OpenCV vector type to interpret the img values with
+ * @param[in] img - input OpenCV image (supported OpenCV image types: CV_32FC3, CV_8UC3)
+ * @param[inout] imageOut - output RGBA aliceVision image
+ * @param[in] factor - optional scale factor
+ */
+template <typename VecType>
+inline void cvMatBGRToImageRGBAImpl(const cv::Mat& img, image::Image<image::RGBAfColor>& imageOut, float factor = 1.f)
+{
+    for(int row = 0; row < imageOut.Height(); row++)
+    {
+        const VecType* rowPtr = img.ptr<VecType>(row);
+        for(int col = 0; col < imageOut.Width(); col++)
+        {
+            const VecType& matPixel = rowPtr[col];
+            imageOut(row, col) = image::RGBAfColor(matPixel[2] * factor, matPixel[1] * factor,
+                                                   matPixel[0] * factor, imageOut(row, col).a());
+        }
+    }
+}
+
+
+/**
+ * @brief Converts an OpenCV image (cv::Mat) in BGR to an aliceVision image
+ * Keeps the alpha channel of the output image unchanged
+ * @param[in] img - input OpenCV image (supported OpenCV image types: CV_32FC3, CV_8UC3)
+ * @param[inout] imageOut - output RGBA aliceVision image
+ * @return the resulting aliceVision image
  */
 inline void cvMatBGRToImageRGBA(const cv::Mat& img, image::Image<image::RGBAfColor>& imageOut)
 {
-    const float charToFloat = 1.0f / 255.0f;
-    for(int row = 0; row < imageOut.Height(); row++)
+    switch(img.type())
     {
-        switch(img.type())
-        {
-            case CV_32FC3:
-            {
-                const cv::Vec3f* rowPtr = img.ptr<cv::Vec3f>(row);
-                for(int col = 0; col < imageOut.Width(); col++)
-                {
-                    const cv::Vec3f& matPixel = rowPtr[col];
-                    imageOut(row, col) =
-                        image::RGBAfColor(matPixel[2], matPixel[1], matPixel[0], imageOut(row, col).a());
-                }
-                break;
-            }
-            case CV_8UC3:
-            {
-                const cv::Vec3b* rowPtr = img.ptr<cv::Vec3b>(row);
-                for(int col = 0; col < imageOut.Width(); col++)
-                {
-                    const cv::Vec3b& matPixel = rowPtr[col];
-                    imageOut(row, col) = image::RGBAfColor(matPixel[2] * charToFloat, matPixel[1] * charToFloat,
-                                                           matPixel[0] * charToFloat, imageOut(row, col).a());
-                }
-                break;
-            }
-            default:
-                std::runtime_error("Cannot handle OpenCV matrix type '" + std::to_string(img.type()) + "'.");
-        }
+        case CV_32FC3:
+            cvMatBGRToImageRGBAImpl<cv::Vec3f>(img, imageOut);
+            break;
+        case CV_8UC3:
+            cvMatBGRToImageRGBAImpl<cv::Vec3b>(img, imageOut, 1.0f / 255.0f);
+            break;
+        default:
+            std::runtime_error("Cannot handle OpenCV matrix type '" + std::to_string(img.type()) + "'.");
     }
 }
 
