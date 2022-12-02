@@ -29,7 +29,6 @@ namespace image
  * @param[in] color - value to set
  * @param[in] factor - optional scale factor
  * @param[in] delta - optional delta added to the scaled values
- * @return the resulting openCV image
  */
 template <typename VecType, typename ValueType>
 inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor& color, float factor = 1.f,
@@ -42,11 +41,11 @@ inline void setValueCvMatBGR(cv::Mat& mat, int i, int j, const image::RGBAfColor
 
 
 /**
- * @brief Converts an aliceVision image to an openCv image (cv::Mat) in BGR
+ * @brief Converts an aliceVision image to an OpenCV image (cv::Mat) in BGR
  * Ignores the alpha channel of the source image
- * @param[in] img - Input RGBA aliceVision image
+ * @param[in] img - input RGBA aliceVision image
  * @param[in] cvtype - OpenCV mat type (supported values: CV_32FC3, CV_8UC3)
- * @return the resulting openCV image
+ * @return the resulting OpenCV image
  */
 inline cv::Mat imageRGBAToCvMatBGR(const image::Image<image::RGBAfColor>& img, int cvtype = CV_32FC3)
 {
