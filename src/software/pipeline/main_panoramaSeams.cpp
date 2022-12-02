@@ -222,7 +222,8 @@ int aliceVision_main(int argc, char** argv)
         }
 
         std::smatch m;
-        if (!std::regex_search(iter.path().string(), m, pattern))
+        const std::string text = iter.path().string();
+        if (!std::regex_search(text, m, pattern))
         {
             continue;
         }
