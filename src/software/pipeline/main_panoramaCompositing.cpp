@@ -353,10 +353,14 @@ bool processImage(const PanoramaMap & panoramaMap, const sfmData::SfMData & sfmD
     bool hasFailed = false;
 
     // Load metadata to get image color space
-    std::string colorSpace;
-    const std::string firstImagePath = (fs::path(warpingFolder) / (std::to_string(overlappingViews[0]) + ".exr")).string();
-    oiio::ParamValueList srcMetadata = image::readImageMetadata(firstImagePath);
-    colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
+    std::string colorSpace = "Linear";
+    if (overlappingViews.size() > 0)
+    {
+        const std::string warpedPath = sfmData.getViews().at(overlappingViews[0])->getMetadata().at("AliceVision:warpedPath");
+        const std::string firstImagePath = (fs::path(warpingFolder) / (warpedPath + ".exr")).string();
+        oiio::ParamValueList srcMetadata = image::readImageMetadata(firstImagePath);
+        colorSpace = srcMetadata.get_string("AliceVision:ColorSpace", "Linear");
+    }
 
     #pragma omp parallel for
     for (int posCurrent = 0; posCurrent < overlappingViews.size(); posCurrent++)
