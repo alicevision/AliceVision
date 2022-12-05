@@ -343,6 +343,7 @@ void detectColorChecker(
     ImageOptions& imgOpt,
     CCheckerDetectionSettings &settings)
 {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
     const std::string imgSrcStem = imgOpt.imgFsPath.stem().string();
@@ -394,6 +395,11 @@ void detectColorChecker(
                 cv::imwrite(masksFolder + imgDestStem + counterStr + "_" + std::to_string(i) + ".jpg", ccq._cellMasks[i]);
         }
     }
+#else
+    throw std::invalid_argument("Unsupported mode! If you intended to use a color checker, please add OpenCV >=4.5 support.");
+#endif
+
+
 }
 
 
