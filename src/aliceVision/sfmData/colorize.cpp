@@ -31,96 +31,74 @@ void colorizeTracks(SfMData& sfmData)
   for(auto& landmarkPair : sfmData.getLandmarks())
     remainingLandmarksToColor.push_back(landmarkPair.second);
 
-  struct ViewInfo
-  {
-    ViewInfo(IndexT viewId, std::size_t cardinal)
-      : viewId(viewId)
-      , cardinal(cardinal)
-    {}
+  
 
-    IndexT viewId;
-    std::size_t cardinal;
-    std::vector<std::reference_wrapper<Landmark>> landmarks;
+  struct ObservationInfo
+  {
+      ObservationInfo(Observation observation, image::RGBfColor& rgb, double& segment)
+          : observation(observation)
+          , rgb(rgb)
+          , segment(segment)
+      {
+      }
+      std::reference_wrapper<Observation> observation;
+      image::RGBfColor rgb;
+      double segment; // Inverse norm distance of landmark to center of view
   };
+  
+  std::map<int, std::vector<ObservationInfo>> landmarkInfo;
 
-  std::vector<ViewInfo> sortedViewsCardinal;
-  sortedViewsCardinal.reserve(sfmData.getViews().size());
+  for(const auto& viewPair : sfmData.getViews())
   {
-    // create cardinal per viewId map
-    std::map<IndexT, std::size_t> viewsCardinalMap; // <ViewId, Cardinal>
-    for(const auto& landmarkPair : sfmData.getLandmarks())
-    {
-      const Observations& observations = landmarkPair.second.observations;
-      for(const auto& observationPair : observations)
-        ++viewsCardinalMap[observationPair.first]; // TODO: 0
-    }
-
-    // copy key-value pairs from the map to the vector
-    for(const auto& cardinalPair : viewsCardinalMap)
-      sortedViewsCardinal.push_back(ViewInfo(cardinalPair.first, cardinalPair.second));
-
-    // sort the vector, biggest cardinality first
-    std::sort(sortedViewsCardinal.begin(),
-              sortedViewsCardinal.end(),
-              [] (const ViewInfo& l, const ViewInfo& r) { return l.cardinal > r.cardinal; });
-  }
-
-  // assign each landmark to a view
-  for(ViewInfo& viewCardinal : sortedViewsCardinal)
-  {
-    std::vector<std::reference_wrapper<Landmark>> toKeep;
-    const IndexT viewId = viewCardinal.viewId;
-
-    for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
-    {
-      Landmark& landmark = remainingLandmarksToColor.at(i);
-      auto it = landmark.observations.find(viewId);
-      if(it != landmark.observations.end())
-      {
-        viewCardinal.landmarks.push_back(landmark);
-      }
-      else
-      {
-        toKeep.push_back(landmark);
-      }
-    }
-    std::swap(toKeep, remainingLandmarksToColor);
-
-    if(remainingLandmarksToColor.empty())
-      break;
-  }
-
-  std::random_device randomDevice;
-  std::mt19937 rng(randomDevice());
-
-  // create an unsorted index container
-  std::vector<int> unsortedIndexes(sortedViewsCardinal.size()) ;
-  std::iota(std::begin(unsortedIndexes), std::end(unsortedIndexes), 0);
-  std::shuffle(unsortedIndexes.begin(), unsortedIndexes.end(), rng);
-
-  // landmark colorization
-#pragma omp parallel for
-  for(int i = 0; i < unsortedIndexes.size(); ++i)
-  {
-    const ViewInfo& viewCardinal = sortedViewsCardinal.at(unsortedIndexes.at(i));
-    if(!viewCardinal.landmarks.empty())
-    {
-      const View& view = sfmData.getView(viewCardinal.viewId);
+      const IndexT viewId = viewPair.first;
       image::Image<image::RGBColor> image;
-      image::readImage(view.getImagePath(), image, image::EImageColorSpace::SRGB);
+      image::readImage(viewPair.second->getImagePath(), image, image::EImageColorSpace::SRGB);
 
-      for(Landmark& landmark : viewCardinal.landmarks)
+      for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
       {
-        // color the point
-        Vec2 pt = landmark.observations.at(view.getViewId()).x;
-        // clamp the pixel position if the feature/marker center is outside the image.
-        pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.Width() - 1));
-        pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.Height() - 1));
-        landmark.rgb = image(pt.y(), pt.x());
-      }
+          Landmark& landmark = remainingLandmarksToColor[i];
+          auto it = landmark.observations.find(viewId);
+          if(it != landmark.observations.end())
+          {
+              const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
+              const Vec3& pt = landmark.X;
 
-      progressDisplay += viewCardinal.landmarks.size();
-    }
+              double eucd = 1.0 / (Tcenter - pt).norm();
+              Vec2 uv = it->second.x;
+              uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
+              uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
+              image::RGBColor obsColor = image(uv.y(), uv.x());
+              landmarkInfo[i].push_back(ObservationInfo(it->second,
+                                                        image::RGBfColor(static_cast<float>(obsColor.r()),
+                                                                         static_cast<float>(obsColor.g()),
+                                                                         static_cast<float>(obsColor.b())),
+                                                        eucd)
+                                        );
+
+          }
+          
+      }
+          
+  }
+
+  for(auto& landmarkInfoPair : landmarkInfo)
+  {
+      Landmark& landmark = remainingLandmarksToColor[landmarkInfoPair.first];
+      std::vector<ObservationInfo> obsInfoVector = landmarkInfoPair.second;
+      double sumSegments = 0.0;
+      // Compute weight based on Observation distance and assign landmark colors
+      for(const ObservationInfo& obsInfo : obsInfoVector)
+      {
+          sumSegments += obsInfo.segment;
+      }
+      image::RGBfColor rgbFinal(0.0);
+      for(const ObservationInfo& obsinfo : obsInfoVector)
+      {
+          rgbFinal = rgbFinal + (obsinfo.rgb * (obsinfo.segment / sumSegments));
+
+      }
+      landmark.rgb = image::RGBColor(static_cast<char>(rgbFinal.r()), static_cast<char>(rgbFinal.g()), static_cast<char>(rgbFinal.b()));
+      progressBar += 1;
   }
 }
 
