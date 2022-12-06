@@ -49,8 +49,8 @@ int aliceVision_main(int argc, char** argv)
       ("output,o", po::value<std::string>(&outputFilePath)->default_value(outputFilePath),
         "Output file path for the new mesh file (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl)");
 
-    CmdLine cmdline("AliceVision convertMesh\n"
-                    "The program allows to convert a mesh to another mesh format.");
+    CmdLine cmdline("The program allows to convert a mesh to another mesh format.\n"
+                    "AliceVision convertMesh");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
     {

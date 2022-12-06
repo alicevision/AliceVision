@@ -88,8 +88,8 @@ int aliceVision_main(int argc, char* argv[])
         ("computeNormalMaps", po::value<bool>(&computeNormalMaps)->default_value(computeNormalMaps),
             "Compute normal maps per depth map");
 
-    CmdLine cmdline("AliceVision depthMapFiltering\n"
-                    "Filter depth map to remove values that are not consistent with other depth maps");
+    CmdLine cmdline("This program filters depth maps to remove values that are not consistent with other depth maps.\n"
+                    "AliceVision depthMapFiltering");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

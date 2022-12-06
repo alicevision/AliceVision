@@ -67,7 +67,8 @@ int aliceVision_main(int argc, char** argv)
          "Set the poses to locked, so they will not be refined in the sfm step")
         ;
 
-    CmdLine cmdline("This program generate an SfMData from the configuration files of the Middlebury dataset: https://vision.middlebury.edu/mview/data");
+    CmdLine cmdline("This program generates an SfMData from the configuration files of the Middlebury dataset: https://vision.middlebury.edu/mview/data\n"
+                    "AliceVision importMiddlebury");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

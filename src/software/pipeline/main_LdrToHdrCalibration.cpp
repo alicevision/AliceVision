@@ -148,7 +148,7 @@ int aliceVision_main(int argc, char** argv)
          "can be managed by the calibration step (in term of computation time and memory usage).")
         ;
 
-    CmdLine cmdline("Recover the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracking.\n"
+    CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
                     "AliceVision LdrToHdrCalibration");
                   
     cmdline.add(requiredParams);

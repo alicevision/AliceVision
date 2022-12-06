@@ -89,8 +89,8 @@ int aliceVision_main(int argc, char **argv)
     ("zFar", po::value<double>(&zFar)->default_value(zFar),
       "Distance of the far camera plane.");
 
-  CmdLine cmdline("Compute camera cones that share some putative visual content.\n"
-                  "AliceVision FrustumFiltering");
+  CmdLine cmdline("This program computes camera cones that share some putative visual content.\n"
+                  "AliceVision frustumFiltering");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

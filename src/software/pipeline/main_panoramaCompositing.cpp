@@ -586,8 +586,8 @@ int aliceVision_main(int argc, char** argv)
         ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads), "max number of threads to use.")
         ("labels,l", po::value<std::string>(&labelsFilepath)->required(), "Labels image from seams estimation.");
 
-    CmdLine cmdline("Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
-                    "AliceVision PanoramaCompositing");
+    CmdLine cmdline("This program performs panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
+                    "AliceVision panoramaCompositing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

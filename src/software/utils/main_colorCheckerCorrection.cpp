@@ -157,7 +157,7 @@ int aliceVision_main(int argc, char** argv)
         "extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the original source file format.");
 
-    CmdLine cmdline("This program is used to perform color correction based on a color checker\n"
+    CmdLine cmdline("This program is used to perform color correction based on a color checker.\n"
                     "AliceVision colorCheckerCorrection");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);

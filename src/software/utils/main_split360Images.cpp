@@ -317,7 +317,7 @@ int aliceVision_main(int argc, char** argv)
       "Number of threads.")
     ;
 
-  CmdLine cmdline("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder\n"
+  CmdLine cmdline("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder.\n"
                   "AliceVision split360Images");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);

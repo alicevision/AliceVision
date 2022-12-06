@@ -68,7 +68,7 @@ int aliceVision_main(int argc, char* argv[])
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
-    CmdLine cmdline("AliceVision mesh resampling");
+    CmdLine cmdline("AliceVision meshResampling");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

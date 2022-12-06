@@ -130,7 +130,7 @@ int aliceVision_main(int argc, char **argv)
             "Path of the output SfMData file.")
         ;
 
-    CmdLine cmdline("AliceVision sfmAlignment");
+    CmdLine cmdline("AliceVision sfmTransfer");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

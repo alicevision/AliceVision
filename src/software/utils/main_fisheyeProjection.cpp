@@ -281,7 +281,7 @@ int aliceVision_main(int argc, char** argv)
     ("zRotation,z", po::value<std::vector<double>>(&zRotation)->multitoken(),
       "Angles to rotate each image on axis z : depth axis on the panorama.");
 
-  CmdLine cmdline("This program is used to stitch multiple fisheye images into an equirectangular 360° panorama\n"
+  CmdLine cmdline("This program is used to stitch multiple fisheye images into an equirectangular 360° panorama.\n"
                   "AliceVision fisheyeProjection");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);

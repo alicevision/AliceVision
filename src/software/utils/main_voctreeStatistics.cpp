@@ -77,8 +77,8 @@ int aliceVision_main(int argc, char** argv)
                                                                           "-weightedStrongCommonPoints: strongCommonPoints with weights \n"
                                                                           "-inversedWeightedCommonPoints: strongCommonPoints with inverted weights");
 
-  CmdLine cmdline("This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree\n"
-                  "The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset\n"
+  CmdLine cmdline("This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree.\n"
+                  "The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset.\n"
                   "AliceVision voctreeStatistics");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);

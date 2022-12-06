@@ -93,7 +93,8 @@ int aliceVision_main(int argc, char** argv)
         "maximum number of output frames (0 = no limit)");
 
 
-  aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig");
+  aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
+                               "AliceVision keyframeSelection");
   cmdline.add(inputParams);
   cmdline.add(metadataParams);
   cmdline.add(algorithmParams);

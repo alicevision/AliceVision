@@ -152,8 +152,8 @@ int aliceVision_main(int argc, char** argv)
       ("postProcess", po::value<bool>(&postProcess)->default_value(postProcess),
         "Post-process output mesh in order to avoid future geometric errors");
 
-    CmdLine cmdline("AliceVision mergeMeshes\n"
-                    "The program takes two meshes and applies a boolean operation on them.");
+    CmdLine cmdline("The program takes two meshes and applies a boolean operation on them.\n"
+                    "AliceVision mergeMeshes");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

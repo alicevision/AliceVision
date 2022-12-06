@@ -541,7 +541,7 @@ int main(int argc, char **argv)
             "Use the points visibilities from the meshing to filter triangles. Example: when they are occluded, back-face, etc.")
         ;
 
-    CmdLine cmdline("AliceVision mesh masking");
+    CmdLine cmdline("AliceVision meshMasking");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

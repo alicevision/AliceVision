@@ -232,7 +232,8 @@ int aliceVision_main(int argc, char** argv)
   
 
   CmdLine cmdline("This program takes as input a media (image, image sequence, video) and a database (vocabulary tree, 3D scene data) \n"
-                  "and returns for each frame a pose estimation for the camera.");
+                  "and returns for each frame a pose estimation for the camera.\n"
+                  "AliceVision cameraLocalization");
   cmdline.add(inputParams);
   cmdline.add(outputParams);
   cmdline.add(commonParams);

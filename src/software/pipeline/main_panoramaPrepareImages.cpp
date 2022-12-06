@@ -77,7 +77,7 @@ int aliceVision_main(int argc, char* argv[])
         ("output,o", po::value<std::string>(&sfmOutputDataFilename)->required(),
          "SfMData file output.");
 
-    CmdLine cmdline("Prepare images set for use in panorama.\n"
+    CmdLine cmdline("This program prepares images set for use in panorama.\n"
                     "AliceVision panoramaPrepareImages");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))

@@ -144,7 +144,7 @@ int aliceVision_main(int argc, char* argv[])
         ("filterTrianglesRatio", po::value<double>(&filterTrianglesRatio)->default_value(filterTrianglesRatio),
             "Remove all triangles by ratio (largest edge /smallest edge). Put zero to disable it.");
 
-    CmdLine cmdline("AliceVision mesh filtering");
+    CmdLine cmdline("AliceVision meshFiltering");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

@@ -99,7 +99,7 @@ int aliceVision_main(int argc, char** argv)
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
           "Range size.");
 
-    CmdLine cmdline("Merge LDR images into HDR images.\n"
+    CmdLine cmdline("This program merges LDR images into HDR images.\n"
                     "AliceVision LdrToHdrMerge");
                   
     cmdline.add(requiredParams);

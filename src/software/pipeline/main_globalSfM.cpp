@@ -81,7 +81,7 @@ int aliceVision_main(int argc, char **argv)
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ;
 
-  CmdLine cmdline("Implementation of the paper\n"
+  CmdLine cmdline("This program is an implementation of the paper\n"
                   "\"Global Fusion of Relative Motions for "
                   "Robust, Accurate and Scalable Structure from Motion.\"\n"
                   "Pierre Moulon, Pascal Monasse and Renaud Marlet ICCV 2013.\n"

@@ -132,8 +132,8 @@ int aliceVision_main(int argc, char* argv[])
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
             "Number of GPUs to use (0 means use all GPUs).");
 
-    CmdLine cmdline("AliceVision depthMapEstimation\n"
-                        "Estimate depth map for each input image");
+    CmdLine cmdline("This program estimates depth maps for each input image.\n"
+                    "AliceVision depthMapEstimation");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

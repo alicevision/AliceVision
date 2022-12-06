@@ -44,8 +44,8 @@ int aliceVision_main( int argc, char** argv )
     ("sanityCheck,s", po::value<bool>(&doSanityCheck)->default_value(doSanityCheck),
        "Perform a sanity check to check that the conversion and the genrated files are the same.");
 
-  CmdLine cmdline("This program is used to convert SIFT features from float representation to unsigned char representation\n"
-                  "AliceVision convertRAW");
+  CmdLine cmdline("This program is used to convert SIFT features from float representation to unsigned char representation.\n"
+                  "AliceVision convertFloatDescriptorToUchar");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

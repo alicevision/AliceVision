@@ -178,8 +178,8 @@ int aliceVision_main(int argc, char **argv)
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ;
 
-  CmdLine cmdline("Sequential/Incremental reconstruction\n"
-                  "Perform incremental SfM (Initial Pair Essential + Resection)\n"
+  CmdLine cmdline("Sequential/Incremental reconstruction.\n"
+                  "This program performs incremental SfM (Initial Pair Essential + Resection).\n"
                   "AliceVision incrementalSfM");
                   
   cmdline.add(requiredParams);

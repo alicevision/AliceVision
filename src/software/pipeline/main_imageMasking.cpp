@@ -154,7 +154,7 @@ int main(int argc, char **argv)
             "Compute a sub-range of N images (N=rangeSize).")
         ;
 
-    CmdLine cmdline("AliceVision masking");
+    CmdLine cmdline("AliceVision imageMasking");
     cmdline.add(requiredParams);
     cmdline.add(hsvParams);
     cmdline.add(optionalParams);
