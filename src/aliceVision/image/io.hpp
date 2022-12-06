@@ -321,6 +321,11 @@ void readImageDirect(const std::string& path, Image<IndexT>& image);
 void readImageDirect(const std::string& path, Image<unsigned char>& image);
 
 /**
+ * @brief log information about the memory usage of the OIIO default shared image cache 
+ */
+void logOIIOImageCacheInfo();
+
+/**
  * @brief write an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer

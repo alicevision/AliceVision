@@ -13,6 +13,7 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 #include <OpenImageIO/color.h>
+#include <OpenImageIO/imagecache.h>
 
 #include <aliceVision/half.hpp>
 
@@ -921,6 +922,33 @@ void readImage(const std::string& path, Image<RGBfColor>& image, const ImageRead
 void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions & imageReadOptions)
 {
   readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
+}
+
+void logOIIOImageCacheInfo()
+{
+  oiio::ImageCache* cache = oiio::ImageCache::create(true);
+
+  int maxOpenFiles = -1;
+  cache->getattribute("max_open_files", maxOpenFiles);
+
+  int totalFiles = -1;
+  cache->getattribute("total_files", totalFiles);
+
+  float maxMemoryMB = -1.f;
+  cache->getattribute("max_memory_MB", maxMemoryMB);
+
+  int64 cacheMemoryUsed = -1;
+  cache->getattribute("stat:cache_memory_used", oiio::TypeDesc::INT64, &cacheMemoryUsed);
+
+  int64 bytesRead = -1;
+  cache->getattribute("stat:bytes_read", oiio::TypeDesc::INT64, &bytesRead);
+
+  ALICEVISION_LOG_INFO("OIIO image cache info: " << 
+                      "\n * max open files: " << maxOpenFiles << 
+                      "\n * total files: " << totalFiles << 
+                      "\n * max memory (MB): " << maxMemoryMB << 
+                      "\n * cache memory used: " << cacheMemoryUsed << 
+                      "\n * bytes read: " << bytesRead);
 }
 
 void writeImage(const std::string& path, const Image<unsigned char>& image,
