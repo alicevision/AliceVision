@@ -186,7 +186,7 @@ int aliceVision_main(int argc, char **argv)
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ;
 
-  CmdLine cmdline("Compute corresponding features between a series of views:\n"
+  CmdLine cmdline("This program computes corresponding features between a series of views:\n"
                   "- Load view images description (regions: features & descriptors)\n"
                   "- Compute putative local feature matches (descriptors matching)\n"
                   "- Compute geometric coherent feature matches (robust model estimation from putative matches)\n"

@@ -190,7 +190,8 @@ int aliceVision_main(int argc, char** argv)
     
   CmdLine cmdline("This program is used to calibrate a camera rig composed of internally calibrated cameras."
                   "It takes as input a synchronized sequence of N cameras and it saves the estimated "
-                  "rig calibration to a text file");
+                  "rig calibration to a text file.\n"
+                  "AliceVision rigCalibration");
   cmdline.add(ioParams);
   cmdline.add(outputParams);
   cmdline.add(commonParams);

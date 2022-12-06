@@ -65,7 +65,7 @@ int aliceVision_main(int argc, char **argv)
         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ;
 
-  CmdLine cmdline("AliceVision compute structure from known poses");
+  CmdLine cmdline("AliceVision computeStructureFromKnownPoses");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

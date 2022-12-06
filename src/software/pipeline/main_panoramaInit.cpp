@@ -668,8 +668,8 @@ int main(int argc, char * argv[])
         ;
 
 
-    CmdLine cmdline("Parse external information about cameras used in a panorama.\n"
-                    "AliceVision PanoramaInit");
+    CmdLine cmdline("This program parses external information about cameras used in a panorama.\n"
+                    "AliceVision panoramaInit");
     cmdline.add(requiredParams);
     cmdline.add(motorizedHeadParams);
     cmdline.add(fisheyeParams);

@@ -196,7 +196,8 @@ int aliceVision_main(int argc, char** argv)
 #endif
           ;
 
-  CmdLine cmdline("This program is used to localize a camera rig composed of internally calibrated cameras");
+  CmdLine cmdline("This program is used to localize a camera rig composed of internally calibrated cameras.\n"
+                  "AliceVision rigLocalization");
   cmdline.add(inputParams);
   cmdline.add(outputParams);
   cmdline.add(commonParams);

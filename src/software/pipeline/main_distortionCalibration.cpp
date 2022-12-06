@@ -479,8 +479,8 @@ int aliceVision_main(int argc, char* argv[])
     ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(), "SfMData file output.")
     ;
 
-    CmdLine cmdline("Calibrate camera distortion.\n"
-                    "AliceVision Distortion Calibration");
+    CmdLine cmdline("This program calibrates camera distortion.\n"
+                    "AliceVision distortionCalibration");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
     {

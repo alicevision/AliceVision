@@ -60,8 +60,8 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType), ("Storage data type: " + image::EStorageDataType_informations()).c_str());
 
-    CmdLine cmdline("Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
-                    "AliceVision PanoramaCompositing");
+    CmdLine cmdline("This program performs panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
+                    "AliceVision panoramaMerging");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

@@ -207,7 +207,7 @@ int aliceVision_main(int argc, char **argv)
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
 
-  CmdLine cmdline("CameraInit");
+  CmdLine cmdline("AliceVision cameraInit");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

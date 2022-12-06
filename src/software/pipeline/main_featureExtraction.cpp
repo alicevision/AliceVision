@@ -92,7 +92,7 @@ int aliceVision_main(int argc, char **argv)
     ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
       "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).");
 
-  CmdLine cmdline("Alicevision feature extraction");
+  CmdLine cmdline("AliceVision featureExtraction");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

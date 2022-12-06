@@ -105,8 +105,8 @@ int aliceVision_main(int argc, char **argv)
       "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ;
 
-  CmdLine cmdline("Perform estimation of cameras orientation around a nodal point for 360° panorama.\n"
-                  "AliceVision PanoramaEstimation");
+  CmdLine cmdline("This program performs estimation of cameras orientation around a nodal point for 360° panorama.\n"
+                  "AliceVision panoramaEstimation");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))
