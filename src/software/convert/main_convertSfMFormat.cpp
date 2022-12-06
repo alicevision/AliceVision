@@ -74,7 +74,7 @@ int aliceVision_main(int argc, char **argv)
     ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
       "Export observations.");
 
-  CmdLine cmdline("AliceVision convert sfm format");
+  CmdLine cmdline("AliceVision convertSfMFormat");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

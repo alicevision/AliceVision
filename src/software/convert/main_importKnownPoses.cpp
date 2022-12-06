@@ -145,7 +145,7 @@ int aliceVision_main(int argc, char **argv)
       ("sfmData", po::value<std::string>(&sfmDataFilePath)->required(), "SfmData filepath.")
       ("output,o", po::value<std::string>(&outputFilename)->required(), "Output sfmData filepath.");
 
-  CmdLine cmdline("AliceVision import known poses");
+  CmdLine cmdline("AliceVision importKnownPoses");
   cmdline.add(requiredParams);
   if (!cmdline.execute(argc, argv))
   {
