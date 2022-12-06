@@ -46,7 +46,8 @@ int aliceVision_main(int argc, char* argv[])
              "folder.");
 
     CmdLine cmdline("Export an AV sfmdata to a Colmap scene, creating the folder structure and "
-                    "the scene files that can be used for running a MVS step");
+                    "the scene files that can be used for running a MVS step.\n"
+                    "AliceVision exportColmap");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
     {

@@ -139,7 +139,7 @@ int aliceVision_main(int argc, char** argv)
     ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
       image::EImageFileType_informations().c_str());
 
-  CmdLine cmdline("AliceVision Export Animated Camera");
+  CmdLine cmdline("AliceVision exportAnimatedCamera");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

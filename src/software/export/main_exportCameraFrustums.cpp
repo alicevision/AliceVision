@@ -40,7 +40,7 @@ int aliceVision_main(int argc, char **argv)
     ("output,o", po::value<std::string>(&plyOutFilename)->required(),
       "PLY file to store the camera frustums as triangle meshes.");
 
-  CmdLine cmdline("Export camera frustrums as a triangle PLY file\n"
+  CmdLine cmdline("Export camera frustrums as a triangle PLY file.\n"
                   "AliceVision exportCameraFrustums");
   cmdline.add(requiredParams);
   if (!cmdline.execute(argc, argv))
