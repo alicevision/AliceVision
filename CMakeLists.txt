@@ -949,11 +949,17 @@ if(AV_BUILD_PCL)
                 ${PNG_CMAKE_FLAGS}
                 ${CUDA_CMAKE_FLAGS}
                 -DWITH_CUDA:BOOL=${AV_USE_CUDA}
+                -DWITH_OPENGL:BOOL=OFF
+                -DWITH_OPENMP:BOOL=ON
+                -DWITH_LIBUSB:BOOL=OFF
+                -DWITH_VTK:BOOL=OFF
+                -DWITH_PCAP:BOOL=OFF
                 ${FLANN_CMAKE_FLAGS}
                 ${LZ4_CMAKE_FLAGS}
+                ${ZLIB_CMAKE_FLAGS}
                 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
             BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-            DEPENDS ${FLANN_TARGET} ${LZ4_TARGET} ${EIGEN_TARGET} ${BOOST_TARGET} ${PNG_TARGET} ${CUDA_TARGET}
+            DEPENDS ${FLANN_TARGET} ${LZ4_TARGET} ${EIGEN_TARGET} ${BOOST_TARGET} ${PNG_TARGET} ${CUDA_TARGET} ${ZLIB_TARGET}
             )
     set(PCL_CMAKE_FLAGS -DPCL_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/pcl-1.12/)
 
