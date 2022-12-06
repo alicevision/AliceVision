@@ -57,13 +57,12 @@ void colorizeTracks(SfMData& sfmData)
       {
             Landmark& landmark = remainingLandmarksToColor[i];
             auto it = landmark.observations.find(viewId);
-            const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
 
             if(it != landmark.observations.end())
             {
-
+                const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
                 const Vec3& pt = landmark.X;
-
+                
                 double eucd = 1.0 / (Tcenter - pt).norm();
                 Vec2 uv = it->second.x;
                 uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
