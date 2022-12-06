@@ -12,6 +12,11 @@
 
 #include <boost/program_options.hpp>
 
+#include <thread>
+#include <mutex>
+#include <functional>
+#include <chrono>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -19,6 +24,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
+using namespace std::chrono_literals;
 
 namespace po = boost::program_options;
 
@@ -29,7 +35,8 @@ int aliceVision_main(int argc, char **argv)
     int capacity = 256;
     int maxSize = 1024;
     std::vector<std::string> filenames;
-    std::vector<int> halfSampleLevels = {1};
+    std::vector<int> halfSampleLevels;
+    int nbThreads = 1;
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -44,7 +51,9 @@ int aliceVision_main(int argc, char **argv)
         ("maxSize", po::value<int>(&maxSize)->default_value(maxSize), 
         "Cache max size")
         ("halfSampleLevels", po::value<std::vector<int>>(&halfSampleLevels)->multitoken()->default_value(halfSampleLevels), 
-        "halfSampleLevels")
+        "Half-sampling levels")
+        ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads), 
+        "Number of threads")
         ;
 
     CmdLine cmdline("AliceVision imageCaching");
@@ -60,15 +69,34 @@ int aliceVision_main(int argc, char **argv)
     image::ImageReadOptions readOptions(image::EImageColorSpace::LINEAR);
     image::ImageCache cache(capacity, maxSize, readOptions);
 
-    // Load images
-    for (const std::string& filename: filenames)
+    // Start threads
+    std::vector<std::thread> threads;
+    std::mutex mutexLoadImg;
+    for (int i = 0; i < nbThreads; i++)
     {
-        for (int level: halfSampleLevels)
-        {
-            ALICEVISION_LOG_INFO("Reading " << filename << " with half sample level " << level);
-            auto img = cache.get(filename, level);
-            ALICEVISION_LOG_INFO(cache.toString());
-        }
+        threads.emplace_back([&](int numThread){
+            // Load images
+            for (int j = numThread; j < filenames.size(); j += nbThreads)
+            {
+                {
+                    const std::lock_guard<std::mutex> lock(mutexLoadImg);
+                    const std::string& filename = filenames[j];
+                    int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : 0;
+                    auto img = cache.get(filename, level);
+                    ALICEVISION_LOG_INFO("Load " << filename << '\n'
+                                        << "with half sample level " << level << '\n'
+                                        << "from thread " << numThread << '\n'
+                                        << cache.toString());
+                }
+                std::this_thread::sleep_for(1s);
+            }
+        }, i);
+    }
+
+    // Join threads
+    for (int i = 0; i < nbThreads; i++)
+    {
+        threads[i].join();
     }
 
     return EXIT_SUCCESS;

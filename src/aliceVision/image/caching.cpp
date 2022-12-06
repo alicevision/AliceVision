@@ -24,6 +24,8 @@ ImageCache::~ImageCache()
 
 std::shared_ptr<Image<RGBAfColor>> ImageCache::get(const std::string& filename, int halfSampleLevel)
 {
+    const std::lock_guard<std::mutex> lock(_mutex);
+
     CacheKey reqKey(filename, halfSampleLevel);
 
     // try finding the requested image in the cached images
@@ -100,8 +102,10 @@ void ImageCache::add(const CacheKey& key, std::shared_ptr<Image<RGBAfColor>> img
     _memUsage.contentSize += img->MemorySize();
 }
 
-std::string ImageCache::toString() const
+std::string ImageCache::toString()
 {
+    const std::lock_guard<std::mutex> lock(_mutex);
+
     std::string description = "Image cache content (LRU to MRU): ";
 
     for (const CacheKey& key : _keys)

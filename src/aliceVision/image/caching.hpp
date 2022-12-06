@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <functional>
 #include <list>
+#include <mutex>
 
 
 namespace aliceVision {
@@ -121,7 +122,7 @@ public:
      * @brief Provide a description of the current internal state of the cache (useful for logging).
      * @return a string describing the cache content
      */
-    std::string toString() const;
+    std::string toString();
 
 private:
     /**
@@ -135,6 +136,7 @@ private:
     ImageReadOptions _options;
     std::unordered_map<CacheKey, std::shared_ptr<Image<RGBAfColor>>, CacheKeyHasher> _imagePtrs;
     std::list<CacheKey> _keys; // ordered from LRU to MRU
+    std::mutex _mutex;
 
 };
 
