@@ -578,8 +578,7 @@ int aliceVision_main(int argc, char * argv[])
          "Output image extension (like exr, or empty to keep the source file format.")
         ;
 
-    CmdLine cmdline("Parse external information about cameras used in a panorama.\n"
-                    "AliceVision PanoramaExternalInfo");
+    CmdLine cmdline("AliceVision imageProcessing");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))

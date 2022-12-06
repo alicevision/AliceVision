@@ -33,7 +33,8 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
                                  "Output sfm file to generate.");
 
-    CmdLine cmdline("This program is used to generate a sample scene and save at to a given file path");
+    CmdLine cmdline("This program is used to generate a sample scene and save it to a given file path.\n"
+                    "AliceVision generateSampleScene");
     cmdline.add(requiredParams);
     if (!cmdline.execute(argc, argv))
     {

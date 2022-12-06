@@ -66,7 +66,7 @@ int aliceVision_main(int argc, char **argv)
     ("maxResidualError", po::value<double>(&maxResidualError)->default_value(maxResidualError),
       "Upper bound of the residual error tolerance.");
 
-  CmdLine cmdline("Image localization in an existing SfM reconstruction\n"
+  CmdLine cmdline("Image localization in an existing SfM reconstruction.\n"
                   "AliceVision sfmLocalization");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);

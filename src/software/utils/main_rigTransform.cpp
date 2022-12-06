@@ -60,7 +60,7 @@ int aliceVision_main(int argc, char** argv)
     ("rigFile,e", po::value<std::string>(&rigFile)->required(),
         "Rig calibration file that will be  applied to input.");
 
-  CmdLine cmdline("Program to deduce the pose of the not localized cameras of the RIG.\n"
+  CmdLine cmdline("This program is used to deduce the pose of the not localized cameras of the RIG.\n"
                   "Use if you have localized a single camera from an acquisition with a RIG of cameras.\n"
                   "AliceVision rigTransform");
   cmdline.add(requiredParams);

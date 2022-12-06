@@ -177,7 +177,7 @@ int main(int argc, char **argv)
       + feature::EImageDescriberType_informations()).c_str())
     ;
 
-  CmdLine cmdline("AliceVision sfmTransform");
+  CmdLine cmdline("AliceVision sfmDistances");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
   if (!cmdline.execute(argc, argv))

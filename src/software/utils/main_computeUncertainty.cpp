@@ -55,7 +55,7 @@ int aliceVision_main(int argc, char **argv)
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  CmdLine cmdline("AliceVision Uncertainty");
+  CmdLine cmdline("AliceVision computeUncertainty");
   cmdline.add(params);
   if (!cmdline.execute(argc, argv))
   {

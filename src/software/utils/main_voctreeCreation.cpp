@@ -69,9 +69,9 @@ int aliceVision_main(int argc, char** argv)
     (",L", po::value<uint32_t>(&LEVELS)->default_value(6), "Number of levels of the tree")
     ("sanitycheck,s", po::value<bool>(&sanityCheck)->default_value(sanityCheck), "Perform a sanity check at the end of the creation of the vocabulary tree. The sanity check is a query to the database with the same documents/images useed to train the vocabulary tree");
 
-  CmdLine cmdline("This program is used to load the sift descriptors from a SfMData file and create a vocabulary tree\n"
-                  "It takes as input either a list.txt file containing the a simple list of images (bundler format and older AliceVision version format)\n"
-                  "or a sfm_data file (JSON) containing the list of images. In both cases it is assumed that the .desc to load are in the same folder as the input file\n"
+  CmdLine cmdline("This program is used to load the sift descriptors from a SfMData file and create a vocabulary tree.\n"
+                  "It takes as input either a list.txt file containing a simple list of images (bundler format and older AliceVision version format)\n"
+                  "or a sfm_data file (JSON) containing the list of images. In both cases it is assumed that the .desc to load are in the same folder as the input file.\n"
                   "AliceVision voctreeCreation");
   cmdline.add(requiredParams);
   cmdline.add(optionalParams);
