@@ -530,7 +530,7 @@ int aliceVision_main(int argc, char * argv[])
         ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
         "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
-         "Output folder.")
+         "Output folder or output image if a single image is given as input.")
         ;
 
     po::options_description optionalParams("Optional parameters");
@@ -843,9 +843,28 @@ int aliceVision_main(int argc, char * argv[])
             const std::string filename = path.stem().string();
             const std::string fileExt = path.extension().string();
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
+
+            const std::string userExt = fs::path(outputPath).extension().string();
+            std::string outputFilePath;
+
+            if ((size == 1) && !userExt.empty())
+            {
+                if (image::isSupported(userExt))
+                {
+                    outputFilePath = fs::path(outputPath).generic_string();
+                }
+                else
+                {
+                    outputFilePath = (fs::path(outputPath).parent_path() / (filename + outputExt)).generic_string();
+                    ALICEVISION_LOG_WARNING("Extension " << userExt << " is not supported! Output image saved in " << outputFilePath);
+                }    
+            }
+            else
+            {
+                outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+            }
 
             image::DCPProfile dcpProf;
             sfmData::View view; // used to extract and complete metadata
@@ -884,8 +903,9 @@ int aliceVision_main(int argc, char * argv[])
             // set readOptions
             image::ImageReadOptions readOptions;
             readOptions.colorProfileFileName = dcpProf.info.filename;
-            if ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
-                (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata) && dcpProf.info.filename.empty())
+            if (dcpProf.info.filename.empty() &&
+                ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
+                 (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
             {
                 // Fallback case of missing profile but no error requested
                 readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;

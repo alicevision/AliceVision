@@ -119,9 +119,12 @@ struct DCPProfileApplyParams
 struct DCPProfileInfo
 {
     std::string filename = "";
+    std::string profileCalibrationSignature = "";
 
     bool has_color_matrix_1 = false;
     bool has_color_matrix_2 = false;
+    bool has_camera_calibration_1 = false;
+    bool has_camera_calibration_2 = false;
     bool has_forward_matrix_1 = false;
     bool has_forward_matrix_2 = false;
     bool has_look_table = false;
@@ -233,27 +236,25 @@ private:
     Triple matMult(const Matrix& M, const Triple& V);
     Matrix matInv(const Matrix& M);
 
-    Matrix getInterpolatedMatrix(const float cct, const std::string& type);
-    void getChromaticityCoordinatesFromXyz(const Triple& xyz, float& x, float& y);
-    Triple getXyzFromChromaticityCoordinates(const float x, const float y);
-    Triple getXyzFromTemperature(const float cct, const float tint = 0.f);
-    void setChromaticityCoordinates(const float x, const float y, float& cct, float& tint);
-    void getChromaticityCoordinates(const float cct, const float tint, float& x, float& y);
-    void getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, float& x, float& y);
+    Matrix getInterpolatedMatrix(const double cct, const std::string& type);
+    void getChromaticityCoordinatesFromXyz(const Triple& xyz, double& x, double& y);
+    Triple getXyzFromChromaticityCoordinates(const double x, const double y);
+    Triple getXyzFromTemperature(const double cct, const double tint = 0.f);
+    void setChromaticityCoordinates(const double x, const double y, double& cct, double& tint);
+    void getChromaticityCoordinates(const double cct, const double tint, double& x, double& y);
+    void getChromaticityCoordinatesFromCameraNeutral(const Matrix& analogBalance, const Triple& asShotNeutral, double& x, double& y);
     Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget);
-    Matrix getCameraToXyzD50Matrix(const float x, const float y);
-    Matrix getCameraToSrgbLinearMatrix(const float x, const float y);
+    Matrix getCameraToXyzD50Matrix(const double x, const double y);
+    Matrix getCameraToSrgbLinearMatrix(const double x, const double y);
     Matrix getCameraToSrgbLinearMatrix(const Triple& asShotNeutral, const bool sourceIsRaw = false);
 
     Matrix ws_sRGB; // working color space to sRGB
     Matrix sRGB_ws; // sRGB to working color space
     Matrix color_matrix_1; // Color matrix for illuminant 1
     Matrix color_matrix_2; // Color matrix for illuminant 2
-    Matrix calib_matrix_1; // Calibration matrix for illuminant 1
-    Matrix calib_matrix_2; // Calibration matrix for illuminant 2
+    Matrix camera_calibration_1; // Calibration matrix for illuminant 1
+    Matrix camera_calibration_2; // Calibration matrix for illuminant 2
     Matrix analogBalance;
-    bool will_interpolate;
-    bool valid;
     Matrix forward_matrix_1; // white balanced raw to xyzD50 for illumimant 1
     Matrix forward_matrix_2; // white balanced raw to xyzD50 for illumimant 2
     double baseline_exposure_offset;

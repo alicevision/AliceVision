@@ -749,6 +749,10 @@ public:
           (dcpProf.info.has_forward_matrix_1 ? 1 : 0);
       addMetadata("AliceVision:DCP:ForwardMatrixNumber", std::to_string(forwardMatrixNumber));
 
+      const int calibMatrixNumber = (dcpProf.info.has_camera_calibration_1 && dcpProf.info.has_camera_calibration_2) ? 2 :
+          (dcpProf.info.has_camera_calibration_1 ? 1 : 0);
+      addMetadata("AliceVision:DCP:CameraCalibrationMatrixNumber", std::to_string(calibMatrixNumber));
+
       std::vector<std::string> v_strColorMatrix;
       dcpProf.getMatricesAsStrings("color", v_strColorMatrix);
       for (int k = 0; k < v_strColorMatrix.size(); k++)
@@ -761,6 +765,13 @@ public:
       for (int k = 0; k < v_strForwardMatrix.size(); k++)
       {
           addMetadata("AliceVision:DCP:ForwardMat" + std::to_string(k + 1), v_strForwardMatrix[k]);
+      }
+
+      std::vector<std::string> v_strCalibMatrix;
+      dcpProf.getMatricesAsStrings("calib", v_strCalibMatrix);
+      for (int k = 0; k < v_strCalibMatrix.size(); k++)
+      {
+          addMetadata("AliceVision:DCP:CameraCalibrationMat" + std::to_string(k + 1), v_strCalibMatrix[k]);
       }
   }
 
