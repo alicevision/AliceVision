@@ -32,7 +32,6 @@ void colorizeTracks(SfMData& sfmData)
     remainingLandmarksToColor.push_back(landmarkPair.second);
 
   
-
   struct ObservationInfo
   {
       ObservationInfo(Observation observation, image::RGBfColor& rgb, double& segment)
@@ -56,26 +55,26 @@ void colorizeTracks(SfMData& sfmData)
 
       for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
       {
-          Landmark& landmark = remainingLandmarksToColor[i];
-          auto it = landmark.observations.find(viewId);
-          if(it != landmark.observations.end())
-          {
-              const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
-              const Vec3& pt = landmark.X;
+            Landmark& landmark = remainingLandmarksToColor[i];
+            auto it = landmark.observations.find(viewId);
+            const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
 
-              double eucd = 1.0 / (Tcenter - pt).norm();
-              Vec2 uv = it->second.x;
-              uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
-              uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
-              image::RGBColor obsColor = image(uv.y(), uv.x());
-              landmarkInfo[i].push_back(ObservationInfo(it->second,
-                                                        image::RGBfColor(static_cast<float>(obsColor.r()),
-                                                                         static_cast<float>(obsColor.g()),
-                                                                         static_cast<float>(obsColor.b())),
-                                                        eucd)
-                                        );
+            if(it != landmark.observations.end())
+            {
 
-          }
+                const Vec3& pt = landmark.X;
+
+                double eucd = 1.0 / (Tcenter - pt).norm();
+                Vec2 uv = it->second.x;
+                uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
+                uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
+                image::RGBColor obsColor = image(uv.y(), uv.x());
+                landmarkInfo[i].push_back(ObservationInfo(it->second,
+                                                            image::RGBfColor(static_cast<float>(obsColor.r()),
+                                                                            static_cast<float>(obsColor.g()),
+                                                                            static_cast<float>(obsColor.b())),
+                                                            eucd));
+            }
           
       }
           
@@ -95,10 +94,9 @@ void colorizeTracks(SfMData& sfmData)
       for(const ObservationInfo& obsinfo : obsInfoVector)
       {
           rgbFinal = rgbFinal + (obsinfo.rgb * (obsinfo.segment / sumSegments));
-
       }
       landmark.rgb = image::RGBColor(static_cast<char>(rgbFinal.r()), static_cast<char>(rgbFinal.g()), static_cast<char>(rgbFinal.b()));
-      progressBar += 1;
+      progressDisplay += 1;
   }
 }
 
