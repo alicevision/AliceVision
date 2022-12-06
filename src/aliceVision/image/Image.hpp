@@ -143,6 +143,15 @@ namespace aliceVision
         return sizeof( Tpixel );
       }
 
+      /**
+       * @brief Retrieve the size in byte of the image 
+       * @return size of the image (in byte)
+       */
+      inline int MemorySize() const
+      {
+        return Width() * Height() * Depth();
+      }
+
 
       /**
       * @brief Return the number of channels
