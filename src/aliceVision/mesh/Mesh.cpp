@@ -111,7 +111,10 @@ void Mesh::save(const std::string& filepath)
 
     aimesh->mNumVertices = pts.size();
     aimesh->mVertices = new aiVector3D[pts.size()];
-    aimesh->mColors[0] = new aiColor4D[pts.size()];
+    if(!_colors.empty() && _colors.size()==pts.size())
+    {
+        aimesh->mColors[0] = new aiColor4D[pts.size()];    
+    }
 
     int index = 0;
     for (const auto & p : pts)
@@ -120,12 +123,14 @@ void Mesh::save(const std::string& filepath)
         aimesh->mVertices[index].y = -p.y;
         aimesh->mVertices[index].z = -p.z;
 
-        aiColor4D c;
-        c.r = _colors[index].r / 255.0;
-        c.g = _colors[index].g / 255.0;
-        c.b = _colors[index].b / 255.0;
-        aimesh->mColors[0][index] = c;
-
+        if(!_colors.empty() && _colors.size() == pts.size())
+        {
+            aiColor4D c;
+            c.r = _colors[index].r / 255.0;
+            c.g = _colors[index].g / 255.0;
+            c.b = _colors[index].b / 255.0;
+            aimesh->mColors[0][index] = c;
+        }
         ++index;
     }
 
