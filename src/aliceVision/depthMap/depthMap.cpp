@@ -150,7 +150,7 @@ int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& dept
                          << "\t- # streams: " << out_nbAllowedStreams);
 
     if(out_nbAllowedStreams < 1 || rcCamParams > ALICEVISION_DEVICE_MAX_CONSTANT_CAMERA_PARAM_SETS)
-        ALICEVISION_THROW_ERROR("Not enough GPU memory to compute a single tile.")
+        ALICEVISION_THROW_ERROR("Not enough GPU memory to compute a single tile.");
 
     return out_nbAllowedStreams;
 }
