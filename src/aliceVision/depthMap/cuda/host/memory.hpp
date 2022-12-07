@@ -472,19 +472,6 @@ public:
         return *this;
     }
 
-    template<typename texturetype>
-    void bindToTexture( texturetype& texref )
-    {
-        cudaError_t err = cudaBindTexture2D( 0, // offset
-                                             texref,
-                                             this->getBuffer(),
-                                             cudaCreateChannelDesc<Type>(),
-                                             this->getUnitsInDim(0),
-                                             this->getUnitsInDim(1),
-                                             this->getPitch() );
-        THROW_ON_CUDA_ERROR( err, "Failed to bind texture reference to pitched memory, " << cudaGetErrorString( err ) );
-    }
-
     // see below with copy() functions
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src, cudaStream_t stream = 0 );
     void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream = 0 );
