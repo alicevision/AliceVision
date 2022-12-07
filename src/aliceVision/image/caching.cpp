@@ -102,7 +102,7 @@ void ImageCache::add(const CacheKey& key, std::shared_ptr<Image<RGBAfColor>> img
     _memUsage.contentSize += img->MemorySize();
 }
 
-std::string ImageCache::toString()
+std::string ImageCache::toString() const
 {
     const std::lock_guard<std::mutex> lock(_mutex);
 

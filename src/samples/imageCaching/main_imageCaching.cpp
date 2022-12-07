@@ -13,9 +13,7 @@
 #include <boost/program_options.hpp>
 
 #include <thread>
-#include <mutex>
 #include <functional>
-#include <chrono>
 
 
 // These constants define the current software version.
@@ -24,7 +22,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
-using namespace std::chrono_literals;
 
 namespace po = boost::program_options;
 
@@ -71,24 +68,19 @@ int aliceVision_main(int argc, char **argv)
 
     // Start threads
     std::vector<std::thread> threads;
-    std::mutex mutexLoadImg;
     for (int i = 0; i < nbThreads; i++)
     {
         threads.emplace_back([&](int numThread){
             // Load images
-            for (int j = numThread; j < filenames.size(); j += nbThreads)
+            for (int j = 0; j < filenames.size(); j++)
             {
-                {
-                    const std::lock_guard<std::mutex> lock(mutexLoadImg);
-                    const std::string& filename = filenames[j];
-                    int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : 0;
-                    auto img = cache.get(filename, level);
-                    ALICEVISION_LOG_INFO("Load " << filename << '\n'
-                                        << "with half sample level " << level << '\n'
-                                        << "from thread " << numThread << '\n'
-                                        << cache.toString());
-                }
-                std::this_thread::sleep_for(1s);
+                const std::string& filename = filenames[j];
+                int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : 0;
+                auto img = cache.get(filename, level);
+                ALICEVISION_LOG_INFO("Thread " << numThread << '\n' 
+                                    << "Filename: " << filename << '\n'
+                                    << "Half-sampling level: " << level << '\n'
+                                    << cache.toString());
             }
         }, i);
     }
