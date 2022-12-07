@@ -12,6 +12,7 @@
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <map>
 #include <random>
@@ -22,6 +23,7 @@ namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
+  system::Timer timer;
   auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
                                                               "\nCompute scene structure color\n");
 
@@ -45,14 +47,14 @@ void colorizeTracks(SfMData& sfmData)
       double segment; // Inverse norm distance of landmark to center of view
   };
   
-  std::map<int, std::vector<ObservationInfo>> landmarkInfo;
+  std::unordered_map<int, std::vector<ObservationInfo>> landmarkInfo;
 
   for(const auto& viewPair : sfmData.getViews())
   {
       const IndexT viewId = viewPair.first;
       image::Image<image::RGBColor> image;
       image::readImage(viewPair.second->getImagePath(), image, image::EImageColorSpace::SRGB);
-
+      #pragma omp parallel for
       for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
       {
             Landmark& landmark = remainingLandmarksToColor[i];
@@ -60,25 +62,29 @@ void colorizeTracks(SfMData& sfmData)
 
             if(it != landmark.observations.end())
             {
-                const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
-                const Vec3& pt = landmark.X;
+                #pragma omp critical
+                {
+                    const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
+                    const Vec3& pt = landmark.X;
+                    double eucd = 1.0 / (Tcenter - pt).norm();
+                    Vec2 uv = it->second.x;
+                    uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
+                    uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
+                    image::RGBColor obsColor = image(uv.y(), uv.x());
+                    landmarkInfo[i].push_back(ObservationInfo(it->second,
+                                                              image::RGBfColor(static_cast<float>(obsColor.r()),
+                                                                               static_cast<float>(obsColor.g()),
+                                                                               static_cast<float>(obsColor.b())),
+                                                              eucd));
                 
-                double eucd = 1.0 / (Tcenter - pt).norm();
-                Vec2 uv = it->second.x;
-                uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
-                uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
-                image::RGBColor obsColor = image(uv.y(), uv.x());
-                landmarkInfo[i].push_back(ObservationInfo(it->second,
-                                                            image::RGBfColor(static_cast<float>(obsColor.r()),
-                                                                            static_cast<float>(obsColor.g()),
-                                                                            static_cast<float>(obsColor.b())),
-                                                            eucd));
+                }
+                
             }
           
       }
           
   }
-
+  std::cout << "Obs info population: " << timer << std::endl;
   for(auto& landmarkInfoPair : landmarkInfo)
   {
       Landmark& landmark = remainingLandmarksToColor[landmarkInfoPair.first];
@@ -97,6 +103,8 @@ void colorizeTracks(SfMData& sfmData)
       landmark.rgb = image::RGBColor(static_cast<char>(rgbFinal.r()), static_cast<char>(rgbFinal.g()), static_cast<char>(rgbFinal.b()));
       progressDisplay += 1;
   }
+  
+  std::cout << sfmData.getViews().size() << " views and " << remainingLandmarksToColor.size() << " points Colorize Time: " << timer << std::endl;
 }
 
 } // namespace sfm
