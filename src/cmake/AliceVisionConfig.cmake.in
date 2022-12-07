@@ -108,6 +108,9 @@ if(ALICEVISION_BUILD_SFM)
   find_package(CoinUtils REQUIRED)
   find_package(Clp REQUIRED)
   find_package(Osi REQUIRED)
+set(ALICEVISION_BUILD_MVS @ALICEVISION_BUILD_MVS@)
+if(ALICEVISION_BUILD_MVS)
+  find_dependency(ZLIB REQUIRED)
 endif()
 
 # propagate other building options
