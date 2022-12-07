@@ -7,7 +7,7 @@
 #include "deviceNormalMap.hpp"
 #include "deviceNormalMapKernels.cuh"
 
-#include <aliceVision/depthMap/cuda/host/hostUtils.hpp>
+#include <aliceVision/depthMap/cuda/host/divUp.hpp>
 
 namespace aliceVision {
 namespace depthMap {

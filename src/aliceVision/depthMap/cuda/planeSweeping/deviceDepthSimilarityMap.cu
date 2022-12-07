@@ -7,7 +7,7 @@
 #include "deviceDepthSimilarityMap.hpp"
 #include "deviceDepthSimilarityMapKernels.cuh"
 
-#include <aliceVision/depthMap/cuda/host/hostUtils.hpp>
+#include <aliceVision/depthMap/cuda/host/divUp.hpp>
 
 #include <utility>
 

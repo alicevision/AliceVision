@@ -6,8 +6,8 @@
 
 #include "deviceGaussianFilter.hpp"
 
+#include <aliceVision/depthMap/cuda/host/divUp.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
-#include <aliceVision/depthMap/cuda/host/hostUtils.hpp>
 #include <aliceVision/depthMap/cuda/device/buffer.cuh>
 #include <aliceVision/depthMap/cuda/device/operators.cuh>
 

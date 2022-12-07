@@ -27,9 +27,9 @@ set(depthMap_files_sources
 
 # Cuda Host Headers Only
 set(depthMap_cuda_host_headers
-  cuda/host/hostUtils.hpp
   cuda/host/LRUCameraCache.hpp
   cuda/host/LRUCache.hpp
+  cuda/host/divUp.hpp
   cuda/host/memory.hpp
 )
 
