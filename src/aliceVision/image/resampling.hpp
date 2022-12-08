@@ -54,7 +54,7 @@ namespace image {
 
       out.resize(new_width, new_height);
 
-      const Sampler2d<SamplerType> sampler;
+      const Sampler2d<SamplerType> sampler; //TODO: rely on OIIO ? (as in downscaleImageInPlace)
       const float downscalef = downscale;
       for(int i = 0; i < new_height; ++i)
       {

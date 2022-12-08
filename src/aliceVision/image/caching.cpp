@@ -153,6 +153,7 @@ std::string ImageCache::toString() const
     std::string statsDesc = "\nUsage statistics: "
                             "\n * nb load from disk: " + std::to_string(_info.nbLoadFromDisk) + 
                             "\n * nb load from cache: " + std::to_string(_info.nbLoadFromCache) + 
+                            "\n * nb load from higher scale: " + std::to_string(_info.nbLoadFromHigherScale) + 
                             "\n * nb remove unused: " + std::to_string(_info.nbRemoveUnused);
     description += statsDesc;
  

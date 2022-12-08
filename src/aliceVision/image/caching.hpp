@@ -33,7 +33,7 @@ struct CacheKey
     oiio::TypeDesc::BASETYPE typeDesc;
     int halfSampleLevel;
 
-    CacheKey(const std::string& path, int nchannels, oiio::TypeDesc::BASETYPE baseType,  int level) : 
+    CacheKey(const std::string& path, int nchannels, oiio::TypeDesc::BASETYPE baseType, int level) : 
         filename(path), 
         nbChannels(nchannels), 
         typeDesc(baseType),  
@@ -78,6 +78,7 @@ struct CacheInfo
     /// usage statistics
     int nbLoadFromDisk = 0;
     int nbLoadFromCache = 0;
+    int nbLoadFromHigherScale = 0;
     int nbRemoveUnused = 0;
 
     CacheInfo(int capacity_MB, int maxSize_MB) : 
@@ -298,8 +299,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     // remove as few unused images as possible
     while (missingCapacity > 0)
     {
-        auto it = std::find_if(_keys.begin(), _keys.end(), [this](const CacheKey& key){
-            return _imagePtrs.at(key).useCount() == 1;
+        auto it = std::find_if(_keys.begin(), _keys.end(), [this](const CacheKey& k){
+            return _imagePtrs.at(k).useCount() == 1;
         });
         
         if (it != _keys.end())
@@ -335,14 +336,39 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 template<typename TPix>
 void ImageCache::load(const CacheKey& key)
 {
-    // load image from disk
     auto img = std::make_shared<Image<TPix>>();
-    readImage(key.filename, *img, _options);
-    _info.nbLoadFromDisk++;
 
-    // apply downscale
-    int downscale = 1 << key.halfSampleLevel;
-    downscaleImageInplace(*img, downscale);
+    // find the same image with a higher scale
+    auto it = std::find_if(_keys.begin(), _keys.end(), [&key](const CacheKey& k){
+        return k.filename == key.filename &&
+               k.nbChannels == key.nbChannels &&
+               k.typeDesc == key.typeDesc &&
+               k.halfSampleLevel <= key.halfSampleLevel;
+    });
+
+    if (it != _keys.end())
+    {
+        // retrieve high-scale image from cache
+        const CacheKey& keyHighScale = *it;
+        CacheValue& valueHighScale = _imagePtrs.at(keyHighScale);
+
+        // apply downscale
+        int downscale = 1 << (key.halfSampleLevel - keyHighScale.halfSampleLevel);
+        downscaleImage<SamplerLinear, Image<TPix>>(*(valueHighScale.get<TPix>()), *img, downscale);
+
+        _info.nbLoadFromHigherScale++;
+    }
+    else 
+    {
+        // load image from disk
+        readImage(key.filename, *img, _options);
+
+        // apply downscale
+        int downscale = 1 << key.halfSampleLevel;
+        downscaleImageInplace(*img, downscale);
+
+        _info.nbLoadFromDisk++;
+    }
 
     // create wrapper around shared pointer
     CacheValue value = CacheValue::wrap(img);
