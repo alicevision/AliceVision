@@ -71,7 +71,6 @@ void colorizeTracks(SfMData& sfmData)
   #pragma omp parallel for
   for( int viewId = 0; viewId < views.size(); viewId++)
   {
-      //const IndexT viewId = views.at(i)irst;
       image::Image<image::RGBColor> image;
       image::readImage(views.at(viewId)->getImagePath(), image, image::EImageColorSpace::SRGB);
 
@@ -100,7 +99,7 @@ void colorizeTracks(SfMData& sfmData)
       }
       progressDisplay += 1;    
   }
-  std::cout << "Obs info population: " << timer << std::endl;
+
   for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
   {
       Landmark& landmark = remainingLandmarksToColor.at(i);
