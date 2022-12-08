@@ -19,7 +19,7 @@ void HardwareContext::displayHardware()
     
     std::cout << "\tDetected core count : " << system::get_total_cpus() << std::endl;
 
-    if (_maxUserCoresAvailable < std::numeric_limits<size_t>::max())
+    if (_maxUserCoresAvailable < std::numeric_limits<unsigned int>::max())
     {
         std::cout << "\tUser upper limit on core count : " << _maxUserCoresAvailable << std::endl;
     }
@@ -30,7 +30,7 @@ void HardwareContext::displayHardware()
     
     std::cout << "\tDetected available memory : " << meminfo.availableRam / (1024 * 1024)  << " Mo" << std::endl;
 
-    if (_maxUserMemoryAvailable < std::numeric_limits<unsigned int>::max())
+    if (_maxUserMemoryAvailable < std::numeric_limits<size_t>::max())
     {
         std::cout << "\tUser upper limit on memory available : " << _maxUserMemoryAvailable / (1024 * 1024) << " Mo" << std::endl;
     }
