@@ -12,6 +12,110 @@
 namespace aliceVision {
 namespace image {
 
+CacheValue::CacheValue()
+{
+}
+
+CacheValue CacheValue::wrap(std::shared_ptr<Image<unsigned char>> img)
+{
+    CacheValue value;
+    value.imgUChar = img;
+    return value;
+}
+
+CacheValue CacheValue::wrap(std::shared_ptr<Image<float>> img)
+{
+    CacheValue value;
+    value.imgFloat = img;
+    return value;
+}
+
+CacheValue CacheValue::wrap(std::shared_ptr<Image<RGBColor>> img)
+{
+    CacheValue value;
+    value.imgRGB = img;
+    return value;
+}
+
+CacheValue CacheValue::wrap(std::shared_ptr<Image<RGBfColor>> img)
+{
+    CacheValue value;
+    value.imgRGBf = img;
+    return value;
+}
+
+CacheValue CacheValue::wrap(std::shared_ptr<Image<RGBAColor>> img)
+{
+    CacheValue value;
+    value.imgRGBA = img;
+    return value;
+}
+
+CacheValue CacheValue::wrap(std::shared_ptr<Image<RGBAfColor>> img)
+{
+    CacheValue value;
+    value.imgRGBAf = img;
+    return value;
+}
+
+int CacheValue::useCount() const
+{
+    if (imgUChar)
+    {
+        return imgUChar.use_count();
+    }
+    if (imgFloat)
+    {
+        return imgFloat.use_count();
+    }
+    if (imgRGB)
+    {
+        return imgRGB.use_count();
+    }
+    if (imgRGBf)
+    {
+        return imgRGBf.use_count();
+    }
+    if (imgRGBA)
+    {
+        return imgRGBA.use_count();
+    }
+    if (imgRGBAf)
+    {
+        return imgRGBAf.use_count();
+    }
+    return 0;
+}
+
+int CacheValue::memorySize() const
+{
+    if (imgUChar)
+    {
+        return imgUChar->MemorySize();
+    }
+    if (imgFloat)
+    {
+        return imgFloat->MemorySize();
+    }
+    if (imgRGB)
+    {
+        return imgRGB->MemorySize();
+    }
+    if (imgRGBf)
+    {
+        return imgRGBf->MemorySize();
+    }
+    if (imgRGBA)
+    {
+        return imgRGBA->MemorySize();
+    }
+    if (imgRGBAf)
+    {
+        return imgRGBAf->MemorySize();
+    }
+    return 0;
+}
+
 ImageCache::ImageCache(int capacity_MB, int maxSize_MB, const ImageReadOptions& options) : 
     _memUsage(capacity_MB, maxSize_MB), 
     _options(options)
@@ -20,86 +124,6 @@ ImageCache::ImageCache(int capacity_MB, int maxSize_MB, const ImageReadOptions& 
 
 ImageCache::~ImageCache()
 {
-}
-
-std::shared_ptr<Image<RGBAfColor>> ImageCache::get(const std::string& filename, int halfSampleLevel)
-{
-    const std::lock_guard<std::mutex> lock(_mutex);
-
-    CacheKey reqKey(filename, halfSampleLevel);
-
-    // try finding the requested image in the cached images
-    {
-        auto it = std::find(_keys.begin(), _keys.end(), reqKey);
-        if (it != _keys.end())
-        {
-            // image becomes LRU
-            _keys.erase(it);
-            _keys.push_back(reqKey);
-
-            return _imagePtrs[reqKey];
-        }
-    }
-
-    // load image from disk and apply downscale
-    auto img = std::make_shared<Image<RGBAfColor>>();
-    readImage(filename, *img, _options);
-    int downscale = 1 << halfSampleLevel;
-    downscaleImageInplace(*img, downscale);
-
-    // try adding image to cache if it fits in capacity
-    if (img->MemorySize() + _memUsage.contentSize <= _memUsage.capacity) 
-    {
-        add(reqKey, img);
-        return _imagePtrs[reqKey];
-    }
-
-    // image is too large to fit in capacity
-    // retrieve missing space
-    int missingSpace = img->MemorySize() + _memUsage.contentSize - _memUsage.capacity;
-
-    // try removing an unused image that is sufficiently large
-    {
-        auto it = _keys.begin();
-        while (it != _keys.end())
-        {
-            const CacheKey& key = *it;
-            if (_imagePtrs[key].use_count() == 1 && _imagePtrs[key]->MemorySize() >= missingSpace)
-            {
-                // remove unused image from cache
-                _memUsage.nbImages--;
-                _memUsage.contentSize -= _imagePtrs[key]->MemorySize();
-                _imagePtrs.erase(key);
-                _keys.erase(it);
-
-                add(reqKey, img);
-                return _imagePtrs[reqKey];
-            }
-            ++it;
-        }
-    }
-
-    // try adding image to cache it it fits in maxSize
-    if (img->MemorySize() + _memUsage.contentSize <= _memUsage.maxSize) 
-    {
-        add(reqKey, img);
-        return _imagePtrs[reqKey];
-    }
-
-    return nullptr;
-}
-
-void ImageCache::add(const CacheKey& key, std::shared_ptr<Image<RGBAfColor>> img)
-{
-    // store (key, img) entry
-    _imagePtrs[key] = img;
-
-    // image becomes LRU
-    _keys.push_back(key);
-
-    // update memory usage
-    _memUsage.nbImages++;
-    _memUsage.contentSize += img->MemorySize();
 }
 
 std::string ImageCache::toString() const
@@ -111,9 +135,11 @@ std::string ImageCache::toString() const
     for (const CacheKey& key : _keys)
     {
         std::string keyDesc = key.filename + 
+                              ", nbChannels: " + std::to_string(key.nbChannels) + 
+                              ", typeDesc: " + std::to_string(key.typeDesc) + 
                               ", halfSampleLevel: " + std::to_string(key.halfSampleLevel) + 
-                              ", usages: " + std::to_string(_imagePtrs.at(key).use_count()) + 
-                              ", size: " + std::to_string(_imagePtrs.at(key)->MemorySize());
+                              ", usages: " + std::to_string(_imagePtrs.at(key).useCount()) + 
+                              ", size: " + std::to_string(_imagePtrs.at(key).memorySize());
         description += "\n * " + keyDesc;
     }
 

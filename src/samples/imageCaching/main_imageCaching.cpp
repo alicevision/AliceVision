@@ -76,7 +76,12 @@ int aliceVision_main(int argc, char **argv)
             {
                 const std::string& filename = filenames[j];
                 int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : 0;
-                auto img = cache.get(filename, level);
+                auto imgUChar = cache.get<unsigned char>(filename, level);
+                auto imgFloat = cache.get<float>(filename, level);
+                auto imgRGB = cache.get<image::RGBColor>(filename, level);
+                auto imgRGBf = cache.get<image::RGBfColor>(filename, level);
+                auto imgRGBA = cache.get<image::RGBAColor>(filename, level);
+                auto imgRGBAf = cache.get<image::RGBAfColor>(filename, level);
                 ALICEVISION_LOG_INFO("Thread " << numThread << '\n' 
                                     << "Filename: " << filename << '\n'
                                     << "Half-sampling level: " << level << '\n'
