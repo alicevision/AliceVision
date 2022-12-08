@@ -63,20 +63,26 @@ struct CacheKeyHasher
 };
 
 /**
- * @brief A struct to store information about the cache current memory usage.
+ * @brief A struct to store information about the cache current state and usage.
  */
-struct CacheMemoryUsage
+struct CacheInfo
 {
-    int capacity;
-    int maxSize;
-    int nbImages;
-    int contentSize;
+    /// memory usage limits
+    const int capacity;
+    const int maxSize;
 
-    CacheMemoryUsage(int capacity_MB, int maxSize_MB) : 
+    /// current state of the cache
+    int nbImages = 0;
+    int contentSize = 0;
+
+    /// usage statistics
+    int nbLoadFromDisk = 0;
+    int nbLoadFromCache = 0;
+    int nbRemoveUnused = 0;
+
+    CacheInfo(int capacity_MB, int maxSize_MB) : 
         capacity(capacity_MB * 1000000), 
-        maxSize(maxSize_MB * 1000000), 
-        nbImages(0), 
-        contentSize(0)
+        maxSize(maxSize_MB * 1000000)
     {
     }
 };
@@ -186,11 +192,11 @@ public:
     std::shared_ptr<Image<TPix>> get(const std::string& filename, int halfSampleLevel);
 
     /**
-     * @return the current memory usage of the cache
+     * @return information on the current cache state and usage
      */
-    inline const CacheMemoryUsage& memoryUsage() const
+    inline const CacheInfo& info() const
     {
-        return _memUsage;
+        return _info;
     }
 
     /**
@@ -215,7 +221,7 @@ private:
     template<typename TPix>
     void load(const CacheKey& key);
 
-    CacheMemoryUsage _memUsage;
+    CacheInfo _info;
     ImageReadOptions _options;
     std::unordered_map<CacheKey, CacheValue, CacheKeyHasher> _imagePtrs;
     /// ordered from LRU (Least Recently Used) to MRU (Most Recently Used)
@@ -243,6 +249,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
             _keys.erase(it);
             _keys.push_back(reqKey);
 
+            _info.nbLoadFromCache++;
+
             return _imagePtrs.at(reqKey).get<TPix>();
         }
     }
@@ -254,14 +262,14 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     int memSize = (width / downscale) * (height / downscale) * sizeof(TPix);
  
     // add image to cache if it fits in capacity
-    if (memSize + _memUsage.contentSize <= _memUsage.capacity) 
+    if (memSize + _info.contentSize <= _info.capacity) 
     {
         load<TPix>(reqKey);
         return _imagePtrs.at(reqKey).get<TPix>();
     }
 
     // retrieve missing capacity
-    int missingCapacity = memSize + _memUsage.contentSize - _memUsage.capacity;
+    int missingCapacity = memSize + _info.contentSize - _info.capacity;
 
     // find unused image with size bigger than missing capacity
     // remove it and add image to cache
@@ -273,10 +281,12 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
             const CacheValue& value = _imagePtrs.at(key);
             if (value.useCount() == 1 && value.memorySize() >= missingCapacity)
             {
-                _memUsage.nbImages--;
-                _memUsage.contentSize -= value.memorySize();
+                _info.nbImages--;
+                _info.contentSize -= value.memorySize();
                 _imagePtrs.erase(key);
                 _keys.erase(it);
+
+                _info.nbRemoveUnused++;
 
                 load<TPix>(reqKey);
                 return _imagePtrs.at(reqKey).get<TPix>();
@@ -296,10 +306,13 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
         {
             const CacheKey& key = *it;
             const CacheValue& value = _imagePtrs.at(key);
-            _memUsage.nbImages--;
-            _memUsage.contentSize -= value.memorySize();
+
+            _info.nbImages--;
+            _info.contentSize -= value.memorySize();
             _imagePtrs.erase(key);
             _keys.erase(it);
+
+            _info.nbRemoveUnused++;
         }
         else 
         {
@@ -308,7 +321,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     }
 
     // add image to cache if it fits in maxSize
-    if (memSize + _memUsage.contentSize <= _memUsage.maxSize) 
+    if (memSize + _info.contentSize <= _info.maxSize) 
     {
         load<TPix>(reqKey);
         return _imagePtrs.at(reqKey).get<TPix>();
@@ -325,6 +338,7 @@ void ImageCache::load(const CacheKey& key)
     // load image from disk
     auto img = std::make_shared<Image<TPix>>();
     readImage(key.filename, *img, _options);
+    _info.nbLoadFromDisk++;
 
     // apply downscale
     int downscale = 1 << key.halfSampleLevel;
@@ -338,8 +352,8 @@ void ImageCache::load(const CacheKey& key)
     _keys.push_back(key);
 
     // update memory usage
-    _memUsage.nbImages++;
-    _memUsage.contentSize += value.memorySize();
+    _info.nbImages++;
+    _info.contentSize += value.memorySize();
 }
 
 }

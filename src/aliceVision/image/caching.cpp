@@ -117,7 +117,7 @@ int CacheValue::memorySize() const
 }
 
 ImageCache::ImageCache(int capacity_MB, int maxSize_MB, const ImageReadOptions& options) : 
-    _memUsage(capacity_MB, maxSize_MB), 
+    _info(capacity_MB, maxSize_MB), 
     _options(options)
 {
 }
@@ -144,12 +144,17 @@ std::string ImageCache::toString() const
     }
 
     std::string memUsageDesc = "\nMemory usage: "
-                               "\n * capacity: " + std::to_string(_memUsage.capacity) + 
-                               "\n * max size: " + std::to_string(_memUsage.maxSize) + 
-                               "\n * nb images: " + std::to_string(_memUsage.nbImages) + 
-                               "\n * content size: " + std::to_string(_memUsage.contentSize);
-    
+                               "\n * capacity: " + std::to_string(_info.capacity) + 
+                               "\n * max size: " + std::to_string(_info.maxSize) + 
+                               "\n * nb images: " + std::to_string(_info.nbImages) + 
+                               "\n * content size: " + std::to_string(_info.contentSize);
     description += memUsageDesc;
+
+    std::string statsDesc = "\nUsage statistics: "
+                            "\n * nb load from disk: " + std::to_string(_info.nbLoadFromDisk) + 
+                            "\n * nb load from cache: " + std::to_string(_info.nbLoadFromCache) + 
+                            "\n * nb remove unused: " + std::to_string(_info.nbRemoveUnused);
+    description += statsDesc;
  
     return description;
 }
