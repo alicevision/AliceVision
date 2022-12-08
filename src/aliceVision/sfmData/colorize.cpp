@@ -19,12 +19,44 @@
 #include <vector>
 #include <functional>
 namespace aliceVision {
+
+class LMColorAccumulator
+{
+    public:
+        LMColorAccumulator()
+            : rgbFinal(0.0)
+            , sumSegments(0.0)
+            {}
+        ~LMColorAccumulator() {}
+
+
+        image::RGBfColor rgbFinal;
+        double sumSegments;
+
+        void addRGB(const image::RGBfColor& rgbf, const double& weight) 
+        { 
+            rgbFinal = rgbFinal + (rgbf*weight);
+            sumSegments += weight; 
+        }
+
+        image::RGBfColor getColor() const 
+        { 
+            return rgbFinal / sumSegments;
+        }
+
+        image::RGBColor getRGBChar() const 
+        {
+            auto temp = getColor();
+            return image::RGBColor(static_cast<char>(temp.r()), static_cast<char>(temp.g()),static_cast<char>(temp.b()));
+        }
+
+};
 namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
   system::Timer timer;
-  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout,
+  auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout,
                                                               "\nCompute scene structure color\n");
 
   std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
@@ -33,75 +65,47 @@ void colorizeTracks(SfMData& sfmData)
   for(auto& landmarkPair : sfmData.getLandmarks())
     remainingLandmarksToColor.push_back(landmarkPair.second);
 
-  
-  struct ObservationInfo
-  {
-      ObservationInfo(Observation observation, image::RGBfColor& rgb, double& segment)
-          : observation(observation)
-          , rgb(rgb)
-          , segment(segment)
-      {
-      }
-      std::reference_wrapper<Observation> observation;
-      image::RGBfColor rgb;
-      double segment; // Inverse norm distance of landmark to center of view
-  };
-  
-  std::unordered_map<int, std::vector<ObservationInfo>> landmarkInfo;
+  std::vector<LMColorAccumulator> landmarkInfo(sfmData.getLandmarks().size());
+  Views& views = sfmData.getViews();
 
-  for(const auto& viewPair : sfmData.getViews())
+  #pragma omp parallel for
+  for( int viewId = 0; viewId < views.size(); viewId++)
   {
-      const IndexT viewId = viewPair.first;
+      //const IndexT viewId = views.at(i)irst;
       image::Image<image::RGBColor> image;
-      image::readImage(viewPair.second->getImagePath(), image, image::EImageColorSpace::SRGB);
+      image::readImage(views.at(viewId)->getImagePath(), image, image::EImageColorSpace::SRGB);
+
       #pragma omp parallel for
       for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
       {
-            Landmark& landmark = remainingLandmarksToColor[i];
+            Landmark& landmark = remainingLandmarksToColor.at(i);
             auto it = landmark.observations.find(viewId);
 
             if(it != landmark.observations.end())
             {
+                const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
+                const Vec3& pt = landmark.X;
+                double eucd = 1.0 / (Tcenter - pt).norm();
+                Vec2 uv = it->second.x;
+                uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
+                uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
+                image::RGBColor obsColor = image(uv.y(), uv.x());
+                image::RGBfColor& rgbf = image::RGBfColor(static_cast<float>(obsColor.r()), static_cast<float>(obsColor.g()), static_cast<float>(obsColor.b()));
+                
                 #pragma omp critical
                 {
-                    const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
-                    const Vec3& pt = landmark.X;
-                    double eucd = 1.0 / (Tcenter - pt).norm();
-                    Vec2 uv = it->second.x;
-                    uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
-                    uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
-                    image::RGBColor obsColor = image(uv.y(), uv.x());
-                    landmarkInfo[i].push_back(ObservationInfo(it->second,
-                                                              image::RGBfColor(static_cast<float>(obsColor.r()),
-                                                                               static_cast<float>(obsColor.g()),
-                                                                               static_cast<float>(obsColor.b())),
-                                                              eucd));
-                
-                }
-                
-            }
-          
+                    landmarkInfo.at(i).addRGB(rgbf, eucd);
+                }   
+            }     
       }
-          
+      progressDisplay += 1;    
   }
   std::cout << "Obs info population: " << timer << std::endl;
-  for(auto& landmarkInfoPair : landmarkInfo)
+  for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
   {
-      Landmark& landmark = remainingLandmarksToColor[landmarkInfoPair.first];
-      std::vector<ObservationInfo> obsInfoVector = landmarkInfoPair.second;
-      double sumSegments = 0.0;
-      // Compute weight based on Observation distance and assign landmark colors
-      for(const ObservationInfo& obsInfo : obsInfoVector)
-      {
-          sumSegments += obsInfo.segment;
-      }
-      image::RGBfColor rgbFinal(0.0);
-      for(const ObservationInfo& obsinfo : obsInfoVector)
-      {
-          rgbFinal = rgbFinal + (obsinfo.rgb * (obsinfo.segment / sumSegments));
-      }
-      landmark.rgb = image::RGBColor(static_cast<char>(rgbFinal.r()), static_cast<char>(rgbFinal.g()), static_cast<char>(rgbFinal.b()));
-      progressDisplay += 1;
+      Landmark& landmark = remainingLandmarksToColor.at(i);
+      landmark.rgb = landmarkInfo.at(i).getRGBChar();
+      
   }
   
   std::cout << sfmData.getViews().size() << " views and " << remainingLandmarksToColor.size() << " points Colorize Time: " << timer << std::endl;
