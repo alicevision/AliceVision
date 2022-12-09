@@ -23,17 +23,14 @@ namespace aliceVision {
 class LMColorAccumulator
 {
     public:
-        LMColorAccumulator()
-            : rgbFinal(0.0)
-            , sumSegments(0.0)
-            {}
-        ~LMColorAccumulator() {}
+        LMColorAccumulator() = default 
+        ~LMColorAccumulator() = default
 
 
-        image::RGBfColor rgbFinal;
-        double sumSegments;
+        image::RGBfColor rgbFinal{0};
+        double sumSegments{.0};
 
-        void addRGB(const image::RGBfColor& rgbf, const double& weight) 
+        void addRGB(const image::RGBfColor& rgbf, double weight) 
         { 
             rgbFinal = rgbFinal + (rgbf*weight);
             sumSegments += weight; 
@@ -69,7 +66,7 @@ void colorizeTracks(SfMData& sfmData)
   Views& views = sfmData.getViews();
 
   #pragma omp parallel for
-  for( int viewId = 0; viewId < views.size(); viewId++)
+  for( int viewId = 0; viewId < views.size(); ++viewId)
   {
       image::Image<image::RGBColor> image;
       image::readImage(views.at(viewId)->getImagePath(), image, image::EImageColorSpace::SRGB);
@@ -77,18 +74,18 @@ void colorizeTracks(SfMData& sfmData)
       #pragma omp parallel for
       for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
       {
-            Landmark& landmark = remainingLandmarksToColor.at(i);
-            auto it = landmark.observations.find(viewId);
+            const Landmark& landmark = remainingLandmarksToColor.at(i);
+            const auto it = landmark.observations.find(viewId);
 
             if(it != landmark.observations.end())
             {
                 const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
                 const Vec3& pt = landmark.X;
-                double eucd = 1.0 / (Tcenter - pt).norm();
+                const double eucd = 1.0 / (Tcenter - pt).norm();
                 Vec2 uv = it->second.x;
                 uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
                 uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
-                image::RGBColor obsColor = image(uv.y(), uv.x());
+                const image::RGBColor obsColor = image(uv.y(), uv.x());
                 image::RGBfColor& rgbf = image::RGBfColor(static_cast<float>(obsColor.r()), static_cast<float>(obsColor.g()), static_cast<float>(obsColor.b()));
                 
                 #pragma omp critical
