@@ -13,6 +13,9 @@
 
 #include <aliceVision/system/Logger.hpp>
 
+#include <boost/filesystem.hpp>
+#include <boost/functional/hash.hpp>
+
 #include <memory>
 #include <unordered_map>
 #include <functional>
@@ -32,12 +35,14 @@ struct CacheKey
     int nbChannels;
     oiio::TypeDesc::BASETYPE typeDesc;
     int halfSampleLevel;
+    std::time_t lastWriteTime;
 
-    CacheKey(const std::string& path, int nchannels, oiio::TypeDesc::BASETYPE baseType, int level) : 
+    CacheKey(const std::string& path, int nchannels, oiio::TypeDesc::BASETYPE baseType, int level, std::time_t time) : 
         filename(path), 
         nbChannels(nchannels), 
         typeDesc(baseType),  
-        halfSampleLevel(level)
+        halfSampleLevel(level), 
+        lastWriteTime(time)
     {
     }
 
@@ -46,7 +51,8 @@ struct CacheKey
         return (filename == other.filename &&
                 nbChannels == other.nbChannels &&
                 typeDesc == other.typeDesc &&
-                halfSampleLevel == other.halfSampleLevel);
+                halfSampleLevel == other.halfSampleLevel &&
+                lastWriteTime == other.lastWriteTime);
     }
 };
 
@@ -54,11 +60,13 @@ struct CacheKeyHasher
 {
     std::size_t operator()(const CacheKey& key) const noexcept
     {
-        std::size_t h1 = std::hash<std::string>{}(key.filename);
-        std::size_t h2 = std::hash<int>{}(key.nbChannels);
-        std::size_t h3 = std::hash<int>{}(key.typeDesc);
-        std::size_t h4 = std::hash<int>{}(key.halfSampleLevel);
-        return (h1 ^ (h2 << 1)) ^ (h3 ^ (h4 << 1));
+        std::size_t seed = 0;
+        boost::hash_combine(seed, key.filename);
+        boost::hash_combine(seed, key.nbChannels);
+        boost::hash_combine(seed, key.typeDesc);
+        boost::hash_combine(seed, key.halfSampleLevel);
+        boost::hash_combine(seed, key.lastWriteTime);
+        return seed;
     }
 };
 
@@ -239,20 +247,21 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 
     using TInfo = ColorTypeInfo<TPix>;
 
-    CacheKey reqKey(filename, TInfo::size, TInfo::typeDesc, halfSampleLevel);
+    auto lastWriteTime = boost::filesystem::last_write_time(filename);
+    CacheKey keyReq(filename, TInfo::size, TInfo::typeDesc, halfSampleLevel, lastWriteTime);
 
     // find the requested image in the cached images
     {
-        auto it = std::find(_keys.begin(), _keys.end(), reqKey);
+        auto it = std::find(_keys.begin(), _keys.end(), keyReq);
         if (it != _keys.end())
         {
             // image becomes LRU
             _keys.erase(it);
-            _keys.push_back(reqKey);
+            _keys.push_back(keyReq);
 
             _info.nbLoadFromCache++;
 
-            return _imagePtrs.at(reqKey).get<TPix>();
+            return _imagePtrs.at(keyReq).get<TPix>();
         }
     }
 
@@ -265,8 +274,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     // add image to cache if it fits in capacity
     if (memSize + _info.contentSize <= _info.capacity) 
     {
-        load<TPix>(reqKey);
-        return _imagePtrs.at(reqKey).get<TPix>();
+        load<TPix>(keyReq);
+        return _imagePtrs.at(keyReq).get<TPix>();
     }
 
     // retrieve missing capacity
@@ -289,8 +298,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 
                 _info.nbRemoveUnused++;
 
-                load<TPix>(reqKey);
-                return _imagePtrs.at(reqKey).get<TPix>();
+                load<TPix>(keyReq);
+                return _imagePtrs.at(keyReq).get<TPix>();
             }
             ++it;
         }
@@ -324,8 +333,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     // add image to cache if it fits in maxSize
     if (memSize + _info.contentSize <= _info.maxSize) 
     {
-        load<TPix>(reqKey);
-        return _imagePtrs.at(reqKey).get<TPix>();
+        load<TPix>(keyReq);
+        return _imagePtrs.at(keyReq).get<TPix>();
     }
 
    ALICEVISION_THROW_ERROR("[image::ImageCache] Not enough space to load image");
