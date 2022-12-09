@@ -19,12 +19,13 @@
 #include <vector>
 #include <functional>
 namespace aliceVision {
+namespace sfmData {
 
 class LMColorAccumulator
 {
     public:
-        LMColorAccumulator() = default 
-        ~LMColorAccumulator() = default
+        LMColorAccumulator() = default;
+        ~LMColorAccumulator() = default;
 
 
         image::RGBfColor rgbFinal{0};
@@ -48,7 +49,6 @@ class LMColorAccumulator
         }
 
 };
-namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
@@ -94,7 +94,7 @@ void colorizeTracks(SfMData& sfmData)
                 }   
             }     
       }
-      progressDisplay += 1;    
+      ++progressDisplay;    
   }
 
   for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
