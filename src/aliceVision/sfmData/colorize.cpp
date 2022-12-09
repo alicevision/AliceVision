@@ -63,7 +63,7 @@ void colorizeTracks(SfMData& sfmData)
     remainingLandmarksToColor.push_back(landmarkPair.second);
 
   std::vector<LMColorAccumulator> landmarkInfo(sfmData.getLandmarks().size());
-  Views& views = sfmData.getViews();
+  const Views& views = sfmData.getViews();
 
   #pragma omp parallel for
   for( int viewId = 0; viewId < views.size(); ++viewId)
