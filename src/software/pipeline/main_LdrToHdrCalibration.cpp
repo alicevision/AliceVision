@@ -33,6 +33,7 @@
 #include <sstream>
 
 #include <fstream>
+#include <map>
 
 
 // These constants define the current software version.
@@ -218,6 +219,8 @@ int aliceVision_main(int argc, char** argv)
 
     std::vector<std::vector<hdr::ImageSample>> calibrationSamples;
     hdr::rgbCurve calibrationWeight(channelQuantization);
+    std::vector<std::vector<double>> groupedExposures;
+    std::vector<int> refIndexes;
 
     if(calibrationMethod == ECalibrationMethod::LINEAR)
     {
@@ -234,8 +237,29 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response Function (CRF).");
             return EXIT_FAILURE;
         }
+
+        // Build camera exposure table
+        for (int i = 0; i < groupedViews.size(); ++i)
+        {
+            const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
+            std::vector<sfmData::ExposureSetting> exposuresSetting;
+
+            for (int j = 0; j < group.size(); ++j)
+            {
+                const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting(/*group[0]->getMetadataISO(), group[0]->getMetadataFNumber()*/);
+                exposuresSetting.push_back(exp);
+            }
+            if (!sfmData::hasComparableExposures(exposuresSetting))
+            {
+                ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
+            }
+            groupedExposures.push_back(getExposures(exposuresSetting));
+        }
+
         size_t group_pos = 0;
         hdr::Sampling sampling;
+
+        double meanTargetedLuma = 0.4; // should be a parameter
 
         ALICEVISION_LOG_INFO("Analyzing samples for each group");
         for(auto & group : groupedViews)
@@ -259,6 +283,59 @@ int aliceVision_main(int argc, char** argv)
             }
 
             sampling.analyzeSource(samples, channelQuantization, group_pos);
+
+            std::map<int, std::pair<int, double>> meanLum;
+            std::map<int, std::pair<double, double>> rangeLum;
+            for (int i = 0; i < groupedExposures[group_pos].size(); i++)
+            {
+                meanLum[(int)(groupedExposures[group_pos][i] * 1000)].first = 0;
+                meanLum[(int)(groupedExposures[group_pos][i] * 1000)].second = 0.0;
+                rangeLum[(int)(groupedExposures[group_pos][i] * 1000)].first = 1000.0;
+                rangeLum[(int)(groupedExposures[group_pos][i] * 1000)].second = 0.0;
+            }
+            for (int i = 0; i < samples.size(); i++)
+            {
+                for (int j = 0; j < samples[i].descriptions.size(); j++)
+                {
+                    double lum = 0.2126 * samples[i].descriptions[j].mean[0] + 0.7152 * samples[i].descriptions[j].mean[1] + 0.0722 * samples[i].descriptions[j].mean[2];
+                    meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].second += lum;
+                    meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].first++;
+                    if (lum < rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first)
+                    {
+                        rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first = lum;
+                    }
+                    if (lum > rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second)
+                    {
+                        rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second = lum;
+                    }
+                }
+            }
+
+            double minDiffWithLumaTarget = 1000.0;
+            int minDiffWithLumaTargetIdx = 0;
+
+            int k = 0;
+            for (const auto& n : meanLum)
+            {
+                double lumaMean = n.second.second / (double)n.second.first;
+
+                std::cout << '[' << n.first << "] = " << lumaMean << std::endl;
+
+                if (fabs(lumaMean - meanTargetedLuma) < minDiffWithLumaTarget)
+                {
+                    minDiffWithLumaTarget = fabs(lumaMean - meanTargetedLuma);
+                    minDiffWithLumaTargetIdx = k;
+                }
+                ++k;
+            }
+            std::cout << std::endl;
+            for (const auto& n : rangeLum)
+            {
+                std::cout << '[' << n.first << " , " << n.second << "]" << std::endl;
+            }
+            std::cout << std::endl;
+
+            refIndexes.push_back(minDiffWithLumaTargetIdx);
 
             ++group_pos;
         }
@@ -321,25 +398,6 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Start calibration");
     hdr::rgbCurve response(channelQuantization);
 
-    // Build camera exposure table
-    std::vector<std::vector<double>> groupedExposures;
-    for(int i = 0; i < groupedViews.size(); ++i)
-    {
-        const std::vector<std::shared_ptr<sfmData::View>>& group = groupedViews[i];
-        std::vector<sfmData::ExposureSetting> exposuresSetting;
-
-        for(int j = 0; j < group.size(); ++j)
-        {
-            const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting(/*group[0]->getMetadataISO(), group[0]->getMetadataFNumber()*/);
-            exposuresSetting.push_back(exp);
-        }
-        if(!sfmData::hasComparableExposures(exposuresSetting))
-        {
-            ALICEVISION_THROW_ERROR("Camera exposure settings are inconsistent.");
-        }
-        groupedExposures.push_back(getExposures(exposuresSetting));
-    }
-
     switch(calibrationMethod)
     {
         case ECalibrationMethod::LINEAR:
@@ -381,6 +439,21 @@ int aliceVision_main(int argc, char** argv)
 
     response.write(outputResponsePath);
     response.writeHtml(htmlOutput, "response");
+
+    const std::string expRefIndexesFilename = (fs::path(outputResponsePath).parent_path() / (std::string("exposureRefIndexes") + std::string(".txt"))).string();
+
+    std::ofstream file(expRefIndexesFilename);
+    if (!file)
+    {
+        throw std::logic_error("Can't create file for exposure reference Indexes");
+    }
+    std::string text = "";
+    for (std::size_t index = 0; index < refIndexes.size(); ++index)
+    {
+        text += std::to_string(refIndexes[index]) + "\n";
+    }
+    file << text;
+    file.close();
 
     return EXIT_SUCCESS;
 }
