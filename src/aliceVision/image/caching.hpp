@@ -21,6 +21,7 @@
 #include <functional>
 #include <list>
 #include <mutex>
+#include <thread>
 
 
 namespace aliceVision {
@@ -89,7 +90,7 @@ struct CacheInfo
     int nbLoadFromHigherScale = 0;
     int nbRemoveUnused = 0;
 
-    CacheInfo(int capacity_MB, int maxSize_MB) : 
+    CacheInfo(float capacity_MB, float maxSize_MB) : 
         capacity(capacity_MB * 1000000), 
         maxSize(maxSize_MB * 1000000)
     {
@@ -180,10 +181,10 @@ public:
      * @param[in] maxSize_MB the cache maximal size (in MB)
      * @param[in] options the reading options that will be used when loading images through this cache
      */
-    ImageCache(int capacity_MB, int maxSize_MB, const ImageReadOptions& options);
+    ImageCache(float capacity_MB, float maxSize_MB, const ImageReadOptions& options);
 
     /**
-     * @brief Destroy the cache and the images it contains.
+     * @brief Destroy the cache and the unused images it contains.
      */
     ~ImageCache();
 
@@ -245,6 +246,10 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 {
     const std::lock_guard<std::mutex> lock(_mutex);
 
+    ALICEVISION_LOG_DEBUG("[image::ImageCache] reading " << filename 
+                         << " with half-sampling level " << halfSampleLevel
+                         << " from thread " << std::this_thread::get_id());
+
     using TInfo = ColorTypeInfo<TPix>;
 
     auto lastWriteTime = boost::filesystem::last_write_time(filename);
@@ -261,6 +266,7 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
 
             _info.nbLoadFromCache++;
 
+            ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
             return _imagePtrs.at(keyReq).get<TPix>();
         }
     }
@@ -275,6 +281,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     if (memSize + _info.contentSize <= _info.capacity) 
     {
         load<TPix>(keyReq);
+
+        ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
         return _imagePtrs.at(keyReq).get<TPix>();
     }
 
@@ -299,6 +307,8 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
                 _info.nbRemoveUnused++;
 
                 load<TPix>(keyReq);
+
+                ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
                 return _imagePtrs.at(keyReq).get<TPix>();
             }
             ++it;
@@ -334,12 +344,14 @@ std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int ha
     if (memSize + _info.contentSize <= _info.maxSize) 
     {
         load<TPix>(keyReq);
+
+        ALICEVISION_LOG_DEBUG("[image::ImageCache] " << toString());
         return _imagePtrs.at(keyReq).get<TPix>();
     }
 
-   ALICEVISION_THROW_ERROR("[image::ImageCache] Not enough space to load image");
-   
-   return nullptr;
+    ALICEVISION_THROW_ERROR("[image::ImageCache] Failed to load image \n" << toString());
+
+    return nullptr;
 }
 
 template<typename TPix>

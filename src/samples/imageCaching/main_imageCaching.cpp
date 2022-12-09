@@ -29,10 +29,13 @@ namespace po = boost::program_options;
 int aliceVision_main(int argc, char **argv)
 {
     // command-line arguments
-    int capacity = 256;
-    int maxSize = 1024;
+    float capacity = 256;
+    float maxSize = 1024;
     std::vector<std::string> filenames;
     std::vector<int> halfSampleLevels;
+    int defaultHalfSampleLevel = 0;
+    std::vector<int> pixelTypes;
+    int defaultPixelType = 5;
     int nbThreads = 1;
 
     po::options_description requiredParams("Required parameters");
@@ -43,12 +46,24 @@ int aliceVision_main(int argc, char **argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("capacity", po::value<int>(&capacity)->default_value(capacity), 
+        ("capacity", po::value<float>(&capacity)->default_value(capacity), 
         "Cache capacity")
-        ("maxSize", po::value<int>(&maxSize)->default_value(maxSize), 
+        ("maxSize", po::value<float>(&maxSize)->default_value(maxSize), 
         "Cache max size")
         ("halfSampleLevels", po::value<std::vector<int>>(&halfSampleLevels)->multitoken()->default_value(halfSampleLevels), 
         "Half-sampling levels")
+        ("defaultHalfSampleLevel", po::value<int>(&defaultHalfSampleLevel)->default_value(defaultHalfSampleLevel), 
+        "Default half-sampling level")
+        ("pixelTypes", po::value<std::vector<int>>(&pixelTypes)->multitoken()->default_value(pixelTypes), 
+        "Pixel types:"
+        "\n * 0: unsigned char"
+        "\n * 1: float"
+        "\n * 2: RGB"
+        "\n * 3: RGBf"
+        "\n * 4: RGBA"
+        "\n * 5: RGBAf")
+        ("defaultPixelType", po::value<int>(&defaultPixelType)->default_value(defaultPixelType), 
+        "Default pixel type")
         ("nbThreads", po::value<int>(&nbThreads)->default_value(nbThreads), 
         "Number of threads")
         ;
@@ -70,24 +85,38 @@ int aliceVision_main(int argc, char **argv)
     std::vector<std::thread> threads;
     for (int i = 0; i < nbThreads; i++)
     {
-        threads.emplace_back([&](int numThread){
+        threads.emplace_back([&](){
             // Load images
             for (int j = 0; j < filenames.size(); j++)
             {
                 const std::string& filename = filenames[j];
-                int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : 0;
-                auto imgUChar = cache.get<unsigned char>(filename, level);
-                auto imgFloat = cache.get<float>(filename, level);
-                auto imgRGB = cache.get<image::RGBColor>(filename, level);
-                auto imgRGBf = cache.get<image::RGBfColor>(filename, level);
-                auto imgRGBA = cache.get<image::RGBAColor>(filename, level);
-                auto imgRGBAf = cache.get<image::RGBAfColor>(filename, level);
-                ALICEVISION_LOG_INFO("Thread " << numThread << '\n' 
-                                    << "Filename: " << filename << '\n'
-                                    << "Half-sampling level: " << level << '\n'
-                                    << cache.toString());
+                const int level = (j < halfSampleLevels.size()) ? halfSampleLevels[j] : defaultHalfSampleLevel;
+                const int pixelType = (j < pixelTypes.size()) ? pixelTypes[j] : defaultPixelType;
+                switch (pixelType)
+                {
+                    case 0:
+                        { auto imgUChar = cache.get<unsigned char>(filename, level); }
+                        break;
+                    case 1:
+                        { auto imgFloat = cache.get<float>(filename, level); }
+                        break;
+                    case 2:
+                        { auto imgRGB = cache.get<image::RGBColor>(filename, level); }
+                        break;
+                    case 3:
+                        { auto imgRGBf = cache.get<image::RGBfColor>(filename, level); }
+                        break;
+                    case 4:
+                        { auto imgRGBA = cache.get<image::RGBAColor>(filename, level); }
+                        break;
+                    case 5:
+                        { auto imgRGBAf = cache.get<image::RGBAfColor>(filename, level); }
+                        break;
+                    default:
+                        break;
+                }
             }
-        }, i);
+        });
     }
 
     // Join threads

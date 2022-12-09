@@ -116,7 +116,7 @@ int CacheValue::memorySize() const
     return 0;
 }
 
-ImageCache::ImageCache(int capacity_MB, int maxSize_MB, const ImageReadOptions& options) : 
+ImageCache::ImageCache(float capacity_MB, float maxSize_MB, const ImageReadOptions& options) : 
     _info(capacity_MB, maxSize_MB), 
     _options(options)
 {
@@ -128,8 +128,6 @@ ImageCache::~ImageCache()
 
 std::string ImageCache::toString() const
 {
-    const std::lock_guard<std::mutex> lock(_mutex);
-
     std::string description = "Image cache content (LRU to MRU): ";
 
     for (const CacheKey& key : _keys)
