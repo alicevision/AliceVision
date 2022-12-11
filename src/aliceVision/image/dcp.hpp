@@ -246,7 +246,7 @@ private:
     Matrix getChromaticAdaptationMatrix(const Triple& xyzSource, const Triple& xyzTarget);
     Matrix getCameraToXyzD50Matrix(const double x, const double y);
     Matrix getCameraToSrgbLinearMatrix(const double x, const double y);
-    Matrix getCameraToSrgbLinearMatrix(const Triple& asShotNeutral, const bool sourceIsRaw = false);
+    Matrix getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw = false);
 
     Matrix ws_sRGB; // working color space to sRGB
     Matrix sRGB_ws; // sRGB to working color space

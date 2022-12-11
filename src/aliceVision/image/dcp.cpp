@@ -269,6 +269,9 @@ const DCPProfile::Matrix CAT02_MATRIX = {0.7328, 0.4296, -0.1624, -0.7036, 1.697
 const DCPProfile::Matrix xyzD50ToSrgbD65LinearMatrix = { 3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252 };
 const DCPProfile::Matrix xyzD50ToSrgbD50LinearMatrix = { 3.1338561, -1.6168667, -0.4906146, -0.9787684, 1.9161415, 0.0334540, 0.0719453, -0.2289914, 1.4052427 };
 
+// xyzD50ToACES2065Matrix = xyzD60ToACES2065 * xyzD50ToXyzD60
+const DCPProfile::Matrix xyzD50ToACES2065Matrix = { 1.019573375, -0.022815668, 0.048147546, -0.503070253, 1.384421764, 0.121965628, 0.000961591, 0.003054793, 1.207019111 };
+
 const double TINT_SCALE = -3000.0;
 } // namespace
 
@@ -2104,7 +2107,7 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
     return cameraToSrgbLinear;
 }
 
-DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const Triple& asShotNeutral, const bool sourceIsRaw)
+DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeutral, const bool sourceIsRaw)
 {
     double x, y;
     getChromaticityCoordinatesFromCameraNeutral(IdentityMatrix, asShotNeutral, x, y);
@@ -2150,9 +2153,9 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const Triple& asShotN
     {
         cameraToXyzD50 = matMult(forward_matrix_1, neutral);
     }
-    Matrix cameraToSrgbLinear = matMult(xyzD50ToSrgbD65LinearMatrix, cameraToXyzD50);
+    Matrix cameraToACES2065 = matMult(xyzD50ToACES2065Matrix, cameraToXyzD50);
 
-    return cameraToSrgbLinear;
+    return cameraToACES2065;
 }
 
 
@@ -2201,9 +2204,9 @@ void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::
 
 void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw)
 {
-    Matrix cameraToSrgbLinearMatrix = getCameraToSrgbLinearMatrix(neutral, sourceIsRaw);
+    Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)
         for (int j = 0; j < image.spec().width; ++j)
         {
@@ -2216,7 +2219,7 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool s
                 rgbOut[r] = 0.0;
                 for (int c = 0; c < 3; ++c)
                 {
-                    rgbOut[r] += cameraToSrgbLinearMatrix[r][c] * rgb[c];
+                    rgbOut[r] += cameraToACES2065Matrix[r][c] * rgb[c];
                 }
             }
             image.setpixel(j, i, rgbOut, 3);

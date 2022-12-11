@@ -477,7 +477,7 @@ void readImage(const std::string& path,
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
-            configSpec.attribute("raw:use_camera_wb", 0); // white balance correction
+            configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
         }
@@ -546,7 +546,9 @@ void readImage(const std::string& path,
         ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
 
     // Get color space name. Default image color space is sRGB
-    const std::string fromColorSpaceName = isRawImage ? "Linear" : inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB"));
+    const std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing) ? "aces2065-1" :
+                                            (isRawImage ? "linear" :
+                                             inBuf.spec().get_string_attribute("aliceVision:ColorSpace", inBuf.spec().get_string_attribute("oiio:ColorSpace", "sRGB")));
 
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
   
