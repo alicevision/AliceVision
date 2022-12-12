@@ -476,8 +476,11 @@ void readImage(const std::string& path,
             {
                 ALICEVISION_THROW_ERROR("A DCP color profile is required but cannot be found");
             }
+            float user_mul[4] = { 1,1,1,1 };
+
             configSpec.attribute("raw:auto_bright", 0); // disable exposure correction
             configSpec.attribute("raw:use_camera_wb", 0); // no white balance correction
+            configSpec.attribute("raw:user_mul", oiio::TypeDesc(oiio::TypeDesc::FLOAT, 4), user_mul); // no neutralization
             configSpec.attribute("raw:use_camera_matrix", 0); // do not use embeded color profile if any
             configSpec.attribute("raw:ColorSpace", "raw");
         }
@@ -538,7 +541,7 @@ void readImage(const std::string& path,
 
         ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = {" << neutral[0] << ", " << neutral[1] << ", " << neutral[2] << "}");
 
-        dcpProfile.applyLinear(inBuf, neutral, false); // inBuf is already neutralized but neutral is needed for color Temperature estimation
+        dcpProfile.applyLinear(inBuf, neutral, true);
     }
 
     // color conversion
