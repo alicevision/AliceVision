@@ -122,22 +122,21 @@ __global__ void depthSimMapCopyDepthOnly_kernel(float2* out_deptSimMap_d, int ou
 template<class T>
 __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
                                   const T* in_map_d, int in_map_p, 
-                                  int out_width, int out_height, 
-                                  int in_width, int in_height, 
+                                  const ROI roi,
                                   float ratio)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x >= out_width || y >= out_height)
+    if(x >= roi.width() || y >= roi.height())
         return;
 
     const float ox = (float(x) - 0.5f) * ratio;
     const float oy = (float(y) - 0.5f) * ratio;
 
     // nearest neighbor, no interpolation
-    const int xp = min(int(floor(ox + 0.5)), in_width  - 1);
-    const int yp = min(int(floor(oy + 0.5)), in_height - 1);
+    const int xp = min(int(floor(ox + 0.5)), int(roi.width()  * ratio) - 1);
+    const int yp = min(int(floor(oy + 0.5)), int(roi.height() * ratio) - 1);
 
     // write output upscaled map
     *get2DBufferAt(out_upscaledMap_d, out_upscaledMap_p, x, y) = *get2DBufferAt(in_map_d, in_map_p, xp, yp);
@@ -146,14 +145,13 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
 
 __global__ void depthSimMapUpscale_kernel(float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
                                           const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
-                                          int out_width, int out_height, 
-                                          int in_width, int in_height, 
+                                          const ROI roi,
                                           float ratio)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x >= out_width || y >= out_height)
+    if(x >= roi.width() || y >= roi.height())
         return;
 
     const float oy = (float(y) - 0.5f) * ratio;
@@ -166,8 +164,8 @@ __global__ void depthSimMapUpscale_kernel(float2* out_upscaledDeptSimMap_d, int 
     int xp = floor(ox + 0.5);
     int yp = floor(oy + 0.5);
 
-    xp = min(xp, in_width  - 1);
-    yp = min(yp, in_height - 1);
+    xp = min(xp, int(roi.width()  * ratio) - 1);
+    yp = min(yp, int(roi.height() * ratio) - 1);
 
     out_depthSim = *get2DBufferAt(in_otherDepthSimMap_d, in_otherDepthSimMap_p, xp, yp);
 #else

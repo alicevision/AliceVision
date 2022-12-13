@@ -114,7 +114,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
 
         // upscale SGM depth/sim map
-        cuda_depthSimMapUpscale(_sgmDepthPixSizeMap_dmp, in_sgmDepthSimMap_dmp, _stream);
+        cuda_depthSimMapUpscale(_sgmDepthPixSizeMap_dmp, in_sgmDepthSimMap_dmp, downscaledRoi, _stream);
 
         // export intermediate depth/sim map (if requested by user)
         if(_refineParams.exportIntermediateDepthSimMaps)
@@ -125,7 +125,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
 
         if(_refineParams.useNormalMap && in_sgmNormalMap_dmp.getBuffer() != nullptr)
         {
-            cuda_normalMapUpscale(_normalMap_dmp, in_sgmNormalMap_dmp, _stream);
+            cuda_normalMapUpscale(_normalMap_dmp, in_sgmNormalMap_dmp, downscaledRoi, _stream);
         }
     }
 
