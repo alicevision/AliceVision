@@ -254,7 +254,8 @@ int aliceVision_main(int argc, char** argv)
 
             image::ImageReadOptions options;
             options.workingColorSpace = image::EImageColorSpace::SRGB;
-            options.applyWhiteBalance = group[i]->getApplyWhiteBalance();
+            options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
+            options.colorProfileFileName = group[i]->getColorProfileFileName();
             image::readImage(filepath, images[i], options);
 
             exposuresSetting[i] = group[i]->getCameraExposureSetting(/*targetView->getMetadataISO(), targetView->getMetadataFNumber()*/);

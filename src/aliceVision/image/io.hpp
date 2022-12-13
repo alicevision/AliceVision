@@ -27,6 +27,31 @@ class rgb;
 namespace image {
 
 /**
+ * @brief Available raw processing methods
+ */
+enum class ERawColorInterpretation
+{
+    /// Debayering without any color processing
+    None,
+    /// Simple neutralization
+    LibRawNoWhiteBalancing,
+    /// Use internal white balancing from libraw
+    LibRawWhiteBalancing,
+    /// If DCP file is not available throw an exception
+    DcpLinearProcessing,
+    /// If DCP file is not available throw an exception
+    DcpMetadata,
+    /// Access aliceVision:rawColorInterpretation metadata to set the method
+    Auto
+};
+
+std::string ERawColorInterpretation_informations();
+ERawColorInterpretation ERawColorInterpretation_stringToEnum(const std::string& dataType);
+std::string ERawColorInterpretation_enumToString(const ERawColorInterpretation dataType);
+std::ostream& operator<<(std::ostream& os, ERawColorInterpretation dataType);
+std::istream& operator>>(std::istream& in, ERawColorInterpretation& dataType);
+
+/**
  * @brief Available image file type for pipeline output
  */
 enum class EImageFileType
@@ -151,22 +176,23 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
  */
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 
-
 /**
  * @brief aggregate for multiple image reading options
  */
 struct ImageReadOptions
 {
     ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
-                     bool useWhiteBalance = true, const oiio::ROI & roi = oiio::ROI()) :
-        workingColorSpace(colorSpace),
-        applyWhiteBalance(useWhiteBalance),
-        subROI(roi)
+        ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::Auto,
+        const std::string& colorProfile = "", const oiio::ROI& roi = oiio::ROI()) :
+        workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), applyToneCurve(false), subROI(roi)
     {
     }
 
+
     EImageColorSpace workingColorSpace;
-    bool applyWhiteBalance;
+    ERawColorInterpretation rawColorInterpretation;
+    std::string colorProfileFileName;
+    bool applyToneCurve;
 
     //ROI for this image.
     //If the image contains an roi, this is the roi INSIDE the roi.

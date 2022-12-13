@@ -10,6 +10,7 @@ set(image_files_headers
   convertion.hpp
   convolutionBase.hpp
   convolution.hpp
+  dcp.hpp
   diffusion.hpp
   drawing.hpp
   filtering.hpp
@@ -26,6 +27,7 @@ set(image_files_headers
 set(image_files_sources
   colorspace.cpp
   convolution.cpp
+  dcp.cpp
   filtering.cpp
   io.cpp
   imageAlgo.cpp
