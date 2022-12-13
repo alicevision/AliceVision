@@ -212,7 +212,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
 
     // original depth invalid or masked, similarity value remain at 255
-    if(originalDepth < 0.0f) 
+    if(originalDepth <= 0.0f)
         return; 
 
     // get rc 3d point at original depth (z center)
@@ -398,7 +398,7 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
     // corresponding output depth/sim pointer
     float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap_d, out_bestDepthSimMap_p, vx, vy);
 
-    if(originalDepth < 0.0f) // original depth invalid or masked
+    if(originalDepth <= 0.0f) // original depth invalid or masked
     {
         out_bestDepthSimPtr->x = originalDepth;  // -1 (invalid) or -2 (masked)
         out_bestDepthSimPtr->y = 1.0f;           // similarity between (-1, +1)
