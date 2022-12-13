@@ -1680,8 +1680,8 @@ void DCPProfile::setChromaticityCoordinates(const double x, const double y, doub
 
     for (int i = 1; i < 31; i++)
     {
-        std::vector<float> wrRuvt = WYSZECKI_ROBERSTON_TABLE[i];
-        std::vector<float> wrRuvtPrevious = WYSZECKI_ROBERSTON_TABLE[i - 1];
+        const std::vector<float> wrRuvt = WYSZECKI_ROBERSTON_TABLE[i];
+        const std::vector<float> wrRuvtPrevious = WYSZECKI_ROBERSTON_TABLE[i - 1];
 
         double du = 1.f;
         double dv = wrRuvt[3];
@@ -1737,8 +1737,8 @@ void DCPProfile::setChromaticityCoordinates(const double x, const double y, doub
 */
 void DCPProfile::getChromaticityCoordinates(const double cct, const double tint, double& x, double& y)
 {
-    double r = 1.0e6 / cct;
-    double offset = tint * (1.0 / TINT_SCALE);
+    const double r = 1.0e6 / cct;
+    const double offset = tint * (1.0 / TINT_SCALE);
 
     for (int i = 0; i < 30; ++i)
     {
@@ -2001,7 +2001,7 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const double x, const dou
 {
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
-    Triple xyz = {
+    const Triple xyz = {
         x * 1.f / y,
         1.f,
         (1.f - x - y) * 1.f / y};
@@ -2015,15 +2015,15 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const double x, const dou
     {
         interpolatedColorMatrix = info.has_color_matrix_1 ? color_matrix_1 : color_matrix_2;
     }
-    Matrix interpolatedCalibMatrix = getInterpolatedMatrix(cct, "calib");
+    const Matrix interpolatedCalibMatrix = getInterpolatedMatrix(cct, "calib");
 
-    Triple rgb = matMult(interpolatedColorMatrix, xyz);
-    Triple asShotNeutral = {
+    const Triple rgb = matMult(interpolatedColorMatrix, xyz);
+    const Triple asShotNeutral = {
         rgb[0] / rgb[1],
         rgb[1] / rgb[1],
         rgb[2] / rgb[1]};
 
-    Triple referenceNeutral = matMult(matInv(matMult(analogBalance, interpolatedCalibMatrix)), asShotNeutral);
+    const Triple referenceNeutral = matMult(matInv(matMult(analogBalance, interpolatedCalibMatrix)), asShotNeutral);
 
     Matrix d = IdentityMatrix;
     d[0][0] = 1.0 / referenceNeutral[0];
@@ -2036,22 +2036,22 @@ DCPProfile::Matrix DCPProfile::getCameraToXyzD50Matrix(const double x, const dou
     {
         Matrix interpolatedForwardMatrix = IdentityMatrix;
 
-        Matrix xyzToCamera = matMult(analogBalance, matMult(interpolatedCalibMatrix, interpolatedColorMatrix));
-        Matrix cameraToXyz = matInv(xyzToCamera);
+        const Matrix xyzToCamera = matMult(analogBalance, matMult(interpolatedCalibMatrix, interpolatedColorMatrix));
+        const Matrix cameraToXyz = matInv(xyzToCamera);
 
-        double D50_cct = 5000.706605070579;  //
-        double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
-        Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+        const double D50_cct = 5000.706605070579;  //
+        const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        const Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
         cameraToXyzD50 = matMult(cat, cameraToXyz);
     }
     else if ((!info.has_forward_matrix_1) || (!info.has_forward_matrix_2))
     {
-        Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
+        const Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
         cameraToXyzD50 = matMult(interpolatedForwardMatrix, matMult(d, matInv(matMult(analogBalance, interpolatedCalibMatrix))));
     }
     else
     {
-        Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
+        const Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
         cameraToXyzD50 = matMult(interpolatedForwardMatrix, matMult(d, matInv(matMult(analogBalance, interpolatedCalibMatrix))));
     }
 
@@ -2062,7 +2062,7 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
 {
     double cct, tint;
     setChromaticityCoordinates(x, y, cct, tint);
-    Triple xyz = {
+    const Triple xyz = {
         x * 1.f / y,
         1.f,
         (1.f - x - y) * 1.f / y };
@@ -2081,28 +2081,28 @@ DCPProfile::Matrix DCPProfile::getCameraToSrgbLinearMatrix(const double x, const
 
     if ((!info.has_forward_matrix_1) && (!info.has_forward_matrix_2))
     {
-        Matrix interpolatedForwardMatrix = IdentityMatrix;
+        const Matrix interpolatedForwardMatrix = IdentityMatrix;
 
-        Matrix xyzToCamera = interpolatedColorMatrix;
-        Matrix cameraToXyz = matInv(xyzToCamera);
+        const Matrix xyzToCamera = interpolatedColorMatrix;
+        const Matrix cameraToXyz = matInv(xyzToCamera);
 
-        double D50_cct = 5000.706605070579;  //
-        double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
-        Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+        const double D50_cct = 5000.706605070579;  //
+        const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        const Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
         cameraToXyzD50 = matMult(cat, cameraToXyz);
     }
     else if ((!info.has_forward_matrix_1) || (!info.has_forward_matrix_2))
     {
-        Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
+        const Matrix interpolatedForwardMatrix = info.has_forward_matrix_2 ? forward_matrix_2 : forward_matrix_1;
         cameraToXyzD50 = interpolatedForwardMatrix;
     }
     else
     {
-        Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
+        const Matrix interpolatedForwardMatrix = getInterpolatedMatrix(cct, "forward");
         cameraToXyzD50 = interpolatedForwardMatrix;
     }
 
-    Matrix cameraToSrgbLinear = matMult(xyzD50ToSrgbD65LinearMatrix, cameraToXyzD50);
+    const Matrix cameraToSrgbLinear = matMult(xyzD50ToSrgbD65LinearMatrix, cameraToXyzD50);
 
     return cameraToSrgbLinear;
 }
@@ -2138,11 +2138,11 @@ DCPProfile::Matrix DCPProfile::getCameraToACES2065Matrix(const Triple& asShotNeu
         {
             xyzToCamera = color_matrix_1;
         }
-        Matrix cameraToXyz = matInv(xyzToCamera);
+        const Matrix cameraToXyz = matInv(xyzToCamera);
 
-        double D50_cct = 5000.706605070579;  //
-        double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
-        Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
+        const double D50_cct = 5000.706605070579;  //
+        const double D50_tint = 9.562965495510433; // Using x, y = 0.3457, 0.3585
+        const Matrix cat = getChromaticAdaptationMatrix(getXyzFromChromaticityCoordinates(x, y), getXyzFromTemperature(D50_cct, D50_tint));
         cameraToXyzD50 = matMult(cat, cameraToXyz);
     }
     else if ((info.has_forward_matrix_1) && (info.has_forward_matrix_2))
@@ -2204,7 +2204,7 @@ void DCPProfile::getMatricesAsStrings(const std::string& type, std::vector<std::
 
 void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool sourceIsRaw)
 {
-    Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
+    const Matrix cameraToACES2065Matrix = getCameraToACES2065Matrix(neutral, sourceIsRaw);
 
     #pragma omp parallel for
     for (int i = 0; i < image.spec().height; ++i)
@@ -2225,7 +2225,6 @@ void DCPProfile::applyLinear(OIIO::ImageBuf& image, Triple neutral, const bool s
             image.setpixel(j, i, rgbOut, 3);
         }
 }
-
 
 DCPDatabase::DCPDatabase(const std::string& databaseDirPath)
 {
@@ -2272,14 +2271,18 @@ bool DCPDatabase::getDcpForCamera(const std::string& make, const std::string& mo
 {
     const std::string dcpKey = make + "_" + model;
 
-    std::map<std::string, image::DCPProfile>::iterator it = dcpStore.find(dcpKey);
-    if (it != dcpStore.end())
     {
-        dcpProf = it->second;
-        return true;
+        // Retrieve preloaded DCPProfile
+        std::map<std::string, image::DCPProfile>::iterator it = dcpStore.find(dcpKey);
+        if (it != dcpStore.end())
+        {
+            dcpProf = it->second;
+            return true;
+        }
     }
-    else
+
     {
+        // Load DCPProfile from disk
         const std::vector<std::string>::iterator it = std::find_if(dcpFilenamesList.begin(), dcpFilenamesList.end(), [make, model](const std::string& s)
             { return (s.find(make) != std::string::npos) && (s.find(model) != std::string::npos); });
 
@@ -2289,11 +2292,9 @@ bool DCPDatabase::getDcpForCamera(const std::string& make, const std::string& mo
             dcpStore.insert(std::pair<std::string, image::DCPProfile>(dcpKey, dcpProf));
             return true;
         }
-        else
-        {
-            return false;
-        }
     }
+
+    return false;
 }
 
 void DCPDatabase::add_or_replace(DCPProfile& dcpProf, const std::string& make, const std::string& model)
