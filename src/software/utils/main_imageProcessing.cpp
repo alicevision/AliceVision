@@ -577,7 +577,6 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
-    bool applyToneCurve = false;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
     std::string colorProfileDatabaseDirPath = "";
     bool errorOnMissingColorProfile = true;
@@ -677,9 +676,6 @@ int aliceVision_main(int argc, char * argv[])
 
         ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
             "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
-
-        ("applyToneCurve", po::value<bool>(&applyToneCurve)->default_value(applyToneCurve),
-            "Apply color profile embedded tone curve if any.")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -801,7 +797,6 @@ int aliceVision_main(int argc, char * argv[])
                 options.rawColorInterpretation = rawColorInterpretation;
             }
             options.colorProfileFileName = view.getColorProfileFileName();
-            options.applyToneCurve = applyToneCurve;
 
             // Read original image
             image::Image<image::RGBAfColor> image;
