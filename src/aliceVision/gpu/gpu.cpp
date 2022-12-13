@@ -96,13 +96,18 @@ std::string gpuInformationCUDA()
 
             std::size_t avail;
             std::size_t total;
-            if(cudaMemGetInfo(&avail, &total) != cudaSuccess)
+            cudaError_t memInfoErr = cudaMemGetInfo(&avail, &total);
+            if(memInfoErr != cudaSuccess)
             {
                 // if the card does not provide this information.
                 avail = 0;
                 total = 0;
-                ALICEVISION_LOG_WARNING("Cannot get available memory information for CUDA gpu device " << i << ".");
+                ALICEVISION_LOG_WARNING("Cannot get available memory information for CUDA gpu device " << i << ":" << std::endl
+                                        << "\t (error code: " << memInfoErr << ") " << cudaGetErrorName(memInfoErr));
+                
+                cudaError_t err = cudaGetLastError();  // clear error
             }
+
             std::stringstream deviceSS;
 
             deviceSS << "Device information:" << std::endl
