@@ -32,8 +32,8 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
 {
     // get tile maximum dimensions
     const int downscale = _sgmParams.scale * _sgmParams.stepXY;
-    const int maxTileWidth  = divideRoundUp(tileParams.width , downscale);
-    const int maxTileHeight = divideRoundUp(tileParams.height, downscale);
+    const int maxTileWidth  = divideRoundUp(tileParams.bufferWidth , downscale);
+    const int maxTileHeight = divideRoundUp(tileParams.bufferHeight, downscale);
 
     // allocate depth list in device memory
     {

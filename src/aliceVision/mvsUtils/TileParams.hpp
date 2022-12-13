@@ -14,16 +14,15 @@ namespace mvsUtils {
 
 /**
  * @brief Tile Parameters
- *
- * Tile size is in the coordinate system of the original input image (without any downscale applied).
+ * This structure handle tilling user parameters.
  */
 struct TileParams
 {
   // user parameters
 
-  int width  = 1024;
-  int height = 1024;
-  int padding = 128;
+  int bufferWidth  = 1024;
+  int bufferHeight = 1024;
+  int padding = 64;
 };
 
  /**
@@ -31,9 +30,18 @@ struct TileParams
  * @param[in] tileParams the tile parameters
  * @param[in] imageWidth the image width
  * @param[in] imageHeight the image height
- * @param[out] out_tileList the output tile ROI list
+ * @param[out] out_tileRoiList the output tile ROI list
  */
-void getTileList(const TileParams& tileParams, int imageWidth, int imageHeight, std::vector<ROI>& out_tileList);
+void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, std::vector<ROI>& out_tileRoiList);
+
+/**
+* @brief Log tile list and tile parameters
+* @param[in] tileParams the tile parameters
+* @param[in] imageWidth the image width used for the tile ROI list computation
+* @param[in] imageHeight the image height used for the tile ROI list computation
+* @param[in] in_tileRoiList the tile ROI list
+*/
+void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, const std::vector<ROI>& in_tileRoiList);
 
 } // namespace mvsUtils
 } // namespace aliceVision

@@ -92,9 +92,9 @@ int aliceVision_main(int argc, char* argv[])
             "Minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
             "Maximum angle between two views.")
-        ("tileWidth", po::value<int>(&tileParams.width)->default_value(tileParams.width),
+        ("tileBufferWidth", po::value<int>(&tileParams.bufferWidth)->default_value(tileParams.bufferWidth),
             "Maximum tile buffer width.")
-        ("tileHeight", po::value<int>(&tileParams.height)->default_value(tileParams.height),
+        ("tileBufferHeight", po::value<int>(&tileParams.bufferHeight)->default_value(tileParams.bufferHeight),
             "Maximum tile buffer height.")
         ("tilePadding", po::value<int>(&tileParams.padding)->default_value(tileParams.padding),
             "Tile buffer padding for overlapping.")
@@ -250,28 +250,6 @@ int aliceVision_main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    // check if the tile padding is correct
-    if(tileParams.padding < 0)
-    {
-        ALICEVISION_LOG_ERROR("Invalid value for tilePadding parameter. Should be at least 0.");
-        return EXIT_FAILURE;
-    }
-
-    // check if the downscaled tile parameters are correct
-    {
-      const float downscaledTileWidth = tileParams.width / float(downscale);
-      const float downscaledTileHeight = tileParams.height / float(downscale);
-      const float downscaledTilePadding = tileParams.padding / float(downscale);
-
-      if((downscaledTileWidth   - int(downscaledTileWidth))   > 0 ||
-         (downscaledTileHeight  - int(downscaledTileHeight))  > 0 ||
-         (downscaledTilePadding - int(downscaledTilePadding)) > 0)
-      {
-        ALICEVISION_LOG_ERROR("Tile dimensions (width/height/padding) must be able to be downscaled to integer values.");
-        return EXIT_FAILURE;
-      }
-    }
-
     // read the input SfM scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -288,29 +266,45 @@ int aliceVision_main(int argc, char* argv[])
     mp.setMaxViewAngle(maxViewAngle);
 
     // set undefined tile dimensions
+    if(tileParams.bufferWidth <= 0 || tileParams.bufferHeight <= 0)
     {
-      const int tileWidth  = (tileParams.width  > 0) ? tileParams.width  : ((tileParams.height > 0) ? tileParams.height : mp.getMaxImageWidth());
-      const int tileHeight = (tileParams.height > 0) ? tileParams.height : ((tileParams.width  > 0) ? tileParams.width  : mp.getMaxImageHeight());
-      tileParams.width  = tileWidth;
-      tileParams.height = tileHeight;
+      tileParams.bufferWidth  = mp.getMaxImageWidth();
+      tileParams.bufferHeight = mp.getMaxImageHeight();
     }
 
-    // check tile passing
-    if(tileParams.padding >= std::min(tileParams.width, tileParams.height))
+    // check if the tile padding is correct
+    if(tileParams.padding < 0 &&
+       tileParams.padding * 2 < tileParams.bufferWidth &&
+       tileParams.padding * 2 < tileParams.bufferHeight)
     {
-      ALICEVISION_LOG_ERROR("Unable to compute tile dimensions, tile padding size is too large.");
-      return EXIT_FAILURE;
+        ALICEVISION_LOG_ERROR("Invalid value for tilePadding parameter. Should be at least 0 and not exceed half buffer width and height.");
+        return EXIT_FAILURE;
+    }
+
+    // check if the downscaled tile parameters are correct
+    {
+      const float downscaledTileWidth  = tileParams.bufferWidth  / float(downscale);
+      const float downscaledTileHeight = tileParams.bufferHeight / float(downscale);
+      const float downscaledTilePadding = tileParams.padding / float(downscale);
+
+      if((downscaledTileWidth   - int(downscaledTileWidth))   > 0 ||
+         (downscaledTileHeight  - int(downscaledTileHeight))  > 0 ||
+         (downscaledTilePadding - int(downscaledTilePadding)) > 0)
+      {
+        ALICEVISION_LOG_ERROR("Tile dimensions (width/height/padding) must be able to be downscaled to integer values.");
+        return EXIT_FAILURE;
+      }
     }
 
     // check if tile size > max image size
-    if(tileParams.width > mp.getMaxImageWidth() || tileParams.height > mp.getMaxImageHeight())
-      ALICEVISION_LOG_WARNING("Tile size "  << tileParams.width << "x" << tileParams.height << " is larger than " << mp.getMaxImageWidth() << "x" << mp.getMaxImageHeight() <<  ", the maximum image size.");
+    if(tileParams.bufferWidth > mp.getMaxImageWidth() || tileParams.bufferHeight > mp.getMaxImageHeight())
+      ALICEVISION_LOG_WARNING("Tile buffer size (width: "  << tileParams.bufferWidth << ", height: " << tileParams.bufferHeight << ") is larger than the maximum image size (width: " << mp.getMaxImageWidth() << ", height: " << mp.getMaxImageHeight() <<  ").");
 
     // set params in bpt
 
     // Tile Parameters
-    mp.userParams.put("tile.width", tileParams.width);
-    mp.userParams.put("tile.height", tileParams.height);
+    mp.userParams.put("tile.bufferWidth", tileParams.bufferWidth);
+    mp.userParams.put("tile.bufferHeight", tileParams.bufferHeight);
     mp.userParams.put("tile.padding", tileParams.padding);
 
     // SGM Parameters

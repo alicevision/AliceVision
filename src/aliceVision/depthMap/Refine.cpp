@@ -31,8 +31,8 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
 {
     // get tile maximum dimensions
     const int downscale = _refineParams.scale * _refineParams.stepXY;
-    const int maxTileWidth  = divideRoundUp(tileParams.width , downscale);
-    const int maxTileHeight = divideRoundUp(tileParams.height, downscale);
+    const int maxTileWidth  = divideRoundUp(tileParams.bufferWidth , downscale);
+    const int maxTileHeight = divideRoundUp(tileParams.bufferHeight, downscale);
 
     // compute depth/sim map maximum dimensions
     const CudaSize<2> depthSimMapDim(maxTileWidth, maxTileHeight);

@@ -160,8 +160,8 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     // get tile user parameters from MultiViewParams property_tree
 
     auto& tileParams = depthMapParams.tileParams;
-    tileParams.width = mp.userParams.get<int>("tile.width", tileParams.width);
-    tileParams.height = mp.userParams.get<int>("tile.height", tileParams.height);
+    tileParams.bufferWidth = mp.userParams.get<int>("tile.bufferWidth", tileParams.bufferWidth);
+    tileParams.bufferHeight = mp.userParams.get<int>("tile.bufferHeight", tileParams.bufferHeight);
     tileParams.padding = mp.userParams.get<int>("tile.padding", tileParams.padding);
 
     // get SGM user parameters from MultiViewParams property_tree
@@ -232,8 +232,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // compute tile ROI list
     std::vector<ROI> tileRoiList;
-    getTileList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
+    getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
     const int nbTilesPerCamera = tileRoiList.size();
+
+    // log tilling information and ROI list
+    logTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
 
     // get maximum number of stream (simultaneous tiles)
     const int nbStreams = getNbStreams(mp, depthMapParams, nbTilesPerCamera);

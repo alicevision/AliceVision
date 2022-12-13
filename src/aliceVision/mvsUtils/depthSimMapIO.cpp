@@ -23,21 +23,21 @@ void getTileParamsFromMetadata(const std::string& mapFirstTilePath, TileParams& 
 {
     const oiio::ParamValueList metadata = image::readImageMetadata(mapFirstTilePath);
 
-    const auto tileWidthIt = metadata.find("AliceVision:tileWidth");
-    const auto tileHeightIt = metadata.find("AliceVision:tileHeight");
+    const auto tileWidthIt = metadata.find("AliceVision:tileBufferWidth");
+    const auto tileHeightIt = metadata.find("AliceVision:tileBufferHeight");
     const auto tilePaddingIt = metadata.find("AliceVision:tilePadding");
 
     if(tileWidthIt != metadata.end() && tileWidthIt->type() == oiio::TypeDesc::INT)
-        tileParams.width = tileWidthIt->get_int();
+        tileParams.bufferWidth = tileWidthIt->get_int();
 
     if(tileHeightIt != metadata.end() && tileHeightIt->type() == oiio::TypeDesc::INT)
-        tileParams.height = tileHeightIt->get_int();
+        tileParams.bufferHeight = tileHeightIt->get_int();
 
     if(tilePaddingIt != metadata.end() && tilePaddingIt->type() == oiio::TypeDesc::INT)
         tileParams.padding = tilePaddingIt->get_int();
     
     // invalid or no tile metadata
-    if((tileParams.width <= 0) || (tileParams.height <= 0) || (tileParams.padding < 0))
+    if((tileParams.bufferWidth <= 0) || (tileParams.bufferHeight <= 0) || (tileParams.padding < 0))
     {
         ALICEVISION_THROW_ERROR("Cannot find tile information in file: " << mapFirstTilePath);
     }
@@ -107,8 +107,8 @@ void addTileMapWeighted(int rc,
     const ROI downscaledRoi = downscaleROI(roi, downscale);
 
     // get tile border size
-    const int tileWidth = tileParams.width / downscale;
-    const int tileHeight = tileParams.height / downscale;
+    const int tileWidth = downscaledRoi.width();
+    const int tileHeight = downscaledRoi.height();
     const int tilePadding = tileParams.padding / downscale;
 
     // get tile position information
@@ -237,12 +237,12 @@ void readMapFromTiles(int rc,
     TileParams tileParams;
     getTileParamsFromMetadata(firstTilePath, tileParams);
 
-    std::vector<ROI> tileList;
-    getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
+    std::vector<ROI> tileRoiList;
+    getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileRoiList);
 
-    for(std::size_t i = 0; i < tileList.size(); ++i)
+    for(std::size_t i = 0; i < tileRoiList.size(); ++i)
     {
-        const ROI roi = intersect(tileList.at(i), imageRoi);
+        const ROI roi = intersect(tileRoiList.at(i), imageRoi);
         const std::string mapTilePath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
 
         if(roi.isEmpty())
@@ -280,10 +280,10 @@ void writeDepthSimMap(int rc,
     oiio::ParamValueList metadata = image::getMetadataFromMap(mp.getMetadata(rc));
 
     // tile metadata
-    if((tileParams.width > 0) && (tileParams.height > 0) && (tileParams.padding >= 0))
+    if((tileParams.bufferWidth > 0) && (tileParams.bufferHeight > 0) && (tileParams.padding >= 0))
     {
-        metadata.push_back(oiio::ParamValue("AliceVision:tileWidth", int(tileParams.width)));
-        metadata.push_back(oiio::ParamValue("AliceVision:tileHeight", int(tileParams.height)));
+        metadata.push_back(oiio::ParamValue("AliceVision:tileBufferWidth", int(tileParams.bufferWidth)));
+        metadata.push_back(oiio::ParamValue("AliceVision:tileBufferHeight", int(tileParams.bufferHeight)));
         metadata.push_back(oiio::ParamValue("AliceVision:tilePadding", int(tileParams.padding)));    
     }
 
@@ -357,7 +357,7 @@ void writeDepthSimMap(int rc,
     {
         // tiled depth/sim map
         pixelRoi = oiio::ROI(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
-;       depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
+        depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
         simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix, roi.x.begin, roi.y.begin);
     }
     else
@@ -508,10 +508,10 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
         TileParams tileParams;
         getTileParamsFromMetadata(depthMapFirstTilePath, tileParams);
 
-        std::vector<ROI> tileList;
-        getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
+        std::vector<ROI> tileRoiList;
+        getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileRoiList);
 
-        for(const ROI& roi : tileList)
+        for(const ROI& roi : tileRoiList)
         {
             const std::string mapTilePath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
             const oiio::ParamValueList metadata = image::readImageMetadata(mapTilePath);
@@ -575,12 +575,12 @@ void deleteDepthSimMapTiles(int rc,
   TileParams tileParams;
   getTileParamsFromMetadata(firstTilePath, tileParams);
 
-  std::vector<ROI> tileList;
-  getTileList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileList);
+  std::vector<ROI> tileRoiList;
+  getTileRoiList(tileParams, mp.getWidth(rc), mp.getHeight(rc), tileRoiList);
 
-  for(std::size_t i = 0; i < tileList.size(); ++i)
+  for(std::size_t i = 0; i < tileRoiList.size(); ++i)
   {
-    const ROI roi = intersect(tileList.at(i), imageRoi);
+    const ROI roi = intersect(tileRoiList.at(i), imageRoi);
 
     if(roi.isEmpty())
         continue;
@@ -596,7 +596,7 @@ void deleteDepthSimMapTiles(int rc,
     }
     catch (const std::exception& e)
     {
-      ALICEVISION_LOG_WARNING("Cannot delete depth/sim map tile (rc: " << rc << ", tile: " << (i + 1) << "/" << tileList.size()<< "): " << std::endl
+      ALICEVISION_LOG_WARNING("Cannot delete depth/sim map tile (rc: " << rc << ", tile: " << (i + 1) << "/" << tileRoiList.size()<< "): " << std::endl
                               << " - " << depthMapTilePath << std::endl
                               << " - " << simMapTilePath << std::endl);
     }
