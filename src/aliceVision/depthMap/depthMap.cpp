@@ -74,6 +74,47 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
     }
 }
 
+void updateDepthMapParamsForSingleTileComputation(const mvsUtils::MultiViewParams& mp, DepthMapParams& depthMapParams)
+{
+    if(!depthMapParams.overrideSingleTileParameters)
+    {
+      // cannot override depth map parameters
+      return;
+    }
+
+    // update SGM maxTCamsPerTile
+    if(depthMapParams.sgmParams.maxTCamsPerTile < depthMapParams.maxTCams)
+    {
+      ALICEVISION_LOG_WARNING("Single tile computation, override SGM maximum number of T cameras per tile (before: "
+                              << depthMapParams.sgmParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
+      depthMapParams.sgmParams.maxTCamsPerTile = depthMapParams.maxTCams;
+    }
+
+    // update Refine maxTCamsPerTile
+    if(depthMapParams.refineParams.maxTCamsPerTile < depthMapParams.maxTCams)
+    {
+      ALICEVISION_LOG_WARNING("Single tile computation, override Refine maximum number of T cameras per tile (before: "
+                              << depthMapParams.refineParams.maxTCamsPerTile << ", now: " << depthMapParams.maxTCams << ").");
+      depthMapParams.refineParams.maxTCamsPerTile = depthMapParams.maxTCams;
+    }
+
+    const int maxSgmBufferWidth  = divideRoundUp(mp.getMaxImageWidth() , depthMapParams.sgmParams.scale * depthMapParams.sgmParams.stepXY);
+    const int maxSgmBufferHeight = divideRoundUp(mp.getMaxImageHeight(), depthMapParams.sgmParams.scale * depthMapParams.sgmParams.stepXY);
+    const int maxSgmBufferSide = std::max(maxSgmBufferWidth, maxSgmBufferHeight);
+    const int minSgmBufferSide = std::min(maxSgmBufferWidth, maxSgmBufferHeight);
+
+    // update SGM step XY
+    if((depthMapParams.sgmParams.stepXY == 2) && // default stepXY
+       (maxSgmBufferSide * 2 <= 700) && // max side in order to fit in device memory (for legacy method)
+       (minSgmBufferSide * 2 <= 560) && // max side in order to fit in device memory (for legacy method)
+       (maxSgmBufferWidth  < depthMapParams.tileParams.bufferWidth  * 0.5) &&
+       (maxSgmBufferHeight < depthMapParams.tileParams.bufferHeight * 0.5))
+    {
+      ALICEVISION_LOG_WARNING("Single tile computation, override SGM step XY (before: " << depthMapParams.sgmParams.stepXY  << ", now: 1).");
+      depthMapParams.sgmParams.stepXY = 1;
+    }
+}
+
 int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& depthMapParams, int nbTilesPerCamera)
 {
     const int maxImageSize = mp.getMaxImageWidth() * mp.getMaxImageHeight(); // process downscale apply
@@ -208,6 +249,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     depthMapParams.useRefine = mp.userParams.get<bool>("depthMap.useRefine", depthMapParams.useRefine);
     depthMapParams.chooseTCamsPerTile = mp.userParams.get<bool>("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
     depthMapParams.exportTilePattern = mp.userParams.get<bool>("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
+    depthMapParams.overrideSingleTileParameters = mp.userParams.get<bool>("depthMap.overrideSingleTileParameters", depthMapParams.overrideSingleTileParameters);
 }
 
 void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
@@ -216,12 +258,27 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device 
     setCudaDeviceId(cudaDeviceId);
 
+    // initialize RAM image cache
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(mp, image::EImageColorSpace::LINEAR);
+
     // get user parameters from MultiViewParams property_tree
     DepthMapParams depthMapParams;
     getDepthMapParams(mp, depthMapParams);
 
-    // compute SGM scale and step
+    // compute SGM scale and step (set to -1)
     computeScaleStepSgmParams(mp, depthMapParams.sgmParams);
+
+    // compute tile ROI list
+    std::vector<ROI> tileRoiList;
+    getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
+    const int nbTilesPerCamera = tileRoiList.size();
+
+    // log tilling information and ROI list
+    logTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
+
+    // single tile case, update parameters
+    if(tileRoiList.size() == 1)
+      updateDepthMapParamsForSingleTileComputation(mp, depthMapParams);
 
     // log SGM downscale & stepXY
     ALICEVISION_LOG_INFO("SGM parameters:" << std::endl
@@ -232,17 +289,6 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Refine parameters:" << std::endl
                          << "\t- scale: " << depthMapParams.refineParams.scale << std::endl
                          << "\t- stepXY: " << depthMapParams.refineParams.stepXY);
-
-    // initialize RAM image cache
-    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(mp, image::EImageColorSpace::LINEAR);
-
-    // compute tile ROI list
-    std::vector<ROI> tileRoiList;
-    getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
-    const int nbTilesPerCamera = tileRoiList.size();
-
-    // log tilling information and ROI list
-    logTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
 
     // get maximum number of stream (simultaneous tiles)
     const int nbStreams = getNbStreams(mp, depthMapParams, nbTilesPerCamera);

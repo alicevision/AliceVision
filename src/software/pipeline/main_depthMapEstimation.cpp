@@ -158,6 +158,8 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: Perform Refine post-process optimization.")
         ("refineEnabled", po::value<bool>(&depthMapParams.useRefine)->default_value(depthMapParams.useRefine),
             "Enable/Disable depth/simiarity map refinement process.")
+        ("overrideSingleTileParameters", po::value<bool>(&depthMapParams.overrideSingleTileParameters)->default_value(depthMapParams.overrideSingleTileParameters),
+            "Allow program to override parameters for the single tile case.")
         ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
             "Export intermediate depth/similarity maps from the SGM and Refine steps.")
         ("exportIntermediateVolumes", po::value<bool>(&exportIntermediateVolumes)->default_value(exportIntermediateVolumes),
@@ -350,6 +352,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
     mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
     mp.userParams.put("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
+    mp.userParams.put("depthMap.overrideSingleTileParameters", depthMapParams.overrideSingleTileParameters);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);
