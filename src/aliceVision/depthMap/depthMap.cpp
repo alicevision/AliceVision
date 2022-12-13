@@ -72,10 +72,6 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
     {
         sgmParams.stepXY = computeDownscale(mp, fileScale * sgmParams.scale, maxW, maxH);
     }
-
-    ALICEVISION_LOG_INFO("Computed SGM parameters:" << std::endl
-                         << "\t- scale: " << sgmParams.scale << std::endl
-                         << "\t- stepXY: " << sgmParams.stepXY);
 }
 
 int getNbStreams(const mvsUtils::MultiViewParams& mp, const DepthMapParams& depthMapParams, int nbTilesPerCamera)
@@ -226,6 +222,16 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // compute SGM scale and step
     computeScaleStepSgmParams(mp, depthMapParams.sgmParams);
+
+    // log SGM downscale & stepXY
+    ALICEVISION_LOG_INFO("SGM parameters:" << std::endl
+                         << "\t- scale: " << depthMapParams.sgmParams.scale << std::endl
+                         << "\t- stepXY: " << depthMapParams.sgmParams.stepXY);
+
+    // log Refine downscale & stepXY
+    ALICEVISION_LOG_INFO("Refine parameters:" << std::endl
+                         << "\t- scale: " << depthMapParams.refineParams.scale << std::endl
+                         << "\t- stepXY: " << depthMapParams.refineParams.stepXY);
 
     // initialize RAM image cache
     mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> ic(mp, image::EImageColorSpace::LINEAR);
