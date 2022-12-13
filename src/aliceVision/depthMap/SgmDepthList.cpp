@@ -504,6 +504,8 @@ void SgmDepthList::computeRcTcDepths(int tc,
     {
         const Point2d tcPoint = ((depthDirection > 0) ? tcFromPoint : tcToPoint) + (pixelVect * double(i) * double(depthDirection));
 
+        // check if the epipolar segment point is in T camera
+        // note: get2dLineImageIntersection can give points slightly out of the picture
         if(!_mp.isPixelInImage(tcPoint, tc))
             continue;
 
@@ -522,8 +524,10 @@ void SgmDepthList::computeRcTcDepths(int tc,
         if(!triangulateMatch(p, referencePoint, tcPoint, _tile.rc, tc, _mp))
             continue;
 
-        if(!checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
-            continue;
+        // check the difference in pixel size between R and T and the angle size of p
+        // note: disabled for now, this test is too strict and rejects too many points.
+        //if(!checkPair(p, _tile.rc, tc, _mp, _mp.getMinViewAngle(), _mp.getMaxViewAngle()))
+        //    continue;
 
         // compute related 3d point depth
         const float depth = float(orientedPointPlaneDistance(p, rcplane.p, rcplane.n));
