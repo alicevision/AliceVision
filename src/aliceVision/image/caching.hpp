@@ -391,7 +391,8 @@ void ImageCache::load(const CacheKey& key)
         return k.filename == key.filename &&
                k.nbChannels == key.nbChannels &&
                k.typeDesc == key.typeDesc &&
-               k.halfSampleLevel <= key.halfSampleLevel;
+               k.halfSampleLevel < key.halfSampleLevel &&
+               k.lastWriteTime == key.lastWriteTime;
     });
 
     if (it != _keys.end())
