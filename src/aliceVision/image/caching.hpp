@@ -28,7 +28,7 @@ namespace aliceVision {
 namespace image {
 
 /**
- * @brief A struct used to identify a cached image using its filename, color type info and half-sampling level.
+ * @brief A struct used to identify a cached image using its file description, color type info and half-sampling level.
  */
 struct CacheKey 
 {
@@ -71,6 +71,7 @@ struct CacheKeyHasher
     }
 };
 
+
 /**
  * @brief A struct to store information about the cache current state and usage.
  */
@@ -96,6 +97,7 @@ struct CacheInfo
     {
     }
 };
+
 
 /**
  * @brief A class to support shared pointers for all types of images.
@@ -169,8 +171,28 @@ inline std::shared_ptr<Image<RGBAColor>> CacheValue::get<RGBAColor>() { return i
 template<>
 inline std::shared_ptr<Image<RGBAfColor>> CacheValue::get<RGBAfColor>() { return imgRGBAf; }
 
+
 /**
- * @brief A class to retrieve images that handles loading from disk, downscaling and caching.
+ * @brief A class for retrieving images from disk (optionnaly downscaled) that implements a caching mechanism.
+ * 
+ * When creating an instance of this class, one must provide two memory size limits: 
+ * - a capacity: the amount of space dedicated to storing images for later use
+ * - a maximal size: the amount of space that cannot be exceeded.
+ * 
+ * When one attempts to retrieve an image through this cache, the following policy applies: 
+ * 1. if the image is already in the cache, return it
+ * 2. if the image fits in the capacity, load it, store it in the cache and return it
+ * 3. find the Leat-Recently-Used image in the cache that is not used externally and which size is bigger than the missing capacity, 
+ * if such an image exists remove it and apply step 2
+ * 4. remove all images that are not used externally from Least- to Most-Recently-Used until the capacity is big enough to fit the image
+ * or until there is nothing to remove
+ * 5. if the image fits in the maximal size, load it, store it and return it
+ * 6. the image is too big for the cache, throw an error.
+ * 
+ * In the process described above, we also take advantage of the cache content when loading an image: 
+ * if the same image with a lower half-sampling level (i.e. higher resolution) exists in the cache, 
+ * we take the high-resolution version of the image from the cache and create and new downscaled version of it
+ * instead of loading the image from disk.
  */
 class ImageCache 
 {
@@ -194,9 +216,11 @@ public:
 
     /**
      * @brief Retrieve a cached image at a given half-sampling level.
+     * @note This method is thread-safe.
      * @param[in] filename the image's filename on disk
      * @param[in] halfSampleLevel the half-sampling level
      * @return a shared pointer to the cached image
+     * @throws std::runtime_error if the image does not fit in the maximal size of the cache
      */
     template<typename TPix>
     std::shared_ptr<Image<TPix>> get(const std::string& filename, int halfSampleLevel);
@@ -240,6 +264,9 @@ private:
 
 };
 
+
+// Since some methods in the ImageCache class are templated
+// their definition must be given in this header file
 
 template<typename TPix>
 std::shared_ptr<Image<TPix>> ImageCache::get(const std::string& filename, int halfSampleLevel)
