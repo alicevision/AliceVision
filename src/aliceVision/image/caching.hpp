@@ -9,7 +9,7 @@
 #include "Image.hpp"
 #include "pixelTypes.hpp"
 #include "io.hpp"
-#include "resampling.hpp"
+#include "imageAlgo.hpp"
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -375,7 +375,7 @@ void ImageCache::load(const CacheKey& key)
 
         // apply downscale
         int downscale = 1 << (key.halfSampleLevel - keyHighScale.halfSampleLevel);
-        downscaleImage<SamplerLinear, Image<TPix>>(*(valueHighScale.get<TPix>()), *img, downscale);
+        imageAlgo::resizeImage(downscale, *(valueHighScale.get<TPix>()), *img);
 
         _info.nbLoadFromHigherScale++;
     }
@@ -386,7 +386,10 @@ void ImageCache::load(const CacheKey& key)
 
         // apply downscale
         int downscale = 1 << key.halfSampleLevel;
-        downscaleImageInplace(*img, downscale);
+        if (downscale > 1)
+        {
+            imageAlgo::resizeImage(downscale, *img, *img);
+        }
 
         _info.nbLoadFromDisk++;
     }

@@ -245,6 +245,16 @@ void resizeImage(oiio::TypeDesc typeDesc,
     oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
 }
 
+void resizeImage(int downscale, const image::Image<unsigned char>& inImage,
+                 image::Image<unsigned char>& outImage, const std::string& filter, float filterSize)
+{
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
 void resizeImage(int downscale, const image::Image<float>& inImage,
                  image::Image<float>& outImage, const std::string& filter, float filterSize)
 {
@@ -252,6 +262,17 @@ void resizeImage(int downscale, const image::Image<float>& inImage,
     const int outHeight = inImage.Height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 1,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(int downscale, const image::Image<image::RGBColor> &inImage,
+                 image::Image<image::RGBColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
                 inImage.data(), outImage.data(), filter, filterSize);
 }
 
@@ -263,6 +284,17 @@ void resizeImage(int downscale, const image::Image<image::RGBfColor> &inImage,
     const int outHeight = inImage.Height() / downscale;
     outImage.resize(outWidth, outHeight);
     resizeImage(oiio::TypeDesc::FLOAT, inImage.Width(), inImage.Height(), outWidth, outHeight, 3,
+                inImage.data(), outImage.data(), filter, filterSize);
+}
+
+void resizeImage(int downscale, const image::Image<image::RGBAColor> &inImage,
+                 image::Image<image::RGBAColor> &outImage, const std::string &filter,
+                 float filterSize)
+{
+    const int outWidth = inImage.Width() / downscale;
+    const int outHeight = inImage.Height() / downscale;
+    outImage.resize(outWidth, outHeight);
+    resizeImage(oiio::TypeDesc::UINT8, inImage.Width(), inImage.Height(), outWidth, outHeight, 4,
                 inImage.data(), outImage.data(), filter, filterSize);
 }
 
