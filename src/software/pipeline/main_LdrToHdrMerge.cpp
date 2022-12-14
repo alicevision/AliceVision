@@ -178,29 +178,10 @@ int aliceVision_main(int argc, char** argv)
         }
     }
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    //hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex);
 
-    const std::string targetIndexFilename = (fs::path(inputResponsePath).parent_path() / (std::string("exposureRefIndexes") + std::string(".txt"))).string();
+    const fs::path targetIndexFilepath(fs::path(inputResponsePath).parent_path() / (std::string("exposureRefIndexes.txt")));
 
-    std::ifstream file(targetIndexFilename);
-    std::vector<int> targetIndexes;
-    if (!file)
-    {
-        throw std::logic_error("Can't open target indexes file");
-    }
-    //create fileData
-    while (file)
-    {
-        std::string line;
-        if (!getline(file, line)) break;
-        targetIndexes.push_back(atoi(line.c_str()));
-    }
-    file.close();
-
-    for (int i = 0; i < groupedViews.size(); ++i)
-    {
-        targetViews.push_back(groupedViews[i][targetIndexes[i]]);
-    }
+    hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, targetIndexFilepath.string());
 
     // Define range to compute
     if(rangeStart != -1)

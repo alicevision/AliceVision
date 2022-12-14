@@ -1,5 +1,7 @@
 #include "brackets.hpp"
 
+#include <fstream>
+
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <boost/filesystem.hpp>
@@ -101,15 +103,55 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     return true;
 }
 
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex)
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex, const std::string& targetIndexesFilename)
 {
-    for(auto & group : groups)
+    // If targetIndexesFilename cannot be opened or is not valid target views are derived from the middle exposed views
+    // For odd number, there is no ambiguity on the middle image.
+    // For even number, we arbitrarily choose the more exposed view (as we usually have more under-exposed images than over-exposed).
+    const int viewNumberPerGroup = groups[0].size();
+    const int middleIndex = viewNumberPerGroup / 2;
+    const int targetIndex = middleIndex + offsetRefBracketIndex;
+
+    if ((targetIndex >= 0) && (targetIndex < viewNumberPerGroup))
     {
-        // Target views are the middle exposed views
-        // For add number, there is no ambiguity on the middle image.
-        // For even number, we arbitrarily choose the more exposed view (as we usually have more under-exposed images than over-exposed).
-        const int middleIndex = int(group.size()) / 2;
-        const int targetIndex = clamp(middleIndex + offsetRefBracketIndex, 0, int(group.size()) - 1);
+        ALICEVISION_LOG_INFO("Use offsetRefBracketIndex parameter");
+        for(auto & group : groups)
+        {
+            out_targetViews.push_back(group[targetIndex]);
+        }
+    }
+    else // try to use indexes in the file
+    {
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, read file containing target indexes");
+        std::vector<int> targetIndexes;
+        std::ifstream file(targetIndexesFilename);
+        if (!file)
+        {
+            ALICEVISION_LOG_WARNING("Unable to open the file " << targetIndexesFilename << " with the selection of exposures. This file would be needed to select the optimal exposure for the creation of the HDR images. Use clamped offsetRefBracketIndex parameter.");
+            for (int i = 0; i < groups.size(); ++i)
+            {
+                targetIndexes.push_back(clamp(targetIndex, 0, int(groups[i].size()) - 1));
+            }
+        }
+        else
+        {
+            while (file)
+            {
+                std::string line;
+                if (!getline(file, line)) break;
+                targetIndexes.push_back(atoi(line.c_str()));
+            }
+            file.close();
+
+            if (targetIndexes.size() != groups.size())
+            {
+                ALICEVISION_LOG_WARNING("Non consistent number of reference indexes in file " << targetIndexesFilename << ", use clamped offsetRefBracketIndex parameter");
+                for (int i = 0; i < groups.size(); ++i)
+                {
+                    targetIndexes.push_back(clamp(targetIndex, 0, int(groups[i].size()) - 1));
+                }
+            }
+        }
 
         //Set the ldr ancestors id
         for (auto v : group)
@@ -117,8 +159,12 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
             group[targetIndex]->addAncestor(v->getViewId());
         }
 
-        out_targetViews.push_back(group[targetIndex]);
+        for (int i = 0; i < groups.size(); ++i)
+        {
+            out_targetViews.push_back(groups[i][targetIndexes[i]]);
+        }
     }
+
 }
 }
 }

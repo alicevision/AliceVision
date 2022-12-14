@@ -111,6 +111,60 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
     return in;
 }
 
+int computeMergingRefIndex(const std::vector<double>& groupedExposure, const std::vector<hdr::ImageSample>& samples, const double meanTargetedLuma)
+{
+    std::map<int, std::pair<int, double>> meanLum;
+    std::map<int, std::pair<double, double>> rangeLum;
+    for (int i = 0; i < groupedExposure.size(); i++)
+    {
+        meanLum[(int)(groupedExposure[i] * 1000)].first = 0;
+        meanLum[(int)(groupedExposure[i] * 1000)].second = 0.0;
+        rangeLum[(int)(groupedExposure[i] * 1000)].first = 1000.0;
+        rangeLum[(int)(groupedExposure[i] * 1000)].second = 0.0;
+    }
+    for (int i = 0; i < samples.size(); i++)
+    {
+        for (int j = 0; j < samples[i].descriptions.size(); j++)
+        {
+            double lum = image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
+            meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].second += lum;
+            meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].first++;
+            if (lum < rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first)
+            {
+                rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first = lum;
+            }
+            if (lum > rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second)
+            {
+                rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second = lum;
+            }
+        }
+    }
+
+    double minDiffWithLumaTarget = 1000.0;
+    int minDiffWithLumaTargetIdx = 0;
+
+    int k = 0;
+    for (const auto& n : meanLum)
+    {
+        double lumaMean = n.second.second / (double)n.second.first;
+
+        ALICEVISION_LOG_DEBUG('[' << n.first << "] = " << lumaMean);
+
+        if (fabs(lumaMean - meanTargetedLuma) < minDiffWithLumaTarget)
+        {
+            minDiffWithLumaTarget = fabs(lumaMean - meanTargetedLuma);
+            minDiffWithLumaTargetIdx = k;
+        }
+        ++k;
+    }
+    for (const auto& n : rangeLum)
+    {
+        ALICEVISION_LOG_DEBUG('[' << n.first << " , " << n.second << "]");
+    }
+
+    return minDiffWithLumaTargetIdx;
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string sfmInputDataFilename;
@@ -121,6 +175,7 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
     size_t maxTotalPoints = 1000000;
+    double meanTargetedLumaForMerging = 0.4;
 
     // Command line parameters
 
@@ -145,8 +200,10 @@ int aliceVision_main(int argc, char** argv)
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
         ("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
-         "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
-         "can be managed by the calibration step (in term of computation time and memory usage).")
+            "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
+            "can be managed by the calibration step (in term of computation time and memory usage).")
+        ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
+            "Mean expected luminance after merging step. Must be in the range [0, 1].")
         ;
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
@@ -259,8 +316,6 @@ int aliceVision_main(int argc, char** argv)
         size_t group_pos = 0;
         hdr::Sampling sampling;
 
-        double meanTargetedLuma = 0.4; // should be a parameter
-
         ALICEVISION_LOG_INFO("Analyzing samples for each group");
         for(auto & group : groupedViews)
         {
@@ -284,58 +339,7 @@ int aliceVision_main(int argc, char** argv)
 
             sampling.analyzeSource(samples, channelQuantization, group_pos);
 
-            std::map<int, std::pair<int, double>> meanLum;
-            std::map<int, std::pair<double, double>> rangeLum;
-            for (int i = 0; i < groupedExposures[group_pos].size(); i++)
-            {
-                meanLum[(int)(groupedExposures[group_pos][i] * 1000)].first = 0;
-                meanLum[(int)(groupedExposures[group_pos][i] * 1000)].second = 0.0;
-                rangeLum[(int)(groupedExposures[group_pos][i] * 1000)].first = 1000.0;
-                rangeLum[(int)(groupedExposures[group_pos][i] * 1000)].second = 0.0;
-            }
-            for (int i = 0; i < samples.size(); i++)
-            {
-                for (int j = 0; j < samples[i].descriptions.size(); j++)
-                {
-                    double lum = 0.2126 * samples[i].descriptions[j].mean[0] + 0.7152 * samples[i].descriptions[j].mean[1] + 0.0722 * samples[i].descriptions[j].mean[2];
-                    meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].second += lum;
-                    meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].first++;
-                    if (lum < rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first)
-                    {
-                        rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first = lum;
-                    }
-                    if (lum > rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second)
-                    {
-                        rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second = lum;
-                    }
-                }
-            }
-
-            double minDiffWithLumaTarget = 1000.0;
-            int minDiffWithLumaTargetIdx = 0;
-
-            int k = 0;
-            for (const auto& n : meanLum)
-            {
-                double lumaMean = n.second.second / (double)n.second.first;
-
-                std::cout << '[' << n.first << "] = " << lumaMean << std::endl;
-
-                if (fabs(lumaMean - meanTargetedLuma) < minDiffWithLumaTarget)
-                {
-                    minDiffWithLumaTarget = fabs(lumaMean - meanTargetedLuma);
-                    minDiffWithLumaTargetIdx = k;
-                }
-                ++k;
-            }
-            std::cout << std::endl;
-            for (const auto& n : rangeLum)
-            {
-                std::cout << '[' << n.first << " , " << n.second << "]" << std::endl;
-            }
-            std::cout << std::endl;
-
-            refIndexes.push_back(minDiffWithLumaTargetIdx);
+            refIndexes.push_back(computeMergingRefIndex(groupedExposures[group_pos], samples, meanTargetedLumaForMerging));
 
             ++group_pos;
         }
