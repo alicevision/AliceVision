@@ -982,5 +982,5 @@ LCPinfo* LCPdatabase::findLCP(
         return retrieveLCP(lcpPath.path.string());
     }
 
-    return false;
+    return nullptr;
 }
