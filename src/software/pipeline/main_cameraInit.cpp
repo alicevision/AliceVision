@@ -452,32 +452,35 @@ int aliceVision_main(int argc, char **argv)
 
     std::string imgFormat = in->format_name();
 
-    if (dcpDatabase.empty() && (imgFormat.compare("raw") == 0) && errorOnMissingColorProfile)
-    {
-        ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist or is empty.");
-        // No color profile available
-        boost::atomic_ref<char>{allColorProfilesFound} = 0;
-    }
-
     // if a color profile is required check if a dcp database exists and if one is available inside 
     // if yes and if metadata exist and image format is raw then update metadata with DCP info
     if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
         rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata) &&
-        hasCameraMetadata && !dcpDatabase.empty() && (imgFormat.compare("raw") == 0))
+        hasCameraMetadata && (imgFormat.compare("raw") == 0))
     {
-        image::DCPProfile dcpProf;
 
-        if(dcpDatabase.getDcpForCamera(make, model, dcpProf))
+        if (dcpDatabase.empty() && errorOnMissingColorProfile)
         {
-            view.addDCPMetadata(dcpProf);
-
-            #pragma omp critical
-            viewsWithDCPMetadata++;
-        }
-        else if(allColorProfilesFound)
-        {
-            // there is a missing color profile for one image or more
+            ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist or is empty.");
+            // No color profile available
             boost::atomic_ref<char>{allColorProfilesFound} = 0;
+        }
+        else if (!dcpDatabase.empty())
+        {
+            image::DCPProfile dcpProf;
+
+            if (dcpDatabase.getDcpForCamera(make, model, dcpProf))
+            {
+                view.addDCPMetadata(dcpProf);
+
+                #pragma omp critical
+                viewsWithDCPMetadata++;
+            }
+            else if (allColorProfilesFound)
+            {
+                // there is a missing color profile for one image or more
+                boost::atomic_ref<char>{allColorProfilesFound} = 0;
+            }
         }
     }
 
