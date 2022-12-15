@@ -108,6 +108,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
                     const sfmData::View& view, double mmFocalLength, double sensorWidth,
                     double defaultFocalLength, double defaultFieldOfView, 
                     double defaultFocalRatio, double defaultOffsetX, double defaultOffsetY,
+                    camera::EINTRINSIC lcpIntrinsicType,
                     camera::EINTRINSIC defaultIntrinsicType,
                     camera::EINTRINSIC allowedEintrinsics)
 {
@@ -189,6 +190,10 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(
   if(cameraBrand == "Custom")
   {
     intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
+  }
+  else if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN) && (allowedEintrinsics & lcpIntrinsicType))
+  {
+      intrinsicType = lcpIntrinsicType;
   }
   else if(checkPossiblePinhole)
   {

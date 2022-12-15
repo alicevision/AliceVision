@@ -21,6 +21,7 @@ enum class EIntrinsicInitMode : std::uint8_t
 {
   NONE = 0, //< Value not set
   CALIBRATED, //< External calibration
+  LCP, //< Distortion model is extracted from a LCP profile using metadata information
   ESTIMATED, //< Estimated, in the standard pipeline it is estimated from metadata information (FocalLength + sensor width or FocalLengthIn35mm with integer approximation)
   UNKNOWN //< The camera parameters are unknown (can still have a default value guess)
 };
@@ -35,6 +36,7 @@ inline std::string EIntrinsicInitMode_enumToString(EIntrinsicInitMode intrinsicI
   switch(intrinsicInitMode)
   {
     case EIntrinsicInitMode::CALIBRATED: return "calibrated";
+    case EIntrinsicInitMode::LCP:        return "lcp";
     case EIntrinsicInitMode::ESTIMATED:  return "estimated";
     case EIntrinsicInitMode::UNKNOWN:    return "unknown";
     case EIntrinsicInitMode::NONE:       return "none";
@@ -53,6 +55,7 @@ inline EIntrinsicInitMode EIntrinsicInitMode_stringToEnum(const std::string& int
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
   if(mode == "calibrated") return EIntrinsicInitMode::CALIBRATED;
+  if(mode == "lcp")        return EIntrinsicInitMode::LCP;
   if(mode == "estimated")  return EIntrinsicInitMode::ESTIMATED;
   if(mode == "unknown")    return EIntrinsicInitMode::UNKNOWN;
   if(mode == "none")       return EIntrinsicInitMode::NONE;
