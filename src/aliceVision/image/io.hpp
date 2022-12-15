@@ -184,15 +184,13 @@ struct ImageReadOptions
     ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
         ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::Auto,
         const std::string& colorProfile = "", const oiio::ROI& roi = oiio::ROI()) :
-        workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), applyToneCurve(false), subROI(roi)
+        workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), subROI(roi)
     {
     }
-
 
     EImageColorSpace workingColorSpace;
     ERawColorInterpretation rawColorInterpretation;
     std::string colorProfileFileName;
-    bool applyToneCurve;
 
     //ROI for this image.
     //If the image contains an roi, this is the roi INSIDE the roi.
