@@ -484,6 +484,10 @@ int aliceVision_main(int argc, char **argv)
         }
     }
 
+    // Store the color interpretation mode choosed for raw images in metadata,
+    // so all future loads of this image will be interpreted in the same way.
+    view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
@@ -847,15 +851,6 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Add the white balance option to the image metadata
-  for (auto vitem : sfmData.getViews())
-  {
-    if (vitem.second) 
-    {
-        vitem.second->addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
-    }
-  }
-  
   // store SfMData views & intrinsic data
   if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
