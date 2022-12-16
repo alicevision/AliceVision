@@ -444,20 +444,24 @@ int aliceVision_main(int argc, char** argv)
     response.write(outputResponsePath);
     response.writeHtml(htmlOutput, "response");
 
-    const std::string expRefIndexesFilename = (fs::path(outputResponsePath).parent_path() / (std::string("exposureRefIndexes") + std::string(".txt"))).string();
+    double meanIndex = 0.0;
+    for (int i = 0; i < refIndexes.size(); i++)
+    {
+        meanIndex += static_cast<double>(refIndexes[i]);
+    }
+    const int refIndex = static_cast<int>(std::round(meanIndex /= refIndexes.size()));
 
-    std::ofstream file(expRefIndexesFilename);
+    const std::string expRefIndexFilename = (fs::path(outputResponsePath).parent_path() / (std::string("exposureRefIndex") + std::string(".txt"))).string();
+    std::ofstream file(expRefIndexFilename);
     if (!file)
     {
-        throw std::logic_error("Can't create file for exposure reference Indexes");
+        ALICEVISION_LOG_WARNING("Unable to create file " << expRefIndexFilename << " for storing the exposure reference Index");
     }
-    std::string text = "";
-    for (std::size_t index = 0; index < refIndexes.size(); ++index)
+    else
     {
-        text += std::to_string(refIndexes[index]) + "\n";
+        file << std::to_string(refIndex) + "\n";
+        file.close();
     }
-    file << text;
-    file.close();
 
     return EXIT_SUCCESS;
 }
