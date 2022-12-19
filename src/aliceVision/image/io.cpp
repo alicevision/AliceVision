@@ -499,6 +499,10 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", 1); // unclip
         }
+        else
+        {
+            ALICEVISION_THROW_ERROR("[image] readImage: invalid rawColorInterpretation " << ERawColorInterpretation_enumToString(imageReadOptions.rawColorInterpretation) << ".");
+        }
     }
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
