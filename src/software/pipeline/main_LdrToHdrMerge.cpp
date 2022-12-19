@@ -180,24 +180,27 @@ int aliceVision_main(int argc, char** argv)
     }
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
 
-    const int middleIndex = usedNbBrackets / 2;
-    const int targetIndex = middleIndex + offsetRefBracketIndex;
-    const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
-
-    const fs::path targetIndexFilepath(fs::path(inputResponsePath).parent_path() / (std::string("exposureRefIndex.txt")));
-
-    if (!fs::is_regular_file(targetIndexFilepath) && !isOffsetRefBracketIndexValid)
+    if (!byPass)
     {
-        ALICEVISION_LOG_ERROR("Unable to open the file " << targetIndexFilepath.string() << " with the selection of exposures. This file is needed to select the optimal exposure for the creation of HDR images.");
-        return EXIT_FAILURE;
-    }
+        const int middleIndex = usedNbBrackets / 2;
+        const int targetIndex = middleIndex + offsetRefBracketIndex;
+        const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
 
-    hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, targetIndexFilepath.string());
+        const fs::path targetIndexFilepath(fs::path(inputResponsePath).parent_path() / (std::string("exposureRefIndex.txt")));
 
-    if (targetViews.empty() && !isOffsetRefBracketIndexValid)
-    {
-        ALICEVISION_LOG_ERROR("File " << targetIndexFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
-        return EXIT_FAILURE;
+        if (!fs::is_regular_file(targetIndexFilepath) && !isOffsetRefBracketIndexValid)
+        {
+            ALICEVISION_LOG_ERROR("Unable to open the file " << targetIndexFilepath.string() << " with the selection of exposures. This file is needed to select the optimal exposure for the creation of HDR images.");
+            return EXIT_FAILURE;
+        }
+
+        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, targetIndexFilepath.string());
+
+        if (targetViews.empty() && !isOffsetRefBracketIndexValid)
+        {
+            ALICEVISION_LOG_ERROR("File " << targetIndexFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
+            return EXIT_FAILURE;
+        }
     }
 
     // Define range to compute

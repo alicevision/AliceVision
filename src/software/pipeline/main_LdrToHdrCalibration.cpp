@@ -148,7 +148,7 @@ int computeMergingRefIndex(const std::vector<double>& groupedExposure, const std
     {
         double lumaMean = n.second.second / (double)n.second.first;
 
-        ALICEVISION_LOG_DEBUG('[' << n.first << "] = " << lumaMean);
+        ALICEVISION_LOG_DEBUG('[' << n.first << "] : mean = " << lumaMean << " ; min = " << rangeLum[k].first << " ; max = " << rangeLum[k].second);
 
         if (fabs(lumaMean - meanTargetedLuma) < minDiffWithLumaTarget)
         {
@@ -156,10 +156,6 @@ int computeMergingRefIndex(const std::vector<double>& groupedExposure, const std
             minDiffWithLumaTargetIdx = k;
         }
         ++k;
-    }
-    for (const auto& n : rangeLum)
-    {
-        ALICEVISION_LOG_DEBUG('[' << n.first << " , " << n.second << "]");
     }
 
     return minDiffWithLumaTargetIdx;
@@ -287,14 +283,22 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_WARNING("The provided input sampling folder will not be used.");
         }
     }
-    else
+    
+    if(samplesFolder.empty())
     {
-        if(samplesFolder.empty())
+        if (calibrationMethod != ECalibrationMethod::LINEAR)
         {
             ALICEVISION_LOG_ERROR("A folder with selected samples is required to calibrate the Camera Response Function (CRF).");
             return EXIT_FAILURE;
         }
-
+        else
+        {
+            ALICEVISION_LOG_WARNING("A folder with selected samples is required to estimate the hdr output exposure level.");
+            ALICEVISION_LOG_WARNING("You will have to set manually the dedicated paramater at merging stage.");
+        }
+    }
+    else
+    {
         // Build camera exposure table
         for (int i = 0; i < groupedViews.size(); ++i)
         {
@@ -303,7 +307,7 @@ int aliceVision_main(int argc, char** argv)
 
             for (int j = 0; j < group.size(); ++j)
             {
-                const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting(/*group[0]->getMetadataISO(), group[0]->getMetadataFNumber()*/);
+                const sfmData::ExposureSetting exp = group[j]->getCameraExposureSetting();
                 exposuresSetting.push_back(exp);
             }
             if (!sfmData::hasComparableExposures(exposuresSetting))
@@ -317,7 +321,7 @@ int aliceVision_main(int argc, char** argv)
         hdr::Sampling sampling;
 
         ALICEVISION_LOG_INFO("Analyzing samples for each group");
-        for(auto & group : groupedViews)
+        for (auto& group : groupedViews)
         {
             // Read from file
             const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
@@ -329,7 +333,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
             std::size_t size;
-            fileSamples.read((char *)&size, sizeof(size));
+            fileSamples.read((char*)&size, sizeof(size));
 
             std::vector<hdr::ImageSample> samples(size);
             for (std::size_t i = 0; i < size; ++i)
@@ -351,7 +355,7 @@ int aliceVision_main(int argc, char** argv)
         group_pos = 0;
 
         std::size_t total = 0;
-        for(auto & group : groupedViews)
+        for (auto& group : groupedViews)
         {
             // Read from file
             const std::string samplesFilepath = (fs::path(samplesFolder) / (std::to_string(group_pos) + "_samples.dat")).string();
@@ -363,7 +367,7 @@ int aliceVision_main(int argc, char** argv)
             }
 
             std::size_t size = 0;
-            fileSamples.read((char *)&size, sizeof(size));
+            fileSamples.read((char*)&size, sizeof(size));
 
             std::vector<hdr::ImageSample> samples(size);
             for (int i = 0; i < size; ++i)
@@ -381,19 +385,19 @@ int aliceVision_main(int argc, char** argv)
 
         // Define calibration weighting curve from name
         boost::algorithm::to_lower(calibrationWeightFunction);
-        if(calibrationWeightFunction == "default")
+        if (calibrationWeightFunction == "default")
         {
-            switch(calibrationMethod)
+            switch (calibrationMethod)
             {
-                case ECalibrationMethod::DEBEVEC:
-                    calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::TRIANGLE);
-                    break;
-                case ECalibrationMethod::LINEAR:
-                case ECalibrationMethod::GROSSBERG:
-                case ECalibrationMethod::LAGUERRE:
-                default:
-                    calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
-                    break;
+            case ECalibrationMethod::DEBEVEC:
+                calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::TRIANGLE);
+                break;
+            case ECalibrationMethod::LINEAR:
+            case ECalibrationMethod::GROSSBERG:
+            case ECalibrationMethod::LAGUERRE:
+            default:
+                calibrationWeightFunction = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
+                break;
             }
         }
         calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
@@ -456,6 +460,7 @@ int aliceVision_main(int argc, char** argv)
     if (!file)
     {
         ALICEVISION_LOG_WARNING("Unable to create file " << expRefIndexFilename << " for storing the exposure reference Index");
+        ALICEVISION_LOG_WARNING("You will have to set manually the dedicated paramater at merging stage.");
     }
     else
     {
