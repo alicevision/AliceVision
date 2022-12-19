@@ -28,7 +28,6 @@ namespace fs = boost::filesystem;
 int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
-  std::string verboseLevel = aliceVision::system::EVerboseLevel_enumToString(aliceVision::system::Logger::getDefaultVerboseLevel());
   std::vector<std::string> mediaPaths;    // media file path list
   std::vector<std::string> brands;        // media brand list
   std::vector<std::string> models;        // media model list
@@ -40,7 +39,6 @@ int aliceVision_main(int argc, char** argv)
   std::string outputFolder;               // output folder for keyframes
 
   // algorithm variables
-
   bool useSparseDistanceSelection = true;
   bool useSharpnessSelection = true;
   std::string sharpnessPreset = ESharpnessSelectionPreset_enumToString(ESharpnessSelectionPreset::NORMAL);
@@ -49,8 +47,6 @@ int aliceVision_main(int argc, char** argv)
   unsigned int minFrameStep = 12;
   unsigned int maxFrameStep = 36;
   unsigned int maxNbOutFrame = 0;
-
-  po::options_description allParams("This program is used to extract keyframes from single camera or a camera rig");
 
   po::options_description inputParams("Required parameters");  
   inputParams.add_options()
@@ -96,43 +92,16 @@ int aliceVision_main(int argc, char** argv)
       ("maxNbOutFrame", po::value<unsigned int>(&maxNbOutFrame)->default_value(maxNbOutFrame), 
         "maximum number of output frames (0 = no limit)");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal, error, warning, info, debug, trace).");
 
-  allParams.add(inputParams).add(metadataParams).add(algorithmParams).add(logParams);
-
-  po::variables_map vm;
-  try
+  aliceVision::CmdLine cmdline("This program is used to extract keyframes from single camera or a camera rig.\n"
+                               "AliceVision keyframeSelection");
+  cmdline.add(inputParams);
+  cmdline.add(metadataParams);
+  cmdline.add(algorithmParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
+      return EXIT_FAILURE;
   }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
-
-  // set verbose level
-  aliceVision::system::Logger::get()->setLogLevel(verboseLevel);
 
   const std::size_t nbCameras = mediaPaths.size();
 

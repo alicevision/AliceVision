@@ -261,7 +261,9 @@ bool L2RotationAveraging_Refine(
   ceres::Solver::Options solverOptions;
   // Since the problem is sparse, use a sparse solver
   if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::SUITE_SPARSE) ||
+#if ALICEVISION_CERES_HAS_CXSPARSE
       ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE) ||
+#endif
       ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     solverOptions.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;

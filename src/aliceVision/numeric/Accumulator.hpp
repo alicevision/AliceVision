@@ -7,7 +7,7 @@
 
 #pragma once
 
-/// Accumulator trait to perform safe summation over a specified type
+// Accumulator trait to perform safe summation over a specified type
 namespace aliceVision {
 
 template<typename T>

@@ -15,7 +15,7 @@ namespace depthMap {
 void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, GPUJob gpujob, int nbGPUsToUse)
 {
     const int nbGPUDevices = listCudaDevices();
-    const int nbCPUThreads = omp_get_num_procs();
+    const int nbCPUThreads = omp_get_max_threads();
 
     ALICEVISION_LOG_INFO("Number of GPU devices: " << nbGPUDevices << ", number of CPU threads: " << nbCPUThreads);
 
@@ -36,6 +36,8 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
     }
     else
     {
+        //backup max threads to keep potentially previously set value
+        int previous_count_threads = omp_get_max_threads();
         omp_set_num_threads(nbThreads); // create as many CPU threads as there are CUDA devices
 #pragma omp parallel
         {
@@ -62,6 +64,7 @@ void computeOnMultiGPUs(mvsUtils::MultiViewParams& mp, const std::vector<int>& c
 
             gpujob(cudaDeviceId, mp, subcams);
         }
+        omp_set_num_threads(previous_count_threads);
     }
 }
 

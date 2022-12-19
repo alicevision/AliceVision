@@ -8,11 +8,13 @@
 
 #include "Logger.hpp"
 #include "Timer.hpp"
+#include "hardwareContext.hpp"
 
-// This file is header only, so the module don't need to have program_options as a dependency
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/option.hpp>
 #include <boost/program_options/errors.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/options_description.hpp>
 
 #include <functional>
 #include <ostream>
@@ -58,7 +60,6 @@ std::function<void(T)> optInRange(T min, T max, const char* opt_name)
         }
     };
 };
-
 }
 
 namespace boost {
@@ -162,4 +163,33 @@ inline std::ostream& operator<<(std::ostream& os, const variables_map& vm)
 }
 
 }
+}
+
+namespace aliceVision {
+
+class CmdLine
+{
+public:
+    CmdLine(const std::string& name) :
+        _allParams(name)
+    {
+    }
+
+    void add(const boost::program_options::options_description& options)
+    {
+        _allParams.add(options);
+    }
+
+    bool execute(int argc, char** argv);
+
+    HardwareContext getHardwareContext()
+    {
+        return _hContext;
+    }
+
+private:
+    boost::program_options::options_description _allParams;
+    HardwareContext _hContext;
+};
+
 }

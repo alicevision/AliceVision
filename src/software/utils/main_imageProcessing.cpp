@@ -1,4 +1,3 @@
-
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -14,9 +13,11 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include <opencv2/imgproc.hpp>
+#include <opencv2/photo.hpp>
 #endif
 
 #include <OpenImageIO/imageio.h>
@@ -212,6 +213,45 @@ inline std::istream& operator>>(std::istream& in, EImageFormat& e)
     return in;
 }
 
+struct NLMeansFilterParams
+{
+    bool enabled;
+    float filterStrength;
+    float filterStrengthColor;
+    int templateWindowSize;
+    int searchWindowSize;
+};
+
+std::istream& operator>>(std::istream& in, NLMeansFilterParams& nlmParams)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> splitParams;
+    boost::split(splitParams, token, boost::algorithm::is_any_of(":"));
+    if(splitParams.size() != 5)
+        throw std::invalid_argument("Failed to parse NLMeansFilterParams from: " + token);
+    nlmParams.enabled = boost::to_lower_copy(splitParams[0]) == "true";
+    nlmParams.filterStrength = boost::lexical_cast<float>(splitParams[1]);
+    nlmParams.filterStrengthColor = boost::lexical_cast<float>(splitParams[2]);
+    nlmParams.templateWindowSize = boost::lexical_cast<int>(splitParams[3]);
+    nlmParams.searchWindowSize = boost::lexical_cast<int>(splitParams[4]);
+
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const NLMeansFilterParams& nlmParams)
+{
+    os << nlmParams.enabled << ":" << nlmParams.filterStrength << ":" << nlmParams.filterStrengthColor << ":"
+       << nlmParams.templateWindowSize << ":" << nlmParams.searchWindowSize;
+    return os;
+}
+
+std::string getColorProfileDatabaseFolder()
+{
+    const char* value = std::getenv("ALICEVISION_COLOR_PROFILE_DB");
+    return value ? value : "";
+}
+
 struct ProcessingParams
 {
     bool reconstructedViewsOnly = false;
@@ -255,6 +295,14 @@ struct ProcessingParams
         true // mono
     };
 
+    NLMeansFilterParams nlmFilter = 
+    {
+        false, // enable
+        5.0f,  // filterStrength
+        10.0f, // filterStrengthColor
+        7,     // templateWindowSize
+        21     // searchWindowSize
+    };
 };
 
 
@@ -401,9 +449,29 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBufAlgo::noise(inBuf, ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono);
     }
+
+    if(pParams.nlmFilter.enabled)
+    {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+        // Create temporary OpenCV Mat (keep only 3 channels) to handle Eigen data of our image
+        cv::Mat openCVMatIn = image::imageRGBAToCvMatBGR(image, CV_8UC3);
+        cv::Mat openCVMatOut(image.Width(), image.Height(), CV_8UC3);
+
+        cv::fastNlMeansDenoisingColored(openCVMatIn, openCVMatOut, pParams.nlmFilter.filterStrength,
+                                        pParams.nlmFilter.filterStrengthColor, pParams.nlmFilter.templateWindowSize,
+                                        pParams.nlmFilter.searchWindowSize);
+
+        // Copy filtered data from OpenCV Mat(3 channels) to our image (keep the alpha channel unfiltered)
+        image::cvMatBGRToImageRGBA(openCVMatOut, image);
+
+#else
+        throw std::invalid_argument(
+            "Unsupported mode! If you intended to use a non-local means filter, please add OpenCV support.");
+#endif
+    }
 }
 
-void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath,
+void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputPath, const std::string& outputPath, std::map<std::string, std::string> inputMetadata,
                const std::vector<std::string>& metadataFolders, const image::EImageColorSpace workingColorSpace, const EImageFormat outputFormat,
                const image::EImageColorSpace outputColorSpace, const image::EStorageDataType storageDataType)
 {
@@ -413,8 +481,25 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
     const std::string filename = fs::path(inputPath).filename().string();
     const std::string outExtension = boost::to_lower_copy(fs::path(outputPath).extension().string());
     const bool isEXR = (outExtension == ".exr");
-    // If metadataFolders is specified
-    if(!metadataFolders.empty())
+    oiio::ParamValueList metadata;
+    
+    if (!inputMetadata.empty()) // If metadata are provided as input
+    {
+        // metadata name in "raw" domain must be updated otherwise values are discarded by oiio when writing exr format
+        // we want to propagate them so we replace the domain "raw" with "AliceVision:raw"
+        for (const auto & meta : inputMetadata)
+        {
+            if (meta.first.compare(0, 3, "raw") == 0)
+            {
+                metadata.add_or_replace(oiio::ParamValue("AliceVision:"+meta.first, meta.second));
+            }
+            else
+            {
+                metadata.add_or_replace(oiio::ParamValue(meta.first, meta.second));
+            }
+        }
+    }
+    else if (!metadataFolders.empty()) // If metadataFolders is specified
     {
         // The file must match the file name and extension to be used as a metadata replacement.
         const std::vector<std::string> metadataFilePaths = utils::getFilesPathsFromFolders(
@@ -441,16 +526,17 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
             ALICEVISION_LOG_TRACE("Metadata path found for the current image: " << filename);
             metadataFilePath = metadataFilePaths[0];
         }
+        metadata = image::readImageMetadata(metadataFilePath);
     }
     else
     {
         // Metadata are extracted from the original images
-        metadataFilePath = inputPath;
+        metadata = image::readImageMetadata(inputPath);
     }
 
-    oiio::ParamValueList metadata = image::readImageMetadata(metadataFilePath);
-
-    auto options = image::ImageWriteOptions().toColorSpace(workingColorSpace);
+    image::ImageWriteOptions options;
+    options.fromColorSpace(workingColorSpace);
+    options.toColorSpace(outputColorSpace);
 
     if(isEXR)
     {
@@ -482,7 +568,6 @@ void saveImage(image::Image<image::RGBAfColor>& image, const std::string& inputP
 
 int aliceVision_main(int argc, char * argv[])
 {
-    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputExpression;
     std::vector<std::string> inputFolders;
     std::vector<std::string> metadataFolders;
@@ -492,13 +577,11 @@ int aliceVision_main(int argc, char * argv[])
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
     std::string extension;
+    image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+    std::string colorProfileDatabaseDirPath = "";
+    bool errorOnMissingColorProfile = true;
 
     ProcessingParams pParams;
-
-    // Command line parameters
-    po::options_description allParams(
-        "Parse external information about cameras used in a panorama.\n"
-        "AliceVision PanoramaExternalInfo");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -507,7 +590,7 @@ int aliceVision_main(int argc, char * argv[])
         ("inputFolders", po::value<std::vector<std::string>>(&inputFolders)->multitoken(),
         "Use images from specific folder(s) instead of those specify in the SfMData file.")
         ("output,o", po::value<std::string>(&outputPath)->required(),
-         "Output folder.")
+         "Output folder or output image if a single image is given as input.")
         ;
 
     po::options_description optionalParams("Optional parameters");
@@ -559,14 +642,22 @@ int aliceVision_main(int argc, char * argv[])
             " * TileGridSize: Sets Size Of Grid For Histogram Equalization. Input Image Will Be Divided Into Equally Sized Rectangular Tiles.")
 
         ("noiseFilter", po::value<NoiseFilterParams>(&pParams.noise)->default_value(pParams.noise),
-                                 "Noise Filter parameters:\n"
-                                 " * Enabled: Add Noise.\n"
-                                 " * method: There are several noise types to choose from:\n"
-                                 "    - uniform: adds noise values uninformly distributed on range [A,B).\n"
-                                 "    - gaussian: adds Gaussian (normal distribution) noise values with mean value A and standard deviation B.\n"
-                                 "    - salt: changes to value A a portion of pixels given by B.\n"
-                                 " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
-                                 " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
+            "Noise Filter parameters:\n"
+            " * Enabled: Add Noise.\n"
+            " * method: There are several noise types to choose from:\n"
+            "    - uniform: adds noise values uninformly distributed on range [A,B).\n"
+            "    - gaussian: adds Gaussian (normal distribution) noise values with mean value A and standard deviation B.\n"
+            "    - salt: changes to value A a portion of pixels given by B.\n"
+            " * A, B: parameters that have a different interpretation depending on the method chosen.\n"
+            " * mono: If is true, a single noise value will be applied to all channels otherwise a separate noise value will be computed for each channel.")
+
+        ("nlmFilter", po::value<NLMeansFilterParams>(&pParams.nlmFilter)->default_value(pParams.nlmFilter),
+            "Non local means Filter parameters:\n"
+            " * Enabled: Use non local means Filter.\n"
+            " * H: Parameter regulating filter strength. Bigger H value perfectly removes noise but also removes image details, smaller H value preserves details but also preserves some noise.\n"
+            " * HColor: Parameter regulating filter strength for color images only. Normally same as Filtering Parameter H. Not necessary for grayscale images\n "
+            " * templateWindowSize: Size in pixels of the template patch that is used to compute weights. Should be odd. \n"
+            " * searchWindowSize:Size in pixels of the window that is used to compute weighted average for given pixel. Should be odd. Affect performance linearly: greater searchWindowsSize - greater denoising time.")
 
         ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
@@ -575,7 +666,16 @@ int aliceVision_main(int argc, char * argv[])
          "Output image format (rgba, rgb, grayscale)")
 
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
-         ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+            ("Output color space: " + image::EImageColorSpace_informations()).c_str())
+
+        ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
+            ("RAW color interpretation: " + image::ERawColorInterpretation_informations() + "\ndefault : librawnowhitebalancing").c_str())
+
+        ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
+            "DNG Color Profiles (DCP) database path.")
+
+        ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
+            "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
 
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
@@ -584,44 +684,13 @@ int aliceVision_main(int argc, char * argv[])
          "Output image extension (like exr, or empty to keep the source file format.")
         ;
 
-
-    po::options_description logParams("Log parameters");
-    logParams.add_options()
-        ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-          "verbosity level (fatal, error, warning, info, debug, trace).");
-
-    allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-    po::variables_map vm;
-    try
+    CmdLine cmdline("AliceVision imageProcessing");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if (vm.count("help") || (argc == 1))
-        {
-          ALICEVISION_COUT(allParams);
-          return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
-    catch(boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    // Set verbose level
-    system::Logger::get()->setLogLevel(verboseLevel);
 
     // check user choose at least one input option
     if(inputExpression.empty() && inputFolders.empty())
@@ -631,9 +700,10 @@ int aliceVision_main(int argc, char * argv[])
     }
 
 #if !ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-    if(pParams.bilateralFilter.enabled || pParams.claheFilter.enabled)
+    if(pParams.bilateralFilter.enabled || pParams.claheFilter.enabled || pParams.nlmFilter.enabled)
     {
-        ALICEVISION_LOG_ERROR("Invalid option: BilateralFilter and claheFilter can't be used without openCV !");
+        ALICEVISION_LOG_ERROR(
+            "Invalid option: BilateralFilter, claheFilter and nlmFilter can't be used without openCV !");
         return EXIT_FAILURE;
     }
 #endif
@@ -717,8 +787,16 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
 
             image::ImageReadOptions options;
-            options.workingColorSpace = workingColorSpace;
-            options.applyWhiteBalance = view.getApplyWhiteBalance();
+            options.workingColorSpace = workingColorSpace;           
+            if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
+            {
+                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getRawColorInterpretation());
+            }
+            else
+            {
+                options.rawColorInterpretation = rawColorInterpretation;
+            }
+            options.colorProfileFileName = view.getColorProfileFileName();
 
             // Read original image
             image::Image<image::RGBAfColor> image;
@@ -742,7 +820,10 @@ int aliceVision_main(int argc, char * argv[])
             processImage(image, pParams);
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+
+            std::map<std::string, std::string> metadata = view.getMetadata();
+
+            saveImage(image, viewPath, outputfilePath, metadata, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
 
             // Update view for this modification
             view.setImagePath(outputfilePath);
@@ -818,6 +899,7 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO(size << " images found.");
         }
 
+        image::DCPDatabase dcpDatabase;
         int i = 0;
         for (const std::string& inputFilePath : filesStrPaths)
         {
@@ -825,19 +907,90 @@ int aliceVision_main(int argc, char * argv[])
             const std::string filename = path.stem().string();
             const std::string fileExt = path.extension().string();
             const std::string outputExt = extension.empty() ? fileExt : (std::string(".") + extension);
-            const std::string outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
 
             ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
 
+            const std::string userExt = fs::path(outputPath).extension().string();
+            std::string outputFilePath;
+
+            if ((size == 1) && !userExt.empty())
+            {
+                if (image::isSupported(userExt))
+                {
+                    outputFilePath = fs::path(outputPath).generic_string();
+                }
+                else
+                {
+                    outputFilePath = (fs::path(outputPath).parent_path() / (filename + outputExt)).generic_string();
+                    ALICEVISION_LOG_WARNING("Extension " << userExt << " is not supported! Output image saved in " << outputFilePath);
+                }    
+            }
+            else
+            {
+                outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+            }
+
+            image::DCPProfile dcpProf;
+            sfmData::View view; // used to extract and complete metadata
+
+            if (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+                rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+            {
+                // Load DCP color profiles database if not already loaded
+                dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
+
+                // Get DSLR maker and model by creating a view and picking values up in it.
+                view.setImagePath(inputFilePath);
+                int width, height;
+                const auto metadata = image::readImageMetadata(inputFilePath, width, height);
+                view.setMetadata(image::getMapFromMetadata(metadata));
+
+                const std::string& make = view.getMetadataMake();
+                const std::string& model = view.getMetadataModel();
+
+                // Get DCP profile
+                if (!dcpDatabase.getDcpForCamera(make, model, dcpProf))
+                    if (errorOnMissingColorProfile)
+                    {
+                        ALICEVISION_LOG_ERROR("The specified DCP database does not contain an appropriate profil for DSLR " << make << " " << model);
+                        return EXIT_FAILURE;
+                    }
+                    else
+                    {
+                        ALICEVISION_LOG_WARNING("Can't find color profile for input image " << inputFilePath);
+                    }
+
+                // Add color profile info in metadata
+                view.addDCPMetadata(dcpProf);
+            }
+
+            // set readOptions
+            image::ImageReadOptions readOptions;
+            readOptions.colorProfileFileName = dcpProf.info.filename;
+            if (dcpProf.info.filename.empty() &&
+                ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
+                 (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+            {
+                // Fallback case of missing profile but no error requested
+                readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+            }
+            else
+            {
+                readOptions.rawColorInterpretation = rawColorInterpretation;
+            }
+            readOptions.workingColorSpace = workingColorSpace;
+
             // Read original image
             image::Image<image::RGBAfColor> image;
-            image::readImage(inputFilePath, image, workingColorSpace);
+            image::readImage(inputFilePath, image, readOptions);
 
             // Image processing
             processImage(image, pParams);
 
+            std::map<std::string,std::string> metadata = view.getMetadata();
+
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
+            saveImage(image, inputFilePath, outputFilePath, metadata, metadataFolders, workingColorSpace, outputFormat, outputColorSpace, storageDataType);
         }
     }
 

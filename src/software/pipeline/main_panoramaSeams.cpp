@@ -169,66 +169,30 @@ int aliceVision_main(int argc, char** argv)
     bool useGraphCut = true;
     image::EStorageDataType storageDataType = image::EStorageDataType::Float;
 
-    system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
-
-    // Program description
-    po::options_description allParams(
-        "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
-        "AliceVision PanoramaCompositing");
-
     // Description of mandatory parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilepath)->required(), "Input sfmData.")
         ("warpingFolder,w", po::value<std::string>(&warpingFolder)->required(), "Folder with warped images.")
         ("output,o", po::value<std::string>(&outputLabels)->required(), "Path of the output labels.");
-    allParams.add(requiredParams);
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("maxWidth", po::value<int>(&maxPanoramaWidth)->required(), "Max Panorama Width.")
         ("useGraphCut,g", po::value<bool>(&useGraphCut)->default_value(useGraphCut), "Enable graphcut algorithm to improve seams.");
-    allParams.add(optionalParams);
 
-    // Setup log level given command line
-    po::options_description logParams("Log parameters");
-    logParams.add_options()("verboseLevel,v",
-                            po::value<system::EVerboseLevel>(&verboseLevel)->default_value(verboseLevel),
-                            "verbosity level (fatal, error, warning, info, debug, trace).");
-    allParams.add(logParams);
-
-    // Effectively parse command line given parse options
-    po::variables_map vm;
-    try
+    CmdLine cmdline("AliceVision panoramaSeams");
+    cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
+    if (!cmdline.execute(argc, argv))
     {
-        po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-        if(vm.count("help") || (argc == 1))
-        {
-            ALICEVISION_COUT(allParams);
-            return EXIT_SUCCESS;
-        }
-        po::notify(vm);
-    }
-    catch(boost::program_options::required_option& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
-        return EXIT_FAILURE;
-    }
-    catch(boost::program_options::error& e)
-    {
-        ALICEVISION_CERR("ERROR: " << e.what());
-        ALICEVISION_COUT("Usage:\n\n" << allParams);
         return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT(vm);
-
-    // Set verbose level given command line
-    system::Logger::get()->setLogLevel(verboseLevel);
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
 
     // load input scene
     sfmData::SfMData sfmData;

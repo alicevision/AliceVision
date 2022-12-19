@@ -12,13 +12,14 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/image/io.cpp>
+#include <aliceVision/image/dcp.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
+#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -28,7 +29,8 @@
 #include <vector>
 #include <cstdlib>
 #include <stdexcept>
-
+#include <algorithm>
+#include <iterator>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -131,7 +133,6 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
     return in;
 }
 
-
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
  * - Export a SfMData file with View & Intrinsic data
@@ -139,8 +140,6 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
 int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
-
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmFilePath;
   std::string imageFolder;
   std::string sensorDatabasePath;
@@ -149,6 +148,7 @@ int aliceVision_main(int argc, char **argv)
   // user optional parameters
   std::string defaultCameraModelName;
   std::string allowedCameraModelsStr = "pinhole,radial1,radial3,brown,fisheye4,fisheye1";
+  std::string colorProfileDatabaseDirPath;
 
   double defaultFocalLength = -1.0;
   double defaultFieldOfView = -1.0;
@@ -161,9 +161,9 @@ int aliceVision_main(int argc, char **argv)
   std::string viewIdRegex = ".*?(\\d+)";
 
   bool allowSingleView = false;
-  bool useInternalWhiteBalance = true;
+  bool errorOnMissingColorProfile = true;
+  image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
 
-  po::options_description allParams("AliceVision cameraInit");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -178,6 +178,8 @@ int aliceVision_main(int argc, char **argv)
   optionalParams.add_options()
     ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->default_value(""),
       "Camera sensor width database path.")
+    ("colorProfileDatabase,c", po::value<std::string>(&colorProfileDatabaseDirPath)->default_value(""),
+      "DNG Color Profiles (DCP) database path.")
     ("defaultFocalLength", po::value<double>(&defaultFocalLength)->default_value(defaultFocalLength),
       "Focal length in mm. (or '-1' to unset)")
     ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
@@ -204,49 +206,21 @@ int aliceVision_main(int argc, char **argv)
       " * " + EViewIdMethod_enumToString(EViewIdMethod::FILENAME) + ": Generate viewId from file names using regex.") .c_str())
     ("viewIdRegex", po::value<std::string>(&viewIdRegex)->default_value(viewIdRegex),
       "Regex used to catch number used as viewId in filename.")
-    ("useInternalWhiteBalance", po::value<bool>(&useInternalWhiteBalance)->default_value(useInternalWhiteBalance),
-      "Apply the white balance included in the image metadata (Only for raw images)")
+    ("rawColorInterpretation", po::value<image::ERawColorInterpretation>(&rawColorInterpretation)->default_value(rawColorInterpretation),
+      ("RAW color interpretation: " + image::ERawColorInterpretation_informations()).c_str())
+    ("errorOnMissingColorProfile", po::value<bool>(&errorOnMissingColorProfile)->default_value(errorOnMissingColorProfile),
+      "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (Only for raw images)")
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal, error, warning, info, debug, trace).");
-
-  allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-  po::variables_map vm;
-  try
+  CmdLine cmdline("AliceVision cameraInit");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
+      return EXIT_FAILURE;
   }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
-
-  // set verbose level
-  system::Logger::get()->setLogLevel(verboseLevel);
 
   // set user camera model
   camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::UNKNOWN;
@@ -331,7 +305,7 @@ int aliceVision_main(int argc, char **argv)
 
   if(!sensorDatabasePath.empty() && !sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
   {
-      ALICEVISION_LOG_ERROR("Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
+      ALICEVISION_LOG_ERROR("Invalid input sensor database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
   }
 
@@ -397,9 +371,12 @@ int aliceVision_main(int argc, char **argv)
   boost::regex extractNumberRegex("\\d+");
 
   std::map<IndexT, std::vector<IndexT>> poseGroups;
+  char allColorProfilesFound = 1; // char type instead of bool to support usage of atomic
+  image::DCPDatabase dcpDatabase(colorProfileDatabaseDirPath);
+  int viewsWithDCPMetadata = 0;
 
   #pragma omp parallel for
-  for(int i = 0; i < sfmData.getViews().size(); ++i)
+  for (int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
 
@@ -471,6 +448,42 @@ int aliceVision_main(int argc, char **argv)
     const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
     camera::EIntrinsicInitMode intrinsicInitMode = camera::EIntrinsicInitMode::UNKNOWN;
 
+    std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(view.getImagePath()));
+
+    std::string imgFormat = in->format_name();
+
+    // if a color profile is required check if a dcp database exists and if one is available inside 
+    // if yes and if metadata exist and image format is raw then update metadata with DCP info
+    if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+        rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata) &&
+        hasCameraMetadata && (imgFormat.compare("raw") == 0))
+    {
+
+        if (dcpDatabase.empty() && errorOnMissingColorProfile)
+        {
+            ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist or is empty.");
+            // No color profile available
+            boost::atomic_ref<char>{allColorProfilesFound} = 0;
+        }
+        else if (!dcpDatabase.empty())
+        {
+            image::DCPProfile dcpProf;
+
+            if (dcpDatabase.getDcpForCamera(make, model, dcpProf))
+            {
+                view.addDCPMetadata(dcpProf);
+
+                #pragma omp critical
+                viewsWithDCPMetadata++;
+            }
+            else if (allColorProfilesFound)
+            {
+                // there is a missing color profile for one image or more
+                boost::atomic_ref<char>{allColorProfilesFound} = 0;
+            }
+        }
+    }
+
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
@@ -496,13 +509,13 @@ int aliceVision_main(int argc, char **argv)
       if(sensorDB::getInfo(make, model, sensorDatabase, datasheet))
       {
         // sensor is in the database
-        ALICEVISION_LOG_TRACE("Sensor width found in database: " << std::endl
+        ALICEVISION_LOG_TRACE("Sensor width found in sensor database: " << std::endl
                               << "\t- brand: " << make << std::endl
                               << "\t- model: " << model << std::endl
                               << "\t- sensor width: " << datasheet._sensorWidth << " mm");
 
         if(datasheet._model != model) {
-          // the camera model in database is slightly different
+          // the camera model in sensor database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
         }
 
@@ -725,6 +738,19 @@ int aliceVision_main(int argc, char **argv)
     }
   }
 
+  if (!allColorProfilesFound)
+  {
+      if (errorOnMissingColorProfile)
+      {
+          ALICEVISION_LOG_ERROR("Can't find color profile for at least one input image.");
+          return EXIT_FAILURE;
+      }
+      else
+      {
+          ALICEVISION_LOG_WARNING("Can't find color profile for at least one input image.");
+      }
+  }
+
   // Update poseId for detected multi-exposure or multi-lighting images (multiple shots with the same camera pose)
   if(!poseGroups.empty())
   {
@@ -775,21 +801,21 @@ int aliceVision_main(int argc, char **argv)
 
   if(!unsureSensors.empty())
   {
-    ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
+    ALICEVISION_LOG_WARNING("The camera found in the sensor database is slightly different for image(s):");
     for(const auto& unsureSensor : unsureSensors)
       ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
                         << "\t- image camera brand: " << unsureSensor.first.first <<  std::endl
                         << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
-                        << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
-                        << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
-    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
+                        << "\t- sensor database camera brand: " << unsureSensor.second.second._brand <<  std::endl
+                        << "\t- sensor database camera model: " << unsureSensor.second.second._model << std::endl
+                        << "\t- sensor database camera sensor width: " << unsureSensor.second.second._sensorWidth  << " mm");
+    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the sensor database." << std::endl);
   }
 
   if(!unknownSensors.empty())
   {
     std::stringstream ss;
-    ss << "Sensor width doesn't exist in the database for image(s):\n";
+    ss << "Sensor width doesn't exist in the sensor database for image(s):\n";
     for(const auto& unknownSensor : unknownSensors)
     {
       ss << "\t- camera brand: " << unknownSensor.first.first << "\n"
@@ -826,7 +852,7 @@ int aliceVision_main(int argc, char **argv)
   {
     if (vitem.second) 
     {
-      vitem.second->addMetadata("AliceVision:useWhiteBalance", (useInternalWhiteBalance)?"1":"0");
+        vitem.second->addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
     }
   }
   
@@ -840,7 +866,8 @@ int aliceVision_main(int argc, char **argv)
   ALICEVISION_LOG_INFO("CameraInit report:"
                    << "\n\t- # views listed: " << sfmData.getViews().size()
                    << "\n\t   - # views with an initialized intrinsic listed: " << completeViewCount
-                   << "\n\t   - # views without metadata (with a default intrinsic): " <<  noMetadataImagePaths.size()
+                   << "\n\t   - # views without metadata (with a default intrinsic): " << noMetadataImagePaths.size()
+                   << "\n\t   - # views with DCP metadata (raw images only): " << viewsWithDCPMetadata
                    << "\n\t- # intrinsics listed: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;

@@ -7,7 +7,7 @@
 #include "ImageDescriber.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/View.hpp>
-
+#include <aliceVision/system/hardwareContext.hpp>
 namespace aliceVision {
 namespace feature {
 
@@ -79,11 +79,6 @@ public:
       _rangeSize = rangeSize;
     }
 
-    void setMaxThreads(int maxThreads)
-    {
-      _maxThreads = maxThreads;
-    }
-
     void setMasksFolder(const std::string& folder)
     {
       _masksFolder = folder;
@@ -99,7 +94,7 @@ public:
       _imageDescribers.push_back(imageDescriber);
     }
 
-    void process();
+    void process(const HardwareContext & hcontext);
 
 private:
 
@@ -111,7 +106,6 @@ private:
     std::string _outputFolder;
     int _rangeStart = -1;
     int _rangeSize = -1;
-    int _maxThreads = -1;
 };
 
 } // namespace feature

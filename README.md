@@ -39,6 +39,11 @@ If you use this project for a publication, please cite the [paper](https://hal.a
   ```
 
 
+## Bibliography
+
+See [**Bibliography**](BIBLIOGRAPHY.md) for the list of research papers and tools used in this project.
+
+
 ## Get the project
 
 Get the source code: `git clone --recursive git://github.com/alicevision/AliceVision`

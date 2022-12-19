@@ -105,9 +105,14 @@ endif()
 
 set(ALICEVISION_BUILD_SFM @ALICEVISION_BUILD_SFM@)
 if(ALICEVISION_BUILD_SFM)
-  find_package(CoinUtils REQUIRED)
-  find_package(Clp REQUIRED)
-  find_package(Osi REQUIRED)
+  find_dependency(CoinUtils REQUIRED)
+  find_dependency(Clp REQUIRED)
+  find_dependency(Osi REQUIRED)
+endif()
+
+set(ALICEVISION_BUILD_MVS @ALICEVISION_BUILD_MVS@)
+if(ALICEVISION_BUILD_MVS)
+  find_dependency(ZLIB REQUIRED)
 endif()
 
 # propagate other building options

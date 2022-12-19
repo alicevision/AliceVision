@@ -12,16 +12,6 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/PointFittingRansacKernel.hpp>
 
-/**
- * @brief Collection of kernel.
- * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
- *
- * - AngularRadianErrorKernel: essential matrix estimation between spherical camera
- *
- *  Mainly it add correct data normalization and define the function required
- *  by the generic ACRANSAC / LORANSAC routine.
- */
-
 namespace aliceVision {
 namespace multiview {
 

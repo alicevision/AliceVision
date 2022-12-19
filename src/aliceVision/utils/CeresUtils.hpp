@@ -17,6 +17,10 @@ namespace utils {
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=56480
 #define ALICEVISION_CERES_HAS_MANIFOLD ((CERES_VERSION_MAJOR * 100 + CERES_VERSION_MINOR) >= 201)
 
+// Ceres has removed support for CXSPARSE after 2.1
+// See https://github.com/ceres-solver/ceres-solver/commit/2335b5b4b7a4703ca9458aa275ca878945763a34
+#define ALICEVISION_CERES_HAS_CXSPARSE ((CERES_VERSION_MAJOR * 100 + CERES_VERSION_MINOR) <= 201)
+
 #if ALICEVISION_CERES_HAS_MANIFOLD
 using CeresManifold = ceres::Manifold;
 #else

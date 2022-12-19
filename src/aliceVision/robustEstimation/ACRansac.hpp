@@ -20,29 +20,6 @@
 #include <numeric>
 #include <vector>
 
-/**
- * @brief Generic implementation of ACRANSAC
- *
- * The A contrario parametrization have been first explained in [1] and
- * later extended to generic model estimation in [2] (with a demonstration for
- * the homography) and extended and use at large scale for Structure from Motion in [3].
- *
- * @ref [1] Lionel Moisan, Berenger Stival.
- *          A probalistic criterion to detect rigid point matches between
- *          two images and estimate the fundamental matrix.
- *          IJCV 04.
- *
- * @ref [2] Lionel Moisan, Pierre Moulon, Pascal Monasse.
- *          Automatic Homographic Registration of a Pair of Images,
- *          with A Contrario Elimination of Outliers
- *          Image Processing On Line (IPOL), 2012.
- *          http://dx.doi.org/10.5201/ipol.2012.mmm-oh
- *
- * @ref [3] Pierre Moulon, Pascal Monasse and Renaud Marlet.
- *          Adaptive Structure from Motion with a contrario mode estimation.
- *          In 11th Asian Conference on Computer Vision (ACCV 2012)
- */
-
 namespace aliceVision {
 namespace robustEstimation{
 
@@ -131,7 +108,27 @@ inline ErrorIndex bestNFA(int startIndex, //number of point required for estimat
 
 
 /**
- * @brief ACRANSAC routine (ErrorThreshold, NFA)
+ * @brief An implementation of the "Random Sample Consensus" algorithm based on a-contrario estimator
+ * to automatically estimate the error threshold.
+ *
+ * The A contrario parametrization have been first explained in [1] and
+ * later extended to generic model estimation in [2] (with a demonstration for
+ * the homography) and extended and use at large scale for Structure from Motion in [3].
+ *
+ * @ref [1] Lionel Moisan, Berenger Stival.
+ *          A probalistic criterion to detect rigid point matches between
+ *          two images and estimate the fundamental matrix.
+ *          IJCV 04.
+ *
+ * @ref [2] Lionel Moisan, Pierre Moulon, Pascal Monasse.
+ *          Automatic Homographic Registration of a Pair of Images,
+ *          with A Contrario Elimination of Outliers
+ *          Image Processing On Line (IPOL), 2012.
+ *          http://dx.doi.org/10.5201/ipol.2012.mmm-oh
+ *
+ * @ref [3] Pierre Moulon, Pascal Monasse and Renaud Marlet.
+ *          Adaptive Structure from Motion with a contrario mode estimation.
+ *          In 11th Asian Conference on Computer Vision (ACCV 2012)
  *
  * @param[in] kernel model and metric object
  * @param[out] vec_inliers points that fit the estimated model

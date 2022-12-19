@@ -100,8 +100,6 @@ oiio::ROI convertRodToRoi(const camera::IntrinsicBase* intrinsic, const oiio::RO
 int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
-
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
 
@@ -115,8 +113,6 @@ int aliceVision_main(int argc, char** argv)
   std::string sfmDataFilterFilepath;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
   std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
-
-  po::options_description allParams("AliceVision exportAnimatedCamera");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -143,48 +139,17 @@ int aliceVision_main(int argc, char** argv)
     ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
       image::EImageFileType_informations().c_str());
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
-
-  allParams.add(requiredParams).add(optionalParams).add(logParams);
-  ALICEVISION_LOG_DEBUG("UVmap: " + std::to_string(exportUVMaps));
-
-  po::variables_map vm;
-  try
+  CmdLine cmdline("AliceVision exportAnimatedCamera");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
+      return EXIT_FAILURE;
   }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
 
   // set output file type
   const image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
   const image::EImageFileType outputMapFileType = image::EImageFileType_stringToEnum(outMapFileTypeName);
-
-  // set verbose level
-  system::Logger::get()->setLogLevel(verboseLevel);
 
   if(exportFullROD && outputFileType != image::EImageFileType::EXR)
   {

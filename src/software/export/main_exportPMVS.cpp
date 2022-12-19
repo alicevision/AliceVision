@@ -10,7 +10,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/main.hpp>
-
+#include <aliceVision/system/cmdline.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -328,16 +328,12 @@ bool exportToBundlerFormat(
 int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
-
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outputFolder;
 
   int resolution = 1;
   int nbCore = 8;
   bool useVisData = true;
-
-  po::options_description allParams("AliceVision exportPMVS");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -355,40 +351,13 @@ int aliceVision_main(int argc, char *argv[])
     ("useVisData", po::value<bool>(&useVisData)->default_value(useVisData),
       "Use visibility information.");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
-
-  allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-  po::variables_map vm;
-  try
+  CmdLine cmdline("AliceVision exportPMVS");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
+      return EXIT_FAILURE;
   }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  // set verbose level
-  system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
   if (!fs::exists(outputFolder))

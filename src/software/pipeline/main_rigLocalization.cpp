@@ -115,8 +115,6 @@ int aliceVision_main(int argc, char** argv)
   int randomSeed = std::mt19937::default_seed;
 
 
-  po::options_description allParams("This program is used to localize a camera rig composed of internally calibrated cameras");
-  
   po::options_description inputParams("Required input parameters");  
   inputParams.add_options()
       ("sfmdata", po::value<std::string>(&sfmFilePath)->required(),
@@ -198,35 +196,16 @@ int aliceVision_main(int argc, char** argv)
 #endif
           ;
 
-  allParams.add(inputParams).add(outputParams).add(commonParams).add(voctreeParams);
-
-  po::variables_map vm;
-
-  try
+  CmdLine cmdline("This program is used to localize a camera rig composed of internally calibrated cameras.\n"
+                  "AliceVision rigLocalization");
+  cmdline.add(inputParams);
+  cmdline.add(outputParams);
+  cmdline.add(commonParams);
+  cmdline.add(voctreeParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-
-    po::notify(vm);
-  }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
+  }	
   std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
   const double defaultLoRansacMatchingError = 4.0;
@@ -254,8 +233,6 @@ int aliceVision_main(int argc, char** argv)
                         (matchDescTypes.front() == feature::EImageDescriberType::CCTAG4)));
 #endif
 
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
 
   std::unique_ptr<localization::LocalizerParameters> param;
   

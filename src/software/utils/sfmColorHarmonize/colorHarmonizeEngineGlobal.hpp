@@ -16,12 +16,25 @@
 
 namespace aliceVision {
 
-enum EHistogramSelectionMethod
+enum class EHistogramSelectionMethod
 {
-    eHistogramHarmonizeFullFrame     = 0,
-    eHistogramHarmonizeMatchedPoints = 1,
-    eHistogramHarmonizeVLDSegment    = 2,
+    eHistogramHarmonizeFullFrame = 0,
+    eHistogramHarmonizeMatchedPoints,
+    eHistogramHarmonizeVLDSegment
 };
+
+inline std::string EHistogramSelectionMethod_description()
+{
+  return "Histogram selection method: \n"
+         "* full_frame \n"
+         "* matched_points \n"
+         "* VLD_segments\n";
+}
+
+EHistogramSelectionMethod EEHistogramSelectionMethod_stringToEnum(const std::string& histogramSelectionMethod);
+std::string EHistogramSelectionMethod_enumToString(const EHistogramSelectionMethod histogramSelectionMethod);
+std::ostream& operator<<(std::ostream& os, EHistogramSelectionMethod p);
+std::istream& operator>>(std::istream& in, EHistogramSelectionMethod& p);
 
 /**
  * @brief The ColorHarmonizationEngineGlobal class
@@ -40,8 +53,8 @@ public:
     const std::vector<std::string>& matchesFolders,
     const std::string& outputDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    int selectionMethod = -1,
-    int imgRef = -1);
+    EHistogramSelectionMethod selectionMethod,
+    int imgRef = 0);
 
   ~ColorHarmonizationEngineGlobal();
 

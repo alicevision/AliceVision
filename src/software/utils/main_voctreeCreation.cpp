@@ -44,7 +44,6 @@ typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUCh
  */
 int aliceVision_main(int argc, char** argv)
 {
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   int tbVerbosity = 2;
   std::string weightName;
   std::string treeName;
@@ -54,11 +53,6 @@ int aliceVision_main(int argc, char** argv)
   std::uint32_t restart = 5;
   std::uint32_t LEVELS = 6;
   bool sanityCheck = true;
-
-  po::options_description allParams("This program is used to load the sift descriptors from a SfMData file and create a vocabulary tree\n"
-                                    "It takes as input either a list.txt file containing the a simple list of images (bundler format and older AliceVision version format)\n"
-                                    "or a sfm_data file (JSON) containing the list of images. In both cases it is assumed that the .desc to load are in the same folder as the input file\n"
-                                    "AliceVision voctreeCreation");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -75,44 +69,16 @@ int aliceVision_main(int argc, char** argv)
     (",L", po::value<uint32_t>(&LEVELS)->default_value(6), "Number of levels of the tree")
     ("sanitycheck,s", po::value<bool>(&sanityCheck)->default_value(sanityCheck), "Perform a sanity check at the end of the creation of the vocabulary tree. The sanity check is a query to the database with the same documents/images useed to train the vocabulary tree");
 
-  po::options_description logParams("Log parameters");
-  logParams.add_options()
-    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal, error, warning, info, debug, trace).")
-    ("tbVerbose", po::value<int>(&tbVerbosity)->default_value(tbVerbosity), "Tree builder verbosity level, 3 should be just enough, 0 to mute");
-
-  allParams.add(requiredParams).add(optionalParams).add(logParams);
-
-  po::variables_map vm;
-  try
+  CmdLine cmdline("This program is used to load the sift descriptors from a SfMData file and create a vocabulary tree.\n"
+                  "It takes as input either a list.txt file containing a simple list of images (bundler format and older AliceVision version format)\n"
+                  "or a sfm_data file (JSON) containing the list of images. In both cases it is assumed that the .desc to load are in the same folder as the input file.\n"
+                  "AliceVision voctreeCreation");
+  cmdline.add(requiredParams);
+  cmdline.add(optionalParams);
+  if (!cmdline.execute(argc, argv))
   {
-    po::store(po::parse_command_line(argc, argv, allParams), vm);
-
-    if(vm.count("help") || (argc == 1))
-    {
-      ALICEVISION_COUT(allParams);
-      return EXIT_SUCCESS;
-    }
-    po::notify(vm);
+      return EXIT_FAILURE;
   }
-  catch(boost::program_options::required_option& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-  catch(boost::program_options::error& e)
-  {
-    ALICEVISION_CERR("ERROR: " << e.what());
-    ALICEVISION_COUT("Usage:\n\n" << allParams);
-    return EXIT_FAILURE;
-  }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
-
-  // set verbose level
-  system::Logger::get()->setLogLevel(verboseLevel);
 
   // load SfMData
   sfmData::SfMData sfmData;
