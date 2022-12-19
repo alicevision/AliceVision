@@ -10,7 +10,6 @@
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/image/Image.hpp>
 
-#include <vector>
 #include <string>
 
 namespace aliceVision {
