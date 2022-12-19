@@ -85,10 +85,8 @@ void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeigh
   {
     const ROI& roi = in_tileRoiList.at(i);
 
-    ostr << "\t   - tile (" << (i + 1) << "/" << in_tileRoiList.size() << "):" << std::endl
-         << "\t      - region of interest: [" << roi << "]" << std::endl
-         << "\t      - width:  " << roi.width() << " px" << std::endl
-         << "\t      - height: " << roi.height() << " px" << std::endl;
+    ostr << "\t   - tile (" << (i + 1) << "/" << in_tileRoiList.size() << ") "
+         << "size: " << roi.width() << "x"  << roi.height() << " px, roi: [" << roi << "]" << std::endl;
   }
 
   ALICEVISION_LOG_INFO(ostr.str());
