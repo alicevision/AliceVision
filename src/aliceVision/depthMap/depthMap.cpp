@@ -76,9 +76,9 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
 
 void updateDepthMapParamsForSingleTileComputation(const mvsUtils::MultiViewParams& mp, DepthMapParams& depthMapParams)
 {
-    if(!depthMapParams.overrideSingleTileParameters)
+    if(!depthMapParams.autoAdjustSmallImage)
     {
-      // cannot override depth map parameters
+      // cannot adjust depth map parameters
       return;
     }
 
@@ -249,7 +249,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     depthMapParams.useRefine = mp.userParams.get<bool>("depthMap.useRefine", depthMapParams.useRefine);
     depthMapParams.chooseTCamsPerTile = mp.userParams.get<bool>("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
     depthMapParams.exportTilePattern = mp.userParams.get<bool>("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
-    depthMapParams.overrideSingleTileParameters = mp.userParams.get<bool>("depthMap.overrideSingleTileParameters", depthMapParams.overrideSingleTileParameters);
+    depthMapParams.autoAdjustSmallImage = mp.userParams.get<bool>("depthMap.autoAdjustSmallImage", depthMapParams.autoAdjustSmallImage);
 }
 
 void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
