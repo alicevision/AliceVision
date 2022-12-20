@@ -22,8 +22,8 @@ struct SgmParams
   int stepXY = 2;
   int stepZ = -1;
   int wsh = 4;
-  int maxDepths = 3000;
-  int maxDepthsPerTc = 1500;
+  int maxDepths = 1500;
+  int maxDepthsPerTc = 1500; // clamp to keep only the closest depths
   int maxTCamsPerTile = 4;
   double seedsRangeInflate = 0.2;
   double gammaC = 5.5;
