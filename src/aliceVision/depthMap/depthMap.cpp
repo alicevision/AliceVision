@@ -271,17 +271,21 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     // compute SGM scale and step (set to -1)
     const bool autoSgmScaleStep = computeScaleStepSgmParams(mp, depthMapParams.sgmParams);
 
+    // single tile case, update parameters
+    if(hasOnlyOneTile(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight()))
+      updateDepthMapParamsForSingleTileComputation(mp, autoSgmScaleStep, depthMapParams);
+
+    // compute the maximum downscale factor
+    const int maxDownscale = std::max(depthMapParams.sgmParams.scale * depthMapParams.sgmParams.stepXY,
+                                      depthMapParams.refineParams.scale * depthMapParams.refineParams.stepXY);
+
     // compute tile ROI list
     std::vector<ROI> tileRoiList;
-    getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
+    getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxDownscale, tileRoiList);
     const int nbTilesPerCamera = tileRoiList.size();
 
     // log tilling information and ROI list
-    logTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), tileRoiList);
-
-    // single tile case, update parameters
-    if(tileRoiList.size() == 1)
-      updateDepthMapParamsForSingleTileComputation(mp, autoSgmScaleStep, depthMapParams);
+    logTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxDownscale, tileRoiList);
 
     // log SGM downscale & stepXY
     ALICEVISION_LOG_INFO("SGM parameters:" << std::endl

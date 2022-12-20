@@ -12,10 +12,18 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, std::vector<ROI>& out_tileRoiList)
+void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, int maxDownscale, std::vector<ROI>& out_tileRoiList)
 {
+    assert(maxDownscale > 0);
     assert(2 * tileParams.padding < tileParams.bufferWidth);
     assert(2 * tileParams.padding < tileParams.bufferHeight);
+
+    // single tile case
+    if(hasOnlyOneTile(tileParams, imageWidth, imageHeight))
+    {
+      out_tileRoiList.emplace_back(0, imageWidth, 0, imageHeight);
+      return;
+    }
 
     // compute maximum effective tile width and height: maximum size without padding
     const int maxEffectiveTileWidth  = tileParams.bufferWidth  - 2 * tileParams.padding;
@@ -28,9 +36,13 @@ void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeigh
     // allocate roi list
     out_tileRoiList.resize(nbTileSideX * nbTileSideY);
 
-    // compute effective tile width and height for the best tile layout
-    const int effectiveTileWidth  = divideRoundUp(imageWidth , nbTileSideX);
-    const int effectiveTileHeight = divideRoundUp(imageHeight, nbTileSideY);
+    // compute downscaled image width and height
+    const int downscaledImageWidth  = divideRoundUp(imageWidth,  maxDownscale);
+    const int downscaledImageHeight = divideRoundUp(imageHeight, maxDownscale);
+
+    // compute effective tile width and height for the best tile layout at the maximum downscale
+    const int effectiveTileWidth  = divideRoundUp(downscaledImageWidth , nbTileSideX) * maxDownscale;
+    const int effectiveTileHeight = divideRoundUp(downscaledImageHeight, nbTileSideY) * maxDownscale;
 
     // compute each tile ROI
     for(int i = 0; i < nbTileSideX; ++i)
@@ -48,7 +60,7 @@ void getTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeigh
     }
 }
 
-void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, const std::vector<ROI>& in_tileRoiList)
+void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeight, int maxDownscale, const std::vector<ROI>& in_tileRoiList)
 {
   // compute maximum effective tile width and height: maximum size without padding
   const int maxEffectiveTileWidth  = tileParams.bufferWidth  - 2 * tileParams.padding;
@@ -58,9 +70,13 @@ void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeigh
   const int nbTileSideX = divideRoundUp(imageWidth , maxEffectiveTileWidth);
   const int nbTileSideY = divideRoundUp(imageHeight, maxEffectiveTileHeight);
 
-  // compute effective tile width and height for the best tile layout
-  const int effectiveTileWidth  = divideRoundUp(imageWidth , nbTileSideX);
-  const int effectiveTileHeight = divideRoundUp(imageHeight, nbTileSideY);
+  // compute downscaled image width and height
+  const int downscaledImageWidth  = divideRoundUp(imageWidth,  maxDownscale);
+  const int downscaledImageHeight = divideRoundUp(imageHeight, maxDownscale);
+
+  // compute effective tile width and height for the best tile layout at the maximum downscale
+  const int effectiveTileWidth  = divideRoundUp(downscaledImageWidth , nbTileSideX) * maxDownscale;
+  const int effectiveTileHeight = divideRoundUp(downscaledImageHeight, nbTileSideY) * maxDownscale;
 
   std::ostringstream ostr;
   ostr << "Tilling information: " << std::endl
@@ -68,9 +84,18 @@ void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeigh
        << "\t      - buffer width:  " << tileParams.bufferWidth  << " px" << std::endl
        << "\t      - buffer height: " << tileParams.bufferHeight << " px" << std::endl
        << "\t      - padding: " << tileParams.padding << " px" << std::endl
+       << "\t- maximum downscale:  " << maxDownscale  << std::endl
        << "\t- maximum image width:  " << imageWidth  << " px" << std::endl
-       << "\t- maximum image height: " << imageHeight << " px" << std::endl
-       << "\t- maximum effective tile width:  " << maxEffectiveTileWidth  << " px" << std::endl
+       << "\t- maximum image height: " << imageHeight << " px" << std::endl;
+
+  if(hasOnlyOneTile(tileParams, imageWidth, imageHeight))
+  {
+    ALICEVISION_LOG_INFO(ostr.str());
+    ALICEVISION_LOG_INFO("Maximum image size is smaller than one tile, use only one tile.");
+    return;
+  }
+
+  ostr << "\t- maximum effective tile width:  " << maxEffectiveTileWidth  << " px" << std::endl
        << "\t- maximum effective tile height: " << maxEffectiveTileHeight << " px" << std::endl
        << "\t- # tiles on X-side: " << nbTileSideX << std::endl
        << "\t- # tiles on Y-side: " << nbTileSideY << std::endl
