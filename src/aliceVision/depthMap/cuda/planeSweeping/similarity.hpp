@@ -6,7 +6,7 @@
 
 #pragma once
 
-// #define TSIM_REFINE_USE_HALF
+#define TSIM_REFINE_USE_HALF
 
 #ifdef TSIM_REFINE_USE_HALF
 #define CUDA_NO_HALF
