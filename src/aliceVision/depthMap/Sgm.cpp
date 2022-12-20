@@ -232,7 +232,7 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
     // update second best uninitialized similarity volume values with first best similarity volume values
     // - allows to avoid the particular case with a single tc (second best volume has no valid similarity values)
     // - usefull if a tc alone contributes to the calculation of a subpart of the similarity volume
-    if(_sgmParams.updateUnitializeSim) // should always be true, false for debug purposes
+    if(_sgmParams.updateUninitializedSim) // should always be true, false for debug purposes
     {
         ALICEVISION_LOG_DEBUG(tile << "SGM Update uninitialized similarity volume values from best similarity volume.");
 
