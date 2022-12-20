@@ -48,8 +48,11 @@ int computeDownscale(const mvsUtils::MultiViewParams& mp, int scale, int maxWidt
     return downscale;
 }
 
-void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams)
+bool computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& sgmParams)
 {
+    if(sgmParams.scale != -1 && sgmParams.stepXY != -1)
+      return false;
+
     const int fileScale = 1; // input images scale (should be one)
     const int maxSideXY = 700 / mp.getProcessDownscale(); // max side in order to fit in device memory
     const int maxImageW = mp.getMaxImageWidth();
@@ -68,13 +71,16 @@ void computeScaleStepSgmParams(const mvsUtils::MultiViewParams& mp, SgmParams& s
         const int scaleTmp = computeDownscale(mp, fileScale, maxW, maxH);
         sgmParams.scale = std::min(2, scaleTmp);
     }
+
     if(sgmParams.stepXY == -1)
     {
         sgmParams.stepXY = computeDownscale(mp, fileScale * sgmParams.scale, maxW, maxH);
     }
+
+    return true;
 }
 
-void updateDepthMapParamsForSingleTileComputation(const mvsUtils::MultiViewParams& mp, DepthMapParams& depthMapParams)
+void updateDepthMapParamsForSingleTileComputation(const mvsUtils::MultiViewParams& mp, bool autoSgmScaleStep, DepthMapParams& depthMapParams)
 {
     if(!depthMapParams.autoAdjustSmallImage)
     {
@@ -100,13 +106,10 @@ void updateDepthMapParamsForSingleTileComputation(const mvsUtils::MultiViewParam
 
     const int maxSgmBufferWidth  = divideRoundUp(mp.getMaxImageWidth() , depthMapParams.sgmParams.scale * depthMapParams.sgmParams.stepXY);
     const int maxSgmBufferHeight = divideRoundUp(mp.getMaxImageHeight(), depthMapParams.sgmParams.scale * depthMapParams.sgmParams.stepXY);
-    const int maxSgmBufferSide = std::max(maxSgmBufferWidth, maxSgmBufferHeight);
-    const int minSgmBufferSide = std::min(maxSgmBufferWidth, maxSgmBufferHeight);
 
     // update SGM step XY
-    if((depthMapParams.sgmParams.stepXY == 2) && // default stepXY
-       (maxSgmBufferSide * 2 <= 700) && // max side in order to fit in device memory (for legacy method)
-       (minSgmBufferSide * 2 <= 560) && // max side in order to fit in device memory (for legacy method)
+    if(!autoSgmScaleStep && // user define SGM scale & stepXY
+       (depthMapParams.sgmParams.stepXY == 2) && // default stepXY
        (maxSgmBufferWidth  < depthMapParams.tileParams.bufferWidth  * 0.5) &&
        (maxSgmBufferHeight < depthMapParams.tileParams.bufferHeight * 0.5))
     {
@@ -266,7 +269,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     getDepthMapParams(mp, depthMapParams);
 
     // compute SGM scale and step (set to -1)
-    computeScaleStepSgmParams(mp, depthMapParams.sgmParams);
+    const bool autoSgmScaleStep = computeScaleStepSgmParams(mp, depthMapParams.sgmParams);
 
     // compute tile ROI list
     std::vector<ROI> tileRoiList;
@@ -278,7 +281,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
 
     // single tile case, update parameters
     if(tileRoiList.size() == 1)
-      updateDepthMapParamsForSingleTileComputation(mp, depthMapParams);
+      updateDepthMapParamsForSingleTileComputation(mp, autoSgmScaleStep, depthMapParams);
 
     // log SGM downscale & stepXY
     ALICEVISION_LOG_INFO("SGM parameters:" << std::endl
