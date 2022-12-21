@@ -92,7 +92,7 @@ jobs:
           git clone --branch master https://github.com/alicevision/SfM_quality_evaluation.git
           cd SfM_quality_evaluation/
           # checkout a specific commit to ensure repeatability
-          git checkout 130d12a0f59ebe1695dafdc42dfe109fe08407ea
+          git checkout 36e3bf2d05c64d1726cb4a0e770923794f203f98
           export LD_LIBRARY_PATH=$PWD/../../../AV_install/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           echo "ldd aliceVision_cameraInit"
           ldd $PWD/../../../AV_install/bin/aliceVision_cameraInit
