@@ -116,6 +116,20 @@ if(ALICEVISION_BUILD_SFM)
           Boost::filesystem
   )
 
+  #Triangulate
+  alicevision_add_software(aliceVision_triangulate
+  SOURCE main_triangulate.cpp
+  FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        Boost::program_options
+        Boost::filesystem
+  )
+
   # Global SfM
   alicevision_add_software(aliceVision_globalSfM
     SOURCE main_globalSfM.cpp
@@ -476,4 +490,4 @@ alicevision_add_software(aliceVision_LdrToHdrMerge
         Boost::filesystem
 )
 
-endif() 
+endif()
