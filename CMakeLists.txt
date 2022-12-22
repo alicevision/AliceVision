@@ -346,8 +346,8 @@ endif()
 if(AV_BUILD_LAPACK)
 set(LAPACK_TARGET lapack)
 ExternalProject_Add(${LAPACK_TARGET}
-       URL https://github.com/Reference-LAPACK/lapack/archive/v3.10.0.tar.gz
-       URL_HASH MD5=d70fc27a8bdebe00481c97c728184f09
+       URL https://github.com/Reference-LAPACK/lapack/archive/v3.11.0.tar.gz
+       URL_HASH MD5=595b064fd448b161cd711fe346f498a7
        DOWNLOAD_DIR ${BUILD_DIR}/download/lapack
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
