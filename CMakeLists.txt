@@ -402,11 +402,8 @@ else()
     set(SUITESPARSE_INTERNAL_MAKE_CMD MPFR_ROOT=${CMAKE_INSTALL_PREFIX} GMP_ROOT=${CMAKE_INSTALL_PREFIX} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL} BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 endif()
 ExternalProject_Add(${SUITESPARSE_TARGET}
-       # URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.10.1.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
-       # URL_HASH MD5=1
-       GIT_REPOSITORY https://github.com/alicevision/SuiteSparse
-       GIT_TAG fix/gmp_mpfr  # based on v5.8.1
-       # DOWNLOAD_DIR ${BUILD_DIR}/download/suitesparse
+       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v6.0.2.tar.gz
+       URL_HASH MD5=628214a2d18ee4d3996fdc50b7fc9aef
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
