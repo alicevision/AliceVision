@@ -656,7 +656,7 @@ if(AV_BUILD_FFMPEG)
 # )
 ExternalProject_add(libvpx
       GIT_REPOSITORY https://chromium.googlesource.com/webm/libvpx.git
-      GIT_TAG v1.10.0
+      GIT_TAG v1.12.0
       GIT_PROGRESS ON
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
@@ -670,8 +670,8 @@ ExternalProject_add(libvpx
 
 set(FFMPEG_TARGET ffmpeg)
 ExternalProject_add(${FFMPEG_TARGET}
-      URL http://ffmpeg.org/releases/ffmpeg-4.4.tar.bz2
-      URL_HASH MD5=aa46d2168f30becd4fd3b22d2e8a91ec
+      URL http://ffmpeg.org/releases/ffmpeg-5.1.tar.bz2
+      URL_HASH MD5=0e5091837a9b950c81e1d5aaba281e51
       DOWNLOAD_DIR ${BUILD_DIR}/download/ffmpeg
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
