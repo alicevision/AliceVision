@@ -1024,8 +1024,8 @@ if(AV_BUILD_PCL)
     # add point cloud library
     set(PCL_TARGET pcl)
     ExternalProject_Add(${PCL_TARGET}
-            URL https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-1.12.1.tar.gz
-            URL_MD5 eb1be79330872f9674c9850bb35023bf
+            URL https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-1.13.0.tar.gz
+            URL_HASH MD5=987a5f6e440407a2bcae10c1022568b0
             DOWNLOAD_DIR ${BUILD_DIR}/download/${PCL_TARGET}
             PREFIX ${BUILD_DIR}
             BUILD_IN_SOURCE 0
