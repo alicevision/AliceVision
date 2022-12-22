@@ -849,10 +849,8 @@ endif()
 if(AV_BUILD_APRILTAG)
 set(APRILTAG_TARGET apriltag)
 ExternalProject_Add(${APRILTAG_TARGET}
-      # GIT_REPOSITORY https://github.com/AprilRobotics/apriltag
-      # GIT_TAG v3.1.7
-      GIT_REPOSITORY https://github.com/alicevision/apriltag.git
-      GIT_TAG 25ccfab4230a35fb000814c9c1749d9902173012  # commit 2021/10/26
+      GIT_REPOSITORY https://github.com/AprilRobotics/apriltag
+      GIT_TAG v3.2.0
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
