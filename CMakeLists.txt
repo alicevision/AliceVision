@@ -763,8 +763,8 @@ set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Ale
 if(AV_BUILD_OPENCV)
 set(OPENCV_TARGET opencv)
 ExternalProject_Add(opencv_contrib
-  URL https://github.com/opencv/opencv_contrib/archive/4.5.3.zip
-  URL_MD5 bdf41b61fbb998e118ffd2e81437d44f
+  URL https://github.com/opencv/opencv_contrib/archive/4.6.0.zip
+  URL_HASH MD5=9065c130d87da6f5e7a4044f6f7ce4f6
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
   BUILD_ALWAYS 0
@@ -775,8 +775,8 @@ ExternalProject_Add(opencv_contrib
 )
 ExternalProject_Add(${OPENCV_TARGET}
   DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${FFMPEG_TARGET}
-  URL https://github.com/opencv/opencv/archive/4.5.3.zip
-  URL_MD5 e4e25de494ba3dfb676c9f51d7c853fb
+  URL https://github.com/opencv/opencv/archive/4.6.0.zip
+  URL_HASH MD5=e86914869fd4811f42814a4a2ad98d86
   DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
   UPDATE_COMMAND ""
   BUILD_IN_SOURCE 0
