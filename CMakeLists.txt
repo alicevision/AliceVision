@@ -740,8 +740,8 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
       # vfxplatform CY2022 1.8.x
-      URL https://github.com/alembic/alembic/archive/1.8.3.tar.gz
-      URL_HASH MD5=2cd8d6e5a3ac4a014e24a4b04f4fadf9
+      URL https://github.com/alembic/alembic/archive/1.8.4.tar.gz
+      URL_HASH MD5=c00f2b3ab84d534e8c21289c4a9663e8
       DOWNLOAD_DIR ${BUILD_DIR}/download/alembic
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
