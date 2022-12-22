@@ -382,8 +382,8 @@ ExternalProject_add(gmp
       BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
 )
 ExternalProject_add(mpfr
-      URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.1.0.tar.gz
-      URL_HASH MD5=81a97a9ba03590f83a30d26d4400ce39
+      URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.1.1.tar.gz
+      URL_HASH MD5=97cf917a3f05a7efb4040fcb994b643d
       DOWNLOAD_DIR ${BUILD_DIR}/download/mpfr
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
