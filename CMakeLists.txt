@@ -453,8 +453,8 @@ set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} -DCeres_DIR=${CMAKE_INSTALL_PRE
 set(OPENEXR_TARGET openexr)
 ExternalProject_Add(${OPENEXR_TARGET}
       # vfxplatform CY2022: 3.1.x
-      URL https://github.com/AcademySoftwareFoundation/openexr/archive/v3.1.2.tar.gz
-      URL_HASH MD5=2e976f5fb610abb6f75d8f20014cf72a
+      URL https://github.com/AcademySoftwareFoundation/openexr/archive/v3.1.5.tar.gz
+      URL_HASH MD5=a92f38eedd43e56c0af56d4852506886
       DOWNLOAD_DIR ${BUILD_DIR}/download/openexr
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
