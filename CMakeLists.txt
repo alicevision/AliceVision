@@ -304,7 +304,7 @@ set(EIGEN_CMAKE_FLAGS
 set(EXPAT_TARGET expat)
 ExternalProject_Add(${EXPAT_TARGET}
        GIT_REPOSITORY https://github.com/libexpat/libexpat.git
-       GIT_TAG R_2_4_8
+       GIT_TAG R_2_5_0
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
