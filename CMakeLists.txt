@@ -205,9 +205,11 @@ set(GEOGRAM_CMAKE_FLAGS -DGEOGRAM_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DGEOGR
 # Add Cuda
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
 set(CUDA_TARGET cuda)
+set(CUDA_EXE cuda_12.0.0_525.60.13_linux.run)
 ExternalProject_Add(${CUDA_TARGET}
        # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-       URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       # URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       URL https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/${CUDA_EXE}
        DOWNLOAD_NO_EXTRACT 1
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
@@ -218,7 +220,7 @@ ExternalProject_Add(${CUDA_TARGET}
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
        BUILD_COMMAND ""
-       INSTALL_COMMAND sh ${BUILD_DIR}/src/cuda_9.2.88_396.26_linux --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
+       INSTALL_COMMAND sh ${BUILD_DIR}/src/${CUDA_EXE} --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
        )
 set(CUDA_CUDART_LIBRARY "")
 set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CMAKE_INSTALL_PREFIX})
