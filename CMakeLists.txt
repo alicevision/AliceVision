@@ -507,8 +507,8 @@ if(AV_BUILD_PNG)
     endif()
     set(PNG_TARGET png)
     ExternalProject_Add(${PNG_TARGET}
-           URL https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz
-           URL_HASH MD5=6c7519f6c75939efa0ed3053197abd54
+           URL https://download.sourceforge.net/libpng/libpng-1.6.39.tar.gz
+           URL_HASH MD5=93b8e79a008747e70f7704f600349559
            DOWNLOAD_DIR ${BUILD_DIR}/download/libpng
            PREFIX ${BUILD_DIR}
            BUILD_IN_SOURCE 0
