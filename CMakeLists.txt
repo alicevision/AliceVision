@@ -481,8 +481,8 @@ set(OPENEXR_CMAKE_FLAGS ${ILMBASE_CMAKE_FLAGS} -DOPENEXR_ROOT=${CMAKE_INSTALL_PR
 if(AV_BUILD_TIFF)
 set(TIFF_TARGET tiff)
 ExternalProject_Add(${TIFF_TARGET}
-       URL http://download.osgeo.org/libtiff/tiff-4.3.0.tar.gz
-       URL_HASH MD5=0a2e4744d1426a8fc8211c0cdbc3a1b3
+       URL http://download.osgeo.org/libtiff/tiff-4.5.0.tar.gz
+       URL_HASH MD5=db9e220a1971acc64487f1d51a20dcaa
        DOWNLOAD_DIR ${BUILD_DIR}/download/tiff
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
