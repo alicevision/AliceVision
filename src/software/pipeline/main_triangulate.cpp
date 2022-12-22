@@ -146,6 +146,10 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // set maxThreads
+    HardwareContext hwc = cmdline.getHardwareContext();
+    omp_set_num_threads(hwc.getMaxThreads());
+
     const double defaultLoRansacLocalizationError = 4.0;
     if (!robustEstimation::adjustRobustEstimatorThreshold(sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, defaultLoRansacLocalizationError))
     {
@@ -154,7 +158,7 @@ int aliceVision_main(int argc, char** argv)
 
     // load input SfMData scene
     sfmData::SfMData sfmData;
-    if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
         return EXIT_FAILURE;
@@ -208,6 +212,7 @@ int aliceVision_main(int argc, char** argv)
     sfmEngine.setMatches(&pairwiseMatches);
 
     //run the triangulation
+    sfmEngine.fuseMatchesIntoTracks();
     std::set<IndexT> reconstructedViews = sfmData.getValidViews();
     sfmEngine.triangulate({}, reconstructedViews);
 
