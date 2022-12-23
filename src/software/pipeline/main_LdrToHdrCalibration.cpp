@@ -465,7 +465,6 @@ int aliceVision_main(int argc, char** argv)
     else
     {
         file << std::to_string(refIndex) + "\n";
-        file.close();
     }
 
     return EXIT_SUCCESS;
