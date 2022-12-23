@@ -123,22 +123,11 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
         ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, read file containing the target index");
         std::ifstream file(targetIndexesFilename);
         if (!file)
-        {
-            return; 
-        }
-        else
-        {
-            std::string line;
-            if (getline(file, line))
-            {
-                targetIndex = atoi(line.c_str());
-                file.close();
-            }
-            else
-            {
-                return;
-            }
-        }
+            ALICEVISION_THROW_ERROR("Failed to open file: " << targetIndexesFilename);
+        std::string line;
+        if (!std::getline(file, line))
+            ALICEVISION_THROW_ERROR("Failed to read from file: " << targetIndexesFilename);
+        targetIndex = atoi(line.c_str());
     }
 
         //Set the ldr ancestors id
