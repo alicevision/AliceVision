@@ -63,6 +63,12 @@ This program is based on works distributed under the terms of another license(s)
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).  
     Compiled with EIGEN_MPL2_ONLY to ensure MPL2 compatible code.
 
+*   __Expat__  
+    https://libexpat.github.io/
+    Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper
+    Copyright (c) 2001-2022 Expat maintainers
+    Distributed under the MIT/X Consortium license
+
 *   __Flann__  
     [https://www.cs.ubc.ca/research/flann](https://www.cs.ubc.ca/research/flann)  
     Copyright (c) 2008-2011  Marius Muja (mariusm@cs.ubc.ca). All rights reserved.  

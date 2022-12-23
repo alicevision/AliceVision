@@ -97,7 +97,7 @@ void XMLCALL LCPinfo::XmlStartHandler(void* pLCPinfo, const char* el, const char
                 LCPdata->_currText = value;
                 LCPdata->setCommonSettings(key);
                 LCPdata->setCameraSettings(key);
-            }
+           }
         }
         else
         {
@@ -204,7 +204,6 @@ void XMLCALL LCPinfo::XmlStartHandler(void* pLCPinfo, const char* el, const char
                 {
                     LCPdata->setRectilinearModel(LCPdata->currLensParam.ChromaticBlueGreenParams, key);
                 }
-
             }
         }
     }
@@ -477,7 +476,7 @@ void LCPinfo::load(const std::string& filename, bool fullParsing)
 {
     if(fullParsing)
     {
-        ALICEVISION_LOG_DEBUG("Load LCP file: \"" << filename << "\"");
+        ALICEVISION_LOG_INFO("Load LCP file: \"" << filename << "\"");
     }
     else
     {
@@ -532,7 +531,12 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
     std::vector<bool> v_isDistortionValid;
     std::vector<bool> v_isVignetteValid;
 
-    // Search best focal length
+    // Search the best focal lengths with respect to the target one in settings
+    // At the end of the loop, iLow is the index in v_lensParam of the lens parameter set with the closest focal length, lower or equal to the one in settings.
+    // iHigh is the index in v_lensParam of the lens parameter set with the closest focal length, greater or equal to the one in settings.
+    // In case of missing aperture value target and search mode is vignetting, if several parameter sets have the same ideal focal length,
+    // iLow and iHigh point out the ones with the lowest aperture value.
+    // If search mode is not vignetting and no focus distance target is given the highest focus value is targeted.
     for (size_t i = 0; i < v_lensParams.size(); ++i)
     {
         const LensParam& currParam = v_lensParams[i];
@@ -547,25 +551,37 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
         if (isCurrentValid)
         {
             if (
-                f <= settings.FocalLength
+                f <= settings.FocalLength // v_lensParams[iLow] focal length must always stay lower than or equal to the targeted focal length
                 && (
-                    iLow == -1
-                    || f > v_lensParams[iLow].camData.FocalLength
-                    || (settings.FocusDistance == 0 && f == v_lensParams[iLow].camData.FocalLength && v_lensParams[iLow].camData.FocusDistance > currParam.camData.FocusDistance)
+                    iLow == -1 // iLow not yet initialized
+                    || f > v_lensParams[iLow].camData.FocalLength // Better candidate than the stored one (higher than but still lower than or equal to the target value)
+                    || (f == v_lensParams[iLow].camData.FocalLength && // Same focal lenth value as the stored one
+                          (settings.FocusDistance == 0 && // No focus info
+                           mode != LCPCorrectionMode::VIGNETTE && // search for other model than vignetting (geometry, chromatic aberation)
+                           v_lensParams[iLow].camData.FocusDistance > currParam.camData.FocusDistance) // Higher focus distance value than the stored one
+                       || (settings.ApertureValue == 0 && // No aperture info
+                           mode == LCPCorrectionMode::VIGNETTE && // search for vignetting model
+                           v_lensParams[iLow].camData.ApertureValue < currParam.camData.ApertureValue)) // Lower aperture value than the stored one
                     )
-                )
+               )
             {
                 iLow = i;
             }
 
             if (
-                f >= settings.FocalLength
+                f >= settings.FocalLength // v_lensParams[iHigh] focal length must always stay greater than or equal to the targeted focal length
                 && (
-                    iHigh == -1
-                    || f < v_lensParams[iHigh].camData.FocalLength
-                    || (settings.FocusDistance == 0 && f == v_lensParams[iHigh].camData.FocalLength && v_lensParams[iHigh].camData.FocusDistance < currParam.camData.FocusDistance)
+                    iHigh == -1 // iHigh not yet initialized
+                    || f < v_lensParams[iHigh].camData.FocalLength // Better candidate than the stored one (lower than but still higher than or equal to the target value)
+                    || (f == v_lensParams[iHigh].camData.FocalLength && // Same focal lenth value as the stored one
+                          (settings.FocusDistance == 0 && // No focus info
+                           mode != LCPCorrectionMode::VIGNETTE && // search for other model than vignetting (geometry, chromatic aberation)
+                           v_lensParams[iHigh].camData.FocusDistance > currParam.camData.FocusDistance)
+                       || (settings.ApertureValue == 0 && // No aperture info
+                           mode == LCPCorrectionMode::VIGNETTE && // search for vignetting model
+                           v_lensParams[iHigh].camData.ApertureValue < currParam.camData.ApertureValue)) // Lower aperture value than the stored one
                     )
-                )
+               )
             {
                 iHigh = i;
             }
@@ -584,6 +600,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
     bool settingsOK = (mode == LCPCorrectionMode::VIGNETTE && settings.ApertureValue > 0) ||
                       (mode != LCPCorrectionMode::VIGNETTE && settings.FocusDistance > 0);
 
+    // Amongst all possible low and high candidates, the closest from the targeted focus or aperture value are selected
     if (iLow != -1 && iHigh != -1 && iLow != iHigh && settingsOK)
     {
         std::vector<int> candidatesLow;
@@ -731,18 +748,40 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
         weightLow = 1.0;
         return true;
     }
-    else if (((mode == LCPCorrectionMode::VIGNETTE && settings.ApertureValue == 0.f) ||
-              (mode == LCPCorrectionMode::DISTORTION && settings.FocusDistance == 0.f)) &&
-            (v_lensParams[iHigh].camData.FocalLength > v_lensParams[iLow].camData.FocalLength))
+    else if ((mode == LCPCorrectionMode::VIGNETTE) && (settings.ApertureValue == 0.f))
     {
-        weightLow = (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(settings.FocalLength)) /
-                    (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(v_lensParams[iLow].camData.FocalLength));
-        return true;
+        if (v_lensParams[iHigh].camData.FocalLength > v_lensParams[iLow].camData.FocalLength)
+        {
+            weightLow = (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(settings.FocalLength)) /
+                (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(v_lensParams[iLow].camData.FocalLength));
+            return true;
+        }
+        else if (v_lensParams[iHigh].camData.FocalLength == v_lensParams[iLow].camData.FocalLength)
+        {
+            // case of a prime lens without any aperture value available in metadata
+            // we keep the highest aperture value
+            weightLow = (v_lensParams[iLow].camData.ApertureValue >= v_lensParams[iHigh].camData.ApertureValue) ? 1.0 : 0.0;
+            return true;
+        }
     }
-    else
+    else if ((mode == LCPCorrectionMode::DISTORTION) && (settings.FocusDistance == 0.f))
     {
-        return false;
+        if (v_lensParams[iHigh].camData.FocalLength > v_lensParams[iLow].camData.FocalLength)
+        {
+            weightLow = (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(settings.FocalLength)) /
+                (std::log(v_lensParams[iHigh].camData.FocalLength) - std::log(v_lensParams[iLow].camData.FocalLength));
+            return true;
+        }
+        else if (v_lensParams[iHigh].camData.FocalLength == v_lensParams[iLow].camData.FocalLength)
+        {
+            // case of a prime lens without any focus value available in metadata
+            // we retain the lowest focus value
+            weightLow = (v_lensParams[iLow].camData.FocusDistance <= v_lensParams[iHigh].camData.FocusDistance) ? 1.0 : 0.0;
+            return true;
+        }
     }
+
+    return false;
 }
 
 void LCPinfo::combine(size_t iLow, size_t iHigh, float weightLow, LCPCorrectionMode mode, LensParam& pOut)
@@ -862,13 +901,19 @@ void LCPinfo::getVignettingParams(const float& focalLength, const float& apertur
     }
 }
 
-
 void LCPdatabase::loadDirectory(const boost::filesystem::path& p)
 {
     if (boost::filesystem::is_directory(p))
     {
+        // In some border cases, multiple LCP files could match with the image metadata
+        // and we stop the search as soon as we have found a valid match.
+        // So to ensure a repeatable behavior, we sort the files by name.
+        std::vector<boost::filesystem::path> sortedPaths;
         for (auto&& x : boost::filesystem::directory_iterator(p))
-            loadDirectory(x.path());
+            sortedPaths.push_back(x.path());
+        std::sort(sortedPaths.begin(), sortedPaths.end());
+        for(auto&& x : sortedPaths)
+            loadDirectory(x);
     }
     else if (boost::filesystem::is_regular_file(p) && (boost::filesystem::extension(p) == ".lcp"))
     {
