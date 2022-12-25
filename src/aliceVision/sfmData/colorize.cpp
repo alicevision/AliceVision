@@ -45,7 +45,7 @@ class LMColorAccumulator
         image::RGBColor getRGBChar() const 
         {
             auto temp = getColor();
-            return image::RGBColor(static_cast<char>(temp.r()), static_cast<char>(temp.g()),static_cast<char>(temp.b()));
+            return image::RGBColor(temp.r(), temp.g(),temp.b());
         }
 
 };
@@ -66,10 +66,14 @@ void colorizeTracks(SfMData& sfmData)
   const Views& views = sfmData.getViews();
 
   #pragma omp parallel for
-  for( int viewId = 0; viewId < views.size(); ++viewId)
+  for( int viewIndex = 0; viewIndex < views.size(); ++viewIndex)
   {
       image::Image<image::RGBColor> image;
-      image::readImage(views.at(viewId)->getImagePath(), image, image::EImageColorSpace::SRGB);
+
+      auto itView = views.begin();
+      std::advance(itView, viewIndex);
+      const IndexT viewId = itView->first;
+      image::readImage(itView->second->getImagePath(), image, image::EImageColorSpace::SRGB);
 
       #pragma omp parallel for
       for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
@@ -81,13 +85,12 @@ void colorizeTracks(SfMData& sfmData)
             {
                 const Vec3& Tcenter = sfmData.getAbsolutePose(viewId).getTransform().center();
                 const Vec3& pt = landmark.X;
-                const double eucd = 1.0 / (Tcenter - pt).norm();
+                const double eucd = (Tcenter - pt).norm();
                 Vec2 uv = it->second.x;
                 uv.x() = clamp(uv.x(), 0.0, static_cast<double>(image.Width() - 1));
                 uv.y() = clamp(uv.y(), 0.0, static_cast<double>(image.Height() - 1));
                 const image::RGBColor obsColor = image(uv.y(), uv.x());
-                image::RGBfColor& rgbf = image::RGBfColor(static_cast<float>(obsColor.r()), static_cast<float>(obsColor.g()), static_cast<float>(obsColor.b()));
-                
+                image::RGBfColor rgbf(obsColor.r(), obsColor.g(), obsColor.b());
                 #pragma omp critical
                 {
                     landmarkInfo.at(i).addRGB(rgbf, eucd);
