@@ -420,7 +420,11 @@ oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int&
 oiio::ImageSpec readImageSpec(const std::string& path)
 {
   oiio::ImageSpec configSpec;
-  configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of buffer
+#if OIIO_VERSION > (10000 * 2 + 100 * 4 + 5) // OIIO_VERSION > 2.4.5
+    // To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+    // so we can disable the auto orientation and keep the metadata.
+    configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of the image buffer
+#endif 
 
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
   oiio::ImageSpec spec = in->spec();
@@ -554,6 +558,12 @@ void readImage(const std::string& path,
 
         // libRAW configuration
         // See https://openimageio.readthedocs.io/en/master/builtinplugins.html#raw-digital-camera-files
+
+#if OIIO_VERSION > (10000 * 2 + 100 * 4 + 5) // OIIO_VERSION > 2.4.5
+	// To disable the application of the orientation, we need the PR https://github.com/OpenImageIO/oiio/pull/3669,
+	// so we can disable the auto orientation and keep the metadata.
+        configSpec.attribute("raw:user_flip", 1); // set flip to 1 to disable auto rotation of the image buffer
+#endif
 
         if (imageReadOptions.rawColorInterpretation == ERawColorInterpretation::None)
         {
