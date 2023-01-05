@@ -103,7 +103,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     return true;
 }
 
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex, const std::string& targetIndexesFilename)
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>> & groups, int offsetRefBracketIndex, const std::string& lumaStatFilepath, const double meanTargetedLuma)
 {
     // If targetIndexesFilename cannot be opened or is not valid target views are derived from the middle exposed views
     // For odd number, there is no ambiguity on the middle image.
@@ -118,16 +118,58 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
     {
         ALICEVISION_LOG_INFO("Use offsetRefBracketIndex parameter");
     }
-    else // try to use the index in the file
+    else // try to use the luminance statistics of the LDR images stored in the file
     {
-        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, read file containing the target index");
-        std::ifstream file(targetIndexesFilename);
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter out of range, read file containing luminance statistics to compute an estimation");
+        std::ifstream file(lumaStatFilepath);
         if (!file)
-            ALICEVISION_THROW_ERROR("Failed to open file: " << targetIndexesFilename);
+            ALICEVISION_THROW_ERROR("Failed to open file: " << lumaStatFilepath);
+        std::vector<std::string> lines;
         std::string line;
-        if (!std::getline(file, line))
-            ALICEVISION_THROW_ERROR("Failed to read from file: " << targetIndexesFilename);
-        targetIndex = atoi(line.c_str());
+        while (std::getline(file, line))
+        {
+            lines.push_back(line);
+        }
+        if ((lines.size() < 2) || (atoi(lines[0].c_str()) != groups.size()) || (atoi(lines[1].c_str()) < groups[0].size()))
+        {
+            ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
+        }
+        int nbGroup = atoi(lines[0].c_str());
+        int nbExp = atoi(lines[1].c_str());
+
+        std::vector<double> v_lumaMeanMean;
+
+        for (int i = 0; i < nbExp; ++i)
+        {
+            double lumaMeanMean = 0.0;
+            for (int j = 0; j < nbGroup; ++j)
+            {
+                std::istringstream iss(lines[2 + j * nbExp + i]);
+                int exposure, nbItem;
+                double lumaMean, lumaMin, lumaMax;
+                if (!(iss >> exposure >> nbItem >> lumaMean >> lumaMin >> lumaMax))
+                {
+                    ALICEVISION_THROW_ERROR("File: " << lumaStatFilepath << " is not a valid file");
+                }
+                lumaMeanMean += lumaMean;
+            }
+            v_lumaMeanMean.push_back(lumaMeanMean / nbGroup);
+        }
+
+        double minDiffWithLumaTarget = 1000.0;
+        targetIndex = 0;
+
+        for (int k = 0; k < v_lumaMeanMean.size(); ++k)
+        {
+            const double diffWithLumaTarget = fabs(v_lumaMeanMean[k] - meanTargetedLuma);
+            if (diffWithLumaTarget < minDiffWithLumaTarget)
+            {
+                minDiffWithLumaTarget = diffWithLumaTarget;
+                targetIndex = k;
+            }
+        }
+
+        ALICEVISION_LOG_INFO("offsetRefBracketIndex parameter automaticaly set to " << targetIndex);
     }
 
         //Set the ldr ancestors id

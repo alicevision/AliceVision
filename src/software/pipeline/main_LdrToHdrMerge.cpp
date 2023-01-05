@@ -54,8 +54,9 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 3;
     bool byPass = false;
     int channelQuantizationPower = 10;
+    int offsetRefBracketIndex = 1000; // By default, use the automatic selection
+    double meanTargetedLumaForMerging = 0.4;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
-    int offsetRefBracketIndex = 1000;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 0.0f;
@@ -90,6 +91,8 @@ int aliceVision_main(int argc, char** argv)
          "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
         ("offsetRefBracketIndex", po::value<int>(&offsetRefBracketIndex)->default_value(offsetRefBracketIndex),
          "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
+        ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
+         "Mean expected luminance after merging step. Must be in the range [0, 1].")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -98,9 +101,9 @@ int aliceVision_main(int argc, char** argv)
         ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
          ("Storage data type: " + image::EStorageDataType_informations()).c_str())
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-          "Range image index start.")
+         "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-          "Range size.");
+         "Range size.");
 
     CmdLine cmdline("This program merges LDR images into HDR images.\n"
                     "AliceVision LdrToHdrMerge");
@@ -186,19 +189,19 @@ int aliceVision_main(int argc, char** argv)
         const int targetIndex = middleIndex + offsetRefBracketIndex;
         const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
 
-        const fs::path targetIndexFilepath(fs::path(inputResponsePath).parent_path() / (std::string("exposureRefIndex.txt")));
+        const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() / (std::string("luminanceStatistics.txt")));
 
-        if (!fs::is_regular_file(targetIndexFilepath) && !isOffsetRefBracketIndexValid)
+        if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
         {
-            ALICEVISION_LOG_ERROR("Unable to open the file " << targetIndexFilepath.string() << " with the selection of exposures. This file is needed to select the optimal exposure for the creation of HDR images.");
+            ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
             return EXIT_FAILURE;
         }
 
-        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, targetIndexFilepath.string());
+        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
 
         if (targetViews.empty() && !isOffsetRefBracketIndexValid)
         {
-            ALICEVISION_LOG_ERROR("File " << targetIndexFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
+            ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
             return EXIT_FAILURE;
         }
     }

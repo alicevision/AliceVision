@@ -111,54 +111,40 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
     return in;
 }
 
-int computeMergingRefIndex(const std::vector<double>& groupedExposure, const std::vector<hdr::ImageSample>& samples, const double meanTargetedLuma)
+struct luminanceInfo
 {
-    std::map<int, std::pair<int, double>> meanLum;
-    std::map<int, std::pair<double, double>> rangeLum;
+    double meanLum;
+    double minLum;
+    double maxLum;
+    int itemNb;
+};
+
+void computeLuminanceStat(const std::vector<double>& groupedExposure, const std::vector<hdr::ImageSample>& samples, std::map<int, luminanceInfo>& luminanceInfos)
+{
     for (int i = 0; i < groupedExposure.size(); i++)
     {
-        meanLum[(int)(groupedExposure[i] * 1000)].first = 0;
-        meanLum[(int)(groupedExposure[i] * 1000)].second = 0.0;
-        rangeLum[(int)(groupedExposure[i] * 1000)].first = 1000.0;
-        rangeLum[(int)(groupedExposure[i] * 1000)].second = 0.0;
+        luminanceInfos[(int)(groupedExposure[i] * 1000)].itemNb = 0;
+        luminanceInfos[(int)(groupedExposure[i] * 1000)].meanLum = 0.0;
+        luminanceInfos[(int)(groupedExposure[i] * 1000)].minLum = 1000.0;
+        luminanceInfos[(int)(groupedExposure[i] * 1000)].maxLum = 0.0;
     }
     for (int i = 0; i < samples.size(); i++)
     {
         for (int j = 0; j < samples[i].descriptions.size(); j++)
         {
             double lum = image::Rgb2GrayLinear(samples[i].descriptions[j].mean[0], samples[i].descriptions[j].mean[1], samples[i].descriptions[j].mean[2]);
-            meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].second += lum;
-            meanLum[(int)(samples[i].descriptions[j].exposure * 1000)].first++;
-            if (lum < rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first)
+            luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].meanLum += lum;
+            luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].itemNb++;
+            if (lum < luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].minLum)
             {
-                rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].first = lum;
+                luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].minLum = lum;
             }
-            if (lum > rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second)
+            if (lum > luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].maxLum)
             {
-                rangeLum[(int)(samples[i].descriptions[j].exposure * 1000)].second = lum;
+                luminanceInfos[(int)(samples[i].descriptions[j].exposure * 1000)].maxLum = lum;
             }
         }
     }
-
-    double minDiffWithLumaTarget = 1000.0;
-    int minDiffWithLumaTargetIdx = 0;
-
-    int k = 0;
-    for (const auto& n : meanLum)
-    {
-        double lumaMean = n.second.second / (double)n.second.first;
-
-        ALICEVISION_LOG_DEBUG('[' << n.first << "] : mean = " << lumaMean << " ; min = " << rangeLum[k].first << " ; max = " << rangeLum[k].second);
-
-        if (fabs(lumaMean - meanTargetedLuma) < minDiffWithLumaTarget)
-        {
-            minDiffWithLumaTarget = fabs(lumaMean - meanTargetedLuma);
-            minDiffWithLumaTargetIdx = k;
-        }
-        ++k;
-    }
-
-    return minDiffWithLumaTargetIdx;
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -171,7 +157,6 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
     size_t maxTotalPoints = 1000000;
-    double meanTargetedLumaForMerging = 0.4;
 
     // Command line parameters
 
@@ -198,8 +183,6 @@ int aliceVision_main(int argc, char** argv)
         ("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
             "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
             "can be managed by the calibration step (in term of computation time and memory usage).")
-        ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
-            "Mean expected luminance after merging step. Must be in the range [0, 1].")
         ;
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
@@ -273,7 +256,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::vector<hdr::ImageSample>> calibrationSamples;
     hdr::rgbCurve calibrationWeight(channelQuantization);
     std::vector<std::vector<double>> groupedExposures;
-    std::vector<int> refIndexes;
+    std::vector<std::map<int, luminanceInfo>> v_luminanceInfos;
 
     if(calibrationMethod == ECalibrationMethod::LINEAR)
     {
@@ -343,7 +326,9 @@ int aliceVision_main(int argc, char** argv)
 
             sampling.analyzeSource(samples, channelQuantization, group_pos);
 
-            refIndexes.push_back(computeMergingRefIndex(groupedExposures[group_pos], samples, meanTargetedLumaForMerging));
+            std::map<int, luminanceInfo> luminanceInfos;
+            computeLuminanceStat(groupedExposures[group_pos], samples, luminanceInfos);
+            v_luminanceInfos.push_back(luminanceInfos);
 
             ++group_pos;
         }
@@ -448,23 +433,27 @@ int aliceVision_main(int argc, char** argv)
     response.write(outputResponsePath);
     response.writeHtml(htmlOutput, "response");
 
-    double meanIndex = 0.0;
-    for (int i = 0; i < refIndexes.size(); i++)
-    {
-        meanIndex += static_cast<double>(refIndexes[i]);
-    }
-    const int refIndex = static_cast<int>(std::round(meanIndex /= refIndexes.size()));
-
-    const std::string expRefIndexFilename = (fs::path(outputResponsePath).parent_path() / (std::string("exposureRefIndex") + std::string(".txt"))).string();
-    std::ofstream file(expRefIndexFilename);
+    const std::string lumastatFilename = (fs::path(outputResponsePath).parent_path() / (std::string("luminanceStatistics") + std::string(".txt"))).string();
+    std::ofstream file(lumastatFilename);
     if (!file)
     {
-        ALICEVISION_LOG_WARNING("Unable to create file " << expRefIndexFilename << " for storing the exposure reference Index");
-        ALICEVISION_LOG_WARNING("You will have to set manually the dedicated paramater at merging stage.");
+        ALICEVISION_LOG_ERROR("Unable to create file " << lumastatFilename << " for storing luminance statistics");
+        return EXIT_FAILURE;
     }
     else
     {
-        file << std::to_string(refIndex) + "\n";
+        file << v_luminanceInfos.size() << std::endl;
+        file << v_luminanceInfos[0].size() << std::endl;
+
+        for (int i = 0; i < v_luminanceInfos.size(); ++i)
+        {
+            for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+            {
+                file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
+                file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
+            }
+        }
+
     }
 
     return EXIT_SUCCESS;

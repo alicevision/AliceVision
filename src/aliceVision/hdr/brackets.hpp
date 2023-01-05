@@ -29,7 +29,7 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
  *                                   if the file cannot be read or does not contain the expected number of values (same as view group number) and
  *                                   if offsetRefBracketIndex is out of range the number of views then a clamped values of offsetRefBracketIndex is considered
  */
-void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex, const std::string& targetIndexesFilename = "");
+void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetViews, const std::vector<std::vector<std::shared_ptr<sfmData::View>>>& groups, int offsetRefBracketIndex, const std::string& targetIndexesFilename = "", const double meanTargetedLuma = 0.4);
 
 }
 }
