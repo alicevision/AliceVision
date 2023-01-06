@@ -54,6 +54,7 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 3;
     bool byPass = false;
     int channelQuantizationPower = 10;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     int offsetRefBracketIndex = 0;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -83,6 +84,8 @@ int aliceVision_main(int argc, char** argv)
          "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
          "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
         ("offsetRefBracketIndex", po::value<int>(&offsetRefBracketIndex)->default_value(offsetRefBracketIndex),
@@ -253,7 +256,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Load " << filepath);
 
             image::ImageReadOptions options;
-            options.workingColorSpace = image::EImageColorSpace::SRGB;
+            options.workingColorSpace = workingColorSpace;
             options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
             options.colorProfileFileName = group[i]->getColorProfileFileName();
             image::readImage(filepath, images[i], options);

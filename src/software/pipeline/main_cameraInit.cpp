@@ -162,7 +162,7 @@ int aliceVision_main(int argc, char **argv)
 
   bool allowSingleView = false;
   bool errorOnMissingColorProfile = true;
-  image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawNoWhiteBalancing;
+  image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
 
 
   po::options_description requiredParams("Required parameters");
@@ -452,6 +452,8 @@ int aliceVision_main(int argc, char **argv)
 
     std::string imgFormat = in->format_name();
 
+    bool dcpError = false;
+
     // if a color profile is required check if a dcp database exists and if one is available inside 
     // if yes and if metadata exist and image format is raw then update metadata with DCP info
     if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
@@ -465,7 +467,7 @@ int aliceVision_main(int argc, char **argv)
             // No color profile available
             boost::atomic_ref<char>{allColorProfilesFound} = 0;
         }
-        else if (!dcpDatabase.empty())
+        else if (!dcpDatabase.empty() || (dcpDatabase.empty() && !errorOnMissingColorProfile))
         {
             image::DCPProfile dcpProf;
 
@@ -476,17 +478,29 @@ int aliceVision_main(int argc, char **argv)
                 #pragma omp critical
                 viewsWithDCPMetadata++;
             }
-            else if (allColorProfilesFound)
+            else 
             {
-                // there is a missing color profile for one image or more
-                boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                dcpError = true;
+                if (allColorProfilesFound)
+                {
+                    // there is a missing color profile for one image or more
+                    boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                }
             }
         }
     }
 
     // Store the color interpretation mode choosed for raw images in metadata,
     // so all future loads of this image will be interpreted in the same way.
-    view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+    if (!dcpError)
+    {
+        view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(rawColorInterpretation));
+    }
+    else
+    {
+        view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
+        ALICEVISION_LOG_WARNING("DCP Profile not found. Use LibRawWhiteBalancing option for raw color processing.");
+    }
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -752,6 +766,7 @@ int aliceVision_main(int argc, char **argv)
       else
       {
           ALICEVISION_LOG_WARNING("Can't find color profile for at least one input image.");
+          ALICEVISION_LOG_WARNING("Images without color profiles have been decoded with the LibRawWhiteBalancing option.");
       }
   }
 
