@@ -62,10 +62,11 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
     CHECK_CUDA_ERROR();
 }
 
-__host__ void cuda_depthSimMapUpscale(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthSimMap_dmp,
-                                      const CudaDeviceMemoryPitched<float2, 2>& in_otherDepthSimMap_dmp,
-                                      const ROI& roi,
-                                      cudaStream_t stream)
+__host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthSimMap_dmp,
+                                               const CudaDeviceMemoryPitched<float2, 2>& in_otherDepthSimMap_dmp,
+                                               const DeviceCamera& rcDeviceCamera,
+                                               const ROI& roi,
+                                               cudaStream_t stream)
 {
     const CudaSize<2>& out_depthSimMapSize = out_upscaledDepthSimMap_dmp.getSize();
     const CudaSize<2>& in_depthSimMapSize = in_otherDepthSimMap_dmp.getSize();
@@ -76,7 +77,8 @@ __host__ void cuda_depthSimMapUpscale(CudaDeviceMemoryPitched<float2, 2>& out_up
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
-    depthSimMapUpscale_kernel<<<grid, block, 0, stream>>>(
+    depthSimMapUpscaleAndFilter_kernel<<<grid, block, 0, stream>>>(
+      rcDeviceCamera.getTextureObject(),
       out_upscaledDepthSimMap_dmp.getBuffer(), 
       out_upscaledDepthSimMap_dmp.getPitch(),
       in_otherDepthSimMap_dmp.getBuffer(), 

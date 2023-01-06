@@ -143,16 +143,24 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
 }
 
 
-__global__ void depthSimMapUpscale_kernel(float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
-                                          const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
-                                          const ROI roi,
-                                          float ratio)
+__global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
+                                                   float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
+                                                   const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
+                                                   const ROI roi,
+                                                   float ratio)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(x >= roi.width() || y >= roi.height())
         return;
+
+    // filter masked pixels (alpha < 0.9f)
+    if(tex2D_float4(rcTex, x + 0.5f, y + 0.5f).w < 0.9f)
+    {
+        *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, x, y) = make_float2(-2.f, 1.f);
+        return;
+    }
 
     const float oy = (float(y) - 0.5f) * ratio;
     const float ox = (float(x) - 0.5f) * ratio;

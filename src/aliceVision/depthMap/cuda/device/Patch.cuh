@@ -294,11 +294,13 @@ __device__ static float compNCCby3DptsYK(cudaTextureObject_t rcTex,
     const float4 gcr = tex2D_float4(rcTex, rp.x + 0.5f, rp.y + 0.5f);
     const float4 gct = tex2D_float4(tcTex, tp.x + 0.5f, tp.y + 0.5f);
 
-    // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
-    // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
-
-    if(gcr.w == 0.0f || gct.w == 0.0f)
-        return CUDART_INF_F; // if no alpha, invalid pixel from input mask
+    // check the alpha values of the patch pixel center of R and T cameras
+    // for the R camera, alpha should be at least 0.9f (computation area)
+    // for the T camera, alpha should be at least 0.4f (masking)
+    if(gcr.w < 0.9f || gct.w < 0.4f)
+    {
+        return CUDART_INF_F; // uninitialized
+    }
 
     const float gammaC = _gammaC;
     const float gammaP = _gammaP;

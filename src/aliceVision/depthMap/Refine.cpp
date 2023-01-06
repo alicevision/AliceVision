@@ -113,8 +113,8 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
         DeviceCache& deviceCache = DeviceCache::getInstance();
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
 
-        // upscale SGM depth/sim map
-        cuda_depthSimMapUpscale(_sgmDepthPixSizeMap_dmp, in_sgmDepthSimMap_dmp, downscaledRoi, _stream);
+        // upscale SGM depth/sim map and filter masked pixels (alpha)
+        cuda_depthSimMapUpscaleAndFilter(_sgmDepthPixSizeMap_dmp, in_sgmDepthSimMap_dmp, rcDeviceCamera, downscaledRoi, _stream);
 
         // export intermediate depth/sim map (if requested by user)
         if(_refineParams.exportIntermediateDepthSimMaps)
@@ -134,7 +134,6 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
     {
         // refine and fuse with volume strategy
         refineAndFuseDepthSimMap(tile);
-
     }
     else
     {

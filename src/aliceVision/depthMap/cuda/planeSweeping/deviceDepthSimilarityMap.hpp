@@ -40,16 +40,18 @@ extern void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upscal
                                   cudaStream_t stream);
 
 /**
- * @brief Upscale the given depth/sim map.
+ * @brief Upscale the given depth/sim map and filter masked pixels.
  * @param[out] out_upscaledDepthSimMap_dmp the output upscaled depth/sim map
  * @param[in] in_otherDepthSimMap_dmp the depth/sim map to upscaled
+ * @param[in] rcDeviceCamera the R device camera
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_depthSimMapUpscale(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthSimMap_dmp,
-                                    const CudaDeviceMemoryPitched<float2, 2>& in_otherDepthSimMap_dmp,
-                                    const ROI& roi,
-                                    cudaStream_t stream);
+extern void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthSimMap_dmp,
+                                             const CudaDeviceMemoryPitched<float2, 2>& in_otherDepthSimMap_dmp,
+                                             const DeviceCamera& rcDeviceCamera,
+                                             const ROI& roi,
+                                             cudaStream_t stream);
 
 /**
  * @brief Compute the pixSize map from the depth map.
