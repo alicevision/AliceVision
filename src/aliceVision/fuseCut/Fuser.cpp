@@ -175,11 +175,12 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 
         if (tcdepthMap.Height() > 0 && tcdepthMap.Width() > 0)
         {
-            for(int y = 0; y < h; ++y)
+            for(int y = 0; y < tcdepthMap.Height(); ++y)
             {
-                for(int x = 0; x < w; ++x)
+                for(int x = 0; x < tcdepthMap.Width(); ++x)
                 {
                     float depth = tcdepthMap(y, x);
+
                     if(depth > 0.0f)
                     {
                       Point3d p = _mp.CArr[tc] + (_mp.iCamArr[tc] * Point2d((float)x, (float)y)).normalize() * depth;
