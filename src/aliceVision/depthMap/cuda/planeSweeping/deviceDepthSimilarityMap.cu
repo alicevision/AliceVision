@@ -147,8 +147,6 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
                                                       const ROI& roi,
                                                       cudaStream_t stream)
 {
-    const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
-
     // initialize depth/sim map optimized with SGM depth/pixSize map
     out_depthSimMapOptimized_dmp.copyFrom(in_depthPixSizeMapSgmUpscaled_dmp, stream);
 
@@ -184,7 +182,6 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
 
         // adjust depth/sim by using previously computed depths
         optimize_depthSimMap_kernel<<<grid, block, 0, stream>>>(
-            rcDeviceCamera.getTextureObject(), 
             rcDeviceCamera.getDeviceCamId(), 
             imgVarianceTex.textureObj,
             depthTex.textureObj, 
@@ -195,7 +192,6 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
             in_depthSimMapRefinedFused_dmp.getBuffer(), 
             in_depthSimMapRefinedFused_dmp.getPitch(),
             iter, 
-            samplesPerPixSize, 
             roi);
     }
 

@@ -381,14 +381,13 @@ __global__ void optimize_getOptDeptMapFromOptDepthSimMap_kernel(float* out_tmpOp
     *get2DBufferAt(out_tmpOptDepthMap_d, out_tmpOptDepthMap_p, roiX, roiY) = get2DBufferAt(in_optDepthSimMap_d, in_optDepthSimMap_p, roiX, roiY)->x; // depth
 }
 
-__global__ void optimize_depthSimMap_kernel(cudaTextureObject_t rc_tex,
-                                            int rcDeviceCamId,
+__global__ void optimize_depthSimMap_kernel(int rcDeviceCamId,
                                             cudaTextureObject_t imgVarianceTex,
                                             cudaTextureObject_t depthTex,
                                             float2* out_optDepthSimMap_d, int out_optDepthSimMap_p,                   // Optimized
                                             const float2* in_roughDepthPixSizeMap_d, int in_roughDepthPixSizeMap_p,   // SGM upscaled
                                             const float2* in_fineDepthSimMap_d, int in_fineDepthSimMap_p,             // Refine & Fused 
-                                            int iter, float samplesPerPixSize,
+                                            int iter,
                                             const ROI roi)
 {
     // roi and imgVarianceTex, depthTex coordinates 
