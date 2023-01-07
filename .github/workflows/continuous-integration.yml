@@ -23,6 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: alicevision/alicevision-deps:ci-2022-12-06-centos7-cuda11.3.1
+    # permissions required by codeql  
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -62,6 +68,9 @@ jobs:
            -DCeres_DIR:PATH="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DEIGEN_INCLUDE_DIR_HINTS:PATH="${DEPS_INSTALL_DIR}" \
            -DAlembic_DIR:PATH="${DEPS_INSTALL_DIR}/lib/cmake/Alembic"
+           
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
 
       - name: Build
         working-directory: ./build
@@ -77,6 +86,9 @@ jobs:
         working-directory: ./build
         run: |
           make test
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
 
       - name: Build As Third Party
         working-directory: ./build_as_3rdparty
