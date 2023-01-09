@@ -452,7 +452,7 @@ int aliceVision_main(int argc, char **argv)
 
     std::string imgFormat = in->format_name();
 
-    bool dcpError = false;
+    bool dcpError = true;
 
     // if a color profile is required check if a dcp database exists and if one is available inside 
     // if yes and if metadata exist and image format is raw then update metadata with DCP info
@@ -467,26 +467,25 @@ int aliceVision_main(int argc, char **argv)
             // No color profile available
             boost::atomic_ref<char>{allColorProfilesFound} = 0;
         }
-        else if (!dcpDatabase.empty() || (dcpDatabase.empty() && !errorOnMissingColorProfile))
+        else
         {
             image::DCPProfile dcpProf;
 
-            if (dcpDatabase.getDcpForCamera(make, model, dcpProf))
+            if (!dcpDatabase.empty() && dcpDatabase.getDcpForCamera(make, model, dcpProf))
             {
                 view.addDCPMetadata(dcpProf);
 
                 #pragma omp critical
                 viewsWithDCPMetadata++;
+
+                dcpError = false;
             }
-            else 
+            else if (allColorProfilesFound)
             {
-                dcpError = true;
-                if (allColorProfilesFound)
-                {
-                    // there is a missing color profile for one image or more
-                    boost::atomic_ref<char>{allColorProfilesFound} = 0;
-                }
+                // there is a missing color profile for at least one image
+                boost::atomic_ref<char>{allColorProfilesFound} = 0;
             }
+
         }
     }
 
@@ -499,7 +498,8 @@ int aliceVision_main(int argc, char **argv)
     else
     {
         view.addMetadata("AliceVision:rawColorInterpretation", image::ERawColorInterpretation_enumToString(image::ERawColorInterpretation::LibRawWhiteBalancing));
-        ALICEVISION_LOG_WARNING("DCP Profile not found. Use LibRawWhiteBalancing option for raw color processing.");
+        if (!dcpDatabase.empty())
+            ALICEVISION_LOG_WARNING("DCP Profile not found for image: " << view.getImagePath() << ". Use LibRawWhiteBalancing option for raw color processing.");
     }
 
     // check if the view intrinsic is already defined
