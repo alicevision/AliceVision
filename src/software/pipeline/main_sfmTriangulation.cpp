@@ -35,41 +35,6 @@ namespace fs = boost::filesystem;
 using namespace aliceVision::track;
 using namespace aliceVision::sfm;
 
-
-/**
- * @brief Retrieve the view id in the sfmData from the image filename.
- * @param[in] sfmData the SfM scene
- * @param[in] name the image name to find (uid or filename or path)
- * @param[out] out_viewId the id found
- * @return if a view is found
- */
-bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
-    const std::string& name,
-    IndexT& out_viewId)
-{
-    out_viewId = UndefinedIndexT;
-
-    // list views uid / filenames and find the one that correspond to the user ones
-    for (const auto& viewPair : sfmData.getViews())
-    {
-        const sfmData::View& v = *(viewPair.second.get());
-
-        if (name == std::to_string(v.getViewId()) ||
-            name == fs::path(v.getImagePath()).filename().string() ||
-            name == v.getImagePath())
-        {
-            out_viewId = v.getViewId();
-            break;
-        }
-    }
-
-    if (out_viewId == UndefinedIndexT)
-        ALICEVISION_LOG_ERROR("Can't find the given initial pair view: " << name);
-
-    return out_viewId != UndefinedIndexT;
-}
-
-
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
