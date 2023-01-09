@@ -186,7 +186,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
                                      int wsh, 
                                      float gammaC, 
                                      float gammaP, 
-                                     const float2* in_midDepthSimMap_d, int in_midDepthSimMap_p,
+                                     const float2* in_midDepthPixSizeMap_d, int in_midDepthPixSizeMap_p,
                                      const float3* in_normalMap_d, int in_normalMap_p,
                                      TSimRefine* inout_volSim_d, int inout_volSim_s, int inout_volSim_p, 
                                      const Range depthRange,
@@ -209,7 +209,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     const int y = (roi.y.begin + vy) * stepXY;
 
     // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
+    const float originalDepth = get2DBufferAt(in_midDepthPixSizeMap_d, in_midDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
 
     // original depth invalid or masked, similarity value remain at 255
     if(originalDepth <= 0.0f)
@@ -368,7 +368,7 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int o
 
 
 __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out_bestDepthSimMap_p,
-                                          const float2* in_midDepthSimMap_d, int in_midDepthSimMap_p, 
+                                          const float2* in_midDepthPixSizeMap_d, int in_midDepthPixSizeMap_p,
                                           const TSimRefine* in_volSim_d, int in_volSim_s, int in_volSim_p, 
                                           int volDimZ, 
                                           int rcDeviceCamId, 
@@ -393,7 +393,7 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
     const int y = (roi.y.begin + vy) * scaleStep;
 
     // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_midDepthSimMap_d, in_midDepthSimMap_p, vx, vy)->x; // input original middle depth
+    const float originalDepth = get2DBufferAt(in_midDepthPixSizeMap_d, in_midDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
 
     // corresponding output depth/sim pointer
     float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap_d, out_bestDepthSimMap_p, vx, vy);
