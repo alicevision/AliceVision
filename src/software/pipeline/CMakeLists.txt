@@ -116,9 +116,9 @@ if(ALICEVISION_BUILD_SFM)
           Boost::filesystem
   )
 
-  #Triangulate
-  alicevision_add_software(aliceVision_triangulate
-  SOURCE main_triangulate.cpp
+  # SfM Triangulation
+  alicevision_add_software(aliceVision_sfmTriangulation
+  SOURCE main_sfmTriangulation.cpp
   FOLDER ${FOLDER_SOFTWARE_PIPELINE}
   LINKS aliceVision_system
         aliceVision_image

@@ -138,7 +138,7 @@ int aliceVision_main(int argc, char** argv)
             "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
         ;
     
-    CmdLine cmdline("AliceVision Triangulation");
+    CmdLine cmdline("AliceVision SfM Triangulation");
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
