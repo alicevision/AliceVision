@@ -8,6 +8,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/depthSimMapIO.hpp>
 
@@ -254,8 +255,9 @@ void exportDepthSimMapTilePatternObj(int rc,
       const ROI& roi = tileRoiList.at(ri);
 
       const auto& minMaxDepth = tileMinMaxDepthsList.at(ri);
-      const float firstDepth = minMaxDepth.first;
-      const float lastDepth = minMaxDepth.second;
+      const Point3d planeN = (mp.iRArr[rc] * Point3d(0.0f, 0.0f, 1.0f)).normalize(); // plane normal
+      const Point3d firstPlaneP = mp.CArr[rc] + planeN * minMaxDepth.first;          // first depth plane point
+      const Point3d lastPlaneP  = mp.CArr[rc] + planeN * minMaxDepth.second;         // last depth plane point
 
       const std::vector<Point2d> roiCorners = {
         {double(roi.x.begin), double(roi.y.begin)},
@@ -276,12 +278,12 @@ void exportDepthSimMapTilePatternObj(int rc,
         const Point2d cornerX = corner + cornerOffsets.first;  // corner 2d point X offsetted
         const Point2d cornerY = corner + cornerOffsets.second; // corner 2d point Y offsetted
 
-        vertices[vStartIdx    ] = mp.CArr[rc] + (mp.iCamArr[rc] * corner ).normalize() * firstDepth;
-        vertices[vStartIdx + 1] = mp.CArr[rc] + (mp.iCamArr[rc] * corner ).normalize() * lastDepth;
-        vertices[vStartIdx + 2] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerX).normalize() * firstDepth;
-        vertices[vStartIdx + 3] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerX).normalize() * lastDepth;
-        vertices[vStartIdx + 4] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerY).normalize() * firstDepth;
-        vertices[vStartIdx + 5] = mp.CArr[rc] + (mp.iCamArr[rc] * cornerY).normalize() * lastDepth;
+        vertices[vStartIdx    ] = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * corner ).normalize(), firstPlaneP, planeN);
+        vertices[vStartIdx + 1] = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * corner ).normalize(), lastPlaneP , planeN);
+        vertices[vStartIdx + 2] = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * cornerX).normalize(), firstPlaneP, planeN);
+        vertices[vStartIdx + 3] = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * cornerX).normalize(), lastPlaneP , planeN);
+        vertices[vStartIdx + 4] = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * cornerY).normalize(), firstPlaneP, planeN);
+        vertices[vStartIdx + 5] = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * cornerY).normalize(), lastPlaneP , planeN);
 
         faces[fStartIdx    ] = {vStartIdx    , vStartIdx + 1, vStartIdx + 2};
         faces[fStartIdx + 1] = {vStartIdx + 1, vStartIdx + 2, vStartIdx + 3};
