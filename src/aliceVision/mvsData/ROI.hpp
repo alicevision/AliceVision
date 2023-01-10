@@ -230,7 +230,7 @@ inline ROI intersect(const ROI& a, const ROI& b)
     return ROI(intersect(a.x, b.x), intersect(a.y, b.y));
 }
 
-#if not defined(__NVCC__)
+#if !defined(__NVCC__)
 inline std::ostream& operator<<(std::ostream& os, const Range& range)
 {
     os << range.begin << "-" << range.end;
