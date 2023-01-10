@@ -18,7 +18,7 @@ namespace depthMap {
  */
 struct DepthMapParams
 {
-  mvsUtils::TileParams tileParams;    //< tilling parameters
+  mvsUtils::TileParams tileParams;    //< tiling parameters
   SgmParams sgmParams;                //< parameters of Sgm process
   RefineParams refineParams;          //< parameters of Refine process
   int maxTCams = 10;                  //< global T cameras maximum

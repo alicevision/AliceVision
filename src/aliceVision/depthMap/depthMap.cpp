@@ -282,7 +282,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     if(depthMapParams.tileParams.padding % maxDownscale != 0)
     {
       const int padding = divideRoundUp(depthMapParams.tileParams.padding, maxDownscale) * maxDownscale;
-      ALICEVISION_LOG_WARNING("Override tilling padding parameter (before: " << depthMapParams.tileParams.padding << ", now: " << padding << ").");
+      ALICEVISION_LOG_WARNING("Override tiling padding parameter (before: " << depthMapParams.tileParams.padding << ", now: " << padding << ").");
       depthMapParams.tileParams.padding = padding;
     }
 
@@ -291,7 +291,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxDownscale, tileRoiList);
     const int nbTilesPerCamera = tileRoiList.size();
 
-    // log tilling information and ROI list
+    // log tiling information and ROI list
     logTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxDownscale, tileRoiList);
 
     // log SGM downscale & stepXY

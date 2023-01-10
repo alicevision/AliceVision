@@ -49,7 +49,7 @@ int aliceVision_main(int argc, char* argv[])
     // DepthMap parameters
     depthMap::DepthMapParams depthMapParams;
 
-    // Tilling parameters
+    // Tiling parameters
     auto& tileParams = depthMapParams.tileParams;
 
     // Semi Global Matching Parameters
