@@ -121,8 +121,6 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: P2 Weighting.")
         ("sgmMaxDepths", po::value<int>(&sgmParams.maxDepths)->default_value(sgmParams.maxDepths),
             "Semi Global Matching: Max number of depths in the overall similarity volume.")
-        ("sgmMaxDepthsPerTc", po::value<int>(&sgmParams.maxDepthsPerTc)->default_value(sgmParams.maxDepthsPerTc),
-            "Semi Global Matching: Max number of depths to sweep in the similarity volume per Rc/Tc cameras.")
         ("sgmFilteringAxes", po::value<std::string>(&sgmParams.filteringAxes)->default_value(sgmParams.filteringAxes),
             "Semi Global Matching: Filtering axes for the 3D volume.")
         ("sgmUseSfmSeeds", po::value<bool>(&sgmParams.useSfmSeeds)->default_value(sgmParams.useSfmSeeds),
@@ -287,7 +285,6 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.p2Weighting", sgmParams.p2Weighting);
     mp.userParams.put("sgm.maxTCamsPerTile", sgmParams.maxTCamsPerTile);
     mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
-    mp.userParams.put("sgm.maxDepthsPerTc", sgmParams.maxDepthsPerTc);
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     mp.userParams.put("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);

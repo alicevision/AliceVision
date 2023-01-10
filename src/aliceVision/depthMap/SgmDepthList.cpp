@@ -183,9 +183,6 @@ void SgmDepthList::computeListRc()
         if(id2 == -1)
             id2 = _depths.size() - 1;
 
-        // clamp to keep only the closest depths if we have too much inputs (> _sgmParams.maxDepthsPerTc)
-        id2 = std::min(id1 + _sgmParams.maxDepthsPerTc - 1, id2);
-
         _depthsTcLimits[c] = Pixel(id1, id2 - id1 + 1);
     }
 
