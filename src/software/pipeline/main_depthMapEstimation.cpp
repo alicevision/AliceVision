@@ -147,12 +147,10 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaC threshold.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold.")
-        ("refineDoRefineFuse", po::value<bool>(&refineParams.doRefineFuse)->default_value(refineParams.doRefineFuse),
-            "Refine: Perform Refine/Fuse.")
-        ("refineDoRefineOptimization", po::value<bool>(&refineParams.doRefineOptimization)->default_value(refineParams.doRefineOptimization),
-            "Refine: Perform Refine post-process optimization.")
-        ("refineEnabled", po::value<bool>(&depthMapParams.useRefine)->default_value(depthMapParams.useRefine),
-            "Enable/Disable depth/simiarity map refinement process.")
+        ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
+            "Enable/Disable depth/similarity map refinement process.")
+        ("colorOptimizationEnabled", po::value<bool>(&refineParams.useColorOptimization)->default_value(refineParams.useColorOptimization),
+            "Enable/Disable depth/similarity map post-process color optimization.")
         ("autoAdjustSmallImage", po::value<bool>(&depthMapParams.autoAdjustSmallImage)->default_value(depthMapParams.autoAdjustSmallImage),
             "Automatically override depth map parameters if images are smaller than one tile.")
         ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
@@ -304,14 +302,13 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
     mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
     mp.userParams.put("refine.optimizationNbIters", refineParams.optimizationNbIters);
-    mp.userParams.put("refine.doRefineFuse", refineParams.doRefineFuse);
-    mp.userParams.put("refine.doRefineOptimization", refineParams.doRefineOptimization);
+    mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
+    mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
     mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
     mp.userParams.put("refine.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
     mp.userParams.put("refine.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
 
     // Workflow Parameters
-    mp.userParams.put("depthMap.useRefine", depthMapParams.useRefine);
     mp.userParams.put("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
     mp.userParams.put("depthMap.maxTCams", depthMapParams.maxTCams);
     mp.userParams.put("depthMap.exportTilePattern", depthMapParams.exportTilePattern);

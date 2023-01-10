@@ -53,7 +53,7 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
     _volumeRefineSim_dmp.allocate(volDim);
 
     // allocate depth/sim map optimization buffers
-    if(_refineParams.doRefineOptimization)
+    if(_refineParams.useColorOptimization)
     {
         _optImgVariance_dmp.allocate(depthSimMapDim);
         _optTmpDepthMap_dmp.allocate(depthSimMapDim);
@@ -70,7 +70,7 @@ double Refine::getDeviceMemoryConsumption() const
     bytes += _normalMap_dmp.getBytesPadded();
     bytes += _volumeRefineSim_dmp.getBytesPadded();
 
-    if(_refineParams.doRefineOptimization)
+    if(_refineParams.useColorOptimization)
     {
         bytes += _optImgVariance_dmp.getBytesPadded();
         bytes += _optTmpDepthMap_dmp.getBytesPadded();
@@ -89,7 +89,7 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     bytes += _normalMap_dmp.getBytesUnpadded();
     bytes += _volumeRefineSim_dmp.getBytesUnpadded();
 
-    if(_refineParams.doRefineOptimization)
+    if(_refineParams.useColorOptimization)
     {
         bytes += _optImgVariance_dmp.getBytesUnpadded();
         bytes += _optTmpDepthMap_dmp.getBytesUnpadded();
@@ -130,7 +130,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
     }
 
     // refine and fuse depth/sim map
-    if(_refineParams.doRefineFuse)
+    if(_refineParams.useRefineFuse)
     {
         // refine and fuse with volume strategy
         refineAndFuseDepthSimMap(tile);
@@ -145,7 +145,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
       writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _refinedDepthSimMap_dmp, _refineParams.scale, _refineParams.stepXY, "_refinedFused");
 
     // optimize depth/sim map
-    if(_refineParams.doRefineOptimization && _refineParams.optimizationNbIters > 0)
+    if(_refineParams.useColorOptimization && _refineParams.optimizationNbIters > 0)
     {
         optimizeDepthSimMap(tile);
     }

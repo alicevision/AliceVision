@@ -104,8 +104,8 @@ private:
     CudaDeviceMemoryPitched<float2, 2> _optimizedDepthSimMap_dmp;  //< rc optimized depth/sim map
     CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;             //< rc normal map
     CudaDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   //< rc refine similarity volume
-    CudaDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for optimization: temporary depth map buffer
-    CudaDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for optimization: image variance buffer
+    CudaDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for color optimization: temporary depth map buffer
+    CudaDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for color optimization: image variance buffer
     cudaStream_t _stream;                                          //< stream for gpu execution
 };
 

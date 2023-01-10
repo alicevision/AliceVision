@@ -239,8 +239,8 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.sigma = mp.userParams.get<double>("refine.sigma", refineParams.sigma);
     refineParams.gammaC = mp.userParams.get<double>("refine.gammaC", refineParams.gammaC);
     refineParams.gammaP = mp.userParams.get<double>("refine.gammaP", refineParams.gammaP);
-    refineParams.doRefineFuse = mp.userParams.get<bool>("refine.doRefineFuse", refineParams.doRefineFuse);
-    refineParams.doRefineOptimization = mp.userParams.get<bool>("refine.doRefineOptimization", refineParams.doRefineOptimization);
+    refineParams.useRefineFuse = mp.userParams.get<bool>("refine.useRefineFuse", refineParams.useRefineFuse);
+    refineParams.useColorOptimization = mp.userParams.get<bool>("refine.useColorOptimization", refineParams.useColorOptimization);
     refineParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("refine.exportIntermediateDepthSimMaps", refineParams.exportIntermediateDepthSimMaps);
     refineParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("refine.exportIntermediateCrossVolumes", refineParams.exportIntermediateCrossVolumes);
     refineParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("refine.exportIntermediateVolume9pCsv", refineParams.exportIntermediateVolume9pCsv);
@@ -248,7 +248,6 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     // get workflow user parameters from MultiViewParams property_tree
 
     depthMapParams.maxTCams = mp.userParams.get<int>("depthMap.maxTCams", depthMapParams.maxTCams);
-    depthMapParams.useRefine = mp.userParams.get<bool>("depthMap.useRefine", depthMapParams.useRefine);
     depthMapParams.chooseTCamsPerTile = mp.userParams.get<bool>("depthMap.chooseTCamsPerTile", depthMapParams.chooseTCamsPerTile);
     depthMapParams.exportTilePattern = mp.userParams.get<bool>("depthMap.exportTilePattern", depthMapParams.exportTilePattern);
     depthMapParams.autoAdjustSmallImage = mp.userParams.get<bool>("depthMap.autoAdjustSmallImage", depthMapParams.autoAdjustSmallImage);
