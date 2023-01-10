@@ -67,7 +67,6 @@ int aliceVision_main(int argc, char* argv[])
     // number of GPUs to use (0 means use all GPUs)
     int nbGPUs = 0;
 
-        
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
@@ -243,21 +242,6 @@ int aliceVision_main(int argc, char* argv[])
     {
         ALICEVISION_LOG_ERROR("Invalid value for tilePadding parameter. Should be at least 0 and not exceed half buffer width and height.");
         return EXIT_FAILURE;
-    }
-
-    // check if the downscaled tile parameters are correct
-    {
-      const float downscaledTileWidth  = tileParams.bufferWidth  / float(downscale);
-      const float downscaledTileHeight = tileParams.bufferHeight / float(downscale);
-      const float downscaledTilePadding = tileParams.padding / float(downscale);
-
-      if((downscaledTileWidth   - int(downscaledTileWidth))   > 0 ||
-         (downscaledTileHeight  - int(downscaledTileHeight))  > 0 ||
-         (downscaledTilePadding - int(downscaledTilePadding)) > 0)
-      {
-        ALICEVISION_LOG_ERROR("Tile dimensions (width/height/padding) must be able to be downscaled to integer values.");
-        return EXIT_FAILURE;
-      }
     }
 
     // check if tile size > max image size
