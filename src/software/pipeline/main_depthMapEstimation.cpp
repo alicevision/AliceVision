@@ -112,9 +112,9 @@ int aliceVision_main(int argc, char* argv[])
         ("sgmSeedsRangeInflate", po::value<double>(&sgmParams.seedsRangeInflate)->default_value(sgmParams.seedsRangeInflate),
             "Semi Global Matching: Seeds range inflate factor.")
         ("sgmGammaC", po::value<double>(&sgmParams.gammaC)->default_value(sgmParams.gammaC),
-            "Semi Global Matching: GammaC threshold.")
+            "Semi Global Matching: GammaC threshold used for similarity computation.")
         ("sgmGammaP", po::value<double>(&sgmParams.gammaP)->default_value(sgmParams.gammaP),
-            "Semi Global Matching: GammaP threshold.")
+            "Semi Global Matching: GammaP threshold used for similarity computation.")
         ("sgmP1", po::value<double>(&sgmParams.p1)->default_value(sgmParams.p1),
             "Semi Global Matching: P1.")
         ("sgmP2Weighting", po::value<double>(&sgmParams.p2Weighting)->default_value(sgmParams.p2Weighting),
@@ -144,9 +144,9 @@ int aliceVision_main(int argc, char* argv[])
         ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
             "Refine: Sigma threshold.")
         ("refineGammaC", po::value<double>(&refineParams.gammaC)->default_value(refineParams.gammaC),
-            "Refine: GammaC threshold.")
+            "Refine: GammaC threshold used for similarity computation.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
-            "Refine: GammaP threshold.")
+            "Refine: GammaP threshold used for similarity computation.")
         ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
             "Enable/Disable depth/similarity map refinement process.")
         ("colorOptimizationEnabled", po::value<bool>(&refineParams.useColorOptimization)->default_value(refineParams.useColorOptimization),
@@ -316,6 +316,7 @@ int aliceVision_main(int argc, char* argv[])
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);
+
     if(rangeSize == -1)
     {
       for(int rc = 0; rc < mp.ncams; ++rc) // process all cameras
