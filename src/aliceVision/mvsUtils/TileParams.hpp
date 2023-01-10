@@ -14,7 +14,7 @@ namespace mvsUtils {
 
 /**
  * @brief Tile Parameters
- * This structure handle tilling user parameters.
+ * This structure handle tiling user parameters.
  */
 struct TileParams
 {

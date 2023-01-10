@@ -351,7 +351,7 @@ void writeDepthSimMap(int rc,
     // OIIO roi for depth / similarity map writing
     // displayRoi is the image region of interest for display (image size)
     // pixelRoi is the buffer region of interest within the displayRoi (tile size)
-    // no tilling if displayRoi == pixelRoi
+    // no tiling if displayRoi == pixelRoi
     const oiio::ROI displayRoi(0, imageWidth, 0, imageHeight);
     const oiio::ROI pixelRoi(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
 

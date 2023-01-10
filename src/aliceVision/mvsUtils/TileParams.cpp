@@ -79,7 +79,7 @@ void logTileRoiList(const TileParams& tileParams, int imageWidth, int imageHeigh
   const int effectiveTileHeight = divideRoundUp(downscaledImageHeight, nbTileSideY) * maxDownscale;
 
   std::ostringstream ostr;
-  ostr << "Tilling information: " << std::endl
+  ostr << "Tiling information: " << std::endl
        << "\t- parameters: " << std::endl
        << "\t      - buffer width:  " << tileParams.bufferWidth  << " px" << std::endl
        << "\t      - buffer height: " << tileParams.bufferHeight << " px" << std::endl
