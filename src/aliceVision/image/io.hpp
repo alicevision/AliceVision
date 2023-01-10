@@ -182,7 +182,7 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 struct ImageReadOptions
 {
     ImageReadOptions(EImageColorSpace colorSpace = EImageColorSpace::AUTO,
-        ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::Auto,
+        ERawColorInterpretation rawColorInterpretation = ERawColorInterpretation::LibRawWhiteBalancing,
         const std::string& colorProfile = "", const oiio::ROI& roi = oiio::ROI()) :
         workingColorSpace(colorSpace), rawColorInterpretation(rawColorInterpretation), colorProfileFileName(colorProfile), subROI(roi)
     {

@@ -499,6 +499,10 @@ void readImage(const std::string& path,
             configSpec.attribute("raw:ColorSpace", "raw"); // use raw data
             configSpec.attribute("raw:HighlightMode", 1); // unclip
         }
+        else
+        {
+            ALICEVISION_THROW_ERROR("[image] readImage: invalid rawColorInterpretation " << ERawColorInterpretation_enumToString(imageReadOptions.rawColorInterpretation) << ".");
+        }
     }
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
@@ -521,8 +525,13 @@ void readImage(const std::string& path,
         image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
 
         oiio::ParamValueList imgMetadata = readImageMetadata(path);
-        std::string cam_mul;
-        imgMetadata.getattribute("raw:cam_mul", cam_mul);
+        std::string cam_mul = "";
+        if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
+        {
+            cam_mul = "{1024, 1024, 1024, 1024}";
+            ALICEVISION_LOG_WARNING("[readImage]: cam_mul metadata not availbale, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
+        }
+
         std::vector<float> v_mult;
         size_t last = 1;
         size_t next = 1;
