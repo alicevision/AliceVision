@@ -279,6 +279,13 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
     const int maxDownscale = std::max(depthMapParams.sgmParams.scale * depthMapParams.sgmParams.stepXY,
                                       depthMapParams.refineParams.scale * depthMapParams.refineParams.stepXY);
 
+    if(depthMapParams.tileParams.padding % maxDownscale != 0)
+    {
+      const int padding = divideRoundUp(depthMapParams.tileParams.padding, maxDownscale) * maxDownscale;
+      ALICEVISION_LOG_WARNING("Override tilling padding parameter (before: " << depthMapParams.tileParams.padding << ", now: " << padding << ").");
+      depthMapParams.tileParams.padding = padding;
+    }
+
     // compute tile ROI list
     std::vector<ROI> tileRoiList;
     getTileRoiList(depthMapParams.tileParams, mp.getMaxImageWidth(), mp.getMaxImageHeight(), maxDownscale, tileRoiList);
