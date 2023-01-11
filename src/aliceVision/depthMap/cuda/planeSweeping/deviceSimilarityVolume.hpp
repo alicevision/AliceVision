@@ -77,8 +77,8 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_v
 /**
  * @brief Refine the best similarity volume for the given RC / TC.
  * @param[out] inout_volSim_dmp the similarity volume in device memory
- * @param[in] in_midDepthPixSizeMap_dmp the SGM upscaled depth/pixSize map (usefull to get middle depth) in device memory
- * @param[in] in_normalMap_dmpPtr (or nullptr) The related normal map
+ * @param[in] in_sgmDepthPixSizeMap_dmp the SGM upscaled depth/pixSize map (usefull to get middle depth) in device memory
+ * @param[in] in_sgmNormalMap_dmpPtr (or nullptr) the SGM upscaled normal map in device memory
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] tcDeviceCamera the T device camera
  * @param[in] refineParams the Refine parameters
@@ -87,8 +87,8 @@ extern void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out_v
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
-                                        const CudaDeviceMemoryPitched<float2, 2>& in_midDepthPixSizeMap_dmp,
-                                        const CudaDeviceMemoryPitched<float3, 2>* in_normalMap_dmpPtr,
+                                        const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
+                                        const CudaDeviceMemoryPitched<float3, 2>* in_sgmNormalMap_dmpPtr,
                                         const DeviceCamera& rcDeviceCamera, 
                                         const DeviceCamera& tcDeviceCamera, 
                                         const RefineParams& refineParams, 
@@ -122,7 +122,7 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFilt
 
 /**
  * @brief Retrieve the best depth/sim in the given similarity volume.
- * @param[out] out_bestDepthSimMap_dmp the output best depth/sim map in device memory
+ * @param[out] out_sgmDepthSimMap_dmp the output best depth/sim map in device memory
  * @param[in] in_depths_dmp the R camera depth list in device memory
  * @param[in] in_volSim_dmp the input similarity volume in device memory
  * @param[in] rcDeviceCamera the R device camera
@@ -131,7 +131,7 @@ extern void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFilt
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_bestDepthSimMap_dmp,
+extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
                                          const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                          const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                          const DeviceCamera& rcDeviceCamera,
@@ -142,8 +142,8 @@ extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out
 
 /**
  * @brief Retrieve the best depth/sim in the given refined similarity volume.
- * @param[out] out_bestDepthSimMap_dmp the output refined and fused depth/sim map in device memory
- * @param[in] in_midDepthPixSizeMap_dmp the SGM upscaled depth/pixSize map (usefull to get middle depth) in device memory
+ * @param[out] out_refineDepthSimMap_dmp the output refined and fused depth/sim map in device memory
+ * @param[in] in_sgmDepthPixSizeMap_dmp the SGM upscaled depth/pixSize map (usefull to get middle depth) in device memory
  * @param[in] in_volSim_dmp the similarity volume in device memory
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] refineParams the Refine parameters
@@ -151,8 +151,8 @@ extern void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_bestDepthSimMap_dmp,
-                                       const CudaDeviceMemoryPitched<float2, 2>& in_midDepthPixSizeMap_dmp,
+extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_refineDepthSimMap_dmp,
+                                       const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                        const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp, 
                                        const DeviceCamera& rcDeviceCamera,
                                        const RefineParams& refineParams, 

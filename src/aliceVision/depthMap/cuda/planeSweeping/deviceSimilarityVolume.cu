@@ -134,8 +134,8 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
 }
 
 extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp, 
-                                        const CudaDeviceMemoryPitched<float2, 2>& in_midDepthPixSizeMap_dmp,
-                                        const CudaDeviceMemoryPitched<float3, 2>* in_normalMap_dmpPtr,
+                                        const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
+                                        const CudaDeviceMemoryPitched<float3, 2>* in_sgmNormalMap_dmpPtr,
                                         const DeviceCamera& rcDeviceCamera, 
                                         const DeviceCamera& tcDeviceCamera, 
                                         const RefineParams& refineParams, 
@@ -160,10 +160,10 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
         refineParams.wsh, 
         float(refineParams.gammaC), 
         float(refineParams.gammaP), 
-        in_midDepthPixSizeMap_dmp.getBuffer(),
-        in_midDepthPixSizeMap_dmp.getBytesPaddedUpToDim(0),
-        (in_normalMap_dmpPtr == nullptr) ? nullptr : in_normalMap_dmpPtr->getBuffer(),
-        (in_normalMap_dmpPtr == nullptr) ? 0 : in_normalMap_dmpPtr->getBytesPaddedUpToDim(0),
+        in_sgmDepthPixSizeMap_dmp.getBuffer(),
+        in_sgmDepthPixSizeMap_dmp.getBytesPaddedUpToDim(0),
+        (in_sgmNormalMap_dmpPtr == nullptr) ? nullptr : in_sgmNormalMap_dmpPtr->getBuffer(),
+        (in_sgmNormalMap_dmpPtr == nullptr) ? 0 : in_sgmNormalMap_dmpPtr->getBytesPaddedUpToDim(0),
         inout_volSim_dmp.getBuffer(), 
         inout_volSim_dmp.getBytesPaddedUpToDim(1),
         inout_volSim_dmp.getBytesPaddedUpToDim(0), 
@@ -327,7 +327,7 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
     }
 }
 
-__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_bestDepthSimMap_dmp,
+__host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_sgmDepthSimMap_dmp,
                                            const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                            const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                            const DeviceCamera& rcDeviceCamera,
@@ -342,8 +342,8 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
     
     volume_retrieveBestZ_kernel<<<grid, block, 0, stream>>>(
-      out_bestDepthSimMap_dmp.getBuffer(),
-      out_bestDepthSimMap_dmp.getBytesPaddedUpToDim(0),  
+      out_sgmDepthSimMap_dmp.getBuffer(),
+      out_sgmDepthSimMap_dmp.getBytesPaddedUpToDim(0),
       in_depths_dmp.getBuffer(), 
       in_depths_dmp.getBytesPaddedUpToDim(0), 
       in_volSim_dmp.getBuffer(), 
@@ -358,8 +358,8 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
     CHECK_CUDA_ERROR();
 }
 
-extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_bestDepthSimMap_dmp,
-                                       const CudaDeviceMemoryPitched<float2, 2>& in_midDepthPixSizeMap_dmp,
+extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_refineDepthSimMap_dmp,
+                                       const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                        const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp, 
                                        const DeviceCamera& rcDeviceCamera, 
                                        const RefineParams& refineParams, 
@@ -375,10 +375,10 @@ extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_b
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
     volume_refineBestZ_kernel<<<grid, block, 0, stream>>>(
-      out_bestDepthSimMap_dmp.getBuffer(),
-      out_bestDepthSimMap_dmp.getBytesPaddedUpToDim(0), 
-      in_midDepthPixSizeMap_dmp.getBuffer(),
-      in_midDepthPixSizeMap_dmp.getBytesPaddedUpToDim(0),
+      out_refineDepthSimMap_dmp.getBuffer(),
+      out_refineDepthSimMap_dmp.getBytesPaddedUpToDim(0),
+      in_sgmDepthPixSizeMap_dmp.getBuffer(),
+      in_sgmDepthPixSizeMap_dmp.getBytesPaddedUpToDim(0),
       in_volSim_dmp.getBuffer(),
       in_volSim_dmp.getBytesPaddedUpToDim(1), 
       in_volSim_dmp.getBytesPaddedUpToDim(0), 

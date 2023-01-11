@@ -186,8 +186,8 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
                                      int wsh, 
                                      float gammaC, 
                                      float gammaP, 
-                                     const float2* in_midDepthPixSizeMap_d, int in_midDepthPixSizeMap_p,
-                                     const float3* in_normalMap_d, int in_normalMap_p,
+                                     const float2* in_sgmDepthPixSizeMap_d, int in_sgmDepthPixSizeMap_p,
+                                     const float3* in_sgmNormalMap_d, int in_sgmNormalMap_p,
                                      TSimRefine* inout_volSim_d, int inout_volSim_s, int inout_volSim_p, 
                                      const Range depthRange,
                                      const ROI roi)
@@ -209,7 +209,7 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
     const int y = (roi.y.begin + vy) * stepXY;
 
     // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_midDepthPixSizeMap_d, in_midDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
+    const float originalDepth = get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
 
     // original depth invalid or masked, similarity value remain at 255
     if(originalDepth <= 0.0f)
@@ -247,9 +247,9 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
       ptch.y = cross(v1, v2);
       normalize(ptch.y);
 
-      if(in_normalMap_d != nullptr) // initialize patch normal from input normal map
+      if(in_sgmNormalMap_d != nullptr) // initialize patch normal from input normal map
       {
-        ptch.n = *get2DBufferAt(in_normalMap_d, in_normalMap_p, vx, vy);
+        ptch.n = *get2DBufferAt(in_sgmNormalMap_d, in_sgmNormalMap_p, vx, vy);
       }
       else // initialize patch normal from v1 & v2
       {
@@ -288,10 +288,10 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
 #endif
 }
 
-__global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int out_bestDepthSimMap_p,
+__global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int out_sgmDepthSimMap_p,
                                             const float* in_depths_d, int in_depths_p, 
-                                            const TSim* in_simVolume_d, int in_simVolume_s, int in_simVolume_p,
-                                            int volDimZ, 
+                                            const TSim* in_volSim_d, int in_volSim_s, int in_volSim_p,
+                                            int volDimZ, // useful for depth/sim interpolation
                                             int rcDeviceCamId,
                                             int scaleStep, 
                                             const Range depthRange,
@@ -307,14 +307,14 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int o
     const float2 pix{float((roi.x.begin + vx) * scaleStep), float((roi.y.begin + vy) * scaleStep)};
 
     // corresponding output depth/sim pointer
-    float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap_d, out_bestDepthSimMap_p, vx, vy);
+    float2* out_bestDepthSimPtr = get2DBufferAt(out_sgmDepthSimMap_d, out_sgmDepthSimMap_p, vx, vy);
 
     // find best depth
     float bestSim = 255.0f;
     int bestZIdx = -1;
     for(int vz = depthRange.begin; vz < depthRange.end; ++vz)
     {
-      const float simAtZ = *get3DBufferAt(in_simVolume_d, in_simVolume_s, in_simVolume_p, vx, vy, vz);
+      const float simAtZ = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, vz);
       if (simAtZ < bestSim)
       {
         bestSim = simAtZ;
@@ -343,9 +343,9 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int o
     depths.z = *get2DBufferAt(in_depths_d, in_depths_p, bestZIdx_p1, 0);
 
     float3 sims;
-    sims.x = *get3DBufferAt(in_simVolume_d, in_simVolume_s, in_simVolume_p, vx, vy, bestZIdx_m1);
+    sims.x = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, bestZIdx_m1);
     sims.y = bestSim;
-    sims.z = *get3DBufferAt(in_simVolume_d, in_simVolume_s, in_simVolume_p, vx, vy, bestZIdx_p1);
+    sims.z = *get3DBufferAt(in_volSim_d, in_volSim_s, in_volSim_p, vx, vy, bestZIdx_p1);
 
     // convert sims from (0, 255) to (-1, +1)
     sims.x = (sims.x / 255.0f) * 2.0f - 1.0f;
@@ -367,8 +367,8 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_bestDepthSimMap_d, int o
 }
 
 
-__global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out_bestDepthSimMap_p,
-                                          const float2* in_midDepthPixSizeMap_d, int in_midDepthPixSizeMap_p,
+__global__ void volume_refineBestZ_kernel(float2* out_refineDepthSimMap_d, int out_refineDepthSimMap_p,
+                                          const float2* in_sgmDepthPixSizeMap_d, int in_sgmDepthPixSizeMap_p,
                                           const TSimRefine* in_volSim_d, int in_volSim_s, int in_volSim_p, 
                                           int volDimZ, 
                                           int rcDeviceCamId, 
@@ -394,10 +394,10 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
     const int y = (roi.y.begin + vy) * scaleStep;
 
     // corresponding original plane depth
-    const float originalDepth = get2DBufferAt(in_midDepthPixSizeMap_d, in_midDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
+    const float originalDepth = get2DBufferAt(in_sgmDepthPixSizeMap_d, in_sgmDepthPixSizeMap_p, vx, vy)->x; // input original middle depth
 
     // corresponding output depth/sim pointer
-    float2* out_bestDepthSimPtr = get2DBufferAt(out_bestDepthSimMap_d, out_bestDepthSimMap_p, vx, vy);
+    float2* out_bestDepthSimPtr = get2DBufferAt(out_refineDepthSimMap_d, out_refineDepthSimMap_p, vx, vy);
 
     if(originalDepth <= 0.0f) // original depth invalid or masked
     {
