@@ -310,7 +310,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min,
         const Vec2& obs2d = it->second.x;
 
         // if we compute depth list per tile keep only observation located inside the inflated image full-size ROI
-        if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+        if(!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
         {
             const float distance = static_cast<float>(pointPlaneDistance(point, cameraPlane.p, cameraPlane.n));
             accDistanceMin(distance);
@@ -387,7 +387,7 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc,
         const Vec2& obs2d = it->second.x;
 
         // observation located inside the inflated image full-size ROI
-        if(!_sgmParams.chooseDepthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
+        if(!_sgmParams.depthListPerTile || fullsizeRoi.contains(obs2d.x(), obs2d.y()))
         {
             // compute related depth
             const double depth = pointPlaneDistance(point, cameraPlane.p, cameraPlane.n);
@@ -430,7 +430,7 @@ void SgmDepthList::computeRcTcDepths(int tc,
     const Point2d principalPoint(_mp.getWidth(_tile.rc) * 0.5, _mp.getHeight(_tile.rc) * 0.5);
     
     // reference point for the epipolar line
-    const Point2d referencePoint = (!_sgmParams.chooseDepthListPerTile) ? principalPoint : roiCenter;
+    const Point2d referencePoint = (!_sgmParams.depthListPerTile) ? principalPoint : roiCenter;
 
     // input middle depth related point
     Point2d tcMidDepthPoint;

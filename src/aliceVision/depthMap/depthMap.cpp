@@ -220,7 +220,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.p2Weighting = mp.userParams.get<double>("sgm.p2Weighting", sgmParams.p2Weighting);
     sgmParams.filteringAxes = mp.userParams.get<std::string>("sgm.filteringAxes", sgmParams.filteringAxes);
     sgmParams.useSfmSeeds = mp.userParams.get<bool>("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
-    sgmParams.chooseDepthListPerTile = mp.userParams.get<bool>("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
+    sgmParams.depthListPerTile = mp.userParams.get<bool>("sgm.depthListPerTile", sgmParams.depthListPerTile);
     sgmParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("sgm.exportIntermediateDepthSimMaps", sgmParams.exportIntermediateDepthSimMaps);
     sgmParams.exportIntermediateVolumes = mp.userParams.get<bool>("sgm.exportIntermediateVolumes", sgmParams.exportIntermediateVolumes);
     sgmParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("sgm.exportIntermediateCrossVolumes", sgmParams.exportIntermediateCrossVolumes);

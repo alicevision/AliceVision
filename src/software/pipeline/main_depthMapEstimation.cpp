@@ -129,7 +129,7 @@ int aliceVision_main(int argc, char* argv[])
             "Semi Global Matching: Maximum number of depths in the similarity volume.")
         ("sgmFilteringAxes", po::value<std::string>(&sgmParams.filteringAxes)->default_value(sgmParams.filteringAxes),
             "Semi Global Matching: Define axes for the filtering of the similarity volume.")
-        ("sgmChooseDepthListPerTile", po::value<bool>(&sgmParams.chooseDepthListPerTile)->default_value(sgmParams.chooseDepthListPerTile),
+        ("sgmDepthListPerTile", po::value<bool>(&sgmParams.depthListPerTile)->default_value(sgmParams.depthListPerTile),
             "Semi Global Matching: Select the list of depth planes per tile or globally to the image.")
         ("refineScale", po::value<int>(&refineParams.scale)->default_value(refineParams.scale),
             "Refine: Downscale factor applied on source images for the Refine step (in addition to the global downscale).")
@@ -277,7 +277,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.maxDepths", sgmParams.maxDepths);
     mp.userParams.put("sgm.filteringAxes", sgmParams.filteringAxes);
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
-    mp.userParams.put("sgm.chooseDepthListPerTile", sgmParams.chooseDepthListPerTile);
+    mp.userParams.put("sgm.depthListPerTile", sgmParams.depthListPerTile);
     mp.userParams.put("sgm.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
     mp.userParams.put("sgm.exportIntermediateVolumes", exportIntermediateVolumes);
     mp.userParams.put("sgm.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
