@@ -274,7 +274,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
                 if(simValue > maxValue)
                     continue;
 
-                const int relativeDepthIndexOffset = vz - ((refineParams.nDepthsToRefine - 1) / 2);
+                const int relativeDepthIndexOffset = vz - refineParams.halfNbDepths;
                 const double depth = orignalDepth + (relativeDepthIndexOffset * pixSize); // original depth + z based pixSize offset
 
                const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * pix).normalize() * depth;

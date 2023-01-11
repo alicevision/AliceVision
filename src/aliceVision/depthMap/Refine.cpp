@@ -47,7 +47,8 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
       _normalMap_dmp.allocate(depthSimMapDim);
 
     // compute volume maximum dimensions
-    const CudaSize<3> volDim(maxTileWidth, maxTileHeight, _refineParams.nDepthsToRefine);
+    const int nbDepthsToRefine = _refineParams.halfNbDepths * 2 + 1;
+    const CudaSize<3> volDim(maxTileWidth, maxTileHeight, nbDepthsToRefine);
 
     // allocate refine volume in device memory
     _volumeRefineSim_dmp.allocate(volDim);

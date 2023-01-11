@@ -232,8 +232,8 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.scale = mp.userParams.get<int>("refine.scale", refineParams.scale);
     refineParams.stepXY = mp.userParams.get<int>("refine.stepXY", refineParams.stepXY);
     refineParams.wsh = mp.userParams.get<int>("refine.wsh", refineParams.wsh);
-    refineParams.nDepthsToRefine = mp.userParams.get<int>("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
-    refineParams.nSamplesHalf = mp.userParams.get<int>("refine.nSamplesHalf", refineParams.nSamplesHalf);
+    refineParams.halfNbDepths = mp.userParams.get<int>("refine.halfNbDepths", refineParams.halfNbDepths);
+    refineParams.nbSubsamples = mp.userParams.get<int>("refine.nbSubsamples", refineParams.nbSubsamples);
     refineParams.maxTCamsPerTile = mp.userParams.get<int>("refine.maxTCamsPerTile", refineParams.maxTCamsPerTile);
     refineParams.optimizationNbIterations = mp.userParams.get<int>("refine.optimizationNbIterations", refineParams.optimizationNbIterations);
     refineParams.sigma = mp.userParams.get<double>("refine.sigma", refineParams.sigma);

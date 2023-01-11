@@ -367,7 +367,7 @@ extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_b
                                        cudaStream_t stream)
 {
     const int scaleStep = refineParams.scale * refineParams.stepXY;
-    const float samplesPerPixSize = float(refineParams.nSamplesHalf / ((refineParams.nDepthsToRefine - 1) / 2));
+    const int halfNbSamples = refineParams.nbSubsamples * refineParams.halfNbDepths;
     const float twoTimesSigmaPowerTwo = float(2.0 * refineParams.sigma * refineParams.sigma);
 
     const int blockSize = 8;
@@ -385,9 +385,10 @@ extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_b
       int(in_volSim_dmp.getSize().z()), 
       rcDeviceCamera.getDeviceCamId(),
       scaleStep,
-      samplesPerPixSize,
+      refineParams.nbSubsamples,  // number of samples between two depths
+      halfNbSamples,              // number of samples (in front and behind mid depth)
+      refineParams.halfNbDepths,  // number of depths  (in front and behind mid depth)
       twoTimesSigmaPowerTwo,
-      refineParams.nSamplesHalf, 
       roi);
 
     CHECK_CUDA_ERROR();

@@ -19,8 +19,8 @@ struct RefineParams
   int scale = 1;
   int stepXY = 1;
   int wsh = 3;
-  int nDepthsToRefine = 31;
-  int nSamplesHalf = 150;
+  int halfNbDepths = 15;
+  int nbSubsamples = 10;
   int maxTCamsPerTile = 4;
   int optimizationNbIterations = 100;
   double sigma = 15.0;

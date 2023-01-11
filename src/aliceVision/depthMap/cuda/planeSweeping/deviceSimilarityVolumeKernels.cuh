@@ -373,9 +373,10 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
                                           int volDimZ, 
                                           int rcDeviceCamId, 
                                           int scaleStep,
-                                          float samplesPerPixSize, 
+                                          int samplesPerPixSize, // number of subsamples (samples between two depths)
+                                          int halfNbSamples,     // number of samples (in front and behind mid depth)
+                                          int halfNbDepths,      // number of depths  (in front and behind mid depth) should be equal to (volDimZ - 1) / 2
                                           float twoTimesSigmaPowerTwo, 
-                                          float nbSamplesHalf, 
                                           const ROI roi)
 {
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -410,13 +411,13 @@ __global__ void volume_refineBestZ_kernel(float2* out_bestDepthSimMap_d, int out
     int bestSampleOffsetIndex = 0;
 
     // sliding gaussian window
-    for(int sample = -nbSamplesHalf; sample <= nbSamplesHalf; ++sample)
+    for(int sample = -halfNbSamples; sample <= halfNbSamples; ++sample)
     {
         float sampleSim = 0.f; 
 
         for(int vz = 0; vz < volDimZ; ++vz)
         {
-            const int rz = (vz - ((volDimZ - 1) / 2)); // relative depth index offset
+            const int rz = (vz - halfNbDepths);        // relative depth index offset
             const int zs = rz * samplesPerPixSize;     // relative sample offset
 
             // get the inversed similarity sum value

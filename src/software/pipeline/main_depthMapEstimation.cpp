@@ -136,11 +136,13 @@ int aliceVision_main(int argc, char* argv[])
         ("refineStepXY", po::value<int>(&refineParams.stepXY)->default_value(refineParams.stepXY),
             "Refine: Step is used to compute the refine volume for one pixel over N (in the XY image plane).")
         ("refineMaxTCamsPerTile", po::value<int>(&refineParams.maxTCamsPerTile)->default_value(refineParams.maxTCamsPerTile),
-            "Refine: Number of neighbour cameras per tile.")
-        ("refineNSamplesHalf", po::value<int>(&refineParams.nSamplesHalf)->default_value(refineParams.nSamplesHalf),
-            "Refine: Number of samples.")
-        ("refineNDepthsToRefine", po::value<int>(&refineParams.nDepthsToRefine)->default_value(refineParams.nDepthsToRefine),
-            "Refine: Number of depths.")
+            "Refine: Maximum number of neighbour cameras used per tile.")
+        ("refineHalfNbDepths", po::value<int>(&refineParams.halfNbDepths)->default_value(refineParams.halfNbDepths),
+            "Refine: The thickness of the refine area around the initial depth map. "
+            "This parameter defines the number of depths in front of and behind the initial value "
+            "for which we evaluate the similarity with a finer z sampling.")
+        ("refineSubsampling", po::value<int>(&refineParams.nbSubsamples)->default_value(refineParams.nbSubsamples),
+            "Refine: Number of subsamples used to extract the best depth from the refine volume (sliding gaussian window precision).")
         ("refineWSH", po::value<int>(&refineParams.wsh)->default_value(refineParams.wsh),
             "Refine: Half-size of the patch used to compute the similarity. Patch width is wsh*2+1.")
         ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
@@ -289,8 +291,8 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.gammaC", refineParams.gammaC);
     mp.userParams.put("refine.gammaP", refineParams.gammaP);
     mp.userParams.put("refine.maxTCamsPerTile", refineParams.maxTCamsPerTile);
-    mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
-    mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
+    mp.userParams.put("refine.nbSubsamples", refineParams.nbSubsamples);
+    mp.userParams.put("refine.halfNbDepths", refineParams.halfNbDepths);
     mp.userParams.put("refine.optimizationNbIterations", refineParams.optimizationNbIterations);
     mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
     mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
