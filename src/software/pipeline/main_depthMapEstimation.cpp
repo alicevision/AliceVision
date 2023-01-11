@@ -162,11 +162,11 @@ int aliceVision_main(int argc, char* argv[])
         ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
             "Export intermediate depth/similarity maps from the SGM and Refine steps.")
         ("exportIntermediateVolumes", po::value<bool>(&exportIntermediateVolumes)->default_value(exportIntermediateVolumes),
-            "Export intermediate similarity volumes from the SGM and Refine steps.")
+            "Export intermediate full similarity volumes from the SGM and Refine steps.")
         ("exportIntermediateCrossVolumes", po::value<bool>(&exportIntermediateCrossVolumes)->default_value(exportIntermediateCrossVolumes),
             "Export intermediate similarity cross volumes from the SGM and Refine steps.")
         ("exportIntermediateVolume9pCsv", po::value<bool>(&exportIntermediateVolume9pCsv)->default_value(exportIntermediateVolume9pCsv),
-            "Export intermediate volumes 9 points CSV from the SGM and Refine steps.")
+            "Export intermediate volumes 9 points from the SGM and Refine steps in CSV files.")
         ("exportTilePattern", po::value<bool>(&depthMapParams.exportTilePattern)->default_value(depthMapParams.exportTilePattern),
             "Export workflow tile pattern.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
