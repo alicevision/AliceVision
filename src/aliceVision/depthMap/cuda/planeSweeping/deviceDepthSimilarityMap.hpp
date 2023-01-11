@@ -71,6 +71,7 @@ extern void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& i
 /**
  * @brief Compute the normal map from the depth/sim map (only depth is used).
  * @param[out] out_normalMap_dmp the output normal map
+ * @param[in] in_depthSimMap_dmp the input depth/sim map (only depth is used)
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] sgmParams the SGM parameters
  * @param[in] roi the 2d region of interest
@@ -85,21 +86,21 @@ extern void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& ou
 
 /**
  * @brief Optimize a depth/sim map with the refineFused depth/sim map and the SGM depth/pixSize map.
- * @param[out] out_depthSimMapOptimized_dmp the output optimized depth/sim map
+ * @param[out] out_optimizeDepthSimMap_dmp the output optimized depth/sim map
  * @param[in,out] inout_imgVariance_dmp the image variance buffer
  * @param[in,out] inout_tmpOptDepthMap_dmp the temporary optimized depth map buffer
- * @param[in] in_depthPixSizeMapSgmUpscaled_dmp the input upscaled SGM depth/pixSize map
- * @param[in] in_depthSimMapRefinedFused_dmp the inpuyt refined and fused depth/sim map
+ * @param[in] in_sgmDepthPixSizeMap_dmp the input SGM upscaled depth/pixSize map
+ * @param[in] in_refineDepthSimMap_dmp the input refined and fused depth/sim map
  * @param[in] rcDeviceCamera the R device camera
  * @param[in] refineParams the Refine parameters
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
-extern void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<float2, 2>& out_depthSimMapOptimized_dmp,
+extern void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<float2, 2>& out_optimizeDepthSimMap_dmp,
                                                     CudaDeviceMemoryPitched<float, 2>& inout_imgVariance_dmp,
                                                     CudaDeviceMemoryPitched<float, 2>& inout_tmpOptDepthMap_dmp,
-                                                    const CudaDeviceMemoryPitched<float2, 2>& in_depthPixSizeMapSgmUpscaled_dmp,
-                                                    const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMapRefinedFused_dmp,
+                                                    const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
+                                                    const CudaDeviceMemoryPitched<float2, 2>& in_refineDepthSimMap_dmp,
                                                     const DeviceCamera& rcDeviceCamera, 
                                                     const RefineParams& refineParams,
                                                     const ROI& roi,
