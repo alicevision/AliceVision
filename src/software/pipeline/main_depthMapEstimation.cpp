@@ -141,8 +141,6 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: Number of samples.")
         ("refineNDepthsToRefine", po::value<int>(&refineParams.nDepthsToRefine)->default_value(refineParams.nDepthsToRefine),
             "Refine: Number of depths.")
-        ("refineNiters", po::value<int>(&refineParams.optimizationNbIters)->default_value(refineParams.optimizationNbIters),
-            "Refine: Number of optimization iterations.")
         ("refineWSH", po::value<int>(&refineParams.wsh)->default_value(refineParams.wsh),
             "Refine: Half-size of the patch used to compute the similarity. Patch width is wsh*2+1.")
         ("refineSigma", po::value<double>(&refineParams.sigma)->default_value(refineParams.sigma),
@@ -151,6 +149,8 @@ int aliceVision_main(int argc, char* argv[])
             "Refine: GammaC threshold used for similarity computation.")
         ("refineGammaP", po::value<double>(&refineParams.gammaP)->default_value(refineParams.gammaP),
             "Refine: GammaP threshold used for similarity computation.")
+        ("colorOptimizationNbIterations", po::value<int>(&refineParams.optimizationNbIterations)->default_value(refineParams.optimizationNbIterations),
+            "Color Optimization: Number of iterations of the optimization.")
         ("refineEnabled", po::value<bool>(&refineParams.useRefineFuse)->default_value(refineParams.useRefineFuse),
             "Enable/Disable depth/similarity map refinement process.")
         ("colorOptimizationEnabled", po::value<bool>(&refineParams.useColorOptimization)->default_value(refineParams.useColorOptimization),
@@ -291,7 +291,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.maxTCamsPerTile", refineParams.maxTCamsPerTile);
     mp.userParams.put("refine.nSamplesHalf", refineParams.nSamplesHalf);
     mp.userParams.put("refine.nDepthsToRefine", refineParams.nDepthsToRefine);
-    mp.userParams.put("refine.optimizationNbIters", refineParams.optimizationNbIters);
+    mp.userParams.put("refine.optimizationNbIterations", refineParams.optimizationNbIterations);
     mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
     mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
     mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);

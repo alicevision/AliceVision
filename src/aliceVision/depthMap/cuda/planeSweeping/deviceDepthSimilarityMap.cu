@@ -172,7 +172,7 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
 
-    for(int iter = 0; iter < refineParams.optimizationNbIters; ++iter) // default nb iterations is 100
+    for(int iter = 0; iter < refineParams.optimizationNbIterations; ++iter) // default nb iterations is 100
     {
         // copy depths values from out_depthSimMapOptimized_dmp to inout_tmpOptDepthMap_dmp
         optimize_getOptDeptMapFromOptDepthSimMap_kernel<<<grid, block, 0, stream>>>(

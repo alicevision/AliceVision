@@ -145,7 +145,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
       writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _refinedDepthSimMap_dmp, _refineParams.scale, _refineParams.stepXY, "_refinedFused");
 
     // optimize depth/sim map
-    if(_refineParams.useColorOptimization && _refineParams.optimizationNbIters > 0)
+    if(_refineParams.useColorOptimization && _refineParams.optimizationNbIterations > 0)
     {
         optimizeDepthSimMap(tile);
     }

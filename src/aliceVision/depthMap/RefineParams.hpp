@@ -21,8 +21,8 @@ struct RefineParams
   int wsh = 3;
   int nDepthsToRefine = 31;
   int nSamplesHalf = 150;
-  int optimizationNbIters = 100;
   int maxTCamsPerTile = 4;
+  int optimizationNbIterations = 100;
   double sigma = 15.0;
   double gammaC = 15.5;
   double gammaP = 8.0;
