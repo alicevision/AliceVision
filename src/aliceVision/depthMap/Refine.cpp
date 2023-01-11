@@ -138,6 +138,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
     }
     else
     {
+        ALICEVISION_LOG_INFO(tile << "Refine and fuse depth/sim map volume disabled.");
         cuda_depthSimMapCopyDepthOnly(_refinedDepthSimMap_dmp, _sgmDepthPixSizeMap_dmp, 1.0f, _stream);
     }
 
@@ -152,6 +153,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
     }
     else
     {
+        ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map disabled.");
         _optimizedDepthSimMap_dmp.copyFrom(_refinedDepthSimMap_dmp, _stream);
     }
 
@@ -224,7 +226,7 @@ void Refine::refineAndFuseDepthSimMap(const Tile& tile)
 
 void Refine::optimizeDepthSimMap(const Tile& tile)
 {
-    ALICEVISION_LOG_INFO(tile << "Optimize depth/sim map.");
+    ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map.");
 
     // downscale the region of interest
     const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
@@ -243,7 +245,7 @@ void Refine::optimizeDepthSimMap(const Tile& tile)
                                             downscaledRoi,
                                             _stream);
 
-    ALICEVISION_LOG_INFO(tile << "Optimize depth/sim map done.");
+    ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map done.");
 }
 
 void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) const
