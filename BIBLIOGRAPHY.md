@@ -101,4 +101,21 @@
 
 [LP] **Linear Programming** http://en.wikipedia.org/wiki/Linear_programming
 
+[ROCHADE] **ROCHADE: Robust Checkerboard Advanced Detection for Camera Calibration**
+    David Fleet and Tomas Pajdla and Bernt Schiele and Tinne Tuytelaars.
 
+[Geiger] **Automatic Calibration of Range and Camera Sensors using a single Shot**
+    Andreas Geiger and Frank Moosmann and Oemer Car and Bernhard Schuster.
+
+[Chen] **A New Sub-Pixel Detector for X-Corners in Camera Calibration Targets**
+    Chen, Dazhi and Zhang, Guangjun
+
+[Liu] **Automatic chessboard corner detection method**
+    Liu, Y., Liu, S., Cao, Y., & Wang, Z. (2016).
+    IET Image Processing, 10(1), 16-23.
+
+[Abdulrahman] **X-Corner Detection for Camera Calibration Using Saddle Points**
+    Abdulrahman S. Alturki, John S. Loomis.
+
+[Bok] **Automated checkerboard detection and indexing using circular boundaries**
+    Yunsu Bok, Hyowon Ha, In So Kweon.

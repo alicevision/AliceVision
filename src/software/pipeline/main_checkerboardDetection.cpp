@@ -4,60 +4,31 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-//This application is meant to detect a checkerboard or a set of checkerboards in a set of images.
-//For application reasons, we are interested in detecting checkerboards which may be :
-// - heavily distorted
-// - with large blur 
-// - partially occluded (Even in the center of the checkerboard)
-// - Without any information on its size (with lower bounds)
-//
-//The checkerboard returned is a matrix of corners id or UndefinedIndexT.
-//
-//A corner describe :
-// - Its center
-// - Its two principal directions
-// - a scale of detection : the smaller the scale, the "worst" the corner is.
-//
-//The checkerboard order is the same than the corners coordinates order:
-// - if a checkerboard item is at the right of another checkerboard item, 
-//   it means its associated corner is at the right of the other corner in the image
-//
-// - if a checkerboard item is at the bottom of another checkerboard item,
-//   it means its associated corner is at the bottom of the other corner in the image
-
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
-
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <boost/property_tree/json_parser.hpp>
-
 #include <aliceVision/image/all.hpp>
-#include <OpenImageIO/imagebufalgo.h>
-
 #include <aliceVision/calibration/checkerDetector.hpp>
 #include <aliceVision/calibration/checkerDetector_io.hpp>
 
+#include <OpenImageIO/imagebufalgo.h>
 
-
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 using namespace aliceVision;
-
-
-
 
 int aliceVision_main(int argc, char* argv[])
 {
@@ -72,17 +43,24 @@ int aliceVision_main(int argc, char* argv[])
     // Command line parameters
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), "SfMData file input.")
-    ("output,o", po::value<std::string>(&outputFilePath)->required(), "calibration boards json output directory.");
+    ("input,i", po::value<std::string>(&sfmInputDataFilepath)->required(), 
+    "SfMData file input.")
+    ("output,o", po::value<std::string>(&outputFilePath)->required(), 
+    "calibration boards json output directory.");
 
     // Description of optional parameters
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
-        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.")
-        ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), "Export Debug Images.")
-        ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), "Double image size prior to processing.")
-        ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), "This image is a nested calibration grid (fully centered).");
+        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), 
+        "Range start for processing views (ordered by image filepath). Set to -1 to process all images.")
+        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), 
+        "Range size for processing views (ordered by image filepath).")
+        ("exportDebugImages", po::value<bool>(&exportDebugImages)->default_value(exportDebugImages), 
+        "Export Debug Images.")
+        ("doubleSize", po::value<bool>(&doubleSize)->default_value(doubleSize), 
+        "Double image size prior to processing.")
+        ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), 
+        "Images contain nested calibration grids. These grids must be centered on image center.");
 
     CmdLine cmdline("AliceVision checkerboard detection");
     cmdline.add(requiredParams);
@@ -99,7 +77,7 @@ int aliceVision_main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // Order views by their image names for easier debugging
+    // Order views by their image names
     std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
     for(auto& viewIt : sfmData.getViews())
     {
@@ -116,26 +94,24 @@ int aliceVision_main(int argc, char* argv[])
     // Define range to compute
     if(rangeStart != -1)
     {
-        if(rangeStart < 0 || rangeSize < 0 || std::size_t(rangeStart) > viewsOrderedByName.size())
+        if(rangeStart < 0 || rangeSize < 0 || static_cast<std::size_t>(rangeStart) > viewsOrderedByName.size())
         {
             ALICEVISION_LOG_ERROR("Range is incorrect");
             return EXIT_FAILURE;
         }
 
-        if(std::size_t(rangeStart + rangeSize) > viewsOrderedByName.size())
+        if(static_cast<std::size_t>(rangeStart + rangeSize) > viewsOrderedByName.size())
         {
-            rangeSize = int(viewsOrderedByName.size()) - rangeStart;
+            rangeSize = static_cast<int>(viewsOrderedByName.size()) - rangeStart;
         }
     }
     else
     {
         rangeStart = 0;
-        rangeSize = int(viewsOrderedByName.size());
+        rangeSize = static_cast<int>(viewsOrderedByName.size());
     }
 
     ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
-
-
 
     for (int itemidx = 0; itemidx < rangeSize; itemidx++)
     {
@@ -143,7 +119,7 @@ int aliceVision_main(int argc, char* argv[])
 
         IndexT viewId = view->getViewId();
 
-        //Load image and convert it to linear colorspace
+        //Load image and convert it to sRGB colorspace
         std::string imagePath = view->getImagePath();
         ALICEVISION_LOG_INFO("Load image with path " << imagePath);
         image::Image<image::RGBColor> source;
@@ -164,6 +140,8 @@ int aliceVision_main(int argc, char* argv[])
             const double nw = w * ((doubleSize) ? 2.0 : 1.0);
             const double nh = h * ((doubleSize) ? 2.0 : 1.0) / pixelRatio;
 
+            ALICEVISION_LOG_DEBUG("Resize image with dimensions " << nw << "x" << nh);
+
             image::Image<image::RGBColor> resizedInput(nw, nh);
 
             const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::UCHAR);
@@ -178,10 +156,14 @@ int aliceVision_main(int argc, char* argv[])
 
         //Lookup checkerboard
         calibration::CheckerDetector detect;
+        ALICEVISION_LOG_INFO("Launching checkerboard detection");
         if(!detect.process(source, useNestedGrids, exportDebugImages))
         {
+            ALICEVISION_LOG_ERROR("Detection failed");
             continue;
         }
+
+        ALICEVISION_LOG_INFO("Detected " << detect.getBoards().size() << " boards and " << detect.getCorners().size() << " corners");
 
         //Restore aspect ratio for corners coordinates
         if (pixelRatio != 1.0 || doubleSize)
@@ -200,6 +182,7 @@ int aliceVision_main(int argc, char* argv[])
         }
         
         // write the json file with the tree
+        ALICEVISION_LOG_INFO("Writing detection output in " << "checkers_" << viewId << ".json");
         std::stringstream ss;
         ss << outputFilePath << "/" << "checkers_" << viewId << ".json";
         boost::json::value jv = boost::json::value_from(detect);
@@ -209,12 +192,10 @@ int aliceVision_main(int argc, char* argv[])
 
         if(exportDebugImages)
         {
-            for(auto pair : detect.getDebugImages())
-            {
-                std::stringstream ss;
-                ss << outputFilePath << "/" << pair.first << "_" << viewId << ".png";
-                image::writeImage(ss.str(), pair.second, image::ImageWriteOptions());
-            }
+            ALICEVISION_LOG_INFO("Writing debug image:");
+            std::stringstream ss;
+            ss << outputFilePath << "/" << viewId << ".png";
+            image::writeImage(ss.str(), detect.getDebugImage(), image::ImageWriteOptions());
         }
     }
 
