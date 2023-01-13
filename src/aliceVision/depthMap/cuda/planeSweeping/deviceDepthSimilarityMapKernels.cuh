@@ -157,7 +157,7 @@ __global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
         return;
 
     // filter masked pixels (alpha < 0.9f)
-    if(tex2D_float4(rcTex, x + 0.5f, y + 0.5f).w < 0.9f)
+    if(tex2D_float4(rcTex, roi.x.begin + x + 0.5f, roi.y.begin + y + 0.5f).w < 0.9f)
     {
         *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, x, y) = make_float2(-2.f, 1.f);
         return;
