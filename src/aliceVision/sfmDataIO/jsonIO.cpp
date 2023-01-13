@@ -47,6 +47,7 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
   viewTree.put("path", view.getImagePath());
   viewTree.put("width", view.getWidth());
   viewTree.put("height", view.getHeight());
+  viewTree.put("raw", view.isRaw());
 
   // metadata
   {
@@ -81,6 +82,7 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
   view.setImagePath(viewTree.get<std::string>("path"));
   view.setWidth(viewTree.get<std::size_t>("width", 0));
   view.setHeight(viewTree.get<std::size_t>("height", 0));
+  view.setRaw(viewTree.get<bool>("raw", false));
 
   // metadata
   if(viewTree.count("metadata"))

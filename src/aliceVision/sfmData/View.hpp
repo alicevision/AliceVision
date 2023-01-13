@@ -248,7 +248,16 @@ public:
    */
   const std::string& getImagePath() const
   {
-    return _imagePath;
+      return _imagePath;
+  }
+
+  /**
+   * @brief Get image raw status
+   * @return image raw status
+   */
+  bool isRaw() const
+  {
+      return _isRaw;
   }
 
   /**
@@ -624,7 +633,16 @@ public:
    */
   void setImagePath(const std::string& imagePath)
   {
-    _imagePath = imagePath;
+      _imagePath = imagePath;
+  }
+
+  /**
+   * @brief Set the raw status of the image
+   * @param[in] rawStatus Image raw status, true if the image is raw encoded
+   */
+  void setRaw(const bool rawStatus)
+  {
+      _isRaw = rawStatus;
   }
 
   /**
@@ -783,6 +801,8 @@ private:
   std::size_t _width;
   /// image height
   std::size_t _height;
+  /// raw image
+  bool _isRaw = false;
   /// view id
   IndexT _viewId;
   /// intrinsics id

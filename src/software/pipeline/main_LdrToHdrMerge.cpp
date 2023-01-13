@@ -54,7 +54,9 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 3;
     bool byPass = false;
     int channelQuantizationPower = 10;
-    int offsetRefBracketIndex = 0;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
+    int offsetRefBracketIndex = 1000;
+    double meanTargetedLumaForMerging = 0.2;
 
     hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
     float highlightCorrectionFactor = 0.0f;
@@ -83,10 +85,14 @@ int aliceVision_main(int argc, char** argv)
          "bypass HDR creation and use medium bracket as input for next steps")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
          "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
         ("offsetRefBracketIndex", po::value<int>(&offsetRefBracketIndex)->default_value(offsetRefBracketIndex),
          "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
+        ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
+         "Mean expected luminance after merging step. Must be in the range [0, 1].")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -151,6 +157,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    std::size_t usedNbBrackets;
     {
         std::set<std::size_t> sizeOfGroups;
         for(auto& group : groupedViews)
@@ -159,7 +166,7 @@ int aliceVision_main(int argc, char** argv)
         }
         if(sizeOfGroups.size() == 1)
         {
-            std::size_t usedNbBrackets = *sizeOfGroups.begin();
+            usedNbBrackets = *sizeOfGroups.begin();
             if(usedNbBrackets == 1)
             {
                 ALICEVISION_LOG_INFO("No multi-bracketing.");
@@ -174,8 +181,31 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
+
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
-    hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex);
+
+    if (!byPass)
+    {
+        const int middleIndex = usedNbBrackets / 2;
+        const int targetIndex = middleIndex + offsetRefBracketIndex;
+        const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
+
+        const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() / (std::string("luminanceStatistics.txt")));
+
+        if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
+        {
+            ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
+            return EXIT_FAILURE;
+        }
+
+        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
+
+        if (targetViews.empty() && !isOffsetRefBracketIndexValid)
+        {
+            ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
+            return EXIT_FAILURE;
+        }
+    }
 
     // Define range to compute
     if(rangeStart != -1)
@@ -253,7 +283,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_INFO("Load " << filepath);
 
             image::ImageReadOptions options;
-            options.workingColorSpace = image::EImageColorSpace::SRGB;
+            options.workingColorSpace = workingColorSpace;
             options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
             options.colorProfileFileName = group[i]->getColorProfileFileName();
             image::readImage(filepath, images[i], options);

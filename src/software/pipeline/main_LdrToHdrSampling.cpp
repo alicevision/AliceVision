@@ -54,7 +54,9 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     hdr::Sampling::Params params;
+    bool bypassIfRaw = true;
     bool debug = false;
 
     int rangeStart = -1;
@@ -71,10 +73,14 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("bypassIfRaw", po::value<bool>(&bypassIfRaw)->default_value(bypassIfRaw),
+         "Bypass if source images are raw encoded.")
         ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets),
          "bracket count per HDR image (0 means automatic).")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("blockSize", po::value<int>(&params.blockSize)->default_value(params.blockSize),
          "Size of the image tile to extract a sample.")
         ("radius", po::value<int>(&params.radius)->default_value(params.radius),
@@ -180,6 +186,12 @@ int aliceVision_main(int argc, char** argv)
     }
     ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
 
+    // Check if raw images
+    if (groupedViews[rangeStart][0]->isRaw() && bypassIfRaw)
+    {
+        return EXIT_SUCCESS;
+    }
+
     for(std::size_t groupIdx = rangeStart; groupIdx < rangeStart + rangeSize; ++groupIdx)
     {
         auto & group = groupedViews[groupIdx];
@@ -209,7 +221,7 @@ int aliceVision_main(int argc, char** argv)
         std::vector<double> exposures = getExposures(exposuresSetting);
 
         image::ImageReadOptions imgReadOptions;
-        imgReadOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+        imgReadOptions.workingColorSpace = workingColorSpace;
         imgReadOptions.rawColorInterpretation = rawColorInterpretation;
         imgReadOptions.colorProfileFileName = colorProfileFileName;
 

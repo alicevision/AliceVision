@@ -110,6 +110,14 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
     return in;
 }
 
+struct luminanceInfo
+{
+    double meanLum;
+    double minLum;
+    double maxLum;
+    int itemNb;
+};
+
 int aliceVision_main(int argc, char** argv)
 {
     std::string sfmInputDataFilename;
@@ -120,6 +128,8 @@ int aliceVision_main(int argc, char** argv)
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
     size_t maxTotalPoints = 1000000;
+    bool forceLinearIfRaw = true;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
 
     // Command line parameters
 
@@ -132,6 +142,8 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("forceLinearIfRaw", po::value<bool>(&forceLinearIfRaw)->default_value(forceLinearIfRaw),
+         "Force linear calibration mode if source images are raw encoded.")
         ("samplesFolders,f", po::value<std::string>(&samplesFolder)->default_value(samplesFolder),
          "Path to folder containing the extracted samples (Required if the calibration is not linear).")
         ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
@@ -143,6 +155,8 @@ int aliceVision_main(int argc, char** argv)
          "bracket count per HDR image (0 means automatic).")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
          "Max number of points used from the sampling. This ensures that the number of pixels values extracted by the sampling "
          "can be managed by the calibration step (in term of computation time and memory usage).")
@@ -213,6 +227,75 @@ int aliceVision_main(int argc, char** argv)
         {
             ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
             return EXIT_FAILURE;
+        }
+    }
+
+    std::vector<std::map<int, luminanceInfo>> v_luminanceInfos;
+
+    if (groupedViews[0][0]->isRaw() && forceLinearIfRaw)
+    {
+        calibrationMethod = ECalibrationMethod::LINEAR;
+
+        // Compute luminance statistics from raw images
+
+        std::vector<std::vector<double>> meanLuminances(groupedViews.size(), std::vector<double>(groupedViews[0].size(), 0.0));
+        v_luminanceInfos.resize(groupedViews.size());
+
+        #pragma omp parallel for
+        for (int g = 0; g < groupedViews.size(); ++g)
+        {
+            std::vector<std::shared_ptr<aliceVision::sfmData::View>> group = groupedViews[g];
+            std::map<int, luminanceInfo> luminanceInfos;
+
+            for (std::size_t i = 0; i < group.size(); ++i)
+            {
+                image::Image<image::RGBfColor> image;
+
+                const std::string filepath = group[i]->getImagePath();
+
+                image::ImageReadOptions options;
+                options.workingColorSpace = workingColorSpace;
+                options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(group[i]->getRawColorInterpretation());
+                options.colorProfileFileName = group[i]->getColorProfileFileName();
+                image::readImage(filepath, image, options);
+
+                double meanLuminance = 0.0;
+                double maxLuminance = 0.0;
+                double minLuminance = 1000.0;
+                int sampleNb = 0;
+
+                const int imgH = image.Height();
+                const int imgW = image.Width();
+
+                const int a1 = (imgH <= imgW) ? imgW / 2 : imgH / 2;
+                const int a2 = (imgH <= imgW) ? imgW / 2 : imgW - (imgH / 2);
+                const int a3 = (imgH <= imgW) ? imgH - (imgW / 2) : imgH / 2;
+                const int a4 = (imgH <= imgW) ? (imgW / 2) + imgH : imgW + (imgH / 2);
+
+                const int rmin = (imgH <= imgW) ? 0 : (imgH - imgW) / 2;
+                const int rmax = (imgH <= imgW) ? imgH : (imgH + imgW) / 2;
+
+                for (int r = rmin; r < rmax; r = r + 16)
+                {
+                    const int cmin = (r < imgH / 2) ? a1 - r : r - a3;
+                    const int cmax = (r < imgH / 2) ? a2 + r : a4 - r;
+
+                    for (int c = cmin; c < cmax; c = c + 16)
+                    {
+                        double luma = image::Rgb2GrayLinear(image(r, c)[0], image(r, c)[1], image(r, c)[2]);
+                        meanLuminance += luma;
+                        minLuminance = (luma < minLuminance) ? luma : minLuminance;
+                        maxLuminance = (luma > maxLuminance) ? luma : maxLuminance;
+                        sampleNb++;
+                    }
+                }
+
+                luminanceInfos[i].itemNb = sampleNb;
+                luminanceInfos[i].minLum = minLuminance;
+                luminanceInfos[i].maxLum = maxLuminance;
+                luminanceInfos[i].meanLum = meanLuminance;
+            }
+            v_luminanceInfos[g] = luminanceInfos;
         }
     }
 
@@ -381,6 +464,29 @@ int aliceVision_main(int argc, char** argv)
 
     response.write(outputResponsePath);
     response.writeHtml(htmlOutput, "response");
+
+    const std::string lumastatFilename = (fs::path(outputResponsePath).parent_path() / (std::string("luminanceStatistics") + std::string(".txt"))).string();
+    std::ofstream file(lumastatFilename);
+    if (!file)
+    {
+        ALICEVISION_LOG_ERROR("Unable to create file " << lumastatFilename << " for storing luminance statistics");
+        return EXIT_FAILURE;
+    }
+    else
+    {
+        file << v_luminanceInfos.size() << std::endl;
+        file << v_luminanceInfos[0].size() << std::endl;
+
+        for (int i = 0; i < v_luminanceInfos.size(); ++i)
+        {
+            for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+            {
+                file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
+                file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
+            }
+        }
+
+    }
 
     return EXIT_SUCCESS;
 }

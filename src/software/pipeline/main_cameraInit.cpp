@@ -452,6 +452,8 @@ int aliceVision_main(int argc, char **argv)
 
     std::string imgFormat = in->format_name();
 
+    view.setRaw((imgFormat.compare("raw") == 0) ? "true" : "false");
+
     // if a color profile is required check if a dcp database exists and if one is available inside 
     // if yes and if metadata exist and image format is raw then update metadata with DCP info
     if((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
