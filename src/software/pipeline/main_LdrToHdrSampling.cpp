@@ -54,6 +54,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputFolder;
     int nbBrackets = 0;
     int channelQuantizationPower = 10;
+    image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     hdr::Sampling::Params params;
     bool debug = false;
 
@@ -75,6 +76,8 @@ int aliceVision_main(int argc, char** argv)
          "bracket count per HDR image (0 means automatic).")
         ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
          "Quantization level like 8 bits or 10 bits.")
+        ("workingColorSpace", po::value<image::EImageColorSpace>(&workingColorSpace)->default_value(workingColorSpace),
+         ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("blockSize", po::value<int>(&params.blockSize)->default_value(params.blockSize),
          "Size of the image tile to extract a sample.")
         ("radius", po::value<int>(&params.radius)->default_value(params.radius),
@@ -209,7 +212,7 @@ int aliceVision_main(int argc, char** argv)
         std::vector<double> exposures = getExposures(exposuresSetting);
 
         image::ImageReadOptions imgReadOptions;
-        imgReadOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+        imgReadOptions.workingColorSpace = workingColorSpace;
         imgReadOptions.rawColorInterpretation = rawColorInterpretation;
         imgReadOptions.colorProfileFileName = colorProfileFileName;
 

@@ -955,8 +955,7 @@ void DCPProfile::Load(const std::string& filename)
 
     if (file == nullptr)
     {
-        ALICEVISION_LOG_WARNING("Unable to load DCP profile " << filename);
-        return;
+        ALICEVISION_THROW_ERROR("Unable to load DCP profile " << filename);
     }
 
     // read tiff header
