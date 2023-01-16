@@ -236,10 +236,19 @@ void DeviceCache::addCamera(int globalCamId, int downscale, mvsUtils::ImagesCach
         {
             const image::RGBAfColor& floatRGBA = (*img)(y, x);
             CudaRGBA& cudaRGBA = frame_hmh(x, y);
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
+            // explicit float to half conversion
+            cudaRGBA.x = __float2half(floatRGBA.r() * 255.0f);
+            cudaRGBA.y = __float2half(floatRGBA.g() * 255.0f);
+            cudaRGBA.z = __float2half(floatRGBA.b() * 255.0f);
+            cudaRGBA.w = __float2half(floatRGBA.a() * 255.0f);
+#else
             cudaRGBA.x = floatRGBA.r() * 255.0f;
             cudaRGBA.y = floatRGBA.g() * 255.0f;
             cudaRGBA.z = floatRGBA.b() * 255.0f;
             cudaRGBA.w = floatRGBA.a() * 255.0f;
+#endif
         }
     }
 

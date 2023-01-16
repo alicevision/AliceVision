@@ -68,7 +68,9 @@ __global__ void volume_add_kernel(TSimRefine* inout_volume_d, int inout_volume_s
     TSimRefine* outSimPtr = get3DBufferAt(inout_volume_d, inout_volume_s, inout_volume_p, vx, vy, vz);
 
 #ifdef TSIM_REFINE_USE_HALF
-    *outSimPtr = __hadd(*outSimPtr, *get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz));
+    // note: using built-in half addition can give bad results on some gpus
+    //*outSimPtr = __hadd(*outSimPtr, *get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz));
+    *outSimPtr = __float2half(__half2float(*outSimPtr) + __half2float(*get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz))); // perform the addition in float
 #else
     *outSimPtr += *get3DBufferAt(in_volume_d, in_volume_s, in_volume_p, vx, vy, vz);
 #endif
@@ -282,7 +284,10 @@ __global__ void volume_refine_kernel(cudaTextureObject_t rcTex,
 
     // add the output similarity value
 #ifdef TSIM_REFINE_USE_HALF
-    *outSimPtr = __hadd(*outSimPtr, TSimRefine(fsimInvertedFiltered));
+    // note: using built-in half addition can give bad results on some gpus
+    //*outSimPtr = __hadd(*outSimPtr, TSimRefine(fsimInvertedFiltered));
+    //*outSimPtr = __hadd(*outSimPtr, __float2half(fsimInvertedFiltered));
+    *outSimPtr = __float2half(__half2float(*outSimPtr) + fsimInvertedFiltered); // perform the addition in float
 #else
     *outSimPtr += TSimRefine(fsimInvertedFiltered);
 #endif
