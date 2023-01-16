@@ -65,6 +65,7 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
 __host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2>& out_upscaledDepthSimMap_dmp,
                                                const CudaDeviceMemoryPitched<float2, 2>& in_otherDepthSimMap_dmp,
                                                const DeviceCamera& rcDeviceCamera,
+                                               const RefineParams& refineParams,
                                                const ROI& roi,
                                                cudaStream_t stream)
 {
@@ -83,6 +84,7 @@ __host__ void cuda_depthSimMapUpscaleAndFilter(CudaDeviceMemoryPitched<float2, 2
       out_upscaledDepthSimMap_dmp.getPitch(),
       in_otherDepthSimMap_dmp.getBuffer(), 
       in_otherDepthSimMap_dmp.getPitch(),
+      refineParams.stepXY,
       roi,
       ratio);
 
@@ -161,6 +163,7 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
             rcDeviceCamera.getTextureObject(), 
             inout_imgVariance_dmp.getBuffer(), 
             inout_imgVariance_dmp.getPitch(),
+            refineParams.stepXY,
             roi);
     }
 

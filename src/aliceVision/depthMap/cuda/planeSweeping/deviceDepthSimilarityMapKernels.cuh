@@ -147,24 +147,29 @@ __global__ void mapUpscale_kernel(T* out_upscaledMap_d, int out_upscaledMap_p,
 __global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
                                                    float2* out_upscaledDeptSimMap_d, int out_upscaledDeptSimMap_p,
                                                    const float2* in_otherDepthSimMap_d, int in_otherDepthSimMap_p,
+                                                   int stepXY,
                                                    const ROI roi,
                                                    float ratio)
 {
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int roiY = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x >= roi.width() || y >= roi.height())
+    if(roiX >= roi.width() || roiY >= roi.height())
         return;
 
+    // corresponding device image coordinates
+    const int x = (roi.x.begin + roiX) * stepXY;
+    const int y = (roi.y.begin + roiY) * stepXY;
+
     // filter masked pixels (alpha < 0.9f)
-    if(tex2D_float4(rcTex, roi.x.begin + x + 0.5f, roi.y.begin + y + 0.5f).w < 0.9f)
+    if(tex2D_float4(rcTex, x + 0.5f, y + 0.5f).w < 0.9f)
     {
-        *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, x, y) = make_float2(-2.f, 1.f);
+        *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, roiX, roiY) = make_float2(-2.f, 1.f);
         return;
     }
 
-    const float oy = (float(y) - 0.5f) * ratio;
-    const float ox = (float(x) - 0.5f) * ratio;
+    const float oy = (float(roiY) - 0.5f) * ratio;
+    const float ox = (float(roiX) - 0.5f) * ratio;
 
     float2 out_depthSim;
 
@@ -236,7 +241,7 @@ __global__ void depthSimMapUpscaleAndFilter_kernel(cudaTextureObject_t rcTex,
 #endif
 
     // write output
-    *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, x, y) = out_depthSim;
+    *get2DBufferAt(out_upscaledDeptSimMap_d, out_upscaledDeptSimMap_p, roiX, roiY) = out_depthSim;
 }
 
 __global__ void depthSimMapComputePixSize_kernel(int rcDeviceCamId, float2* inout_deptPixSizeMap_d, int inout_deptPixSizeMap_p, int stepXY, const ROI roi)
@@ -351,7 +356,7 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
     *out_normal = nn;
 }
 
-__global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* out_varianceMap_d, int out_varianceMap_p, const ROI roi)
+__global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* out_varianceMap_d, int out_varianceMap_p, int stepXY, const ROI roi)
 {
     // roi and varianceMap coordinates 
     const int roiX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -361,8 +366,8 @@ __global__ void optimize_varLofLABtoW_kernel(cudaTextureObject_t rcTex, float* o
         return;
 
     // corresponding device image coordinates
-    const int x = roi.x.begin + roiX;
-    const int y = roi.y.begin + roiY;
+    const int x = (roi.x.begin + roiX) * stepXY;
+    const int y = (roi.y.begin + roiY) * stepXY;
 
     // compute gradient size of L
     // note: we use 0.5f offset because rcTex texture use interpolation
