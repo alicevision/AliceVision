@@ -207,7 +207,13 @@ int aliceVision_main(int argc, char* argv[])
 
       if(sgmScaleStep < refineScaleStep)
       {
-        ALICEVISION_LOG_ERROR("SGM downscale (scale & step) should be greater or equal to the Refine downscale (scale & step).");
+        ALICEVISION_LOG_ERROR("SGM downscale (scale x step) should be greater or equal to the Refine downscale (scale x step).");
+        return EXIT_FAILURE;
+      }
+
+      if(sgmScaleStep % refineScaleStep != 0)
+      {
+        ALICEVISION_LOG_ERROR("SGM downscale (scale x step) should be a multiple of the Refine downscale (scale x step).");
         return EXIT_FAILURE;
       }
     }
