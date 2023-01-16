@@ -183,27 +183,24 @@ int aliceVision_main(int argc, char** argv)
     }
     std::vector<std::shared_ptr<sfmData::View>> targetViews;
 
-    if (!byPass)
+    const int middleIndex = usedNbBrackets / 2;
+    const int targetIndex = middleIndex + offsetRefBracketIndex;
+    const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
+
+    const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() / (std::string("luminanceStatistics.txt")));
+
+    if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
     {
-        const int middleIndex = usedNbBrackets / 2;
-        const int targetIndex = middleIndex + offsetRefBracketIndex;
-        const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
+        ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
+        return EXIT_FAILURE;
+    }
 
-        const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() / (std::string("luminanceStatistics.txt")));
+    hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
 
-        if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
-        {
-            ALICEVISION_LOG_ERROR("Unable to open the file " << lumaStatFilepath.string() << " with luminance statistics. This file is needed to select the optimal exposure for the creation of HDR images.");
-            return EXIT_FAILURE;
-        }
-
-        hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
-
-        if (targetViews.empty() && !isOffsetRefBracketIndexValid)
-        {
-            ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
-            return EXIT_FAILURE;
-        }
+    if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
+    {
+        ALICEVISION_LOG_ERROR("File " << lumaStatFilepath.string() << " is not valid. This file is required to select the optimal exposure for the creation of HDR images.");
+        return EXIT_FAILURE;
     }
 
     // Define range to compute

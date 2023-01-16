@@ -433,27 +433,24 @@ int aliceVision_main(int argc, char** argv)
     response.write(outputResponsePath);
     response.writeHtml(htmlOutput, "response");
 
-    const std::string lumastatFilename = (fs::path(outputResponsePath).parent_path() / (std::string("luminanceStatistics") + std::string(".txt"))).string();
+    const std::string lumastatFilename = (fs::path(outputResponsePath).parent_path() / "luminanceStatistics.txt").string();
     std::ofstream file(lumastatFilename);
     if (!file)
     {
         ALICEVISION_LOG_ERROR("Unable to create file " << lumastatFilename << " for storing luminance statistics");
         return EXIT_FAILURE;
     }
-    else
+
+    file << v_luminanceInfos.size() << std::endl;
+    file << v_luminanceInfos[0].size() << std::endl;
+
+    for (int i = 0; i < v_luminanceInfos.size(); ++i)
     {
-        file << v_luminanceInfos.size() << std::endl;
-        file << v_luminanceInfos[0].size() << std::endl;
-
-        for (int i = 0; i < v_luminanceInfos.size(); ++i)
+        for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
         {
-            for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
-            {
-                file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
-                file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
-            }
+            file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
+            file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
         }
-
     }
 
     return EXIT_SUCCESS;
