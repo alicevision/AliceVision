@@ -1,9 +1,9 @@
 # Headers
 set(mvsUtils_files_headers
   common.hpp
-  depthSimMapIO.hpp
   fileIO.hpp
   ImagesCache.hpp
+  mapIO.hpp
   MultiViewParams.hpp
   TileParams.hpp
 )
@@ -11,9 +11,9 @@ set(mvsUtils_files_headers
 # Sources
 set(mvsUtils_files_sources
   common.cpp
-  depthSimMapIO.cpp
   fileIO.cpp
   ImagesCache.cpp
+  mapIO.cpp
   MultiViewParams.cpp
   TileParams.cpp
 )

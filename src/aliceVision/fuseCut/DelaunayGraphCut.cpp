@@ -17,7 +17,7 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/alicevision_omp.hpp>

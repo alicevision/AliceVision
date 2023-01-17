@@ -9,7 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
 #include <aliceVision/depthMap/DepthMapParams.hpp>
