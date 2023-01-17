@@ -299,6 +299,7 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int ou
                                             int volDimZ, // useful for depth/sim interpolation
                                             int rcDeviceCamId,
                                             int scaleStep, 
+                                            float maxSimilarity,
                                             const Range depthRange,
                                             const ROI roi)
 {
@@ -327,9 +328,9 @@ __global__ void volume_retrieveBestZ_kernel(float2* out_sgmDepthSimMap_d, int ou
       }
     }
 
-    // TODO: consider filtering out the values with a too bad score like (bestSim > 200.0f)
-    //       to reduce the storage volume of the depth maps
-    if (bestZIdx == -1)
+    // filtering out invalid values and values with a too bad score (above the user maximum similarity threshold)
+    // note: this helps to reduce following calculations and also the storage volume of the depth maps.
+    if((bestZIdx == -1) || (bestSim > maxSimilarity))
     {
         out_bestDepthSimPtr->x = -1.0f; // invalid depth
         out_bestDepthSimPtr->y =  1.0f; // worst similarity value

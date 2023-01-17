@@ -337,6 +337,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
                                            cudaStream_t stream)
 {
     const int scaleStep = sgmParams.scale * sgmParams.stepXY;
+    const float maxSimilarity = float(sgmParams.maxSimilarity) * 254.f; // convert from (0, 1) to (0, 254)
     const int blockSize = 8;
     const dim3 block(blockSize, blockSize, 1);
     const dim3 grid(divUp(roi.width(), blockSize), divUp(roi.height(), blockSize), 1);
@@ -352,6 +353,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
       in_volSim_dmp.getSize().z(),
       rcDeviceCamera.getDeviceCamId(), 
       scaleStep, 
+      maxSimilarity,
       depthRange,
       roi);
 
