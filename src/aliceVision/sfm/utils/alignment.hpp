@@ -306,5 +306,14 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
     Mat3& out_R,
     Vec3& out_t);
 
+/**
+ * @brief Compute the 3D rotation matrix such that "pt"
+ * once rotated will have its x component equal to 0.
+ * This rotation will only affect rotate around the Y axis
+ * @param[out] out_R the result rotation matrix
+ * @param[in] pt the input point to nullify on X
+ */
+void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Vector3d & pt);
+
 } // namespace sfm
 } // namespace aliceVision

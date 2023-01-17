@@ -938,5 +938,22 @@ bool computeNewCoordinateSystemFromGpsData(const sfmData::SfMData& sfmData, std:
     return aliceVision::geometry::ACRansac_FindRTS(x1, x2, randomNumberGenerator, out_S, out_t, out_R, inliers, refine);
 }
 
+void getRotationNullifyX(Eigen::Matrix3d & out_R, const Eigen::Vector3d & pt)
+{
+    /*
+    0 =  [cos(x) 0 -sin(x)][X]
+    Y' = [0      1 0      ][Y]
+    Z' = [sin(x) 0  cos(x)][Z]
+
+    cos(x)X - sin(x)Z = 0
+    sin(x)/cos(x) = X/Z
+    tan(x) = X/Z
+    x = atan2(X, Z)
+    */
+  
+    double angle = std::atan2(pt(0), pt(2));
+    out_R = Eigen::AngleAxisd(angle, Vec3(0,-1,0)).toRotationMatrix();
+}
+
 } // namespace sfm
 } // namespace aliceVision
