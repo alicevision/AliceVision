@@ -14,7 +14,7 @@
 #include <aliceVision/mvsData/Stat3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 

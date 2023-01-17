@@ -10,7 +10,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/mvsUtils/depthSimMapIO.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 
 #include <assimp/Importer.hpp>
 #include <assimp/Exporter.hpp>
