@@ -549,25 +549,25 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
         {
             if(depthMapParams.sgmParams.exportIntermediateDepthSimMaps)
             {
-                mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");
+                mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
             }
 
             if(depthMapParams.sgmParams.exportIntermediateNormalMaps)
             {
-                mergeNormalMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");
+                mergeNormalMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "sgm");
             }
 
             if(depthMapParams.useRefine)
             {
                 if(depthMapParams.refineParams.exportIntermediateDepthSimMaps)
                 {
-                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_sgmUpscaled");
-                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
+                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "sgmUpscaled");
+                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "refinedFused");
                 }
 
                 if(depthMapParams.refineParams.exportIntermediateNormalMaps)
                 {
-                    mergeNormalMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
+                    mergeNormalMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "refinedFused");
                     mergeNormalMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
                 }
             }

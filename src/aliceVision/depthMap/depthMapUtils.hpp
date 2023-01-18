@@ -71,7 +71,7 @@ void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, co
  * @param[in] in_normalMap_dmp the normal map in device memory
  * @param[in] scale the map downscale factor
  * @param[in] step the map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] name the export filename suffix
  */
 void writeNormalMap(int rc,
                     const mvsUtils::MultiViewParams& mp,
@@ -80,7 +80,7 @@ void writeNormalMap(int rc,
                     const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
                     int scale,
                     int step,
-                    const std::string& customSuffix = "");
+                    const std::string& name = "");
 
 /**
  * @brief Write a depth/similarity map on disk from host memory.
@@ -91,7 +91,7 @@ void writeNormalMap(int rc,
  * @param[in] in_depthSimMap_hmh the depth/similarity map in host memory
  * @param[in] scale the depth/similarity map downscale factor
  * @param[in] step the depth/similarity map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] name the export filename suffix
  */
 void writeDepthSimMap(int rc,
                       const mvsUtils::MultiViewParams& mp,
@@ -100,7 +100,7 @@ void writeDepthSimMap(int rc,
                       const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
                       int scale,
                       int step,
-                      const std::string& customSuffix = "");
+                      const std::string& name = "");
 
 /**
  * @brief Write a depth/similarity map on disk from device memory.
@@ -111,7 +111,7 @@ void writeDepthSimMap(int rc,
  * @param[in] in_depthSimMap_dmp the depth/similarity map in device memory
  * @param[in] scale the depth/similarity map downscale factor
  * @param[in] step the depth/similarity map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] name the export filename suffix
  */
 void writeDepthSimMap(int rc,
                       const mvsUtils::MultiViewParams& mp,
@@ -120,7 +120,7 @@ void writeDepthSimMap(int rc,
                       const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
                       int scale,
                       int step,
-                      const std::string& customSuffix = "");
+                      const std::string& name = "");
 
 /**
  * @brief Write a depth/similarity map on disk from a tile list in host memory.
@@ -131,7 +131,7 @@ void writeDepthSimMap(int rc,
  * @param[in] in_depthSimMapTiles_hmh the depth/similarity map tile list in host memory
  * @param[in] scale the depth/similarity map downscale factor
  * @param[in] step the depth/similarity map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] name the export filename suffix
  */
 void writeDepthSimMapFromTileList(int rc,
                                   const mvsUtils::MultiViewParams& mp,
@@ -140,7 +140,7 @@ void writeDepthSimMapFromTileList(int rc,
                                   const std::vector<CudaHostMemoryHeap<float2, 2>>& in_depthSimMapTiles_hmh,
                                   int scale,
                                   int step,
-                                  const std::string& customSuffix = "");
+                                  const std::string& name = "");
 
 /**
  * @brief Merge normal map tiles on disk.
@@ -148,13 +148,13 @@ void writeDepthSimMapFromTileList(int rc,
  * @param[in] mp the multi-view parameters
  * @param[in] scale the normal map downscale factor
  * @param[in] step the normal map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] name the export filename suffix
  */
 void mergeNormalMapTiles(int rc,
                          const mvsUtils::MultiViewParams& mp,
                          int scale,
                          int step,
-                         const std::string& customSuffix = "");
+                         const std::string& name = "");
 
 /**
  * @brief Merge depth/similarity map tiles on disk.
@@ -162,13 +162,13 @@ void mergeNormalMapTiles(int rc,
  * @param[in] mp the multi-view parameters
  * @param[in] scale the depth/similarity map downscale factor
  * @param[in] step the depth/similarity map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] name the export filename suffix
  */
 void mergeDepthSimMapTiles(int rc,
                            const mvsUtils::MultiViewParams& mp,
                            int scale,
                            int step,
-                           const std::string& customSuffix = "");
+                           const std::string& name = "");
 
 /**
  * @brief Build and write a debug OBJ file with all tiles areas
