@@ -166,15 +166,19 @@ void computeLuminanceInfoFromImage(image::Image<image::RGBfColor>& image, lumina
     const int a3 = (imgH <= imgW) ? imgH - (imgW / 2) : imgH / 2;
     const int a4 = (imgH <= imgW) ? (imgW / 2) + imgH : imgW + (imgH / 2);
 
+    // All rows must be considered if image orientation is landscape
+    // Only imgW rows centered on imgH/2 must be considered if image orientation is portrait
     const int rmin = (imgH <= imgW) ? 0 : (imgH - imgW) / 2;
     const int rmax = (imgH <= imgW) ? imgH : (imgH + imgW) / 2;
 
-    for (int r = rmin; r < rmax; r = r + 16)
+    const int sampling = 16;
+
+    for (int r = rmin; r < rmax; r = r + sampling)
     {
         const int cmin = (r < imgH / 2) ? a1 - r : r - a3;
         const int cmax = (r < imgH / 2) ? a2 + r : a4 - r;
 
-        for (int c = cmin; c < cmax; c = c + 16)
+        for (int c = cmin; c < cmax; c = c + sampling)
         {
             double luma = image::Rgb2GrayLinear(image(r, c)[0], image(r, c)[1], image(r, c)[2]);
             meanLuminance += luma;
@@ -336,11 +340,9 @@ int aliceVision_main(int argc, char** argv)
     }
     else
     {
-
         std::vector<std::vector<hdr::ImageSample>> calibrationSamples;
         hdr::rgbCurve calibrationWeight(channelQuantization);
         std::vector<std::vector<double>> groupedExposures;
-        //std::vector<std::map<int, luminanceInfo>> v_luminanceInfos;
 
         if (calibrationMethod == ECalibrationMethod::LINEAR)
         {
@@ -527,14 +529,17 @@ int aliceVision_main(int argc, char** argv)
     }
 
     file << v_luminanceInfos.size() << std::endl;
-    file << v_luminanceInfos[0].size() << std::endl;
-
-    for (int i = 0; i < v_luminanceInfos.size(); ++i)
+    if (!v_luminanceInfos.empty())
     {
-        for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+        file << v_luminanceInfos[0].size() << std::endl;
+
+        for (int i = 0; i < v_luminanceInfos.size(); ++i)
         {
-            file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
-            file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
+            for (auto it = v_luminanceInfos[i].begin(); it != v_luminanceInfos[i].end(); it++)
+            {
+                file << it->first << " " << (it->second).itemNb << " " << (it->second).meanLum / (it->second).itemNb << " ";
+                file << (it->second).minLum << " " << (it->second).maxLum << std::endl;
+            }
         }
     }
 

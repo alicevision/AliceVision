@@ -92,7 +92,7 @@ int aliceVision_main(int argc, char** argv)
         ("offsetRefBracketIndex", po::value<int>(&offsetRefBracketIndex)->default_value(offsetRefBracketIndex),
          "Zero to use the center bracket. +N to use a more exposed bracket or -N to use a less exposed backet.")
         ("meanTargetedLumaForMerging", po::value<double>(&meanTargetedLumaForMerging)->default_value(meanTargetedLumaForMerging),
-         "Mean expected luminance after merging step. Must be in the range [0, 1].")
+         "Mean expected luminance after merging step when input LDR images are decoded in sRGB color space. Must be in the range [0, 1].")
         ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
          "Highlights maximum luminance.")
         ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -195,6 +195,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Adjust the targeted luminance level by removing the corresponding gamma if the working color space is not sRGB.
     if (workingColorSpace != image::EImageColorSpace::SRGB)
     {
         meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
