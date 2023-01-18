@@ -392,12 +392,16 @@ void writeMapToFileOrTile(int rc,
     // get downscaled ROI
     const ROI downscaledROI = downscaleROI(roi, scaleStep);
 
+    // check input map dimensions
+    assert(in_map.Width()  == downscaledROI.width()  && in_map.Width()  <= imageWidth);
+    assert(in_map.Height() == downscaledROI.height() && in_map.Height() <= imageHeight);
+
     // set OIIO ROI for map writing
     // displayRoi is the image region of interest for display (image size)
     // pixelRoi is the buffer region of interest within the displayRoi (tile size)
     // no tiling if displayRoi == pixelRoi
     const oiio::ROI displayRoi(0, imageWidth, 0, imageHeight);
-    const oiio::ROI pixelRoi(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
+    const oiio::ROI pixelRoi(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end);
 
     // output map path
     std::string mapPath;
