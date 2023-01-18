@@ -255,7 +255,7 @@ private:
      * @param[in] refinedCorners Checkerboard corners.
      * @return Checkerboard's energy value.
      */
-    double computeEnergy(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners);
+    double computeEnergy(const Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners);
 
     /**
      * @brief Find positions on a board that do not reference a corner yet but can be used to extend the board.
@@ -287,7 +287,7 @@ private:
     /**
      * @brief Extend a board in the up, down, right and left directions.
      * 
-     * @param[in] board Checkerboard to extend.
+     * @param[in,out] board Checkerboard to extend.
      * @param[in] refinedCorners All detected corners.
      * @return False if the energy of the extended board is higher than before, otherwise true.
      */

@@ -871,7 +871,7 @@ bool CheckerDetector::growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, con
     return false;
 }
 
-double CheckerDetector::computeEnergy(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners)
+double CheckerDetector::computeEnergy(const Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners)
 {
     // Count valid corners in board
     size_t countValid = 0;
@@ -899,29 +899,6 @@ double CheckerDetector::computeEnergy(Eigen::Matrix<IndexT, -1, -1> & board, con
                 const IndexT id1 = board(i, j);
                 const IndexT id2 = board(i, j + 1);
                 const IndexT id3 = board(i, j + 2);
-
-                if (id1 == UndefinedIndexT || id2 == UndefinedIndexT || id3 == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                const CheckerBoardCorner & ci = refinedCorners[id1];
-                const CheckerBoardCorner & cj = refinedCorners[id2];
-                const CheckerBoardCorner & ck = refinedCorners[id3];
-
-                const double E =
-                    ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
-                if (E > maxE)
-                {
-                    maxE = E;
-                }
-            }
-
-            for (int j = 2; j < board.cols(); j++)
-            {
-                const IndexT id1 = board(i, j);
-                const IndexT id2 = board(i, j - 1);
-                const IndexT id3 = board(i, j - 2);
 
                 if (id1 == UndefinedIndexT || id2 == UndefinedIndexT || id3 == UndefinedIndexT)
                 {
@@ -969,36 +946,10 @@ double CheckerDetector::computeEnergy(Eigen::Matrix<IndexT, -1, -1> & board, con
                 }
             }
         }
-
-        for (int i = 2; i < board.rows(); i++)
-        {
-            for (int j = 0; j < board.cols(); j++)
-            {
-                const IndexT id1 = board(i - 0, j);
-                const IndexT id2 = board(i - 1, j);
-                const IndexT id3 = board(i - 2, j);
-
-                if (id1 == UndefinedIndexT || id2 == UndefinedIndexT || id3 == UndefinedIndexT)
-                {
-                    continue;
-                }
-
-                const CheckerBoardCorner & ci = refinedCorners[id1];
-                const CheckerBoardCorner & cj = refinedCorners[id2];
-                const CheckerBoardCorner & ck = refinedCorners[id3];
-
-                const double E =
-                    ((ci.center - cj.center) + (ck.center - cj.center)).norm() / (ck.center - ci.center).norm();
-                if (E > maxE)
-                {
-                    maxE = E;
-                }
-            }
-        }
     }
 
     // Energy formula
-    return -static_cast<double>(countValid) + static_cast<double>(countValid) * maxE;
+    return static_cast<double>(countValid) * (maxE - 1);
 }
 
 bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners)
