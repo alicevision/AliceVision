@@ -117,7 +117,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
 
         // export intermediate depth/sim map (if requested by user)
         if(_refineParams.exportIntermediateDepthSimMaps)
-          writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _sgmDepthPixSizeMap_dmp, _refineParams.scale, _refineParams.stepXY, "_sgmUpscaled");
+          writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _sgmDepthPixSizeMap_dmp, _refineParams.scale, _refineParams.stepXY, "sgmUpscaled");
 
         // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
         cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
@@ -142,7 +142,7 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
 
     // export intermediate depth/sim map (if requested by user)
     if(_refineParams.exportIntermediateDepthSimMaps)
-      writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _refinedDepthSimMap_dmp, _refineParams.scale, _refineParams.stepXY, "_refinedFused");
+      writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _refinedDepthSimMap_dmp, _refineParams.scale, _refineParams.stepXY, "refinedFused");
 
     // export intermediate normal map (if requested by user)
     if(_refineParams.exportIntermediateNormalMaps)
@@ -267,7 +267,7 @@ void Refine::computeAndWriteNormalMap(const Tile& tile, const CudaDeviceMemoryPi
 
     cuda_depthSimMapComputeNormal(_normalMap_dmp, in_depthSimMap_dmp, rcDeviceCamera, _refineParams.stepXY, downscaledRoi, _stream);
 
-    writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _refineParams.scale, _refineParams.stepXY, (name.empty()) ? "" : "_" + name);
+    writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _refineParams.scale, _refineParams.stepXY, name);
 }
 
 void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) const

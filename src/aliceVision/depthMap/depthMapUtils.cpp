@@ -100,7 +100,7 @@ void writeNormalMap(int rc,
                     const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
                     int scale,
                     int step,
-                    const std::string& customSuffix)
+                    const std::string& name)
 {
   const ROI downscaledROI = downscaleROI(roi, scale * step);
   const int width  = int(downscaledROI.width());
@@ -126,7 +126,7 @@ void writeNormalMap(int rc,
   }
 
   // write map from the image buffer
-  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::normalMap, tileParams, roi, map, scale, step, customSuffix);
+  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::normalMap, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
 }
 
 void writeDepthSimMap(int rc,
@@ -136,8 +136,9 @@ void writeDepthSimMap(int rc,
                       const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
                       int scale,
                       int step,
-                      const std::string& customSuffix)
+                      const std::string& name)
 {
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
     const int scaleStep = scale * step;
 
     image::Image<float> depthMap;
@@ -156,8 +157,9 @@ void writeDepthSimMap(int rc,
                       const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
                       int scale,
                       int step,
-                      const std::string& customSuffix)
+                      const std::string& name)
 {
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
     const int scaleStep = scale * step;
 
     image::Image<float> depthMap;
@@ -176,10 +178,12 @@ void writeDepthSimMapFromTileList(int rc,
                                   const std::vector<CudaHostMemoryHeap<float2, 2>>& in_depthSimMapTiles_hmh,
                                   int scale,
                                   int step,
-                                  const std::string& customSuffix)
+                                  const std::string& name)
 {
   ALICEVISION_LOG_TRACE("Merge and write depth/similarity map tiles (rc: " << rc << ", view id: " << mp.getViewId(rc) << ").");
-  
+
+  const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+
   const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
   
   const int scaleStep = scale * step;
@@ -216,8 +220,10 @@ void mergeNormalMapTiles(int rc,
                          const mvsUtils::MultiViewParams& mp,
                          int scale,
                          int step,
-                         const std::string& customSuffix)
+                         const std::string& name)
 {
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+
     image::Image<image::RGBfColor> normalMap;
 
     mvsUtils::readMap(rc, mp, mvsUtils::EFileType::normalMap, normalMap, scale, step, customSuffix);  // read and merge normal map tiles
@@ -229,8 +235,10 @@ void mergeDepthSimMapTiles(int rc,
                            const mvsUtils::MultiViewParams& mp,
                            int scale,
                            int step,
-                           const std::string& customSuffix)
+                           const std::string& name)
 {
+    const std::string customSuffix = (name.empty()) ? "" : "_" + name;
+
     image::Image<float> depthMap;
     image::Image<float> simMap;
 

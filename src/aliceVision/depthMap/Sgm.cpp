@@ -149,7 +149,7 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     // export intermediate depth/sim map (if requested by user)
     if(_sgmParams.exportIntermediateDepthSimMaps)
     {
-        writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "_sgm");
+        writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _depthSimMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
     }
 
     // compute normal map from depth/sim map if needed
@@ -168,7 +168,7 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         // export intermediate normal map (if requested by user)
         if(_sgmParams.exportIntermediateNormalMaps)
         {
-            writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "_sgm");
+            writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "sgm");
         }
     }
 
