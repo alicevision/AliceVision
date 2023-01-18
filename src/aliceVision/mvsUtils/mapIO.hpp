@@ -16,135 +16,123 @@ namespace aliceVision {
 namespace mvsUtils {
 
 /**
- * @brief Add a tile to a full map with weighting
+ * @brief Add a tile to a full map with weighting.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
  * @param[in] tileParams tile workflow parameters
  * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] downscale the depth/sim map downscale factor
+ * @param[in] downscale the map downscale factor
  * @param[in] in_tileMap the tile map to add
  * @param[in,out] inout_map the full output map
  */
 void addTileMapWeighted(int rc,
-                         const MultiViewParams& mp,
-                         const TileParams& tileParams,
-                         const ROI& roi,
-                         int downscale,
-                         image::Image<float>& in_tileMap,
-                         image::Image<float>& inout_map);
+                        const MultiViewParams& mp,
+                        const TileParams& tileParams,
+                        const ROI& roi,
+                        int downscale,
+                        image::Image<float>& in_tileMap,
+                        image::Image<float>& inout_map);
 
 /**
- * @brief Write the depth map and the similarity map
+ * @brief Read a fullsize map from file(s).
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
+ * @param[in] fileType the map fileType enum
+ * @param[out] out_map the output map read from file(s)
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] customSuffix the map filename custom suffix
+ */
+void readMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              image::Image<float>& out_map,
+              int scale = 1,
+              int step = 1,
+              const std::string& customSuffix = "");
+
+void readMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              image::Image<image::RGBfColor>& out_map,
+              int scale = 1,
+              int step = 1,
+              const std::string& customSuffix = "");
+
+/**
+ * @brief Write a fullsize or tile map in a file.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] fileType the map fileType enum
  * @param[in] tileParams tile workflow parameters
  * @param[in] roi the 2d region of interest without any downscale apply
- * @param[in] depthMap the corresponding depth map
- * @param[in] simMap the corresponding similarity map
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] in_map the input fullsize or tile map to write
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] customSuffix the map filename custom suffix
  */
-void writeDepthSimMap(int rc, 
-                      const MultiViewParams& mp, 
-                      const TileParams& tileParams, 
-                      const ROI& roi,
-                      const image::Image<float>& depthMap, 
-                      const image::Image<float>& simMap, 
-                      int scale,
-                      int step,
-                      const std::string& customSuffix = "");
+void writeMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              const TileParams& tileParams,
+              const ROI& roi,
+              const image::Image<float>& in_map,
+              int scale,
+              int step,
+              const std::string& customSuffix = "");
+
+void writeMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              const TileParams& tileParams,
+              const ROI& roi,
+              const image::Image<image::RGBfColor>& in_map,
+              int scale,
+              int step,
+              const std::string& customSuffix = "");
 
 /**
- * @brief Write the depth map and the similarity map
+ * @brief Write a fullsize map in a file.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[in] depthMap the corresponding depth map
- * @param[in] simMap the corresponding similarity map 
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] fileType the map fileType enum
+ * @param[in] in_map the input fullsize map to write
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] customSuffix the map filename custom suffix
  */
-void writeDepthSimMap(int rc, 
-                      const MultiViewParams& mp,
-                      const image::Image<float>& depthMap, 
-                      const image::Image<float>& simMap, 
-                      int scale = 1,
-                      int step = 1,
-                      const std::string& customSuffix = "");
-
-/**
- * @brief Write the depth map 
- * @param[in] rc the related R camera index
- * @param[in] mp the multi-view parameters
- * @param[in] depthMap the corresponding depth map
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
- */
-void writeDepthMap(int rc, 
-                   const MultiViewParams& mp,
-                   const image::Image<float>& depthMap, 
-                   int scale = 1,
-                   int step = 1,
-                   const std::string& customSuffix = "");
-
-/**
- * @brief read the depth map and the similarity map from files
- * @param[in] rc the related R camera index
- * @param[in] mp the multi-view parameters
- * @param[out] out_depthMap the corresponding depth map
- * @param[out] out_simMap the corresponding similarity map
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
- */
-void readDepthSimMap(int rc, 
+inline void writeMap(int rc,
                      const MultiViewParams& mp,
-                     image::Image<float>& out_depthMap, 
-                     image::Image<float>& out_simMap, 
+                     const EFileType fileType,
+                     const image::Image<float>& in_map,
                      int scale = 1,
                      int step = 1,
-                     const std::string& customSuffix = "");
+                     const std::string& customSuffix = "")
+{
+  const TileParams tileParams; // default tile parameters, no tiles
+  const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // fullsize roi
+  writeMap(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
+}
+
+inline void writeMap(int rc,
+                     const MultiViewParams& mp,
+                     const EFileType fileType,
+                     const image::Image<image::RGBfColor>& in_map,
+                     int scale = 1,
+                     int step = 1,
+                     const std::string& customSuffix = "")
+{
+  const TileParams tileParams; // default tile parameters, no tiles
+  const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // fullsize roi
+  writeMap(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
+}
 
 /**
- * @brief read the depth map from file(s)
+ * @brief Get depth map number of depth values from metadata or computation.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[out] out_depthMap the corresponding depth map
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
- */
-void readDepthMap(int rc, 
-                  const MultiViewParams& mp,
-                  image::Image<float>& out_depthMap, 
-                  int scale = 1,
-                  int step = 1,
-                  const std::string& customSuffix = "");
-
-/**
- * @brief read the similarity map from file(s)
- * @param[in] rc the related R camera index
- * @param[in] mp the multi-view parameters
- * @param[out] out_simMap the corresponding similarity map
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
- */
-void readSimMap(int rc, 
-                const MultiViewParams& mp,
-                image::Image<float>& out_simMap, 
-                int scale = 1,
-                int step = 1,
-                const std::string& customSuffix = "");
-
-/**
- * @brief Get depth map number of depth values from metadata or count
- * @param[in] rc the related R camera index
- * @param[in] mp the multi-view parameters
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
+ * @param[in] scale the depth map downscale factor
+ * @param[in] step the depth map step factor
  * @param[in] customSuffix the filename custom suffix
  */
 unsigned long getNbDepthValuesFromDepthMap(int rc, 
@@ -153,19 +141,21 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
                                            int step = 1,
                                            const std::string& customSuffix = "");
 
-
 /**
- * @brief Delete depth/sim map tiles from disk
+ * @brief Delete map tiles files.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
+ * @param[in] fileType the map fileType enum
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
  * @param[in] customSuffix the filename custom suffix
  */
-void deleteDepthSimMapTiles(int rc,
-                            const MultiViewParams& mp,
-                            int scale = 1,
-                            int step = 1,
-                            const std::string& customSuffix = "");
+void deleteMapTiles(int rc,
+                    const MultiViewParams& mp,
+                    const EFileType fileType,
+                    int scale = 1,
+                    int step = 1,
+                    const std::string& customSuffix = "");
+
 } // namespace mvsUtils
 } // namespace aliceVision

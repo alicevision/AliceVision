@@ -136,7 +136,8 @@ void writeDepthSimMap(int rc,
 
     copyDepthSimMap(depthMap, simMap, in_depthSimMap_hmh, roi, scaleStep);
 
-    mvsUtils::writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
+    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, tileParams, roi, depthMap, scale, step, customSuffix);
+    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   tileParams, roi, simMap,   scale, step, customSuffix);
 }
 
 void writeDepthSimMap(int rc,
@@ -155,7 +156,8 @@ void writeDepthSimMap(int rc,
 
     copyDepthSimMap(depthMap, simMap, in_depthSimMap_dmp, roi, scaleStep);
 
-    mvsUtils::writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
+    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, tileParams, roi, depthMap, scale, step, customSuffix);
+    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   tileParams, roi, simMap,   scale, step, customSuffix);
 }
 
 void writeDepthSimMapFromTileList(int rc,
@@ -192,12 +194,13 @@ void writeDepthSimMapFromTileList(int rc,
     copyDepthSimMap(tileDepthMap, tileSimMap, in_depthSimMapTiles_hmh.at(i), roi, scaleStep);
 
     // add tile maps to the full-size maps with weighting
-    addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileDepthMap, depthMap);
-    addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileSimMap,   simMap);
+    mvsUtils::addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileDepthMap, depthMap);
+    mvsUtils::addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileSimMap,   simMap);
   }
 
-  // write full-size maps on disk
-  mvsUtils::writeDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix);
+  // write fullsize maps on disk
+  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale, step, customSuffix); // write the merged depth map
+  mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix); // write the merged similarity map
 }
 
 void mergeDepthSimMapTiles(int rc,
@@ -209,9 +212,14 @@ void mergeDepthSimMapTiles(int rc,
     image::Image<float> depthMap;
     image::Image<float> simMap;
 
-    mvsUtils::readDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix);  // read and merge tiles
-    mvsUtils::writeDepthSimMap(rc, mp, depthMap, simMap, scale, step, customSuffix); // write the merged depth/sim maps
-    mvsUtils::deleteDepthSimMapTiles(rc, mp, scale, step, customSuffix);             // delete tile files
+    mvsUtils::readMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale, step, customSuffix);  // read and merge depth map tiles
+    mvsUtils::readMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix);  // read and merge similarity map tiles
+
+    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::depthMap, depthMap, scale, step, customSuffix); // write the merged depth map
+    mvsUtils::writeMap(rc, mp, mvsUtils::EFileType::simMap,   simMap,   scale, step, customSuffix); // write the merged similarity map
+
+    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::depthMap, scale, step, customSuffix); // delete depth map tile files
+    mvsUtils::deleteMapTiles(rc, mp, mvsUtils::EFileType::simMap,   scale, step, customSuffix); // delete similarity tile files
 }
 
 void exportDepthSimMapTilePatternObj(int rc,

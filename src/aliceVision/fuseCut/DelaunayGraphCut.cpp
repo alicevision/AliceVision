@@ -301,7 +301,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         const int height = mp.getHeight(c);
 
         // read depth map
-        mvsUtils::readDepthMap(c, mp, depthMap, 0);
+        mvsUtils::readMap(c, mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
 
         if(depthMap.size() <= 0)
         {
@@ -312,7 +312,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         // read similarity map
         try
         {
-            mvsUtils::readSimMap(c, mp, simMap, 0);
+            mvsUtils::readMap(c, mp, mvsUtils::EFileType::simMap, simMap, 0); // scale 0 -> depth maps filter folder
             image::Image<float> simMapTmp(simMap.Width(), simMap.Height());
             imageAlgo::convolveImage(simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
             simMap.swap(simMapTmp);
@@ -940,8 +940,7 @@ void DelaunayGraphCut::addMaskHelperPoints(const Point3d voxel[8], const StaticV
         for(int c = 0; c < cams.size(); c++)
         {
             image::Image<float> depthMap;
-
-            mvsUtils::readDepthMap(c, _mp, depthMap, 0);
+            mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
 
             if(depthMap.size() <= 0)
             {
@@ -1088,7 +1087,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
             {
                 // read depth map
-                mvsUtils::readDepthMap(c, _mp, depthMap, 0);
+                mvsUtils::readMap(c, _mp, mvsUtils::EFileType::depthMap, depthMap, 0); // scale 0 -> depth maps filter folder
 
                 if(depthMap.size() <= 0)
                 {
@@ -1099,12 +1098,12 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 // read similarity map
                 try
                 {
-                    mvsUtils::readSimMap(c, _mp, simMap, 0);
-                        image::Image<float> simMapTmp;
-                        imageAlgo::convolveImage(simMap, simMapTmp, "gaussian",
-                                                 params.simGaussianSizeInit,
-                                                 params.simGaussianSizeInit);
-                        simMap.swap(simMapTmp);
+                    mvsUtils::readMap(c, _mp, mvsUtils::EFileType::simMap, simMap, 0); // scale 0 -> depth maps filter folder
+                    image::Image<float> simMapTmp;
+                    imageAlgo::convolveImage(simMap, simMapTmp, "gaussian",
+                                             params.simGaussianSizeInit,
+                                             params.simGaussianSizeInit);
+                    simMap.swap(simMapTmp);
                 }
                 catch(const std::exception& e)
                 {

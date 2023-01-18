@@ -20,7 +20,24 @@ namespace aliceVision {
 namespace mvsUtils {
 
 /**
- * @brief Get tile map ROI from file metadata
+ * @brief Get the map name from the given fileType enum
+ * @param[in] fileType the map fileType enum
+ * @return map type string
+ */
+std::string getMapNameFromFileType(EFileType fileType)
+{
+  switch(fileType)
+  {
+    case EFileType::depthMap:   return "depth map";       break;
+    case EFileType::simMap:     return "similarity map";  break;
+    case EFileType::normalMap:  return "normal map";      break;
+    default: break;
+  }
+  return "unknown map";
+}
+
+/**
+ * @brief Get tile map ROI from file metadata.
  * @param[in] mapTilePath the tile map file path
  * @param[in,out] out_roi the corresponding region-of-interest read from file metadata
  */
@@ -48,12 +65,12 @@ void getRoiFromMetadata(const std::string& mapTilePath, ROI& out_roi)
     // invalid or no roi metadata
     if((out_roi.x.begin < 0) || (out_roi.y.begin < 0) || (out_roi.x.end <= 0) || (out_roi.y.end <= 0))
     {
-        ALICEVISION_THROW_ERROR("Cannot find ROI information in file: " << mapTilePath);
+        ALICEVISION_THROW_ERROR("Cannot find ROI information in file: " << fs::path(mapTilePath).filename().string());
     }
 }
 
 /**
- * @brief Get tile map TileParams from file metadata
+ * @brief Get tile map TileParams from file metadata.
  * @param[in] mapTilePath the tile map file path
  * @param[in,out] out_tileParams the corresponding TileParams read from file metadata
  */
@@ -77,17 +94,18 @@ void getTileParamsFromMetadata(const std::string& mapTilePath, TileParams& out_t
     // invalid or no tile metadata
     if((out_tileParams.bufferWidth <= 0) || (out_tileParams.bufferHeight <= 0) || (out_tileParams.padding < 0))
     {
-        ALICEVISION_THROW_ERROR("Cannot find tile parameters in file: " << mapTilePath);
+        ALICEVISION_THROW_ERROR("Cannot find tile parameters in file: " << fs::path(mapTilePath).filename().string());
     }
 }
 
 /**
- * @brief Get the tile map path list for a R camera et a given scale / stepXY
+ * @brief Get the tile map path list for a R camera et a given scale / stepXY.
  * @param[in] rc the related R camera index
  * @param[in] mp the multi-view parameters
- * @param[in] scale the depth/sim map downscale factor
- * @param[in] step the depth/sim map step factor
- * @param[in] customSuffix the filename custom suffix
+ * @param[in] fileType the map fileType enum
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] customSuffix the map filename custom suffix
  * @param[in,out] out_mapTilePathList the tile map path list
  */
 void getTilePathList(int rc,
@@ -102,7 +120,7 @@ void getTilePathList(int rc,
   const fs::path mapDirectory(mapPath.parent_path());
 
   if(!is_directory(mapDirectory))
-    ALICEVISION_THROW_ERROR("Cannot find depth/similarity map directory (rc: " << rc << ").");
+    ALICEVISION_THROW_ERROR("Cannot find " << getMapNameFromFileType(fileType) << " directory (rc: " << rc << ").");
 
   const boost::regex mapPattern(mapPath.stem().string() + "_\\d+_\\d+" + mapPath.extension().string());
 
@@ -114,7 +132,7 @@ void getTilePathList(int rc,
 }
 
 /**
- * @brief Weight one of the corners/edges of a tile according to the size of the padding
+ * @brief Weight one of the corners/edges of a tile according to the size of the padding.
  *
  * When merging tiles, there are 8 intersection areas:
  *  * 4 corners (intersection of 4 tiles or 2 tiles when the tile is on one image edge)
@@ -129,11 +147,12 @@ void getTilePathList(int rc,
  * @param lu left-up corner of the intersection area in the tile coordinate system
  * @param in_tileMap image of the tile
  */
+template <typename T>
 void weightTileBorder(int a, int b, int c, int d, 
                       int borderWidth, 
                       int borderHeight,
                       const Point2d& lu, 
-                      image::Image<float>& in_tileMap)
+                      image::Image<T>& in_tileMap)
 {
     const Point2d rd = lu + Point2d(borderWidth, borderHeight);
 
@@ -165,13 +184,24 @@ void weightTileBorder(int a, int b, int c, int d,
     }
 }
 
-void addTileMapWeighted(int rc,
-                         const MultiViewParams& mp, 
-                         const TileParams& tileParams,
-                         const ROI& roi, 
-                         int downscale,
-                         image::Image<float>& in_tileMap,
-                         image::Image<float>& inout_map)
+/**
+ * @brief Add a single tile to a full map with weighting.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] downscale the map downscale factor
+ * @param[in] in_tileMap the tile map to add
+ * @param[in,out] inout_map the full output map
+ */
+template <typename T>
+void addSingleTileMapWeighted(int rc,
+                              const MultiViewParams& mp,
+                              const TileParams& tileParams,
+                              const ROI& roi,
+                              int downscale,
+                              image::Image<T>& in_tileMap,
+                              image::Image<T>& inout_map)
 {
     // get downscaled ROI
     const ROI downscaledRoi = downscaleROI(roi, downscale);
@@ -264,14 +294,27 @@ void addTileMapWeighted(int rc,
     }
 }
 
-void readMapFromTiles(int rc, 
-                      const MultiViewParams& mp, 
-                      EFileType fileType,
-                      image::Image<float>& out_map, 
-                      int scale,
-                      int step, 
-                      const std::string& customSuffix)
+template <typename T>
+void readMapFromFileOrTiles(int rc,
+                            const MultiViewParams& mp,
+                            EFileType fileType,
+                            image::Image<T>& out_map,
+                            int scale,
+                            int step,
+                            const std::string& customSuffix)
 {
+    // single file fullsize map path
+    const std::string mapPath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix);
+
+    // check single file fullsize map exists
+    if(fs::exists(mapPath))
+    {
+        // read single file fullsize map
+        image::readImage(mapPath, out_map, image::EImageColorSpace::NO_CONVERSION);
+        return;
+    }
+
+    // read map from tiles
     const ROI imageRoi(Range(0, mp.getWidth(rc)), Range(0, mp.getHeight(rc)));
 
     const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
@@ -279,7 +322,7 @@ void readMapFromTiles(int rc,
     const int height = divideRoundUp(mp.getHeight(rc), scaleStep);
 
     // the output full map
-    out_map.resize(width, height, true, 0.f); // should be initialized, additive process
+    out_map.resize(width, height, true, T(0.f)); // should be initialized, additive process
 
     // get tile map path list for the given R camera
     std::vector<std::string> mapTilePathList;
@@ -287,9 +330,9 @@ void readMapFromTiles(int rc,
 
     if(mapTilePathList.empty())
     {
-      // map can be empty
-      ALICEVISION_LOG_INFO("Cannot find any map tile file (rc: " << rc << ").");
-      return; // nothing to do, already initialized
+        // map can be empty
+        ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file (rc: " << rc << ").");
+        return; // nothing to do, already initialized
     }
 
     // get tileParams from first tile file metadata
@@ -301,7 +344,7 @@ void readMapFromTiles(int rc,
     tileRoiList.resize(mapTilePathList.size());
     for(size_t i = 0; i < mapTilePathList.size(); ++i)
     {
-      getRoiFromMetadata(mapTilePathList.at(i), tileRoiList.at(i));
+        getRoiFromMetadata(mapTilePathList.at(i), tileRoiList.at(i));
     }
 
     // read and add each tile to the full map
@@ -316,28 +359,29 @@ void readMapFromTiles(int rc,
         try
         {
             // read tile
-            image::Image<float> tileMap;
+            image::Image<T> tileMap;
             image::readImage(mapTilePath, tileMap, image::EImageColorSpace::NO_CONVERSION);
 
             // add tile to the full map
-            addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
+            addSingleTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileMap, out_map);
         }
         catch(const std::exception& e)
         {
-            ALICEVISION_LOG_WARNING("Cannot find depth/sim map (rc: " << rc << "): " << mapTilePath);
+            ALICEVISION_LOG_WARNING("Cannot find map (rc: " << rc << "): " << fs::path(mapTilePath).filename().string());
         }
     }
 }
 
-void writeDepthSimMap(int rc, 
-                      const MultiViewParams& mp, 
-                      const TileParams& tileParams, 
-                      const ROI& roi,
-                      const image::Image<float>& depthMap, 
-                      const image::Image<float>& simMap, 
-                      int scale,
-                      int step,
-                      const std::string& customSuffix)
+template <typename T>
+void writeMapToFileOrTile(int rc,
+                          const MultiViewParams& mp,
+                          const EFileType fileType,
+                          const TileParams& tileParams,
+                          const ROI& roi,
+                          const image::Image<T>& in_map,
+                          int scale,
+                          int step,
+                          const std::string& customSuffix = "")
 {
     const int scaleStep = std::max(scale, 1) * step; // avoid 0 special case (reserved for depth map filtering)
 
@@ -348,7 +392,7 @@ void writeDepthSimMap(int rc,
     // get downscaled ROI
     const ROI downscaledROI = downscaleROI(roi, scaleStep);
 
-    // OIIO roi for depth / similarity map writing
+    // set OIIO ROI for map writing
     // displayRoi is the image region of interest for display (image size)
     // pixelRoi is the buffer region of interest within the displayRoi (tile size)
     // no tiling if displayRoi == pixelRoi
@@ -356,22 +400,20 @@ void writeDepthSimMap(int rc,
     const oiio::ROI pixelRoi(downscaledROI.x.begin, downscaledROI.x.end, downscaledROI.y.begin, downscaledROI.y.end, 0, 1, 0, 1);
 
     // output map path
-    std::string depthMapPath;
-    std::string simMapPath;
+    std::string mapPath;
 
     if(downscaledROI.width() != imageWidth || downscaledROI.height() != imageHeight) // is a tile
     {
-        // tiled depth/sim map
-        depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix, roi.x.begin, roi.y.begin);
-        simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix, roi.x.begin, roi.y.begin);
+        // tiled map
+        mapPath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix, roi.x.begin, roi.y.begin);
     }
     else
     {
-        // fullsize depth/sim map
-        depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix);
-        simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix);
+        // fullsize map
+        mapPath = getFileNameFromIndex(mp, rc, fileType, scale, customSuffix);
     }
 
+    // original picture file metadata
     oiio::ParamValueList metadata = image::getMetadataFromMap(mp.getMetadata(rc));
 
     // downscale metadata
@@ -421,15 +463,16 @@ void writeDepthSimMap(int rc,
       metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, iP.m));
     }
 
-    // min/max/nb depth metadata
-    { 
-        const int nbDepthValues = std::count_if(depthMap.data(), depthMap.data() + depthMap.size(), [](float v) { return v > 0.0f; });
+    // min/max/nb depth metadata (for depth map only)
+    if(fileType == EFileType::depthMap)
+    {
+        const int nbDepthValues = std::count_if(in_map.data(), in_map.data() + in_map.size(), [](float v) { return v > 0.0f; });
         float maxDepth = -1.0f;
         float minDepth = std::numeric_limits<float>::max();
 
-        for(int i = 0; i < depthMap.size(); ++i)
+        for(int i = 0; i < in_map.size(); ++i)
         {
-            const float depth = depthMap(i);
+            const float depth = in_map(i);
 
             if(depth <= -1.0f)
                 continue;
@@ -443,119 +486,76 @@ void writeDepthSimMap(int rc,
         metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", maxDepth));
     }
 
-    // write depth map
-    if(!depthMap.size() <= 0)
-    {
-        image::writeImage(depthMapPath, 
-                          depthMap,
-                          image::ImageWriteOptions()
-                              .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
-                              .storageDataType(image::EStorageDataType::Float),
-                          metadata, 
-                          displayRoi,
-                          pixelRoi);
-    }
+    // write map
+    image::ImageWriteOptions mapWriteOptions;
+    mapWriteOptions.toColorSpace(image::EImageColorSpace::NO_CONVERSION);
+    mapWriteOptions.storageDataType((fileType == EFileType::depthMap) ? image::EStorageDataType::Float : image::EStorageDataType::Half);
 
-    // write sim map
-    if(!simMap.size() <= 0)
-    {
-        image::writeImage(simMapPath,  
-                          simMap,
-                          image::ImageWriteOptions()
-                              .toColorSpace(image::EImageColorSpace::NO_CONVERSION)
-                              .storageDataType(image::EStorageDataType::Half),
-                          metadata, 
-                          displayRoi,
-                          pixelRoi);
-    }
+    image::writeImage(mapPath,
+                      in_map,
+                      mapWriteOptions,
+                      metadata,
+                      displayRoi,
+                      pixelRoi);
 }
 
-void writeDepthSimMap(int rc, 
-                      const MultiViewParams& mp,
-                      const image::Image<float>& depthMap, 
-                      const image::Image<float>& simMap, 
-                      int scale,
-                      int step,
-                      const std::string& customSuffix)
+void addTileMapWeighted(int rc,
+                        const MultiViewParams& mp,
+                        const TileParams& tileParams,
+                        const ROI& roi,
+                        int downscale,
+                        image::Image<float>& in_tileMap,
+                        image::Image<float>& inout_map)
 {
-    const TileParams tileParams; // default tile parameters, no tiles
-    const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // full roi
-    writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
+  addSingleTileMapWeighted(rc, mp, tileParams, roi, downscale, in_tileMap, inout_map);
 }
 
-
-void writeDepthMap(int rc, 
-                   const MultiViewParams& mp,
-                   const image::Image<float>& depthMap, 
-                   int scale,
-                   int step,
-                   const std::string& customSuffix)
+void readMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              image::Image<float>& out_map,
+              int scale,
+              int step,
+              const std::string& customSuffix)
 {
-    const TileParams tileParams;  // default tile parameters, no tiles
-    const ROI roi = ROI(0, mp.getWidth(rc), 0, mp.getHeight(rc)); // full roi
-    image::Image<float> simMap; // empty simMap, write only depth map
-    writeDepthSimMap(rc, mp, tileParams, roi, depthMap, simMap, scale, step, customSuffix);
+  readMapFromFileOrTiles(rc, mp, fileType, out_map, scale, step, customSuffix);
 }
 
-void readDepthSimMap(int rc, 
-                     const MultiViewParams& mp,
-                     image::Image<float>& out_depthMap, 
-                     image::Image<float>& out_simMap, 
-                     int scale,
-                     int step, 
-                     const std::string& customSuffix)
+void readMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              image::Image<image::RGBfColor>& out_map,
+              int scale,
+              int step,
+              const std::string& customSuffix)
 {
-    const std::string depthMapPath = getFileNameFromIndex(mp, rc,EFileType::depthMap, scale, customSuffix);
-    const std::string simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix);
-
-    if (fs::exists(depthMapPath) && fs::exists(simMapPath))
-    {
-        image::readImage(depthMapPath, out_depthMap, image::EImageColorSpace::NO_CONVERSION);
-        image::readImage(simMapPath, out_simMap, image::EImageColorSpace::NO_CONVERSION);
-    }
-    else
-    {
-        readMapFromTiles(rc, mp, EFileType::depthMap, out_depthMap, scale, step, customSuffix);
-        readMapFromTiles(rc, mp, EFileType::simMap, out_simMap, scale, step, customSuffix);
-    }
+  readMapFromFileOrTiles(rc, mp, fileType, out_map, scale, step, customSuffix);
 }
 
-void readDepthMap(int rc, 
-                  const MultiViewParams& mp,
-                  image::Image<float>& out_depthMap, 
-                  int scale,
-                  int step,
-                  const std::string& customSuffix)
+void writeMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              const TileParams& tileParams,
+              const ROI& roi,
+              const image::Image<float>& in_map,
+              int scale,
+              int step,
+              const std::string& customSuffix)
 {
-    const std::string depthMapPath = getFileNameFromIndex(mp, rc, EFileType::depthMap, scale, customSuffix);
-        
-    if (fs::exists(depthMapPath))
-    {
-        image::readImage(depthMapPath, out_depthMap, image::EImageColorSpace::NO_CONVERSION);
-    }
-    else
-    {
-        readMapFromTiles(rc, mp, EFileType::depthMap, out_depthMap, scale, step, customSuffix);
-    }
+  writeMapToFileOrTile(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
 }
 
-void readSimMap(int rc, 
-                const MultiViewParams& mp, 
-                image::Image<float>& out_simMap, 
-                int scale, 
-                int step, 
-                const std::string& customSuffix)
+void writeMap(int rc,
+              const MultiViewParams& mp,
+              const EFileType fileType,
+              const TileParams& tileParams,
+              const ROI& roi,
+              const image::Image<image::RGBfColor>& in_map,
+              int scale,
+              int step,
+              const std::string& customSuffix)
 {
-    const std::string simMapPath = getFileNameFromIndex(mp, rc, EFileType::simMap, scale, customSuffix);
-
-    if (fs::exists(simMapPath))
-    {
-        image::readImage(simMapPath, out_simMap, image::EImageColorSpace::NO_CONVERSION);
-    }
-    else
-    {
-        readMapFromTiles(rc, mp, EFileType::simMap, out_simMap, scale, step, customSuffix);
-    }
+  writeMapToFileOrTile(rc, mp, fileType, tileParams, roi, in_map, scale, step, customSuffix);
 }
 
 unsigned long getNbDepthValuesFromDepthMap(int rc, 
@@ -601,7 +601,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
 
         ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in depth map (rc: " << rc << "). Recompute the number of valid values.");
 
-        readDepthMap(rc, mp, depthMap, scale, step, customSuffix);
+        readMap(rc, mp, EFileType::depthMap, depthMap, scale, step, customSuffix);
 
         nbDepthValues = std::count_if(depthMap.data(), depthMap.data() + depthMap.size(), [](float v) { return v > 0.0f; });
     }
@@ -609,47 +609,30 @@ unsigned long getNbDepthValuesFromDepthMap(int rc,
     return nbDepthValues;
 }
 
-void deleteDepthSimMapTiles(int rc,
-                            const MultiViewParams& mp,
-                            int scale,
-                            int step,
-                            const std::string& customSuffix)
+void deleteMapTiles(int rc,
+                    const MultiViewParams& mp,
+                    const EFileType fileType,
+                    int scale,
+                    int step,
+                    const std::string& customSuffix)
 {
-  std::vector<std::string> depthMapTilePathList;
-  std::vector<std::string> simMapTilePathList;
+  std::vector<std::string> mapTilePathList;
 
-  getTilePathList(rc, mp, EFileType::depthMap, scale, step, customSuffix, depthMapTilePathList);
-  getTilePathList(rc, mp, EFileType::simMap,   scale, step, customSuffix, simMapTilePathList);
+  getTilePathList(rc, mp, fileType, scale, step, customSuffix, mapTilePathList);
 
-  if(depthMapTilePathList.empty()) // depth map can be empty
-    ALICEVISION_LOG_INFO("Cannot find any depth map tile file to delete (rc: " << rc << ").");
+  if(mapTilePathList.empty()) // depth map can be empty
+    ALICEVISION_LOG_INFO("Cannot find any " << getMapNameFromFileType(fileType) << " tile file to delete (rc: " << rc << ").");
 
-  if(simMapTilePathList.empty()) // sim map can be empty
-    ALICEVISION_LOG_INFO("Cannot find any similarity map tile file to delete (rc: " << rc << ").");
-
-  // delete depth map tile files
-  for(const std::string& depthMapTilePath : depthMapTilePathList)
+  // delete map tile files
+  for(const std::string& mapTilePath : mapTilePathList)
   {
     try
     {
-      fs::remove(depthMapTilePath);
+      fs::remove(mapTilePath);
     }
     catch (const std::exception& e)
     {
-      ALICEVISION_LOG_WARNING("Cannot delete depth map tile file (rc: " << rc << "): " << fs::path(depthMapTilePath).filename().string() << std::endl);
-    }
-  }
-
-  // delete similarity map tile files
-  for(const std::string& simMapTilePath : simMapTilePathList)
-  {
-    try
-    {
-      fs::remove(simMapTilePath);
-    }
-    catch (const std::exception& e)
-    {
-      ALICEVISION_LOG_WARNING("Cannot delete similarity map tile file (rc: " << rc << "): " << fs::path(simMapTilePath).filename().string() << std::endl);
+      ALICEVISION_LOG_WARNING("Cannot delete map tile file (rc: " << rc << "): " << fs::path(mapTilePath).filename().string());
     }
   }
 }
