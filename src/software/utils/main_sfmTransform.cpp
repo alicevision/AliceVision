@@ -184,6 +184,36 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
 
 } // namespace
 
+IndexT getReferenceViewIndex(const sfmData::SfMData & sfmData, const std::string & transform)
+{
+    IndexT refPoseId;
+    try
+    {
+        refPoseId = sfm::getViewIdFromExpression(sfmData, transform);
+    }
+    catch (...)
+    {
+        refPoseId = UndefinedIndexT;
+    }
+
+    if (refPoseId == UndefinedIndexT)
+    {
+        // Sort views per timestamps
+        std::vector<std::pair<int64_t, IndexT>> sorted_views;
+        for (auto v : sfmData.getViews()) {
+            int64_t t = v.second->getMetadataDateTimestamp();
+            sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
+        }
+        std::sort(sorted_views.begin(), sorted_views.end());
+
+        // Get the view which was taken at the middle of the sequence 
+        int median = sorted_views.size() / 2;
+        refPoseId = sorted_views[sorted_views.size() - 1].second;
+    }
+
+    return refPoseId;
+}
+
 int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
@@ -269,18 +299,8 @@ int aliceVision_main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  IndexT refPoseId = getReferenceViewIndex(sfmData, transform);
 
-  // Sort views per timestamps
-  std::vector<std::pair<int64_t, IndexT>> sorted_views;
-  for (auto v : sfmData.getViews()) {
-      int64_t t = v.second->getMetadataDateTimestamp();
-      sorted_views.push_back(std::make_pair(t, v.second->getPoseId()));
-  }
-  std::sort(sorted_views.begin(), sorted_views.end());
-
-  // Get the view which was taken at the middle of the sequence 
-  int median = sorted_views.size() / 2;
-  IndexT refPoseId = sorted_views[sorted_views.size() - 1].second;
   Eigen::Matrix3d ref_R_world = sfmData.getAbsolutePose(refPoseId).getTransform().rotation();
 
   double S = 1.0;
@@ -321,8 +341,10 @@ int aliceVision_main(int argc, char **argv)
 
     case EAlignmentMethod::AUTO_FROM_CAMERAS_X_AXIS:
     {
+        //Align with x axis
         sfm::computeNewCoordinateSystemFromCamerasXAxis(sfmData, S, R, t);
 
+        //Align with reference image
         Eigen::Matrix3d refcam_R_updatedWorld = ref_R_world * R.transpose();
         Eigen::Matrix3d updatedWorld_R_refcam = refcam_R_updatedWorld.transpose();
         Eigen::Vector3d alignmentVector = updatedWorld_R_refcam * Eigen::Vector3d::UnitZ();
@@ -330,6 +352,7 @@ int aliceVision_main(int argc, char **argv)
         Eigen::Matrix3d zeroX_R_world;
         sfm::getRotationNullifyX(zeroX_R_world, alignmentVector);
 
+        //Cumulate both transformations
         //(zeroX_R_world * updatedWorld_R_refcam).transpose()
         //(zeroX_R_world * (ref_R_world * R.transpose()).transpose()).transpose()
         // ref_R_world * R.transpose() * zeroX_R_world.transpose()
