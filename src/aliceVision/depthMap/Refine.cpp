@@ -42,9 +42,13 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
     _refinedDepthSimMap_dmp.allocate(depthSimMapDim);
     _optimizedDepthSimMap_dmp.allocate(depthSimMapDim);
 
+    // allocate SGM upscaled normal map in device memory
+    if(_refineParams.useSgmNormalMap)
+        _sgmNormalMap_dmp.allocate(depthSimMapDim);
+
     // allocate normal map in device memory
-    if(refineParams.useNormalMap)
-      _normalMap_dmp.allocate(depthSimMapDim);
+    if(_refineParams.exportIntermediateNormalMaps)
+        _normalMap_dmp.allocate(depthSimMapDim);
 
     // compute volume maximum dimensions
     const int nbDepthsToRefine = _refineParams.halfNbDepths * 2 + 1;
@@ -56,8 +60,8 @@ Refine::Refine(const mvsUtils::MultiViewParams& mp,
     // allocate depth/sim map optimization buffers
     if(_refineParams.useColorOptimization)
     {
-        _optImgVariance_dmp.allocate(depthSimMapDim);
         _optTmpDepthMap_dmp.allocate(depthSimMapDim);
+        _optImgVariance_dmp.allocate(depthSimMapDim);
     }
 }
 
@@ -68,14 +72,11 @@ double Refine::getDeviceMemoryConsumption() const
     bytes += _sgmDepthPixSizeMap_dmp.getBytesPadded();
     bytes += _refinedDepthSimMap_dmp.getBytesPadded();
     bytes += _optimizedDepthSimMap_dmp.getBytesPadded();
+    bytes += _sgmNormalMap_dmp.getBytesPadded();
     bytes += _normalMap_dmp.getBytesPadded();
     bytes += _volumeRefineSim_dmp.getBytesPadded();
-
-    if(_refineParams.useColorOptimization)
-    {
-        bytes += _optImgVariance_dmp.getBytesPadded();
-        bytes += _optTmpDepthMap_dmp.getBytesPadded();
-    }
+    bytes += _optTmpDepthMap_dmp.getBytesPadded();
+    bytes += _optImgVariance_dmp.getBytesPadded();
 
     return (double(bytes) / (1024.0 * 1024.0));
 }
@@ -87,14 +88,11 @@ double Refine::getDeviceMemoryConsumptionUnpadded() const
     bytes += _sgmDepthPixSizeMap_dmp.getBytesUnpadded();
     bytes += _refinedDepthSimMap_dmp.getBytesUnpadded();
     bytes += _optimizedDepthSimMap_dmp.getBytesUnpadded();
+    bytes += _sgmNormalMap_dmp.getBytesUnpadded();
     bytes += _normalMap_dmp.getBytesUnpadded();
     bytes += _volumeRefineSim_dmp.getBytesUnpadded();
-
-    if(_refineParams.useColorOptimization)
-    {
-        bytes += _optImgVariance_dmp.getBytesUnpadded();
-        bytes += _optTmpDepthMap_dmp.getBytesUnpadded();
-    }
+    bytes += _optTmpDepthMap_dmp.getBytesUnpadded();
+    bytes += _optImgVariance_dmp.getBytesUnpadded();
 
     return (double(bytes) / (1024.0 * 1024.0));
 }
@@ -124,9 +122,9 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
         // compute pixSize to replace similarity (this is usefull for depth/sim map optimization)
         cuda_depthSimMapComputePixSize(_sgmDepthPixSizeMap_dmp, rcDeviceCamera, _refineParams, downscaledRoi, _stream);
 
-        if(_refineParams.useNormalMap && in_sgmNormalMap_dmp.getBuffer() != nullptr)
+        if(_refineParams.useSgmNormalMap && in_sgmNormalMap_dmp.getBuffer() != nullptr)
         {
-            cuda_normalMapUpscale(_normalMap_dmp, in_sgmNormalMap_dmp, downscaledRoi, _stream);
+            cuda_normalMapUpscale(_sgmNormalMap_dmp, in_sgmNormalMap_dmp, downscaledRoi, _stream);
         }
     }
 
@@ -146,6 +144,10 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
     if(_refineParams.exportIntermediateDepthSimMaps)
       writeDepthSimMap(tile.rc, _mp, _tileParams, tile.roi, _refinedDepthSimMap_dmp, _refineParams.scale, _refineParams.stepXY, "_refinedFused");
 
+    // export intermediate normal map (if requested by user)
+    if(_refineParams.exportIntermediateNormalMaps)
+      computeAndWriteNormalMap(tile, _refinedDepthSimMap_dmp, "refinedFused");
+
     // optimize depth/sim map
     if(_refineParams.useColorOptimization && _refineParams.optimizationNbIterations > 0)
     {
@@ -156,6 +158,10 @@ void Refine::refineRc(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>
         ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map disabled.");
         _optimizedDepthSimMap_dmp.copyFrom(_refinedDepthSimMap_dmp, _stream);
     }
+
+    // export intermediate normal map (if requested by user)
+    if(_refineParams.exportIntermediateNormalMaps)
+      computeAndWriteNormalMap(tile, _optimizedDepthSimMap_dmp);
 
     ALICEVISION_LOG_INFO(tile << "Refine depth/sim map done.");
 }
@@ -199,7 +205,7 @@ void Refine::refineAndFuseDepthSimMap(const Tile& tile)
 
         cuda_volumeRefineSimilarity(_volumeRefineSim_dmp, 
                                     _sgmDepthPixSizeMap_dmp,
-                                    (_refineParams.useNormalMap) ? &_normalMap_dmp : nullptr,
+                                    (_refineParams.useSgmNormalMap) ? &_sgmNormalMap_dmp : nullptr,
                                     rcDeviceCamera, 
                                     tcDeviceCamera,
                                     _refineParams, 
@@ -246,6 +252,22 @@ void Refine::optimizeDepthSimMap(const Tile& tile)
                                             _stream);
 
     ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map done.");
+}
+
+void Refine::computeAndWriteNormalMap(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const std::string& name)
+{
+    // downscale the region of interest
+    const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
+
+    // get R device camera from cache
+    DeviceCache& deviceCache = DeviceCache::getInstance();
+    const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _refineParams.scale, _mp);
+
+    ALICEVISION_LOG_INFO(tile << "Refine compute normal map of view id: " << _mp.getViewId(tile.rc) << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+
+    cuda_depthSimMapComputeNormal(_normalMap_dmp, in_depthSimMap_dmp, rcDeviceCamera, _refineParams.stepXY, downscaledRoi, _stream);
+
+    writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _refineParams.scale, _refineParams.stepXY, (name.empty()) ? "" : "_" + name);
 }
 
 void Refine::exportVolumeInformation(const Tile& tile, const std::string& name) const

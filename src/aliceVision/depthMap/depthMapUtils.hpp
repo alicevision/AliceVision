@@ -20,30 +20,6 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @brief Copy an image from device memory to host memory and write on disk.
- * @note  This function can be useful for code analysis and debugging. 
- * @param[in] in_img_dmp the image in device memory
- * @param[in] path the path of the output image on disk
- */
-void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
-
-/**
- * @brief Copy an image from device memory to host memory and write on disk.
- * @note  This function can be useful for code analysis and debugging.
- * @param[in] in_img_dmp the image in device memory
- * @param[in] path the path of the output image on disk
- */
-void writeDeviceImage(const CudaDeviceMemoryPitched<float3, 2>& in_img_dmp, const std::string& path);
-
-/**
- * @brief Reset a depth/similarity map in host memory to the given default depth and similarity.
- * @param[in,out] inout_depthSimMap_hmh the depth/similarity map in host memory
- * @param[in] depth the depth reset value
- * @param[in] sim the sim reset value
- */
-void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
-
-/**
  * @brief Copy a depth/similarity map from host memory to 2 images.
  * @param[out] out_depthMap the output depth image
  * @param[out] out_simMap the output similarity image
@@ -54,7 +30,7 @@ void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, floa
 void copyDepthSimMap(image::Image<float>& out_depthMap,
                      image::Image<float>& out_simMap,
                      const CudaHostMemoryHeap<float2, 2>& in_depthSimMap_hmh,
-                     const ROI& roi, 
+                     const ROI& roi,
                      int downscale);
 /**
  * @brief Copy a depth/similarity map from device memory to 2 images.
@@ -64,11 +40,47 @@ void copyDepthSimMap(image::Image<float>& out_depthMap,
  * @param[in] roi the 2d region of interest without any downscale apply
  * @param[in] downscale the depth/similarity map downscale factor
  */
-void copyDepthSimMap(image::Image<float>& out_depthMap, 
-                     image::Image<float>& out_simMap, 
+void copyDepthSimMap(image::Image<float>& out_depthMap,
+                     image::Image<float>& out_simMap,
                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
-                     const ROI& roi, 
+                     const ROI& roi,
                      int downscale);
+
+/**
+ * @brief Reset a depth/similarity map in host memory to the given default depth and similarity.
+ * @param[in,out] inout_depthSimMap_hmh the depth/similarity map in host memory
+ * @param[in] depth the depth reset value
+ * @param[in] sim the sim reset value
+ */
+void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
+
+/**
+ * @brief Copy an image from device memory to host memory and write on disk.
+ * @note  This function can be useful for code analysis and debugging. 
+ * @param[in] in_img_dmp the image in device memory
+ * @param[in] path the path of the output image on disk
+ */
+void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
+
+/**
+ * @brief Write a normal map on disk from device memory.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] tileParams tile workflow parameters
+ * @param[in] roi the 2d region of interest without any downscale apply
+ * @param[in] in_normalMap_dmp the normal map in device memory
+ * @param[in] scale the map downscale factor
+ * @param[in] step the map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void writeNormalMap(int rc,
+                    const mvsUtils::MultiViewParams& mp,
+                    const mvsUtils::TileParams& tileParams,
+                    const ROI& roi,
+                    const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
+                    int scale,
+                    int step,
+                    const std::string& customSuffix = "");
 
 /**
  * @brief Write a depth/similarity map on disk from host memory.
@@ -129,6 +141,20 @@ void writeDepthSimMapFromTileList(int rc,
                                   int scale,
                                   int step,
                                   const std::string& customSuffix = "");
+
+/**
+ * @brief Merge normal map tiles on disk.
+ * @param[in] rc the related R camera index
+ * @param[in] mp the multi-view parameters
+ * @param[in] scale the normal map downscale factor
+ * @param[in] step the normal map step factor
+ * @param[in] customSuffix the filename custom suffix
+ */
+void mergeNormalMapTiles(int rc,
+                         const mvsUtils::MultiViewParams& mp,
+                         int scale,
+                         int step,
+                         const std::string& customSuffix = "");
 
 /**
  * @brief Merge depth/similarity map tiles on disk.

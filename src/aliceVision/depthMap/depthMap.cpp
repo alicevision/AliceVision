@@ -223,6 +223,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     sgmParams.useSfmSeeds = mp.userParams.get<bool>("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     sgmParams.depthListPerTile = mp.userParams.get<bool>("sgm.depthListPerTile", sgmParams.depthListPerTile);
     sgmParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("sgm.exportIntermediateDepthSimMaps", sgmParams.exportIntermediateDepthSimMaps);
+    sgmParams.exportIntermediateNormalMaps = mp.userParams.get<bool>("sgm.exportIntermediateNormalMaps", sgmParams.exportIntermediateNormalMaps);
     sgmParams.exportIntermediateVolumes = mp.userParams.get<bool>("sgm.exportIntermediateVolumes", sgmParams.exportIntermediateVolumes);
     sgmParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("sgm.exportIntermediateCrossVolumes", sgmParams.exportIntermediateCrossVolumes);
     sgmParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("sgm.exportIntermediateVolume9pCsv", sgmParams.exportIntermediateVolume9pCsv);
@@ -243,6 +244,7 @@ void getDepthMapParams(const mvsUtils::MultiViewParams& mp, DepthMapParams& dept
     refineParams.useRefineFuse = mp.userParams.get<bool>("refine.useRefineFuse", refineParams.useRefineFuse);
     refineParams.useColorOptimization = mp.userParams.get<bool>("refine.useColorOptimization", refineParams.useColorOptimization);
     refineParams.exportIntermediateDepthSimMaps = mp.userParams.get<bool>("refine.exportIntermediateDepthSimMaps", refineParams.exportIntermediateDepthSimMaps);
+    refineParams.exportIntermediateNormalMaps = mp.userParams.get<bool>("refine.exportIntermediateNormalMaps", refineParams.exportIntermediateNormalMaps);
     refineParams.exportIntermediateCrossVolumes = mp.userParams.get<bool>("refine.exportIntermediateCrossVolumes", refineParams.exportIntermediateCrossVolumes);
     refineParams.exportIntermediateVolume9pCsv = mp.userParams.get<bool>("refine.exportIntermediateVolume9pCsv", refineParams.exportIntermediateVolume9pCsv);
 
@@ -550,10 +552,24 @@ void estimateAndRefineDepthMaps(int cudaDeviceId, mvsUtils::MultiViewParams& mp,
                 mergeDepthSimMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");
             }
 
-            if(depthMapParams.useRefine && depthMapParams.refineParams.exportIntermediateDepthSimMaps)
+            if(depthMapParams.sgmParams.exportIntermediateNormalMaps)
             {
-                mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_sgmUpscaled");
-                mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
+                mergeNormalMapTiles(rc, mp, depthMapParams.sgmParams.scale, depthMapParams.sgmParams.stepXY, "_sgm");
+            }
+
+            if(depthMapParams.useRefine)
+            {
+                if(depthMapParams.refineParams.exportIntermediateDepthSimMaps)
+                {
+                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_sgmUpscaled");
+                    mergeDepthSimMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
+                }
+
+                if(depthMapParams.refineParams.exportIntermediateNormalMaps)
+                {
+                    mergeNormalMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY, "_refinedFused");
+                    mergeNormalMapTiles(rc, mp, depthMapParams.refineParams.scale, depthMapParams.refineParams.stepXY);
+                }
             }
         }
     }

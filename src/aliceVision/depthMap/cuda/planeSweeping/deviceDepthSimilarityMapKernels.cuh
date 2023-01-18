@@ -276,8 +276,6 @@ __global__ void depthSimMapComputeNormal_kernel(int rcDeviceCamId,
                                                 float3* out_normalMap_d, int out_normalMap_p,
                                                 const float2* in_depthSimMap_d, int in_depthSimMap_p,
                                                 int wsh,
-                                                int gammaC,
-                                                int gammaP, 
                                                 int stepXY,
                                                 const ROI roi)
 {

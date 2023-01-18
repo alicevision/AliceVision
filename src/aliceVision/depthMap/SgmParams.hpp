@@ -37,6 +37,7 @@ struct SgmParams
   // intermediate results export parameters
 
   bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateNormalMaps = false;
   bool exportIntermediateVolumes = false;
   bool exportIntermediateCrossVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
