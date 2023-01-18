@@ -60,6 +60,7 @@ int aliceVision_main(int argc, char* argv[])
 
     // intermediate results
     bool exportIntermediateDepthSimMaps = false;
+    bool exportIntermediateNormalMaps = false;
     bool exportIntermediateVolumes = false;
     bool exportIntermediateCrossVolumes = false;
     bool exportIntermediateVolume9pCsv = false;
@@ -163,6 +164,8 @@ int aliceVision_main(int argc, char* argv[])
             "Automatically adjust depth map parameters if images are smaller than one tile (maxTCamsPerTile=maxTCams, adjust step if needed).")
         ("exportIntermediateDepthSimMaps", po::value<bool>(&exportIntermediateDepthSimMaps)->default_value(exportIntermediateDepthSimMaps),
             "Export intermediate depth/similarity maps from the SGM and Refine steps.")
+        ("exportIntermediateNormalMaps", po::value<bool>(&exportIntermediateNormalMaps)->default_value(exportIntermediateNormalMaps),
+            "Export intermediate normal maps from the SGM and Refine steps.")
         ("exportIntermediateVolumes", po::value<bool>(&exportIntermediateVolumes)->default_value(exportIntermediateVolumes),
             "Export intermediate full similarity volumes from the SGM and Refine steps.")
         ("exportIntermediateCrossVolumes", po::value<bool>(&exportIntermediateCrossVolumes)->default_value(exportIntermediateCrossVolumes),
@@ -288,6 +291,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("sgm.useSfmSeeds", sgmParams.useSfmSeeds);
     mp.userParams.put("sgm.depthListPerTile", sgmParams.depthListPerTile);
     mp.userParams.put("sgm.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
+    mp.userParams.put("sgm.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
     mp.userParams.put("sgm.exportIntermediateVolumes", exportIntermediateVolumes);
     mp.userParams.put("sgm.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
     mp.userParams.put("sgm.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
@@ -306,6 +310,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("refine.useRefineFuse", refineParams.useRefineFuse);
     mp.userParams.put("refine.useColorOptimization", refineParams.useColorOptimization);
     mp.userParams.put("refine.exportIntermediateDepthSimMaps", exportIntermediateDepthSimMaps);
+    mp.userParams.put("refine.exportIntermediateNormalMaps", exportIntermediateNormalMaps);
     mp.userParams.put("refine.exportIntermediateCrossVolumes", exportIntermediateCrossVolumes);
     mp.userParams.put("refine.exportIntermediateVolume9pCsv", exportIntermediateVolume9pCsv);
 
