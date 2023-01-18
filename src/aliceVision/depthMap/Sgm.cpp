@@ -35,19 +35,23 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     const int maxTileWidth  = divideRoundUp(tileParams.bufferWidth , downscale);
     const int maxTileHeight = divideRoundUp(tileParams.bufferHeight, downscale);
 
+    // compute depth/sim map maximum dimensions
+    const CudaSize<2> depthSimMapDim(maxTileWidth, maxTileHeight);
+
     // allocate depth list in device memory
     {
         const CudaSize<2> depthsDim(_sgmParams.maxDepths, 1);
+
         _depths_hmh.allocate(depthsDim);
         _depths_dmp.allocate(depthsDim);
     }
 
     // allocate depth/sim map in device memory
-    _depthSimMap_dmp.allocate(CudaSize<2>(maxTileWidth, maxTileHeight));
+    _depthSimMap_dmp.allocate(depthSimMapDim);
 
     // allocate normal map in device memory
-    if(_sgmParams.computeNormalMap)
-        _normalMap_dmp.allocate(CudaSize<2>(maxTileWidth, maxTileHeight));
+    if(_sgmParams.computeNormalMap || _sgmParams.exportIntermediateNormalMaps)
+        _normalMap_dmp.allocate(depthSimMapDim);
 
     // allocate similarity volumes in device memory
     {
@@ -61,6 +65,7 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     if(sgmParams.doSgmOptimizeVolume)
     {
         const size_t maxTileSide = std::max(maxTileWidth, maxTileHeight);
+
         _volumeSliceAccA_dmp.allocate(CudaSize<2>(maxTileSide, _sgmParams.maxDepths));
         _volumeSliceAccB_dmp.allocate(CudaSize<2>(maxTileSide, _sgmParams.maxDepths));
         _volumeAxisAcc_dmp.allocate(CudaSize<2>(maxTileSide, 1));
@@ -73,18 +78,12 @@ double Sgm::getDeviceMemoryConsumption() const
 
     bytes += _depths_dmp.getBytesPadded();
     bytes += _depthSimMap_dmp.getBytesPadded();
+    bytes += _normalMap_dmp.getBytesPadded();
     bytes += _volumeBestSim_dmp.getBytesPadded();
     bytes += _volumeSecBestSim_dmp.getBytesPadded();
-
-    if(_sgmParams.computeNormalMap)
-        bytes += _normalMap_dmp.getBytesPadded();
-
-    if(_sgmParams.doSgmOptimizeVolume)
-    {
-        bytes += _volumeSliceAccA_dmp.getBytesPadded();
-        bytes += _volumeSliceAccB_dmp.getBytesPadded();
-        bytes += _volumeAxisAcc_dmp.getBytesPadded();
-    }
+    bytes += _volumeSliceAccA_dmp.getBytesPadded();
+    bytes += _volumeSliceAccB_dmp.getBytesPadded();
+    bytes += _volumeAxisAcc_dmp.getBytesPadded();
 
     return (double(bytes) / (1024.0 * 1024.0));
 }
@@ -95,18 +94,12 @@ double Sgm::getDeviceMemoryConsumptionUnpadded() const
 
     bytes += _depths_dmp.getBytesUnpadded();
     bytes += _depthSimMap_dmp.getBytesUnpadded();
+    bytes += _normalMap_dmp.getBytesUnpadded();
     bytes += _volumeBestSim_dmp.getBytesUnpadded();
     bytes += _volumeSecBestSim_dmp.getBytesUnpadded();
-
-    if(_sgmParams.computeNormalMap)
-        bytes += _normalMap_dmp.getBytesUnpadded();
-
-    if(_sgmParams.doSgmOptimizeVolume)
-    {
-        bytes += _volumeSliceAccA_dmp.getBytesUnpadded();
-        bytes += _volumeSliceAccB_dmp.getBytesUnpadded();
-        bytes += _volumeAxisAcc_dmp.getBytesUnpadded();
-    }
+    bytes += _volumeSliceAccA_dmp.getBytesUnpadded();
+    bytes += _volumeSliceAccB_dmp.getBytesUnpadded();
+    bytes += _volumeAxisAcc_dmp.getBytesUnpadded();
 
     return (double(bytes) / (1024.0 * 1024.0));
 }
@@ -160,7 +153,7 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     }
 
     // compute normal map from depth/sim map if needed
-    if(_sgmParams.computeNormalMap)
+    if(_sgmParams.computeNormalMap || _sgmParams.exportIntermediateNormalMaps)
     {
         // downscale the region of interest
         const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
@@ -169,10 +162,14 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
         DeviceCache& deviceCache = DeviceCache::getInstance();
         const DeviceCamera& rcDeviceCamera = deviceCache.requestCamera(tile.rc, _sgmParams.scale, _mp);
 
-        ALICEVISION_LOG_INFO(tile << "SGM normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
-        cuda_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, rcDeviceCamera, _sgmParams, downscaledRoi, _stream);
+        ALICEVISION_LOG_INFO(tile << "SGM compute normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / " << _mp.ncams << ").");
+        cuda_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, rcDeviceCamera, _sgmParams.stepXY, downscaledRoi, _stream);
 
-        writeDeviceImage(_normalMap_dmp, getFileNameFromIndex(_mp, tile.rc, mvsUtils::EFileType::depthMap, _sgmParams.scale, "Normal", tile.roi.x.begin, tile.roi.y.begin));
+        // export intermediate normal map (if requested by user)
+        if(_sgmParams.exportIntermediateNormalMaps)
+        {
+            writeNormalMap(tile.rc, _mp, _tileParams, tile.roi, _normalMap_dmp, _sgmParams.scale, _sgmParams.stepXY, "_sgm");
+        }
     }
 
     ALICEVISION_LOG_INFO(tile << "SGM depth/sim map done.");

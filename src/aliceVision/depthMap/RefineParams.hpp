@@ -32,12 +32,13 @@ struct RefineParams
   // intermediate results export parameters
 
   bool exportIntermediateDepthSimMaps = false;
+  bool exportIntermediateNormalMaps = false;
   bool exportIntermediateCrossVolumes = false;
   bool exportIntermediateVolume9pCsv = false;
 
   // constant parameters
 
-  const bool useNormalMap = false; // for experimentation purposes
+  const bool useSgmNormalMap = false; // for experimentation purposes
 };
 
 } // namespace depthMap

@@ -75,14 +75,14 @@ extern void cuda_depthSimMapComputePixSize(CudaDeviceMemoryPitched<float2, 2>& i
  * @param[out] out_normalMap_dmp the output normal map
  * @param[in] in_depthSimMap_dmp the input depth/sim map (only depth is used)
  * @param[in] rcDeviceCamera the R device camera
- * @param[in] sgmParams the SGM parameters
+ * @param[in] stepXY the input depth/sim map stepXY factor
  * @param[in] roi the 2d region of interest
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_depthSimMapComputeNormal(CudaDeviceMemoryPitched<float3, 2>& out_normalMap_dmp,
                                           const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
                                           const DeviceCamera& rcDeviceCamera,
-                                          const SgmParams& sgmParams,
+                                          const int stepXY,
                                           const ROI& roi,
                                           cudaStream_t stream);
 
