@@ -135,7 +135,7 @@ private:
      * @param[in] scale Scale applied to the image before the extraction.
      * @return False if a problem occured during extraction, otherwise true.
      */
-    bool processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale);
+    bool processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale) const;
 
     /**
      * @brief Retrieve min and max pixel values of a grayscale image.
@@ -144,7 +144,7 @@ private:
      * @param[out] max Maximum pixel value.
      * @param[in] input Input grayscale image.
      */
-    void getMinMax(float &min, float &max, const image::Image<float> & input);
+    void getMinMax(float &min, float &max, const image::Image<float> & input) const;
 
     /**
      * @brief Normalize a grayscale image so that min pixel value is 0 and max pixel value is 1.
@@ -152,7 +152,7 @@ private:
      * @param[out] output Normalized image.
      * @param[in] input Input grayscale image.
      */
-    void normalizeImage(image::Image<float> & output, const image::Image<float> & input);
+    void normalizeImage(image::Image<float> & output, const image::Image<float> & input) const;
 
     /**
      * @brief Compute Hessian response at each pixel of an image.
@@ -164,7 +164,7 @@ private:
      * @param[out] output Hessian response at each pixel of input image.
      * @param[in] input Input grayscale image.
      */
-    void computeHessianResponse(image::Image<float> & output, const image::Image<float> & input);
+    void computeHessianResponse(image::Image<float> & output, const image::Image<float> & input) const;
 
     /**
      * @brief Extract corner positions by searching local maxima (on a 7x7 patch) in the Hessian response.
@@ -173,7 +173,7 @@ private:
      * @param[out] rawCorners Corners positions.
      * @param[in] hessianResponse Hessian response of input image.
      */
-    void extractCorners(std::vector<Vec2> & rawCorners, const image::Image<float> & hessianResponse);
+    void extractCorners(std::vector<Vec2> & rawCorners, const image::Image<float> & hessianResponse) const;
 
     /**
      * @brief Refine corners positions using image gradient (on a 5x5 patch) around the initial positions.
@@ -184,7 +184,7 @@ private:
      * @param[in] rawCorners Initial corners positions.
      * @param[in] input Input grayscale image.
      */
-    void refineCorners(std::vector<Vec2> & refinedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input);
+    void refineCorners(std::vector<Vec2> & refinedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input) const;
 
     /**
      * @brief Analyze grayscale values in the neighborhood of given corners positions and select the ones that match a checkerboard pattern.
@@ -200,7 +200,7 @@ private:
      * @param[in] rawCorners Initial corners positions.
      * @param[in] input Input grayscale image.
      */
-    void pruneCorners(std::vector<Vec2> & prunedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input);
+    void pruneCorners(std::vector<Vec2> & prunedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input) const;
 
     /**
      * @brief Given corners positions, refine their positions and compute their directions.
@@ -211,7 +211,7 @@ private:
      * @param[in] rawCorners Corners positions.
      * @param[in] input Input grayscale image.
      */
-    void fitCorners(std::vector<CheckerBoardCorner> & refinedCorners, const std::vector<IntermediateCorner> & rawCorners, const image::Image<float> & input);
+    void fitCorners(std::vector<CheckerBoardCorner> & refinedCorners, const std::vector<IntermediateCorner> & rawCorners, const image::Image<float> & input) const;
 
     /**
      * @brief Build checkerboards by connecting corners.
@@ -226,7 +226,7 @@ private:
      * @param[in] refinedCorners Corners with directions information.
      * @param[in] input Input grayscale image.
      */
-    void buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refinedCorners, const image::Image<float> & input);
+    void buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refinedCorners, const image::Image<float> & input) const;
 
     /**
      * @brief Find corner closest to a given position in an area constrained to a small cone around a given direction.
@@ -236,7 +236,7 @@ private:
      * @param[in] refinedCorners Array of corners.
      * @return Index of closest corner in the input array, UndefinedIndexT if none was found.
      */
-    IndexT findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refinedCorners);
+    IndexT findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refinedCorners) const;
 
     /**
      * @brief Check if a given corner can be used as seed for checkerboard detection.
@@ -246,7 +246,7 @@ private:
      * @param[in] refinedCorners Array of corners.
      * @return True if the corner can be used as a seed, otherwise false.
      */
-    bool getSeedCheckerboard(Eigen::Matrix<IndexT, -1, -1> & board, IndexT seed, const std::vector<CheckerBoardCorner> & refinedCorners);
+    bool getSeedCheckerboard(CheckerBoard & board, IndexT seed, const std::vector<CheckerBoardCorner> & refinedCorners) const;
 
     /**
      * @brief Compute the "energy" of a checkerboard using the number of valid corners and the maximum local distortion along rows and columns.
@@ -255,7 +255,7 @@ private:
      * @param[in] refinedCorners Checkerboard corners.
      * @return Checkerboard's energy value.
      */
-    double computeEnergy(const Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners);
+    double computeEnergy(const CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners) const;
 
     /**
      * @brief Find positions on a board that do not reference a corner yet but can be used to extend the board.
@@ -265,7 +265,7 @@ private:
      * @param[in] inside Search points for extending the board inwards or outwards.
      * @return False if the board has less than two rows, otherwise true.
      */
-    bool getCandidates(std::vector<NewPoint> & candidates, Eigen::Matrix<IndexT, -1, -1> & board, bool inside);
+    bool getCandidates(std::vector<NewPoint> & candidates, const CheckerBoard & board, bool inside) const;
 
     /**
      * @brief Extend a board in the up direction.
@@ -282,7 +282,7 @@ private:
      * @param[in] nested Extend the board inwards or outwards.
      * @return False if a problem occured or if the energy of the extended board is higher than before, otherwise true.
      */
-    bool growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners, bool nested);
+    bool growIterationUp(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners, bool nested) const;
 
     /**
      * @brief Extend a board in the up, down, right and left directions.
@@ -291,7 +291,7 @@ private:
      * @param[in] refinedCorners All detected corners.
      * @return False if the energy of the extended board is higher than before, otherwise true.
      */
-    bool growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners);
+    bool growIteration(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners) const;
 
     /**
      * @brief Merge connected checkboards.
@@ -324,6 +324,15 @@ private:
      * @param[in] center Image center.
      */
     void sortCheckerBoardsByDistanceToCenter(const Vec2& center);
+
+    /**
+     * @brief Compute minimal distance between a center point and the corners of a checkerboard.
+     * 
+     * @param[in] board Input checkerboard.
+     * @param[in] center Center position.
+     * @return Minimal distance between checkerboard and center position.
+     */
+    double minDistanceToCenter(const CheckerBoard& board, const Vec2& center) const;
 
     /**
      * @brief Keep only a sequence of nested boards and discard the other boards.

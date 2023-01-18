@@ -192,7 +192,7 @@ int aliceVision_main(int argc, char* argv[])
 
         if(exportDebugImages)
         {
-            ALICEVISION_LOG_INFO("Writing debug image:");
+            ALICEVISION_LOG_INFO("Writing debug image");
             std::stringstream ss;
             ss << outputFilePath << "/" << viewId << ".png";
             image::writeImage(ss.str(), detect.getDebugImage(), image::ImageWriteOptions());

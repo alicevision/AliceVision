@@ -148,7 +148,7 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
 
 
 
-bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale) 
+bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Image<float> & input, double scale) const
 {       
     // Get resized size
     const unsigned int w = input.Width();
@@ -190,7 +190,7 @@ bool CheckerDetector::processLevel(std::vector<Vec2> & corners, const image::Ima
     return true;
 }
 
-void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input)
+void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input) const
 {
     const image::Sampler2d<image::SamplerLinear> sampler;
     const int radius = 5;
@@ -244,7 +244,7 @@ void CheckerDetector::pruneCorners(std::vector<Vec2> & prunedCorners, const std:
     }
 }
 
-void CheckerDetector::normalizeImage(image::Image<float> & output, const image::Image<float> & input)
+void CheckerDetector::normalizeImage(image::Image<float> & output, const image::Image<float> & input) const
 {
     float min = 0.0f, max = 0.0f;
     getMinMax(min, max, input);
@@ -259,7 +259,7 @@ void CheckerDetector::normalizeImage(image::Image<float> & output, const image::
     }
 }
 
-void CheckerDetector::computeHessianResponse(image::Image<float> & output, const image::Image<float> & input)
+void CheckerDetector::computeHessianResponse(image::Image<float> & output, const image::Image<float> & input) const
 {
     image::Image<float> smoothed;
     image::ImageGaussianFilter(input, 1.5, smoothed, 2);
@@ -285,7 +285,7 @@ void CheckerDetector::computeHessianResponse(image::Image<float> & output, const
     }
 }
 
-void CheckerDetector::extractCorners(std::vector<Vec2> & rawCorners, const image::Image<float> & hessianResponse)
+void CheckerDetector::extractCorners(std::vector<Vec2> & rawCorners, const image::Image<float> & hessianResponse) const
 {
     float min = 0.0f, max = 0.0f;
     getMinMax(min, max, hessianResponse);
@@ -329,7 +329,7 @@ void CheckerDetector::extractCorners(std::vector<Vec2> & rawCorners, const image
     }
 }
 
-void CheckerDetector::getMinMax(float &min, float &max, const image::Image<float> & input)
+void CheckerDetector::getMinMax(float &min, float &max, const image::Image<float> & input) const
 {
     min = std::numeric_limits<float>::max();
     max = std::numeric_limits<float>::min();
@@ -343,7 +343,7 @@ void CheckerDetector::getMinMax(float &min, float &max, const image::Image<float
     }
 }
 
-void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input)
+void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const std::vector<Vec2> & rawCorners, const image::Image<float> & input) const
 {
     image::Image<float> gx, gy;
     ImageXDerivative(input, gx, true);
@@ -398,7 +398,7 @@ void CheckerDetector::refineCorners(std::vector<Vec2> & refinedCorners, const st
     }
 }
 
-void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorners, const std::vector<IntermediateCorner> & rawCorners, const image::Image<float> & input)
+void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorners, const std::vector<IntermediateCorner> & rawCorners, const image::Image<float> & input) const
 {
     // Build kernel
     const int radius = 4;
@@ -587,7 +587,7 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner> & refinedCorner
     }
 }
 
-IndexT CheckerDetector::findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refinedCorners)
+IndexT CheckerDetector::findClosestCorner(const Vec2 & center, const Vec2 & dir, const std::vector<CheckerBoardCorner> & refinedCorners) const
 {
     IndexT ret = UndefinedIndexT;
     double min = std::numeric_limits<double>::max();
@@ -618,7 +618,7 @@ IndexT CheckerDetector::findClosestCorner(const Vec2 & center, const Vec2 & dir,
     return ret;
 }
 
-bool CheckerDetector::getSeedCheckerboard(Eigen::Matrix<IndexT, -1, -1> & board, IndexT seed, const std::vector<CheckerBoardCorner> & refinedCorners)
+bool CheckerDetector::getSeedCheckerboard(CheckerBoard & board, IndexT seed, const std::vector<CheckerBoardCorner> & refinedCorners) const
 {
     IndexT right, bottom, bottom_right, check;
     const CheckerBoardCorner & referenceCorner = refinedCorners[seed];
@@ -665,7 +665,7 @@ bool CheckerDetector::getSeedCheckerboard(Eigen::Matrix<IndexT, -1, -1> & board,
 }
 
 
-bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, Eigen::Matrix<IndexT, -1, -1> & board, bool inside)
+bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, const CheckerBoard & board, bool inside) const
 {   
     if (board.rows() < 2)
     {
@@ -722,12 +722,12 @@ bool CheckerDetector::getCandidates(std::vector<NewPoint> & candidates, Eigen::M
 }
 
 
-bool CheckerDetector::growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners, bool nested)
+bool CheckerDetector::growIterationUp(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners, bool nested) const
 {
     double referenceEnergy = computeEnergy(board, refinedCorners);
 
     // Enlarge board and fill with empty indices
-    Eigen::Matrix<IndexT, -1, -1> nboard(board.rows()  + 1, board.cols());
+    CheckerBoard nboard(board.rows()  + 1, board.cols());
     nboard.fill(UndefinedIndexT);
     nboard.block(1, 0, board.rows(), board.cols()) = board;
     board = nboard;
@@ -871,7 +871,7 @@ bool CheckerDetector::growIterationUp(Eigen::Matrix<IndexT, -1, -1> & board, con
     return false;
 }
 
-double CheckerDetector::computeEnergy(const Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners)
+double CheckerDetector::computeEnergy(const CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners) const
 {
     // Count valid corners in board
     size_t countValid = 0;
@@ -952,7 +952,7 @@ double CheckerDetector::computeEnergy(const Eigen::Matrix<IndexT, -1, -1> & boar
     return static_cast<double>(countValid) * (maxE - 1);
 }
 
-bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const std::vector<CheckerBoardCorner> & refinedCorners)
+bool CheckerDetector::growIteration(CheckerBoard & board, const std::vector<CheckerBoardCorner> & refinedCorners) const
 {
     if (board.rows() < 2) return false;
     if (board.cols() < 2) return false;
@@ -960,9 +960,9 @@ bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const
     const double originalE = computeEnergy(board, refinedCorners);
     double minE = std::numeric_limits<double>::max();
 
-    Eigen::Matrix<IndexT, -1, -1> board_original = board;
+    CheckerBoard board_original = board;
 
-    Eigen::Matrix<IndexT, -1, -1> board_up = board_original;
+    CheckerBoard board_up = board_original;
     if (growIterationUp(board_up, refinedCorners, false))
     {
         const double E = computeEnergy(board_up, refinedCorners);
@@ -973,7 +973,7 @@ bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const
         }
     }
 
-    Eigen::Matrix<IndexT, -1, -1> board_down = board_original.colwise().reverse();
+    CheckerBoard board_down = board_original.colwise().reverse();
     if (growIterationUp(board_down, refinedCorners, false))
     {
         double E = computeEnergy(board_down, refinedCorners);
@@ -984,7 +984,7 @@ bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const
         }
     }
 
-    Eigen::Matrix<IndexT, -1, -1> board_right = board_original.transpose().colwise().reverse();
+    CheckerBoard board_right = board_original.transpose().colwise().reverse();
     if (growIterationUp(board_right, refinedCorners, false))
     {
         double E = computeEnergy(board_right, refinedCorners);
@@ -995,7 +995,7 @@ bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const
         }
     }
 
-    Eigen::Matrix<IndexT, -1, -1> board_left = board_original.transpose();
+    CheckerBoard board_left = board_original.transpose();
     if (growIterationUp(board_left, refinedCorners, false))
     {
         double E = computeEnergy(board_left, refinedCorners);
@@ -1016,7 +1016,7 @@ bool CheckerDetector::growIteration(Eigen::Matrix<IndexT, -1, -1> & board, const
     return false;
 }
 
-void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refinedCorners, const image::Image<float> & input)
+void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, const std::vector<CheckerBoardCorner> & refinedCorners, const image::Image<float> & input) const
 {
     double minE = std::numeric_limits<double>::max();
 
@@ -1027,7 +1027,7 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard> & boards, con
         if (used[cid]) continue;
 
         // Check if corner can be used as seed
-        Eigen::Matrix<IndexT, -1, -1> board;
+        CheckerBoard board;
         if (!getSeedCheckerboard(board, cid, refinedCorners))
         {
             continue;
@@ -1551,43 +1551,31 @@ bool CheckerDetector::removeInvalidCheckerboards()
     return true;
 }
 
+double CheckerDetector::minDistanceToCenter(const CheckerBoard& board, const Vec2& center) const
+{
+    double mindist = std::numeric_limits<double>::max();
+    for (int i = 0; i < board.rows(); i++)
+    {
+        for (int j = 0; j < board.cols(); j++)
+        {
+            IndexT cid = board(i, j);
+            if (cid == UndefinedIndexT) continue;
+
+            const CheckerBoardCorner& c = _corners[cid];
+            double dist = (c.center - center).norm();
+            mindist = std::min(dist, mindist);
+        }
+    }
+    return mindist;
+}
+
 void CheckerDetector::sortCheckerBoardsByDistanceToCenter(const Vec2 & center)
 {
-    const std::vector<CheckerBoardCorner> & corners = _corners;
-
     // Sort boards by their minimal distance to image center
     std::sort(_boards.begin(), _boards.end(),
-        [corners, center](const calibration::CheckerDetector::CheckerBoard& first, const calibration::CheckerDetector::CheckerBoard& second)
+        [this, &center](const CheckerBoard& first, const CheckerBoard& second)
         {
-            double mindist_first = std::numeric_limits<double>::max();
-            for (int i = 0; i < first.rows(); i++)
-            {
-                for (int j = 0; j < first.cols(); j++)
-                {
-                    IndexT cid = first(i, j);
-                    if (cid == UndefinedIndexT) continue;
-
-                    const calibration::CheckerDetector::CheckerBoardCorner& c = corners[cid];
-                    double dist = (c.center - center).norm();
-                    mindist_first = std::min(dist, mindist_first);
-                }
-            }
-
-            double mindist_second = std::numeric_limits<double>::max();
-            for (int i = 0; i < second.rows(); i++)
-            {
-                for (int j = 0; j < second.cols(); j++)
-                {
-                    IndexT cid = second(i, j);
-                    if (cid == UndefinedIndexT) continue;
-
-                    const calibration::CheckerDetector::CheckerBoardCorner& c = corners[cid];
-                    double dist = (c.center - center).norm();
-                    mindist_second = std::min(dist, mindist_second);
-                }
-            }
-
-            return (mindist_first < mindist_second);
+            return minDistanceToCenter(first, center) < minDistanceToCenter(second, center);
         }
     );
 }
@@ -1691,7 +1679,7 @@ void CheckerDetector::buildNestedConnectors()
         auto & board_original = _boards[idx_board];
         double minE = computeEnergy(board_original, _corners);
         
-        Eigen::Matrix<IndexT, -1, -1> board_up = board_original;
+        CheckerBoard board_up = board_original;
         if (growIterationUp(board_up, _corners, true))
         {
             const double E = computeEnergy(board_up, _corners);
@@ -1702,7 +1690,7 @@ void CheckerDetector::buildNestedConnectors()
             }
         }
 
-        Eigen::Matrix<IndexT, -1, -1> board_down = board_original.colwise().reverse();
+        CheckerBoard board_down = board_original.colwise().reverse();
         if (growIterationUp(board_down, _corners, true))
         {
             const double E = computeEnergy(board_down, _corners);
@@ -1713,7 +1701,7 @@ void CheckerDetector::buildNestedConnectors()
             }
         }
 
-        Eigen::Matrix<IndexT, -1, -1> board_right = board_original.transpose().colwise().reverse();
+        CheckerBoard board_right = board_original.transpose().colwise().reverse();
         if (growIterationUp(board_right, _corners, true))
         {
             const double E = computeEnergy(board_right, _corners);
@@ -1724,7 +1712,7 @@ void CheckerDetector::buildNestedConnectors()
             }
         }
 
-        Eigen::Matrix<IndexT, -1, -1> board_left = board_original.transpose();
+        CheckerBoard board_left = board_original.transpose();
         if (growIterationUp(board_left, _corners, true))
         {
             const double E = computeEnergy(board_left, _corners);
