@@ -224,7 +224,10 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
       }
       case EFileType::normalMap:
       {
-          folder = mp.getDepthMapsFilterFolder();
+          if(scale == 0)
+              folder = mp.getDepthMapsFilterFolder();
+          else
+              folder = mp.getDepthMapsFolder();
           suffix = "_normalMap";
           ext = "exr";
           break;
