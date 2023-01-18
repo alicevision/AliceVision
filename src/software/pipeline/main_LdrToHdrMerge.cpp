@@ -195,6 +195,10 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    if (workingColorSpace != image::EImageColorSpace::SRGB)
+    {
+        meanTargetedLumaForMerging = std::pow((meanTargetedLumaForMerging + 0.055) / 1.055, 2.2);
+    }
     hdr::selectTargetViews(targetViews, groupedViews, offsetRefBracketIndex, lumaStatFilepath.string(), meanTargetedLumaForMerging);
 
     if ((targetViews.empty() || targetViews.size() != groupedViews.size()) && !isOffsetRefBracketIndexValid)
