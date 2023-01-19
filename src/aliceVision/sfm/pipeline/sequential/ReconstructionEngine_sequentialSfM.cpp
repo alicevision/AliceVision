@@ -184,7 +184,6 @@ bool ReconstructionEngine_sequentialSfM::process()
           {
               // Add the reconstructed views to the LocalBA graph
               _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _params.kMinNbOfMatches);
-              _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
           }
       }
   }
@@ -558,10 +557,6 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       std::set<IndexT> updatedViews;
 
       calibrateRigs(updatedViews);
-
-      // update rig edges in the local BA graph
-      if(_params.useLocalBundleAdjustment)
-        _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
 
       // after rig calibration, camera may have moved by replacing independant poses by a rig pose with a common subpose.
       // so we need to perform a bundle adjustment, to ensure that 3D points and cameras poses are coherents.
