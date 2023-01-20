@@ -214,22 +214,12 @@ bool VideoFeed::FeederImpl::goToFrame(const unsigned int frame)
     ALICEVISION_LOG_WARNING("We cannot open the video file.");
     return false;
   }
-  
-  if(_isLive)
+
+  if (_isLive)
     return goToNextFrame();
-  
-  if(frame > 0)
-  {
-    _videoCapture.set(cv::CAP_PROP_POS_FRAMES, frame);
-    _videoCapture.grab();
-    return true;
-  }
-  else
-  {
-    _videoCapture.set(cv::CAP_PROP_POS_FRAMES, 0);
-    _videoCapture.grab();
-    return false;
-  }
+
+  _videoCapture.set(cv::CAP_PROP_POS_FRAMES, frame);
+  return _videoCapture.grab();
 }
 
 bool VideoFeed::FeederImpl::goToNextFrame()
