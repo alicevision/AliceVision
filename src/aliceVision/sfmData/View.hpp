@@ -703,6 +703,28 @@ public:
   }
 
   /**
+   * @brief Get the list of viewID referencing the source views called "Ancestors"
+   * If an image is generated from multiple input images, "Ancestors" allows to keep track of the viewIDs of the original inputs views.
+   * For instance, the generated view can come from the fusion of multiple LDR images into one HDR image, the fusion from multi-focus 
+   * stacking to get a fully focused image, fusion of images with multiple lighting to get a more diffuse lighting, etc.
+   * @return list of viewID of the ancestors
+   * @param[in] viewId the view ancestor id
+   */
+  void addAncestor(IndexT viewId)
+  {
+    _ancestors.push_back(viewId);
+  }
+
+  /**
+  * @Brief get all ancestors for this view
+  * @return ancestors
+  */
+  const std::vector<IndexT> & getAncestors() const
+  {
+    return _ancestors;
+  }
+
+  /**
    * @brief Set the given resection id
    * @param[in] resectionId The given resection id
    */
@@ -801,6 +823,8 @@ private:
   bool _isPoseIndependent = true;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
+  /// list of ancestors
+  std::vector<IndexT> _ancestors;
 };
 
 } // namespace sfmData

@@ -58,6 +58,21 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
     viewTree.add_child("metadata", metadataTree);
   }
 
+  // ancestors
+  if (!view.getAncestors().empty())
+  {
+    bpt::ptree ancestorsTree;
+
+    for(const auto & ancestor : view.getAncestors())
+    {
+      bpt::ptree ancestorTree;
+      ancestorTree.put("", ancestor);
+      ancestorsTree.push_back(std::make_pair("", ancestorTree));
+    }
+
+    viewTree.add_child("ancestors", ancestorsTree);
+  }
+
   parentTree.push_back(std::make_pair(name, viewTree));
 }
 
@@ -81,6 +96,14 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
   view.setImagePath(viewTree.get<std::string>("path"));
   view.setWidth(viewTree.get<std::size_t>("width", 0));
   view.setHeight(viewTree.get<std::size_t>("height", 0));
+
+  if (viewTree.count("ancestors"))
+  {
+    for (bpt::ptree::value_type &ancestor : viewTree.get_child("ancestors"))
+    {
+      view.addAncestor(ancestor.second.get_value<IndexT>());
+    }
+  }
 
   // metadata
   if(viewTree.count("metadata"))

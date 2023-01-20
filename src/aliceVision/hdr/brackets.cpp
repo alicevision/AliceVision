@@ -111,6 +111,12 @@ void selectTargetViews(std::vector<std::shared_ptr<sfmData::View>> & out_targetV
         const int middleIndex = int(group.size()) / 2;
         const int targetIndex = clamp(middleIndex + offsetRefBracketIndex, 0, int(group.size()) - 1);
 
+        //Set the ldr ancestors id
+        for (auto v : group)
+        {
+            group[targetIndex]->addAncestor(v->getViewId());
+        }
+
         out_targetViews.push_back(group[targetIndex]);
     }
 }
